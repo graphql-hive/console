@@ -38,9 +38,10 @@ import { QueryError } from '@/components/ui/query-error';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard, useSlugs } from '@/lib/hooks';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
 
 const rootTraceColor = 'rgb(244, 183, 64)';
@@ -528,7 +529,7 @@ function SpanNode(props: SpanNodeProps) {
                     targetSlug,
                     traceId: props.traceId,
                   }}
-                  search={{ activeSpanId: span.id }}
+                  search={previous => ({ ...carriedRange(previous), activeSpanId: span.id })}
                 >
                   <NodeElement
                     color={props.color}
@@ -628,7 +629,11 @@ function SpanNode(props: SpanNodeProps) {
                         targetSlug,
                         traceId: props.traceId,
                       }}
-                      search={{ activeSpanId: span.id, activeSpanTab: 'events' }}
+                      search={previous => ({
+                        ...carriedRange(previous),
+                        activeSpanId: span.id,
+                        activeSpanTab: 'events',
+                      })}
                     >
                       <div className="relative h-full">
                         <div
@@ -877,7 +882,11 @@ export function TraceSheet(props: TraceSheetProps) {
                                 targetSlug,
                                 traceId: trace.id,
                               }}
-                              search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
+                              search={previous => ({
+                                ...carriedRange(previous),
+                                activeSpanId: event.spanId,
+                                activeSpanTab: 'events',
+                              })}
                               onMouseOver={() =>
                                 setHighlightedEvent({
                                   spanId: event.spanId,
@@ -935,7 +944,7 @@ export function TraceSheet(props: TraceSheetProps) {
         onClose={() =>
           navigate({
             to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
-            search: {},
+            search: previous => carriedRange(previous),
           })
         }
         traceId={trace.id}
@@ -944,6 +953,10 @@ export function TraceSheet(props: TraceSheetProps) {
     </div>
   );
 }
+
+const traceRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
+);
 
 export const TargetInsightsNewPageContent_TraceQuery = graphql(/* GraphQL */ `
   query TargetInsightsNewPageContent_TraceQuery(
@@ -976,6 +989,7 @@ function TargetInsightsNewPageContent(props: {
   activeSpanTab: string | null;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const range = carriedRange(traceRoute.useSearch());
   const [result] = useQuery({
     query: TargetInsightsNewPageContent_TraceQuery,
     variables: {
@@ -1014,6 +1028,7 @@ function TargetInsightsNewPageContent(props: {
                 projectSlug,
                 targetSlug,
               }}
+              search={range}
             >
               Traces
             </Link>{' '}
@@ -1438,7 +1453,10 @@ function SpanSheet(props: SpanSheetProps) {
                     targetSlug,
                     traceId: props.traceId,
                   }}
-                  search={{ activeSpanId: span.parentId }}
+                  search={previous => ({
+                    ...carriedRange(previous),
+                    activeSpanId: span.parentId ?? undefined,
+                  })}
                 />
               }
             >

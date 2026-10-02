@@ -29,11 +29,13 @@ import {
 } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
+import { useLayoutQuery } from '@/lib/hooks/use-layout-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { AlertMetricChart } from './alert-metric-chart';
 import { AlertPreview, type AlertPreviewChannelType } from './alert-notification-preview';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
+import { previewWindowMinutes } from './preview-window';
 
 export const AlertForm_ChannelsQuery = graphql(`
   query AlertForm_ChannelsQuery($organizationSlug: String!, $projectSlug: String!) {
@@ -570,21 +572,19 @@ export function AlertForm(props: AlertFormProps) {
         ? 'e.g. 5'
         : 'e.g. 1000';
 
-  const previewWindowMinutes = Math.min(
-    (parseInt(watchedValues.timeWindowMinutes, 10) || 10_080) * 2,
-    20_160,
-  );
+  const retentionInDays = useLayoutQuery('target').data?.organization?.usageRetentionInDays;
+  const previewMinutes = previewWindowMinutes(watchedValues.timeWindowMinutes, retentionInDays);
   const { period, resolution } = useMemo(() => {
     const now = new Date();
     const resolved = resolveRangeAndResolution({
-      from: subMinutes(now, previewWindowMinutes),
+      from: subMinutes(now, previewMinutes),
       to: now,
     });
     return {
       period: { from: resolved.range.from.toISOString(), to: resolved.range.to.toISOString() },
       resolution: resolved.resolution,
     };
-  }, [previewWindowMinutes]);
+  }, [previewMinutes]);
   const [previewQuery] = useQuery({
     query: AlertForm_PreviewQuery,
     variables: { organizationSlug, projectSlug, targetSlug, period, resolution },
@@ -847,6 +847,7 @@ export function AlertForm(props: AlertFormProps) {
               <AlertMetricChart
                 stats={previewQuery.data?.target?.operationsStats ?? null}
                 loading={previewQuery.fetching}
+                error={previewQuery.error?.graphQLErrors[0]?.message ?? previewQuery.error?.message}
                 type={parsedMetric.type}
                 metric={parsedMetric.metric}
                 severity={watchedValues.severity}

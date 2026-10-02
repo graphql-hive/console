@@ -2,7 +2,7 @@ import { OrganizationLayout } from '@/components/layouts/organization';
 import { OrganizationLayoutQuery } from '@/components/layouts/queries';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { overviewPeriod } from '@/lib/overview-period';
-import { loadQuery, revalidate } from '@/lib/route-utils';
+import { loadQuery, revalidate, usageRetention } from '@/lib/route-utils';
 import {
   OrganizationIndexRouteSearch,
   OrganizationPage,
@@ -22,6 +22,7 @@ import {
   OrganizationSupportTicketPage,
   SupportTicketPageQuery,
 } from '@/pages/organization-support-ticket';
+import { UTCDate } from '@date-fns/utc';
 import { createRoute, Outlet, redirect } from '@tanstack/react-router';
 import { withHeaderRoute } from '../with-header';
 
@@ -56,9 +57,11 @@ export const organizationIndexRoute = createRoute({
   path: '/',
   validateSearch: OrganizationIndexRouteSearch.parse,
   preloadStaleTime: 0,
-  loader: loader => {
+  // The window depends on the plan, so the overview waits for the layout document on a cold load.
+  loader: async loader => {
     const { organizationSlug } = loader.params;
-    const { period, resolution } = overviewPeriod();
+    const retention = await usageRetention.organization(loader);
+    const { period, resolution } = overviewPeriod(new UTCDate(), retention);
     void loadQuery(
       loader,
       OrganizationProjectsPageQuery,
