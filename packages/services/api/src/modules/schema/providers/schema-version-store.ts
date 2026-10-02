@@ -707,36 +707,48 @@ export class SchemaVersionStore {
     });
   }
 
-  async countSchemaVersionsOfProject(
+  async countSchemaVersionsOfDefaultGraphsInProject(
     project: Project,
     period: {
       from: Date;
       to: Date;
     } | null,
   ): Promise<number> {
-    if (period) {
-      const result = await this.pg
-        .maybeOne(
-          psql`/* countPeriodSchemaVersionsOfProject */
-            SELECT COUNT(*) as total FROM schema_versions as sv
-            LEFT JOIN targets as t ON (t.id = sv.target_id)
-            WHERE
-              t.project_id = ${project.id}
-              AND sv.created_at >= ${period.from.toISOString()}
-              AND sv.created_at < ${period.to.toISOString()}
-          `,
-        )
-        .then(z.object({ total: z.number() }).nullable().parse);
-      return result?.total ?? 0;
-    }
+    const periodFilter = period
+      ? psql`
+          AND sv.created_at >= ${period.from.toISOString()}
+          AND sv.created_at < ${period.to.toISOString()}
+        `
+      : psql``;
 
     const result = await this.pg
       .maybeOne(
-        psql`/* countSchemaVersionsOfProject */
-        SELECT COUNT(*) as total FROM schema_versions as sv
-        LEFT JOIN targets as t ON (t.id = sv.target_id)
-        WHERE t.project_id = ${project.id}
-      `,
+        psql`/* countPeriodSchemaVersionsOfProject */
+          SELECT
+            COUNT(*) as "total"
+          FROM
+            "schema_versions" as sv
+          INNER JOIN
+            "targets" as t ON (t."id" = sv."target_id")
+          WHERE
+            t."project_id" = ${project.id}
+            AND (
+              ${
+                /* Legacy Records */ psql`
+                  sv."graph_metadata" IS NULL
+                `
+              }
+              OR
+              ${
+                /* New "default" graph records */ psql`
+                (
+                  sv."graph_metadata"->>'name' = 'default'
+                  AND sv."graph_metadata"->>'type' = 'default'
+                )`
+              }
+            )
+            ${periodFilter}
+          `,
       )
       .then(z.object({ total: z.number() }).nullable().parse);
 
@@ -744,32 +756,46 @@ export class SchemaVersionStore {
   }
 
   async countSchemaVersionsOfTarget(
-    target: Target,
+    graph: Graph,
     period: {
       from: Date;
       to: Date;
     } | null,
   ): Promise<number> {
-    if (period) {
-      const result = await this.pg
-        .maybeOne(
-          psql`/* countPeriodSchemaVersionsOfTarget */
-            SELECT COUNT(*) as total FROM schema_versions
-            WHERE
-              target_id = ${target.id}
-              AND created_at >= ${period.from.toISOString()}
-              AND created_at < ${period.to.toISOString()}
-          `,
-        )
-        .then(z.object({ total: z.number() }).nullable().parse);
-      return result?.total ?? 0;
-    }
+    const graphFilter = psql`
+      (
+        "graph_id" = ${graph.id}
+         ${
+           graph.isBackfilled
+             ? psql`
+                 OR (
+                   "target_id" = ${graph.targetId}
+                   AND "graph_id" IS NULL
+                 )
+              `
+             : psql``
+         }
+      )
+    `;
+
+    const periodFilter = period
+      ? psql`
+          AND "created_at" >= ${period.from.toISOString()}
+          AND "created_at" < ${period.to.toISOString()}
+        `
+      : psql``;
 
     const result = await this.pg
       .maybeOne(
-        psql`/* countSchemaVersionsOfTarget */
-        SELECT COUNT(*) as total FROM schema_versions WHERE target_id = ${target.id}
-      `,
+        psql`/* countPeriodSchemaVersionsOfTarget */
+          SELECT
+            COUNT(*) as "total"
+          FROM
+            "schema_versions"
+          WHERE
+            ${graphFilter}
+            ${periodFilter}
+        `,
       )
       .then(z.object({ total: z.number() }).nullable().parse);
 
@@ -1035,6 +1061,27 @@ export class SchemaVersionStore {
       `,
       )
       .then(SchemaPushLogModel.nullable().parse);
+  }
+
+  async getSchemaVersionForGraphById(
+    graph: Graph,
+    schemaVersionId: string,
+  ): Promise<SchemaVersion | null> {
+    const schemaVersion = await this.getSchemaVersionById(schemaVersionId);
+
+    if (
+      schemaVersion &&
+      // Graph ID match
+      (schemaVersion.graphId === graph.id ||
+        // legacy match
+        (graph.isBackfilled &&
+          schemaVersion.graphId === null &&
+          schemaVersion.targetId === graph.targetId))
+    ) {
+      return schemaVersion;
+    }
+
+    return null;
   }
 
   async getSchemaVersionById(schemaVersionId: string) {

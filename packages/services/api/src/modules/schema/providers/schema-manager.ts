@@ -581,14 +581,17 @@ export class SchemaManager {
     await this.storage.updateBaseSchema(selector, newBaseSchema);
   }
 
-  countSchemaVersionsOfProject(project: Project, period: DateRange | null): Promise<number> {
+  countSchemaVersionsOfDefaultGraphsInProject(
+    project: Project,
+    period: DateRange | null,
+  ): Promise<number> {
     this.logger.debug('Fetching schema versions count of project (projectId=%s)', project.id);
-    return this.schemaVersions.countSchemaVersionsOfProject(project, period);
+    return this.schemaVersions.countSchemaVersionsOfDefaultGraphsInProject(project, period);
   }
 
-  countSchemaVersionsOfTarget(target: Target, period: DateRange | null): Promise<number> {
-    this.logger.debug('Fetching schema versions count of target (targetId=%s)', target.id);
-    return this.schemaVersions.countSchemaVersionsOfTarget(target, period);
+  countSchemaVersionsOfGraph(graph: Graph, period: DateRange | null): Promise<number> {
+    this.logger.debug('Fetching schema versions count of graph (graphId=%s)', graph.id);
+    return this.schemaVersions.countSchemaVersionsOfTarget(graph, period);
   }
 
   async completeGetStartedCheck(
@@ -1318,6 +1321,24 @@ export class SchemaManager {
     return {
       status,
       results,
+    };
+  }
+
+  async getSchemaVersionForGraphById(graph: Graph, id: string) {
+    if (!isUUID(id)) {
+      this.logger.debug('Invalid UUID provided. (versionId=%s)', id);
+      return null;
+    }
+    const version = await this.schemaVersions.getSchemaVersionForGraphById(graph, id);
+
+    if (!version) {
+      return null;
+    }
+
+    return {
+      projectId: graph.projectId,
+      organizationId: graph.organizationId,
+      ...version,
     };
   }
 
