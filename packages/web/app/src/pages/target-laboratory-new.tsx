@@ -847,6 +847,7 @@ function LaboratoryPageContent(props: {
             defaultEndpoint={url}
             theme={resolvedTheme}
             defaultSchemaIntrospection={introspection}
+            enableDocs
             {...laboratoryState}
             plugins={[
               TargetEnvPlugin({

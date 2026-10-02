@@ -17,6 +17,7 @@ import {
   type SchemaCheckApprovalMetadata,
 } from '@hive/storage';
 import { isUUID } from '../../../shared/is-uuid';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { Logger } from '../../shared/providers/logger';
 import { ArtifactStorageWriter } from './artifact-storage-writer';
 import { SchemaVersion } from './schema-version-store';
@@ -31,11 +32,17 @@ export class Contracts {
     logger: Logger,
     private pool: PostgresDatabasePool,
     private artifactStorageWriter: ArtifactStorageWriter,
+    private graphStore: GraphStore,
   ) {
     this.logger = logger.child({ source: 'Contracts' });
   }
 
-  async createContract(args: { contract: CreateContractInput }) {
+  async createContract(args: {
+    contract: CreateContractInput;
+    organizationId: string;
+    projectId: string;
+    sourceGraphId: string | null;
+  }) {
     this.logger.debug(
       'Create contract (targetId=%s, contractName=%s)',
       args.contract.targetId,
@@ -62,25 +69,54 @@ export class Contracts {
       };
     }
 
-    let result: unknown;
+    let contract: Contract;
     try {
-      result = await this.pool.maybeOne(psql`
-        INSERT INTO "contracts" (
-          "target_id"
-          , "contract_name"
-          , "include_tags"
-          , "exclude_tags"
-          , "remove_unreachable_types_from_public_api_schema"
-        ) VALUES (
-          ${validatedContract.data.targetId}
-          , ${validatedContract.data.contractName}
-          , ${toNullableTextArray(validatedContract.data.includeTags)}
-          , ${toNullableTextArray(validatedContract.data.excludeTags)}
-          , ${validatedContract.data.removeUnreachableTypesFromPublicApiSchema}
-        )
-        RETURNING
-          ${contractFields}
-    `);
+      contract = await this.pool.transaction('create contract', async trx => {
+        const contract = await trx
+          .maybeOne(
+            psql`
+          INSERT INTO "contracts" (
+            "target_id"
+            , "contract_name"
+            , "include_tags"
+            , "exclude_tags"
+            , "remove_unreachable_types_from_public_api_schema"
+          ) VALUES (
+            ${validatedContract.data.targetId}
+            , ${validatedContract.data.contractName}
+            , ${toNullableTextArray(validatedContract.data.includeTags)}
+            , ${toNullableTextArray(validatedContract.data.excludeTags)}
+            , ${validatedContract.data.removeUnreachableTypesFromPublicApiSchema}
+          )
+          RETURNING
+            ${contractFields}
+        `,
+          )
+          .then(ContractModel.parse);
+
+        // Only create the graph record if the source graph id already exists
+        if (args.sourceGraphId) {
+          await this.graphStore.createGraph(
+            {
+              type: 'CONTRACT',
+              id: contract.id,
+              name: `default/${validatedContract.data.contractName}`,
+              organizationId: args.organizationId,
+              projectId: args.projectId,
+              targetId: validatedContract.data.targetId,
+              config: {
+                includeTags: validatedContract.data.includeTags,
+                excludeTags: validatedContract.data.excludeTags,
+                removeUnreachableTypesFromPublicApiSchema:
+                  validatedContract.data.removeUnreachableTypesFromPublicApiSchema,
+              },
+              sourceGraphId: args.sourceGraphId,
+            },
+            trx,
+          );
+        }
+        return contract;
+      });
     } catch (err: unknown) {
       if (
         err instanceof UniqueIntegrityConstraintViolationError &&
@@ -96,8 +132,6 @@ export class Contracts {
       throw err;
     }
 
-    const contract = ContractModel.parse(result);
-
     this.logger.debug(
       'Created contract successfully. (targetId=%s, contractId=%s, contractName=%s)',
       args.contract.targetId,
@@ -107,7 +141,7 @@ export class Contracts {
 
     return {
       type: 'success' as const,
-      contract: ContractModel.parse(result),
+      contract,
     };
   }
 
@@ -138,20 +172,26 @@ export class Contracts {
   async deleteContract(args: { contract: Contract }) {
     this.logger.debug('Delete contract (contractId=%s)', args.contract.id);
 
-    const record = await this.pool.maybeOne(psql`
-      DELETE FROM
-        "contracts"
-      WHERE
-        "id" = ${args.contract.id}
-      RETURNING
-        "id"
-    `);
+    const record = await this.pool.transaction('delete contract', async trx => {
+      const record = await trx.maybeOne(psql`
+        DELETE FROM
+          "contracts"
+        WHERE
+          "id" = ${args.contract.id}
+        RETURNING
+          "id"
+      `);
+
+      await this.graphStore.deleteGraphByTargetIdAndName(
+        args.contract.targetId,
+        `default/${args.contract.contractName}`,
+        trx,
+      );
+
+      return z.object({ id: z.string().uuid() }).nullable().parse(record);
+    });
 
     if (!record) {
-      this.logger.debug(
-        'Contract can not be deleted as it was not found. (contractId=%s)',
-        args.contract.id,
-      );
       return {
         type: 'error' as const,
         message: 'Contract not found.',
@@ -180,7 +220,7 @@ export class Contracts {
 
     return {
       type: 'success' as const,
-      contractId: z.object({ id: z.string().uuid() }).parse(record).id,
+      contractId: record.id,
     };
   }
 
