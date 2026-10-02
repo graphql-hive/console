@@ -61,7 +61,7 @@ export function useDateRangeController(args: {
       title: `Date range reset to ${args.defaultPreset.label}`,
       description:
         state.rangeReset === 'retention'
-          ? `Your plan keeps the last ${args.dataRetentionInDays} days of ${subject}.`
+          ? `This organization keeps the last ${args.dataRetentionInDays} days of ${subject}.`
           : 'This page cannot show the range the URL carried.',
     });
   }, [state, toast, args.defaultPreset.label, args.dataRetentionInDays, subject]);

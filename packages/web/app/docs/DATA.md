@@ -121,13 +121,13 @@ the URL until it settles: the app version's search box writes the URL 500 ms aft
   defaults. The nav's Alerts item is left out: the activity log has its own default and retention,
   so a usage range would mostly reset. Links that mean a range of their own, such as an alert's view
   of its saved filter, set it.
-- **A range stays inside what the plan keeps.** The picker greys out presets and refuses a custom
-  start before `retentionBoundary`. The loader resets a link it cannot honor to the screen's
+- **A range stays inside the organization's retention.** The picker greys out presets and refuses a
+  custom start before `retentionBoundary`. The loader resets a link it cannot honor to the screen's
   default: `requireRange(loader, bounds)` before the warms, for a bound it cannot read or older than
   the rollups; `requireRetention(loader, bounds)` after them, for a start before the retention on
   the layout document (`usageRetention.<scope>`; alert activity passes its log's). The reset notes a
   `rangeReset` reason in history state and the controller shows the toast once. The API rejects what
-  slips through, so the console's fixed windows follow the plan too (`overviewPeriod`).
+  slips through, so the console's fixed windows follow it too (`overviewPeriod`).
 - **Stripe** decides in `beforeLoad` too: the subscription routes redirect to the organization when
   it is not configured.
 
@@ -195,8 +195,8 @@ src/lib/hooks/use-layout-query.ts         useLayoutQuery(scope); use-viewer.ts: 
 src/lib/hooks/use-date-range-controller.ts  loaderPeriod(deps, preset) for a loader and its page; carriedRange(search)
                                           for a link into a period page; retentionBoundary(days); the picker's
                                           controller, its reset toast and Refresh
-src/lib/overview-period.ts                overviewPeriod(now?, retention?): the overviews' window, 14 days or what
-                                          the plan keeps, as loader data
+src/lib/overview-period.ts                overviewPeriod(now?, retention?): the overviews' window, 14 days or the
+                                          retention if shorter, as loader data
 src/lib/hooks/use-interval.ts             useInterval(ms, fn): a poll that never fires on mount
 src/components/layouts/page-pending.tsx   PagePending (the router's pending default) and SectionPending
 src/components/apps/app-filter.tsx        the app version's search term, written to the URL once it settles
@@ -286,10 +286,10 @@ Run from the repo root: `pnpm vitest run packages/web/app/src`.
 | `routes/target/traces.spec.ts`         | The default range, filter and sort in the variables, row links and the breadcrumb carry the range, old ranges reset.       |
 | `routes/target/explorer.spec.ts`       | Each view's documents, filters surviving a redirect, unreadable and old ranges resetting with the toast, the plan note.    |
 | `routes/target/proposals.spec.ts`      | Stages from the URL, a new timestamp is a new request, no load-more control.                                               |
-| `routes/organization/route.spec.ts`    | The overview window, shrunk to the plan, support warmed, the Stripe redirect and the warms with it.                        |
+| `routes/organization/route.spec.ts`    | The overview window, shrunk to the retention, support warmed, the Stripe redirect and the warms with it.                   |
 | `routes/organization/settings.spec.ts` | Sections revalidating, hidden sections falling back, personal tokens merging.                                              |
 | `routes/organization/members.spec.ts`  | The gate beside the page document, the list filter, groups by slug, section fallback.                                      |
-| `routes/project/route.spec.ts`         | The overview window, shrunk to the plan, project alerts warmed beside the gate, the gate's redirect.                       |
+| `routes/project/route.spec.ts`         | The overview window, shrunk to the retention, project alerts warmed beside the gate, the gate's redirect.                  |
 | `routes/project/settings.spec.ts`      | GitHub details warmed, tokens revalidating, section fallbacks, the two-flag gate.                                          |
 | `routes/render.spec.ts`                | The chrome at every page, the nav carrying the range, the gates' redirects, section navs, loading and error states.        |
 | `routes/legacy.spec.ts`                | Every old URL lands on its new path, keeping its search, with one history entry.                                           |

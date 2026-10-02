@@ -211,7 +211,7 @@ describe('explorer period', () => {
   }
 
   it(
-    "resets a range past the plan's retention to the last week, after the warms, and notes it",
+    "resets a range past the organization's retention to the last week, after the warms, and notes it",
     { timeout: 30_000 },
     async () => {
       const router = await loadedAt(
@@ -232,12 +232,18 @@ describe('explorer period', () => {
     },
   );
 
-  it('the page says what the plan keeps after a retention reset', { timeout: 30_000 }, async () => {
-    renderAtUrl(`${EXPLORER}/deprecated?from=now-30d&to=now`, { client: hobbyClient() });
+  it(
+    'the page says what the organization keeps after a retention reset',
+    { timeout: 30_000 },
+    async () => {
+      renderAtUrl(`${EXPLORER}/deprecated?from=now-30d&to=now`, { client: hobbyClient() });
 
-    await screen.findByRole('button', { name: 'Last 7 days' });
-    expect(await screen.findByText('Your plan keeps the last 7 days of usage data.')).toBeTruthy();
-  });
+      await screen.findByRole('button', { name: 'Last 7 days' });
+      expect(
+        await screen.findByText('This organization keeps the last 7 days of usage data.'),
+      ).toBeTruthy();
+    },
+  );
 
   it('the picker says what the plan keeps and where to upgrade', { timeout: 30_000 }, async () => {
     stripe.enabled = true;

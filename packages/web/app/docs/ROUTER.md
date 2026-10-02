@@ -149,7 +149,8 @@ For the rest of the route state:
   `src/lib/route-utils.ts`, so it is a path on this app or `/` by the time anything follows it.
 - A date range (`from`, `to`) is URL state and nothing else: a link into a period page carries the
   current one with `carriedRange(search)`, a bare URL takes the page's default, and a range the
-  loader cannot read or the plan does not keep resets to that default with a toast. See DATA.md.
+  loader cannot read or the retention does not cover resets to that default with a toast. See
+  DATA.md.
 
 ## Recipes
 
