@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import { AdminStats, Filters } from '@/components/admin/admin-stats';
-import { Page } from '@/components/common';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
@@ -44,7 +43,8 @@ export function ManagePage() {
   );
 
   return (
-    <Page title="Hive Stats">
+    <div className="p-4">
+      <h2 className="text-fg-inverse text-xl font-bold">Hive Stats</h2>
       <div className="flex flex-col">
         <div className="flex gap-4 pb-2">
           <DateRangePicker
@@ -97,6 +97,6 @@ export function ManagePage() {
           filters={filters}
         />
       </div>
-    </Page>
+    </div>
   );
 }

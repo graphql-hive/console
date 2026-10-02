@@ -1,4 +1,4 @@
-import { ComponentProps, ReactElement, ReactNode } from 'react';
+import { ComponentProps, ReactElement } from 'react';
 import { cn } from '@/lib/utils';
 
 export function Label({ className, children, ...props }: ComponentProps<'span'>): ReactElement {
@@ -14,35 +14,6 @@ export function Label({ className, children, ...props }: ComponentProps<'span'>)
     </span>
   );
 }
-
-export const Page = ({
-  title,
-  subtitle = '',
-  actions,
-  children,
-  noPadding,
-  className,
-}: {
-  children: ReactNode;
-  title: string;
-  subtitle?: string;
-  actions?: ReactElement;
-  noPadding?: boolean;
-  className?: string;
-}): ReactElement => {
-  return (
-    <div className={cn('relative flex h-full flex-col', className)}>
-      <div className="flex shrink-0 flex-row items-center justify-between p-4">
-        <div>
-          <h2 className="text-fg-inverse text-xl font-bold">{title}</h2>
-          <span className="text-fg-subtle mt-2 text-sm">{subtitle}</span>
-        </div>
-        <div className="flex flex-row items-center space-x-2">{actions}</div>
-      </div>
-      {noPadding ? children : <div className="h-full px-4 pb-4">{children}</div>}
-    </div>
-  );
-};
 
 export const Section = {
   Title: ({ className, children, ...props }: ComponentProps<'h3'>): ReactElement => (
