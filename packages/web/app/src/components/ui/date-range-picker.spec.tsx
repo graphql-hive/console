@@ -87,12 +87,5 @@ describe('DateRangePicker', () => {
       expect(screen.queryByText(/Must start on or after/)).toBeNull();
       expect(apply().disabled).toBe(false);
     });
-
-    it('disables Apply on a unit the picker excludes', async () => {
-      const from = await openWith({ validUnits: ['d'] });
-      fireEvent.change(from, { target: { value: 'now-3h' } });
-      expect(screen.getByText(/Only allowed units/)).toBeTruthy();
-      expect(apply().disabled).toBe(true);
-    });
   });
 });

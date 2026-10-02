@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/primitives/input/input';
 import { Label } from '@/components/ui/primitives/label/label';
 import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { type ControlSize } from '@/components/ui/primitives/shared-styles';
-import { DurationUnit, formatDateToString, parse, units, withinUnits } from '@/lib/date-math';
+import { formatDateToString, parse } from '@/lib/date-math';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { UTCDate } from '@date-fns/utc';
 import { Calendar } from './calendar';
@@ -27,8 +27,6 @@ export interface DateRangePickerProps {
   locale?: string;
   /** Date after which a range can be picked. */
   startDate?: Date;
-  /** valid units allowed */
-  validUnits?: DurationUnit[];
   /** Height of the default trigger: `compact` in a filter row, `default` beside form controls. */
   size?: ControlSize;
   /** Custom trigger element. Must forward ref. Replaces the default segmented Button trigger. */
@@ -45,8 +43,6 @@ export interface DateRangePickerPanelProps {
   onUpdate?: (values: { preset: Preset }) => void;
   /** Date after which a range can be picked. */
   startDate?: Date;
-  /** valid units allowed */
-  validUnits?: DurationUnit[];
   /** Called when a selection is made. Parent should close the container (popover, submenu, etc). */
   onClose?: () => void;
   /** Shown under the custom range, for a note about what can be picked. */
@@ -116,54 +112,39 @@ export const availablePresets: Preset[] = [
   { name: 'last1y', label: 'Last 1 year', range: { from: 'now-364d', to: 'now' } },
 ];
 
-function createQuickRangePresets(number: number, validUnits: DurationUnit[]): Preset[] {
-  const presets: Preset[] = [];
-
-  if (validUnits.includes('m')) {
-    presets.push({
+function createQuickRangePresets(number: number): Preset[] {
+  return [
+    {
       name: `last${number}min`,
       label: `Last ${number} minutes`,
       range: { from: `now-${number}m`, to: 'now' },
-    });
-  }
-  if (validUnits.includes('h')) {
-    presets.push({
+    },
+    {
       name: `last${number}h`,
       label: `Last ${number} hours`,
       range: { from: `now-${number}h`, to: 'now' },
-    });
-  }
-  if (validUnits.includes('d')) {
-    presets.push({
+    },
+    {
       name: `last${number}d`,
       label: `Last ${number} days`,
       range: { from: `now-${number}d`, to: 'now' },
-    });
-  }
-  if (validUnits.includes('w')) {
-    presets.push({
+    },
+    {
       name: `last${number}w`,
       label: `Last ${number} weeks`,
       range: { from: `now-${number}w`, to: 'now' },
-    });
-  }
-  if (validUnits.includes('M')) {
-    presets.push({
+    },
+    {
       name: `last${number}M`,
       label: `Last ${number} months`,
       range: { from: `now-${number}M`, to: 'now' },
-    });
-  }
-
-  if (validUnits.includes('y')) {
-    presets.push({
+    },
+    {
       name: `last${number}y`,
       label: `Last ${number} years`,
       range: { from: `now-${number}y`, to: 'now' },
-    });
-  }
-
-  return presets;
+    },
+  ];
 }
 
 export function findMatchingPreset(
@@ -178,7 +159,6 @@ export function findMatchingPreset(
 export function getDateRangeDisplayLabel(
   selectedRange: { from: string; to: string } | null | undefined,
   presets: Preset[],
-  validUnits: DurationUnit[],
 ): string {
   if (!selectedRange) {
     return presets.at(0)?.label ?? 'Select range';
@@ -190,10 +170,7 @@ export function getDateRangeDisplayLabel(
   if (selectedRange.from.startsWith('now-')) {
     const number = parseInt(selectedRange.from.replace(/\D/g, ''), 10);
     if (!Number.isNaN(number)) {
-      const dynamicMatch = findMatchingPreset(
-        selectedRange,
-        createQuickRangePresets(number, validUnits),
-      );
+      const dynamicMatch = findMatchingPreset(selectedRange, createQuickRangePresets(number));
       if (dynamicMatch) return dynamicMatch.label;
     }
   }
@@ -209,11 +186,7 @@ export function getDateRangeDisplayLabel(
  * Can be rendered inside a Popover, a menu submenu, or any other container.
  */
 export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
-  const validUnits = props.validUnits ?? units;
-  const staticPresets = (props.presets ?? availablePresets).filter(
-    preset =>
-      withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
-  );
+  const staticPresets = props.presets ?? availablePresets;
 
   const disabledDays: Matcher[] = [
     {
@@ -235,11 +208,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   function getInitialPreset() {
     const fallbackPreset = staticPresets.at(0) ?? null;
 
-    if (
-      !props.selectedRange ||
-      !withinUnits(props.selectedRange.from, validUnits) ||
-      !withinUnits(props.selectedRange.to, validUnits)
-    ) {
+    if (!props.selectedRange) {
       return fallbackPreset;
     }
 
@@ -254,7 +223,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
     if (props.selectedRange.from.startsWith('now-')) {
       const number = parseInt(props.selectedRange.from.replace(/\D/g, ''), 10);
       if (!Number.isNaN(number)) {
-        const quickRangPresets = createQuickRangePresets(number, validUnits);
+        const quickRangPresets = createQuickRangePresets(number);
 
         const preset = quickRangPresets.find(
           preset =>
@@ -294,20 +263,16 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   const fromParsed = parse(fromValue);
   const toParsed = parse(toValue);
   // Typed values parse as UTC, so the boundary shows as a UTC date too.
-  const fromError = !withinUnits(fromValue, validUnits)
-    ? `Only allowed units are ${validUnits.join(', ')}`
-    : !fromParsed
-      ? 'Invalid date string'
-      : props.startDate && fromParsed.getTime() < props.startDate.getTime()
-        ? `Must start on or after ${formatDateToString(new UTCDate(props.startDate))}`
-        : null;
-  const toError = !withinUnits(toValue, validUnits)
-    ? `Only allowed units are ${validUnits.join(', ')}`
-    : !toParsed
-      ? 'Invalid date string'
-      : fromParsed && fromParsed.getTime() > toParsed.getTime()
-        ? 'The end must come after the start.'
-        : null;
+  const fromError = !fromParsed
+    ? 'Invalid date string'
+    : props.startDate && fromParsed.getTime() < props.startDate.getTime()
+      ? `Must start on or after ${formatDateToString(new UTCDate(props.startDate))}`
+      : null;
+  const toError = !toParsed
+    ? 'Invalid date string'
+    : fromParsed && fromParsed.getTime() > toParsed.getTime()
+      ? 'The end must come after the start.'
+      : null;
 
   const PresetButton = useMemo(
     () =>
@@ -356,23 +321,12 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
   const dynamicPresets = useMemo(() => {
     const number = parseInt(quickRangeFilter.replace(/\D/g, ''), 10);
 
-    const dynamicPresets = createQuickRangePresets(number, validUnits);
-
-    const uniqueDynamicPresets = dynamicPresets.filter(
+    const dynamicPresets = createQuickRangePresets(number).filter(
       preset => !staticPresets.some(p => p.name === preset.name),
     );
 
-    const validDynamicPresets = uniqueDynamicPresets.filter(
-      preset =>
-        withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
-    );
-
-    if (number > 0 && validDynamicPresets.length > 0) {
-      return validDynamicPresets;
-    }
-
-    return [];
-  }, [quickRangeFilter, validUnits]);
+    return number > 0 ? dynamicPresets : [];
+  }, [quickRangeFilter, staticPresets]);
 
   return (
     <div className="flex h-[380px]">
@@ -546,13 +500,8 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
 export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
 
-  const validUnits = props.validUnits ?? units;
-  const staticPresets = (props.presets ?? availablePresets).filter(
-    preset =>
-      withinUnits(preset.range.from, validUnits) && withinUnits(preset.range.to, validUnits),
-  );
-
-  const label = getDateRangeDisplayLabel(props.selectedRange, staticPresets, validUnits);
+  const staticPresets = props.presets ?? availablePresets;
+  const label = getDateRangeDisplayLabel(props.selectedRange, staticPresets);
 
   return (
     <Popover
@@ -580,7 +529,6 @@ export function DateRangePicker(props: DateRangePickerProps): JSX.Element {
           selectedRange={props.selectedRange}
           onUpdate={props.onUpdate}
           startDate={props.startDate}
-          validUnits={props.validUnits}
           onClose={() => setIsOpen(false)}
           footer={props.footer}
         />

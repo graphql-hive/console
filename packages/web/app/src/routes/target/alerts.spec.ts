@@ -139,22 +139,6 @@ describe('alerts activity route', () => {
   );
 
   it(
-    'a range in months is a unit the screen allows; the log retention is what resets it',
-    { timeout: 30_000 },
-    async () => {
-      const { router } = await loadedWith(
-        activityFixtures(30),
-        `${ALERTS}?from=now-6M&to=now&types=["x"]`,
-      );
-
-      await waitFor(() =>
-        expect(router.state.location.search).toEqual({ ...presetLast1Hour.range, types: ['x'] }),
-      );
-      expect(router.state.location.state.rangeReset).toBe('retention');
-    },
-  );
-
-  it(
     'polls through the router: the same bounds within the minute, new ones when it rolls',
     { timeout: 30_000 },
     async () => {

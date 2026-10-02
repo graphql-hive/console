@@ -15,12 +15,6 @@ export type Period = z.infer<typeof Period>;
 export type DurationUnit = 'y' | 'M' | 'w' | 'd' | 'h' | 'm';
 export const units: DurationUnit[] = ['y', 'M', 'w', 'd', 'h', 'm'];
 
-// Whether a range expression uses only these units; an absolute date uses none.
-export function withinUnits(text: string, validUnits: DurationUnit[]): boolean {
-  const disallowed = units.filter(unit => !validUnits.includes(unit));
-  return !disallowed.length || !new RegExp(`[0-9]+(${disallowed.join('|')})`).test(text);
-}
-
 function unitToDurationKey(unit: DurationUnit): keyof Duration {
   switch (unit) {
     case 'y':
