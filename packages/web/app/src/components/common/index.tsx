@@ -34,7 +34,7 @@ export const Page = ({
     <div className={cn('relative flex h-full flex-col', className)}>
       <div className="flex shrink-0 flex-row items-center justify-between p-4">
         <div>
-          <h2 className="text-fg-inverse text-xl font-bold">{title}title</h2>
+          <h2 className="text-fg-inverse text-xl font-bold">{title}</h2>
           <span className="text-fg-subtle mt-2 text-sm">{subtitle}</span>
         </div>
         <div className="flex flex-row items-center space-x-2">{actions}</div>
