@@ -27,7 +27,7 @@ import { AlertsManager } from '../../alerts/providers/alerts-manager';
 import { AppDeployments } from '../../app-deployments/providers/app-deployments';
 import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
-import { GraphStore } from '../../graph/providers/graph-store';
+import { GraphStore, type Graph } from '../../graph/providers/graph-store';
 import {
   GitHubIntegrationManager,
   type GitHubCheckRun,
@@ -384,7 +384,7 @@ export class SchemaPublisher {
       },
     });
 
-    const [target, project, organization, schemaProposal] = await Promise.all([
+    const [target, project, organization, graph, schemaProposal] = await Promise.all([
       this.targetStore.getTarget({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
@@ -397,7 +397,7 @@ export class SchemaPublisher {
       this.storage.getOrganization({
         organizationId: selector.organizationId,
       }),
-
+      this.graphStore.getDefaultGraphForTargetId(selector.targetId),
       input.schemaProposalId
         ? this.schemaProposals.getProposal({
             id: input.schemaProposalId,
@@ -421,11 +421,11 @@ export class SchemaPublisher {
     }
 
     const [latestVersion, latestComposableVersion] = await Promise.all([
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-        target,
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+        graph,
       }),
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-        target,
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+        graph,
         onlyComposable: true,
       }),
     ]);
@@ -1365,12 +1365,8 @@ export class SchemaPublisher {
       selector.targetId,
     );
 
-    const [target, project] = await Promise.all([
-      this.targetStore.getTarget({
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-        targetId: selector.targetId,
-      }),
+    const [graph, project] = await Promise.all([
+      this.graphStore.getDefaultGraphForTargetId(selector.targetId),
       this.projectStore.getProject({
         organizationId: selector.organizationId,
         projectId: selector.projectId,
@@ -1421,8 +1417,8 @@ export class SchemaPublisher {
 
     const [contracts, latestVersion] = await Promise.all([
       this.contracts.getActiveContractsByTargetId({ targetId: selector.targetId }),
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-        target,
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+        graph,
       }),
     ]);
 
@@ -1606,7 +1602,7 @@ export class SchemaPublisher {
           signal,
         },
         async () => {
-          const [organization, project, target, defaultGraph] = await Promise.all([
+          const [organization, project, target, graph] = await Promise.all([
             this.storage.getOrganization({
               organizationId: selector.organizationId,
             }),
@@ -1619,7 +1615,7 @@ export class SchemaPublisher {
               projectId: selector.projectId,
               targetId: selector.targetId,
             }),
-            this.graphStore.findGraphForTargetIdByName(selector.targetId, 'default'),
+            this.graphStore.getDefaultGraphForTargetId(selector.targetId),
           ]);
 
           schemaDeleteCount.inc({ model: 'modern', projectType: project.type });
@@ -1629,11 +1625,11 @@ export class SchemaPublisher {
           }
 
           const [latestVersion, latestComposableVersion, baseSchema] = await Promise.all([
-            this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-              target,
+            this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+              graph,
             }),
-            this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-              target,
+            this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+              graph,
               onlyComposable: true,
             }),
             this.storage.getBaseSchema({
@@ -1727,12 +1723,11 @@ export class SchemaPublisher {
           if (deleteResult.conclusion === SchemaDeleteConclusion.Accept) {
             this.logger.debug('Delete accepted');
             if (input.dryRun !== true) {
-              const schemaVersion = await this.schemaVersions.deleteSubgraphFromTarget(target, {
+              const schemaVersion = await this.schemaVersions.deleteSubgraphFromGraph(graph, {
                 service: {
                   name: affectedService.service_name,
                   versionId: affectedService.id,
                 },
-                graph: defaultGraph,
                 composable: deleteResult.state.composable,
                 diffSchemaVersionId: latestComposableVersion?.version.id ?? null,
                 changes: deleteResult.state.changes,
@@ -1907,7 +1902,7 @@ export class SchemaPublisher {
       metadata: !!input.metadata,
     });
 
-    const [organization, project, target, baseSchema, defaultGraph] = await Promise.all([
+    const [organization, project, target, baseSchema, graph] = await Promise.all([
       this.storage.getOrganization({
         organizationId: organizationId,
       }),
@@ -1925,15 +1920,15 @@ export class SchemaPublisher {
         projectId: projectId,
         targetId: targetId,
       }),
-      this.graphStore.findGraphForTargetIdByName(targetId, 'default'),
+      this.graphStore.getDefaultGraphForTargetId(targetId),
     ]);
 
     const [latestVersion, latestComposable] = await Promise.all([
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-        target,
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+        graph,
       }),
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogs({
-        target,
+      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+        graph,
         onlyComposable: true,
       }),
     ]);
@@ -2337,7 +2332,7 @@ export class SchemaPublisher {
     let schemaVersion: SchemaVersion;
     try {
       schemaVersion = await this.schemaVersions.createPublishSchemaVersion({
-        graph: defaultGraph,
+        graph,
         valid: composable,
         organizationId: organizationId,
         projectId: project.id,
@@ -2609,10 +2604,11 @@ export class SchemaPublisher {
         projectId: selector.projectId,
       });
 
-      const result = await this.schemaManager.getSchemaVersionWithTargetBySchemaVersionIdForProject(
-        project,
-        args.source.fromSchemaVersionById,
-      );
+      const result =
+        await this.schemaManager.getSchemaVersionWithTargetAndGraphBySchemaVersionIdForProject(
+          project,
+          args.source.fromSchemaVersionById,
+        );
 
       if (!result) {
         return {
@@ -3091,8 +3087,11 @@ export class SchemaPublisher {
       };
     }
 
+    const graph = await this.graphStore.getDefaultGraphForTargetId(target.id);
+
     let originSchemaVersionLookup: {
       target: Target;
+      graph: Graph;
       schemaVersion: SchemaVersion & {
         projectId: string;
         organizationId: string;
@@ -3104,10 +3103,11 @@ export class SchemaPublisher {
         'use specific schema version by id as the source. (schemaVersionId=%s)',
         args.source.schemaVersionId,
       );
-      const lookup = await this.schemaManager.getSchemaVersionWithTargetBySchemaVersionIdForProject(
-        project,
-        args.source.schemaVersionId,
-      );
+      const lookup =
+        await this.schemaManager.getSchemaVersionWithTargetAndGraphBySchemaVersionIdForProject(
+          project,
+          args.source.schemaVersionId,
+        );
 
       if (!lookup) {
         this.logger.debug(
@@ -3117,6 +3117,13 @@ export class SchemaPublisher {
         return {
           type: 'error' as const,
           message: 'Schema Version not found.',
+        };
+      }
+
+      if (lookup.graph.type === 'CONTRACT') {
+        return {
+          type: 'error' as const,
+          message: 'A contract schema version can not be promoted.',
         };
       }
 
@@ -3142,7 +3149,9 @@ export class SchemaPublisher {
         };
       }
 
-      const schemaVersion = await this.schemaManager.getMaybeLatestVersion(sourceTarget);
+      const sourceGraph = await this.graphStore.getDefaultGraphForTargetId(sourceTarget.id);
+
+      const schemaVersion = await this.schemaManager.getMaybeLatestVersionForGraph(sourceGraph);
 
       if (!schemaVersion) {
         this.logger.debug(
@@ -3163,6 +3172,7 @@ export class SchemaPublisher {
 
       originSchemaVersionLookup = {
         target: sourceTarget,
+        graph: sourceGraph,
         schemaVersion,
       };
     } else {
@@ -3174,6 +3184,7 @@ export class SchemaPublisher {
     // Here we start loading a bunch of things that we need in order to insert the new schema version
 
     const originTarget = originSchemaVersionLookup.target;
+    const originGraph = originSchemaVersionLookup.graph;
     const originSchemaVersion = originSchemaVersionLookup.schemaVersion;
 
     this.logger.debug('load required data for generating new schema version.');
@@ -3182,8 +3193,6 @@ export class SchemaPublisher {
     const [
       targetLatestSchemaVersion,
       targetLatestValidSchemaVersion,
-      targetDefaultGraph,
-      originDefaultGraph,
       originPublicSchemaSdl,
       originSupergraphSdl,
       originLogEdges,
@@ -3192,12 +3201,8 @@ export class SchemaPublisher {
       { conditionalBreakingChangeConfiguration },
     ] = await Promise.all([
       // The latest versions within the target we promote to
-      this.schemaManager.getMaybeLatestVersion(target),
-      this.schemaManager.getMaybeLatestValidVersion(target),
-      // the default graph in the target we promote to
-      this.graphStore.findGraphForTargetIdByName(target.id, 'default'),
-      // the default graph in the target we promote from
-      this.graphStore.findGraphForTargetIdByName(originTarget.id, 'default'),
+      this.schemaManager.getMaybeLatestVersionForGraph(graph),
+      this.schemaManager.getMaybeLatestValidVersionForGraph(graph),
       // We have some old schema versions that do not store the SDLs on the record
       // we need to use the helpers to ensure the SDL is produced for these
       this.schemaVersionHelper.getCompositeSchemaSdl(originSchemaVersion),
@@ -3337,13 +3342,13 @@ export class SchemaPublisher {
     const schemaVersion = await this.schemaVersions.createPromotionSchemaVersion({
       target: {
         target,
-        graph: targetDefaultGraph,
+        graph,
         latestVersion: targetLatestSchemaVersion,
         latestValidVersion: targetLatestValidSchemaVersion,
       },
       origin: {
         target: originTarget,
-        graph: originDefaultGraph,
+        graph: originGraph,
         version: originSchemaVersion,
         publicSchemaSdl: originPublicSchemaSdl,
         supergraphSdl: originSupergraphSdl,
