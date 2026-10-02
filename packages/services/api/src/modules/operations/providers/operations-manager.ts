@@ -1,5 +1,5 @@
 import DataLoader from 'dataloader';
-import { Inject, Injectable, Scope } from 'graphql-modules';
+import { Injectable, Scope } from 'graphql-modules';
 import { LRUCache } from 'lru-cache';
 import { traceFn } from '@hive/service-common';
 import type { DateRangeInput } from '../../../__generated__/types';
@@ -8,7 +8,6 @@ import { PeriodOutsideRetentionError } from '../../../shared/errors';
 import type { Listify, Optional } from '../../../shared/helpers';
 import { cache, createPeriod, parseDateRangeInput } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
-import { COMMERCE_CONFIG, type CommerceConfig } from '../../commerce/providers/commerce-client';
 import { Logger } from '../../shared/providers/logger';
 import type {
   OrganizationSelector,
@@ -88,7 +87,6 @@ export class OperationsManager {
     private reader: OperationsReader,
     private storage: Storage,
     private targetStore: TargetStore,
-    @Inject(COMMERCE_CONFIG) private commerceConfig: CommerceConfig,
   ) {
     this.logger = logger.child({ source: 'OperationsManager' });
 
@@ -149,14 +147,11 @@ export class OperationsManager {
     };
   }
 
-  // Fails a usage read that starts before the plan keeps data; without billing nothing expires.
+  // Fails a usage read that starts before the organization's retention, on every instance.
   async assertPeriodWithinRetention({
     organizationId,
     period,
   }: OrganizationSelector & { period: DateRange }): Promise<void> {
-    if (!this.commerceConfig.billingEnabled) {
-      return;
-    }
     const { retentionInDays, earliestFrom } = await this.getUsageRetentionWindow({
       organizationId,
     });
@@ -174,9 +169,6 @@ export class OperationsManager {
       const period = parseDateRangeInput(input);
       await this.assertPeriodWithinRetention({ organizationId, period });
       return period;
-    }
-    if (!this.commerceConfig.billingEnabled) {
-      return createPeriod('30d');
     }
     const { retentionInDays } = await this.getUsageRetentionWindow({ organizationId });
     return createPeriod(`${defaultUsagePeriodDays(retentionInDays)}d`);
