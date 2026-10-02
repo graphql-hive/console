@@ -93,6 +93,10 @@ describe('alerts activity route', () => {
         new UTCDate('2026-09-28T10:59:50.000Z'),
       );
       expect(client.requests(RETENTION).map(o => o.variables)).toEqual([SLUGS]);
+      // A plan change moves the log retention, so every visit asks again.
+      expect(['cache-and-network', 'network-only']).toContain(
+        client.requests(RETENTION)[0].context.requestPolicy,
+      );
       expect(client.requests(ACTIVITY).map(o => [o.variables, o.context.requestPolicy])).toEqual([
         [{ ...SLUGS, from: period.from, to: period.to }, 'cache-and-network'],
       ]);

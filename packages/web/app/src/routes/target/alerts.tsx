@@ -64,7 +64,13 @@ export const targetAlertsIndexRoute = createRoute({
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const slugs = { organizationSlug, projectSlug, targetSlug };
     const { period } = loaderPeriod(loader.deps, presetLast1Hour);
-    const retention = loadQuery(loader, TargetAlertsActivityPage_RetentionQuery, slugs);
+    // A plan change moves it: asked again on each visit, not on each poll.
+    const retention = loadQuery(
+      loader,
+      TargetAlertsActivityPage_RetentionQuery,
+      slugs,
+      loader.cause === 'enter' ? revalidate(loader) : 'cache-first',
+    );
     void loadQuery(
       loader,
       TargetAlertsActivityPage_Query,
