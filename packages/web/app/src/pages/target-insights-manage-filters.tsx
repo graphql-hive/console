@@ -25,7 +25,8 @@ import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
 import { useSlugs } from '@/lib/hooks';
-import { retentionBoundary, startsWithin } from '@/lib/hooks/use-date-range-controller';
+import { retentionBoundary } from '@/lib/hooks/use-date-range-controller';
+import { useRangeWithin } from '@/lib/hooks/use-range-within';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
@@ -329,11 +330,9 @@ function SavedFilterRowFilters({
   const { operationHashes, clientFilters } = filter.filters;
 
   const startDate = useMemo(() => retentionBoundary(dataRetentionInDays), [dataRetentionInDays]);
-  // A range saved before a downgrade, or before the plan was enforced, starts from the default.
+  // A range saved before a downgrade, or before retention was enforced, shows the default instead.
   const savedDateRange = filter.filters.dateRange ?? DEFAULT_DATE_RANGE;
-  const [dateRange, setDateRange] = useState(() =>
-    startsWithin(savedDateRange, startDate) ? savedDateRange : DEFAULT_DATE_RANGE,
-  );
+  const [dateRange, setDateRange] = useRangeWithin(savedDateRange, startDate, DEFAULT_DATE_RANGE);
 
   const resolvedPeriod = useMemo(() => {
     const from = parse(dateRange.from);
