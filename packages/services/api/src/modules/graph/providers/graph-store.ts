@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
 import { batch } from '../../../shared/helpers';
-import { SchemaVersion } from '../../schema/providers/schema-version-store';
+import type { SchemaVersion } from '../../schema/providers/schema-version-store';
 import { Logger } from '../../shared/providers/logger';
 
 const ContractGraphConfigModel = z.object({
