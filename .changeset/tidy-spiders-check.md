@@ -2,4 +2,4 @@
 '@graphql-hive/cli': patch
 ---
 
-Publish SHA-256 checksums and standalone archives with CLI releases.
+Publish SHA-256 checksums, standalone archives, and stable-version metadata with CLI releases.

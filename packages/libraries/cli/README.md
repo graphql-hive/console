@@ -35,7 +35,10 @@ curl -sSL https://graphql-hive.com/install.sh | sh
 ```
 
 Each version's standalone archives and `SHA256SUMS` manifest are attached to its GitHub release. The
-manifest is also available from `https://cli.graphql-hive.com/versions/VERSION/SHA256SUMS`.
+manifest is also available from `https://cli.graphql-hive.com/versions/VERSION/SHA256SUMS`. The
+exact version currently promoted to the standalone stable channel is available as plain text from
+`https://cli.graphql-hive.com/channels/stable/VERSION`; its body is the semantic version followed by
+a newline.
 
 ## Commands
 
