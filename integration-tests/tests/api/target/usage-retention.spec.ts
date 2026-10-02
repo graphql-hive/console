@@ -1,11 +1,10 @@
 import { addDays, formatISO, subDays } from 'date-fns';
+import { readOperationsStats, readTotalRequests } from 'testkit/flow';
+import { graphql } from 'testkit/gql';
 import { ProjectType } from 'testkit/gql/graphql';
+import { execute } from 'testkit/graphql';
+import { initSeed } from 'testkit/seed';
 import { UTCDate } from '@date-fns/utc';
-import { readOperationsStats, readTotalRequests } from '../../../testkit/flow';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { graphql } from '../../../testkit/gql';
-import { execute } from '../../../testkit/graphql';
-import { initSeed } from '../../../testkit/seed';
 
 const ExplorerUsageQuery = graphql(/* GraphQL */ `
   query IntegrationTestsExplorerUsage(
