@@ -6,7 +6,6 @@ import { resolve } from 'node:path';
 import { execa } from '@esm2cjs/execa';
 
 const binPath = resolve(__dirname, '../../../packages/libraries/cli/bin/run');
-const cliDir = resolve(__dirname, '../../../packages/libraries/cli');
 
 test('sends configured headers to the registry endpoint', async () => {
   const headerValue = 'custom-header-value';
@@ -51,7 +50,6 @@ test('sends configured headers to the registry endpoint', async () => {
     const result = await execa(binPath, ['whoami'], {
       env: {
         HIVE_CONFIG: configPath,
-        OCLIF_CLI_CUSTOM_PATH: cliDir,
         NODE_OPTIONS: '--no-deprecation',
       },
     });
@@ -113,7 +111,6 @@ test('sends registry headers provided by CLI flags', async () => {
       {
         env: {
           HIVE_CONFIG: configPath,
-          OCLIF_CLI_CUSTOM_PATH: cliDir,
           NODE_OPTIONS: '--no-deprecation',
         },
       },
