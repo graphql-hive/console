@@ -63,7 +63,7 @@ function ContractSelect(props: { value: string; onValueChange: (value: string) =
       value={props.value}
       onValueChange={props.onValueChange}
       size="compact"
-      width="md"
+      width="auto"
     />
   );
 }

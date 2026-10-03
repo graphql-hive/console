@@ -300,7 +300,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         })),
       ]}
       size="compact"
-      width="md"
+      width="auto"
     />
   );
 

@@ -1243,7 +1243,7 @@ function SchemaChecksView(props: {
         })),
       ]}
       size="compact"
-      width="md"
+      width="auto"
     />
   );
 

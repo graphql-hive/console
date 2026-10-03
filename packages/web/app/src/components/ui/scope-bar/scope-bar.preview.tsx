@@ -63,7 +63,7 @@ export const Default = createPreview(() => {
           value={value}
           onValueChange={setValue}
           size="compact"
-          width="md"
+          width="auto"
         />
       }
     />
@@ -101,7 +101,7 @@ export const VersionPage = createPreview(() => {
             trailing: statusTooltip(entry.status),
           }))}
           size="compact"
-          width="md"
+          width="auto"
         />
       }
     />
@@ -131,7 +131,7 @@ export const Narrow = createPreview(() => (
           options={[{ value: 'default', label: 'Default Graph' }]}
           value="default"
           size="compact"
-          width="md"
+          width="auto"
         />
       }
     />
@@ -152,7 +152,7 @@ export const Playground = createPreview({
           options={[{ value: 'default', label: 'Default Graph' }]}
           value="default"
           size="compact"
-          width="md"
+          width="auto"
         />
       }
     />
