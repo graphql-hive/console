@@ -30,10 +30,11 @@ jobs:
   # Build all packages and applications, and creates Docker images
   build:
     name: build
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     uses: ./.github/workflows/build-and-dockerize.yaml
     needs: changeset-version
     with:
-      dockerize: ${{ !github.event.pull_request.head.repo.fork }}
+      dockerize: true
       imageTag: ${{ github.event.pull_request.head.sha }}
       publishLatest: false
       targets: 'build'
@@ -55,20 +56,37 @@ jobs:
   integration-tests:
     name: test
     needs: build
+    if: >-
+      ${{
+        always() &&
+        (
+          needs.build.result == 'success' ||
+          github.event.pull_request.head.repo.full_name != github.repository
+        )
+      }}
     uses: ./.github/workflows/tests-integration.yaml
-    secrets:
-      stripeTestPublicKey: ${{ secrets.TEST_STRIPE_PUBLIC_KEY }}
-      stripeTestSecretKey: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
+      buildImagesLocally: >-
+        ${{ github.event.pull_request.head.repo.full_name != github.repository }}
 
   # e2e tests using Playwright, runs Hive from pre-built Docker images.
   e2e:
     name: test
     needs: build
+    if: >-
+      ${{
+        always() &&
+        (
+          needs.build.result == 'success' ||
+          github.event.pull_request.head.repo.full_name != github.repository
+        )
+      }}
     uses: ./.github/workflows/tests-e2e.yaml
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
+      buildImagesLocally: >-
+        ${{ github.event.pull_request.head.repo.full_name != github.repository }}
 
   # Changeset Validation
   # Validates that changesets reference valid packages that exist in the monorepo
@@ -86,5 +104,9 @@ jobs:
   # Build and test standalone CLI artifacts
   alpha:
     uses: ./.github/workflows/release-alpha.yaml
-    if: ${{ github.event.pull_request.title != 'Upcoming Release Changes' }}
+    if: >-
+      ${{
+        github.event.pull_request.title != 'Upcoming Release Changes' &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      }}
     secrets: inherit
