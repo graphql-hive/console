@@ -15,16 +15,10 @@ import { Badge } from '../primitives/badge/badge';
 import { Button } from '../primitives/button/button';
 import { Select } from '../primitives/floating/select/select';
 import { Tooltip } from '../primitives/floating/tooltip/tooltip';
-import { Legend } from '../primitives/legend/legend';
+import { ScopeBar } from '../scope-bar/scope-bar';
 import { TabbedView, type TabbedViewItem } from './tabbed-view';
 
 export const nav: NavPath = 'Components/TabbedView';
-
-/**
- * Tabs in a header band, one view per tab in the body, and a picker leading the strip that
- * scopes every view. The schema check and schema version pages, which used to nest a contract
- * tab row above a view tab row.
- */
 
 type ContractStatus = 'failed' | 'changed' | 'ok';
 
@@ -69,7 +63,6 @@ function ContractSelect(props: { value: string; onValueChange: (value: string) =
       value={props.value}
       onValueChange={props.onValueChange}
       size="compact"
-      onSurface="raised"
       width="md"
     />
   );
@@ -137,22 +130,11 @@ function checkViews(contract: string): TabbedViewItem[] {
   ];
 }
 
-export const Default = createPreview(() => {
-  const [contract, setContract] = useState('default');
-  return (
-    <TabbedView
-      items={checkViews(contract)}
-      defaultValue="details"
-      action={<ContractSelect value={contract} onValueChange={setContract} />}
-    />
-  );
-});
+export const Default = createPreview(() => (
+  <TabbedView items={checkViews('Default Graph')} defaultValue="details" />
+));
 
-/**
- * The schema check page around it, with its content mocked. The key to the picker's icons and
- * the FailureCard sit between the status card and the band; the card lists contracts only, since
- * the default graph's own failure is the view the page opens on.
- */
+/** The FailureCard lists contracts only: the default graph's failure is the view the page opens on. */
 export const ChecksPage = createPreview(() => {
   const [contract, setContract] = useState('default');
   const failed = CONTRACTS.filter(entry => entry.value !== 'default' && entry.status === 'failed');
@@ -176,40 +158,32 @@ export const ChecksPage = createPreview(() => {
         <Button variant="destructive">Approve</Button>
       </div>
       <div className="flex flex-col gap-3">
-        <div className="flex justify-end">
-          <Legend
-            items={[
-              { icon: <StatusGlyph status="failed" />, label: 'Failed' },
-              { icon: <StatusGlyph status="changed" />, label: 'Schema changed' },
-              { icon: <StatusGlyph status="ok" />, label: 'Passed' },
-            ]}
+        <div className="mb-3">
+          <FailureCard
+            title={`${failed.length} of ${CONTRACTS.length - 1} contracts failed`}
+            aside={`${CONTRACTS.length - 1 - failed.length} passed`}
+            items={failed.map(entry => ({
+              key: entry.value,
+              label: entry.label,
+              reason: STATUS_LABEL.failed,
+              detail: '2 errors',
+              onView: () => setContract(entry.value),
+            }))}
           />
         </div>
-        <FailureCard
-          title={`${failed.length} of ${CONTRACTS.length - 1} contracts failed`}
-          aside={`${CONTRACTS.length - 1 - failed.length} passed`}
-          items={failed.map(entry => ({
-            key: entry.value,
-            label: entry.label,
-            reason: STATUS_LABEL.failed,
-            detail: '2 errors',
-            onView: () => setContract(entry.value),
-          }))}
+        <ScopeBar
+          picker={<ContractSelect value={contract} onValueChange={setContract} />}
+          legend={[
+            { icon: <StatusGlyph status="failed" />, label: 'Failed' },
+            { icon: <StatusGlyph status="changed" />, label: 'Schema changed' },
+            { icon: <StatusGlyph status="ok" />, label: 'Passed' },
+          ]}
         />
-        <TabbedView
-          items={checkViews(contract)}
-          defaultValue="details"
-          action={<ContractSelect value={contract} onValueChange={setContract} />}
-        />
+        <TabbedView items={checkViews(contract)} defaultValue="details" />
       </div>
     </div>
   );
 });
-
-/** Without a picker: the version page on a project with no contracts. */
-export const NoAction = createPreview(() => (
-  <TabbedView items={checkViews('the default graph')} defaultValue="details" />
-));
 
 const SERVICES = [
   'users',
@@ -222,10 +196,7 @@ const SERVICES = [
   'notifications',
 ];
 
-/**
- * The band in a flex column at 32rem, with more tabs than fit: the strip scrolls sideways behind
- * the picker instead of stretching the column. See Primitives/Tabs ManyTabs for the strip alone.
- */
+/** More tabs than fit: the strip scrolls instead of stretching the column. */
 export const ManyTabs = createPreview(() => {
   const [view, setView] = useState(SERVICES[0]);
   return (
@@ -233,16 +204,6 @@ export const ManyTabs = createPreview(() => {
       <TabbedView
         value={view}
         onValueChange={setView}
-        action={
-          <Select
-            aria-label="Contract"
-            options={[{ value: 'default', label: 'Default Graph' }]}
-            value="default"
-            size="compact"
-            onSurface="raised"
-            width="sm"
-          />
-        }
         items={SERVICES.map(name => ({
           value: name,
           label: name,

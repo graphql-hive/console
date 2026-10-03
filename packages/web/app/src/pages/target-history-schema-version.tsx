@@ -43,10 +43,10 @@ import { CopyChip } from '@/components/ui/primitives/copy-chip/copy-chip';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
 import { Select } from '@/components/ui/primitives/floating/select/select';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
-import { Legend } from '@/components/ui/primitives/legend/legend';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { QueryError } from '@/components/ui/query-error';
+import { ScopeBar } from '@/components/ui/scope-bar/scope-bar';
 import { TabbedView } from '@/components/ui/tabbed-view/tabbed-view';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -300,7 +300,6 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         })),
       ]}
       size="compact"
-      onSurface="raised"
       width="md"
     />
   );
@@ -397,11 +396,6 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
       {/* A monolithic schema has no subgraphs, so its summary sits on the page without tabs. */}
       {schemaVersion.subgraphDiffs ? (
         <div className="mt-3 flex flex-col gap-3">
-          {contractVersions.length ? (
-            <div className="flex justify-end">
-              <Legend items={CONTRACT_STATUS_LEGEND} />
-            </div>
-          ) : null}
           {failures.length ? (
             <div className="mb-3">
               <FailureCard
@@ -411,10 +405,15 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
               />
             </div>
           ) : null}
+          {contractPicker ? (
+            <ScopeBar
+              picker={contractPicker}
+              legend={contractVersions.length ? CONTRACT_STATUS_LEGEND : undefined}
+            />
+          ) : null}
           <TabbedView
             value={selectedView}
             onValueChange={setSelectedView}
-            action={contractPicker}
             items={[
               {
                 value: 'details',
