@@ -132,18 +132,6 @@ export const BillingPaymentMethodForm = ({
               },
             }}
           />
-          {/* <Section.Subtitle>
-            All payments and subscriptions are processed securely by{' '}
-            <Link
-              as="a"
-              variant="primary"
-              href="https://stripe.com"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Stripe
-            </Link>
-          </Section.Subtitle> */}
 
           <div className="text-fg-secondary text-sm">
             All payments and subscriptions are processed securely by{' '}
