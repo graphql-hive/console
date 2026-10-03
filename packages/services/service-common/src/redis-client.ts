@@ -83,7 +83,9 @@ export async function createRedisClient(
       host: config.host,
       port: config.port,
       password,
-      username: resolvedUsername,
+      // resolveRedisCredentials only returns a username for IAM auth; with a static password
+      // the configured REDIS_USERNAME (Redis ACL user) still has to reach the client.
+      username: resolvedUsername ?? config.username,
       tlsEnabled: config.tlsEnabled,
       clusterModeEnabled: config.clusterModeEnabled,
       maxRetriesPerRequest: options.maxRetriesPerRequest,
