@@ -99,7 +99,7 @@ export class CompositionOrchestrator {
   })
   /**
    * Compose and validate schemas via the schema service.
-   * - Requests time out after 30 seconds and result in a human readable error response
+   * - Requests time out after 60 seconds and result in a human readable error response
    * - In case the incoming request is canceled, the call to the schema service is aborted
    */
   async composeAndValidate(
@@ -126,10 +126,13 @@ export class CompositionOrchestrator {
         : 'none',
     );
 
-    const timeoutAbortSignal = AbortSignal.timeout(30_000);
+    // Deadlock guard for a hanging schema service. The schema service enforces the composition
+    // budget itself (SCHEMA_COMPOSITION_TIMEOUT_MS, 60s by default) and answers with a structured
+    // error, so this must not be lower than that value.
+    const timeoutAbortSignal = AbortSignal.timeout(60_000);
 
     const onTimeout = () => {
-      this.logger.debug('Composition HTTP request aborted due to timeout of 30 seconds.');
+      this.logger.debug('Composition HTTP request aborted due to timeout of 60 seconds.');
     };
     timeoutAbortSignal.addEventListener('abort', onTimeout);
 
@@ -153,9 +156,8 @@ export class CompositionOrchestrator {
         },
         {
           // We want to abort composition if the request that does the composition is aborted
-          // We also limit the maximum time allowed for composition requests to 30 seconds to avoid
-          //
-          // The reason for these is a potential dead-lock.
+          // We also limit the maximum time allowed for composition requests to 60 seconds to avoid
+          // a potential dead-lock.
           //
           // Note: We are using `abortSignalAny` over `AbortSignal.any` because of leak issues.
           // @source https://github.com/nodejs/node/issues/57584

@@ -399,7 +399,7 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
         total: 1,
         nodes: [
           {
-            message: expect.stringMatching(/The schema composition timed out. Please try again./i),
+            message: expect.stringMatching(/External composition timed out/i),
           },
         ],
       },

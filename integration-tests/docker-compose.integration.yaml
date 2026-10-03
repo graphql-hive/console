@@ -266,6 +266,9 @@ services:
   schema:
     environment:
       LOG_LEVEL: debug
+      # keep the external composition timeout test short
+      SCHEMA_COMPOSITION_TIMEOUT_MS: '30000'
+      SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS: '5000'
       REQUEST_BROKER: '1'
       REQUEST_BROKER_SIGNATURE: 'secretSignature'
       REQUEST_BROKER_ENDPOINT: 'http://local_broker:3013'
