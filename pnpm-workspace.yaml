@@ -64,6 +64,7 @@ catalog:
   itty-router: 4.2.2
   kafkajs: 2.2.4
   lru-cache: 11.5.2
+  lucide-react: 1.51.0
   lz-string: '^1.5.0'
   monaco-editor: '^0.52.2'
   nock: 14.0.10
