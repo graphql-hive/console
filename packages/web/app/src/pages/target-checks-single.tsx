@@ -355,7 +355,7 @@ const PolicyBlock = (props: {
   const policies = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.policies);
   return (
     <div>
-      <h2 className="text-fg-secondary mb-3 text-sm font-bold">
+      <h2 className="text-fg-default mb-3 text-sm font-bold">
         {props.title} <PolicyInfo />
       </h2>
       <ul className="list-inside list-disc pl-3 text-sm/relaxed">
