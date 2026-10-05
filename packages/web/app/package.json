@@ -80,7 +80,7 @@
     "monaco-editor": "catalog:",
     "monaco-graphql": "^1.7.2",
     "react": "catalog:",
-    "react-day-picker": "8.10.1",
+    "react-day-picker": "10.0.2",
     "react-dom": "catalog:",
     "react-foundry": "catalog:",
     "react-helmet-async": "3.0.0",
