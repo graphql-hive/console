@@ -19,7 +19,7 @@ import {
   Play,
   TreePine,
 } from 'lucide-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
+import { AutoSizer } from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -1093,13 +1093,18 @@ export function TargetTracePage(props: {
     <>
       <LayoutContent className="flex flex-col">
         <div className="flex flex-1 flex-col">
-          <AutoSizer disableWidth>
-            {size => (
-              <div className="w-full" style={{ height: size.height }}>
-                <TargetInsightsNewPageContent {...props} />
-              </div>
-            )}
-          </AutoSizer>
+          {/* Zero height on purpose: the sized child overflows this box, so the flex parent's height stays
+              flex-driven and can shrink to be re-measured. */}
+          <AutoSizer
+            className="h-0"
+            renderProp={size =>
+              size.height == null ? null : (
+                <div className="w-full" style={{ height: size.height }}>
+                  <TargetInsightsNewPageContent {...props} />
+                </div>
+              )
+            }
+          />
         </div>
       </LayoutContent>
     </>
