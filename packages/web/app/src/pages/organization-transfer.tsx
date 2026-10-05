@@ -110,7 +110,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
       <Meta title="Organization Transfer" />
       <DottedBackground className="min-h-screen">
         <div className="flex h-full grow items-center">
-          <div className="absolute right-6 top-6">
+          <div className="absolute top-6 right-6">
             <Button
               variant="outline"
               onClick={() =>
@@ -122,7 +122,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
               <LogOutIcon className="mr-2 size-4" /> Sign out
             </Button>
           </div>
-          <Link to="/" className="absolute left-6 top-6">
+          <Link to="/" className="absolute top-6 left-6">
             <HiveLogo className="size-10" />
           </Link>
           <div className="flex size-full flex-row items-center justify-center">

@@ -312,7 +312,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         <Button variant="outline" onClick={() => setBaseSchema(props.baseSchema)}>
           Reset
         </Button>
-        {isUnsaved && <span className="text-success text-sm">Unsaved changes!</span>}
+        {isUnsaved && <span className="text-sm text-success">Unsaved changes!</span>}
       </div>
     </SubPageLayout>
   );
@@ -419,7 +419,7 @@ function AppDeploymentExclusion(
 
   if (availableAppDeploymentNamesQuery.error) {
     return (
-      <div className="text-critical text-sm">Failed to load app deployments. Please try again.</div>
+      <div className="text-sm text-critical">Failed to load app deployments. Please try again.</div>
     );
   }
 
@@ -739,7 +739,7 @@ export const BreakingChanges = () => {
         />
 
         {dangerousAsBreaking.error && (
-          <span className="text-critical ml-2">
+          <span className="ml-2 text-critical">
             {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
               dangerousAsBreaking.error.message}
           </span>
@@ -925,7 +925,7 @@ export const AppDeploymentProtection = () => {
               </p>
               <p>
                 Use{' '}
-                <code className="bg-surface-code rounded-sm px-1 py-0.5 text-xs">
+                <code className="rounded-sm bg-surface-code px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.
@@ -1591,7 +1591,7 @@ export function DangerousChangeTypeForm({
 
 function JustSavedLabel() {
   return (
-    <div className="text-success inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
+    <div className="inline-flex flex-row items-center gap-1 text-success italic subpixel-antialiased">
       <JustSavedIndicator />
       <span>Saved just now</span>
     </div>
@@ -1599,12 +1599,12 @@ function JustSavedLabel() {
 }
 
 function JustSavedIndicator() {
-  return <Check className="text-success size-5" />;
+  return <Check className="size-5 text-success" />;
 }
 
 function SavedLabel() {
   return (
-    <div className="text-fg-secondary inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
+    <div className="inline-flex flex-row items-center gap-1 text-fg-secondary italic subpixel-antialiased">
       <SavedIndicator />
       <span>All changes saved</span>
     </div>
@@ -1612,12 +1612,12 @@ function SavedLabel() {
 }
 
 function SavedIndicator() {
-  return <Check className="text-fg-secondary size-5" />;
+  return <Check className="size-5 text-fg-secondary" />;
 }
 
 function UnsavedChangesLabel() {
   return (
-    <div className="text-accent inline-flex flex-row items-center gap-2 italic subpixel-antialiased">
+    <div className="inline-flex flex-row items-center gap-2 text-accent italic subpixel-antialiased">
       <PendingIndicator />
       <span>Unsaved changes</span>
     </div>

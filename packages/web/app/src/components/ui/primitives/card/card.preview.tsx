@@ -5,7 +5,7 @@ export const nav: NavPath = 'Primitives/Card';
 
 export const Default = createPreview(() => (
   <Card title="Alert rule" description="Notify the team when p99 latency crosses the threshold.">
-    <p className="text-fg-default text-sm">Evaluated every 5 minutes against the last hour.</p>
+    <p className="text-sm text-fg-default">Evaluated every 5 minutes against the last hour.</p>
   </Card>
 ));
 
@@ -33,7 +33,7 @@ export const RichDescription = createPreview(() => (
 /** Title with no description, the shape the SSO settings cards use. */
 export const TitleOnly = createPreview(() => (
   <Card title="SCIM Provision Defaults">
-    <p className="text-fg-default text-sm">Applied to every user provisioned via SCIM.</p>
+    <p className="text-sm text-fg-default">Applied to every user provisioned via SCIM.</p>
   </Card>
 ));
 
@@ -43,7 +43,7 @@ export const TitleOnly = createPreview(() => (
  */
 export const ContentOnly = createPreview(() => (
   <Card>
-    <p className="text-fg-default text-sm">
+    <p className="text-sm text-fg-default">
       Padding is even on all four sides here, since there is no heading block above to supply it.
     </p>
   </Card>
@@ -94,12 +94,12 @@ export const Interactive = createPreview(() => (
 export const BodyPadding = createPreview(() => (
   <div className="grid w-[36rem] grid-cols-2 gap-4">
     <Card variants={{ onSurface: 'raised' }} title="Default">
-      <div className="bg-accent-tint-strong text-fg-default rounded-sm p-4 text-center text-xs">
+      <div className="rounded-sm bg-accent-tint-strong p-4 text-center text-xs text-fg-default">
         Inset by the card's p-5
       </div>
     </Card>
     <Card variants={{ onSurface: 'raised', bodyPadding: 'none' }} title="None">
-      <div className="bg-accent-tint-strong text-fg-default p-4 text-center text-xs">
+      <div className="bg-accent-tint-strong p-4 text-center text-xs text-fg-default">
         Runs to the edge
       </div>
     </Card>
@@ -148,7 +148,7 @@ export const Playground = createPreview({
       // Tinted so `bodyPadding` is visible; off, the card is just its heading block.
       derive: on =>
         on ? (
-          <div className="bg-accent-tint-strong text-fg-default p-4 text-center text-xs">Body</div>
+          <div className="bg-accent-tint-strong p-4 text-center text-xs text-fg-default">Body</div>
         ) : undefined,
     },
   }),

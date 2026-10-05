@@ -52,7 +52,7 @@ export function ProjectSelector(props: {
           linkText={currentOrganization.slug}
         />
       ) : (
-        <div className="bg-surface-skeleton h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
+        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-surface-skeleton" />
       )}
       {projectEdges?.length && currentProject ? (
         <>
@@ -74,7 +74,7 @@ export function ProjectSelector(props: {
           />
         </>
       ) : (
-        <div className="bg-surface-skeleton h-5 w-48 animate-pulse rounded-full" />
+        <div className="h-5 w-48 animate-pulse rounded-full bg-surface-skeleton" />
       )}
     </>
   );

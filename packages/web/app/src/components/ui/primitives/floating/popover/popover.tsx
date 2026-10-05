@@ -103,17 +103,17 @@ export function Popover(props: PopoverProps) {
     inner = (
       <div className={cn(widthClass[width ?? 'md'], 'p-4')}>
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-fg text-sm">{props.title}</span>
+          <span className="text-sm text-fg">{props.title}</span>
           {!props.hideCloseButton && (
             <BasePopover.Close
-              className="text-fg-secondary hover:text-fg rounded-sm p-0.5"
+              className="rounded-sm p-0.5 text-fg-secondary hover:text-fg"
               aria-label="Close"
             >
               <X className="size-4" />
             </BasePopover.Close>
           )}
         </div>
-        {props.description && <p className="text-fg-default mb-3 text-sm">{props.description}</p>}
+        {props.description && <p className="mb-3 text-sm text-fg-default">{props.description}</p>}
         {props.content}
       </div>
     );

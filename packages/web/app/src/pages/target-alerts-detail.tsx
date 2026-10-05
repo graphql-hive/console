@@ -212,7 +212,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   if (result.error && !result.data) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
-        <div className="text-critical text-sm">
+        <div className="text-sm text-critical">
           Failed to load alert rule: {result.error.message}
         </div>
       </div>
@@ -266,7 +266,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
         <RuleStateLogSection ruleId={rule.id} viewRangeMinutes={viewRangeMinutes} rule={rule} />
       </div>
 
-      <aside className="w-94 sticky top-6 shrink-0 self-start">
+      <aside className="sticky top-6 w-94 shrink-0 self-start">
         <AlertConditionsPanel
           rule={rule}
           onRuleDeleted={() => {
@@ -320,7 +320,7 @@ function RuleStateLogSection(props: {
   const hasNoData = !data;
   const stateLogStatus =
     result.error && hasNoData ? (
-      <div className="text-critical py-4 text-sm">
+      <div className="py-4 text-sm text-critical">
         Failed to load status transitions: {result.error.message}
       </div>
     ) : result.fetching && hasNoData ? (
@@ -332,7 +332,7 @@ function RuleStateLogSection(props: {
   return (
     <>
       <section className="space-y-2">
-        <h2 className="text-fg m-0 mb-2 text-sm font-medium">Status transitions</h2>
+        <h2 className="m-0 mb-2 text-sm font-medium text-fg">Status transitions</h2>
         {stateLogStatus ?? (
           <AlertStateTransitionsBar
             stateLog={stateLog}
@@ -345,7 +345,7 @@ function RuleStateLogSection(props: {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-fg m-0 text-sm font-medium">
+        <h2 className="m-0 text-sm font-medium text-fg">
           {rule.type === MetricAlertRuleType.ErrorRate
             ? 'Error rate over time'
             : rule.type === MetricAlertRuleType.Latency

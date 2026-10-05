@@ -63,7 +63,7 @@ export function Card({ children, title, description, variants }: CardProps) {
       {hasHeader ? (
         <div className="flex flex-col space-y-1.5 p-5">
           {title ? <h3 className={cardTitleVariants({ ...variants })}>{title}</h3> : null}
-          {description ? <p className="text-fg-secondary text-control">{description}</p> : null}
+          {description ? <p className="text-control text-fg-secondary">{description}</p> : null}
         </div>
       ) : null}
       {children ? (

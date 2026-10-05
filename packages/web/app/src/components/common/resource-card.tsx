@@ -63,15 +63,15 @@ export function ResourceCard(props: {
                     <div>
                       <h4 className="line-clamp-2 text-lg font-bold">{props.name}</h4>
                       {props.subtitle ? (
-                        <p className="text-fg-default text-xs">{props.subtitle}</p>
+                        <p className="text-xs text-fg-default">{props.subtitle}</p>
                       ) : null}
                     </div>
                   ) : (
                     <div>
-                      <div className="bg-surface-skeleton h-4 w-48 animate-pulse rounded-full py-2" />
+                      <div className="h-4 w-48 animate-pulse rounded-full bg-surface-skeleton py-2" />
                       {/* Only reserve the second line for a kind that has a subtitle to load into. */}
                       {props.kind === 'project' ? (
-                        <div className="bg-surface-skeleton mt-4 h-2 w-24 animate-pulse rounded-full" />
+                        <div className="mt-4 h-2 w-24 animate-pulse rounded-full bg-surface-skeleton" />
                       ) : null}
                     </div>
                   )}
@@ -81,7 +81,7 @@ export function ResourceCard(props: {
                         <Tooltip
                           trigger={
                             <div className="flex flex-row items-center gap-x-2">
-                              <Globe className="text-fg-secondary size-4" />
+                              <Globe className="size-4 text-fg-secondary" />
                               <div className="text-xs">
                                 {requestsInDateRange}{' '}
                                 {pluralize(totalNumberOfRequests, 'request', 'requests')}
@@ -93,7 +93,7 @@ export function ResourceCard(props: {
                         <Tooltip
                           trigger={
                             <div className="flex flex-row items-center gap-x-2">
-                              <History className="text-fg-secondary size-4" />
+                              <History className="size-4 text-fg-secondary" />
                               <div className="text-xs">
                                 {schemaVersionsInDateRange}{' '}
                                 {pluralize(totalNumberOfVersions, 'commit', 'commits')}
@@ -105,8 +105,8 @@ export function ResourceCard(props: {
                       </>
                     ) : (
                       <>
-                        <div className="bg-surface-skeleton my-1 h-2 w-16 animate-pulse rounded-full" />
-                        <div className="bg-surface-skeleton my-1 h-2 w-16 animate-pulse rounded-full" />
+                        <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-surface-skeleton" />
+                        <div className="my-1 h-2 w-16 animate-pulse rounded-full bg-surface-skeleton" />
                       </>
                     )}
                   </div>

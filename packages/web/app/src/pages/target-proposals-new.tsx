@@ -107,7 +107,7 @@ export function TargetProposalsNewPage() {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className="h-(--content-height) flex min-h-[300px] flex-col pb-0">
+      <LayoutContent className="flex h-(--content-height) min-h-[300px] flex-col pb-0">
         <SaveProposalProvider>
           <ProposalsNewContent />
         </SaveProposalProvider>
@@ -136,7 +136,7 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
               >
                 Schema Proposals
               </Link>{' '}
-              <span className="text-fg-secondary inline-block px-2 italic">/</span> New
+              <span className="inline-block px-2 text-fg-secondary italic">/</span> New
             </span>
           }
           description="Collaborate on schema changes to reduce friction during development."
@@ -647,7 +647,7 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
       <Title>{props.title}</Title>
       <div className="mb-6">
         {props.error ? (
-          <div className="text-critical flex items-center">
+          <div className="flex items-center text-critical">
             <TriangleAlert className="mr-2 size-4" />
             {props.error}
           </div>

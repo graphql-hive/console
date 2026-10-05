@@ -803,7 +803,7 @@ export function TargetInsightsManageFiltersPage(): ReactElement {
     <>
       <Meta title="Manage saved filters" />
       <LayoutContent>
-        <div className="pb-3 pt-6">
+        <div className="pt-6 pb-3">
           <BackLink
             copy="Back to Insights"
             link={{

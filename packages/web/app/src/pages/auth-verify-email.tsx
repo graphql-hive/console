@@ -182,7 +182,7 @@ function AuthVerifyEmail() {
         content={
           <AuthCardStack>
             <div className="flex justify-center">
-              <div className="border-t-fg-muted size-8 animate-spin rounded-full border-2" />
+              <div className="size-8 animate-spin rounded-full border-2 border-t-fg-muted" />
             </div>
           </AuthCardStack>
         }

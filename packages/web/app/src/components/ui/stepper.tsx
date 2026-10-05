@@ -278,7 +278,7 @@ const StepperTitle = ({ children, className, ...props }: React.ComponentProps<'h
 
 const StepperDescription = ({ children, className, ...props }: React.ComponentProps<'p'>) => {
   return (
-    <p className={cn('text-fg-secondary text-sm', className)} {...props}>
+    <p className={cn('text-sm text-fg-secondary', className)} {...props}>
       {children}
     </p>
   );

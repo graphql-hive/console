@@ -105,12 +105,12 @@ export const OnSurface = createPreview(() => {
   );
   return (
     <div className="flex flex-wrap gap-6">
-      <div className="bg-neutral-2 dark:bg-neutral-3 border-line-subtle flex w-[20rem] flex-col items-start gap-3 rounded-md border p-4">
-        <span className="text-fg-default text-xs">A card</span>
+      <div className="flex w-[20rem] flex-col items-start gap-3 rounded-md border border-line-subtle bg-neutral-2 p-4 dark:bg-neutral-3">
+        <span className="text-xs text-fg-default">A card</span>
         {pair}
       </div>
-      <div className="bg-neutral-2 dark:bg-neutral-4 border-line flex w-[20rem] flex-col items-start gap-3 rounded-md border p-4 shadow-md">
-        <span className="text-fg-default text-xs">A floating panel</span>
+      <div className="flex w-[20rem] flex-col items-start gap-3 rounded-md border border-line bg-neutral-2 p-4 shadow-md dark:bg-neutral-4">
+        <span className="text-xs text-fg-default">A floating panel</span>
         {pair}
       </div>
     </div>

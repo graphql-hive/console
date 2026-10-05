@@ -45,7 +45,7 @@ const PERMISSION_COLUMNS: ColumnDef<PermissionRow, unknown>[] = [
 export function PermissionTable(props: { title: string; permissions: PermissionRow[] }) {
   return (
     <div>
-      <h4 className="text-fg mb-2 text-sm font-medium">{props.title}</h4>
+      <h4 className="mb-2 text-sm font-medium text-fg">{props.title}</h4>
       <DataTable
         data={props.permissions}
         columns={PERMISSION_COLUMNS}

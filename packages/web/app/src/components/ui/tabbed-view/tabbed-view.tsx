@@ -40,10 +40,10 @@ export function TabbedView({
       value={value}
       defaultValue={defaultValue}
       onValueChange={next => onValueChange?.(String(next))}
-      className="border-line bg-neutral-1 dark:bg-neutral-2 overflow-hidden rounded-md border"
+      className="overflow-hidden rounded-md border border-line bg-neutral-1 dark:bg-neutral-2"
       {...attrs}
     >
-      <div className="bg-surface-card border-line flex items-center border-b">
+      <div className="flex items-center border-b border-line bg-surface-card">
         <TabStrip items={items} variant="header" activeValue={value} />
       </div>
       {items.map(item => (

@@ -72,7 +72,7 @@ export function Collapsible({
     >
       <div className={headerVariants({ variant })}>
         <BaseCollapsible.Trigger className={triggerVariants({ variant })}>
-          <ChevronRight className="text-fg-secondary size-4 shrink-0 transition-transform group-data-[panel-open]/trigger:rotate-90" />
+          <ChevronRight className="size-4 shrink-0 text-fg-secondary transition-transform group-data-[panel-open]/trigger:rotate-90" />
           <span className="min-w-0 grow">{trigger}</span>
         </BaseCollapsible.Trigger>
         {actions}

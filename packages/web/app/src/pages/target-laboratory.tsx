@@ -426,7 +426,7 @@ function LaboratoryPageContent(props: {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Title>Laboratory</Title>
-            <div className="bg-line h-4 w-px" />
+            <div className="h-4 w-px bg-line" />
             <ToggleGroup
               aria-label="Laboratory version"
               value={props.defaultLaboratoryTab}
@@ -440,7 +440,7 @@ function LaboratoryPageContent(props: {
                   label: (
                     <>
                       Hive Laboratory
-                      <span className="bg-accent ml-1 size-2 rounded-full" />
+                      <span className="ml-1 size-2 rounded-full bg-accent" />
                     </>
                   ),
                 },
@@ -452,7 +452,7 @@ function LaboratoryPageContent(props: {
             <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
           </p>
         </div>
-        <div className="ml-auto mr-0 flex flex-col justify-center">
+        <div className="mr-0 ml-auto flex flex-col justify-center">
           <div>
             {query.data && !query.data.target?.graphqlEndpointUrl ? (
               <RouterLink
@@ -554,7 +554,7 @@ function LaboratoryPageContent(props: {
             visiblePlugin={operationCollectionsPlugin}
             schema={schema}
             forcedTheme={resolvedTheme}
-            className={isFullScreen ? 'bg-editor-backdrop fixed inset-0' : ''}
+            className={isFullScreen ? 'fixed inset-0 bg-editor-backdrop' : ''}
             onTabChange={handleTabChange}
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
@@ -606,7 +606,7 @@ export function TargetLaboratoryPage(props: {
   return (
     <>
       <Meta title="Schema laboratory" />
-      <LayoutContent className="h-(--content-height) flex flex-col pb-0">
+      <LayoutContent className="flex h-(--content-height) flex-col pb-0">
         <PromptProvider>
           <LaboratoryPageContent {...props} />
           <PromptManager />
@@ -653,7 +653,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   return (
     <div
       id="preflight-logs"
-      className="bg-editor-backdrop flex max-h-[200px] w-full flex-col overflow-hidden"
+      className="flex max-h-[200px] w-full flex-col overflow-hidden bg-editor-backdrop"
     >
       <Collapsible
         variant="panel"
@@ -679,7 +679,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
             {props.logs.length === 0 ? (
               <div
                 data-cy="empty-state"
-                className="text-fg-secondary flex flex-col items-center justify-center"
+                className="flex flex-col items-center justify-center text-fg-secondary"
               >
                 <p>No logs available</p>
                 <p>Execute a query to see logs</p>

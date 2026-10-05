@@ -123,13 +123,13 @@ export function DataTableRow({
       data-state={expanded ? 'expanded' : selected ? 'selected' : undefined}
       onClick={onClick}
       className={cn(
-        'border-line border-b transition-colors',
+        'border-b border-line transition-colors',
         // Hover means "this row does something": only a clickable or expandable row gets it.
         onClick && surface[onSurface].hover,
         // The critical tint replaces the stripe rather than layering on it.
         striped && !critical && surface[onSurface].stripe,
         critical && 'bg-critical-tint-subtle',
-        'data-[state=expanded]:bg-neutral-3 data-[state=expanded]:border-b-0',
+        'data-[state=expanded]:border-b-0 data-[state=expanded]:bg-neutral-3',
         'data-[state=selected]:bg-neutral-12/10 dark:data-[state=selected]:bg-neutral-12/10',
         onClick && 'cursor-pointer',
         muted && 'text-fg-secondary',
@@ -158,7 +158,7 @@ export function DataTableHead({
   return (
     <th
       className={cn(
-        'text-fg-secondary h-10 whitespace-nowrap px-4 text-left align-middle text-xs font-normal',
+        'h-10 px-4 text-left align-middle text-xs font-normal whitespace-nowrap text-fg-secondary',
         surface[onSurface].head,
         layoutClass(layout),
       )}
@@ -204,7 +204,7 @@ export function DataTableExpandedRow({
   children: React.ReactNode;
 }) {
   return (
-    <tr className="bg-neutral-3 border-line border-b">
+    <tr className="border-b border-line bg-neutral-3">
       <DataTableCellSlot colSpan={colSpan} variant="panel">
         {children}
       </DataTableCellSlot>
@@ -223,14 +223,14 @@ export function DataTableFooterRow({
 }) {
   return (
     <tfoot>
-      <tr className="border-line border-t">
+      <tr className="border-t border-line">
         <td
           colSpan={Math.max(1, columnCount - 1)}
-          className="text-fg h-12 px-4 align-middle font-medium"
+          className="h-12 px-4 align-middle font-medium text-fg"
         >
           {label}
         </td>
-        <td className="text-fg h-12 px-4 text-right align-middle font-medium">{value}</td>
+        <td className="h-12 px-4 text-right align-middle font-medium text-fg">{value}</td>
       </tr>
     </tfoot>
   );

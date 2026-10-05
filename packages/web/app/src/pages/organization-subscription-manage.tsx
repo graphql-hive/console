@@ -368,14 +368,14 @@ function Inner(props: {
                   <>
                     <div className="my-8 w-1/2">
                       <Heading>Define your reserved volume</Heading>
-                      <p className="text-fg-secondary text-sm">
+                      <p className="text-sm text-fg-secondary">
                         Pro plan requires to defined quota of reported operations.
                       </p>
-                      <p className="text-fg-secondary text-sm">
+                      <p className="text-sm text-fg-secondary">
                         Pick a volume a little higher than you think you'll need to avoid being rate
                         limited.
                       </p>
-                      <p className="text-fg-secondary text-sm">
+                      <p className="text-sm text-fg-secondary">
                         Don't worry, you can always adjust it later.
                       </p>
                       <div className="mt-5 pl-2.5">
@@ -484,7 +484,7 @@ function SubscriptionSlider({
 
       <div className="ml-auto w-48">
         <Input ref={inputRef} value={inputValue} onChange={handleInputChange} onBlur={handleBlur} />
-        {inputError && <div className="text-critical mt-1 text-end text-sm">{inputError}</div>}
+        {inputError && <div className="mt-1 text-end text-sm text-critical">{inputError}</div>}
       </div>
     </div>
   );

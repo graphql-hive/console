@@ -242,7 +242,7 @@ export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: ()
       <div className="max-w-[600px]">
         {target && (
           <>
-            <div className="mb-5 mt-1 flex flex-row justify-start gap-3">
+            <div className="mt-1 mb-5 flex flex-row justify-start gap-3">
               <div>
                 <Label htmlFor="cdn-graph" label="Graph Variant" />
                 <Select

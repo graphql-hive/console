@@ -38,7 +38,7 @@ export const WithIndicators = createPreview(() => {
           value: 'breaking',
           content: (
             <>
-              <span className="bg-critical size-2 rounded-full" />
+              <span className="size-2 rounded-full bg-critical" />
               Breaking
             </>
           ),
@@ -47,7 +47,7 @@ export const WithIndicators = createPreview(() => {
           value: 'dangerous',
           content: (
             <>
-              <span className="bg-warning size-2 rounded-full" />
+              <span className="size-2 rounded-full bg-warning" />
               Dangerous
             </>
           ),
@@ -56,7 +56,7 @@ export const WithIndicators = createPreview(() => {
           value: 'safe',
           content: (
             <>
-              <span className="bg-success size-2 rounded-full" />
+              <span className="size-2 rounded-full bg-success" />
               Safe
             </>
           ),
@@ -155,7 +155,7 @@ export const AsCardFloating = createPreview(() => {
   const [value, setValue] = useState('high');
 
   return (
-    <div className="bg-neutral-3 w-[533px] rounded-md p-5">
+    <div className="w-[533px] rounded-md bg-neutral-3 p-5">
       <RadioGroup
         variant="as-card"
         onSurface="raised"
@@ -178,7 +178,7 @@ export const Playground = createPreview({
     const [value, setValue] = useState('normal');
     return (
       <div
-        className={v.onSurface === 'raised' ? 'bg-neutral-3 w-[46rem] rounded-md p-5' : 'w-[46rem]'}
+        className={v.onSurface === 'raised' ? 'w-[46rem] rounded-md bg-neutral-3 p-5' : 'w-[46rem]'}
       >
         <RadioGroup
           variant={v.variant}
@@ -206,19 +206,19 @@ function PlanBody(props: {
     <div className="flex w-full flex-col justify-between gap-6 self-stretch">
       <div>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-fg text-sm font-semibold">{props.name}</span>
+          <span className="text-sm font-semibold text-fg">{props.name}</span>
           {props.isCurrent ? (
-            <span className="bg-accent-tint text-accent rounded-xs px-2 py-1 text-[11px] font-medium tracking-wide">
+            <span className="rounded-xs bg-accent-tint px-2 py-1 text-[11px] font-medium tracking-wide text-accent">
               CURRENT PLAN
             </span>
           ) : null}
         </div>
-        <div className="text-fg text-3xl font-bold">{props.price}</div>
-        <div className="text-fg-secondary text-control">{props.description}</div>
+        <div className="text-3xl font-bold text-fg">{props.price}</div>
+        <div className="text-control text-fg-secondary">{props.description}</div>
         <div className="mt-6 flex flex-col gap-2">
           {props.features.map(feature => (
-            <div key={feature} className="text-fg-default text-control flex items-start gap-2">
-              <Check className="text-fg-secondary mt-0.5 size-4 shrink-0" />
+            <div key={feature} className="flex items-start gap-2 text-control text-fg-default">
+              <Check className="mt-0.5 size-4 shrink-0 text-fg-secondary" />
               {feature}
             </div>
           ))}
@@ -226,8 +226,8 @@ function PlanBody(props: {
       </div>
       {props.footer ? (
         <div>
-          <div className="border-line mx-auto mb-4 w-9/12 border-b" />
-          <div className="text-fg-default text-xs">{props.footer}</div>
+          <div className="mx-auto mb-4 w-9/12 border-b border-line" />
+          <div className="text-xs text-fg-default">{props.footer}</div>
         </div>
       ) : null}
     </div>

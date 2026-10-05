@@ -608,7 +608,7 @@ export function AlertForm(props: AlertFormProps) {
     <Form form={form} onSubmit={onSubmit}>
       <div className={showPreview ? 'flex gap-8' : undefined}>
         <div
-          className={showPreview ? 'min-w-0 max-w-[700px] space-y-6' : 'min-w-0 flex-1 space-y-6'}
+          className={showPreview ? 'max-w-[700px] min-w-0 space-y-6' : 'min-w-0 flex-1 space-y-6'}
         >
           {/* Section 1: Destination */}
           <Card
@@ -831,7 +831,7 @@ export function AlertForm(props: AlertFormProps) {
                     )}
                   />
                 </div>
-                <p className="text-fg-secondary text-control">
+                <p className="text-control text-fg-secondary">
                   {isPercentageChange
                     ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
                         watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'
@@ -921,7 +921,7 @@ export function AlertForm(props: AlertFormProps) {
                                 tooltip={
                                   <>
                                     Wait for the condition to exist for{' '}
-                                    <span className="text-fg font-medium">
+                                    <span className="font-medium text-fg">
                                       {field.value || '0'}
                                     </span>{' '}
                                     minutes before firing. Helps prevent false alarms from brief

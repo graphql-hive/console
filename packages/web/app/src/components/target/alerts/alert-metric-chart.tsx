@@ -161,8 +161,8 @@ export function AlertMetricChart({
 
   if (data.length === 0) {
     return (
-      <div className="bg-surface-card border-line flex h-[200px] items-center justify-center rounded-md border">
-        <span className={loading ? 'text-fg-subtle text-sm' : 'text-fg-subtle text-sm italic'}>
+      <div className="flex h-[200px] items-center justify-center rounded-md border border-line bg-surface-card">
+        <span className={loading ? 'text-sm text-fg-subtle' : 'text-sm text-fg-subtle italic'}>
           {loading ? 'Loading chart data...' : 'No data available for this range.'}
         </span>
       </div>
@@ -393,7 +393,7 @@ export function AlertMetricChart({
 
   return (
     <div className="space-y-1.5">
-      <div className="text-fg-secondary text-control flex flex-wrap items-center gap-x-2">
+      <div className="flex flex-wrap items-center gap-x-2 text-control text-fg-secondary">
         {hasPreviousWindow ? (
           <>
             <span>

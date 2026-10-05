@@ -35,8 +35,8 @@ export function FloatingSearch({
           }
         }}
         className={cn(
-          'text-fg-default placeholder:text-fg-subtle w-full py-2 pl-4 pr-2 outline-none',
-          standalone ? 'rounded-md' : 'border-line rounded-t-md border-b',
+          'w-full py-2 pr-2 pl-4 text-fg-default outline-none placeholder:text-fg-subtle',
+          standalone ? 'rounded-md' : 'rounded-t-md border-b border-line',
         )}
       />
     </div>

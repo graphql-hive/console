@@ -66,12 +66,12 @@ function OperationsTable({
               <Popover
                 trigger={
                   <button type="button" aria-label="Anonymous operation" className="inline-flex">
-                    <TriangleAlert className="text-warning size-3.5" />
+                    <TriangleAlert className="size-3.5 text-warning" />
                   </button>
                 }
                 openOnHover
                 content={
-                  <p className="text-fg-default text-sm">
+                  <p className="text-sm text-fg-default">
                     Anonymous operation detected. Naming your operations is a recommended practice
                   </p>
                 }

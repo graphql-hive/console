@@ -337,7 +337,7 @@ export function OIDCRegisteredDomainSheet(props: {
                     challenge.
                   </p>
                   <p>Within your hosted zone create the following DNS record.</p>
-                  <div className={cn(!domain?.challenge && 'opacity-33 pointer-events-none')}>
+                  <div className={cn(!domain?.challenge && 'pointer-events-none opacity-33')}>
                     <DescriptionList
                       rows={[
                         {
@@ -400,7 +400,7 @@ export function OIDCRegisteredDomainSheet(props: {
               ),
             })}
             {stepper.current.id === 'step-2-challenge' && challengeError ? (
-              <p className="text-critical mt-4">{challengeError}</p>
+              <p className="mt-4 text-critical">{challengeError}</p>
             ) : null}
           </Sheet>
         )}

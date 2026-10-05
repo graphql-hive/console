@@ -75,15 +75,15 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="bg-background group sticky top-0 z-10 flex items-center pr-2">
+      <div className="group sticky top-0 z-10 flex items-center bg-background pr-2">
         <CollapsibleTrigger asChild>
           {isEditing ? (
-            <InputGroup className="!bg-accent/50 h-8 border-none">
+            <InputGroup className="h-8 border-none !bg-accent/50">
               <InputGroupAddon className="pl-2.5">
                 {isOpen ? (
-                  <FolderOpenIcon className="text-muted-foreground size-4" />
+                  <FolderOpenIcon className="size-4 text-muted-foreground" />
                 ) : (
-                  <FolderIcon className="text-muted-foreground size-4" />
+                  <FolderIcon className="size-4 text-muted-foreground" />
                 )}
               </InputGroupAddon>
               <InputGroupInput
@@ -139,9 +139,9 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
               size="sm"
             >
               {isOpen ? (
-                <FolderOpenIcon className="text-muted-foreground size-4" />
+                <FolderOpenIcon className="size-4 text-muted-foreground" />
               ) : (
-                <FolderIcon className="text-muted-foreground size-4" />
+                <FolderIcon className="size-4 text-muted-foreground" />
               )}
               {props.collection.name}
             </Button>
@@ -154,7 +154,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                 <TooltipTrigger asChild>
                   <Button
                     variant="link"
-                    className="text-muted-foreground p-1! pr-0! opacity-0 transition-opacity group-hover:opacity-100"
+                    className="p-1! pr-0! text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={e => {
                       e.stopPropagation();
                       setIsEditing(true);
@@ -173,7 +173,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="link"
-                        className="text-muted-foreground hover:text-destructive p-1! pr-0! opacity-0 transition-opacity group-hover:opacity-100"
+                        className="p-1! pr-0! text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                         onClick={e => {
                           e.stopPropagation();
                         }}
@@ -212,7 +212,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
           </div>
         )}
       </div>
-      <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
+      <CollapsibleContent className={cn('ml-4 flex flex-col gap-1 border-l border-border pl-2')}>
         {isOpen &&
           props.collection.operations.map(operation => {
             const isActive = activeOperation?.id === operation.id;
@@ -254,7 +254,7 @@ export const CollectionItem = (props: { collection: LaboratoryCollection }) => {
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="link"
-                            className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                            className="ml-auto p-1! pr-0! text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                             onClick={e => {
                               e.stopPropagation();
                             }}
@@ -335,7 +335,7 @@ export const CollectionsSearchResult = (props: { items: CollectionsSearchResultI
             }}
           >
             <GraphQLIcon className="size-4 text-pink-500" />
-            <span className="text-muted-foreground truncate">{operation.parent.name}</span>
+            <span className="truncate text-muted-foreground">{operation.parent.name}</span>
             <span className="text-muted-foreground">{' / '}</span>
             {operation.name}
           </Button>
@@ -377,10 +377,10 @@ export const Collections = () => {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="p-1! size-6 rounded-sm"
+                    className="size-6 rounded-sm p-1!"
                     onClick={openAddCollectionDialog}
                   >
-                    <FolderPlusIcon className="text-primary size-4" />
+                    <FolderPlusIcon className="size-4 text-primary" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Add collection</TooltipContent>
@@ -388,8 +388,8 @@ export const Collections = () => {
             )}
           </div>
         </div>
-        <div className="border-border relative border-b p-3">
-          <SearchIcon className="text-muted-foreground absolute left-5 top-1/2 size-4 -translate-y-1/2" />
+        <div className="relative border-b border-border p-3">
+          <SearchIcon className="absolute top-1/2 left-5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search..."
@@ -401,10 +401,10 @@ export const Collections = () => {
             <Button
               variant="ghost"
               size="icon-sm"
-              className="p-1! absolute right-5 top-1/2 size-6 -translate-y-1/2 rounded-sm"
+              className="absolute top-1/2 right-5 size-6 -translate-y-1/2 rounded-sm p-1!"
               onClick={() => setSearch('')}
             >
-              <XIcon className="text-muted-foreground size-4" />
+              <XIcon className="size-4 text-muted-foreground" />
             </Button>
           )}
         </div>
@@ -416,10 +416,10 @@ export const Collections = () => {
               searchResults.length > 0 ? (
                 <CollectionsSearchResult items={searchResults} />
               ) : (
-                <Empty className="px-0! w-full">
+                <Empty className="w-full px-0!">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
-                      <SearchIcon className="text-muted-foreground size-6" />
+                      <SearchIcon className="size-6 text-muted-foreground" />
                     </EmptyMedia>
                     <EmptyTitle className="text-base">No results found</EmptyTitle>
                     <EmptyDescription className="text-xs">
@@ -431,10 +431,10 @@ export const Collections = () => {
             ) : collections.length > 0 ? (
               collections.map(item => <CollectionItem key={item.id} collection={item} />)
             ) : (
-              <Empty className="px-0! w-full">
+              <Empty className="w-full px-0!">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <FolderIcon className="text-muted-foreground size-6" />
+                    <FolderIcon className="size-6 text-muted-foreground" />
                   </EmptyMedia>
                   <EmptyTitle className="text-base">No collections yet</EmptyTitle>
                   <EmptyDescription className="text-xs">
