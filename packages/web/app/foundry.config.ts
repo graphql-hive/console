@@ -112,6 +112,7 @@ export default defineConfig({
       label: 'Components',
       children: [
         { label: 'BillingPlanPicker' },
+        { label: 'Calendar' },
         { label: 'DataTable' },
         { label: 'FailureCard' },
         { label: 'Filters', children: [{ label: 'FilterDropdown' }, { label: 'FilterMenu' }] },
