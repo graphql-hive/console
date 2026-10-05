@@ -7,7 +7,6 @@ import { Label, Label as LegacyLabel } from '@/components/common';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
-import { Heading } from '@/components/ui/heading';
 import { Accordion } from '@/components/ui/primitives/accordion/accordion';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
@@ -155,7 +154,7 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      {props.title && <h2 className="text-fg-secondary mb-3 font-bold">{props.title}</h2>}
+      {props.title && <h2 className="text-fg-default mb-3 font-bold">{props.title}</h2>}
       <div className="list-inside list-disc space-y-2 text-sm/relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
@@ -683,10 +682,10 @@ export function CompositionErrorsList(props: {
 }) {
   return (
     <div className="mb-2 px-2">
-      <Heading className="my-2">
-        {props.title}
+      <div className="mb-3 flex items-center gap-1.5">
+        <h2 className="text-fg-default font-bold">{props.title}</h2>
         <CompositionErrorsPopover />
-      </Heading>
+      </div>
       {props.description ? (
         <p className="text-fg-default mb-2 text-sm">{props.description}</p>
       ) : null}
