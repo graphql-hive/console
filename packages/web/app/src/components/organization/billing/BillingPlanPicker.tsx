@@ -1,6 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
 import { Check } from 'lucide-react';
-import { Label, Section } from '@/components/common';
+import { Badge } from '@/components/ui/primitives/badge/badge';
 import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
@@ -76,10 +76,11 @@ function Plan(plan: {
     // card so the footers line up across plans with different feature counts.
     <div className="flex h-full w-full flex-col justify-between self-stretch">
       <div>
-        <Section.BigTitle className="flex items-center justify-between">
+        <h2 className="text-fg-default flex items-center justify-between text-base font-bold">
           {plan.name}
-          {plan.isActive && <Label>CURRENT PLAN</Label>}
-        </Section.BigTitle>
+          {plan.isActive && <Badge content="CURRENT PLAN" variants={{ variant: 'default' }} />}
+        </h2>
+
         <div className="text-3xl font-bold">
           {typeof plan.price === 'string' ? (
             plan.price
@@ -94,10 +95,10 @@ function Plan(plan: {
         <div className="mt-6 flex flex-col gap-2">
           {plan.features.map((feature, i) => (
             <div key={i}>
-              <Section.Subtitle className="flex items-center gap-1">
+              <div className="text-fg-secondary flex items-center gap-1 text-sm">
                 <Check className="text-fg-secondary size-5" />
                 {feature}
-              </Section.Subtitle>
+              </div>
             </div>
           ))}
         </div>
