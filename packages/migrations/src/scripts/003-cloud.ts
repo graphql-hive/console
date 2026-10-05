@@ -26,6 +26,7 @@ async function main() {
       .post(endpoint, {
         body: query,
         searchParams: {
+          database: clickhouse.database,
           default_format: 'JSON',
           output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
@@ -53,7 +54,7 @@ async function main() {
       substring(partition_string, 1, 4) as year,
       substring(partition_string, 5, 2) as month,
       substring(partition_string, 7, 2) as day,
-      format('INSERT INTO default.operations_daily_new
+      format('INSERT INTO operations_daily_new
           SELECT
             target,
             toStartOfDay(timestamp) AS timestamp,
@@ -65,7 +66,7 @@ async function main() {
             avgState(duration) AS duration_avg,
             quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
           FROM
-          default.operations
+          operations
           WHERE timestamp >= toDateTime(\\'{0}-{1}-{2} 00:00:00\\', \\'UTC\\') AND timestamp <= toDateTime(\\'{0}-{1}-{2} 23:59:59\\', \\'UTC\\')
           GROUP BY
             target,
@@ -78,9 +79,9 @@ async function main() {
     FROM
       system.parts
     WHERE
-      database = 'default'
+      database = currentDatabase()
       AND table = 'operations'
-      AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM default.operations_migration))
+      AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM operations_migration))
     GROUP BY
       database,
       table,
@@ -111,7 +112,7 @@ async function main() {
   }
 
   await execute(`
-    INSERT INTO default.operations_daily_new
+    INSERT INTO operations_daily_new
     SELECT
       target,
       toStartOfDay(timestamp) AS timestamp_day,
@@ -123,7 +124,7 @@ async function main() {
       avgState(duration) AS duration_avg,
       quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
     FROM
-      default.operations
+      operations
     WHERE
       timestamp >= toDateTime('2023-06-22 00:00:00', 'UTC')
       AND timestamp < (
@@ -136,7 +137,7 @@ async function main() {
               )
             )
           FROM
-            default.operations_migration
+            operations_migration
       )
     GROUP BY
       target,
@@ -153,7 +154,7 @@ async function main() {
       substring(partition_string, 1, 4) as year,
       substring(partition_string, 5, 2) as month,
       substring(partition_string, 7, 2) as day,
-      format('INSERT INTO default.operations_hourly_new
+      format('INSERT INTO operations_hourly_new
           SELECT
             target,
             toStartOfDay(timestamp) AS timestamp,
@@ -165,7 +166,7 @@ async function main() {
             avgState(duration) AS duration_avg,
             quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
           FROM
-          default.operations
+          operations
           WHERE timestamp >= toDateTime(\\'{0}-{1}-{2} 00:00:00\\', \\'UTC\\') AND timestamp <= toDateTime(\\'{0}-{1}-{2} 23:59:59\\', \\'UTC\\')
           GROUP BY
             target,
@@ -178,9 +179,9 @@ async function main() {
     FROM
       system.parts
     WHERE
-      database = 'default'
+      database = currentDatabase()
       AND table = 'operations'
-      AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM default.operations_migration))
+      AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM operations_migration))
     GROUP BY
       database,
       table,
@@ -211,7 +212,7 @@ async function main() {
   }
 
   await execute(`
-    INSERT INTO default.operations_hourly_new
+    INSERT INTO operations_hourly_new
     SELECT
       target,
       toStartOfHour(timestamp) AS timestamp_day,
@@ -223,7 +224,7 @@ async function main() {
       avgState(duration) AS duration_avg,
       quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
     FROM
-      default.operations
+      operations
     WHERE
       timestamp >= toDateTime('2023-06-22 00:00:00', 'UTC')
       AND timestamp < (
@@ -236,7 +237,7 @@ async function main() {
               )
             )
           FROM
-            default.operations_migration
+            operations_migration
       )
     GROUP BY
       target,
@@ -248,28 +249,28 @@ async function main() {
 
   await execute(`
     RENAME TABLE
-      default.operations_daily TO default.operations_daily_old
+      operations_daily TO operations_daily_old
   `);
 
   await execute(`
     RENAME TABLE
-      default.operations_daily_new TO default.operations_daily
+      operations_daily_new TO operations_daily
   `);
 
   await execute(`
     RENAME TABLE
-      default.operations_hourly TO default.operations_hourly_old
+      operations_hourly TO operations_hourly_old
   `);
 
   await execute(`
     RENAME TABLE
-      default.operations_hourly_new TO default.operations_hourly
+      operations_hourly_new TO operations_hourly
   `);
 
   await Promise.all([
-    execute(`DROP VIEW default.operations_daily_old`),
-    execute(`DROP VIEW default.operations_hourly_old`),
-    execute(`DROP VIEW default.operations_migration`),
+    execute(`DROP VIEW operations_daily_old`),
+    execute(`DROP VIEW operations_hourly_old`),
+    execute(`DROP VIEW operations_migration`),
   ]);
 }
 

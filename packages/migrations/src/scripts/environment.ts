@@ -26,6 +26,13 @@ const NumberFromString = zod.preprocess(numberFromNumberOrNumberString, zod.numb
 const ClickHouseModel = zod.object({
   CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
   CLICKHOUSE_HOST: zod.string(),
+  // Restricted to a plain identifier, as in the services' environments.
+  CLICKHOUSE_DB: emptyString(
+    zod
+      .string()
+      .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, 'must be a plain identifier')
+      .optional(),
+  ),
   CLICKHOUSE_PORT: NumberFromString,
   CLICKHOUSE_USERNAME: zod.string(),
   CLICKHOUSE_PASSWORD: zod.string(),
@@ -73,6 +80,7 @@ export const env = {
   clickhouse: {
     protocol: clickhouse.CLICKHOUSE_PROTOCOL,
     host: clickhouse.CLICKHOUSE_HOST,
+    database: clickhouse.CLICKHOUSE_DB ?? 'default',
     port: clickhouse.CLICKHOUSE_PORT,
     username: clickhouse.CLICKHOUSE_USERNAME,
     password: clickhouse.CLICKHOUSE_PASSWORD,
