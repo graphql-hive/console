@@ -1148,7 +1148,7 @@ export class SchemaPublisher {
           ...(checkResult.state?.contracts?.flatMap(contract => [
             ...(contract.schemaChanges?.all?.map(change => ({
               ...change,
-              message: `[${contract.contractName}] ${change.message}`,
+              message: `[${formatContractName(contract.contractName)}] ${change.message}`,
             })) ?? []),
           ]) ?? []),
         ],
@@ -1191,7 +1191,7 @@ export class SchemaPublisher {
             continue;
           }
 
-          errors.push({ message: `[${contract.contractName}] Baseline composition failed.` });
+          errors.push({ message: `[${formatContractName(contract.contractName)}] Baseline composition failed.` });
         }
         for (const contract of checkResult.reason.contracts) {
           if (!contract.composition.errors) {
@@ -1201,7 +1201,7 @@ export class SchemaPublisher {
           errors.push(
             ...contract.composition.errors.map(error => ({
               ...error,
-              message: `[${contract.contractName}] ${error.message}`,
+              message: `[${formatContractName(contract.contractName)}] ${error.message}`,
             })),
           );
         }
@@ -1219,7 +1219,7 @@ export class SchemaPublisher {
               )
               .map(change => ({
                 ...change,
-                message: `[${contract.contractName}] ${change.message}`,
+                message: `[${formatContractName(contract.contractName)}] ${change.message}`,
               })),
           );
         }
@@ -1234,7 +1234,7 @@ export class SchemaPublisher {
           ...(checkResult.reason.contracts?.flatMap(contract => [
             ...(contract.schemaChanges?.all?.map(change => ({
               ...change,
-              message: `[${contract.contractName}] ${change.message}`,
+              message: `[${formatContractName(contract.contractName)}] ${change.message}`,
             })) ?? []),
           ]) ?? []),
         ],
@@ -1281,7 +1281,7 @@ export class SchemaPublisher {
         })) ?? []),
         ...(contractVersions?.edges.flatMap(edge => [
           ...(edge.node.schemaCompositionErrors?.map(error => ({
-            message: `[${edge.node.contractName}] ${error.message}`,
+            message: `[${formatContractName(edge.node.contractName)}] ${error.message}`,
             source: error.source,
           })) ?? []),
         ]) ?? []),
@@ -2273,7 +2273,7 @@ export class SchemaPublisher {
         contract =>
           contract.compositionErrors?.map(err => ({
             ...err,
-            message: `[${contract.contractName}] ${err.message}`,
+            message: `[${formatContractName(contract.contractName)}] ${err.message}`,
           })) ?? [],
       ) ?? [];
 
@@ -2521,7 +2521,7 @@ export class SchemaPublisher {
       __typename: 'SchemaPublishSuccess' as const,
       initial: publishResult.state.initial,
       valid: publishResult.state.composable,
-      changes: null,
+      changes,
       message: (publishResult.state.messages ?? []).join('\n'),
       linkToWebsite,
     };
@@ -3853,20 +3853,20 @@ export function getSchemaCheckFailureGithubDetails(reason: SchemaCheckFailureRea
 
   for (const contract of reason.contracts ?? []) {
     if (contract.baselineComposition?.type === 'failure') {
-      errors.push({ message: `[${contract.contractName}] Baseline composition failed.` });
+      errors.push({ message: `[${formatContractName(contract.contractName)}] Baseline composition failed.` });
     }
 
     if (contract.composition.type === 'failure') {
       errors.push(
         ...contract.composition.errors.map(error => ({
-          message: `[${contract.contractName}] ${error.message}`,
+          message: `[${formatContractName(contract.contractName)}] ${error.message}`,
         })),
       );
     }
 
     errors.push(
       ...(contract.schemaChanges?.breaking?.map(change => ({
-        message: `[${contract.contractName}] ${change.message}`,
+        message: `[${formatContractName(contract.contractName)}] ${change.message}`,
       })) ?? []),
     );
   }
@@ -3956,7 +3956,7 @@ export function buildSchemaCheckSuccessGithubOutput(input: {
       coreChanges.length ? changesToMarkdown(coreChanges, printListOfChanges) : null,
       ...contractChanges.map(contract =>
         [
-          `## Contract "${contract.contractName}"`,
+          `## Contract "${formatContractName(contract.contractName)}"`,
           changesToMarkdown(contract.changes, printListOfChanges),
         ].join('\n'),
       ),
@@ -4007,4 +4007,9 @@ const SchemaCheckContextIdModel = z
 
 export function isValidServiceName(service: string): boolean {
   return service.length <= 64 && /^[a-zA-Z][\w_-]*$/g.test(service);
+}
+
+/** To not confuse users we strip the "default/" prefix for now from the public API until we actually introduce the concept of graphs. */
+export function formatContractName(name: string) {
+ return name.replace(/^default\//, '')
 }
