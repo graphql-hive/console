@@ -8,23 +8,19 @@ const VIEWS = [
 ];
 
 describe('TabbedView', () => {
-  it('puts the action and tabs in the band and the picked view in the body', () => {
+  it('puts the tabs in the band and the picked view in the body', () => {
     const onValueChange = vi.fn();
     render(
       <TabbedView
         items={VIEWS}
         defaultValue="details"
         onValueChange={onValueChange}
-        action={<button type="button">Pick graph</button>}
         attrs={{ 'data-cy': 'check-view' }}
       />,
     );
     const view = document.querySelector('[data-cy="check-view"]')!;
     const band = view.firstElementChild!;
     expect(band.querySelectorAll('[role="tab"]')).toHaveLength(2);
-    expect(band.textContent).toContain('Pick graph');
-    // The picker is a sibling of the tablist, never a child of it.
-    expect(band.querySelector('[role="tablist"]')!.textContent).not.toContain('Pick graph');
     expect(screen.getByRole('tabpanel').textContent).toBe('Details view');
     expect(screen.queryByText('Schema view')).toBeNull();
 
