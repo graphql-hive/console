@@ -126,8 +126,11 @@ export function AlertActivityChart({ events, from, to }: ChartProps) {
     );
   }
 
+  // Zero width on purpose, like the trace page's zero height: the chart's canvas has a fixed pixel
+  // width, so if it sat inside this box the flex column could never shrink below it.
   return (
     <AutoSizer
+      className="w-0"
       renderProp={size => {
         if (size.width == null) return null;
         // Allow ~100px per x-axis label so the longest formatter
@@ -137,67 +140,69 @@ export function AlertActivityChart({ events, from, to }: ChartProps) {
         const targetLabelCount = Math.max(2, Math.min(12, Math.floor(size.width / 100)));
         const labelInterval = Math.max(0, Math.ceil(xAxisData.length / targetLabelCount) - 1);
         return (
-          <Chart
-            height={200}
-            option={{
-              grid: { left: 10, top: 16, right: 10, bottom: 4, containLabel: true },
-              tooltip: {
-                ...theme.tooltip(),
-                axisPointer: { type: 'shadow' },
-                formatter: raw => {
-                  // An axis-triggered tooltip always gets one entry per series.
-                  const params = raw as unknown as Array<{
-                    seriesName: string;
-                    value: number;
-                    color: string;
-                    axisValue: string | number;
-                  }>;
-                  const total = params.reduce((sum, p) => sum + (p.value || 0), 0);
-                  if (total === 0) return '';
-                  const bucketStart = Number(params[0]?.axisValue);
-                  const bucketEnd = bucketStart + bucketMs;
-                  const header = `<div style="margin-bottom:4px;color:${colors.overlayText};opacity:0.7;font-size:11px;">${tooltipTimeFormatter.format(bucketStart)} – ${tooltipTimeFormatter.format(bucketEnd)}</div>`;
-                  const lines = params
-                    .filter(p => p.value > 0)
-                    .map(
-                      p =>
-                        `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:6px;"></span>${p.seriesName}: ${p.value}`,
-                    );
-                  return header + lines.join('<br/>');
+          <div style={{ width: size.width }}>
+            <Chart
+              height={200}
+              option={{
+                grid: { left: 10, top: 16, right: 10, bottom: 4, containLabel: true },
+                tooltip: {
+                  ...theme.tooltip(),
+                  axisPointer: { type: 'shadow' },
+                  formatter: raw => {
+                    // An axis-triggered tooltip always gets one entry per series.
+                    const params = raw as unknown as Array<{
+                      seriesName: string;
+                      value: number;
+                      color: string;
+                      axisValue: string | number;
+                    }>;
+                    const total = params.reduce((sum, p) => sum + (p.value || 0), 0);
+                    if (total === 0) return '';
+                    const bucketStart = Number(params[0]?.axisValue);
+                    const bucketEnd = bucketStart + bucketMs;
+                    const header = `<div style="margin-bottom:4px;color:${colors.overlayText};opacity:0.7;font-size:11px;">${tooltipTimeFormatter.format(bucketStart)} – ${tooltipTimeFormatter.format(bucketEnd)}</div>`;
+                    const lines = params
+                      .filter(p => p.value > 0)
+                      .map(
+                        p =>
+                          `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:6px;"></span>${p.seriesName}: ${p.value}`,
+                      );
+                    return header + lines.join('<br/>');
+                  },
                 },
-              },
-              xAxis: {
-                type: 'category',
-                data: xAxisData,
-                axisLine: { show: false },
-                axisTick: { show: false },
-                splitLine: { show: false },
-                axisLabel: {
-                  ...axisLabel,
-                  interval: labelInterval,
-                  formatter: (value: string) => timeFormatter.format(Number(value)),
+                xAxis: {
+                  type: 'category',
+                  data: xAxisData,
+                  axisLine: { show: false },
+                  axisTick: { show: false },
+                  splitLine: { show: false },
+                  axisLabel: {
+                    ...axisLabel,
+                    interval: labelInterval,
+                    formatter: (value: string) => timeFormatter.format(Number(value)),
+                  },
                 },
-              },
-              yAxis: {
-                type: 'value',
-                min: 0,
-                minInterval: 1,
-                axisLine: { show: false },
-                axisTick: { show: false },
-                splitLine: { lineStyle: { color: colors.gridSubtle } },
-                axisLabel: { ...axisLabel, formatter: (value: number) => String(value) },
-              },
-              series: SEVERITY_ORDER.map(sev => ({
-                name: SEVERITY_LABEL[sev],
-                type: 'bar',
-                stack: 'severity',
-                barMaxWidth: 24,
-                itemStyle: { color: SEVERITY_COLOR[sev], borderRadius: [2, 2, 0, 0] },
-                emphasis: { disabled: true },
-                data: buckets[sev],
-              })),
-            }}
-          />
+                yAxis: {
+                  type: 'value',
+                  min: 0,
+                  minInterval: 1,
+                  axisLine: { show: false },
+                  axisTick: { show: false },
+                  splitLine: { lineStyle: { color: colors.gridSubtle } },
+                  axisLabel: { ...axisLabel, formatter: (value: number) => String(value) },
+                },
+                series: SEVERITY_ORDER.map(sev => ({
+                  name: SEVERITY_LABEL[sev],
+                  type: 'bar',
+                  stack: 'severity',
+                  barMaxWidth: 24,
+                  itemStyle: { color: SEVERITY_COLOR[sev], borderRadius: [2, 2, 0, 0] },
+                  emphasis: { disabled: true },
+                  data: buckets[sev],
+                })),
+              }}
+            />
+          </div>
         );
       }}
     />

@@ -43,9 +43,9 @@ describe('AlertActivityChart', () => {
     expect(screen.queryByTestId('chart')).toBeNull();
   });
 
-  it('renders the chart once a width is measured', () => {
+  it('gives the chart box the measured width once there is one', () => {
     measured = { width: 1200, height: 200 };
     renderChart();
-    expect(screen.getByTestId('chart')).toBeTruthy();
+    expect(screen.getByTestId('chart').parentElement?.style.width).toBe('1200px');
   });
 });
