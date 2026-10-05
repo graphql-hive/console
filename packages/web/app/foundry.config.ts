@@ -120,6 +120,7 @@ export default defineConfig({
         { label: 'PageLead' },
         { label: 'PagePending' },
         { label: 'RefreshButton' },
+        { label: 'Resizable' },
         { label: 'StatCard' },
         { label: 'SupportForms' },
         { label: 'TabbedView' },
