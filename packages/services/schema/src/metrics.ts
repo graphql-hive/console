@@ -12,7 +12,7 @@ export const schemaCompositionCounter = new metrics.Counter({
   labelNames: ['cache' /* hit or miss */, 'type' /* success, failure or timeout */],
 });
 
-const msBuckets = [50, 300, 2_000, 5_000, 10_000];
+const msBuckets = [50, 300, 2_000, 5_000, 10_000, 20_000, 45_000];
 
 export const compositionTotalDurationMS = new metrics.Histogram({
   name: 'composition_total_duration_ms',
