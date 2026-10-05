@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import { Worker } from 'node:worker_threads';
 import fastq from 'fastq';
-import { trace } from '@hive/service-common';
+import { trace, type Span } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { registerWorkerLogging, type Logger } from '../../api/src/modules/shared/providers/logger';
 import type {
@@ -19,6 +19,8 @@ type WorkerRunArgs = {
   data: CompositionEvent['data'];
   requestId: string;
   abortSignal: AbortSignal;
+  /** Span of the request that queued the task; the queue callback may run in another request's context. */
+  span?: Span;
 };
 
 type Task = Omit<PromiseWithResolvers<CompositionResultEvent>, 'promise'>;
@@ -220,9 +222,7 @@ export class CompositionScheduler {
         .then(result => {
           if (result.ctx?.heapUsed) {
             const usedPercent = result.ctx.heapUsed / (maxOldGenerationSizeMb * 1024 * 1024);
-            trace
-              .getActiveSpan()
-              ?.setAttribute('hive.composition.heap.percent', Math.round(usedPercent * 100));
+            args.span?.setAttribute('hive.composition.heap.percent', Math.round(usedPercent * 100));
           }
           return result.data;
         });
@@ -243,7 +243,10 @@ export class CompositionScheduler {
 
   /** Process a composition task in a worker (once the next worker is free). */
   process(args: WorkerRunArgs): Promise<CompositionResultEvent['data']> {
-    return this.queue.push({ args, addedToQueueTime: now() });
+    return this.queue.push({
+      args: { ...args, span: args.span ?? trace.getActiveSpan() },
+      addedToQueueTime: now(),
+    });
   }
 
   /** Terminate all workers. */
