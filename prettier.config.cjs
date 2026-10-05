@@ -21,4 +21,15 @@ module.exports = {
   // prettier-plugin-sql options
   language: 'postgresql',
   keywordCase: 'upper',
+  // prettier-plugin-tailwindcss sorts against the theme in each package's Tailwind entry stylesheet.
+  overrides: [
+    {
+      files: 'packages/web/app/**',
+      options: { tailwindStylesheet: './packages/web/app/src/index.css' },
+    },
+    {
+      files: 'packages/libraries/laboratory/**',
+      options: { tailwindStylesheet: './packages/libraries/laboratory/src/index.css' },
+    },
+  ],
 };
