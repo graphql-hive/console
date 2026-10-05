@@ -121,6 +121,7 @@ export default defineConfig({
         { label: 'PagePending' },
         { label: 'RefreshButton' },
         { label: 'StatCard' },
+        { label: 'Stepper' },
         { label: 'SupportForms' },
         { label: 'TabbedView' },
       ],
