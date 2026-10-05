@@ -7,6 +7,12 @@ export interface ClickHouseConfig {
   username?: string;
   password?: string;
   /**
+   * The database tables are read from and written to (`CLICKHOUSE_DB`). Sent as the
+   * `database` request setting, so queries use unqualified table names. Omitted, the
+   * request carries no setting and ClickHouse falls back to the user's default.
+   */
+  database?: string;
+  /**
    * In milliseconds
    */
   requestTimeout?: number;

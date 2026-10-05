@@ -12,6 +12,7 @@ export function createEstimator(config: {
     port: number;
     username: string;
     password: string;
+    database: string;
   };
 }) {
   const { logger } = config;

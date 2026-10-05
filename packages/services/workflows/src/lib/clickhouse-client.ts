@@ -17,6 +17,8 @@ export type ClickHouseConfig = {
   username: string;
   password: string;
   protocol?: string;
+  /** `CLICKHOUSE_DB`; unset keeps the database this client always used. */
+  database?: string;
 };
 
 const tracer = trace.getTracer('clickhouse-client');
@@ -58,7 +60,7 @@ export class ClickHouseClient {
     try {
       const response = await got.post(this.baseUrl, {
         searchParams: {
-          database: 'default',
+          database: this.config.database ?? 'default',
           default_format: 'JSON',
           output_format_json_quote_64bit_integers: '1',
           ...params,

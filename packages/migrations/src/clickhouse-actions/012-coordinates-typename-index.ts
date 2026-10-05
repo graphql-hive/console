@@ -25,7 +25,7 @@ const StateTableModel = z.array(
 export const action: Action = async (exec, query) => {
   // Create a table to store the state of the migration
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.migration_coordinates_typename_index (
+    CREATE TABLE IF NOT EXISTS migration_coordinates_typename_index (
       table String,
       idx_created Bool DEFAULT false,
       idx_materialized Bool DEFAULT false
@@ -33,7 +33,7 @@ export const action: Action = async (exec, query) => {
   `);
 
   const tables = await query(`
-    SELECT uuid, name FROM system.tables WHERE name IN (
+    SELECT uuid, name FROM system.tables WHERE database = currentDatabase() AND name IN (
       'coordinates_daily',
       'coordinates_hourly',
       'coordinates_minutely'
@@ -45,7 +45,7 @@ export const action: Action = async (exec, query) => {
   }
 
   const tableStates = await query(`
-    SELECT table, idx_created, idx_materialized FROM default.migration_coordinates_typename_index
+    SELECT table, idx_created, idx_materialized FROM migration_coordinates_typename_index
   `).then(async r => StateTableModel.parse(r.data));
 
   for (const { uuid, name } of tables) {
@@ -54,7 +54,7 @@ export const action: Action = async (exec, query) => {
     if (!state) {
       console.log(`Creating state for table ${name}`);
       await exec(`
-        INSERT INTO default.migration_coordinates_typename_index (table) VALUES ('${name}')
+        INSERT INTO migration_coordinates_typename_index (table) VALUES ('${name}')
       `);
 
       state = { table: name, idx_created: false, idx_materialized: false };
@@ -70,7 +70,7 @@ export const action: Action = async (exec, query) => {
         `ALTER TABLE "${innerTable}" ADD INDEX IF NOT EXISTS idx_typename (substringIndex(coordinate, '.', 1)) TYPE ngrambf_v1(4, 1024, 2, 0) GRANULARITY 1`,
       );
       await exec(
-        `ALTER TABLE default.migration_coordinates_typename_index UPDATE idx_created = true WHERE table = '${name}'`,
+        `ALTER TABLE migration_coordinates_typename_index UPDATE idx_created = true WHERE table = '${name}'`,
         {
           mutations_sync: '2',
         },
@@ -83,7 +83,7 @@ export const action: Action = async (exec, query) => {
       console.log(`Materializing idx_typename for table ${name}`);
       await exec(`ALTER TABLE "${innerTable}" MATERIALIZE INDEX idx_typename`);
       await exec(
-        `ALTER TABLE default.migration_coordinates_typename_index UPDATE idx_materialized = true WHERE table = '${name}'`,
+        `ALTER TABLE migration_coordinates_typename_index UPDATE idx_materialized = true WHERE table = '${name}'`,
         {
           mutations_sync: '2',
         },
@@ -93,6 +93,6 @@ export const action: Action = async (exec, query) => {
 
   console.log('Dropping migration state table');
   await exec(`
-    DROP TABLE default.migration_coordinates_typename_index
+    DROP TABLE migration_coordinates_typename_index
   `);
 };

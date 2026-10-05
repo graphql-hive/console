@@ -19,6 +19,8 @@ export interface ClickHouseConfig {
   port: number;
   username: string;
   password: string;
+  /** `CLICKHOUSE_DB`. The INSERTs name their tables unqualified, so this picks the database. */
+  database: string;
   async_insert_busy_timeout_ms: number;
   async_insert_max_data_size: number;
   wait_for_async_insert: number;
@@ -177,6 +179,7 @@ async function writeCsv(
       body,
       searchParams: {
         query,
+        database: config.database,
         async_insert: 1,
         wait_for_async_insert: config.wait_for_async_insert,
         async_insert_busy_timeout_ms: config.async_insert_busy_timeout_ms,
