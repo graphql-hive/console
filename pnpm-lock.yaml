@@ -204,6 +204,9 @@ catalogs:
     stripe:
       specifier: 17.5.0
       version: 17.5.0
+    tailwind-merge:
+      specifier: 3.7.0
+      version: 3.7.0
     toucan-js:
       specifier: 4.1.0
       version: 4.1.0
@@ -1098,8 +1101,8 @@ importers:
         specifier: 'catalog:'
         version: 2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       tailwind-merge:
-        specifier: ^3.4.0
-        version: 3.4.0
+        specifier: 'catalog:'
+        version: 3.7.0
       tailwindcss:
         specifier: 4.1.18
         version: 4.1.18
@@ -2444,8 +2447,8 @@ importers:
         specifier: 0.9.0
         version: 0.9.0
       tailwind-merge:
-        specifier: 2.6.0
-        version: 2.6.0
+        specifier: 'catalog:'
+        version: 3.7.0
       tailwindcss:
         specifier: 4.1.18
         version: 4.1.18
@@ -16596,11 +16599,8 @@ packages:
     resolution: {integrity: sha512-FzD187HuFIZEyeR7Xy6sJbJll2d4SybS90satC8SKIuaNRC05CxMvdzN7BUsfDQffcnabckRM5OIcfArjsZ0mg==}
     engines: {node: '>=18.18'}
 
-  tailwind-merge@2.6.0:
-    resolution: {integrity: sha512-P+Vu1qXfzediirmHOC3xKGAYeZtPcV9g76X+xg2FD4tYgR71ewMA35Y3sCz3zhiN/dwefRpJX0yBcgwi1fXNQA==}
-
-  tailwind-merge@3.4.0:
-    resolution: {integrity: sha512-uSaO4gnW+b3Y2aWoWfFpX62vn2sR3skfhbjsEnaBI81WD1wBLlHZe5sWf0AqjksNdYTbGBEd0UasQMT3SNV15g==}
+  tailwind-merge@3.7.0:
+    resolution: {integrity: sha512-XPPUyAc+cvspz3lHTcR/QgPfW2A0lv/xQNIjX3HGhLR+Nq2lHaLq5MtTesHn8GUr3W3DguT2KT5x3NVgRtYwmA==}
 
   tailwindcss@3.4.17:
     resolution: {integrity: sha512-w33E2aCvSDP0tW9RZuNXadXlkHXqFzSkQew/aIa2i/Sj8fThxwovwlXHSPXTbAHwEIhBFXAedUhP2tueAKP8Og==}
@@ -36714,9 +36714,7 @@ snapshots:
 
   tailwind-csstree@0.1.4: {}
 
-  tailwind-merge@2.6.0: {}
-
-  tailwind-merge@3.4.0: {}
+  tailwind-merge@3.7.0: {}
 
   tailwindcss@3.4.17(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@24.13.3)(typescript@5.7.3)):
     dependencies:
