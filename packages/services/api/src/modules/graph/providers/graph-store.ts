@@ -292,6 +292,22 @@ export class GraphStore {
 
     return graphsById;
   }
+
+  async findGraphsForTargetId(targetId: string) {
+    const query = psql`/* findContractGraphsForBaseGraph*/
+      SELECT
+        ${graphFields}
+      FROM
+        "graphs"
+      WHERE
+        "target_id" = ${targetId}
+      ORDER BY
+        "id" DESC
+    `;
+
+    const records = await this.pg.any(query);
+    return z.array(GraphModel).parse(records);
+  }
 }
 
 const graphFields = psql`

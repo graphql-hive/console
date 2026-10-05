@@ -391,7 +391,6 @@ export class SchemaVersionStore {
       commit: string;
       existingSchemaLogs: Array<{ id: string; serviceName: string | null }>;
       base_schema: string | null;
-      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: null | string;
       /** The ID of the previous schema log for the same service. */
@@ -572,8 +571,6 @@ export class SchemaVersionStore {
         });
       }
 
-      await args.actionFn(version.id);
-
       return {
         version,
         log: newLog,
@@ -591,7 +588,6 @@ export class SchemaVersionStore {
         versionId: string;
       };
       composable: boolean;
-      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType> | null;
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
@@ -771,8 +767,6 @@ export class SchemaVersionStore {
           meta: null,
         });
       }
-
-      await args.actionFn(newVersion.id);
 
       return {
         kind: 'composite',
