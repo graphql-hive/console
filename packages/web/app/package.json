@@ -32,7 +32,7 @@
     "@sentry/node": "catalog:",
     "@sentry/react": "7.120.2",
     "@sentry/vite-plugin": "^5.2.0",
-    "@stepperize/react": "5.1.7",
+    "@stepperize/react": "8.0.0",
     "@stripe/react-stripe-js": "3.1.1",
     "@stripe/stripe-js": "5.5.0",
     "@tailwindcss/vite": "4.1.18",
