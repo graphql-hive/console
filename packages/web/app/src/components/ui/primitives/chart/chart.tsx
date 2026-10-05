@@ -58,5 +58,11 @@ export function Chart({ option, height, onEvents }: ChartProps) {
     };
   }, [onEvents]);
 
-  return <div ref={elementRef} className="w-full" style={{ height }} />;
+  // ECharts writes a fixed pixel width onto its mount. Out of normal flow, that width cannot become
+  // the min-content width of the flex column a chart sits in, which would stop the page shrinking.
+  return (
+    <div className="relative w-full" style={{ height }}>
+      <div ref={elementRef} className="absolute inset-0" />
+    </div>
+  );
 }
