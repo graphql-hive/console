@@ -1,3 +1,6 @@
+# pnpm 10 silently ignores a failed patch whose key has no version; fail the install instead.
+ignorePatchFailures: false
+
 packages:
   - packages/internal/*
   - packages/services/demo/*
