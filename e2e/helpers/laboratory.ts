@@ -16,6 +16,7 @@ export type LaboratoryHelper = {
   tabs(): Locator;
   activeTab(): Locator;
   addOperationTab(): Promise<void>;
+  activateTab(name: string): Promise<void>;
   closeActiveTab(): Promise<void>;
   openCollectionsPanel(): Promise<void>;
   addCollection(name: string): Promise<void>;
@@ -86,7 +87,7 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
     page.getByRole('tablist').filter({ has: page.getByRole('tab', { name: 'Variables' }) });
 
   const openSettingsMenuItem = async (name: string) => {
-    await lab().getByRole('button', { name: 'Settings' }).click();
+    await lab().getByRole('button', { name: 'Settings', exact: true }).click();
     await page.getByRole('menuitem', { name }).click();
   };
 
@@ -127,6 +128,11 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
       const count = await helper.tabs().count();
       await lab().getByRole('button', { name: 'Add operation' }).first().click();
       await expect(helper.tabs()).toHaveCount(count + 1);
+    },
+
+    async activateTab(name) {
+      await helper.tabs().filter({ hasText: name }).first().click();
+      await expect(helper.activeTab()).toContainText(name);
     },
 
     async closeActiveTab() {
