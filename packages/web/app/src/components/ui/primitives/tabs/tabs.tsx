@@ -151,7 +151,9 @@ const indicatorVariants = cva(
   },
 );
 
-const panelVariants = cva('outline-none', {
+// Base UI keeps the outgoing panel mounted until its exit transition ends, which without an
+// animation is still a frame or so of both panels stacked, so hide it the moment it starts ending.
+const panelVariants = cva('outline-none data-[ending-style]:hidden', {
   variants: {
     orientation: {
       horizontal: 'pt-4',

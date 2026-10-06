@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@base-ui/react": "^1.1.0",
+    "@base-ui/react": "1.8.0",
     "@date-fns/utc": "catalog:",
     "@fastify/cors": "catalog:",
     "@fastify/static": "10.1.2",
