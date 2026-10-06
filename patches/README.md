@@ -46,7 +46,9 @@ Returns the last result instead of throwing when one query string holds several 
 60 of the 130 migrations bundle statements this way. Upstream refused a configuration flag for it
 (gajus/slonik#769).
 
-Retire by rewriting those migrations to one statement per query, then delete the hunk.
+Kept on purpose. The hunk is one line and has needed one re-cut since the slonik 46 upgrade (#7897).
+The only way to retire it is rewriting those 60 migrations, which costs more than the patch ever
+will.
 
 ## `eslint@8.57.1.patch`
 
