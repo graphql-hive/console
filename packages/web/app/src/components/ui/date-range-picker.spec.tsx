@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { formatDateToString } from '@/lib/date-math';
 import { UTCDate } from '@date-fns/utc';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { DateRangePicker, presetLast7Days } from './date-range-picker';
 
 describe('DateRangePicker', () => {
@@ -87,5 +87,19 @@ describe('DateRangePicker', () => {
       expect(screen.queryByText(/Must start on or after/)).toBeNull();
       expect(apply().disabled).toBe(false);
     });
+  });
+
+  it('fills both inputs from a two-click range in the calendar', async () => {
+    render(<DateRangePicker selectedRange={presetLast7Days.range} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+    fireEvent.click((await screen.findAllByRole('button', { name: 'Pick a date' }))[0]);
+    // The first grid is last month, so both days are in the past and selectable.
+    const grid = (await screen.findAllByRole('grid'))[0];
+    fireEvent.click(within(grid).getByText('10'));
+    fireEvent.click(within(grid).getByText('15'));
+    const from = screen.getByLabelText('From') as HTMLInputElement;
+    const to = screen.getByLabelText('To') as HTMLInputElement;
+    await waitFor(() => expect(from.value).toMatch(/-10 00:00$/));
+    expect(to.value).toMatch(/-15 23:59$/);
   });
 });

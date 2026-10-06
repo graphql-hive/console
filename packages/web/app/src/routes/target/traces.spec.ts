@@ -22,7 +22,6 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
-vi.mock('react-virtualized-auto-sizer', () => import('@/lib/testing/mocks/auto-sizer'));
 vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
 vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 
