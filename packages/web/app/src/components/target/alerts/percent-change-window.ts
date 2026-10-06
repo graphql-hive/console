@@ -7,9 +7,7 @@ export function percentChangeWindowFits(
   timeWindowMinutes: number,
   retentionInDays?: number,
 ): boolean {
-  return (
-    retentionInDays === undefined || timeWindowMinutes * 2 <= retentionInDays * DAY_IN_MINUTES
-  );
+  return retentionInDays === undefined || timeWindowMinutes * 2 <= retentionInDays * DAY_IN_MINUTES;
 }
 
 // Why a window cannot be picked: the option's tooltip and the message under the field.

@@ -40,7 +40,12 @@ describe('buildAlertFormSchema', () => {
   it('checks the window before a value is entered', () => {
     expect(
       rangeIssues(
-        { ...filled, thresholdValue: '', thresholdType: 'PERCENTAGE_CHANGE', timeWindowMinutes: '10080' },
+        {
+          ...filled,
+          thresholdValue: '',
+          thresholdType: 'PERCENTAGE_CHANGE',
+          timeWindowMinutes: '10080',
+        },
         7,
       ),
     ).toHaveLength(1);
