@@ -401,24 +401,28 @@ function useLaboratoryState() {
 
   const [, mutateCreate] = useMutation(CreateOperationMutation);
 
-  const createOperation = useMemo(
-    () =>
-      throttle((collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
-        void mutateCreate({
-          selector: {
-            targetSlug,
-            organizationSlug,
-            projectSlug,
-          },
-          input: {
-            collectionId: collection.id,
-            name: operation.name,
-            query: operation.query,
-            variables: operation.variables,
-            headers: operation.headers,
-          },
-        });
-      }, 1000),
+  // Not throttled: the lab adopts the stored id this resolves with.
+  const createOperation = useCallback(
+    async (collection: LaboratoryCollection, operation: LaboratoryCollectionOperation) => {
+      const result = await mutateCreate({
+        selector: {
+          targetSlug,
+          organizationSlug,
+          projectSlug,
+        },
+        input: {
+          collectionId: collection.id,
+          name: operation.name,
+          query: operation.query,
+          variables: operation.variables,
+          headers: operation.headers,
+        },
+      });
+
+      const id = result.data?.createOperationInDocumentCollection.ok?.operation.id;
+
+      return id ? { id } : undefined;
+    },
     [mutateCreate, targetSlug, organizationSlug, projectSlug],
   );
 
@@ -457,21 +461,24 @@ function useLaboratoryState() {
 
   const [, mutateAddCollection] = useMutation(CreateCollectionMutation);
 
-  const addCollection = useMemo(
-    () =>
-      throttle((collection: LaboratoryCollection) => {
-        void mutateAddCollection({
-          selector: {
-            targetSlug,
-            organizationSlug,
-            projectSlug,
-          },
-          input: {
-            name: collection.name,
-            description: collection.description,
-          },
-        });
-      }, 1000),
+  const addCollection = useCallback(
+    async (collection: LaboratoryCollection) => {
+      const result = await mutateAddCollection({
+        selector: {
+          targetSlug,
+          organizationSlug,
+          projectSlug,
+        },
+        input: {
+          name: collection.name,
+          description: collection.description,
+        },
+      });
+
+      const id = result.data?.createDocumentCollection.ok?.collection.id;
+
+      return id ? { id } : undefined;
+    },
     [mutateAddCollection, targetSlug, organizationSlug, projectSlug],
   );
 
@@ -640,9 +647,7 @@ function useLaboratoryState() {
     onCollectionOperationCreate: (
       collection: LaboratoryCollection,
       operation: LaboratoryCollectionOperation,
-    ) => {
-      createOperation(collection, operation);
-    },
+    ) => createOperation(collection, operation),
     onCollectionOperationUpdate: (
       collection: LaboratoryCollection,
       operation: LaboratoryCollectionOperation,
@@ -658,9 +663,7 @@ function useLaboratoryState() {
     onCollectionDelete: (collection: LaboratoryCollection) => {
       deleteCollection(collection);
     },
-    onCollectionCreate: (collection: LaboratoryCollection) => {
-      addCollection(collection);
-    },
+    onCollectionCreate: (collection: LaboratoryCollection) => addCollection(collection),
     onCollectionUpdate: (collection: LaboratoryCollection) => {
       updateCollection(collection);
     },
