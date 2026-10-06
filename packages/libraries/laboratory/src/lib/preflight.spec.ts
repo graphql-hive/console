@@ -336,6 +336,14 @@ describe('the generated worker source', () => {
     );
   });
 
+  it('hands the script null for an empty prompt answer', async () => {
+    const posted = await runWorkerSource('console.log(await lab.prompt("Noun"));', {
+      answerPrompt: () => '',
+    });
+
+    expect(posted).toContainEqual(expect.objectContaining({ type: 'log', message: ['null'] }));
+  });
+
   it('exposes CryptoJS on lab and as a bare name', async () => {
     const posted = await runWorkerSource(
       'console.log(typeof lab.CryptoJS.SHA256, typeof CryptoJS.SHA256);',
