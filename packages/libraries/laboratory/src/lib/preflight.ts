@@ -353,6 +353,7 @@ export async function runIsolatedLabScript(
               const isValidEnvValue = ${isValidEnvValue.toString()};
 
               const lab = Object.freeze({
+                CryptoJS,
                 environment: {
                   get: (key) => env.variables[key],
                   set: (key, value) => {

@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { createHash } from 'node:crypto';
 import { act, renderHook } from '@testing-library/react';
 import {
   isValidEnvValue,
@@ -168,7 +169,12 @@ describe('isValidEnvValue', () => {
 // generated worker source. A ReferenceError in it silently costs a run: the script's failure is
 // swallowed, no result is posted, and the lab waits for the timeout.
 describe('the generated worker source', () => {
-  const runWorkerSource = async (script: string) => {
+  const runWorkerSource = async (
+    script: string,
+    options: {
+      answerPrompt?: (request: { title: string; defaultValue?: string }) => string | null;
+    } = {},
+  ) => {
     let workerSource = '';
     URL.createObjectURL = vi.fn((blob: Blob) => {
       void blob.text().then(text => (workerSource = text));
@@ -180,8 +186,28 @@ describe('the generated worker source', () => {
 
     const posted: any[] = [];
     const self: Record<string, any> = {
-      postMessage: (message: any) => posted.push(message),
-      console: globalThis.console,
+      postMessage: (message: any) => {
+        posted.push(message);
+
+        // The main thread answers on a later task, while the script is parked on its await.
+        if (message.type === 'prompt' && options.answerPrompt) {
+          setTimeout(() => {
+            void self.onmessage({
+              data: { type: 'prompt:result', value: options.answerPrompt?.(message) },
+            });
+          }, 0);
+        }
+      },
+      // The script runs in an AsyncFunction, which sees the real global scope rather than this
+      // fake `self`. In a worker the two are the same object, so the console the source installs
+      // on `self` has to become the global one or the script's logs never reach postMessage.
+      // `afterEach` unstubs it.
+      get console() {
+        return globalThis.console;
+      },
+      set console(value) {
+        vi.stubGlobal('console', value);
+      },
     };
 
     // In a worker `self` is the global scope, so what the source hangs off it — CryptoJS, the
@@ -218,6 +244,52 @@ describe('the generated worker source', () => {
     expect(posted).toContainEqual(
       expect.objectContaining({ type: 'result', env: { variables: {} } }),
     );
+  });
+
+  it('exposes CryptoJS on lab and as a bare name', async () => {
+    const posted = await runWorkerSource(
+      'console.log(typeof lab.CryptoJS.SHA256, typeof CryptoJS.SHA256);',
+    );
+
+    expect(posted).toContainEqual(
+      expect.objectContaining({ type: 'log', message: ['function', 'function'] }),
+    );
+  });
+
+  // The same saved script runs on both laboratory tabs, so what worked against the GraphiQL
+  // worker has to keep working here.
+  it('runs a script written for the GraphiQL tab', async () => {
+    const script = [
+      "console.log('preflight worker is running');",
+      "lab.environment.set('ran-at', new Date().toISOString());",
+      "console.info('ran-at =', lab.environment.get('ran-at'));",
+      "const digest = lab.CryptoJS.SHA256('hive').toString();",
+      "console.info('sha256(hive) =', digest);",
+      "lab.request.headers.set('x-preflight-test', digest.slice(0, 8));",
+      "const answer = await lab.prompt('Type anything to confirm the prompt bridge works', 'ok');",
+      "console.warn('prompt returned:', answer);",
+    ].join('\n');
+
+    const posted = await runWorkerSource(script, { answerPrompt: () => 'ok' });
+
+    const digest = createHash('sha256').update('hive').digest('hex');
+    const result = posted.find(message => message.type === 'result');
+    expect(result.error).toBeUndefined();
+    expect(Date.parse(result.env.variables['ran-at'])).not.toBeNaN();
+    expect(result.headers).toEqual({ 'x-preflight-test': digest.slice(0, 8) });
+
+    expect(posted).toContainEqual(
+      expect.objectContaining({
+        type: 'prompt',
+        title: 'Type anything to confirm the prompt bridge works',
+        defaultValue: 'ok',
+      }),
+    );
+
+    const messages = posted.filter(message => message.type === 'log').map(m => m.message);
+    expect(messages).toContainEqual(['preflight worker is running']);
+    expect(messages).toContainEqual(['sha256(hive) =', digest]);
+    expect(messages).toContainEqual(['prompt returned:', 'ok']);
   });
 });
 
