@@ -64,14 +64,14 @@ export function prepareEnvironment(input: {
         replicas: isProduction ? 6 : isStaging ? 3 : 1,
       },
       usageService: {
-        replicas: isProduction ? 12 : isStaging ? 3 : 1,
+        replicas: isProduction ? 18 : isStaging ? 3 : 1,
         cpuMin: isProduction || isStaging ? '200m' : '100m',
         cpuMax: isProduction || isStaging ? '1000m' : '100m',
         memory:
           isProduction || isStaging
             ? {
                 min: '2000Mi',
-                max: '2000Mi',
+                max: '2500Mi',
               }
             : {
                 min: '200Mi',

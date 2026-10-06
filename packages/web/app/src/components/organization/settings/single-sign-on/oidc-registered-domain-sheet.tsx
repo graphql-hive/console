@@ -240,7 +240,7 @@ export function OIDCRegisteredDomainSheet(props: {
     <>
       <Stepper.StepperProvider
         variant="horizontal"
-        initialStep={
+        defaultStep={
           domain ? (domain.verifiedAt ? 'step-3-complete' : 'step-2-challenge') : 'step-1-general'
         }
       >
@@ -255,7 +255,7 @@ export function OIDCRegisteredDomainSheet(props: {
                 {domain?.domainName && <span className="ml-3 font-mono">{domain?.domainName}</span>}
               </>
             }
-            footer={stepper.switch({
+            footer={stepper.match({
               'step-1-general': () => (
                 <>
                   <Button variant="outline" onClick={props.onClose}>
@@ -289,7 +289,7 @@ export function OIDCRegisteredDomainSheet(props: {
                     <Button
                       data-button-next-complete
                       variant="primary"
-                      onClick={() => onVerifyDomain(() => stepper.goTo('step-3-complete'))}
+                      onClick={() => onVerifyDomain(() => void stepper.goTo('step-3-complete'))}
                       disabled={
                         verifyDomainMutationState.fetching ||
                         deleteDomainMutationState.fetching ||
@@ -321,14 +321,14 @@ export function OIDCRegisteredDomainSheet(props: {
           >
             {isInStepperProcess && (
               <Stepper.StepperNavigation className="pb-4">
-                {stepper.all.map(step => (
+                {stepper.steps.map(step => (
                   <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
                     <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
                   </Stepper.StepperStep>
                 ))}
               </Stepper.StepperNavigation>
             )}
-            {stepper.switch({
+            {stepper.match({
               'step-1-general': () => <RegisterDomainForm form={form} onSubmit={onCreateDomain} />,
               'step-2-challenge': () => (
                 <>
