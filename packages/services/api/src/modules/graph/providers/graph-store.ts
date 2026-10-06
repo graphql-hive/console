@@ -1,6 +1,13 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
+import {
+  decodeCreatedAtAndUUIDIdBasedCursor,
+  encodeCreatedAtAndUUIDIdBasedCursor,
+} from '@hive/storage';
+import { batch } from '../../../shared/helpers';
+import type { SchemaVersion } from '../../schema/providers/schema-version-store';
 import { Logger } from '../../shared/providers/logger';
 
 const ContractGraphConfigModel = z.object({
@@ -33,7 +40,7 @@ const ContractGraphModel = GraphSharedModel.extend({
   sourceGraphId: z.string(),
 });
 
-type ContractGraph = z.TypeOf<typeof ContractGraphModel>;
+export type ContractGraph = z.TypeOf<typeof ContractGraphModel>;
 
 const GraphModel = z.discriminatedUnion('type', [BaseGraphModel, ContractGraphModel]);
 
@@ -108,47 +115,198 @@ export class GraphStore {
       .then(GraphModel.parse);
   }
 
-  async findGraphForTargetIdByName(targetId: string, graphName: string): Promise<Graph | null> {
-    this.logger.debug(
-      'find graph by target id and name (targetId=%s, graphName=%s)',
-      targetId,
-      graphName,
+  private findGraphForTargetIdByNameBatched = batch<
+    { targetId: string; graphName: string },
+    Graph | null
+  >(async args => {
+    this.logger.debug('find graphs by target ids and names (args=%o)', args);
+
+    const graphs = await this.pg
+      .any(
+        psql`
+        SELECT
+          ${graphFields}
+        FROM
+          "graphs"
+        WHERE
+          ("target_id", "name") IN (
+            SELECT * FROM ${psql.unnest(
+              args.map(arg => [arg.targetId, arg.graphName]),
+              ['uuid', 'text'],
+            )}
+          )
+      `,
+      )
+      .then(z.array(GraphModel).parse);
+
+    const graphByTargetIdAndName = new Map(
+      graphs.map(graph => [`${graph.targetId}:${graph.name}`, graph]),
     );
 
-    const query = psql`
+    return args.map(arg => graphByTargetIdAndName.get(`${arg.targetId}:${arg.graphName}`) ?? null);
+  });
+
+  findGraphForTargetIdByName(targetId: string, graphName: string): Promise<Graph | null> {
+    return this.findGraphForTargetIdByNameBatched({ targetId, graphName });
+  }
+
+  async findGraphForSchemaVersion(schemaVersion: SchemaVersion): Promise<Graph | null> {
+    const query = psql`/* findGraphForSchemaVersion */
       SELECT
         ${graphFields}
       FROM
         "graphs"
       WHERE
-        "target_id" = ${targetId}
-        AND "name" = ${graphName}
+        ${
+          schemaVersion.graphId
+            ? psql`"id" = ${schemaVersion.graphId}`
+            : /** If `graphId` is null we can find the relevant graph by a legacy lookup. */
+              psql`
+                "target_id" = ${schemaVersion.targetId}
+                AND "type" = 'BASE'
+                AND "is_backfilled" = TRUE
+              `
+        }
     `;
 
-    return this.pg.maybeOne(query).then(GraphModel.nullable().parse);
+    return await this.pg.maybeOne(query).then(GraphModel.nullable().parse);
   }
 
-  async deleteGraphByTargetIdAndName(
-    targetId: string,
-    graphName: string,
-    trx: CommonQueryMethods = this.pg,
-  ): Promise<void> {
-    this.logger.debug(
-      'delete graph by target id and name (targetId=%s, graphName=%s)',
-      targetId,
-      graphName,
-    );
+  /**
+   * Every target owns a `default` graph (created with the target, backfilled for older ones),
+   * so a missing one is a data-integrity error rather than a lookup miss.
+   */
+  async getDefaultGraphForTargetId(targetId: string): Promise<Graph> {
+    const graph = await this.findGraphForTargetIdByNameBatched({ targetId, graphName: 'default' });
+    invariant(graph, `No graph with name 'default' exists. (targetId=${targetId})`);
+    return graph;
+  }
+
+  async findContractGraphById(id: string): Promise<ContractGraph | null> {
+    const record = await this.pg.maybeOne(psql`
+      SELECT
+        ${graphFields}
+      FROM
+        "graphs"
+      WHERE
+        "id" = ${id}
+        AND "type" = 'CONTRACT'
+    `);
+
+    return record ? ContractGraphModel.parse(record) : null;
+  }
+
+  async getPaginatedContractGraphsForGraph(
+    graph: Graph,
+    args: {
+      first: number | null;
+      cursor: string | null;
+    },
+  ) {
+    const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+    const cursor = args.cursor ? decodeCreatedAtAndUUIDIdBasedCursor(args.cursor) : null;
+    const records = await this.pg.any(psql`
+      SELECT
+        ${graphFields}
+      FROM
+        "graphs"
+      WHERE
+        "id" = ${graph.id}
+        AND "type" = 'CONTRACT'
+        ${
+          cursor
+            ? psql`
+                AND (
+                  ("created_at" = ${cursor.createdAt} AND "id" < ${cursor.id})
+                  OR "created_at" < ${cursor.createdAt}
+                )
+              `
+            : psql``
+        }
+      ORDER BY
+        "created_at" DESC,
+        "id" DESC
+      LIMIT ${limit + 1}
+    `);
+
+    const graphs = records.map(record => ContractGraphModel.parse(record));
+    const edges = graphs.slice(0, limit).map(node => ({
+      node,
+      get cursor() {
+        return encodeCreatedAtAndUUIDIdBasedCursor(node);
+      },
+    }));
+
+    return {
+      edges,
+      pageInfo: {
+        hasNextPage: graphs.length > limit,
+        hasPreviousPage: cursor !== null,
+        get endCursor() {
+          return edges[edges.length - 1]?.cursor ?? '';
+        },
+        get startCursor() {
+          return edges[0]?.cursor ?? '';
+        },
+      },
+    };
+  }
+
+  async deleteGraph(graph: Graph, trx: CommonQueryMethods = this.pg): Promise<void> {
+    this.logger.debug('delete graph (graphId=%s)', graph.id);
 
     const query = psql`
       DELETE
       FROM
         "graphs"
       WHERE
-        "target_id" = ${targetId}
-        AND "name" = ${graphName}
+        "id" = ${graph.id}
     `;
 
     await trx.query(query);
+  }
+
+  /**
+   * Find all contract graphs for a given base graph.
+   * Returns a map whose keys is the Graphs ID.
+   */
+  async findContractGraphsForGraph(baseGraph: Graph): Promise<Map<string, ContractGraph>> {
+    const query = psql`/* findContractGraphsForBaseGraph*/
+      SELECT
+        ${graphFields}
+      FROM
+        "graphs"
+      WHERE
+        "source_graph_id" = ${baseGraph.id}
+        AND "type" = 'CONTRACT'
+      ORDER BY
+        "id" DESC
+    `;
+
+    const records = await this.pg.any(query);
+    const graphsById = new Map<string, ContractGraph>();
+    for (const record of records) {
+      const graph = ContractGraphModel.parse(record);
+      graphsById.set(graph.id, graph);
+    }
+
+    return graphsById;
+  }
+
+  async findGraphsForTargetId(targetId: string) {
+    const query = psql`/* findContractGraphsForBaseGraph*/
+      SELECT
+        ${graphFields}
+      FROM
+        "graphs"
+      WHERE
+        "target_id" = ${targetId}
+      ORDER BY
+        "id" DESC
+    `;
+
+    const records = await this.pg.any(query);
+    return z.array(GraphModel).parse(records);
   }
 }
 

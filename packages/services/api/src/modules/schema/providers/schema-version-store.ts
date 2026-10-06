@@ -40,6 +40,11 @@ const GraphMetadataModel = z.discriminatedUnion('type', [
 
 type GraphMetadata = z.TypeOf<typeof GraphMetadataModel>;
 
+type GithubMeta = null | {
+  sha: string;
+  repository: string;
+};
+
 @Injectable({
   scope: Scope.Operation,
   global: true,
@@ -57,6 +62,8 @@ export class SchemaVersionStore {
   private async insertSchemaVersion(
     trx: CommonQueryMethods,
     args: {
+      id?: string;
+      createdAt?: string;
       isComposable: boolean;
       targetId: string;
       origin: SchemaVersionOrigin;
@@ -74,19 +81,16 @@ export class SchemaVersionStore {
       > | null;
       metadataAttributes: Record<string, string[]> | null;
       hasContractCompositionErrors: boolean;
-      github: null | {
-        sha: string;
-        repository: string;
-      };
+      github: GithubMeta;
       meta: SchemaVersionMeta | null;
       conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
       /** The UUID of the graph this schema version belongs to */
-      graphId: string | null;
+      graphId: string;
       /**
        * Additional metadata about the graph
        * Since graphs can be deleted but its version could still be referenced somewhere else, we store that information here.
        */
-      graphMetadata: GraphMetadata | null;
+      graphMetadata: GraphMetadata;
       /** Contracts have a direct relationship to the parent schema version that caused it. */
       sourceSchemaVersionId: string | null;
     },
@@ -94,6 +98,8 @@ export class SchemaVersionStore {
     const query = psql`/* insertSchemaVersion */
       INSERT INTO schema_versions
         (
+          "id",
+          "created_at",
           "record_version",
           "is_composable",
           "target_id",
@@ -120,6 +126,8 @@ export class SchemaVersionStore {
         )
       VALUES
         (
+          ${args.id ?? psql`uuid_generate_v4()`},
+          ${args.createdAt ?? psql`NOW()`},
           '2024-01-10',
           ${args.isComposable},
           ${args.targetId},
@@ -141,7 +149,7 @@ export class SchemaVersionStore {
           ${psql.jsonb(SchemaVersionOriginModel.parse(args.origin))},
           ${psql.jsonbOrNull(SchemaVersionMetaModel.nullable().parse(args.meta))},
           ${args.graphId},
-          ${psql.jsonbOrNull(GraphMetadataModel.nullable().parse(args.graphMetadata))},
+          ${psql.jsonb(GraphMetadataModel.parse(args.graphMetadata))},
           ${args.sourceSchemaVersionId}
         )
       RETURNING
@@ -240,9 +248,21 @@ export class SchemaVersionStore {
       compositeSchemaSDL: string | null;
       supergraphSDL: string | null;
       schemaCompositionErrors: Array<SchemaCompositionError> | null;
+      changes: Array<SchemaChangeType> | null;
+      supergraphChanges: Array<SchemaChangeType> | null;
+      previousSchemaVersionId: string | null;
+      diffSchemaVersionId: string | null;
+      graph: Graph;
+      origin: SchemaVersionOrigin;
+      github: GithubMeta;
+      conditionalBreakingChangeMetadata: ConditionalBreakingChangeMetadata | null;
+      meta: SchemaVersionMeta | null;
     },
-  ): Promise<string> {
-    const id = await trx.oneFirst(psql`/* insertSchemaVersionContract */
+  ): Promise<void> {
+    // write to "contract_versions" for rollback capabilities
+    const contractVersion = await trx
+      .one(
+        psql`/* insertSchemaVersionContract */
       INSERT INTO "contract_versions" (
         "schema_version_id"
         , "contract_id"
@@ -254,16 +274,62 @@ export class SchemaVersionStore {
      VALUES (
         ${args.schemaVersionId}
         , ${args.contractId}
-        , ${args.contractName}
+        , ${args.contractName.replace(/^default\//, '')}
         , ${psql.jsonbOrNull(args.schemaCompositionErrors)}
         , ${args.compositeSchemaSDL}
         , ${args.supergraphSDL}
       )
       RETURNING
         "id"
-    `);
+        , to_json("created_at") AS "createdAt"
+    `,
+      )
+      .then(z.object({ id: z.string().uuid(), createdAt: z.string() }).parse);
 
-    return z.string().parse(id);
+    await this.insertSchemaVersionContractChanges(trx, {
+      schemaVersionContractId: contractVersion.id,
+      changes: args.changes,
+    });
+
+    // write to "schema_versions" so we can start serving newer contract versions from that table
+
+    const version = await this.insertSchemaVersion(trx, {
+      // make sure they have the same id
+      id: contractVersion.id,
+      // and same created at date
+      createdAt: contractVersion.createdAt,
+      sourceSchemaVersionId: args.schemaVersionId,
+      graphMetadata: {
+        id: args.graph.id,
+        name: args.graph.name,
+        type: 'contract',
+      },
+      isComposable: !args.schemaCompositionErrors?.length,
+      targetId: args.graph.targetId,
+      supergraphSDL: args.supergraphSDL,
+      compositeSchemaSDL: args.compositeSchemaSDL,
+      graphId: args.graph.id,
+      hasContractCompositionErrors: false,
+      supergraphChanges: args.supergraphChanges,
+      meta: args.meta,
+      conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+      github: args.github,
+      origin: args.origin,
+      schemaCompositionErrors: args.schemaCompositionErrors,
+      previousSchemaVersionId: args.previousSchemaVersionId,
+      diffSchemaVersionId: args.diffSchemaVersionId,
+      schemaMetadata: null,
+      baseSchema: null,
+      tags: null,
+      metadataAttributes: null,
+    });
+
+    if (args.changes?.length) {
+      await this.insertSchemaVersionChanges(trx, {
+        changes: args.changes,
+        versionId: version.id,
+      });
+    }
   }
 
   private async insertSchemaVersionContractChanges(
@@ -325,7 +391,6 @@ export class SchemaVersionStore {
       commit: string;
       existingSchemaLogs: Array<{ id: string; serviceName: string | null }>;
       base_schema: string | null;
-      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType>;
       previousSchemaVersion: null | string;
       /** The ID of the previous schema log for the same service. */
@@ -343,7 +408,7 @@ export class SchemaVersionStore {
       organizationId: string;
       schemaRevisionId: string | null;
       revision: string | null;
-      graph: Graph | null;
+      graph: Pick<Graph, 'id' | 'name'>;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -403,32 +468,37 @@ export class SchemaVersionStore {
         schemaRevisionId: args.schemaRevisionId,
       });
 
+      const origin: SchemaVersionOriginPublish = {
+        type: 'publish',
+        revision: args.service ? null : args.revision,
+        services: args.service
+          ? [
+              {
+                name: args.service.name,
+                versionId: newLog.id,
+                revision: args.revision,
+              },
+            ]
+          : null,
+      };
+
+      const meta: SchemaVersionMeta = {
+        author: args.author,
+        commit: args.commit,
+      };
+
       // creates a new version
       const version = await this.insertSchemaVersion(trx, {
         isComposable: args.valid,
         targetId: args.targetId,
-        graphId: args.graph?.id ?? null,
-        graphMetadata: args.graph
-          ? {
-              id: args.graph.id,
-              name: args.graph.name,
-              type: 'default',
-            }
-          : null,
-        sourceSchemaVersionId: null,
-        origin: {
-          type: 'publish',
-          revision: args.service ? null : args.revision,
-          services: args.service
-            ? [
-                {
-                  name: args.service.name,
-                  versionId: newLog.id,
-                  revision: args.revision,
-                },
-              ]
-            : null,
+        graphId: args.graph.id,
+        graphMetadata: {
+          id: args.graph.id,
+          name: args.graph.name,
+          type: 'default',
         },
+        sourceSchemaVersionId: null,
+        origin,
         baseSchema: args.base_schema,
         previousSchemaVersionId: args.previousSchemaVersion,
         diffSchemaVersionId: args.diffSchemaVersionId,
@@ -437,10 +507,7 @@ export class SchemaVersionStore {
         supergraphChanges: args.supergraphChanges,
         schemaCompositionErrors: args.schemaCompositionErrors,
         github: args.github,
-        meta: {
-          author: args.author,
-          commit: args.commit,
-        },
+        meta,
         tags: args.tags,
         schemaMetadata: args.schemaMetadata,
         metadataAttributes: args.metadataAttributes,
@@ -485,21 +552,24 @@ export class SchemaVersionStore {
       });
 
       for (const contract of args.contracts ?? []) {
-        const schemaVersionContractId = await this.insertSchemaVersionContract(trx, {
+        await this.insertSchemaVersionContract(trx, {
           schemaVersionId: version.id,
+          changes: contract.changes,
           contractId: contract.contractId,
           contractName: contract.contractName,
           schemaCompositionErrors: contract.schemaCompositionErrors,
           compositeSchemaSDL: contract.compositeSchemaSDL,
           supergraphSDL: contract.supergraphSDL,
-        });
-        await this.insertSchemaVersionContractChanges(trx, {
-          schemaVersionContractId,
-          changes: contract.changes,
+          graph: contract.graph,
+          origin,
+          github: args.github,
+          supergraphChanges: contract.supergraphChanges,
+          conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+          diffSchemaVersionId: contract.diffSchemaVersionId,
+          previousSchemaVersionId: contract.previousSchemaVersionId,
+          meta,
         });
       }
-
-      await args.actionFn(version.id);
 
       return {
         version,
@@ -510,20 +580,18 @@ export class SchemaVersionStore {
     return output.version;
   }
 
-  async deleteSubgraphFromTarget(
-    target: Target,
+  async deleteSubgraphFromGraph(
+    graph: Graph,
     args: {
       service: {
         name: string;
         versionId: string;
       };
       composable: boolean;
-      actionFn(versionId: string): Promise<void>;
       changes: Array<SchemaChangeType> | null;
       diffSchemaVersionId: string | null;
       conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
       contracts: null | Array<CreateContractVersionInput>;
-      graph: Graph | null;
     } & (
       | {
           compositeSchemaSDL: null;
@@ -548,7 +616,7 @@ export class SchemaVersionStore {
         }
     ),
   ) {
-    return this.pg.transaction('deleteSubgraphFromTarget', async trx => {
+    return this.pg.transaction('deleteSubgraphFromGraph', async trx => {
       // fetch the latest version
       const latestVersion = await trx
         .maybeOne(
@@ -556,9 +624,24 @@ export class SchemaVersionStore {
           SELECT
             "id"
             , "base_schema" AS "baseSchema"
-          FROM "schema_versions"
-          WHERE "target_id" = ${target.id}
-          ORDER BY "created_at" DESC
+          FROM
+            "schema_versions"
+          WHERE
+            (
+              "graph_id" = ${graph.id}
+              ${
+                graph.isBackfilled
+                  ? psql`
+                    OR (
+                      "target_id" = ${graph.targetId}
+                      AND "graph_id" IS NULL
+                    )
+                  `
+                  : psql``
+              }
+            )
+          ORDER BY
+            "created_at" DESC
           LIMIT 1
         `,
         )
@@ -581,7 +664,7 @@ export class SchemaVersionStore {
               ${'system'}::text,
               ${'system'}::text,
               lower(${args.service.name}::text),
-              ${target.projectId},
+              ${graph.projectId},
               'DELETE'
             )
           RETURNING
@@ -602,14 +685,16 @@ export class SchemaVersionStore {
           }).parse,
         );
 
+      const origin: SchemaVersionOriginDelete = {
+        type: 'delete',
+        services: [{ name: args.service.name, versionId: args.service.versionId }],
+      };
+
       // creates a new version
       const newVersion = await this.insertSchemaVersion(trx, {
         isComposable: args.composable,
-        targetId: target.id,
-        origin: {
-          type: 'delete',
-          services: [{ name: args.service.name, versionId: args.service.versionId }],
-        },
+        targetId: graph.targetId,
+        origin,
         baseSchema: latestVersion.baseSchema,
         previousSchemaVersionId: latestVersion.id,
         diffSchemaVersionId: args.diffSchemaVersionId,
@@ -626,10 +711,8 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        graphId: args.graph?.id ?? null,
-        graphMetadata: args.graph
-          ? { id: args.graph.id, name: args.graph.name, type: 'default' }
-          : null,
+        graphId: graph.id,
+        graphMetadata: { id: graph.id, name: graph.name, type: 'default' },
         sourceSchemaVersionId: null,
       });
 
@@ -666,21 +749,24 @@ export class SchemaVersionStore {
       }
 
       for (const contract of args.contracts ?? []) {
-        const schemaVersionContractId = await this.insertSchemaVersionContract(trx, {
+        await this.insertSchemaVersionContract(trx, {
           schemaVersionId: newVersion.id,
           contractId: contract.contractId,
           contractName: contract.contractName,
           schemaCompositionErrors: contract.schemaCompositionErrors,
           compositeSchemaSDL: contract.compositeSchemaSDL,
           supergraphSDL: contract.supergraphSDL,
-        });
-        await this.insertSchemaVersionContractChanges(trx, {
-          schemaVersionContractId,
           changes: contract.changes,
+          graph: contract.graph,
+          origin,
+          github: null,
+          supergraphChanges: contract.supergraphChanges,
+          conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+          diffSchemaVersionId: contract.diffSchemaVersionId,
+          previousSchemaVersionId: contract.previousSchemaVersionId,
+          meta: null,
         });
       }
-
-      await args.actionFn(newVersion.id);
 
       return {
         kind: 'composite',
@@ -697,36 +783,48 @@ export class SchemaVersionStore {
     });
   }
 
-  async countSchemaVersionsOfProject(
+  async countSchemaVersionsOfDefaultGraphsInProject(
     project: Project,
     period: {
       from: Date;
       to: Date;
     } | null,
   ): Promise<number> {
-    if (period) {
-      const result = await this.pg
-        .maybeOne(
-          psql`/* countPeriodSchemaVersionsOfProject */
-            SELECT COUNT(*) as total FROM schema_versions as sv
-            LEFT JOIN targets as t ON (t.id = sv.target_id)
-            WHERE
-              t.project_id = ${project.id}
-              AND sv.created_at >= ${period.from.toISOString()}
-              AND sv.created_at < ${period.to.toISOString()}
-          `,
-        )
-        .then(z.object({ total: z.number() }).nullable().parse);
-      return result?.total ?? 0;
-    }
+    const periodFilter = period
+      ? psql`
+          AND sv.created_at >= ${period.from.toISOString()}
+          AND sv.created_at < ${period.to.toISOString()}
+        `
+      : psql``;
 
     const result = await this.pg
       .maybeOne(
-        psql`/* countSchemaVersionsOfProject */
-        SELECT COUNT(*) as total FROM schema_versions as sv
-        LEFT JOIN targets as t ON (t.id = sv.target_id)
-        WHERE t.project_id = ${project.id}
-      `,
+        psql`/* countPeriodSchemaVersionsOfProject */
+          SELECT
+            COUNT(*) as "total"
+          FROM
+            "schema_versions" as sv
+          INNER JOIN
+            "targets" as t ON (t."id" = sv."target_id")
+          WHERE
+            t."project_id" = ${project.id}
+            AND (
+              ${
+                /* Legacy Records */ psql`
+                  sv."graph_metadata" IS NULL
+                `
+              }
+              OR
+              ${
+                /* New "default" graph records */ psql`
+                (
+                  sv."graph_metadata"->>'name' = 'default'
+                  AND sv."graph_metadata"->>'type' = 'default'
+                )`
+              }
+            )
+            ${periodFilter}
+          `,
       )
       .then(z.object({ total: z.number() }).nullable().parse);
 
@@ -734,85 +832,108 @@ export class SchemaVersionStore {
   }
 
   async countSchemaVersionsOfTarget(
-    target: Target,
+    graph: Graph,
     period: {
       from: Date;
       to: Date;
     } | null,
   ): Promise<number> {
-    if (period) {
-      const result = await this.pg
-        .maybeOne(
-          psql`/* countPeriodSchemaVersionsOfTarget */
-            SELECT COUNT(*) as total FROM schema_versions
-            WHERE
-              target_id = ${target.id}
-              AND created_at >= ${period.from.toISOString()}
-              AND created_at < ${period.to.toISOString()}
-          `,
-        )
-        .then(z.object({ total: z.number() }).nullable().parse);
-      return result?.total ?? 0;
-    }
+    const graphFilter = psql`
+      (
+        "graph_id" = ${graph.id}
+         ${
+           graph.isBackfilled
+             ? psql`
+                 OR (
+                   "target_id" = ${graph.targetId}
+                   AND "graph_id" IS NULL
+                 )
+              `
+             : psql``
+         }
+      )
+    `;
+
+    const periodFilter = period
+      ? psql`
+          AND "created_at" >= ${period.from.toISOString()}
+          AND "created_at" < ${period.to.toISOString()}
+        `
+      : psql``;
 
     const result = await this.pg
       .maybeOne(
-        psql`/* countSchemaVersionsOfTarget */
-        SELECT COUNT(*) as total FROM schema_versions WHERE target_id = ${target.id}
-      `,
+        psql`/* countPeriodSchemaVersionsOfTarget */
+          SELECT
+            COUNT(*) as "total"
+          FROM
+            "schema_versions"
+          WHERE
+            ${graphFilter}
+            ${periodFilter}
+        `,
       )
       .then(z.object({ total: z.number() }).nullable().parse);
 
     return result?.total ?? 0;
   }
 
-  async anyVersionExistsForTarget(target: Target) {
+  async anyVersionExistsForGraph(graph: Graph) {
     return this.pg.exists(
       psql`/* hasSchema */
-        SELECT 1 FROM schema_versions as v WHERE v.target_id = ${target.id} LIMIT 1
-      `,
-    );
-  }
-
-  async getMaybeLatestValidSchemaVersion(target: Target): Promise<SchemaVersion | null> {
-    const version = await this.pg.maybeOne(
-      psql`/* getMaybeLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`sv.`)}
-        FROM schema_versions as sv
-        WHERE sv.target_id = ${target.id} AND sv.is_composable IS TRUE
-        ORDER BY sv.created_at DESC
+          1
+        FROM
+          "schema_versions" as "v"
+        WHERE
+          (
+            "v"."graph_id" = ${graph.id}
+            ${
+              graph.isBackfilled
+                ? psql`
+                  OR (
+                    "v"."target_id" = ${graph.targetId}
+                    AND "v"."graph_id" IS NULL
+                  )
+                `
+                : psql``
+            }
+          )
         LIMIT 1
       `,
     );
-
-    return SchemaVersionModel.nullable().parse(version);
   }
 
-  async getLatestValidSchemaVersionForTargetId(targetId: string): Promise<SchemaVersion> {
-    const version = await this.pg.maybeOne(
+  async getMaybeLatestValidSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion | null> {
+    let version = await this.pg.maybeOne(
       psql`/* getLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`sv.`)}
-        FROM schema_versions as sv
-        WHERE sv.target_id = ${targetId} AND sv.is_composable IS TRUE
-        ORDER BY sv.created_at DESC
+          ${schemaVersionSQLFields(psql`"sv".`)}
+        FROM
+          "schema_versions" as "sv"
+        WHERE
+          "sv"."graph_id" = ${graph.id}
+          AND "sv"."is_composable" IS TRUE
+        ORDER BY
+          "sv"."created_at" DESC
         LIMIT 1
       `,
     );
 
-    return SchemaVersionModel.parse(version);
-  }
+    if (!graph.isBackfilled || version) {
+      return SchemaVersionModel.nullable().parse(version);
+    }
 
-  async getMaybeLatestSchemaVersionForTargetId(targetId: string): Promise<SchemaVersion | null> {
-    const version = await this.pg.maybeOne(
-      psql`/* getMaybeLatestVersion */
+    version = await this.pg.maybeOne(
+      psql`/* getLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`sv.`)}
+          ${schemaVersionSQLFields(psql`"sv".`)}
         FROM
-          "schema_versions" AS "sv"
+          "schema_versions" as "sv"
         WHERE
-          "sv"."target_id" = ${targetId}
+          "sv"."target_id" = ${graph.targetId}
+          AND "sv"."is_composable" IS TRUE
+          AND "sv"."graph_id" IS NULL
         ORDER BY
           "sv"."created_at" DESC
         LIMIT 1
@@ -822,7 +943,67 @@ export class SchemaVersionStore {
     return SchemaVersionModel.nullable().parse(version);
   }
 
-  async getSchemaVersionBeforeSchemaVersion(schemaVersion: SchemaVersion, onlyComposable: boolean) {
+  async getLatestValidSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion> {
+    const version = await this.getMaybeLatestValidSchemaVersionForGraph(graph);
+    invariant(version, 'Expected version to exist.');
+    return version;
+  }
+
+  async getMaybeLatestSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion | null> {
+    let version = await this.pg.maybeOne(
+      psql`/* getMaybeLatestVersion */
+        SELECT
+          ${schemaVersionSQLFields(psql`sv.`)}
+        FROM
+          "schema_versions" AS "sv"
+        WHERE
+          "sv"."graph_id" = ${graph.id}
+        ORDER BY
+          "sv"."created_at" DESC
+        LIMIT 1
+      `,
+    );
+
+    if (version || !graph.isBackfilled) {
+      return SchemaVersionModel.nullable().parse(version);
+    }
+
+    version = await this.pg.maybeOne(
+      psql`/* getMaybeLatestVersion */
+        SELECT
+          ${schemaVersionSQLFields(psql`sv.`)}
+        FROM
+          "schema_versions" AS "sv"
+        WHERE
+          "sv"."target_id" = ${graph.targetId}
+          AND "sv"."graph_id" IS NULL
+        ORDER BY
+          "sv"."created_at" DESC
+        LIMIT 1
+      `,
+    );
+
+    return SchemaVersionModel.nullable().parse(version);
+  }
+
+  async getSchemaVersionBeforeSchemaVersion(
+    schemaVersion: SchemaVersion,
+    /** whether to retrieve the previous composable version or not. */
+    onlyComposable: boolean,
+  ) {
+    // shortcut without an index scan
+    if (schemaVersion.recordVersion === '2024-01-10') {
+      if (onlyComposable && schemaVersion.diffSchemaVersionId) {
+        return this.getSchemaVersionById(schemaVersion.diffSchemaVersionId);
+      }
+
+      if (!onlyComposable && schemaVersion.previousSchemaVersionId) {
+        return this.getSchemaVersionById(schemaVersion.previousSchemaVersionId);
+      }
+
+      return null;
+    }
+
     const version = await this.pg.maybeOne(
       psql`/* getVersionBeforeVersionId */
         SELECT
@@ -937,6 +1118,27 @@ export class SchemaVersionStore {
       .then(SchemaPushLogModel.nullable().parse);
   }
 
+  async getSchemaVersionForGraphById(
+    graph: Graph,
+    schemaVersionId: string,
+  ): Promise<SchemaVersion | null> {
+    const schemaVersion = await this.getSchemaVersionById(schemaVersionId);
+
+    if (
+      schemaVersion &&
+      // Graph ID match
+      (schemaVersion.graphId === graph.id ||
+        // legacy match
+        (graph.isBackfilled &&
+          schemaVersion.graphId === null &&
+          schemaVersion.targetId === graph.targetId))
+    ) {
+      return schemaVersion;
+    }
+
+    return null;
+  }
+
   async getSchemaVersionById(schemaVersionId: string) {
     const result = await this.pg.maybeOne(psql`/* getMaybeVersion */
       SELECT
@@ -950,78 +1152,92 @@ export class SchemaVersionStore {
     return SchemaVersionModel.nullable().parse(result);
   }
 
-  async getSchemaVersionForTargetById(
-    target: Target,
-    schemaVersionId: string,
-  ): Promise<SchemaVersion | null> {
-    const schemaVersion = await this.getSchemaVersionById(schemaVersionId);
-
-    if (schemaVersion?.targetId !== target.id) {
-      return null;
-    }
-
-    return schemaVersion;
-  }
-
-  async getPaginatedSchemaVersionsForTarget(
-    target: Target,
+  /**
+   * Retrieve the paginated schema versions for a graph.
+   * Handles legacy schema version records that do not have a `graph_id` populated.
+   */
+  async getPaginatedSchemaVersionsForGraph(
+    graph: Graph,
     args: {
       first: number | null;
-      cursor: string | null;
+      cursor: null | string;
     },
   ) {
-    let cursor: null | {
-      createdAt: string;
-      id: string;
-    } = null;
-
     const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+    const cursor = args.cursor ? decodeCreatedAtAndUUIDIdBasedCursor(args.cursor) : null;
 
-    if (args.cursor) {
-      cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
-    }
+    const cursorCondition = cursor
+      ? psql`
+        AND (
+          (
+            "created_at" = ${cursor.createdAt}
+            AND "id" < ${cursor.id}
+          )
+          OR "created_at" < ${cursor.createdAt}
+        )
+      `
+      : psql``;
 
-    const query = psql`/* getPaginatedSchemaVersionsForTargetId */
+    const graphVersions = psql`
       SELECT
-        ${schemaVersionSQLFields()}
+        *
       FROM
         "schema_versions"
       WHERE
-        "target_id" = ${target.id}
-        ${
-          cursor
-            ? psql`
-              AND (
-                (
-                  "created_at" = ${cursor.createdAt}
-                  AND "id" < ${cursor.id}
-                )
-                OR "created_at" < ${cursor.createdAt}
-              )
-            `
-            : psql``
-        }
+        "graph_id" = ${graph.id}
+        ${cursorCondition}
       ORDER BY
         "created_at" DESC
         , "id" DESC
       LIMIT ${limit + 1}
     `;
 
-    const result = await this.pg.any(query);
+    // Each branch is served by its own (graph_id | target_id, created_at, id) index, so the union
+    // reads at most 2 * (limit + 1) rows instead of sorting every version of the target.
+    const result = await this.pg.any(psql`/* getPaginatedSchemaVersionsForGraph */
+      SELECT
+        ${schemaVersionSQLFields()}
+      FROM (
+        ${
+          graph.isBackfilled
+            ? psql`
+              (${graphVersions})
+              UNION ALL
+              (
+                SELECT
+                  *
+                FROM
+                  "schema_versions"
+                WHERE
+                  "target_id" = ${graph.targetId}
+                  AND "graph_id" IS NULL
+                  ${cursorCondition}
+                ORDER BY
+                  "created_at" DESC
+                  , "id" DESC
+                LIMIT ${limit + 1}
+              )
+            `
+            : graphVersions
+        }
+      ) AS "schema_versions"
+      ORDER BY
+        "created_at" DESC
+        , "id" DESC
+      LIMIT ${limit + 1}
+    `);
 
-    let edges = result.map(row => {
-      const node = SchemaVersionModel.parse(row);
+    let nodes = z.array(SchemaVersionModel).parse(result);
 
-      return {
-        node,
-        get cursor() {
-          return encodeCreatedAtAndUUIDIdBasedCursor(node);
-        },
-      };
-    });
+    const hasNextPage = nodes.length > limit;
+    nodes = nodes.slice(0, limit);
 
-    const hasNextPage = edges.length > limit;
-    edges = edges.slice(0, limit);
+    const edges = nodes.map(node => ({
+      node,
+      get cursor() {
+        return encodeCreatedAtAndUUIDIdBasedCursor(node);
+      },
+    }));
 
     return {
       edges,
@@ -1062,14 +1278,26 @@ export class SchemaVersionStore {
     return changes;
   }
 
-  async getSchemaVersionForTargetByCommit(target: Target, commit: string) {
+  async getSchemaVersionForGraphByCommit(graph: Graph, commit: string) {
     const record = await this.pg.maybeOne(psql`/* getSchemaVersionByCommit */
       SELECT
         ${schemaVersionSQLFields()}
       FROM
         "schema_versions"
       WHERE
-        "target_id" = ${target.id}
+        (
+          "graph_id" = ${graph.id}
+          ${
+            graph.isBackfilled
+              ? psql`
+                  OR (
+                    "target_id" = ${graph.targetId}
+                    AND "graph_id" IS NULL
+                  )
+                `
+              : psql``
+          }
+        )
         AND (
           "meta"->>'commit' = ${commit}
           OR "action_id" = ANY(
@@ -1078,7 +1306,7 @@ export class SchemaVersionStore {
             FROM
               "schema_log"
             WHERE
-              "schema_log"."project_id" = ${target.projectId}
+              "schema_log"."project_id" = ${graph.projectId}
               AND "schema_log"."commit" = ${commit}
             ORDER BY "schema_log"."created_at" DESC
           )
@@ -1387,7 +1615,7 @@ export class SchemaVersionStore {
     origin: {
       version: SchemaVersion;
       target: Target;
-      graph: Graph | null;
+      graph: Graph;
       /** Because of legacy schema versions we cannot rely on the value on the version itself. */
       publicSchemaSdl: string | null;
       /** Because of legacy schema versions we cannot rely on the value on the version itself. */
@@ -1395,7 +1623,7 @@ export class SchemaVersionStore {
     };
     target: {
       target: Target;
-      graph: Graph | null;
+      graph: Graph;
       latestVersion: SchemaVersion | null;
       latestValidVersion: SchemaVersion | null;
     };
@@ -1407,19 +1635,19 @@ export class SchemaVersionStore {
     conditionalBreakingChangeMetadata: null | ConditionalBreakingChangeMetadata;
   }) {
     return await this.pg.transaction('createPromotionSchemaVersion', async trx => {
+      const origin: SchemaVersionOriginPromotion = {
+        type: 'promotion',
+        source: {
+          schemaVersion: { id: args.origin.version.id },
+          target: { id: args.origin.target.id, name: args.origin.target.name },
+          graph: { id: args.origin.graph.id, name: args.origin.graph.name },
+        },
+      };
+
       const schemaVersion = await this.insertSchemaVersion(trx, {
         isComposable: args.origin.version.isComposable,
         targetId: args.target.target.id,
-        origin: {
-          type: 'promotion',
-          source: {
-            schemaVersion: { id: args.origin.version.id },
-            target: { id: args.origin.target.id, name: args.origin.target.name },
-            graph: args.origin.graph
-              ? { id: args.origin.graph.id, name: args.origin.graph.name }
-              : undefined,
-          },
-        },
+        origin,
         baseSchema: args.origin.version.baseSchema,
         previousSchemaVersionId: args.target.latestVersion?.id ?? null,
         diffSchemaVersionId: args.target.latestValidVersion?.id ?? null,
@@ -1435,10 +1663,8 @@ export class SchemaVersionStore {
         hasContractCompositionErrors:
           args.contracts?.some(c => c.schemaCompositionErrors != null) ?? false,
         conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
-        graphId: args.target.graph?.id ?? null,
-        graphMetadata: args.target.graph
-          ? { id: args.target.graph.id, name: args.target.graph.name, type: 'default' }
-          : null,
+        graphId: args.target.graph.id,
+        graphMetadata: { id: args.target.graph.id, name: args.target.graph.name, type: 'default' },
         sourceSchemaVersionId: null,
       });
 
@@ -1542,17 +1768,22 @@ export class SchemaVersionStore {
       }
 
       for (const contract of args.contracts ?? []) {
-        const schemaVersionContractId = await this.insertSchemaVersionContract(trx, {
+        await this.insertSchemaVersionContract(trx, {
           schemaVersionId: schemaVersion.id,
           contractId: contract.contractId,
           contractName: contract.contractName,
           schemaCompositionErrors: contract.schemaCompositionErrors,
           compositeSchemaSDL: contract.compositeSchemaSDL,
           supergraphSDL: contract.supergraphSDL,
-        });
-        await this.insertSchemaVersionContractChanges(trx, {
-          schemaVersionContractId,
           changes: contract.changes,
+          graph: contract.graph,
+          origin,
+          github: args.origin.version.github,
+          supergraphChanges: contract.supergraphChanges,
+          conditionalBreakingChangeMetadata: args.conditionalBreakingChangeMetadata,
+          diffSchemaVersionId: contract.diffSchemaVersionId,
+          previousSchemaVersionId: contract.previousSchemaVersionId,
+          meta: args.meta,
         });
       }
 
@@ -1606,10 +1837,14 @@ const schemaLogFields = (prefix = psql``) => psql`
 export type CreateContractVersionInput = {
   contractId: string;
   contractName: string;
+  graph: Graph;
   compositeSchemaSDL: string | null;
   supergraphSDL: string | null;
   schemaCompositionErrors: Array<SchemaCompositionError> | null;
   changes: null | Array<SchemaChangeType>;
+  supergraphChanges: null | Array<SchemaChangeType>;
+  previousSchemaVersionId: string | null;
+  diffSchemaVersionId: string | null;
 };
 
 const SchemaLogBase = z.object({
@@ -1695,7 +1930,7 @@ const SchemaVersionOriginPromotionModel = z.object({
   }),
 });
 
-// type SchemaVersionOriginPromotion = z.TypeOf<typeof SchemaVersionOriginPromotionModel>;
+type SchemaVersionOriginPromotion = z.TypeOf<typeof SchemaVersionOriginPromotionModel>;
 
 const SchemaVersionOriginPublishServiceModel = z.object({
   name: z.string(),
@@ -1710,6 +1945,8 @@ const SchemaVersionOriginPublishModel = z.object({
   services: z.tuple([SchemaVersionOriginPublishServiceModel]).nullable(),
 });
 
+type SchemaVersionOriginPublish = z.TypeOf<typeof SchemaVersionOriginPublishModel>;
+
 const SchemaVersionOriginDeleteModel = z.object({
   type: z.literal('delete'),
   services: z.array(
@@ -1720,7 +1957,7 @@ const SchemaVersionOriginDeleteModel = z.object({
   ),
 });
 
-// type SchemaVersionOriginPublish = z.TypeOf<typeof SchemaVersionOriginPublishModel>;
+type SchemaVersionOriginDelete = z.TypeOf<typeof SchemaVersionOriginDeleteModel>;
 
 const SchemaVersionOriginModel = z.union([
   SchemaVersionOriginPromotionModel,

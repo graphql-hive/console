@@ -4,6 +4,7 @@ import {
   RuleInstanceSeverityLevel,
 } from 'testkit/gql/graphql';
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
+import { invariant } from '@hive/service-common';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { checkSchema } from '../../../testkit/flow';
@@ -2574,7 +2575,8 @@ function connectionString() {
 test.concurrent(
   'checking a valid schema onto a broken schema succeeds (prior schema has deprecated non-nullable input)',
   async () => {
-    const { createOrg } = await initSeed().createOwner();
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
@@ -2596,6 +2598,9 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
+    const graphStore = await seed.getGraphStore();
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, 'Graph must exist.');
     await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
@@ -2626,7 +2631,7 @@ test.concurrent(
       supergraphChanges: null,
       schemaMetadata: null,
       metadataAttributes: null,
-      graph: null,
+      graph,
     });
     await storage.destroy();
 

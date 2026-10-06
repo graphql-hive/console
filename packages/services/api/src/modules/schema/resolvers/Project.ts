@@ -21,7 +21,10 @@ export const Project: Pick<
   schemaVersionsCount: (project, { period }, { injector }) => {
     return injector
       .get(SchemaManager)
-      .countSchemaVersionsOfProject(project, period ? parseDateRangeInput(period) : null);
+      .countSchemaVersionsOfDefaultGraphsInProject(
+        project,
+        period ? parseDateRangeInput(period) : null,
+      );
   },
   isNativeFederationEnabled: project => {
     return project.nativeFederation === true;

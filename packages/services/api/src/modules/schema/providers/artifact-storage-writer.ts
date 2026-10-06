@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Injectable, Scope } from 'graphql-modules';
+import z from 'zod';
 import { buildArtifactStorageKey } from '@hive/cdn-script/artifact-storage-reader';
 import { setErrorSource, traceFn } from '@hive/service-common';
 import { Logger } from '../../shared/providers/logger';
@@ -22,7 +23,20 @@ const artifactMeta = {
     contentType: 'application/json',
     preprocessor: (rawValue: unknown) => JSON.stringify(rawValue),
   },
+  'manifest.json': {
+    contentType: 'application/json',
+    preprocessor: (rawValue: unknown) => JSON.stringify(rawValue),
+  },
 } as const;
+
+function extractContractName(contractName: string | null): null | string {
+  if (contractName === null) {
+    return null;
+  }
+  const parts = contractName.split('/');
+
+  return parts[parts.length - 1] ?? null;
+}
 
 /**
  * Write an Artifact to an S3 bucket.
@@ -52,10 +66,22 @@ export class ArtifactStorageWriter {
     artifact: unknown;
     contractName: null | string;
     versionId?: string | null;
+    graphId?: string | null;
+    /** When the artifact update was initiated. */
+    referenceDate?: Date;
   }) {
-    const latestKey = buildArtifactStorageKey(args.targetId, args.artifactType, args.contractName);
+    const latestKey = buildArtifactStorageKey(
+      args.targetId,
+      args.artifactType,
+      extractContractName(args.contractName),
+    );
     const versionedKey = args.versionId
-      ? buildArtifactStorageKey(args.targetId, args.artifactType, args.contractName, args.versionId)
+      ? buildArtifactStorageKey(
+          args.targetId,
+          args.artifactType,
+          extractContractName(args.contractName),
+          args.versionId,
+        )
       : null;
     const meta = artifactMeta[args.artifactType];
     const body = meta.preprocessor(args.artifact);
@@ -70,15 +96,27 @@ export class ArtifactStorageWriter {
       versionedKey,
     );
 
+    const headers: Record<string, string> = {
+      'content-type': meta.contentType,
+    };
+
+    if (args.referenceDate) {
+      headers['x-amz-meta-x-hive-updated-at'] = args.referenceDate.toUTCString();
+    }
+
+    if (args.graphId) {
+      headers['x-amz-meta-x-hive-graph-id'] = args.graphId;
+    }
+
     // Write versioned key first (if versionId provided)
     // This order ensures that if versioned write fails, "latest" still points to the previous version
     if (versionedKey && args.versionId) {
+      // Store version ID as S3 object metadata for CDN response headers
+      headers['x-amz-meta-x-hive-graph-version-id'] = args.versionId;
+      headers['x-amz-meta-x-hive-schema-version-id'] = args.versionId;
+
       const versionedResults = await this.s3.write(versionedKey, 'artifact_versioned', {
-        headers: {
-          'content-type': meta.contentType,
-          // Store version ID as S3 object metadata for CDN response headers
-          'x-amz-meta-x-hive-schema-version-id': args.versionId,
-        },
+        headers,
         body,
       });
 
@@ -106,8 +144,6 @@ export class ArtifactStorageWriter {
     const latestResults = await this.s3.write(latestKey, 'artifact_latest', {
       headers: {
         'content-type': meta.contentType,
-        // Store version ID as S3 object metadata for CDN response headers
-        ...(args.versionId ? { 'x-amz-meta-x-hive-schema-version-id': args.versionId } : {}),
       },
       body,
     });
@@ -150,7 +186,11 @@ export class ArtifactStorageWriter {
       args.artifactType,
       args.contractName,
     );
-    const key = buildArtifactStorageKey(args.targetId, args.artifactType, args.contractName);
+    const key = buildArtifactStorageKey(
+      args.targetId,
+      args.artifactType,
+      extractContractName(args.contractName),
+    );
 
     const results = await this.s3.request(key, {
       method: 'DELETE',
@@ -201,3 +241,15 @@ export class ArtifactStorageWriter {
     return { id: hash.substring(0, 10), url };
   }
 }
+
+const GraphManifestGraph = z.object({
+  id: z.string(),
+  currentVersion: z.object({
+    id: z.string(),
+    artifactPath: z.string(),
+  }),
+});
+
+const GraphManifestGraphs = z.record(GraphManifestGraph);
+
+export const GraphManifestModel = z.object({ graphs: GraphManifestGraphs });
