@@ -217,9 +217,11 @@ export function OIDCMetadataUrlForm(props: {
                   disabled={field.disabled || props.isPending}
                 />
               </FormControl>
-              <Button type="submit" onSurface="raised" disabled={props.isPending}>
-                {props.isPending ? 'Fetching...' : 'Fetch endpoints'}
-              </Button>
+              <div className="shrink-0">
+                <Button type="submit" onSurface="raised" disabled={props.isPending}>
+                  {props.isPending ? 'Fetching...' : 'Fetch endpoints'}
+                </Button>
+              </div>
             </div>
             <FormMessage />
           </FormItem>
