@@ -132,17 +132,31 @@ export function organizationLayout(overrides: Partial<typeof organization> = {})
   return { __typename: 'Query' as const, organizationBySlug: { ...organization, ...overrides } };
 }
 
-export function projectLayout(overrides: Partial<typeof project> = {}) {
+export function projectLayout(
+  overrides: Partial<typeof project> = {},
+  organizationOverrides: Partial<typeof organization> = {},
+) {
   return {
     __typename: 'Query' as const,
-    organization: { ...organization, project: { ...project, ...overrides } },
+    organization: {
+      ...organization,
+      ...organizationOverrides,
+      project: { ...project, ...overrides },
+    },
   };
 }
 
-export function targetLayout(overrides: Partial<typeof target> = {}) {
+export function targetLayout(
+  overrides: Partial<typeof target> = {},
+  organizationOverrides: Partial<typeof organization> = {},
+) {
   return {
     __typename: 'Query' as const,
-    organization: { ...organization, project: { ...project, target: { ...target, ...overrides } } },
+    organization: {
+      ...organization,
+      ...organizationOverrides,
+      project: { ...project, target: { ...target, ...overrides } },
+    },
   };
 }
 

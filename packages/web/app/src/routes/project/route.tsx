@@ -1,9 +1,10 @@
 import { ProjectLayout } from '@/components/layouts/project';
 import { ProjectLayoutQuery } from '@/components/layouts/queries';
 import { overviewPeriod } from '@/lib/overview-period';
-import { loadQuery, requireLayoutFlag, revalidate } from '@/lib/route-utils';
+import { loadQuery, requireLayoutFlag, revalidate, usageRetention } from '@/lib/route-utils';
 import { ProjectIndexRouteSearch, ProjectOverviewPageQuery, ProjectPage } from '@/pages/project';
 import { ProjectAlertsPage, ProjectAlertsPageQuery } from '@/pages/project-alerts';
+import { UTCDate } from '@date-fns/utc';
 import { createRoute, Outlet } from '@tanstack/react-router';
 import { withHeaderRoute } from '../with-header';
 
@@ -28,9 +29,11 @@ export const projectIndexRoute = createRoute({
   path: '/',
   validateSearch: ProjectIndexRouteSearch.parse,
   preloadStaleTime: 0,
-  loader: loader => {
+  // The window depends on the plan, so the overview waits for the layout document on a cold load.
+  loader: async loader => {
     const { organizationSlug, projectSlug } = loader.params;
-    const { period, resolution } = overviewPeriod();
+    const retention = await usageRetention.project(loader);
+    const { period, resolution } = overviewPeriod(new UTCDate(), retention);
     void loadQuery(
       loader,
       ProjectOverviewPageQuery,
