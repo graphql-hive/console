@@ -21,6 +21,12 @@ export type LaboratoryHelper = {
   openCollectionsPanel(): Promise<void>;
   addCollection(name: string): Promise<void>;
   saveOperationToCollection(name: string): Promise<void>;
+  collectionRow(name: string): Locator;
+  operationRow(name: string): Locator;
+  openCollection(name: string): Promise<void>;
+  renameCollection(from: string, to: string): Promise<void>;
+  deleteCollection(name: string): Promise<void>;
+  deleteOperation(name: string): Promise<void>;
   openPreflightTab(): Promise<void>;
   openEnvTab(): Promise<void>;
   enablePreflight(): Promise<void>;
@@ -170,6 +176,52 @@ export function createLaboratoryHelper(page: Page): LaboratoryHelper {
       }
       await dialog.getByRole('button', { name: 'Save to collection' }).click();
       await expect(dialog).toBeHidden();
+    },
+
+    // Both row kinds are `div.group` wrapping a button named after the item plus its actions.
+    collectionRow(name) {
+      return lab()
+        .locator('div.group', { has: page.getByRole('button', { name, exact: true }) })
+        .first();
+    },
+
+    operationRow(name) {
+      return helper.collectionRow(name);
+    },
+
+    async openCollection(name) {
+      const trigger = helper.collectionRow(name).getByRole('button', { name, exact: true });
+      if ((await trigger.getAttribute('data-state')) !== 'open') {
+        await trigger.click();
+      }
+      await expect(trigger).toHaveAttribute('data-state', 'open');
+    },
+
+    async renameCollection(from, to) {
+      const row = helper.collectionRow(from);
+      await row.hover();
+      await row.getByRole('button', { name: 'Edit collection' }).click();
+      // Editing swaps the name button for an input, so the row no longer matches by name.
+      const input = lab().locator('div.group').getByRole('textbox');
+      await input.fill(to);
+      await input.press('Enter');
+      await expect(lab().getByRole('button', { name: to, exact: true })).toBeVisible();
+    },
+
+    async deleteCollection(name) {
+      const row = helper.collectionRow(name);
+      await row.hover();
+      await row.getByRole('button', { name: 'Delete collection' }).click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+      await expect(page.getByRole('alertdialog')).toBeHidden();
+    },
+
+    async deleteOperation(name) {
+      const row = helper.operationRow(name);
+      await row.hover();
+      await row.getByRole('button', { name: 'Delete operation' }).click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+      await expect(page.getByRole('alertdialog')).toBeHidden();
     },
 
     async openPreflightTab() {
