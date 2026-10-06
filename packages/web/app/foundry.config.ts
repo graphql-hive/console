@@ -123,6 +123,7 @@ export default defineConfig({
         { label: 'RefreshButton' },
         { label: 'Resizable' },
         { label: 'StatCard' },
+        { label: 'Stepper' },
         { label: 'SupportForms' },
         { label: 'TabbedView' },
       ],
