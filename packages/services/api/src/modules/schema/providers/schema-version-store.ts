@@ -1054,7 +1054,7 @@ export class SchemaVersionStore {
       (schemaVersion.graphId === graph.id ||
         // legacy match
         (graph.isBackfilled &&
-          schemaVersion.graphId === null &&
+          schemaVersion.graphMetadata === null &&
           schemaVersion.targetId === graph.targetId))
     ) {
       return schemaVersion;
