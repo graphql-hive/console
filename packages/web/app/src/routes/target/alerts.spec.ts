@@ -7,7 +7,7 @@ import { presetLast1Hour } from '@/pages/target-alerts-activity';
 import { createAppRouter } from '@/router';
 import { UTCDate } from '@date-fns/utc';
 import { createMemoryHistory } from '@tanstack/react-router';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -24,21 +24,37 @@ vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'
 vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
 // Polls every 200 ms here, so a spec sees a few ticks with real timers.
 vi.mock('@/components/target/alerts/alert-polling', () => ({ ALERTS_POLL_INTERVAL_MS: 200 }));
+// Stripe is off unless a case turns it on; the picker's retention note needs it.
+const stripe = vi.hoisted(() => ({ enabled: false }));
+vi.mock('@/lib/billing/stripe-public-key', () => ({
+  getStripePublicKey: () => (stripe.enabled ? 'pk_test' : null),
+  getIsStripeEnabled: () => stripe.enabled,
+}));
 
 const ALERTS = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}/alerts`;
 const ACTIVITY = 'TargetAlertsActivityPage_Query';
 const RETENTION = 'TargetAlertsActivityPage_RetentionQuery';
 const TARGET_NODE = { __typename: 'Target', id: 'target-1' };
 
-function activityFixtures() {
+function activityFixtures(metricAlertStateLogRetentionDays = 30) {
   return new Map<string, unknown>([
     ...layoutFixtures(),
     [
       RETENTION,
-      { __typename: 'Query', target: { ...TARGET_NODE, metricAlertStateLogRetentionDays: 30 } },
+      { __typename: 'Query', target: { ...TARGET_NODE, metricAlertStateLogRetentionDays } },
     ],
     [ACTIVITY, { __typename: 'Query', target: { ...TARGET_NODE, metricAlertRuleStateLog: [] } }],
   ]);
+}
+
+async function loadedWith(fixtures: Map<string, unknown>, url: string) {
+  const client = createTestClient(fixtures);
+  const router = createAppRouter({
+    history: createMemoryHistory({ initialEntries: [url] }),
+    urqlClient: client,
+  });
+  await router.load();
+  return { client, router };
 }
 
 async function loadedAt(url: string) {
@@ -77,9 +93,48 @@ describe('alerts activity route', () => {
         new UTCDate('2026-09-28T10:59:50.000Z'),
       );
       expect(client.requests(RETENTION).map(o => o.variables)).toEqual([SLUGS]);
+      // A plan change moves the log retention, so every visit asks again.
+      expect(['cache-and-network', 'network-only']).toContain(
+        client.requests(RETENTION)[0].context.requestPolicy,
+      );
       expect(client.requests(ACTIVITY).map(o => [o.variables, o.context.requestPolicy])).toEqual([
         [{ ...SLUGS, from: period.from, to: period.to }, 'cache-and-network'],
       ]);
+    },
+  );
+
+  it('the picker names the log retention, not the usage one', { timeout: 30_000 }, async () => {
+    stripe.enabled = true;
+    try {
+      renderAtUrl(`${ALERTS}?from=now-1h&to=now`, { client: createTestClient(activityFixtures()) });
+      fireEvent.click(await screen.findByRole('button', { name: 'Last 1 hour' }));
+
+      await screen.findByText(/Your Hobby plan keeps the last 30 days of alert activity\./);
+    } finally {
+      stripe.enabled = false;
+    }
+  });
+
+  it(
+    'keeps a range within the log retention and resets one past it',
+    { timeout: 30_000 },
+    async () => {
+      const kept = await loadedWith(activityFixtures(30), `${ALERTS}?from=now-14d&to=now`);
+      expect(kept.router.state.location.search).toEqual({ from: 'now-14d', to: 'now' });
+      expect(kept.router.state.location.state.rangeReset).toBeUndefined();
+
+      const reset = await loadedWith(
+        activityFixtures(7),
+        `${ALERTS}?from=now-14d&to=now&types=["x"]`,
+      );
+      await waitFor(() =>
+        expect(reset.router.state.location.search).toEqual({
+          ...presetLast1Hour.range,
+          types: ['x'],
+        }),
+      );
+      expect(reset.router.history.length).toBe(1);
+      expect(reset.router.state.location.state.rangeReset).toBe('retention');
     },
   );
 

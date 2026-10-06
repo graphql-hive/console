@@ -9,6 +9,14 @@ describe('overviewPeriod', () => {
     });
   });
 
+  it('shrinks to what the plan keeps, one point per day still', () => {
+    expect(overviewPeriod(new UTCDate('2026-09-28T15:30:45.000Z'), 7)).toEqual({
+      period: { from: '2026-09-21T00:00:00Z', to: '2026-09-28T23:59:59Z' },
+      resolution: 7,
+    });
+    expect(overviewPeriod(new UTCDate('2026-09-28T15:30:45.000Z'), 90).resolution).toBe(14);
+  });
+
   it('is stable within a day, so the page and its loader agree', () => {
     const morning = overviewPeriod(new UTCDate('2026-09-28T00:00:01.000Z'));
     const night = overviewPeriod(new UTCDate('2026-09-28T23:59:58.000Z'));

@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
@@ -40,16 +41,6 @@ async function main() {
     server.log.info('Running in development mode');
     // If in development mode, use Vite to serve the frontend and enable hot module reloading.
     const { default: FastifyVite } = await import('@fastify/vite');
-
-    // This and a patch of @fastify/vite is necessary to serve the preflight worker embed html file.
-    // We need to know if the request is for the preflight worker embed or not to determine which html file to serve.
-    server.decorateRequest('viteHtmlFile', {
-      getter() {
-        return this.url.startsWith(preflightWorkerEmbed.path)
-          ? preflightWorkerEmbed.htmlFile
-          : 'index.html';
-      },
-    });
 
     await server.register(FastifyVite, {
       // The root directory of @hive/app (where the package.json is located)
@@ -102,10 +93,15 @@ async function main() {
   connectGithub(server);
   connectLab(server);
 
-  server.get(preflightWorkerEmbed.path, (_req, reply) => {
-    if (isDev) {
-      // If in development mode, return the Vite preflight-worker-embed.html.
-      return reply.html();
+  server.get(preflightWorkerEmbed.path, async (req, reply) => {
+    const devServer = isDev ? server.vite.devServer : undefined;
+    if (devServer) {
+      // @fastify/vite's reply.html() only knows index.html, so this second entry is transformed here.
+      const html = await readFile(
+        resolve(__dirname, '../..', preflightWorkerEmbed.htmlFile),
+        'utf8',
+      );
+      return reply.type('text/html').send(await devServer.transformIndexHtml(req.url, html));
     }
 
     // If in production mode, return the static html file.

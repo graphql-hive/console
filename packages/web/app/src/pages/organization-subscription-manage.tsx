@@ -35,6 +35,7 @@ const ManageSubscriptionInner_OrganizationFragment = graphql(`
       }
     }
     plan
+    usageRetentionInDays
     monthlyOperationsLimit
     ...BillingPaymentMethod_OrganizationFragment
   }
@@ -65,7 +66,8 @@ export const BillingsPlanQuery = graphql(`
   }
 `);
 
-const BillingDowngradeMutation = graphql(`
+// A plan change returns the organization's new retention, so every cached document follows it.
+export const BillingDowngradeMutation = graphql(`
   mutation ManageSubscription_DowngradeToHobby($organizationSlug: String!) {
     downgradeToHobby(input: { organization: { organizationSlug: $organizationSlug } }) {
       previousPlan

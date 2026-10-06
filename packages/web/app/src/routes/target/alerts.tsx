@@ -5,7 +5,15 @@ import {
 } from '@/components/target/alerts/alert-form';
 import { AlertActivitySearch } from '@/components/target/alerts/search-schemas';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
-import { defaultRange, loadQuery, requireLayoutFlag, revalidate } from '@/lib/route-utils';
+import {
+  defaultRange,
+  loadQuery,
+  requireLayoutFlag,
+  requireRange,
+  requireRetention,
+  revalidate,
+  type RangeBounds,
+} from '@/lib/route-utils';
 import { TargetAlertsPage, TargetAlertsWithNav } from '@/pages/target-alerts';
 import {
   presetLast1Hour,
@@ -39,26 +47,40 @@ export const targetAlertsWithNavRoute = createRoute({
   component: TargetAlertsWithNav,
 });
 
+const activity: RangeBounds = {
+  preset: presetLast1Hour,
+  to: '/$organizationSlug/$projectSlug/$targetSlug/alerts',
+};
+
 export const targetAlertsIndexRoute = createRoute({
   getParentRoute: () => targetAlertsWithNavRoute,
   path: '/',
   validateSearch: AlertActivitySearch.parse,
-  beforeLoad: defaultRange(
-    presetLast1Hour.range,
-    '/$organizationSlug/$projectSlug/$targetSlug/alerts',
-  ),
+  beforeLoad: defaultRange(activity),
   loaderDeps: ({ search }) => ({ from: search.from, to: search.to }),
   preloadStaleTime: 0,
-  loader: loader => {
+  loader: async loader => {
+    requireRange(loader, activity);
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const slugs = { organizationSlug, projectSlug, targetSlug };
     const { period } = loaderPeriod(loader.deps, presetLast1Hour);
-    void loadQuery(loader, TargetAlertsActivityPage_RetentionQuery, slugs);
+    // A plan change moves it: asked again on each visit, not on each poll.
+    const retention = loadQuery(
+      loader,
+      TargetAlertsActivityPage_RetentionQuery,
+      slugs,
+      loader.cause === 'enter' ? revalidate(loader) : 'cache-first',
+    );
     void loadQuery(
       loader,
       TargetAlertsActivityPage_Query,
       { ...slugs, from: period.from, to: period.to },
       revalidate(loader),
+    );
+    await requireRetention(
+      loader,
+      activity,
+      retention.then(result => result.data?.target?.metricAlertStateLogRetentionDays ?? undefined),
     );
     return { period };
   },

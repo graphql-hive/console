@@ -1,10 +1,15 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { DayPicker } from 'react-day-picker';
+import { DayPicker, type DayButtonProps } from 'react-day-picker';
 import { focusRing } from '@/components/ui/primitives/shared-styles';
 import { cn } from '@/lib/utils';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+
+const navButton = cn(
+  'border-line inline-flex size-7 items-center justify-center rounded-sm border bg-transparent opacity-50 transition-opacity hover:opacity-100',
+  focusRing,
+);
 
 function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   return (
@@ -12,51 +17,65 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       showOutsideDays={showOutsideDays}
       className={cn('p-3', className)}
       classNames={{
-        months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
+        months: 'relative flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
         month: 'space-y-4',
-        caption: 'flex justify-center pt-1 relative items-center',
+        month_caption: 'flex h-7 items-center justify-center',
         caption_label: 'text-sm font-medium',
-        nav: 'space-x-1 flex items-center',
-        nav_button: cn(
-          'border-line inline-flex size-7 items-center justify-center rounded-sm border bg-transparent opacity-50 transition-opacity hover:opacity-100',
-          focusRing,
-        ),
-        nav_button_previous: 'absolute left-1',
-        nav_button_next: 'absolute right-1',
-        table: 'w-full border-collapse space-y-1',
-        head_row: 'flex',
-        head_cell: 'text-fg-secondary rounded-md w-8 font-normal text-control',
-        row: 'flex w-full mt-2',
-        cell: cn(
-          'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-surface-selected [&:has([aria-selected].day-outside)]:bg-surface-stripe [&:has([aria-selected].day-range-end)]:rounded-r-md',
-          props.mode === 'range'
-            ? '[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md'
-            : '[&:has([aria-selected])]:rounded-md',
-        ),
+        // One nav for all months, laid over the caption row with a button at each outer edge.
+        nav: 'absolute inset-x-1 top-0 z-10 flex items-center justify-between',
+        button_previous: navButton,
+        button_next: navButton,
+        month_grid: 'w-full border-collapse space-y-1',
+        weekdays: 'flex',
+        weekday: 'text-fg-secondary rounded-md w-8 font-normal text-control',
+        week: 'flex w-full mt-2',
+        // The cell carries aria-selected and the modifiers; the button inside is styled below.
         day: cn(
-          'text-fg-default hover:text-fg inline-flex size-8 items-center justify-center rounded-sm text-sm font-normal transition-colors aria-selected:opacity-100',
-          focusRing,
+          'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 aria-selected:bg-surface-selected',
+          props.mode === 'range'
+            ? 'first:aria-selected:rounded-l-md last:aria-selected:rounded-r-md'
+            : 'aria-selected:rounded-md',
         ),
-        day_range_start: 'day-range-start',
-        day_range_end: 'day-range-end',
-        day_selected:
-          'bg-surface-inverse text-fg-inverse hover:bg-surface-inverse hover:text-fg-inverse focus:bg-surface-inverse focus:text-fg-inverse',
-        day_today: 'bg-surface-hover text-fg',
-        day_outside:
-          'day-outside text-fg-secondary opacity-50  aria-selected:bg-surface-stripe aria-selected:text-fg-secondary aria-selected:opacity-30',
-        day_disabled: 'text-fg-secondary opacity-50',
-        day_range_middle: 'aria-selected:bg-surface-selected aria-selected:text-fg',
-        day_hidden: 'invisible',
+        range_start: 'rounded-l-md',
+        range_end: 'rounded-r-md',
+        outside:
+          'text-fg-secondary opacity-50 aria-selected:bg-surface-stripe aria-selected:opacity-30',
+        disabled: 'text-fg-secondary opacity-50',
+        hidden: 'invisible',
         ...classNames,
       }}
       components={{
-        IconLeft: () => <ChevronLeft className="size-4" />,
-        IconRight: () => <ChevronRight className="size-4" />,
+        Chevron: ({ orientation, className }) =>
+          orientation === 'left' ? (
+            <ChevronLeft className={cn('size-4', className)} />
+          ) : (
+            <ChevronRight className={cn('size-4', className)} />
+          ),
+        DayButton: CalendarDayButton,
       }}
       {...props}
     />
   );
 }
 Calendar.displayName = 'Calendar';
+
+// Later entries win in cn(), so a range endpoint beats today and a range middle beats the endpoint
+// look, the same precedence the v8 class map had.
+function CalendarDayButton({ day: _day, modifiers, className, ...props }: DayButtonProps) {
+  return (
+    <button
+      className={cn(
+        'text-fg-default hover:text-fg inline-flex size-8 items-center justify-center rounded-sm text-sm font-normal transition-colors',
+        focusRing,
+        modifiers.today && 'bg-surface-hover text-fg',
+        modifiers.selected &&
+          'bg-surface-inverse text-fg-inverse hover:bg-surface-inverse hover:text-fg-inverse focus:bg-surface-inverse focus:text-fg-inverse',
+        modifiers.range_middle && 'bg-surface-selected text-fg',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
 
 export { Calendar };

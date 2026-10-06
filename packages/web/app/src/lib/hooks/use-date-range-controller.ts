@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   addDays,
   addHours,
@@ -10,10 +10,11 @@ import {
   subSeconds,
 } from 'date-fns';
 import { availablePresets, buildDateRangeString, Preset } from '@/components/ui/date-range-picker';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { parse, resolveRange } from '@/lib/date-math';
 import { subDays } from '@/lib/date-time';
 import { UTCDate } from '@date-fns/utc';
-import { useRouter } from '@tanstack/react-router';
+import { useRouter, useRouterState } from '@tanstack/react-router';
 import { useResetState } from './use-reset-state';
 
 export function useDateRangeController(args: {
@@ -23,11 +24,14 @@ export function useDateRangeController(args: {
   defaultPreset: Preset;
   /** controlled input range */
   range?: Preset['range'];
+  /** what the retention keeps, for the toast; "usage data" unless a page says otherwise. */
+  subject?: string;
 }) {
   const router = useRouter();
+  const subject = args.subject ?? 'usage data';
 
   const [startDate] = useResetState(
-    () => subDays(new Date(), args.dataRetentionInDays),
+    () => retentionBoundary(args.dataRetentionInDays),
     [args.dataRetentionInDays],
   );
   const searchParams = router.latestLocation.search;
@@ -46,8 +50,26 @@ export function useDateRangeController(args: {
     [selectedPreset.range, triggerRefreshCounter],
   );
 
+  // A route that reset the range to this default left a note in history state; say so once.
+  const { toast } = useToast();
+  const state = useRouterState({ select: current => current.location.state });
+  useEffect(() => {
+    if (!state.rangeReset || announced(state.key ?? '')) {
+      return;
+    }
+    toast({
+      title: `Date range reset to ${selectedPreset.label}`,
+      description:
+        state.rangeReset === 'retention'
+          ? `This organization keeps the last ${args.dataRetentionInDays} days of ${subject}.`
+          : 'This page cannot show the range the URL carried.',
+    });
+  }, [state, toast, selectedPreset.label, args.dataRetentionInDays, subject]);
+
   return {
     startDate,
+    retentionInDays: args.dataRetentionInDays,
+    subject,
     selectedPreset,
     setSelectedPreset(preset: Preset) {
       void router.navigate({
@@ -68,6 +90,25 @@ export function useDateRangeController(args: {
     },
     resolution: resolved.resolution,
   } as const;
+}
+
+// The note survives a reload and a return to the entry; remember which one was announced.
+const ANNOUNCED = 'hive:range-reset:announced';
+const REMEMBERED_ENTRIES = 20;
+export function announced(entryKey: string): boolean {
+  try {
+    const keys: string[] = JSON.parse(sessionStorage.getItem(ANNOUNCED) ?? '[]');
+    if (keys.includes(entryKey)) {
+      return true;
+    }
+    sessionStorage.setItem(
+      ANNOUNCED,
+      JSON.stringify([...keys, entryKey].slice(-REMEMBERED_ENTRIES)),
+    );
+  } catch {
+    // Without storage the toast repeats on a reload, nothing worse.
+  }
+  return false;
 }
 
 type DateRangeArgs = { from?: string; to?: string; defaultPreset: Preset };
@@ -117,6 +158,13 @@ export function resolvePeriod(range: Preset['range'], now: UTCDate = new UTCDate
 export function resolveDateRange(args: DateRangeArgs, now: UTCDate = new UTCDate()) {
   const selectedPreset = selectPreset(args, now);
   return { selectedPreset, ...resolvePeriod(selectedPreset.range, now) };
+}
+
+// What a link into another period page carries: the URL's own range, or nothing.
+export function carriedRange(search: Record<string, unknown>): { from?: string; to?: string } {
+  return typeof search.from === 'string' && typeof search.to === 'string'
+    ? { from: search.from, to: search.to }
+    : {};
 }
 
 // The URL's range as a loader returns it and its page reads it.
@@ -182,6 +230,26 @@ function endOfHour(date: Date): Date {
   );
 }
 
+// The UTC day the retention reaches back to; every check compares against it, not the instant.
+export function retentionBoundary(retentionInDays: number, now = new Date()): Date {
+  return getUTCStartOfDay(subDays(now, retentionInDays));
+}
+
+// Whether a saved range still starts inside what the plan keeps; an unreadable one does not.
+export function startsWithin(range: { from: string }, boundary: Date, now?: UTCDate): boolean {
+  const from = parse(range.from, now);
+  return from !== undefined && from.getTime() >= boundary.getTime();
+}
+
+// The longest preset a retention covers: what a screen falls back to when its default is older.
+export function longestPresetWithin(retentionInDays: number, now = new Date()): Preset {
+  const boundary = retentionBoundary(retentionInDays, now);
+  const fitting = availablePresets.filter(preset =>
+    startsWithin(preset.range, boundary, new UTCDate(now)),
+  );
+  return fitting[fitting.length - 1] ?? availablePresets[0];
+}
+
 export function resolveRangeAndResolution(range: { from: Date; to: Date }, now = new Date()) {
   const tableOldestDateTimePoint = {
     /** Because ClickHouse uses UTC and we aggregate to UTC start fo day, we need to get the UTC day here */
@@ -191,8 +259,8 @@ export function resolveRangeAndResolution(range: { from: Date; to: Date }, now =
   };
 
   if (
-    range.to.getTime() <= tableOldestDateTimePoint.daily.getTime() ||
-    range.from.getTime() <= tableOldestDateTimePoint.daily.getTime()
+    range.to.getTime() < tableOldestDateTimePoint.daily.getTime() ||
+    range.from.getTime() < tableOldestDateTimePoint.daily.getTime()
   ) {
     throw new Error('This range can never be resolved.');
   }
