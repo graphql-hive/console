@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { Plus, X } from 'lucide-react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -35,6 +35,7 @@ import { Link } from '@tanstack/react-router';
 import { AlertMetricChart } from './alert-metric-chart';
 import { AlertPreview, type AlertPreviewChannelType } from './alert-notification-preview';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
+import { percentChangeWindowFits, percentChangeWindowReason } from './percent-change-window';
 import { previewWindowMinutes } from './preview-window';
 
 export const AlertForm_ChannelsQuery = graphql(`
@@ -248,28 +249,41 @@ const SEVERITIES = [
   { value: 'CRITICAL' as const, label: 'Critical', dotClass: 'bg-critical' },
 ];
 
-export const AlertFormSchema = z
-  .object({
-    metricSelection: z.string().min(1, 'Metric is required'),
-    timeWindowMinutes: z.string().min(1, 'Range is required'),
-    name: z.string().min(1, 'Name is required'),
-    severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
-    direction: z.string().min(1),
-    thresholdType: z.string().min(1),
-    thresholdValue: z.string().min(1, 'Value is required'),
-    savedFilterId: z.string().optional(),
-    confirmationMinutes: z.string().default('0'),
-    // Zero channels is intentionally allowed here so users can create a rule
-    // and observe its state transitions in the UI without firing notifications
-    // ("test mode"), then attach destinations once the rule's behavior is
-    // trusted.
-    channels: z.array(
-      z.object({
-        channelId: z.string().min(1, 'Select a channel'),
-      }),
-    ),
-  })
-  .superRefine((data, ctx) => {
+const AlertFormFields = z.object({
+  metricSelection: z.string().min(1, 'Metric is required'),
+  timeWindowMinutes: z.string().min(1, 'Range is required'),
+  name: z.string().min(1, 'Name is required'),
+  severity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
+  direction: z.string().min(1),
+  thresholdType: z.string().min(1),
+  thresholdValue: z.string().min(1, 'Value is required'),
+  savedFilterId: z.string().optional(),
+  confirmationMinutes: z.string().default('0'),
+  // Zero channels is intentionally allowed here so users can create a rule
+  // and observe its state transitions in the UI without firing notifications
+  // ("test mode"), then attach destinations once the rule's behavior is
+  // trusted.
+  channels: z.array(
+    z.object({
+      channelId: z.string().min(1, 'Select a channel'),
+    }),
+  ),
+});
+
+// A "% change" window has to leave room for the window before it, which depends on the
+// organization's retention; the schema is built once that is known.
+export function buildAlertFormSchema(retentionInDays?: number) {
+  return AlertFormFields.superRefine((data, ctx) => {
+    if (data.thresholdType === 'PERCENTAGE_CHANGE' && retentionInDays !== undefined) {
+      const timeWindowMinutes = parseInt(data.timeWindowMinutes, 10);
+      if (!percentChangeWindowFits(timeWindowMinutes, retentionInDays)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['timeWindowMinutes'],
+          message: percentChangeWindowReason(timeWindowMinutes, retentionInDays),
+        });
+      }
+    }
     const value = parseFloat(data.thresholdValue);
     if (Number.isNaN(value)) {
       return; // empty is already caught by `.min(1)`; non-numeric by the input
@@ -293,8 +307,9 @@ export const AlertFormSchema = z
       });
     }
   });
+}
 
-export type AlertFormValues = z.infer<typeof AlertFormSchema>;
+export type AlertFormValues = z.infer<typeof AlertFormFields>;
 
 const METRIC_TYPE_MAP: Record<string, MetricAlertRuleType> = {
   TRAFFIC: MetricAlertRuleType.Traffic,
@@ -433,11 +448,17 @@ export function AlertForm(props: AlertFormProps) {
   const [, addMetricAlertRule] = useMutation(AlertForm_AddMetricAlertRuleMutation);
   const [, updateMetricAlertRule] = useMutation(AlertForm_UpdateMetricAlertRuleMutation);
 
+  const retentionInDays = useLayoutQuery('target').data?.organization?.usageRetentionInDays;
+  const schema = useMemo(() => buildAlertFormSchema(retentionInDays), [retentionInDays]);
   const form = useForm({
-    resolver: zodResolver(AlertFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: defaultValues ?? DEFAULT_ALERT_FORM_VALUES,
     mode: 'onChange',
   });
+  // The edit sheet can open on a window the retention no longer backs; say so without a keystroke.
+  useEffect(() => {
+    void form.trigger('timeWindowMinutes');
+  }, [form, retentionInDays]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -558,6 +579,14 @@ export function AlertForm(props: AlertFormProps) {
     : { type: MetricAlertRuleType.Traffic };
 
   const isPercentageChange = watchedValues.thresholdType === 'PERCENTAGE_CHANGE';
+  const rangeOptions = RANGE_OPTIONS.map(option => {
+    const minutes = parseInt(option.value, 10);
+    return isPercentageChange &&
+      retentionInDays !== undefined &&
+      !percentChangeWindowFits(minutes, retentionInDays)
+      ? { ...option, disabled: true, tooltip: percentChangeWindowReason(minutes, retentionInDays) }
+      : option;
+  });
   const valueUnit = thresholdUnit(parsedMetric.type, watchedValues.thresholdType);
   const conditionOptions = isPercentageChange ? CONDITION_OPTIONS_CHANGE : CONDITION_OPTIONS_FIXED;
   const valueMax =
@@ -573,7 +602,6 @@ export function AlertForm(props: AlertFormProps) {
         ? 'e.g. 5'
         : 'e.g. 1000';
 
-  const retentionInDays = useLayoutQuery('target').data?.organization?.usageRetentionInDays;
   const previewMinutes = previewWindowMinutes(watchedValues.timeWindowMinutes, retentionInDays);
   const { period, resolution } = useMemo(() => {
     const now = new Date();
@@ -703,7 +731,7 @@ export function AlertForm(props: AlertFormProps) {
                     <FormLabel label="Range" />
                     <FormControl>
                       <Select
-                        options={RANGE_OPTIONS}
+                        options={rangeOptions}
                         value={field.value}
                         onValueChange={field.onChange}
                         onSurface="raised"
