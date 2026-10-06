@@ -772,8 +772,8 @@ export function TraceSheet(props: TraceSheetProps) {
   return (
     <div className="min-h-0 flex-1">
       <>
-        <ResizablePanelGroup direction="vertical">
-          <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
+        <ResizablePanelGroup orientation="vertical">
+          <ResizablePanel defaultSize="70%" minSize="20%" maxSize="80%">
             <WidthSyncProvider defaultWidth={251}>
               <HighlightedEventContext.Provider value={highlightedEvent}>
                 <ActiveSpanIdContext.Provider value={props.activeSpanId}>
@@ -788,7 +788,7 @@ export function TraceSheet(props: TraceSheetProps) {
             </WidthSyncProvider>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={30} minSize={10} maxSize={80}>
+          <ResizablePanel defaultSize="30%" minSize="10%" maxSize="80%">
             <div className="flex h-full flex-col">
               <div className="sticky top-0 z-10">
                 <Tabs

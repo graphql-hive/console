@@ -85,7 +85,7 @@
     "react-foundry": "catalog:",
     "react-helmet-async": "3.0.0",
     "react-hook-form": "7.88.0",
-    "react-resizable-panels": "2.1.7",
+    "react-resizable-panels": "catalog:",
     "react-select": "5.9.0",
     "react-string-replace": "2.0.1",
     "regenerator-runtime": "0.14.1",
