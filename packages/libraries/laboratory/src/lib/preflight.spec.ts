@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import { act, renderHook } from '@testing-library/react';
 import {
+  blockedGlobalNames,
   isValidEnvValue,
   PREFLIGHT_TIMEOUT,
   readLineAndColumn,
@@ -166,6 +167,20 @@ describe('isValidEnvValue', () => {
   });
 });
 
+describe('blockedGlobalNames', () => {
+  const allowed = new Set(['fetch', 'console']);
+
+  it('keeps valid identifiers that are not allowed, then window', () => {
+    const names = ['fetch', 'self', 'foo-bar', '0', '@wry/context:Slot', 'console', 'process'];
+
+    expect(blockedGlobalNames(names, allowed)).toEqual(['self', 'process', 'window']);
+  });
+
+  it('dedupes names seen through both enumerations', () => {
+    expect(blockedGlobalNames(['self', 'self', 'window'], allowed)).toEqual(['self', 'window']);
+  });
+});
+
 describe('toLogText', () => {
   it.each([
     ['a string', 'a string'],
@@ -274,6 +289,50 @@ describe('the generated worker source', () => {
     expect(log.message[2]).toBe('null');
     expect(posted).toContainEqual(
       expect.objectContaining({ type: 'result', env: { variables: {} } }),
+    );
+  });
+
+  it('hides worker and host globals from the script', async () => {
+    const posted = await runWorkerSource(
+      'console.log(typeof self, typeof globalThis, typeof postMessage, typeof process);',
+    );
+
+    expect(posted).toContainEqual(
+      expect.objectContaining({
+        type: 'log',
+        message: ['undefined', 'undefined', 'undefined', 'undefined'],
+      }),
+    );
+  });
+
+  it('keeps the allowed globals reachable', async () => {
+    const posted = await runWorkerSource(
+      'console.log(typeof fetch, typeof setTimeout, typeof URL, typeof TextEncoder, typeof crypto, typeof Uint8Array, typeof Intl, typeof CryptoJS, typeof lab);',
+    );
+
+    expect(posted).toContainEqual(
+      expect.objectContaining({
+        type: 'log',
+        message: [
+          'function',
+          'function',
+          'function',
+          'function',
+          'object',
+          'function',
+          'object',
+          'object',
+          'object',
+        ],
+      }),
+    );
+  });
+
+  it('does not hand the script the worker scope as this', async () => {
+    const posted = await runWorkerSource('console.log(String(this), typeof this.postMessage);');
+
+    expect(posted).toContainEqual(
+      expect.objectContaining({ type: 'log', message: ['undefined', 'undefined'] }),
     );
   });
 
