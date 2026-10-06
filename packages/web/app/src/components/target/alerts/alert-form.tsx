@@ -214,6 +214,7 @@ const RANGE_OPTIONS = [
   { value: '60', label: '1h' },
   { value: '360', label: '6h' },
   { value: '1440', label: '1d' },
+  { value: '4320', label: '3d' },
   { value: '10080', label: '7d' },
 ] as const;
 
