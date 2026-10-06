@@ -2,6 +2,11 @@ import { print } from 'graphql';
 import nock from 'nock';
 import { composeExternalFederation } from '../src/lib/compose';
 
+afterEach(() => {
+  vi.useRealTimers();
+  nock.cleanAll();
+});
+
 test('external composition sdl is transformed to a public schema if it includes supergraph SDL', async ({
   expect,
 }) => {
@@ -83,7 +88,7 @@ type Query @join__type(graph: PRODUCTS) {
       },
     },
     requestId: '1',
-    requestTimeoutMs: 5000,
+    deadline: Date.now() + 5000,
     subgraphs: [
       /** unimportant */
     ],
@@ -103,5 +108,71 @@ type Query @join__type(graph: PRODUCTS) {
   `);
   // ensure the AST also matches the correct SDL result
   expect(print(result.result.sdlDocumentNode)).toBe(result.result.sdl);
+  http.done();
+});
+
+const external = {
+  endpoint: 'http://localhost/not-important',
+  encryptedSecret: 'foo',
+  broker: {
+    endpoint: 'http://localhost/broker',
+    signature: '123',
+  },
+};
+
+const successResponse = {
+  type: 'success',
+  result: {
+    sdl: 'type Query { product: ID }',
+    supergraph: 'type Query { product: ID }',
+  },
+};
+
+test('external composition gets the whole budget and is not retried once it is spent', async ({
+  expect,
+}) => {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+  const http = nock('http://localhost')
+    .post('/broker')
+    .reply(() => new Promise(() => {}))
+    .post('/broker')
+    .reply(200, successResponse);
+
+  const pending = composeExternalFederation({
+    decrypt: v => v,
+    external,
+    requestId: '1',
+    deadline: Date.now() + 60_000,
+    subgraphs: [],
+  });
+  await vi.advanceTimersByTimeAsync(60_000);
+  const result = await pending;
+
+  expect(result.type).toBe('failure');
+  assert(result.type === 'failure');
+  expect(result.includesNetworkError).toBe(true);
+  expect(result.result.errors[0].message).toMatch(/timed out/);
+  // the second interceptor was never consumed: a spent budget is not retried
+  expect(http.pendingMocks()).toHaveLength(1);
+});
+
+test('a fast failure of the external composition service is retried within the budget', async ({
+  expect,
+}) => {
+  const http = nock('http://localhost')
+    .post('/broker')
+    .reply(503, 'temporarily unavailable')
+    .post('/broker')
+    .reply(200, successResponse);
+
+  const result = await composeExternalFederation({
+    decrypt: v => v,
+    external,
+    requestId: '1',
+    deadline: Date.now() + 5_000,
+    subgraphs: [],
+  });
+
+  expect(result.type).toBe('success');
   http.done();
 });

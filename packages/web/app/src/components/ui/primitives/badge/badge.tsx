@@ -16,9 +16,14 @@ const badgeVariants = cva(
         info: 'border-transparent bg-info-tint text-info',
       },
       size: {
-        default: 'px-2 py-0.5 text-xs',
+        default: 'text-xs',
         /** For a count beside a tab label or a filter row. */
-        sm: 'text-2xs px-1.5 py-px',
+        sm: 'text-2xs',
+      },
+      padding: {
+        default: '',
+        /** For a badge inside running text, so wrapped lines don't touch. */
+        tight: 'px-1 py-0',
       },
       /** For an identifier such as a permission key, rather than a word. */
       mono: {
@@ -26,9 +31,15 @@ const badgeVariants = cva(
         false: '',
       },
     },
+    // Padding lives here so `tight` never shares a span with a size's padding.
+    compoundVariants: [
+      { size: 'default', padding: 'default', class: 'px-2 py-0.5' },
+      { size: 'sm', padding: 'default', class: 'px-1.5 py-px' },
+    ],
     defaultVariants: {
       variant: 'default',
       size: 'default',
+      padding: 'default',
       mono: false,
     },
   },

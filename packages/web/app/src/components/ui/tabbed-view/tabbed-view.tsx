@@ -23,8 +23,6 @@ type TabbedViewProps = {
   value?: string;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
-  /** Leads the strip in the band, outside the tablist: the picker that scopes the views. */
-  action?: ReactNode;
   bodyPadding?: 'default' | 'none';
   attrs?: Record<string, string>;
 };
@@ -34,7 +32,6 @@ export function TabbedView({
   value,
   defaultValue,
   onValueChange,
-  action,
   bodyPadding = 'default',
   attrs,
 }: TabbedViewProps) {
@@ -47,7 +44,6 @@ export function TabbedView({
       {...attrs}
     >
       <div className="bg-surface-card border-line flex items-center border-b">
-        {action != null ? <div className="flex items-center pl-2">{action}</div> : null}
         <TabStrip items={items} variant="header" activeValue={value} />
       </div>
       {items.map(item => (

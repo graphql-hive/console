@@ -1,7 +1,6 @@
 import { ReactElement, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { useMutation } from 'urql';
-import { Section } from '@/components/common';
 import { Heading } from '@/components/ui/heading';
 import { Link } from '@/components/ui/link';
 import { Button } from '@/components/ui/primitives/button/button';
@@ -53,16 +52,16 @@ export const ManagePaymentMethod = (props: {
   }
 
   return (
-    <>
-      <div className="mt-4">
+    <div className="mt-4">
+      <Card
+        variants={{ onSurface: 'base', titleSize: 'large' }}
+        title="Payment Method and Billing Settings"
+      >
         <div>
-          <Section.BigTitle>Payment Method and Billing Settings</Section.BigTitle>
-          <Section.Subtitle className="mb-6">
+          <p className="pb-4">
             Your current payment method is <strong>{info.brand.toUpperCase()}</strong> ending with{' '}
             {info.last4} (expires {info.expMonth}/{info.expYear}).
-          </Section.Subtitle>
-        </div>
-        <div>
+          </p>
           <p className="pb-4">
             To manage or change your payment method, billing settings, billing email, Tax ID, you
             can use the Stripe customer dashboard:
@@ -96,8 +95,8 @@ export const ManagePaymentMethod = (props: {
             )}
           </Button>
         </div>
-      </div>
-    </>
+      </Card>
+    </div>
   );
 };
 
@@ -133,7 +132,8 @@ export const BillingPaymentMethodForm = ({
               },
             }}
           />
-          <Section.Subtitle>
+
+          <div className="text-fg-secondary text-sm">
             All payments and subscriptions are processed securely by{' '}
             <Link
               as="a"
@@ -144,7 +144,7 @@ export const BillingPaymentMethodForm = ({
             >
               Stripe
             </Link>
-          </Section.Subtitle>
+          </div>
         </div>
       </Card>
     </div>

@@ -126,6 +126,35 @@ describe('createRedisClient', () => {
       });
     });
 
+    it('passes the configured username for Redis ACL auth with a static password', async () => {
+      // The real resolveRedisCredentials returns no username without IAM.
+      resolveRedisCredentialsMock.mockResolvedValue({ password: 'test-password' });
+      const logger = createMockLogger();
+      const config = { ...baseEnvConfig, username: 'acl-user' };
+      const redis = await createRedisClient(config, { logger });
+
+      expect(redis.options.username).toBe('acl-user');
+      expect(redis.options.password).toBe('test-password');
+    });
+
+    it('leaves the username unset when neither REDIS_USERNAME nor IAM provides one', async () => {
+      resolveRedisCredentialsMock.mockResolvedValue({ password: 'test-password' });
+      const logger = createMockLogger();
+      const config = { ...baseEnvConfig, username: undefined };
+      const redis = await createRedisClient(config, { logger });
+
+      expect(redis.options.username).toBeUndefined();
+    });
+
+    it('passes the configured username in cluster mode with a static password', async () => {
+      resolveRedisCredentialsMock.mockResolvedValue({ password: 'test-password' });
+      const logger = createMockLogger();
+      const config = { ...baseEnvConfig, username: 'acl-user', clusterModeEnabled: true };
+      const redis = await createRedisClient(config, { logger });
+
+      expect(redis.options.redisOptions.username).toBe('acl-user');
+    });
+
     it('sets TLS options when tlsEnabled is true', async () => {
       const logger = createMockLogger();
       const config = { ...baseEnvConfig, tlsEnabled: true };

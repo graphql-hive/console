@@ -1,5 +1,53 @@
 # hive
 
+## 12.1.0
+
+### Minor Changes
+
+- [#8518](https://github.com/graphql-hive/console/pull/8518)
+  [`f5d702b`](https://github.com/graphql-hive/console/commit/f5d702ba61dfa272af67d5057e2067378d837c70)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce internal entities for graphs. This
+  release is an intermediate rollout step required to bring the database and application into a
+  consistent state before subsequent graph-related changes are deployed.
+
+### Patch Changes
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-4mh8-r7rc-xpvc](https://github.com/advisories/GHSA-4mh8-r7rc-xpvc).
+
+- [#8609](https://github.com/graphql-hive/console/pull/8609)
+  [`7e443af`](https://github.com/graphql-hive/console/commit/7e443af54d09bf4ed4297436c10de9bfae492468)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Fixes a long-standing client
+  crash (graphcache) after modifying a Metric Alert
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [GHSA-44g4-m2mj-wpvx](https://github.com/advisories/GHSA-44g4-m2mj-wpvx),
+  [GHSA-9fr6-4gfg-395g](https://github.com/advisories/GHSA-9fr6-4gfg-395g),
+  [GHSA-vh66-26gq-q6x8](https://github.com/advisories/GHSA-vh66-26gq-q6x8),
+  [GHSA-j8rh-479h-cp32](https://github.com/advisories/GHSA-j8rh-479h-cp32),
+  [GHSA-r4gj-5m52-g5wh](https://github.com/advisories/GHSA-r4gj-5m52-g5wh),
+  [GHSA-4hqw-qxg8-jxx2](https://github.com/advisories/GHSA-4hqw-qxg8-jxx2),
+  [GHSA-3pq3-5fj3-cg6v](https://github.com/advisories/GHSA-3pq3-5fj3-cg6v),
+  [GHSA-m8m8-qj5v-23w3](https://github.com/advisories/GHSA-m8m8-qj5v-23w3),
+  [GHSA-c29m-xwm3-cm6r](https://github.com/advisories/GHSA-c29m-xwm3-cm6r),
+  [GHSA-542g-h47m-68v8](https://github.com/advisories/GHSA-542g-h47m-68v8),
+  [GHSA-mghh-pgcx-3jjj](https://github.com/advisories/GHSA-mghh-pgcx-3jjj) and
+  [GHSA-x97p-jq2g-jp4f](https://github.com/advisories/GHSA-x97p-jq2g-jp4f).
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-f596-whhp-79r4](https://github.com/advisories/GHSA-f596-whhp-79r4).
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-p98j-92pf-mc4p](https://github.com/advisories/GHSA-p98j-92pf-mc4p).
+
 ## 12.0.0
 
 ### Major Changes
