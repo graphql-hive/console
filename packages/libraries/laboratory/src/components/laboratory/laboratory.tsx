@@ -22,7 +22,11 @@ import { useEndpoint } from '../../lib/endpoint';
 import { useEnv } from '../../lib/env';
 import { useHistory } from '../../lib/history';
 import { keepEditorMouseMovesInShadowRoot } from '../../lib/monaco-shadow-dom';
-import { useOperations } from '../../lib/operations';
+import {
+  useOperations,
+  type LaboratoryOperationsActions,
+  type LaboratoryOperationsState,
+} from '../../lib/operations';
 import { LaboratoryPluginTab, usePlugins } from '../../lib/plugins';
 import { usePreflight, usePreflightPrompt } from '../../lib/preflight';
 import { useSettings } from '../../lib/settings';
@@ -519,9 +523,15 @@ export const Laboratory = (
   const pluginsApi = usePlugins(props);
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
+  // Operations are set up after collections, so the id hand-off reaches them through a ref.
+  const operationsApiRef = useRef<(LaboratoryOperationsState & LaboratoryOperationsActions) | null>(null);
   const collectionsApi = useCollections({
     ...props,
     tabsApi,
+    onOperationIdChange: (previousId, id) => {
+      operationsApiRef.current?.replaceOperationId(previousId, id);
+      tabsApi.replaceOperationId(previousId, id);
+    },
   });
   const docsApi = useDocs({
     defaultActivePanel: collectionsApi.collections.length > 0 ? 'collections' : null,
@@ -536,6 +546,7 @@ export const Laboratory = (
     pluginsApi,
     checkPermissions,
   });
+  operationsApiRef.current = operationsApi;
   const endpointApi = useEndpoint({
     ...props,
     settingsApi,

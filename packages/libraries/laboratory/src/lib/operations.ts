@@ -61,6 +61,8 @@ export interface LaboratoryOperationsActions {
     operation: Omit<LaboratoryOperation, 'id'> & { id?: string },
   ) => LaboratoryOperation;
   setOperations: (operations: LaboratoryOperation[]) => void;
+  /** Renames an operation in place once the host has stored it under its own id. */
+  replaceOperationId: (previousId: string, id: string) => void;
   updateActiveOperation: (operation: Partial<Omit<LaboratoryOperation, 'id'>>) => void;
   deleteOperation: (operationId: string) => void;
   /** With a schema, an abstract field is given `__typename` so it is never selection-less. */
@@ -181,6 +183,15 @@ export const useOperations = (
       props.onOperationsChange?.(operations);
     },
     [props],
+  );
+
+  const replaceOperationId = useCallback(
+    (previousId: string, id: string) => {
+      const newOperations = operations.map(o => (o.id === previousId ? { ...o, id } : o));
+      _setOperations(newOperations);
+      props.onOperationsChange?.(newOperations);
+    },
+    [operations, props],
   );
 
   const addOperation = useCallback(
@@ -537,6 +548,7 @@ export const useOperations = (
   return {
     operations,
     setOperations,
+    replaceOperationId,
     runActiveOperation,
     setActiveOperation,
     activeOperation,

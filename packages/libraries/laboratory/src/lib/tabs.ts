@@ -81,6 +81,8 @@ export interface LaboratoryTabsActions {
   addTab: (tab: Omit<LaboratoryTab, 'id'>) => LaboratoryTab;
   updateTab: (id: string, data: LaboratoryTabData) => void;
   deleteTab: (tabId: string) => void;
+  /** Points operation tabs at an operation's persisted id. */
+  replaceOperationId: (previousId: string, id: string) => void;
 }
 
 export const useTabs = (props: {
@@ -143,6 +145,26 @@ export const useTabs = (props: {
     [tabs, props],
   );
 
+  const replaceOperationId = useCallback(
+    (previousId: string, id: string) => {
+      const isOperationTab = (tab: LaboratoryTab): tab is LaboratoryTabOperation =>
+        tab.type === 'operation';
+      const follow = (tab: LaboratoryTab): LaboratoryTab =>
+        isOperationTab(tab) && tab.data.id === previousId
+          ? { ...tab, data: { ...tab.data, id } }
+          : tab;
+
+      const newTabs = tabs.map(follow);
+      _setTabs(newTabs);
+      props.onTabsChange?.(newTabs);
+
+      if (activeTab) {
+        _setActiveTab(follow(activeTab));
+      }
+    },
+    [tabs, activeTab, props],
+  );
+
   return {
     activeTab,
     setActiveTab,
@@ -151,5 +173,6 @@ export const useTabs = (props: {
     addTab,
     deleteTab,
     updateTab,
+    replaceOperationId,
   };
 };

@@ -94,3 +94,27 @@ describe('useTabs', () => {
     ]);
   });
 });
+
+describe('useTabs replaceOperationId', () => {
+  it('points the tab and the active tab at the persisted operation id', () => {
+    const onTabsChange = vi.fn();
+    const { result } = renderHook(() =>
+      useTabs({
+        defaultTabs: [operationTab('t1'), operationTab('t2')],
+        defaultActiveTabId: 't1',
+        onTabsChange,
+      }),
+    );
+
+    act(() => {
+      result.current.replaceOperationId('op-t1', 'server-op');
+    });
+
+    expect(result.current.tabs.map(t => (t.data as { id: string }).id)).toEqual([
+      'server-op',
+      'op-t2',
+    ]);
+    expect((result.current.activeTab?.data as { id: string }).id).toBe('server-op');
+    expect(onTabsChange).toHaveBeenCalledWith(result.current.tabs);
+  });
+});
