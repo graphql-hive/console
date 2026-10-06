@@ -12,6 +12,7 @@ import {
   getOperationName,
   getOperationType,
   handleTemplate,
+  mergeHeaders,
   healQuery,
   isArgInQuery,
   isPathInQuery,
@@ -54,6 +55,32 @@ describe('handleTemplate', () => {
 
   it('is whitespace-sensitive: inner spaces are part of the lookup key and do not resolve', () => {
     expect(handleTemplate('{{ name }}', { name: 'Bob' })).toBe('{{ name }}');
+  });
+});
+
+describe('mergeHeaders', () => {
+  it('lets the override replace a base header of the same name', () => {
+    expect(mergeHeaders({ authorization: 'old' }, { authorization: 'new' })).toEqual({
+      authorization: 'new',
+    });
+  });
+
+  it('compares names case-insensitively', () => {
+    expect(mergeHeaders({ Authorization: 'old' }, { authorization: 'new' })).toEqual({
+      authorization: 'new',
+    });
+  });
+
+  it('keeps base headers the override does not name', () => {
+    expect(mergeHeaders({ 'x-op': 'mine', accept: '*/*' }, { 'x-trace': 't' })).toEqual({
+      'x-op': 'mine',
+      accept: '*/*',
+      'x-trace': 't',
+    });
+  });
+
+  it('returns the base when there is nothing to override', () => {
+    expect(mergeHeaders({ 'x-op': 'mine' }, {})).toEqual({ 'x-op': 'mine' });
   });
 });
 

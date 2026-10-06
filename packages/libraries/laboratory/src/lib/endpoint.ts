@@ -9,7 +9,7 @@ import { debounce, type DebouncedFunc } from 'lodash';
 import { toast } from 'sonner';
 import { LaboratoryEnv, LaboratoryEnvActions, LaboratoryEnvState } from '@/lib/env';
 import { LaboratoryOperationsActions, LaboratoryOperationsState } from '@/lib/operations';
-import { handleTemplate } from '@/lib/operations.utils';
+import { handleTemplate, mergeHeaders } from '@/lib/operations.utils';
 import { LaboratoryPluginsActions, LaboratoryPluginsState } from '@/lib/plugins';
 import { LaboratoryPreflightActions, LaboratoryPreflightState } from '@/lib/preflight';
 import { asyncInterval } from '@/lib/utils';
@@ -149,7 +149,8 @@ export const useEndpoint = (props: {
             } catch {}
           }
 
-          let stringifiedHeaders = JSON.stringify(sourceHeaders);
+          const stringifiedHeaders = JSON.stringify(sourceHeaders);
+          let preflightHeaders: Record<string, string> = {};
 
           if (stringifiedHeaders.includes('{{')) {
             try {
@@ -165,11 +166,7 @@ export const useEndpoint = (props: {
 
                 env = preflightResult.env.variables;
                 plugins = preflightResult.pluginsState;
-
-                stringifiedHeaders = JSON.stringify({
-                  ...sourceHeaders,
-                  ...preflightResult.headers,
-                });
+                preflightHeaders = preflightResult.headers;
               }
             } catch (error: unknown) {
               toast.error('Failed to run preflight');
@@ -189,6 +186,9 @@ export const useEndpoint = (props: {
             toast.error('Failed to parse headers');
             parsedHeaders = {};
           }
+
+          // Preflight values are sent verbatim, so they merge after templating.
+          parsedHeaders = mergeHeaders(parsedHeaders, preflightHeaders);
 
           const result = await loader.load(endpoint, {
             subscriptionsEndpoint: endpoint,

@@ -262,4 +262,40 @@ describe('runActiveOperation', () => {
       }),
     );
   });
+
+  it('lets preflight headers win over operation headers', async () => {
+    type Props = Parameters<typeof useOperations>[0];
+    executor.mockResolvedValue({ data: {} });
+
+    const { result } = renderHook(() =>
+      useOperations({
+        checkPermissions: () => true,
+        defaultOperations: [
+          { ...op('op1'), headers: '{"Authorization":"from-operation","x-op":"mine"}' },
+        ],
+        tabsApi: tabsApiFor('op1'),
+        preflightApi: {
+          runPreflight: vi.fn().mockResolvedValue({
+            status: 'success',
+            env: { variables: {} },
+            headers: { authorization: 'from-preflight' },
+            pluginsState: {},
+            logs: [],
+          }),
+        } as unknown as Props['preflightApi'],
+      }),
+    );
+
+    await act(async () => {
+      await result.current.runActiveOperation('http://localhost:4000/graphql');
+    });
+
+    expect(executor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        extensions: expect.objectContaining({
+          headers: { 'x-op': 'mine', authorization: 'from-preflight' },
+        }),
+      }),
+    );
+  });
 });

@@ -25,6 +25,7 @@ import {
   deletePathFromQuery,
   getOperationName,
   handleTemplate,
+  mergeHeaders,
   removeArgFromField,
 } from './operations.utils';
 import { LaboratoryPlugin, LaboratoryPluginsActions, LaboratoryPluginsState } from './plugins';
@@ -420,10 +421,7 @@ export const useOperations = (
           )
         : {};
 
-      const mergedHeaders = {
-        ...headers,
-        ...parsedHeaders,
-      };
+      const mergedHeaders = mergeHeaders(parsedHeaders, headers);
 
       const variables = activeOperation.variables
         ? JSON.parse(
