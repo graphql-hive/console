@@ -38,12 +38,12 @@ import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Select } from '@/components/ui/primitives/floating/select/select';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { Label } from '@/components/ui/primitives/label/label';
-import { Legend } from '@/components/ui/primitives/legend/legend';
 import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { Switch } from '@/components/ui/primitives/switch/switch';
 import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import { QueryError } from '@/components/ui/query-error';
+import { ScopeBar } from '@/components/ui/scope-bar/scope-bar';
 import { TabbedView, type TabbedViewItem } from '@/components/ui/tabbed-view/tabbed-view';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
@@ -328,18 +328,16 @@ const PolicyInfo = () => {
   return (
     <Popover
       trigger={
-        <button type="button" aria-label="About policy line numbers" className="ml-2 inline-block">
-          <InfoIcon size={14} />
+        <button type="button" aria-label="About policy line numbers">
+          <InfoIcon className="h-3 w-3" />
         </button>
       }
       openOnHover
-      align="start"
-      width="auto"
+      width="lg"
       content={
-        <p className="text-fg-default text-sm">
-          Schema policy checks run on the composed API schema. Line numbers
-          <br />
-          reflect that and will not match the lines from the source schema.
+        <p className="text-fg-default text-xs">
+          Schema policy checks run on the composed API schema. Line numbers reflect that and will
+          not match the lines from the source schema.
         </p>
       }
     />
@@ -355,9 +353,10 @@ const PolicyBlock = (props: {
   const policies = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.policies);
   return (
     <div>
-      <h2 className="text-fg-secondary mb-3 text-sm font-bold">
-        {props.title} <PolicyInfo />
-      </h2>
+      <div className="mb-3 flex items-center gap-1.5">
+        <h2 className="text-fg-default font-bold">{props.title}</h2>
+        <PolicyInfo />
+      </div>
       <ul className="list-inside list-disc pl-3 text-sm/relaxed">
         {policies.edges.map((edge, key) => (
           <li
@@ -1243,8 +1242,7 @@ function SchemaChecksView(props: {
         })),
       ]}
       size="compact"
-      onSurface="raised"
-      width="md"
+      width="auto"
     />
   );
 
@@ -1272,26 +1270,9 @@ function SchemaChecksView(props: {
     projectType: props.projectType,
   });
   const active = contractView ?? defaultView;
-  const view = (
-    <TabbedView
-      items={active.items}
-      value={active.value}
-      onValueChange={active.onValueChange}
-      action={contractPicker}
-      bodyPadding="none"
-    />
-  );
-
-  if (!contractChecks.length) {
-    return view;
-  }
-
   // The picker opens on the default graph, so a contract that failed is named here first.
   return (
     <div className="mt-3 flex flex-col gap-3">
-      <div className="flex justify-end">
-        <Legend items={CONTRACT_STATUS_LEGEND} />
-      </div>
       {failures.length ? (
         <div className="mb-3">
           <FailureCard
@@ -1301,7 +1282,16 @@ function SchemaChecksView(props: {
           />
         </div>
       ) : null}
-      {view}
+      <ScopeBar
+        picker={contractPicker}
+        legend={contractChecks.length ? CONTRACT_STATUS_LEGEND : undefined}
+      />
+      <TabbedView
+        items={active.items}
+        value={active.value}
+        onValueChange={active.onValueChange}
+        bodyPadding="none"
+      />
     </div>
   );
 }

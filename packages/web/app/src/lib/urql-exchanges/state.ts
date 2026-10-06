@@ -1,17 +1,23 @@
+import { useSyncExternalStore } from 'react';
 import { Exchange, Operation } from 'urql';
-import { proxy, useSnapshot } from 'valtio';
 import { map, pipe, tap } from 'wonka';
 
 const inflightRequests = new Set<number>();
+const listeners = new Set<() => void>();
+let inflightCount = 0;
 
-const NetworkState = proxy({
-  inflightRequests: 0,
-});
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
 
-export const useInflightRequests = () => {
-  const state = useSnapshot(NetworkState);
-  return state.inflightRequests;
-};
+function getSnapshot() {
+  return inflightCount;
+}
+
+export const useInflightRequests = () => useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
 function end(key: number) {
   inflightRequests.delete(key);
@@ -24,7 +30,10 @@ function start(key: number) {
 }
 
 function update() {
-  NetworkState.inflightRequests = inflightRequests.size;
+  inflightCount = inflightRequests.size;
+  for (const listener of listeners) {
+    listener();
+  }
 }
 
 function getUniqueKey(op: Operation) {

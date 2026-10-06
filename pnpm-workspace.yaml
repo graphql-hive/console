@@ -60,10 +60,12 @@ catalog:
   fastify: 5.12.5
   got: 14.4.7
   graphql-yoga: 5.22.0
+  immer: 11.1.21
   ioredis-mock: 8.9.0
   itty-router: 4.2.2
   kafkajs: 2.2.4
   lru-cache: 11.5.2
+  lucide-react: 1.51.0
   lz-string: '^1.5.0'
   monaco-editor: '^0.52.2'
   nock: 14.0.10
@@ -79,6 +81,7 @@ catalog:
   snarkdown: 2.0.0
   sonner: '^2.0.7'
   stripe: 17.5.0
+  tailwind-merge: 3.7.0
   toucan-js: 4.1.0
   tsx: 4.19.2
   typescript: 5.7.3

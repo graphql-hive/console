@@ -21,8 +21,7 @@ export class OAuthCache {
   async put(state: string, data: Record) {
     const encodedData = JSON.stringify(data);
     const key = `oauth-cache:${sha256(state)}`;
-    await this.redis.set(key, encodedData);
-    await this.redis.expire(key, 60 * 5);
+    await this.redis.set(key, encodedData, 'EX', 60 * 5);
   }
 
   async get(state: string) {
