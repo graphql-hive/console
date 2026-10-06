@@ -158,16 +158,17 @@ export const useEndpoint = (props: {
                 props.pluginsApi?.pluginsState ?? {},
               );
 
-              props?.envApi?.setEnv(preflightResult?.env ?? { variables: {} });
-              props?.pluginsApi?.setPluginsState(preflightResult?.pluginsState ?? {});
+              // Null means preflight is disabled; the stored env and plugin state stay in use.
+              if (preflightResult) {
+                props.envApi?.setEnv(preflightResult.env);
+                props.pluginsApi?.setPluginsState(preflightResult.pluginsState);
 
-              env = preflightResult?.env?.variables ?? {};
-              plugins = preflightResult?.pluginsState ?? {};
+                env = preflightResult.env.variables;
+                plugins = preflightResult.pluginsState;
 
-              if (preflightResult?.headers) {
                 stringifiedHeaders = JSON.stringify({
                   ...sourceHeaders,
-                  ...preflightResult?.headers,
+                  ...preflightResult.headers,
                 });
               }
             } catch (error: unknown) {

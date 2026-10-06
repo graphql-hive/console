@@ -397,8 +397,12 @@ export const useOperations = (
         const preflightResult = await props.preflightApi?.runPreflight?.(plugins, pluginsState);
         env = preflightResult?.env ?? { variables: {} };
         headers = preflightResult?.headers ?? {};
-        pluginsState = preflightResult?.pluginsState ?? {};
-        props.pluginsApi?.setPluginsState(pluginsState);
+
+        // Null means preflight is disabled, not that it produced empty state.
+        if (preflightResult) {
+          pluginsState = preflightResult.pluginsState;
+          props.pluginsApi?.setPluginsState(pluginsState);
+        }
       }
 
       if (env && Object.keys(env?.variables ?? {}).length > 0) {
