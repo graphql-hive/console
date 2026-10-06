@@ -46,7 +46,9 @@ test.describe('Laboratory > Preflight', () => {
     await expect(page.locator('.hive-laboratory-host')).toBeVisible({ timeout: 30_000 });
 
     await laboratory.openPreflightTab();
-    await expect.poll(() => laboratory.getEditorValue('preflight')).toBe('console.log("Hello_world")');
+    await expect
+      .poll(() => laboratory.getEditorValue('preflight'))
+      .toBe('console.log("Hello_world")');
     await laboratory.openEnvTab();
     await expect.poll(() => laboratory.getEditorValue('env')).toContain('foo=123');
   });

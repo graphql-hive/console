@@ -36,7 +36,10 @@ export type LaboratoryHelper = {
   cancelPrompt(): Promise<void>;
   runOperation(): Promise<void>;
   /** Register before clicking Run; the mock endpoint also receives introspection POSTs. */
-  waitForLabRequest(operationName: string, predicate?: (request: Request) => boolean): Promise<Request>;
+  waitForLabRequest(
+    operationName: string,
+    predicate?: (request: Request) => boolean,
+  ): Promise<Request>;
 };
 
 type MonacoLike = {

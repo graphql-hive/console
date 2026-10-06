@@ -46,7 +46,9 @@ describe('Preflight', () => {
 
   it('marks each log line with its level inside a log region', () => {
     mount({
-      preflightLogs: [{ level: 'warn', message: ['careful'], createdAt: '2026-01-01T00:00:00.000Z' }],
+      preflightLogs: [
+        { level: 'warn', message: ['careful'], createdAt: '2026-01-01T00:00:00.000Z' },
+      ],
     });
 
     const list = screen.getByRole('log', { name: 'Preflight logs' });

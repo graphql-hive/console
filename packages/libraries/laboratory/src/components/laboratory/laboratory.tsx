@@ -524,7 +524,9 @@ export const Laboratory = (
   const testsApi = useTests(props);
   const tabsApi = useTabs(props);
   // Operations are set up after collections, so the id hand-off reaches them through a ref.
-  const operationsApiRef = useRef<(LaboratoryOperationsState & LaboratoryOperationsActions) | null>(null);
+  const operationsApiRef = useRef<(LaboratoryOperationsState & LaboratoryOperationsActions) | null>(
+    null,
+  );
   const collectionsApi = useCollections({
     ...props,
     tabsApi,
