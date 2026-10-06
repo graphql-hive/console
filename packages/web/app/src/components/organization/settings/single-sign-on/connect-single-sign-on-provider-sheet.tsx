@@ -126,15 +126,6 @@ export function ConnectSingleSignOnProviderSheet(
     }
   }
 
-  const formNode = (
-    <ConnectProviderForm
-      form={form}
-      onSubmit={onSubmit}
-      endpointsEditable={state === 'manual'}
-      clientSecretPreview={props.initialValues?.clientSecretPreview}
-    />
-  );
-
   return (
     <Sheet
       open={props.open}
@@ -166,16 +157,16 @@ export function ConnectSingleSignOnProviderSheet(
         </>
       }
     >
-      <Tabs
-        value={state}
-        onValueChange={value => setState(value === 'manual' ? 'manual' : 'discovery')}
-        items={[
-          {
-            value: 'discovery',
-            label: 'Discovery Document',
-            attrs: { 'data-button-oidc-discovery': '' },
-            content: (
-              <div className="space-y-2">
+      <div className="space-y-4">
+        <Tabs
+          value={state}
+          onValueChange={value => setState(value === 'manual' ? 'manual' : 'discovery')}
+          items={[
+            {
+              value: 'discovery',
+              label: 'Discovery Document',
+              attrs: { 'data-button-oidc-discovery': '' },
+              content: (
                 <OIDCMetadataFetcher
                   onEndpointChange={args => {
                     form.setValue('authorization_endpoint', args.authorization, {
@@ -189,18 +180,24 @@ export function ConnectSingleSignOnProviderSheet(
                     });
                   }}
                 />
-                {formNode}
-              </div>
-            ),
-          },
-          {
-            value: 'manual',
-            label: 'Manual',
-            attrs: { 'data-button-oidc-manual': '' },
-            content: formNode,
-          },
-        ]}
-      />
+              ),
+            },
+            {
+              value: 'manual',
+              label: 'Manual',
+              attrs: { 'data-button-oidc-manual': '' },
+            },
+          ]}
+        />
+        {/* One form below the tabs: a copy per panel would mount it twice, and Base UI keeps the
+            outgoing panel in the DOM until its exit transition ends. */}
+        <ConnectProviderForm
+          form={form}
+          onSubmit={onSubmit}
+          endpointsEditable={state === 'manual'}
+          clientSecretPreview={props.initialValues?.clientSecretPreview}
+        />
+      </div>
     </Sheet>
   );
 }
