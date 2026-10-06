@@ -263,6 +263,7 @@ const LaboratoryContent = () => {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Collections"
                 onClick={() => setActivePanel(activePanel === 'collections' ? null : 'collections')}
                 className={cn('text-muted-foreground hover:text-foreground', {
                   'text-foreground': activePanel === 'collections',
@@ -287,6 +288,7 @@ const LaboratoryContent = () => {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="History"
                 onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
                 className={cn('text-muted-foreground hover:text-foreground', {
                   'text-foreground': activePanel === 'history',
@@ -312,6 +314,7 @@ const LaboratoryContent = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Documentation"
                   onClick={() => setActivePanel(activePanel === 'docs' ? null : 'docs')}
                   className={cn('text-muted-foreground hover:text-foreground', {
                     'text-foreground': activePanel === 'docs',
@@ -339,9 +342,9 @@ const LaboratoryContent = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setActivePanel(activePanel === 'history' ? null : 'history')}
+                    aria-label="Settings"
                     className={cn('text-muted-foreground hover:text-foreground', {
-                      'text-foreground': activePanel === 'history',
+                      'text-foreground': activePanel === 'settings',
                     })}
                   >
                     <SettingsIcon className="size-5" />
