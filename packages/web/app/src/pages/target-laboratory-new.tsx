@@ -316,8 +316,8 @@ export const UpdatePreflightScriptMutation = graphql(`
 `);
 
 function useLaboratoryState() {
-  // Once per mount, before the first read below.
-  useState(migrateLegacyLaboratoryStorage);
+  // Idempotent, so it can run on every render ahead of the reads below.
+  migrateLegacyLaboratoryStorage();
 
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [{ data, fetching: dataFetching }] = useQuery({

@@ -30,9 +30,7 @@ export function withLinkedOperation(
   const operation = existing ?? incoming;
   const operations = existing ? stored.operations : [...stored.operations, incoming];
 
-  const existingTab = stored.tabs.find(
-    tab => isOperationTab(tab) && tab.data.id === operation.id,
-  );
+  const existingTab = stored.tabs.find(tab => isOperationTab(tab) && tab.data.id === operation.id);
   const tab: LaboratoryTab = existingTab ?? {
     id: operation.id,
     type: 'operation',
