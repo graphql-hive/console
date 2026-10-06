@@ -54,8 +54,9 @@ describe('Tabs', () => {
     const finished = new Promise<void>(resolve => {
       finish = resolve;
     });
-    HTMLElement.prototype.getAnimations = () =>
-      [{ finished, pending: false, playState: 'running' } as unknown as Animation];
+    HTMLElement.prototype.getAnimations = () => [
+      { finished, pending: false, playState: 'running' } as unknown as Animation,
+    ];
     try {
       render(<Tabs items={ITEMS} defaultValue="details" />);
       fireEvent.click(screen.getByRole('tab', { name: 'Schema' }));
