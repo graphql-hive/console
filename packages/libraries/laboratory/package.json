@@ -100,7 +100,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-foundry": "catalog:",
-    "react-resizable-panels": "^3.0.6",
+    "react-resizable-panels": "catalog:",
     "sonner": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwindcss": "^4.1.18",

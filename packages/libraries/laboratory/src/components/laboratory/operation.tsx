@@ -954,14 +954,14 @@ export const Operation = (props: {
 
   return (
     <div className="bg-card relative size-full">
-      <ResizablePanelGroup direction="horizontal" className="size-full">
-        <ResizablePanel defaultSize={25}>
+      <ResizablePanelGroup orientation="horizontal" className="size-full">
+        <ResizablePanel defaultSize="25%">
           <Builder operation={operation} operationName={operationName} isReadOnly={isReadOnly} />
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel minSize={10} defaultSize={40}>
-          <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={70}>
+        <ResizablePanel minSize="10%" defaultSize="40%">
+          <ResizablePanelGroup orientation="vertical">
+            <ResizablePanel defaultSize="70%">
               <Query
                 operation={operation}
                 isReadOnly={isReadOnly}
@@ -969,7 +969,7 @@ export const Operation = (props: {
               />
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel minSize={10} defaultSize={30}>
+            <ResizablePanel minSize="10%" defaultSize="30%">
               <Tabs className="grid size-full grid-rows-[auto_1fr]" defaultValue="variables">
                 <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
                   <TabsTrigger value="variables" className="grow-0 rounded-sm">
@@ -996,7 +996,7 @@ export const Operation = (props: {
           </ResizablePanelGroup>
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel minSize={10} defaultSize={35}>
+        <ResizablePanel minSize="10%" defaultSize="35%">
           {historyItem ? (
             <>
               {'responses' in historyItem ? (

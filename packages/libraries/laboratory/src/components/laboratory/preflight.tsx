@@ -41,8 +41,8 @@ export const Preflight = () => {
   const logs = preflightLogs ?? [];
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="size-full">
-      <ResizablePanel defaultSize={50} className="bg-card">
+    <ResizablePanelGroup orientation="horizontal" className="size-full">
+      <ResizablePanel defaultSize="50%" className="bg-card">
         <div className="grid size-full grid-rows-[auto_auto_1fr] pb-0">
           <div className="border-border flex w-full items-center gap-2 border-b p-3">
             <span className="text-base font-medium">Preflight</span>
@@ -262,7 +262,7 @@ export const Preflight = () => {
         </div>
       </ResizablePanel>
       <ResizableHandle />
-      <ResizablePanel minSize={10} defaultSize={50} className="bg-card">
+      <ResizablePanel minSize="10%" defaultSize="50%" className="bg-card">
         {logs.length > 0 ? (
           <div className="grid size-full grid-rows-[auto_1fr] pb-0">
             <div className="border-border flex h-12 w-full items-center gap-2 border-b p-3">
