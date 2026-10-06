@@ -19,7 +19,6 @@ import {
   Play,
   TreePine,
 } from 'lucide-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -1090,19 +1089,11 @@ export function TargetTracePage(props: {
   activeSpanTab: string | null;
 }) {
   return (
-    <>
-      <LayoutContent className="flex flex-col">
-        <div className="flex flex-1 flex-col">
-          <AutoSizer disableWidth>
-            {size => (
-              <div className="w-full" style={{ height: size.height }}>
-                <TargetInsightsNewPageContent {...props} />
-              </div>
-            )}
-          </AutoSizer>
-        </div>
-      </LayoutContent>
-    </>
+    <LayoutContent className="h-(--content-height) flex flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <TargetInsightsNewPageContent {...props} />
+      </div>
+    </LayoutContent>
   );
 }
 
