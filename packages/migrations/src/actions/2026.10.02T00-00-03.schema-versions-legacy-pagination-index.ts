@@ -13,7 +13,7 @@ export default {
           "created_at" DESC,
           "id" DESC
         )
-        WHERE "graph_id" IS NULL
+        WHERE "graph_metadata" IS NULL
       `,
     },
   ],

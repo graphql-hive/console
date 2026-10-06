@@ -563,7 +563,7 @@ export class SchemaVersionStore {
                   ? psql`
                     OR (
                       "target_id" = ${graph.targetId}
-                      AND "graph_id" IS NULL
+                      AND "graph_metadata" IS NULL
                     )
                   `
                   : psql``
@@ -770,7 +770,7 @@ export class SchemaVersionStore {
              ? psql`
                  OR (
                    "target_id" = ${graph.targetId}
-                   AND "graph_id" IS NULL
+                   AND "graph_metadata" IS NULL
                  )
               `
              : psql``
@@ -817,7 +817,7 @@ export class SchemaVersionStore {
                 ? psql`
                   OR (
                     "v"."target_id" = ${graph.targetId}
-                    AND "v"."graph_id" IS NULL
+                    AND "v"."graph_metadata" IS NULL
                   )
                 `
                 : psql``
@@ -857,7 +857,7 @@ export class SchemaVersionStore {
         WHERE
           "sv"."target_id" = ${graph.targetId}
           AND "sv"."is_composable" IS TRUE
-          AND "sv"."graph_id" IS NULL
+          AND "sv"."graph_metadata" IS NULL
         ORDER BY
           "sv"."created_at" DESC
         LIMIT 1
@@ -900,7 +900,7 @@ export class SchemaVersionStore {
           "schema_versions" AS "sv"
         WHERE
           "sv"."target_id" = ${graph.targetId}
-          AND "sv"."graph_id" IS NULL
+          AND "sv"."graph_metadata" IS NULL
         ORDER BY
           "sv"."created_at" DESC
         LIMIT 1
@@ -1075,7 +1075,7 @@ export class SchemaVersionStore {
       (schemaVersion.graphId === graph.id ||
         // legacy match
         (graph.isBackfilled &&
-          schemaVersion.graphId === null &&
+          schemaVersion.graphMetadata === null &&
           schemaVersion.targetId === graph.targetId))
     ) {
       return schemaVersion;
@@ -1155,7 +1155,7 @@ export class SchemaVersionStore {
                   "schema_versions"
                 WHERE
                   "target_id" = ${graph.targetId}
-                  AND "graph_id" IS NULL
+                  AND "graph_metadata" IS NULL
                   ${cursorCondition}
                 ORDER BY
                   "created_at" DESC
@@ -1237,7 +1237,7 @@ export class SchemaVersionStore {
               ? psql`
                   OR (
                     "target_id" = ${graph.targetId}
-                    AND "graph_id" IS NULL
+                    AND "graph_metadata" IS NULL
                   )
                 `
               : psql``
