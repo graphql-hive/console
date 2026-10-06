@@ -130,11 +130,11 @@ introspection headers contain `{{…}}`. It sees a `lab` object:
 - `lab.plugins.*`: objects contributed by plugins.
 
 The body runs inside `with(lab)`, so bare `environment.set()` also works, which means sloppy mode.
-Only the globals listed in `src/lib/preflight-allowed-globals.ts` are visible; worker internals
-such as `self`, `postMessage` and `importScripts` read as `undefined`, and `this` is not the worker
+Only the globals listed in `src/lib/preflight-allowed-globals.ts` are visible; worker internals such
+as `self`, `postMessage` and `importScripts` read as `undefined`, and `this` is not the worker
 scope. Console arguments are converted to text. A run is stopped after 30 seconds of execution, not
-counting time spent waiting on a prompt. Scripts written for the GraphiQL-based Hive Console tab
-run unchanged.
+counting time spent waiting on a prompt. Scripts written for the GraphiQL-based Hive Console tab run
+unchanged.
 
 ### Styling and rendering
 

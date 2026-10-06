@@ -182,9 +182,7 @@ describe('useEndpoint', () => {
       renderHook(() =>
         useEndpoint({
           defaultEndpoint: ENDPOINT,
-          settingsApi: settingsApiWithHeaders(
-            '{"Authorization":"Bearer {{token}}","x-op":"mine"}',
-          ),
+          settingsApi: settingsApiWithHeaders('{"Authorization":"Bearer {{token}}","x-op":"mine"}'),
           envApi: { env: { variables: { token: 'secret' } }, setEnv } as Props['envApi'],
           preflightApi: {
             runPreflight: vi.fn().mockResolvedValue({
