@@ -20,6 +20,7 @@ import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
+import { migrateLegacyLaboratoryStorage } from '@/lib/laboratory-legacy-storage';
 import {
   Laboratory,
   LaboratoryCollection,
@@ -311,6 +312,9 @@ export const UpdatePreflightScriptMutation = graphql(`
 `);
 
 function useLaboratoryState() {
+  // Once per mount, before the first read below.
+  useState(migrateLegacyLaboratoryStorage);
+
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [{ data, fetching: dataFetching }] = useQuery({
     query: LaboratoryQuery,
@@ -623,7 +627,7 @@ function useLaboratoryState() {
     defaultPreflight: preflight?.preflightScript?.sourceCode
       ? {
           script: preflight.preflightScript.sourceCode,
-          enabled: getLocalStorageState('preflightEnabled', true),
+          enabled: getLocalStorageState('preflightEnabled', false),
         }
       : null,
     defaultEnv: getLocalStorageState('env', {}),
@@ -678,7 +682,7 @@ function useLaboratoryState() {
     },
     onPreflightChange: (preflight: LaboratoryPreflight | null) => {
       updatePreflight(preflight ?? { script: '', enabled: true });
-      setLocalStorageState('preflightEnabled', preflight?.enabled ?? true);
+      setLocalStorageState('preflightEnabled', preflight?.enabled ?? false);
     },
     // One script per target, stored server side, so it is not private to the person editing it.
     preflightNotice:
