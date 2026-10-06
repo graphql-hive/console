@@ -84,6 +84,22 @@ export const PREFLIGHT_TIMEOUT = 30_000;
 export const isValidEnvValue = (value: unknown) =>
   value === null || ['string', 'number', 'boolean'].includes(typeof value);
 
+/**
+ * A function or `Headers` cannot cross postMessage; the clone error would fail the run.
+ * Injected by source like `isValidEnvValue`, so no outer references.
+ */
+export const toLogText = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  try {
+    return String(value);
+  } catch {
+    return Object.prototype.toString.call(value);
+  }
+};
+
 export interface LaboratoryPreflightRunOptions {
   /** Aborting terminates the worker and settles the run as an error. */
   signal?: AbortSignal;
@@ -319,6 +335,7 @@ export async function runIsolatedLabScript(
         // Declared out here because the catch below needs it too, and a const inside the try
         // would be out of scope exactly when a script has just failed.
         const readLineAndColumn = ${readLineAndColumn.toString()};
+        const toLogText = ${toLogText.toString()};
 
         self.onmessage = async (event) => {
           if (event.data.type === 'prompt:result') {
@@ -332,7 +349,7 @@ export async function runIsolatedLabScript(
                 self.postMessage({
                   type: 'log',
                   level,
-                  message: args,
+                  message: args.map(toLogText),
                   ...readLineAndColumn(new Error().stack, 8),
                 });
               };
@@ -403,13 +420,15 @@ export async function runIsolatedLabScript(
 
               self.postMessage({ type: 'result', env: env, headers: Object.fromEntries(lab.request.headers.entries()), pluginsState: state });
             } catch (err) {
+              const message = err && err.message ? err.message : toLogText(err);
+
               self.postMessage({
                 type: 'log',
                 level: 'error',
-                message: [err && err.message ? err.message : String(err)],
+                message: [message],
                 ...readLineAndColumn(err && err.stack),
               });
-              self.postMessage({ type: 'result', error: err.message || String(err) });
+              self.postMessage({ type: 'result', error: message });
             }
           }
         };

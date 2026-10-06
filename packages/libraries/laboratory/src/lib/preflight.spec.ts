@@ -6,6 +6,7 @@ import {
   PREFLIGHT_TIMEOUT,
   readLineAndColumn,
   runIsolatedLabScript,
+  toLogText,
   usePreflight,
   usePreflightPrompt,
   type LaboratoryPreflightPromptRequest,
@@ -165,6 +166,19 @@ describe('isValidEnvValue', () => {
   });
 });
 
+describe('toLogText', () => {
+  it.each([
+    ['a string', 'a string'],
+    [42, '42'],
+    [null, 'null'],
+    [undefined, 'undefined'],
+    [new Error('boom'), 'Error: boom'],
+    [Object.create(null), '[object Object]'],
+  ])('turns %s into text', (value, expected) => {
+    expect(toLogText(value)).toBe(expected);
+  });
+});
+
 // The suite drives the message protocol with a fake worker, so nothing else here executes the
 // generated worker source. A ReferenceError in it silently costs a run: the script's failure is
 // swallowed, no result is posted, and the lab waits for the timeout.
@@ -187,9 +201,10 @@ describe('the generated worker source', () => {
     const posted: any[] = [];
     const self: Record<string, any> = {
       postMessage: (message: any) => {
-        posted.push(message);
+        // Like the real boundary: an uncloneable value throws back into the script.
+        posted.push(structuredClone(message));
 
-        // The main thread answers on a later task, while the script is parked on its await.
+        // The main thread answers on a later task.
         if (message.type === 'prompt' && options.answerPrompt) {
           setTimeout(() => {
             void self.onmessage({
@@ -198,10 +213,8 @@ describe('the generated worker source', () => {
           }, 0);
         }
       },
-      // The script runs in an AsyncFunction, which sees the real global scope rather than this
-      // fake `self`. In a worker the two are the same object, so the console the source installs
-      // on `self` has to become the global one or the script's logs never reach postMessage.
-      // `afterEach` unstubs it.
+      // The script's AsyncFunction sees the real global, not this fake `self`; in a worker they
+      // are the same object. Unstubbed in afterEach.
       get console() {
         return globalThis.console;
       },
@@ -246,6 +259,24 @@ describe('the generated worker source', () => {
     );
   });
 
+  it('reports a non-Error throw instead of going quiet', async () => {
+    const posted = await runWorkerSource('throw null;');
+
+    expect(posted).toContainEqual(expect.objectContaining({ type: 'result', error: 'null' }));
+  });
+
+  it('logs values that cannot be structured-cloned', async () => {
+    const posted = await runWorkerSource('console.log(lab.request.headers, () => {}, null);');
+
+    const log = posted.find(message => message.type === 'log');
+    expect(log.message).toHaveLength(3);
+    expect(log.message.every((part: unknown) => typeof part === 'string')).toBe(true);
+    expect(log.message[2]).toBe('null');
+    expect(posted).toContainEqual(
+      expect.objectContaining({ type: 'result', env: { variables: {} } }),
+    );
+  });
+
   it('exposes CryptoJS on lab and as a bare name', async () => {
     const posted = await runWorkerSource(
       'console.log(typeof lab.CryptoJS.SHA256, typeof CryptoJS.SHA256);',
@@ -256,8 +287,7 @@ describe('the generated worker source', () => {
     );
   });
 
-  // The same saved script runs on both laboratory tabs, so what worked against the GraphiQL
-  // worker has to keep working here.
+  // The same saved script runs on both laboratory tabs.
   it('runs a script written for the GraphiQL tab', async () => {
     const script = [
       "console.log('preflight worker is running');",
