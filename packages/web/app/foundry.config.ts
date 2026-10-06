@@ -114,6 +114,7 @@ export default defineConfig({
         { label: 'BillingPlanPicker' },
         { label: 'Calendar' },
         { label: 'DataTable' },
+        { label: 'DateRangePicker' },
         { label: 'FailureCard' },
         { label: 'Filters', children: [{ label: 'FilterDropdown' }, { label: 'FilterMenu' }] },
         { label: 'Navigation', children: [{ label: 'Component Examples' }] },

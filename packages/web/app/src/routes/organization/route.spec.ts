@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { overviewPeriod } from '@/lib/overview-period';
-import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
+import { layoutFixtures, organizationLayout, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { createTestClient } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { UTCDate } from '@date-fns/utc';
@@ -33,8 +33,8 @@ const NOW = '2026-09-28T15:30:00.000Z';
 
 type TestClient = ReturnType<typeof createTestClient>;
 
-async function loadedAt(url: string) {
-  const client = createTestClient(layoutFixtures());
+async function loadedAt(url: string, fixtures = layoutFixtures()) {
+  const client = createTestClient(fixtures);
   const router = createAppRouter({
     history: createMemoryHistory({ initialEntries: [url] }),
     urqlClient: client,
@@ -70,6 +70,20 @@ describe('organization overview route', () => {
       { organizationSlug: SLUGS.organizationSlug, chartResolution: resolution, period },
     ]);
     expectRevalidating(client, 'OrganizationProjectsPageQuery');
+  });
+
+  it('asks for a week on a plan that keeps a week', { timeout: 30_000 }, async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(NOW));
+    const fixtures = layoutFixtures();
+    fixtures.set('OrganizationLayoutQuery', organizationLayout({ usageRetentionInDays: 7 }));
+    const { client } = await loadedAt(ORGANIZATION, fixtures);
+
+    const { period, resolution } = overviewPeriod(new UTCDate(NOW), 7);
+    expect(variablesOf(client, 'OrganizationProjectsPageQuery')).toEqual([
+      { organizationSlug: SLUGS.organizationSlug, chartResolution: 7, period },
+    ]);
+    expect(resolution).toBe(7);
   });
 });
 
