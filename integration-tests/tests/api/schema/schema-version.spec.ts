@@ -64,7 +64,9 @@ test.concurrent(
     await using db = await seed.createDbConnection();
     await db.pool.query(psql`
       UPDATE "schema_versions"
-      SET "graph_id" = NULL
+      SET
+        "graph_id" = NULL
+        , "graph_metadata" = NULL
       WHERE "target_id" = ${target.id}
     `);
 
@@ -135,9 +137,11 @@ test.concurrent(
 
     await db.pool.query(psql`
     UPDATE "schema_versions"
-    SET "graph_id" = NULL
+    SET
+      "graph_id" = NULL
+      , "graph_metadata" = NULL
     WHERE "target_id" = ${target.id}
-  `);
+    `);
 
     for (const commit of ['linked-1', 'linked-2']) {
       await token
