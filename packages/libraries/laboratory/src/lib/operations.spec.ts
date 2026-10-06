@@ -319,3 +319,21 @@ describe('replaceOperationId', () => {
     expect(onOperationsChange).toHaveBeenCalledWith(result.current.operations);
   });
 });
+
+describe('replaceOperationId after later changes', () => {
+  it('keeps operations added after the callback was captured', () => {
+    const { result } = renderHook(() =>
+      useOperations({ checkPermissions: () => true, defaultOperations: [op('local-1')] }),
+    );
+    const staleReplace = result.current.replaceOperationId;
+
+    act(() => {
+      result.current.addOperation({ ...op('later'), id: 'later' });
+    });
+    act(() => {
+      staleReplace('local-1', 'server-1');
+    });
+
+    expect(result.current.operations.map(o => o.id)).toEqual(['server-1', 'later']);
+  });
+});

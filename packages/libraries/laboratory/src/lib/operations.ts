@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DocumentNode,
   ExecutionResult,
@@ -185,13 +185,19 @@ export const useOperations = (
     [props],
   );
 
+  // Persisted ids arrive after the fact, so the rename reads the latest state, not a closure.
+  const operationsRef = useRef(operations);
+  operationsRef.current = operations;
+
   const replaceOperationId = useCallback(
     (previousId: string, id: string) => {
-      const newOperations = operations.map(o => (o.id === previousId ? { ...o, id } : o));
+      const newOperations = operationsRef.current.map(o =>
+        o.id === previousId ? { ...o, id } : o,
+      );
       _setOperations(newOperations);
       props.onOperationsChange?.(newOperations);
     },
-    [operations, props],
+    [props],
   );
 
   const addOperation = useCallback(

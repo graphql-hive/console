@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { LaboratoryEnv } from './env';
 import type { LaboratoryHistoryRequest } from './history';
@@ -99,6 +99,12 @@ export const useTabs = (props: {
       null,
   );
 
+  // Persisted ids arrive after the fact, so the rename reads the latest state, not a closure.
+  const tabsRef = useRef(tabs);
+  tabsRef.current = tabs;
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+
   const setActiveTab = useCallback(
     (tab: LaboratoryTab) => {
       _setActiveTab(tab);
@@ -154,15 +160,15 @@ export const useTabs = (props: {
           ? { ...tab, data: { ...tab.data, id } }
           : tab;
 
-      const newTabs = tabs.map(follow);
+      const newTabs = tabsRef.current.map(follow);
       _setTabs(newTabs);
       props.onTabsChange?.(newTabs);
 
-      if (activeTab) {
-        _setActiveTab(follow(activeTab));
+      if (activeTabRef.current) {
+        _setActiveTab(follow(activeTabRef.current));
       }
     },
-    [tabs, activeTab, props],
+    [props],
   );
 
   return {
