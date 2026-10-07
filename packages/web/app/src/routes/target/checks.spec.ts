@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { CHECKS, checksFixtures } from '@/lib/testing/fixtures/checks';
+import { CHECKS, checksFixtures, SERVICES } from '@/lib/testing/fixtures/checks';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory } from '@tanstack/react-router';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -31,6 +31,20 @@ function client() {
 
 function listRequests(client: TestClient) {
   return client.requests('SchemaChecks_NavigationQuery').map(operation => operation.variables);
+}
+
+// Base UI commits an option only while it is highlighted, so focus and click are separate acts.
+async function pickService(name: string) {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('combobox', { name: 'Service' }));
+  });
+  const option = await screen.findByRole('option', { name });
+  await act(async () => {
+    option.focus();
+  });
+  await act(async () => {
+    fireEvent.click(option);
+  });
 }
 
 describe('schema checks list', () => {
@@ -101,6 +115,69 @@ describe('schema checks list', () => {
   });
 });
 
+describe('service filter', () => {
+  it(
+    'narrows the list to a service and keeps the selected check',
+    { timeout: 30_000 },
+    async () => {
+      const testClient = client();
+      const { router } = renderAtUrl(`${CHECKS_PAGE}/check-2`, { client: testClient });
+      await screen.findByText(CHECKS.first[1]);
+
+      await pickService(SERVICES[1]);
+
+      await screen.findByText(CHECKS.serviceOnly);
+      expect(router.state.location.search).toMatchObject({ filter_service: SERVICES[1] });
+      expect(router.state.location.pathname).toBe(`${CHECKS_PAGE}/check-2`);
+      expect(screen.queryByText(CHECKS.first[0])).toBeNull();
+      expect(listRequests(testClient).at(-1)).toMatchObject({
+        after: null,
+        filters: { changed: false, failed: false, serviceName: SERVICES[1] },
+      });
+      expect(testClient.requests('ChecksPageQuery')).toHaveLength(1);
+    },
+  );
+
+  it('clears back to all services', { timeout: 30_000 }, async () => {
+    const testClient = client();
+    const { router } = renderAtUrl(`${CHECKS_PAGE}?filter_service=${SERVICES[1]}`, {
+      client: testClient,
+    });
+    await screen.findByText(CHECKS.serviceOnly);
+
+    await pickService('All services');
+
+    await screen.findByText(CHECKS.first[0]);
+    expect(router.state.location.search).not.toHaveProperty('filter_service');
+    expect(listRequests(testClient).at(-1)).toMatchObject({
+      after: null,
+      filters: { changed: false, failed: false, serviceName: null },
+    });
+  });
+
+  it(
+    'shows a service from the URL that the latest version does not know',
+    { timeout: 30_000 },
+    async () => {
+      renderAtUrl(`${CHECKS_PAGE}?filter_service=ghost`, { client: client() });
+      await screen.findByText(CHECKS.serviceOnly);
+
+      expect(screen.getByRole('combobox', { name: 'Service' }).textContent).toContain('ghost');
+    },
+  );
+
+  it('is absent for a single-schema project', { timeout: 30_000 }, async () => {
+    const testClient = createTestClient(
+      new Map([...layoutFixtures(), ...checksFixtures('SINGLE')]),
+    );
+    renderAtUrl(CHECKS_PAGE, { client: testClient });
+    await screen.findByText(CHECKS.first[0]);
+
+    expect(screen.queryByRole('combobox', { name: 'Service' })).toBeNull();
+    expect(screen.getByRole('switch', { name: 'Show only failed checks' })).toBeTruthy();
+  });
+});
+
 describe('checks route loaders', () => {
   it(
     'start the page and the first list page, with the filters from the URL, before rendering',
@@ -115,10 +192,29 @@ describe('checks route loaders', () => {
 
       expect(testClient.seen).toContain('ChecksPageQuery');
       expect(listRequests(testClient)).toEqual([
-        { ...SLUGS, after: null, filters: { changed: false, failed: true } },
+        { ...SLUGS, after: null, filters: { changed: false, failed: true, serviceName: null } },
       ]);
     },
   );
+
+  it('pass the service from the URL to the first list page', { timeout: 30_000 }, async () => {
+    const testClient = client();
+    const router = createAppRouter({
+      history: createMemoryHistory({
+        initialEntries: [`${CHECKS_PAGE}?filter_service=${SERVICES[1]}`],
+      }),
+      urqlClient: testClient,
+    });
+    await router.load();
+
+    expect(listRequests(testClient)).toEqual([
+      {
+        ...SLUGS,
+        after: null,
+        filters: { changed: false, failed: false, serviceName: SERVICES[1] },
+      },
+    ]);
+  });
 
   it('render the page from the cache: one request per document', { timeout: 30_000 }, async () => {
     const testClient = client();
