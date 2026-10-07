@@ -46,8 +46,7 @@ const ClickHouseModel = zod.union([
   zod.object({
     CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
     CLICKHOUSE_HOST: zod.string(),
-    // Restricted to a plain identifier: the migrator interpolates it into
-    // CREATE DATABASE, which can't take a bound parameter.
+    // A plain identifier, so a typo fails at startup rather than on the first query.
     CLICKHOUSE_DB: emptyString(
       zod
         .string()

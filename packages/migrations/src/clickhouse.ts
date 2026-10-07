@@ -46,13 +46,6 @@ export async function migrateClickHouse(
   const endpoint = `${clickhouse.protocol}://${clickhouse.host}:${clickhouse.port}`;
   const database = clickhouse.database ?? 'default';
 
-  // Interpolated into CREATE DATABASE below, which takes no bound parameters. The environment
-  // schema already restricts CLICKHOUSE_DB to this shape; checked again here because this is
-  // the line that builds SQL from it.
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(database)) {
-    throw new Error(`Invalid ClickHouse database name: ${JSON.stringify(database)}`);
-  }
-
   // Make sure people don't accidentally define the GRAPHQL_HIVE_ENVIRONMENT environment variable
   hiveCloudEnvironment = isHiveCloud ? hiveCloudEnvironment : null;
 
@@ -155,16 +148,6 @@ export async function migrateClickHouse(
       })
       .then(r => r.body);
   }
-
-  // A request that names a database ClickHouse doesn't have fails before it runs, so this one
-  // statement goes out without the setting. A no-op for `default`, which always exists.
-  await got.post(endpoint, {
-    body: `CREATE DATABASE IF NOT EXISTS \`${database}\``,
-    searchParams: { wait_end_of_query: '1' },
-    headers: { Accept: 'text/plain' },
-    username: clickhouse.username,
-    password: clickhouse.password,
-  });
 
   // Create migrations table
   await exec(`

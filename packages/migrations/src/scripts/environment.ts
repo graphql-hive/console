@@ -26,7 +26,7 @@ const NumberFromString = zod.preprocess(numberFromNumberOrNumberString, zod.numb
 const ClickHouseModel = zod.object({
   CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
   CLICKHOUSE_HOST: zod.string(),
-  // Restricted to a plain identifier, as in the services' environments.
+  // A plain identifier, so a typo fails at startup rather than on the first query.
   CLICKHOUSE_DB: emptyString(
     zod
       .string()
