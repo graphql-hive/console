@@ -29,8 +29,8 @@ import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import { GraphStore } from '../../graph/providers/graph-store';
 import {
-  isGitHubClientError,
   GitHubIntegrationManager,
+  isGitHubClientError,
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
