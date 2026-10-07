@@ -1104,7 +1104,7 @@ export function TargetTracePage(props: {
   activeSpanTab: string | null;
 }) {
   return (
-    <LayoutContent className="h-(--content-height) flex flex-col">
+    <LayoutContent className="flex h-(--content-height) flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
         <TargetInsightsNewPageContent {...props} />
       </div>

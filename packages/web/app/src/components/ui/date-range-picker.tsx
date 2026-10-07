@@ -359,7 +359,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }
                   />
                 </div>
-                <div className="text-critical w-0 min-w-full">{fromError}</div>
+                <div className="w-0 min-w-full text-critical">{fromError}</div>
               </div>
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="to" label="To" />
@@ -385,7 +385,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }
                   />
                 </div>
-                <div className="text-critical w-0 min-w-full">{toError}</div>
+                <div className="w-0 min-w-full text-critical">{toError}</div>
               </div>
 
               <Button
