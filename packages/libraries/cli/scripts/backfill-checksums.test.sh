@@ -90,9 +90,11 @@ chmod +x "$TEST_DIR/bin/aws" "$TEST_DIR/bin/curl"
 
 printf 'linux archive\n' > "$TEST_DIR/objects/hive-v1.0.0-linux-x64.tar.gz"
 printf 'darwin archive\n' > "$TEST_DIR/objects/hive-v1.0.0-darwin-arm64.tar.gz"
+printf 'legacy archive\n' > "$TEST_DIR/objects/hive-v0.8.0-abcdef-linux-x64.tar.gz"
 
 cat > "$TEST_DIR/keys" << 'EOF'
 channels/stable/hive-linux-x64.tar.gz
+versions/0.8.0/abcdef/hive-v0.8.0-abcdef-linux-x64.tar.gz
 versions/0.9.0/SHA256SUMS
 versions/0.9.0/hive-v0.9.0-linux-x64.tar.gz
 versions/1.0.0/hive-v1.0.0-darwin-arm64.tar.gz
@@ -109,25 +111,36 @@ export MOCK_PUT_LOG="$TEST_DIR/put.log"
 export PATH="$TEST_DIR/bin:$PATH"
 
 dry_run_output=$("$SCRIPT_DIR/backfill-checksums.sh" --dry-run)
+grep -Fq '  - 0.8.0' <<< "$dry_run_output"
 grep -Fq '  - 1.0.0' <<< "$dry_run_output"
 grep -Fq 'Dry run complete; no objects were written.' <<< "$dry_run_output"
 [[ ! -e "$MOCK_PUT_LOG" ]]
 
 "$SCRIPT_DIR/backfill-checksums.sh"
 
-[[ $(cat "$MOCK_PUT_LOG") == 'versions/1.0.0/SHA256SUMS' ]]
+cat > "$TEST_DIR/expected-put-log" << 'EOF'
+versions/0.8.0/SHA256SUMS
+versions/1.0.0/SHA256SUMS
+EOF
+cmp "$TEST_DIR/expected-put-log" "$MOCK_PUT_LOG"
 [[ $(grep -Fc 'versions/0.9.0/SHA256SUMS' "$MOCK_KEYS") -eq 1 ]]
 
 (
   cd "$TEST_DIR/objects"
-  sha256sum ./hive-v1.0.0-*.tar.gz \
-    | sed 's#  \./#  #' \
-    | LC_ALL=C sort -k2 > "$TEST_DIR/expected"
+  sha256sum hive-v0.8.0-abcdef-linux-x64.tar.gz \
+    | sed 's#  #  abcdef/#' > "$TEST_DIR/expected-legacy"
+)
+cmp "$TEST_DIR/expected-legacy" "$TEST_DIR/uploads/0.8.0/SHA256SUMS"
+
+(
+  cd "$TEST_DIR/objects"
+  sha256sum hive-v1.0.0-*.tar.gz | LC_ALL=C sort -k2 > "$TEST_DIR/expected"
 )
 cmp "$TEST_DIR/expected" "$TEST_DIR/uploads/1.0.0/SHA256SUMS"
 
+sed -i.bak '/versions\/0.8.0\/SHA256SUMS/d' "$MOCK_KEYS"
 sed -i.bak '/versions\/1.0.0\/SHA256SUMS/d' "$MOCK_KEYS"
-rm -f "$MOCK_PUT_LOG" "$MOCK_OBJECTS/hive-v1.0.0-linux-x64.tar.gz"
+rm -f "$MOCK_PUT_LOG" "$MOCK_OBJECTS/hive-v0.8.0-abcdef-linux-x64.tar.gz"
 
 if "$SCRIPT_DIR/backfill-checksums.sh" > "$TEST_DIR/failure.log" 2>&1; then
   echo 'Expected a missing archive download to fail the backfill.' >&2

@@ -51,12 +51,15 @@ inventory() {
   : > "$manifests"
 
   while IFS= read -r key; do
-    if [[ "$key" =~ ^versions/([^/]+)/([^/]+\.tar\.gz)$ ]]; then
+    if [[ "$key" =~ ^versions/([^/]+)/(.+\.tar\.gz)$ ]]; then
       local version=${BASH_REMATCH[1]}
-      local filename=${BASH_REMATCH[2]}
+      local relative_path=${BASH_REMATCH[2]}
 
-      if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-        printf '%s\t%s\t%s\n' "$version" "$key" "$filename" >> "$archives"
+      if
+        [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]] \
+          && [[ ! "$relative_path" =~ (^|/)\.{1,2}(/|$) ]]
+      then
+        printf '%s\t%s\t%s\n' "$version" "$key" "$relative_path" >> "$archives"
       fi
     elif [[ "$key" =~ ^versions/([^/]+)/SHA256SUMS$ ]]; then
       printf '%s\n' "${BASH_REMATCH[1]}" >> "$manifests"
@@ -94,18 +97,19 @@ while IFS= read -r version; do
   version_dir="$WORK_DIR/$version"
   mkdir "$version_dir"
 
-  while IFS=$'\t' read -r _ key filename; do
+  while IFS=$'\t' read -r _ key relative_path; do
+    mkdir -p "$(dirname "$version_dir/$relative_path")"
     aws s3 cp \
       "s3://$BUCKET/$key" \
-      "$version_dir/$filename" \
+      "$version_dir/$relative_path" \
       --endpoint-url "$AWS_S3_ENDPOINT" \
       --only-show-errors
   done < <(awk -F '\t' -v version="$version" '$1 == version' "$WORK_DIR/archives")
 
-  (
-    cd "$version_dir"
-    sha256sum ./*.tar.gz | sed 's#  \./#  #' | LC_ALL=C sort -k2 > SHA256SUMS
-  )
+  while IFS=$'\t' read -r _ _ relative_path; do
+    (cd "$version_dir" && sha256sum "$relative_path")
+  done < <(awk -F '\t' -v version="$version" '$1 == version' "$WORK_DIR/archives") \
+    | LC_ALL=C sort -k2 > "$version_dir/SHA256SUMS"
 
   manifest_key="versions/$version/SHA256SUMS"
   aws s3api put-object \

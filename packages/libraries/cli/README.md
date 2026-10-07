@@ -40,11 +40,12 @@ exact version currently promoted to the standalone stable channel is available a
 `https://cli.graphql-hive.com/channels/stable/VERSION`; its body is the semantic version followed by
 a newline.
 
-Historical versions whose standalone archives are retained under `versions/VERSION/` receive
-manifests through the manual **Backfill CLI checksum manifests** workflow. Run it from `main` with
-`publish` disabled to preview missing manifests, then run it again with `publish` enabled. The
-workflow preserves existing manifests, creates only missing `SHA256SUMS` objects, verifies each
-through the public endpoint, and fails if any retained version remains without a manifest.
+Historical versions whose standalone archives are retained anywhere under `versions/VERSION/`
+receive manifests through the manual **Backfill CLI checksum manifests** workflow. Run it from
+`main` with `publish` disabled to preview missing manifests, then run it again with `publish`
+enabled. The workflow preserves existing manifests, creates only missing `SHA256SUMS` objects,
+verifies each through the public endpoint, and fails if any retained version remains without a
+manifest.
 
 ## Commands
 
