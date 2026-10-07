@@ -557,6 +557,11 @@ function isOctokitRequestError(error: unknown): error is RequestError {
   return error instanceof RequestError;
 }
 
+/** A 4xx from GitHub reflects the customer's installation or repository state, not a Hive fault. */
+export function isGitHubClientError(error: unknown): error is RequestError {
+  return isOctokitRequestError(error) && error.status >= 400 && error.status < 500;
+}
+
 /**
  * GitHub can answer 404 for a check-run it created a moment earlier (read-after-write lag),
  * so a brand-new check-run gets a short grace window before the 404 is treated as real.
