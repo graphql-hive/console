@@ -3,6 +3,7 @@ import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { CallSite } from '@/components/inventory/shared';
 import { CompositionErrorMessage } from './composition-error-message';
 import { CompositionErrorsPopover } from './composition-errors-popover';
+import { CompositionErrorsList } from './errors-and-changes';
 
 export const nav: NavPath = 'Components/CompositionErrors';
 
@@ -13,8 +14,8 @@ export const nav: NavPath = 'Components/CompositionErrors';
  * service itself), so each fixture is a library template with neutral names; `A1` is a real
  * production message.
  *
- * Both containers are transcribed: the version-page card is page-local, and the checks-page list
- * still carries the old renderer until it is switched over.
+ * The checks-page container is the real `CompositionErrorsList`. The version-page card is page-local
+ * and transcribed from `pages/target-history-schema-version.tsx`.
  */
 
 type Fixture = { id: string; label: string; message: string };
@@ -358,25 +359,6 @@ function VersionPageCard(props: { errors: ReadonlyArray<{ message: string }> }) 
   );
 }
 
-/** `CompositionErrorsList` chrome from `errors-and-changes.tsx:686-702` around the shipped renderer. */
-function ChecksPageList(props: { errors: ReadonlyArray<{ message: string }> }) {
-  return (
-    <div className="mb-2 px-2">
-      <div className="mb-3 flex items-center gap-1.5">
-        <h2 className="text-fg-default font-bold">Composition Errors</h2>
-        <CompositionErrorsPopover />
-      </div>
-      <ul>
-        {props.errors.map((error, index) => (
-          <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
-            <CompositionErrorMessage message={error.message} />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 /** Which fixture sits at which row number, since the containers show only the messages. */
 function Legend(props: { fixtures: readonly Fixture[] }) {
   return (
@@ -401,7 +383,7 @@ function BothContainers(props: { fixtures: readonly Fixture[] }) {
         <VersionPageCard errors={errors} />
       </CallSite>
       <CallSite source="components/target/history/errors-and-changes.tsx:681-704" origin="ui">
-        <ChecksPageList errors={errors} />
+        <CompositionErrorsList title="Composition Errors" errors={errors} />
       </CallSite>
     </div>
   );

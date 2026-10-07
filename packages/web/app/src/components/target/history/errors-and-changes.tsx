@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { format } from 'date-fns';
 import { ActivityIcon, BoxIcon, CheckIcon, CircleCheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
+import { CompositionErrorMessage } from '@/components/target/history/composition-error-message';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
@@ -695,33 +696,11 @@ export function CompositionErrorsList(props: {
       <ul>
         {props.errors.map((error, index) => (
           <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
-            <CompositionError message={error.message} />
+            <CompositionErrorMessage message={error.message} />
           </li>
         ))}
       </ul>
     </div>
-  );
-}
-
-function CompositionError(props: { message: string }) {
-  return reactStringReplace(
-    reactStringReplace(
-      reactStringReplace(props.message, /"([^"]+)"/g, (match, index) => {
-        return <ChangeBadge key={index + match} content={match} />;
-      }),
-      /(@[^. ]+)/g,
-      (match, index) => {
-        return <ChangeBadge key={index + match} content={match} />;
-      },
-    ),
-    /Unknown type ([A-Za-z_0-9]+)/g,
-    (match, index) => {
-      return (
-        <span key={match + index}>
-          Unknown type <ChangeBadge content={match} />
-        </span>
-      );
-    },
   );
 }
 
