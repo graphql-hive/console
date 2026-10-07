@@ -264,6 +264,7 @@ export default gql`
   input SchemaChecksFilter {
     failed: Boolean
     changed: Boolean
+    serviceName: String
   }
 
   type SchemaConnection {
