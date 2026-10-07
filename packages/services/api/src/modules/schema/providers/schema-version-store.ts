@@ -347,16 +347,23 @@ export class SchemaVersionStore {
             )
             .then(PreviousVersionIdsModel.parse);
 
-    const version = await this.insertSchemaVersion(trx, {
-      ...sharedParams,
-      ...references,
-    });
-
-    if (args.changes?.length) {
-      await this.insertSchemaVersionChanges(trx, {
-        changes: args.changes,
-        versionId: version.id,
+    // Only insert the schema version for the contract if the provided values match
+    // We want to ensure that all new records are as consistent as possible
+    if (
+      references.diffSchemaVersionId === args.diffSchemaVersionId &&
+      references.previousSchemaVersionId === args.previousSchemaVersionId
+    ) {
+      const version = await this.insertSchemaVersion(trx, {
+        ...sharedParams,
+        ...references,
       });
+
+      if (args.changes?.length) {
+        await this.insertSchemaVersionChanges(trx, {
+          changes: args.changes,
+          versionId: version.id,
+        });
+      }
     }
   }
 
