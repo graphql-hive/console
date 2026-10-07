@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
@@ -6,9 +5,17 @@ import FastifyStatic from '@fastify/static';
 import { env, getPublicEnvVars } from '../env/backend';
 import { connectGithub } from './github';
 import { connectLab } from './lab';
+import { registerPreflightWorkerEmbedRoute } from './preflight-embed';
 import { connectSlack } from './slack';
 
 const __dirname = new URL('.', import.meta.url).pathname;
+// The root directory of @hive/app (where the package.json is located)
+// /
+// ├── /src
+// │   └── /server
+// │       └── index.ts
+// └── package.json
+const appRoot = resolve(__dirname, '../..');
 /**
  * Whether the server is running in development mode.
  * See the ./dev.ts file
@@ -22,11 +29,6 @@ const server = Fastify({
     level: env.log.level,
   },
 });
-
-const preflightWorkerEmbed = {
-  path: '/__preflight-embed',
-  htmlFile: 'preflight-worker-embed.html',
-};
 
 async function main() {
   /**
@@ -43,13 +45,7 @@ async function main() {
     const { default: FastifyVite } = await import('@fastify/vite');
 
     await server.register(FastifyVite, {
-      // The root directory of @hive/app (where the package.json is located)
-      // /
-      // ├── /src
-      // │   └── /server
-      // │       └── index.ts
-      // └── package.json
-      root: resolve(__dirname, '../..'),
+      root: appRoot,
       dev: true,
       spa: true,
     });
@@ -93,22 +89,21 @@ async function main() {
   connectGithub(server);
   connectLab(server);
 
-  server.get(preflightWorkerEmbed.path, async (req, reply) => {
-    const devServer = isDev ? server.vite.devServer : undefined;
-    if (devServer) {
-      // @fastify/vite's reply.html() only knows index.html, so this second entry is transformed here.
-      const html = await readFile(
-        resolve(__dirname, '../..', preflightWorkerEmbed.htmlFile),
-        'utf8',
-      );
-      return reply.type('text/html').send(await devServer.transformIndexHtml(req.url, html));
-    }
-
-    // If in production mode, return the static html file.
-    return reply.sendFile(preflightWorkerEmbed.htmlFile, {
-      cacheControl: false,
-    });
-  });
+  registerPreflightWorkerEmbedRoute(
+    server,
+    isDev
+      ? {
+          appRoot,
+          transformHtml: (url, html) => {
+            const devServer = server.vite.devServer;
+            if (!devServer) {
+              throw new Error('Vite dev server is not ready');
+            }
+            return devServer.transformIndexHtml(url, html);
+          },
+        }
+      : null,
+  );
 
   server.get('*', (req, reply) => {
     // Never serve the SPA shell for a missing asset. Browsers require JavaScript

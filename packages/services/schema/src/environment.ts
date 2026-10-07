@@ -36,7 +36,7 @@ const EnvironmentModel = zod.object({
   RELEASE: emptyString(zod.string().optional()),
   ENCRYPTION_SECRET: zod.string(),
   AWS_REGION: emptyString(zod.string().optional()),
-  COMPOSITION_WORKER_COUNT: zod.number().min(1).default(4),
+  COMPOSITION_WORKER_COUNT: NumberFromString(1).optional().default(4),
   COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB: NumberFromString(1).optional().default(512),
   COMPOSITION_WORKER_TRACK_MEMORY_USAGE: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]),

@@ -1552,6 +1552,18 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                           },
                         ]
                       : []),
+                    ...(schemaCheck.contextId
+                      ? [
+                          {
+                            term: 'Context ID',
+                            description: (
+                              <CopyText>
+                                <span title={schemaCheck.contextId}>{schemaCheck.contextId}</span>
+                              </CopyText>
+                            ),
+                          },
+                        ]
+                      : []),
                   ],
                 },
               ]}
