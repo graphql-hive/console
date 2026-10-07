@@ -123,6 +123,7 @@ export default defineConfig({
         { label: 'PagePending' },
         { label: 'RefreshButton' },
         { label: 'Resizable' },
+        { label: 'ScopeBar' },
         { label: 'StatCard' },
         { label: 'Stepper' },
         { label: 'SupportForms' },
