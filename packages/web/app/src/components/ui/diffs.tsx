@@ -6,7 +6,9 @@ import {
 } from '@pierre/diffs/react';
 import { useTheme } from '../theme/theme-provider';
 
-export function File<LAnnotation>(props: FileProps<LAnnotation>) {
+export function File<LAnnotation = undefined, Caret = undefined>(
+  props: FileProps<LAnnotation, Caret>,
+) {
   const { resolvedTheme } = useTheme();
   return (
     <FileImpl
@@ -19,7 +21,9 @@ export function File<LAnnotation>(props: FileProps<LAnnotation>) {
   );
 }
 
-export function MultiFileDiff<LAnnotation>(props: MultiFileDiffProps<LAnnotation>) {
+export function MultiFileDiff<LAnnotation = undefined, Caret = undefined>(
+  props: MultiFileDiffProps<LAnnotation, Caret>,
+) {
   const { resolvedTheme } = useTheme();
   return (
     <MultiFileDiffImpl

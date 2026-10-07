@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
@@ -213,11 +214,16 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
         </div>
         <div className="flex justify-end gap-x-2">
           <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h']}
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+            footer={
+              <RetentionNote
+                retentionInDays={dateRangeController.retentionInDays}
+                subject={dateRangeController.subject}
+              />
+            }
           />
           <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>

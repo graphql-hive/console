@@ -1,5 +1,5 @@
 import { BentoCache, bentostore } from 'bentocache';
-import { memoryDriver } from 'bentocache/build/src/drivers/memory';
+import { memoryDriver } from 'bentocache/drivers/memory';
 import { makeWorkerUtils, WorkerUtils, type JobHelpers, type Task } from 'graphile-worker';
 import { z } from 'zod';
 import { Logger } from '@graphql-hive/logger';

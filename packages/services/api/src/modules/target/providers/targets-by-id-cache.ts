@@ -1,6 +1,6 @@
 import { BentoCache, bentostore } from 'bentocache';
-import { memoryDriver } from 'bentocache/build/src/drivers/memory';
-import { redisDriver } from 'bentocache/build/src/drivers/redis';
+import { memoryDriver } from 'bentocache/drivers/memory';
+import { redisDriver } from 'bentocache/drivers/redis';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import type { Target } from '../../../shared/entities';

@@ -48,7 +48,6 @@ export function ManagePage() {
       <div className="flex flex-col">
         <div className="flex gap-4 pb-2">
           <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
             align="end"

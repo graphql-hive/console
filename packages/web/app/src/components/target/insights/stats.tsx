@@ -30,7 +30,7 @@ import {
   useFormattedThroughput,
   useSlugs,
 } from '@/lib/hooks';
-import { pick } from '@/lib/object';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './fallback';
 import { resolutionToMilliseconds } from './utils';
@@ -494,9 +494,7 @@ function ClientsStats(props: {
             targetSlug,
             name: ev.value,
           },
-          search(searchParams) {
-            return pick(searchParams, ['from', 'to']);
-          },
+          search: carriedRange,
         });
       }
     },

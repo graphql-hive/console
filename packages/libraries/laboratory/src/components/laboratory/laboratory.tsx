@@ -405,14 +405,14 @@ const LaboratoryContent = () => {
           </Tooltip>
         </div>
       </div>
-      <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
-        <ResizablePanel minSize={10} defaultSize={17} hidden={!activePanel} className="border-l">
+      <ResizablePanelGroup orientation="horizontal" className="h-full flex-1">
+        <ResizablePanel minSize="10%" defaultSize="17%" hidden={!activePanel} className="border-l">
           {activePanel === 'collections' && <Collections />}
           {activePanel === 'history' && <History />}
           {activePanel === 'docs' && <Docs />}
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel minSize={10} defaultSize={83} className="flex flex-col">
+        <ResizablePanel minSize="10%" defaultSize="83%" className="flex flex-col">
           <div className="w-full">
             <Tabs />
           </div>

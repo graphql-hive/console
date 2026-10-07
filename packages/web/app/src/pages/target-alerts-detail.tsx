@@ -10,6 +10,7 @@ import {
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
 import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
+import { viewRangeOptions, viewRangeWithin } from '@/components/target/alerts/view-range-options';
 import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
 import { PageLead } from '@/components/ui/page-lead';
 import { Select } from '@/components/ui/primitives/floating/select/select';
@@ -26,6 +27,7 @@ import { useSlugs } from '@/lib/hooks';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useLayoutQuery } from '@/lib/hooks/use-layout-query';
 import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -139,14 +141,6 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
   }
 `);
 
-const VIEW_RANGE_OPTIONS = [
-  { value: '60', label: 'Last 1 hour' },
-  { value: '360', label: 'Last 6 hours' },
-  { value: '1440', label: 'Last 24 hours' },
-  { value: '10080', label: 'Last 7 days' },
-  { value: '43200', label: 'Last 30 days' },
-] as const;
-
 const METRIC_LABEL_BY_TYPE: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.ErrorRate]: 'error rate',
   [MetricAlertRuleType.Latency]: 'latency',
@@ -198,7 +192,10 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   const { ruleId } = props;
   const navigate = useNavigate();
 
-  const [viewRangeMinutes, setViewRangeMinutes] = useState('60');
+  const [selectedRange, setSelectedRange] = useState('60');
+  const retentionInDays = useLayoutQuery('target').data?.organization?.usageRetentionInDays;
+  const rangeOptions = useMemo(() => viewRangeOptions(retentionInDays), [retentionInDays]);
+  const viewRangeMinutes = viewRangeWithin(rangeOptions, selectedRange);
 
   const [result] = useQuery({
     query: TargetAlertsDetailPage_RuleConfigQuery,
@@ -257,9 +254,9 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
         <div className="flex">
           <Select
             aria-label="Time range"
-            options={VIEW_RANGE_OPTIONS}
+            options={rangeOptions}
             value={viewRangeMinutes}
-            onValueChange={setViewRangeMinutes}
+            onValueChange={setSelectedRange}
           />
         </div>
 

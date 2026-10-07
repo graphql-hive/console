@@ -2,9 +2,13 @@ import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { UTCDate } from '@date-fns/utc';
 import { parse } from '../date-math';
 import {
+  announced,
   loaderPeriod,
+  longestPresetWithin,
   resolveDateRange,
   resolveRangeAndResolution,
+  retentionBoundary,
+  startsWithin,
 } from './use-date-range-controller';
 
 describe('useDateRangeController', () => {
@@ -263,5 +267,80 @@ describe('loaderPeriod', () => {
     expect(loaderPeriod({}, presetLast7Days, now)).toEqual(
       loaderPeriod(presetLast7Days.range, presetLast7Days, now),
     );
+  });
+});
+
+describe('announced', () => {
+  // A Map standing in for sessionStorage, which a node spec has none of.
+  beforeEach(() => {
+    const store = new Map<string, string>();
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('remembers every entry announced, not just the last one', () => {
+    expect(announced('a')).toBe(false);
+    expect(announced('a')).toBe(true);
+    expect(announced('b')).toBe(false);
+    // Back to the first entry: still announced.
+    expect(announced('a')).toBe(true);
+  });
+
+  it('forgets the oldest entries past twenty', () => {
+    for (let i = 0; i < 21; i++) {
+      announced(`entry-${i}`);
+    }
+    expect(announced('entry-1')).toBe(true);
+    expect(announced('entry-0')).toBe(false);
+  });
+
+  it('announces every time when storage is unavailable', () => {
+    vi.stubGlobal('sessionStorage', undefined);
+    expect(announced('a')).toBe(false);
+    expect(announced('a')).toBe(false);
+  });
+});
+
+describe('startsWithin', () => {
+  const now = new UTCDate('2026-09-29T15:30:00.000Z');
+  const boundary = retentionBoundary(7, now);
+
+  it('keeps a saved range inside the retention and drops one before it or unreadable', () => {
+    expect(startsWithin({ from: 'now-7d' }, boundary, now)).toBe(true);
+    expect(startsWithin({ from: '2026-09-22T00:00:00.000Z' }, boundary, now)).toBe(true);
+    expect(startsWithin({ from: 'now-30d' }, boundary, now)).toBe(false);
+    expect(startsWithin({ from: 'garbage' }, boundary, now)).toBe(false);
+  });
+});
+
+describe('longestPresetWithin', () => {
+  const now = new Date('2026-09-29T15:30:00.000Z');
+
+  it('is the longest preset the retention covers', () => {
+    expect(longestPresetWithin(7, now).label).toBe('Last 7 days');
+    expect(longestPresetWithin(3, now).label).toBe('Last 24 hours');
+    expect(longestPresetWithin(90, now).label).toBe('Last 90 days');
+    expect(longestPresetWithin(365, now).label).toBe('Last 1 year');
+  });
+});
+
+describe('retentionBoundary', () => {
+  const now = new Date('2026-09-29T15:30:00.000Z');
+  const boundary = retentionBoundary(7, now);
+
+  it('is the UTC start of the day the retention reaches back to', () => {
+    expect(boundary.toISOString()).toBe('2026-09-22T00:00:00.000Z');
+  });
+
+  it('admits the edge preset whether exact or rounded to the hour, and refuses the day before', () => {
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    expect(sevenDaysAgo.getTime()).toBeGreaterThanOrEqual(boundary.getTime());
+    expect(Date.parse('2026-09-22T15:00:00.000Z')).toBeGreaterThanOrEqual(boundary.getTime());
+    expect(Date.parse('2026-09-21T23:59:59.999Z')).toBeLessThan(boundary.getTime());
   });
 });

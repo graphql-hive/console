@@ -43,6 +43,8 @@ type AlertMetricChartProps = {
   stats: FragmentType<typeof AlertMetricChart_OperationsStatsFragment> | null | undefined;
   /** Whether the owner has a fetch in flight (distinguishes "Loading" from "No data"). */
   loading: boolean;
+  /** Why the owner has no stats, when the request failed. */
+  error?: string | null;
   type: MetricAlertRuleType;
   /** Sub-metric for LATENCY rules (P75/P90/...); null for ERROR_RATE / TRAFFIC */
   metric?: MetricAlertRuleMetric | null;
@@ -90,16 +92,14 @@ const SEVERITY_COLOR_KEY: Record<string, 'critical' | 'warning' | 'info'> = {
   INFO: 'info',
 };
 
-// The preview fetch span is capped at 14 days (see `previewWindowMinutes` in
-// alert-form.tsx), so for windows longer than 7 days the "previous" window
-// falls outside the fetched data and can't be drawn or compared. With the rule
-// window itself capped at 7d, this always holds, but the guard stays as a
-// backstop against a larger `timeWindowMinutes` reaching the chart.
+// The preview fetch span is capped at 14 days and at the plan's retention (`previewWindowMinutes`
+// in preview-window.ts), so a "previous" window outside it is neither drawn nor compared.
 const PREVIEW_SPAN_CAP_MINUTES = 20_160;
 
 export function AlertMetricChart({
   stats,
   loading,
+  error,
   type,
   metric,
   severity,
@@ -161,10 +161,14 @@ export function AlertMetricChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-[200px] items-center justify-center rounded-md border border-line bg-surface-card">
-        <span className={loading ? 'text-sm text-fg-subtle' : 'text-sm text-fg-subtle italic'}>
-          {loading ? 'Loading chart data...' : 'No data available for this range.'}
-        </span>
+      <div className="flex h-[200px] items-center justify-center rounded-md border border-line bg-surface-card px-4">
+        {error && !loading ? (
+          <span className="text-center text-sm text-critical">{error}</span>
+        ) : (
+          <span className={loading ? 'text-sm text-fg-subtle' : 'text-sm text-fg-subtle italic'}>
+            {loading ? 'Loading chart data...' : 'No data available for this range.'}
+          </span>
+        )}
       </div>
     );
   }

@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { Chart } from '@/components/ui/primitives/chart/chart';
 import { useChartTheme } from '@/components/ui/primitives/chart/chart-theme';
 import { MetricAlertRuleSeverity, MetricAlertRuleState } from '@/gql/graphql';
@@ -127,81 +126,65 @@ export function AlertActivityChart({ events, from, to }: ChartProps) {
   }
 
   return (
-    <AutoSizer disableHeight>
-      {size => {
-        // Allow ~100px per x-axis label so the longest formatter
-        // ("Mon DD HH AM") doesn't overlap. Capped at 12 to avoid label
-        // clutter on ultra-wide windows; floored at 2 so very narrow
-        // viewports still show endpoints.
-        const targetLabelCount = Math.max(2, Math.min(12, Math.floor(size.width / 100)));
-        const labelInterval = Math.max(0, Math.ceil(xAxisData.length / targetLabelCount) - 1);
-        // AutoSizer zeroes its own width, so the chart only gets the measured width if it is set here.
-        return (
-          <div style={{ width: size.width }}>
-            <Chart
-              height={200}
-              option={{
-                grid: { left: 10, top: 16, right: 10, bottom: 4, containLabel: true },
-                tooltip: {
-                  ...theme.tooltip(),
-                  axisPointer: { type: 'shadow' },
-                  formatter: raw => {
-                    // An axis-triggered tooltip always gets one entry per series.
-                    const params = raw as unknown as Array<{
-                      seriesName: string;
-                      value: number;
-                      color: string;
-                      axisValue: string | number;
-                    }>;
-                    const total = params.reduce((sum, p) => sum + (p.value || 0), 0);
-                    if (total === 0) return '';
-                    const bucketStart = Number(params[0]?.axisValue);
-                    const bucketEnd = bucketStart + bucketMs;
-                    const header = `<div style="margin-bottom:4px;color:${colors.overlayText};opacity:0.7;font-size:11px;">${tooltipTimeFormatter.format(bucketStart)} – ${tooltipTimeFormatter.format(bucketEnd)}</div>`;
-                    const lines = params
-                      .filter(p => p.value > 0)
-                      .map(
-                        p =>
-                          `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:6px;"></span>${p.seriesName}: ${p.value}`,
-                      );
-                    return header + lines.join('<br/>');
-                  },
-                },
-                xAxis: {
-                  type: 'category',
-                  data: xAxisData,
-                  axisLine: { show: false },
-                  axisTick: { show: false },
-                  splitLine: { show: false },
-                  axisLabel: {
-                    ...axisLabel,
-                    interval: labelInterval,
-                    formatter: (value: string) => timeFormatter.format(Number(value)),
-                  },
-                },
-                yAxis: {
-                  type: 'value',
-                  min: 0,
-                  minInterval: 1,
-                  axisLine: { show: false },
-                  axisTick: { show: false },
-                  splitLine: { lineStyle: { color: colors.gridSubtle } },
-                  axisLabel: { ...axisLabel, formatter: (value: number) => String(value) },
-                },
-                series: SEVERITY_ORDER.map(sev => ({
-                  name: SEVERITY_LABEL[sev],
-                  type: 'bar',
-                  stack: 'severity',
-                  barMaxWidth: 24,
-                  itemStyle: { color: SEVERITY_COLOR[sev], borderRadius: [2, 2, 0, 0] },
-                  emphasis: { disabled: true },
-                  data: buckets[sev],
-                })),
-              }}
-            />
-          </div>
-        );
+    <Chart
+      height={200}
+      option={{
+        grid: { left: 10, top: 16, right: 10, bottom: 4, containLabel: true },
+        tooltip: {
+          ...theme.tooltip(),
+          axisPointer: { type: 'shadow' },
+          formatter: raw => {
+            // An axis-triggered tooltip always gets one entry per series.
+            const params = raw as unknown as Array<{
+              seriesName: string;
+              value: number;
+              color: string;
+              axisValue: string | number;
+            }>;
+            const total = params.reduce((sum, p) => sum + (p.value || 0), 0);
+            if (total === 0) return '';
+            const bucketStart = Number(params[0]?.axisValue);
+            const bucketEnd = bucketStart + bucketMs;
+            const header = `<div style="margin-bottom:4px;color:${colors.overlayText};opacity:0.7;font-size:11px;">${tooltipTimeFormatter.format(bucketStart)} – ${tooltipTimeFormatter.format(bucketEnd)}</div>`;
+            const lines = params
+              .filter(p => p.value > 0)
+              .map(
+                p =>
+                  `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:6px;"></span>${p.seriesName}: ${p.value}`,
+              );
+            return header + lines.join('<br/>');
+          },
+        },
+        xAxis: {
+          type: 'category',
+          data: xAxisData,
+          axisLine: { show: false },
+          axisTick: { show: false },
+          splitLine: { show: false },
+          axisLabel: {
+            ...axisLabel,
+            formatter: (value: string) => timeFormatter.format(Number(value)),
+          },
+        },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          minInterval: 1,
+          axisLine: { show: false },
+          axisTick: { show: false },
+          splitLine: { lineStyle: { color: colors.gridSubtle } },
+          axisLabel: { ...axisLabel, formatter: (value: number) => String(value) },
+        },
+        series: SEVERITY_ORDER.map(sev => ({
+          name: SEVERITY_LABEL[sev],
+          type: 'bar',
+          stack: 'severity',
+          barMaxWidth: 24,
+          itemStyle: { color: SEVERITY_COLOR[sev], borderRadius: [2, 2, 0, 0] },
+          emphasis: { disabled: true },
+          data: buckets[sev],
+        })),
       }}
-    </AutoSizer>
+    />
   );
 }

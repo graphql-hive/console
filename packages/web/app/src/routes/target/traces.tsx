@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
-import { defaultRange, loadQuery, revalidate } from '@/lib/route-utils';
+import {
+  defaultRange,
+  loadQuery,
+  requireRange,
+  revalidate,
+  type RangeBounds,
+} from '@/lib/route-utils';
 import { TargetInsightsNewPageContent_TraceQuery, TargetTracePage } from '@/pages/target-trace';
 import {
   defaultTracesFilter,
@@ -23,14 +29,16 @@ const TargetTracesRouteSearch = z.object({
   to: z.string().optional(),
 });
 
+const traces: RangeBounds = {
+  preset: presetLast7Days,
+  to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
+};
+
 export const targetTracesRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'traces',
   validateSearch: zodValidator(TargetTracesRouteSearch),
-  beforeLoad: defaultRange(
-    presetLast7Days.range,
-    '/$organizationSlug/$projectSlug/$targetSlug/traces',
-  ),
+  beforeLoad: defaultRange(traces),
   loaderDeps: ({ search }) => ({
     filter: search.filter ?? defaultTracesFilter,
     sort: search.sort ?? defaultTracesSort,
@@ -39,6 +47,7 @@ export const targetTracesRoute = createRoute({
   }),
   preloadStaleTime: 0,
   loader: loader => {
+    requireRange(loader, traces);
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
     const { period } = loaderPeriod(loader.deps, presetLast7Days);
     void loadQuery(
@@ -61,9 +70,12 @@ export const targetTracesRoute = createRoute({
   },
 });
 
+// The list's range rides along, so the breadcrumb back lands on the same range.
 const TargetTraceRouteSearchModel = z.object({
   activeSpanId: z.string().optional(),
   activeSpanTab: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
 });
 
 export const targetTraceRoute = createRoute({
