@@ -63,7 +63,7 @@
     "bentocache": "catalog:",
     "csv-stringify": "6.5.2",
     "dataloader": "2.2.3",
-    "date-fns": "4.1.0",
+    "date-fns": "catalog:",
     "fast-json-stable-stringify": "catalog:",
     "got": "catalog:",
     "graphile-worker": "0.16.6",
