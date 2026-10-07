@@ -275,6 +275,11 @@ export class SchemaManager {
     return this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id);
   }
 
+  async getServiceNamesOfVersion(schemaVersion: SchemaVersion) {
+    this.logger.debug('Fetching service names (schemaVersionId=%s)', schemaVersion.id);
+    return this.schemaVersions.getServiceNamesBySchemaVersionId(schemaVersion.id);
+  }
+
   async getMatchingServiceSchemaOfVersions(versions: { before: string | null; after: string }) {
     this.logger.debug('Fetching service schema of versions (selector=%o)', versions);
     return this.schemaVersions.getMatchingServiceSchemaOfVersions(versions);

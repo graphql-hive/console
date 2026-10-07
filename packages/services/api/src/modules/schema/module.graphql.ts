@@ -1077,6 +1077,11 @@ export default gql`
     """
     schemas: SchemaConnection! @tag(name: "public")
     """
+    Lowercased, sorted names of the services published in this version.
+    Empty for single-schema projects.
+    """
+    serviceNames: [String!]!
+    """
     The supergraph SDL for a federation schema.
     """
     supergraph: String @tag(name: "public")
