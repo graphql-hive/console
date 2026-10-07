@@ -41,7 +41,7 @@ export const ConnectProviderFormSchema = OIDCMetadataSchema.extend({
 export type ConnectProviderFormValues = z.infer<typeof ConnectProviderFormSchema>;
 
 /**
- * The provider fields of the connect sheet, shown under both its tabs. The sheet owns the form
+ * The provider fields of the connect sheet, shown below its tabs. The sheet owns the form
  * state and saves from its footer.
  */
 export function ConnectProviderForm(props: {
@@ -217,9 +217,11 @@ export function OIDCMetadataUrlForm(props: {
                   disabled={field.disabled || props.isPending}
                 />
               </FormControl>
-              <Button type="submit" onSurface="raised" disabled={props.isPending}>
-                {props.isPending ? 'Fetching...' : 'Fetch endpoints'}
-              </Button>
+              <div className="shrink-0">
+                <Button type="submit" onSurface="raised" disabled={props.isPending}>
+                  {props.isPending ? 'Fetching...' : 'Fetch endpoints'}
+                </Button>
+              </div>
             </div>
             <FormMessage />
           </FormItem>

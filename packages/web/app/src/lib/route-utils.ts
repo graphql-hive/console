@@ -4,6 +4,14 @@ import {
   ProjectLayoutQuery,
   TargetLayoutQuery,
 } from '@/components/layouts/queries';
+import type { Preset } from '@/components/ui/date-range-picker';
+import { parse } from '@/lib/date-math';
+import {
+  loaderPeriod,
+  longestPresetWithin,
+  retentionBoundary,
+  startsWithin,
+} from '@/lib/hooks/use-date-range-controller';
 import { redirect, type AnyRedirect } from '@tanstack/react-router';
 import type {
   AnyVariables,
@@ -17,6 +25,13 @@ declare module '@urql/core' {
   interface OperationContext {
     /** Set by `loadQuery` on a route preload; the progress bar leaves those out. */
     preload?: boolean;
+  }
+}
+
+declare module '@tanstack/history' {
+  interface HistoryState {
+    // Set by a range reset; the page's picker announces it once.
+    rangeReset?: RangeResetReason;
   }
 }
 
@@ -131,19 +146,102 @@ export const requireLayoutFlag = {
 };
 
 type Range = { from: string; to: string };
+type RangeSearch = Partial<Range> & Record<string, unknown>;
 
-// A `beforeLoad` that sends a bare URL to `range`, so a shared link always says what it shows.
-export function defaultRange(range: Range | (() => Range), to: string) {
-  return ({
-    search,
-    params,
-  }: {
-    search: Partial<Range> & Record<string, unknown>;
-    params: Record<string, string>;
-  }) => {
+// What a screen shows by default, and its own path.
+export type RangeBounds = { preset: Preset; to: string };
+
+// A beforeLoad that fills a bare URL with the default range, so a shared link says what it shows.
+export function defaultRange({ preset, to }: RangeBounds) {
+  return ({ search, params }: { search: RangeSearch; params: Record<string, string> }) => {
     if (search.from === undefined && search.to === undefined) {
-      const { from, to: until } = typeof range === 'function' ? range() : range;
-      throw redirect({ to, params, search: { ...search, from, to: until } });
+      throw redirect({ to, params, search: { ...search, ...preset.range } });
     }
   };
+}
+
+export type RangeLoader = {
+  params: Record<string, string>;
+  deps: Partial<Range>;
+  location: { search: RangeSearch };
+};
+
+export type RangeResetReason = 'unreadable' | 'retention';
+
+// Back to the default; the note in history state is what the page's toast reads. No reason, no note.
+function resetRange(loader: RangeLoader, { preset, to }: RangeBounds, reason?: RangeResetReason) {
+  return redirect({
+    to,
+    params: loader.params,
+    search: { ...loader.location.search, ...preset.range },
+    state: reason ? { rangeReset: reason } : undefined,
+  });
+}
+
+// Before a loader warms anything: a range no screen can show resets, so the URL never carries one.
+export function requireRange(loader: RangeLoader, bounds: RangeBounds): void {
+  for (const bound of [loader.deps.from, loader.deps.to]) {
+    if (bound !== undefined && !parse(bound)) {
+      throw resetRange(loader, bounds, 'unreadable');
+    }
+  }
+  try {
+    loaderPeriod(loader.deps, bounds.preset);
+  } catch {
+    // Older than the rollups keep.
+    throw resetRange(loader, bounds, 'retention');
+  }
+}
+
+type SlugLoader = LoaderContext & { params: Record<string, string> };
+
+function retentionOf(
+  organization: Promise<{ usageRetentionInDays: number } | null | undefined>,
+): Promise<number | undefined> {
+  return organization.then(found => found?.usageRetentionInDays ?? undefined);
+}
+
+// The organization's usage retention, from the layout document the layout above already loaded.
+export const usageRetention = {
+  organization: ({ params: { organizationSlug }, ...loader }: SlugLoader) =>
+    retentionOf(
+      loadQuery(loader, OrganizationLayoutQuery, { organizationSlug }).then(
+        result => result.data?.organizationBySlug,
+      ),
+    ),
+  project: ({ params: { organizationSlug, projectSlug }, ...loader }: SlugLoader) =>
+    retentionOf(
+      loadQuery(loader, ProjectLayoutQuery, { organizationSlug, projectSlug }).then(
+        result => result.data?.organization,
+      ),
+    ),
+  target: ({ params: { organizationSlug, projectSlug, targetSlug }, ...loader }: SlugLoader) =>
+    retentionOf(
+      loadQuery(loader, TargetLayoutQuery, { organizationSlug, projectSlug, targetSlug }).then(
+        result => result.data?.organization,
+      ),
+    ),
+};
+
+// After the warms: a start before what the plan keeps resets; missing data admits.
+export async function requireRetention(
+  loader: LoaderContext & RangeLoader,
+  bounds: RangeBounds,
+  retention: Promise<number | undefined> = usageRetention.target(loader),
+): Promise<void> {
+  const days = await retention;
+  const from = loader.deps.from === undefined ? undefined : parse(loader.deps.from);
+  if (days === undefined || !from || from.getTime() >= retentionBoundary(days).getTime()) {
+    return;
+  }
+  // A retention shorter than the default would reset to a range that fails again; land inside it.
+  const boundary = retentionBoundary(days);
+  const preset = startsWithin(bounds.preset.range, boundary)
+    ? bounds.preset
+    : longestPresetWithin(days);
+  // A bare URL arrives as the default; nobody chose it, so moving it earns no toast.
+  const { from: carriedFrom, to: carriedTo } = loader.deps;
+  const carriedTheDefault =
+    carriedFrom === bounds.preset.range.from && carriedTo === bounds.preset.range.to;
+  throw resetRange(loader, { ...bounds, preset }, carriedTheDefault ? undefined : 'retention');
 }

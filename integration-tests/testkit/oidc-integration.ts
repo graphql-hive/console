@@ -28,7 +28,7 @@ async function createMockOIDCServer() {
   let registeredHandler: typeof handler;
 
   async function handler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    if (!handler) {
+    if (!registeredHandler) {
       throw new Error('No handler registered');
     }
     return await registeredHandler(request, reply);
@@ -57,7 +57,7 @@ async function createMockOIDCServer() {
       registeredHandler = newHandler;
     },
     [Symbol.asyncDispose]: () => {
-      server.close();
+      return server.close();
     },
   };
 }

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Tabs } from './tabs';
 
 const ITEMS = [
@@ -45,5 +45,34 @@ describe('Tabs', () => {
     const policy = screen.getByRole('tab', { name: 'Policy' });
     expect(policy.getAttribute('aria-disabled')).toBe('true');
     expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
+  });
+
+  it('hides the outgoing panel while Base UI waits for its exit transition', async () => {
+    // jsdom has no Web Animations API, so Base UI drops the outgoing panel at once. A stubbed
+    // animation that finishes on demand holds it in the ending state the way a browser does.
+    let finish!: () => void;
+    const finished = new Promise<void>(resolve => {
+      finish = resolve;
+    });
+    HTMLElement.prototype.getAnimations = () => [
+      { finished, pending: false, playState: 'running' } as unknown as Animation,
+    ];
+    try {
+      render(<Tabs items={ITEMS} defaultValue="details" />);
+      fireEvent.click(screen.getByRole('tab', { name: 'Schema' }));
+      const outgoing = screen.getByText('Details panel').closest('[role="tabpanel"]')!;
+      expect(outgoing.hasAttribute('data-ending-style')).toBe(true);
+      expect(outgoing.hasAttribute('inert')).toBe(true);
+      expect(outgoing.className).toContain('data-[ending-style]:hidden');
+      expect(screen.getByText('Schema panel')).toBeTruthy();
+
+      await act(async () => {
+        finish();
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+      expect(screen.queryByText('Details panel')).toBeNull();
+    } finally {
+      delete (HTMLElement.prototype as { getAnimations?: unknown }).getAnimations;
+    }
   });
 });

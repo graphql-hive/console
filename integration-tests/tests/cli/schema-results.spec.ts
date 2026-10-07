@@ -6,7 +6,6 @@ import { resolve } from 'node:path';
 import { execa } from '@esm2cjs/execa';
 
 const binPath = resolve(__dirname, '../../../packages/libraries/cli/bin/run');
-const cliDir = resolve(__dirname, '../../../packages/libraries/cli');
 
 type GraphQLRequest = {
   query: string;
@@ -61,7 +60,6 @@ async function runAgainstRegistry(
           HIVE_REGISTRY: `http://127.0.0.1:${port}/graphql`,
           HIVE_TOKEN: 'test-token',
           HIVE_NO_ERROR_TIP: '1',
-          OCLIF_CLI_CUSTOM_PATH: cliDir,
           OCLIF_COLUMNS: '1000',
           NODE_OPTIONS: '--no-deprecation',
           ...env,

@@ -5,9 +5,17 @@ import FastifyStatic from '@fastify/static';
 import { env, getPublicEnvVars } from '../env/backend';
 import { connectGithub } from './github';
 import { connectLab } from './lab';
+import { registerPreflightWorkerEmbedRoute } from './preflight-embed';
 import { connectSlack } from './slack';
 
 const __dirname = new URL('.', import.meta.url).pathname;
+// The root directory of @hive/app (where the package.json is located)
+// /
+// ├── /src
+// │   └── /server
+// │       └── index.ts
+// └── package.json
+const appRoot = resolve(__dirname, '../..');
 /**
  * Whether the server is running in development mode.
  * See the ./dev.ts file
@@ -21,11 +29,6 @@ const server = Fastify({
     level: env.log.level,
   },
 });
-
-const preflightWorkerEmbed = {
-  path: '/__preflight-embed',
-  htmlFile: 'preflight-worker-embed.html',
-};
 
 async function main() {
   /**
@@ -41,24 +44,8 @@ async function main() {
     // If in development mode, use Vite to serve the frontend and enable hot module reloading.
     const { default: FastifyVite } = await import('@fastify/vite');
 
-    // This and a patch of @fastify/vite is necessary to serve the preflight worker embed html file.
-    // We need to know if the request is for the preflight worker embed or not to determine which html file to serve.
-    server.decorateRequest('viteHtmlFile', {
-      getter() {
-        return this.url.startsWith(preflightWorkerEmbed.path)
-          ? preflightWorkerEmbed.htmlFile
-          : 'index.html';
-      },
-    });
-
     await server.register(FastifyVite, {
-      // The root directory of @hive/app (where the package.json is located)
-      // /
-      // ├── /src
-      // │   └── /server
-      // │       └── index.ts
-      // └── package.json
-      root: resolve(__dirname, '../..'),
+      root: appRoot,
       dev: true,
       spa: true,
     });
@@ -102,17 +89,21 @@ async function main() {
   connectGithub(server);
   connectLab(server);
 
-  server.get(preflightWorkerEmbed.path, (_req, reply) => {
-    if (isDev) {
-      // If in development mode, return the Vite preflight-worker-embed.html.
-      return reply.html();
-    }
-
-    // If in production mode, return the static html file.
-    return reply.sendFile(preflightWorkerEmbed.htmlFile, {
-      cacheControl: false,
-    });
-  });
+  registerPreflightWorkerEmbedRoute(
+    server,
+    isDev
+      ? {
+          appRoot,
+          transformHtml: (url, html) => {
+            const devServer = server.vite.devServer;
+            if (!devServer) {
+              throw new Error('Vite dev server is not ready');
+            }
+            return devServer.transformIndexHtml(url, html);
+          },
+        }
+      : null,
+  );
 
   server.get('*', (req, reply) => {
     // Never serve the SPA shell for a missing asset. Browsers require JavaScript

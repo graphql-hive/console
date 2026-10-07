@@ -19,7 +19,6 @@ import {
   Play,
   TreePine,
 } from 'lucide-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
 import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -38,9 +37,10 @@ import { QueryError } from '@/components/ui/query-error';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard, useSlugs } from '@/lib/hooks';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
 
 const rootTraceColor = 'rgb(244, 183, 64)';
@@ -528,7 +528,7 @@ function SpanNode(props: SpanNodeProps) {
                     targetSlug,
                     traceId: props.traceId,
                   }}
-                  search={{ activeSpanId: span.id }}
+                  search={previous => ({ ...carriedRange(previous), activeSpanId: span.id })}
                 >
                   <NodeElement
                     color={props.color}
@@ -628,7 +628,11 @@ function SpanNode(props: SpanNodeProps) {
                         targetSlug,
                         traceId: props.traceId,
                       }}
-                      search={{ activeSpanId: span.id, activeSpanTab: 'events' }}
+                      search={previous => ({
+                        ...carriedRange(previous),
+                        activeSpanId: span.id,
+                        activeSpanTab: 'events',
+                      })}
                     >
                       <div className="relative h-full">
                         <div
@@ -773,8 +777,8 @@ export function TraceSheet(props: TraceSheetProps) {
   return (
     <div className="min-h-0 flex-1">
       <>
-        <ResizablePanelGroup direction="vertical">
-          <ResizablePanel defaultSize={70} minSize={20} maxSize={80}>
+        <ResizablePanelGroup orientation="vertical">
+          <ResizablePanel defaultSize="70%" minSize="20%" maxSize="80%">
             <WidthSyncProvider defaultWidth={251}>
               <HighlightedEventContext.Provider value={highlightedEvent}>
                 <ActiveSpanIdContext.Provider value={props.activeSpanId}>
@@ -789,7 +793,7 @@ export function TraceSheet(props: TraceSheetProps) {
             </WidthSyncProvider>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={30} minSize={10} maxSize={80}>
+          <ResizablePanel defaultSize="30%" minSize="10%" maxSize="80%">
             <div className="flex h-full flex-col">
               <div className="sticky top-0 z-10">
                 <Tabs
@@ -877,7 +881,11 @@ export function TraceSheet(props: TraceSheetProps) {
                                 targetSlug,
                                 traceId: trace.id,
                               }}
-                              search={{ activeSpanId: event.spanId, activeSpanTab: 'events' }}
+                              search={previous => ({
+                                ...carriedRange(previous),
+                                activeSpanId: event.spanId,
+                                activeSpanTab: 'events',
+                              })}
                               onMouseOver={() =>
                                 setHighlightedEvent({
                                   spanId: event.spanId,
@@ -935,7 +943,7 @@ export function TraceSheet(props: TraceSheetProps) {
         onClose={() =>
           navigate({
             to: '/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
-            search: {},
+            search: previous => carriedRange(previous),
           })
         }
         traceId={trace.id}
@@ -944,6 +952,10 @@ export function TraceSheet(props: TraceSheetProps) {
     </div>
   );
 }
+
+const traceRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId',
+);
 
 export const TargetInsightsNewPageContent_TraceQuery = graphql(/* GraphQL */ `
   query TargetInsightsNewPageContent_TraceQuery(
@@ -976,6 +988,7 @@ function TargetInsightsNewPageContent(props: {
   activeSpanTab: string | null;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
+  const range = carriedRange(traceRoute.useSearch());
   const [result] = useQuery({
     query: TargetInsightsNewPageContent_TraceQuery,
     variables: {
@@ -1014,6 +1027,7 @@ function TargetInsightsNewPageContent(props: {
                 projectSlug,
                 targetSlug,
               }}
+              search={range}
             >
               Traces
             </Link>{' '}
@@ -1090,19 +1104,11 @@ export function TargetTracePage(props: {
   activeSpanTab: string | null;
 }) {
   return (
-    <>
-      <LayoutContent className="flex flex-col">
-        <div className="flex flex-1 flex-col">
-          <AutoSizer disableWidth>
-            {size => (
-              <div className="w-full" style={{ height: size.height }}>
-                <TargetInsightsNewPageContent {...props} />
-              </div>
-            )}
-          </AutoSizer>
-        </div>
-      </LayoutContent>
-    </>
+    <LayoutContent className="h-(--content-height) flex flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <TargetInsightsNewPageContent {...props} />
+      </div>
+    </LayoutContent>
   );
 }
 
@@ -1438,7 +1444,10 @@ function SpanSheet(props: SpanSheetProps) {
                     targetSlug,
                     traceId: props.traceId,
                   }}
-                  search={{ activeSpanId: span.parentId }}
+                  search={previous => ({
+                    ...carriedRange(previous),
+                    activeSpanId: span.parentId ?? undefined,
+                  })}
                 />
               }
             >
