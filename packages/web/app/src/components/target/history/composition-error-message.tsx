@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import reactStringReplace from 'react-string-replace';
 import { Badge } from '@/components/ui/primitives/badge/badge';
+import { SubgraphName } from '@/components/ui/subgraph-name/subgraph-name';
 
 const QUERY_HEAD = 'The following supergraph API query:';
 const QUERY_TAIL = 'cannot be satisfied by the subgraphs because:';
@@ -64,12 +65,31 @@ export function layoutProseLine(line: string) {
   return { depth, bullet, text: bullet ? trimmed.slice(2) : trimmed };
 }
 
+// Subgraph names get SubgraphName, schema coordinates and directives get badges. The composers
+// spell a subgraph either as a leading [name] or as `subgraph "name"` (lists: `subgraphs "a" and "b"`).
+const SUBGRAPH_PHRASE = /(\bsubgraphs? "[^"]+"(?:(?:, | and | or )"[^"]+")*)/g;
+
 function renderCompositionErrorText(message: string): ReactNode[] {
+  const subgraph = (name: string, key: string) => <SubgraphName key={key} name={name} />;
   return reactStringReplace(
     reactStringReplace(
-      reactStringReplace(message, /"([^"]+)"/g, (match, index) => (
-        <Chip key={match + index} content={match} />
-      )),
+      reactStringReplace(
+        reactStringReplace(
+          reactStringReplace(message, /^\[([^\]\n]+)\]/g, (match, index) =>
+            subgraph(match, match + index),
+          ),
+          SUBGRAPH_PHRASE,
+          (match, index) => (
+            <span key={match + index}>
+              {reactStringReplace(match, /"([^"]+)"/g, (name, nameIndex) =>
+                subgraph(name, name + nameIndex),
+              )}
+            </span>
+          ),
+        ),
+        /"([^"]+)"/g,
+        (match, index) => <Chip key={match + index} content={match} />,
+      ),
       /(@[^. ]+)/g,
       (match, index) => <Chip key={match + index} content={match} />,
     ),

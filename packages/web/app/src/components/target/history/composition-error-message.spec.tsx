@@ -85,20 +85,56 @@ describe('layoutProseLine', () => {
 });
 
 describe('CompositionErrorMessage', () => {
-  it('renders the query as one chip-free code block and chips the identifiers around it', () => {
-    const { container } = render(
-      <CompositionErrorMessage
-        message={`The following supergraph API query:\n${QUERY}\n${REASONS}`}
-      />,
+  const rendered = (message: string) => {
+    const { container } = render(<CompositionErrorMessage message={message} />);
+    return {
+      container,
+      badges: [...container.querySelectorAll('[class*="bg-warning-tint"]')].map(
+        el => el.textContent,
+      ),
+      subgraphs: [...container.querySelectorAll('[title]')].map(el => el.getAttribute('title')),
+    };
+  };
+
+  it('renders the query as one chip-free code block, the subgraph as SubgraphName, the field as a badge', () => {
+    const { container, badges, subgraphs } = rendered(
+      `The following supergraph API query:\n${QUERY}\n${REASONS}`,
     );
     const blocks = container.querySelectorAll('pre');
     expect(blocks).toHaveLength(1);
     expect(blocks[0].textContent).toBe(QUERY);
     expect(blocks[0].querySelectorAll('*')).toHaveLength(0);
-    const chips = [...container.querySelectorAll('[class*="bg-warning-tint"]')];
-    expect(chips.map(chip => chip.textContent)).toEqual([
-      'balance-service',
-      'Balance.positionDirection',
-    ]);
+    expect(subgraphs).toEqual(['balance-service']);
+    expect(badges).toEqual(['Balance.positionDirection']);
+  });
+
+  it('treats a leading [name] like a quoted subgraph, and leaves other brackets alone', () => {
+    expect(rendered('[products] Type "User" is an extension type.')).toMatchObject({
+      subgraphs: ['products'],
+      badges: ['User'],
+    });
+    expect(
+      rendered('[@tag] -> Custom directives must be implemented in every service.'),
+    ).toMatchObject({
+      subgraphs: ['@tag'],
+      badges: [],
+    });
+    expect(rendered('Invalid value of type "[String!]!" for [users, billing].')).toMatchObject({
+      subgraphs: [],
+      badges: ['[String!]!'],
+    });
+  });
+
+  it('finds subgraph names after the word subgraph, singular or listed', () => {
+    expect(
+      rendered(
+        'Type of field "User.id" is incompatible across subgraphs: it has type "ID!" in subgraph "users" but type "String!" in subgraph "billing"',
+      ),
+    ).toMatchObject({ subgraphs: ['users', 'billing'], badges: ['User.id', 'ID!', 'String!'] });
+    expect(
+      rendered(
+        'Field "User.email" is marked @external on all the subgraphs in which it is listed (subgraphs "users" and "billing").',
+      ),
+    ).toMatchObject({ subgraphs: ['users', 'billing'], badges: ['User.email', '@external'] });
   });
 });
