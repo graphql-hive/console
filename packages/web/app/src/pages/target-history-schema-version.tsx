@@ -27,8 +27,8 @@ import {
   TriangleAlertIcon,
   XCircleIcon,
 } from 'lucide-react';
-import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
+import { CompositionErrorMessage } from '@/components/target/history/composition-error-message';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
   ChangesBlock,
@@ -1316,57 +1316,25 @@ const CompositionErrors = (props: {
         </span>
       </div>
 
-      <div className="text-fg flex items-center gap-2 px-5 pt-4">
+      <div className="text-fg flex items-center gap-2 px-5 pb-1 pt-4">
         <span className="text-sm font-medium">Composition errors</span>
         <CompositionErrorsPopover />
       </div>
 
-      <ul className="divide-line-subtle divide-y px-1 pb-2">
+      <ul className="divide-critical-line-subtle divide-y px-1 pb-2">
         {compositionErrors.edges.map((err, idx) => (
           <li key={idx} className="flex gap-3 px-4 py-3">
-            <span className="text-fg-subtle mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+            <span className="text-critical mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
               {String(idx + 1).padStart(2, '0')}
             </span>
 
-            <p className="text-fg flex flex-wrap items-baseline gap-y-1 text-sm">
-              <CompositionError message={err.node.message} />
-            </p>
+            <CompositionErrorMessage message={err.node.message} />
           </li>
         ))}
       </ul>
     </div>
   );
 };
-
-export function CompositionError(props: { message: string }) {
-  return reactStringReplace(
-    reactStringReplace(
-      reactStringReplace(props.message, /"([^"]+)"/g, (match, index) => {
-        return <Token key={match + index}>{match}</Token>;
-      }),
-      /(@[^. ]+)/g,
-      (match, index) => {
-        return <Token key={match + index}>{match}</Token>;
-      },
-    ),
-    /Unknown type ([A-Za-z_0-9]+)/g,
-    (match, index) => {
-      return (
-        <span key={match + index}>
-          Unknown type <Token>{match}</Token>
-        </span>
-      );
-    },
-  );
-}
-
-function Token(props: { children: React.ReactNode }) {
-  return (
-    <code className="mx-0.5 inline-flex items-center rounded-md border px-1.5 py-0.5 align-baseline text-xs leading-none">
-      {props.children}
-    </code>
-  );
-}
 
 const SchemaVersionSummary_SchemaVersionFragment = graphql(`
   fragment SchemaVersionSummary_SchemaVersionFragment on SchemaVersion {

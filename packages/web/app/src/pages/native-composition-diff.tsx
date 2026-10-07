@@ -1,6 +1,7 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { CheckIcon, CopyIcon, XIcon } from 'lucide-react';
 import { useQuery } from 'urql';
+import { CompositionErrorMessage } from '@/components/target/history/composition-error-message';
 import { DiffEditor } from '@/components/ui/diff-editor';
 import { Heading } from '@/components/ui/heading';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
@@ -14,7 +15,6 @@ import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
 import { useTimed } from '@/lib/hooks/use-timed';
 import { cn } from '@/lib/utils';
-import { CompositionError } from './target-history-schema-version';
 
 type NativeCompositionDiffProps = {
   projectId: string;
@@ -141,16 +141,14 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
           {report?.nativeCompositionResult?.errors?.edges?.length ? (
             <>
               <div className="py-3 text-lg font-bold">Composition Errors</div>
-              <ul className="divide-line-subtle divide-y px-1 pb-2">
+              <ul className="divide-critical-line-subtle divide-y px-1 pb-2">
                 {report?.nativeCompositionResult?.errors?.edges?.map((err, idx) => (
                   <li key={idx} className="flex gap-3 px-4 py-3">
-                    <span className="text-fg-subtle mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+                    <span className="text-critical mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
 
-                    <p className="text-fg flex flex-wrap items-baseline gap-y-1 text-sm">
-                      <CompositionError message={err.node.message} />
-                    </p>
+                    <CompositionErrorMessage message={err.node.message} />
                   </li>
                 ))}
               </ul>
