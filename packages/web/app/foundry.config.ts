@@ -113,6 +113,7 @@ export default defineConfig({
       children: [
         { label: 'BillingPlanPicker' },
         { label: 'Calendar' },
+        { label: 'CompositionErrors' },
         { label: 'DataTable' },
         { label: 'DateRangePicker' },
         { label: 'FailureCard' },

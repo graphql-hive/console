@@ -64,7 +64,7 @@ export function layoutProseLine(line: string) {
   return { depth, bullet, text: bullet ? trimmed.slice(2) : trimmed };
 }
 
-export function renderCompositionErrorText(message: string): ReactNode[] {
+function renderCompositionErrorText(message: string): ReactNode[] {
   return reactStringReplace(
     reactStringReplace(
       reactStringReplace(message, /"([^"]+)"/g, (match, index) => (
