@@ -109,7 +109,7 @@ export const HiveLogo = ({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={clsx(
-        'fill-fg inline',
+        'inline fill-fg',
         // overshoot curve stands in for the old framer-motion spring
         animated &&
           'motion-safe:transition-transform motion-safe:duration-200 motion-safe:ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-safe:hover:scale-110 motion-safe:active:scale-90',

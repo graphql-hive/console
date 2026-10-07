@@ -333,7 +333,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
       <div ref={calendarAnchor} className="flex flex-col py-2">
         <div className="flex flex-col items-center justify-end gap-2 lg:flex-row lg:items-start">
           <div className="flex flex-col gap-1 pl-3">
-            <div className="text-control mb-2 mt-1">Absolute date range</div>
+            <div className="mt-1 mb-2 text-control">Absolute date range</div>
             <div className="space-y-2">
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="from" label="From" />
@@ -359,7 +359,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }
                   />
                 </div>
-                <div className="text-critical w-0 min-w-full">{fromError}</div>
+                <div className="w-0 min-w-full text-critical">{fromError}</div>
               </div>
               <div className="grid w-full max-w-sm items-center gap-1.5">
                 <Label htmlFor="to" label="To" />
@@ -385,7 +385,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
                     }
                   />
                 </div>
-                <div className="text-critical w-0 min-w-full">{toError}</div>
+                <div className="w-0 min-w-full text-critical">{toError}</div>
               </div>
 
               <Button
@@ -441,7 +441,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
         width="auto"
         content={
           <>
-            <div className="absolute right-2 top-1">
+            <div className="absolute top-1 right-2">
               <Button
                 variant="ghost"
                 size="icon-sm"
@@ -469,7 +469,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
           </>
         }
       />
-      <div className="ml-3 flex flex-col gap-1 border-l py-2 pl-3 pr-2">
+      <div className="ml-3 flex flex-col gap-1 border-l py-2 pr-2 pl-3">
         <Input
           placeholder="Filter quick ranges"
           leadingIcon={SearchIcon}
@@ -477,7 +477,7 @@ export function DateRangePickerPanel(props: DateRangePickerPanelProps) {
           onChange={ev => setQuickRangeFilter(ev.target.value)}
         />
         <ScrollArea fill>
-          <div className="flex w-full flex-col items-start gap-1 pb-2 pt-1">
+          <div className="flex w-full flex-col items-start gap-1 pt-1 pb-2">
             {dynamicPresets.length > 0
               ? dynamicPresets
                   .filter(preset =>

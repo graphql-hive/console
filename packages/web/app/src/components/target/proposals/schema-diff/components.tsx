@@ -40,7 +40,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
       <table
         aria-label="change-document"
         className={cn(
-          'text-fg min-w-full cursor-default whitespace-pre font-mono text-sm',
+          'min-w-full cursor-default font-mono text-sm whitespace-pre text-fg',
           props.className,
         )}
       >
@@ -85,7 +85,7 @@ export function ChangeRow(props: {
       <tr>
         <td
           className={cn(
-            'bg-surface-card text-fg-subtle w-[42px] min-w-fit select-none pr-3 text-right',
+            'w-[42px] min-w-fit bg-surface-card pr-3 text-right text-fg-subtle select-none',
             props.className,
             (props.type === 'removal' || removed) && 'bg-diff-removed-gutter',
             props.type === 'addition' && 'invisible',
@@ -95,7 +95,7 @@ export function ChangeRow(props: {
         </td>
         <td
           className={cn(
-            'bg-surface-card text-fg-subtle w-[42px] min-w-fit select-none pr-3 text-right',
+            'w-[42px] min-w-fit bg-surface-card pr-3 text-right text-fg-subtle select-none',
             props.className,
             props.type === 'removal' && 'invisible',
             (props.type === 'addition' || added) && 'bg-diff-added-gutter',
@@ -115,7 +115,7 @@ export function ChangeRow(props: {
             className={cn(
               'bg-surface-inset',
               props.type === 'removal' &&
-                'bg-diff-removed decoration-diff-removed-strike line-through',
+                'bg-diff-removed line-through decoration-diff-removed-strike',
               props.type === 'addition' && 'bg-diff-added',
             )}
           >
@@ -125,17 +125,17 @@ export function ChangeRow(props: {
               ))}
             {props.severityLevel === SeverityLevelType.Breaking && (
               <span title="Breaking Change">
-                <XIcon className="text-critical inline-block" />
+                <XIcon className="inline-block text-critical" />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Dangerous && (
               <span title="Dangerous Change">
-                <TriangleAlert className="text-warning mr-1 inline-block size-4" />
+                <TriangleAlert className="mr-1 inline-block size-4 text-warning" />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Safe && (
               <span title="Safe Change">
-                <CheckIcon className="text-success mr-1 inline-block" />
+                <CheckIcon className="mr-1 inline-block text-success" />
               </span>
             )}
             {props.children}
@@ -162,7 +162,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
   return (
     <span
       className={cn(
-        'bg-diff-removed decoration-diff-removed-strike hover:bg-diff-removed-hover line-through',
+        'bg-diff-removed line-through decoration-diff-removed-strike hover:bg-diff-removed-hover',
         props.className,
       )}
     >

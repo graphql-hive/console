@@ -292,7 +292,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                     <>
                       {isLoading ? '-' : formatNumber(totalResolutions)}
                       {totalFailures ? (
-                        <span className="text-critical ml-2 text-sm font-normal">
+                        <span className="ml-2 text-sm font-normal text-critical">
                           ({formatNumber(totalFailures)} errors)
                         </span>
                       ) : null}
@@ -340,7 +340,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                 series={[{ name: 'Requests', data: requestsOverTime }]}
               />
               <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
-                <p className="text-fg-secondary text-control pb-4">
+                <p className="pb-4 text-control text-fg-secondary">
                   Number of times the coordinate {props.coordinate} has resolved over time
                 </p>
                 <TimeSeriesChart
@@ -379,7 +379,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                       ({ node: operation }) => (
                         <Link
                           key={operation.id}
-                          className="text-fg-default hover:text-fg-default hover:bg-surface-hover flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          className="flex items-center rounded-md px-2 py-1 text-fg-default hover:bg-surface-hover hover:text-fg-default hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                           params={{
                             organizationSlug,
@@ -422,7 +422,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                       ({ node: client }) => (
                         <Link
                           key={client.name}
-                          className="text-fg-default hover:text-fg-default hover:bg-surface-hover flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                          className="flex items-center rounded-md px-2 py-1 text-fg-default hover:bg-surface-hover hover:text-fg-default hover:underline hover:underline-offset-2"
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
                             organizationSlug,

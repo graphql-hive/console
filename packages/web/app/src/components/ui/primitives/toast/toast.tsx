@@ -45,9 +45,9 @@ export function useToast() {
 }
 
 const iconByVariant: Record<ToastVariant, ReactNode> = {
-  default: <Info aria-hidden className="text-info size-4 shrink-0" />,
-  success: <CircleCheck aria-hidden className="text-success size-4 shrink-0" />,
-  destructive: <CircleAlert aria-hidden className="text-critical size-4 shrink-0" />,
+  default: <Info aria-hidden className="size-4 shrink-0 text-info" />,
+  success: <CircleCheck aria-hidden className="size-4 shrink-0 text-success" />,
+  destructive: <CircleAlert aria-hidden className="size-4 shrink-0 text-critical" />,
 };
 
 const viewportClass = cn(
@@ -89,11 +89,11 @@ function ToastList() {
       <BaseToast.Content className={contentClass}>
         {iconByVariant[(toast.type as ToastVariant | undefined) ?? 'default']}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <BaseToast.Title className="text-fg select-text text-sm font-medium" />
-          <BaseToast.Description className="text-fg-default select-text text-sm" />
+          <BaseToast.Title className="text-sm font-medium text-fg select-text" />
+          <BaseToast.Description className="text-sm text-fg-default select-text" />
         </div>
       </BaseToast.Content>
-      <span className="absolute right-2 top-2">
+      <span className="absolute top-2 right-2">
         <BaseToast.Close
           render={
             <Button layout="iconOnly" icon={X} aria-label="Close" variant="ghost" size="icon-sm" />

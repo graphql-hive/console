@@ -94,11 +94,11 @@ function CompositionErrorText(props: { padding: 'default' | 'tight' }) {
 export const Padding = createPreview(() => (
   <div className="flex gap-8">
     <div className="flex flex-col gap-2">
-      <span className="text-fg-secondary text-xs">default</span>
+      <span className="text-xs text-fg-secondary">default</span>
       <CompositionErrorText padding="default" />
     </div>
     <div className="flex flex-col gap-2">
-      <span className="text-fg-secondary text-xs">tight</span>
+      <span className="text-xs text-fg-secondary">tight</span>
       <CompositionErrorText padding="tight" />
     </div>
   </div>

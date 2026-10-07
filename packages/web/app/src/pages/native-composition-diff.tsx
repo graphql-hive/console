@@ -108,7 +108,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
     <div className="p-8">
       <Heading className="mb-4">Native Composition Report</Heading>
 
-      <div className="border-line dark:bg-surface-card flex items-center gap-4 rounded-sm border px-8 py-4 text-xs">
+      <div className="flex items-center gap-4 rounded-sm border border-line px-8 py-4 text-xs dark:bg-surface-card">
         <MetaCell label="Project" className="flex-1 truncate text-left">
           {project.slug}
         </MetaCell>
@@ -141,14 +141,14 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
           {report?.nativeCompositionResult?.errors?.edges?.length ? (
             <>
               <div className="py-3 text-lg font-bold">Composition Errors</div>
-              <ul className="divide-line-subtle divide-y px-1 pb-2">
+              <ul className="divide-y divide-line-subtle px-1 pb-2">
                 {report?.nativeCompositionResult?.errors?.edges?.map((err, idx) => (
                   <li key={idx} className="flex gap-3 px-4 py-3">
-                    <span className="text-fg-subtle mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+                    <span className="mt-0.5 w-6 shrink-0 font-mono text-xs text-fg-subtle select-none">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
 
-                    <p className="text-fg flex flex-wrap items-baseline gap-y-1 text-sm">
+                    <p className="flex flex-wrap items-baseline gap-y-1 text-sm text-fg">
                       <CompositionError message={err.node.message} />
                     </p>
                   </li>
@@ -166,7 +166,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                     <>
                       The generated supergraph SDL from your existing composition setup and our{' '}
                       <a
-                        className="text-fg-secondary font-semibold underline-offset-4 hover:underline"
+                        className="font-semibold text-fg-secondary underline-offset-4 hover:underline"
                         href="https://github.com/the-guild-org/federation"
                       >
                         Open Source composition library
@@ -235,9 +235,9 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                       }}
                     >
                       {copied ? (
-                        <CheckIcon className="text-fg-subtle mr-2 size-4" />
+                        <CheckIcon className="mr-2 size-4 text-fg-subtle" />
                       ) : (
-                        <CopyIcon className="text-fg-subtle mr-2 size-4" />
+                        <CopyIcon className="mr-2 size-4 text-fg-subtle" />
                       )}{' '}
                       Copy services JSON
                     </Button>
@@ -245,7 +245,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                 }
                 content={
                   <span className="flex items-center text-pretty">
-                    <XIcon className="text-critical mr-1 size-4" />{' '}
+                    <XIcon className="mr-1 size-4 text-critical" />{' '}
                     <span>
                       Cannot copy services JSON because there are no services published for this
                       target.

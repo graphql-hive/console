@@ -105,7 +105,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
             <span>{group.selectedPermissionCount} selected</span>
           ) : undefined,
         content: (
-          <div className="pl-2 pt-1">
+          <div className="pt-1 pl-2">
             {group.permissions.map(permission => {
               const needsDependency =
                 !!permission.dependsOnId &&
@@ -115,7 +115,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                 <div className="relative" key={permission.id}>
                   <div
                     className={cn(
-                      'flex flex-row items-center justify-between space-x-4 pb-2 pr-2 text-sm',
+                      'flex flex-row items-center justify-between space-x-4 pr-2 pb-2 text-sm',
                     )}
                     data-permission-id={permission.id}
                     ref={ref => {
@@ -129,8 +129,8 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         (needsDependency || !permission.isAssignableByViewer) && 'opacity-30',
                       )}
                     >
-                      <div className="text-fg font-semibold">{permission.title}</div>
-                      <div className="text-fg-default text-xs">{permission.description}</div>
+                      <div className="font-semibold text-fg">{permission.title}</div>
+                      <div className="text-xs text-fg-default">{permission.description}</div>
                     </div>
                     {permission.isAssignableByViewer === false ? (
                       <div className="flex grow justify-end">
@@ -142,7 +142,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                           }
                           openOnHover
                           content={
-                            <p className="text-fg-default text-sm">
+                            <p className="text-sm text-fg-default">
                               Your membership has insufficient authority for assigning this
                               permission.
                             </p>
@@ -158,7 +158,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                             </button>
                           }
                           openOnHover
-                          content={<p className="text-fg-default text-sm">{permission.warning}</p>}
+                          content={<p className="text-sm text-fg-default">{permission.warning}</p>}
                         />
                       </div>
                     ) : (
@@ -173,7 +173,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                             }
                             openOnHover
                             content={
-                              <p className="text-fg-default text-sm">
+                              <p className="text-sm text-fg-default">
                                 This permission depends on another permission.{' '}
                                 <Button
                                   variant="link"
@@ -250,7 +250,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                     />
                   </div>
                   {focusedPermission === permission.id && (
-                    <div className="border-warning pointer-events-none absolute bottom-[3px] left-[-7px] right-0 top-[-4px] rounded-sm border" />
+                    <div className="pointer-events-none absolute top-[-4px] right-0 bottom-[3px] left-[-7px] rounded-sm border border-warning" />
                   )}
                 </div>
               );

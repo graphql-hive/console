@@ -94,7 +94,7 @@ const TARGET_PATH = '/the-guild/gateway/production';
 /** The chrome from components/navigation/secondary-navigation.tsx, which mounts the base nav. */
 function ChromeBar(props: { children: ReactNode }) {
   return (
-    <div className="h-(--tabs-navbar-height) border-line bg-neutral-2 dark:bg-neutral-3 relative border-b">
+    <div className="relative h-(--tabs-navbar-height) border-b border-line bg-neutral-2 dark:bg-neutral-3">
       <div className="container">{props.children}</div>
     </div>
   );
@@ -374,7 +374,7 @@ export const ProposalSections = createPreview({
       >
         <RouterAt path={`${TARGET_PATH}/proposals/pr-7?version=v3`}>
           <div className="w-full">
-            <div className="border-line border-b">
+            <div className="border-b border-line">
               <Navigation aria-label="Proposal" items={PROPOSAL_SECTIONS} size="sm" />
             </div>
           </div>
@@ -383,7 +383,7 @@ export const ProposalSections = createPreview({
       <CallSite source="the same" origin="base" note="On ?page=checks&version=v3.">
         <RouterAt path={`${TARGET_PATH}/proposals/pr-7?page=checks&version=v3`}>
           <div className="w-full">
-            <div className="border-line border-b">
+            <div className="border-b border-line">
               <Navigation aria-label="Proposal" items={PROPOSAL_SECTIONS} size="sm" />
             </div>
           </div>
@@ -399,7 +399,7 @@ function SectionsPage(props: { path: string; items: NavigationItem[]; label: str
       <PageLayout>
         <Navigation aria-label={props.label} variant="list" items={props.items} />
         <PageLayoutContent>
-          <div className="bg-neutral-3 h-40 rounded-md" />
+          <div className="h-40 rounded-md bg-neutral-3" />
         </PageLayoutContent>
       </PageLayout>
     </RouterAt>

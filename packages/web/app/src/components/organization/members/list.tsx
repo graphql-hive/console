@@ -193,7 +193,7 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   if (info?.provisioningStatus === GraphQLSchema.ProvisioningStatus.Active && info.isDisabled) {
     return (
       <span
-        className="bg-critical-tint text-critical flex size-9 items-center justify-center rounded-full"
+        className="flex size-9 items-center justify-center rounded-full bg-critical-tint text-critical"
         aria-label="Disabled user"
       >
         <UserRoundX className="size-5" />
@@ -203,7 +203,7 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   const Icon = info ? UserLock : UserRound;
   return (
     <span
-      className="bg-surface-card flex size-9 items-center justify-center rounded-full"
+      className="flex size-9 items-center justify-center rounded-full bg-surface-card"
       aria-label={info ? 'Provisioned user' : 'User'}
     >
       <Icon className="size-5" />
@@ -229,7 +229,7 @@ function MemberNameCell({ member }: { member: MemberRow }) {
               openOnHover
               width="auto"
               content={
-                <div className="text-fg-default text-xs">
+                <div className="text-xs text-fg-default">
                   <div>Provisioned via SCIM</div>
                   <div>
                     External ID:{' '}
@@ -291,7 +291,7 @@ function MemberRoleCell(props: {
               <button
                 type="button"
                 aria-label="About the owner role"
-                className="text-fg-muted hover:text-fg-default inline-flex"
+                className="inline-flex text-fg-muted hover:text-fg-default"
               >
                 <Info className="size-3.5" />
               </button>
@@ -314,7 +314,7 @@ function MemberRoleCell(props: {
         content="This user is disabled."
       />
     ) : (
-      <div className="ml-auto mr-0 w-fit">
+      <div className="mr-0 ml-auto w-fit">
         <MemberGroups groups={member.groups ?? []} />
       </div>
     );
@@ -386,7 +386,7 @@ function MemberRoleCell(props: {
             }}
             cancel={{ disabled: confirmManagementState.fetching }}
           >
-            <p className="text-fg-default text-sm">
+            <p className="text-sm text-fg-default">
               After confirmation, your identity provider will control this user's status and
               group-based access. Review the pending SCIM values below to avoid removing access
               unintentionally.

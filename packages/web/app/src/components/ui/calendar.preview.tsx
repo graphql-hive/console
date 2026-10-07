@@ -31,14 +31,14 @@ function SingleCalendar() {
 }
 
 export const DateRangePickerCalendar = createPreview(() => (
-  <div className="bg-surface-floating border-line inline-block rounded-md border">
+  <div className="inline-block rounded-md border border-line bg-surface-floating">
     <RangeCalendar />
   </div>
 ));
 
 /** One month, single selection: the shape without the range band, for the cell and today styles. */
 export const Single = createPreview(() => (
-  <div className="bg-surface-floating border-line inline-block rounded-md border">
+  <div className="inline-block rounded-md border border-line bg-surface-floating">
     <SingleCalendar />
   </div>
 ));

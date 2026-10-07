@@ -17,11 +17,11 @@ export const Heading = ({
   return (
     <HeadingLevel
       className={clsx(
-        'text-fg cursor-default',
+        'cursor-default text-fg',
         {
           lg: 'text-lg font-bold',
           xl: 'text-xl font-bold',
-          '2xl': 'text-[28px] font-extrabold leading-snug',
+          '2xl': 'text-[28px] leading-snug font-extrabold',
         }[size],
         className,
       )}

@@ -22,7 +22,7 @@ export const PolicyBooleanToggle = (props: {
 
   const label = (
     <label
-      className="text-fg-secondary pb-1 pl-2 font-mono text-xs"
+      className="pb-1 pl-2 font-mono text-xs text-fg-secondary"
       htmlFor={`${props.rule}_${props.propertyName}`}
     >
       {props.title}

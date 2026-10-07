@@ -58,7 +58,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
             description="Collaborate on schema changes to reduce friction during development."
           />
         </div>
-        <div className="ml-auto mr-0 flex flex-col justify-center">
+        <div className="mr-0 ml-auto flex flex-col justify-center">
           <Button onClick={proposeChange}>Propose a change</Button>
         </div>
       </div>
@@ -127,7 +127,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className="border-line-subtle bg-surface-inset min-h-full gap-2.5 rounded-md border p-2.5">
+      <div className="min-h-full gap-2.5 rounded-md border border-line-subtle bg-surface-inset p-2.5">
         <ProposalsList {...props} />
       </div>
     </>
@@ -186,7 +186,7 @@ const ProposalsList = (props: {
           <div
             key={proposal.id}
             className={cn(
-              'hover:bg-surface-hover flex w-full flex-col rounded-md p-2.5',
+              'flex w-full flex-col rounded-md p-2.5 hover:bg-surface-hover',
               props.selectedProposalId === proposal.id && 'bg-surface-selected',
             )}
           >
@@ -208,15 +208,15 @@ const ProposalsList = (props: {
               <div className="flex flex-row items-start">
                 <div className="flex min-w-0 grow flex-col">
                   <div className="mr-6 flex min-w-0 flex-row gap-1 text-sm md:text-base">
-                    <span className="text-fg-default mr-6 truncate font-semibold">
+                    <span className="mr-6 truncate font-semibold text-fg-default">
                       {proposal.title}
                     </span>
-                    <span className="text-fg-inverse flex items-center">
+                    <span className="flex items-center text-fg-inverse">
                       <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
                     <span className="text-fg-secondary">{proposal.stage}</span>
                   </div>
-                  <div className="text-fg-secondary mb-1.5 mt-2 flex flex-col gap-x-1 align-middle text-xs font-medium md:flex-row">
+                  <div className="mt-2 mb-1.5 flex flex-col gap-x-1 align-middle text-xs font-medium text-fg-secondary md:flex-row">
                     <div className="truncate">
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>

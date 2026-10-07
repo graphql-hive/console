@@ -53,7 +53,7 @@ export const Markdown = (props: { content: string; className?: string }) => {
     <div
       data-slot="markdown"
       className={cn(
-        'text-muted-foreground [&_a]:text-primary text-xs leading-relaxed [&_a]:underline [&_code]:rounded [&_code]:bg-black/20 [&_code]:px-1 [&_code]:py-0.5',
+        'text-xs leading-relaxed text-muted-foreground [&_a]:text-primary [&_a]:underline [&_code]:rounded [&_code]:bg-black/20 [&_code]:px-1 [&_code]:py-0.5',
         props.className,
       )}
       dangerouslySetInnerHTML={{ __html: html }}

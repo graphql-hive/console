@@ -23,12 +23,12 @@ export function Description(props: { description: string }) {
 
   return (
     <div
-      className={clsx('mb-2 mt-0 block max-w-screen-sm', {
+      className={clsx('mt-0 mb-2 block max-w-screen-sm', {
         hidden: !isDescriptionsVisible,
       })}
     >
       <Markdown
-        className={clsx('text-fg-secondary text-left text-sm')}
+        className={clsx('text-left text-sm text-fg-secondary')}
         content={props.description}
       />
     </div>
@@ -188,11 +188,11 @@ export function SchemaExplorerUsageStats(props: {
                 <ul>
                   <li>
                     This {kindLabel} has been queried in{' '}
-                    <span className="text-fg font-medium">{formatNumber(usage.total)}</span>{' '}
+                    <span className="font-medium text-fg">{formatNumber(usage.total)}</span>{' '}
                     requests.
                   </li>
                   <li>
-                    <span className="text-fg font-medium">{toDecimal(percentage)}%</span> of all
+                    <span className="font-medium text-fg">{toDecimal(percentage)}%</span> of all
                     requests use this {kindLabel}.
                   </li>
                 </ul>
@@ -333,11 +333,11 @@ export function GraphQLTypeCard(props: {
   }
 
   return (
-    <div className="border-line rounded-md border-2">
+    <div className="rounded-md border-2 border-line">
       <div className="flex flex-row justify-between p-4">
         <div>
           <div className="flex flex-row items-center gap-2">
-            <div className="text-fg-secondary font-normal">{props.kind}</div>
+            <div className="font-normal text-fg-secondary">{props.kind}</div>
             <div className="font-semibold">
               <GraphQLTypeAsLink type={props.name} />
             </div>
@@ -345,7 +345,7 @@ export function GraphQLTypeCard(props: {
           {props.description && <Description description={props.description} />}
         </div>
         {Array.isArray(props.implements) && props.implements.length > 0 && (
-          <div className="text-fg-secondary flex flex-row items-center text-sm">
+          <div className="flex flex-row items-center text-sm text-fg-secondary">
             <div className="mx-2">implements</div>
             <div className="flex flex-row gap-2">
               {props.implements.map(t => (
@@ -390,7 +390,7 @@ export function GraphQLTypeCardListItem(props: {
 
 export function ExplorerFilteredEmptyState() {
   return (
-    <div className="text-fg-secondary border-line rounded-md border border-dashed px-4 py-8 text-center text-sm">
+    <div className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-fg-secondary">
       No schema coordinates match the active filters.
     </div>
   );
@@ -421,7 +421,7 @@ export function GraphQLInputFields(props: {
               <div className="flex w-full flex-row items-center justify-between">
                 <div className="text-fg-secondary">
                   <DeprecationNote deprecationReason={field.deprecationReason}>
-                    <LinkToCoordinatePage coordinate={coordinate} className="text-fg font-semibold">
+                    <LinkToCoordinatePage coordinate={coordinate} className="font-semibold text-fg">
                       {field.name}
                     </LinkToCoordinatePage>
                   </DeprecationNote>
@@ -477,7 +477,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
             >
               Visit in <span className="font-medium">Explorer</span>
             </Link>
-            <span className="text-fg-secondary text-xs"> - displays a full type</span>
+            <span className="text-xs text-fg-secondary"> - displays a full type</span>
           </p>
           <p>
             <Link
@@ -493,7 +493,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
             >
               Visit in <span className="font-medium">Insights</span>
             </Link>
-            <span className="text-fg-secondary text-xs"> - usage insights</span>
+            <span className="text-xs text-fg-secondary"> - usage insights</span>
           </p>
         </div>
       }
@@ -571,7 +571,7 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
 
 export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
   return (
-    <div className="border-line-subtle rounded-md border-2">
+    <div className="rounded-md border-2 border-line-subtle">
       <div className="flex flex-row justify-between p-4">
         <div className="flex flex-row items-center gap-2">
           <span className="my-1 flex w-32">

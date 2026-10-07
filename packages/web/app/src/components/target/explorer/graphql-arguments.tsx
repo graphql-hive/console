@@ -21,9 +21,9 @@ export function GraphQLArguments(props: {
   const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
 
   return (
-    <span className="text-fg-secondary ml-1">
+    <span className="ml-1 text-fg-secondary">
       <span>(</span>
-      <div className="text-fg-default pl-4">
+      <div className="pl-4 text-fg-default">
         {args.map(arg => {
           const coordinate = `${props.parentCoordinate}.${arg.name}`;
           return (

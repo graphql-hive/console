@@ -39,7 +39,7 @@ export function StatCard({ title, value, caption, icon: Icon, hint, variants }: 
             <Tooltip
               trigger={
                 <button type="button" aria-label="What this measures">
-                  <InfoIcon className="text-fg-secondary size-4" />
+                  <InfoIcon className="size-4 text-fg-secondary" />
                 </button>
               }
               content={hint}
@@ -48,10 +48,10 @@ export function StatCard({ title, value, caption, icon: Icon, hint, variants }: 
         </div>
         {/* `shrink-0` so a title that wraps to two lines ("Relative Request Frequency") pushes the
             icon rather than squashing it. */}
-        {Icon ? <Icon className="text-fg-secondary size-4 shrink-0" /> : null}
+        {Icon ? <Icon className="size-4 shrink-0 text-fg-secondary" /> : null}
       </div>
-      <div className="text-fg mt-2 text-2xl font-bold">{value}</div>
-      {caption ? <p className="text-fg-secondary text-xs">{caption}</p> : null}
+      <div className="mt-2 text-2xl font-bold text-fg">{value}</div>
+      {caption ? <p className="text-xs text-fg-secondary">{caption}</p> : null}
     </Card>
   );
 }

@@ -111,21 +111,21 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
 
   if (schemaChecks.edges.length === 0) {
     return (
-      <div className="text-fg-secondary my-4 cursor-default text-center text-sm">
+      <div className="my-4 cursor-default text-center text-sm text-fg-secondary">
         No schema checks found with the current filters
       </div>
     );
   }
 
   return (
-    <div className="border-line-subtle flex min-h-0 w-[300px] grow flex-col rounded-md border">
+    <div className="flex min-h-0 w-[300px] grow flex-col rounded-md border border-line-subtle">
       <ScrollArea fill>
         <div className="flex flex-col gap-2.5 p-2.5">
           {schemaChecks.edges.map(edge => (
             <div
               key={edge.node.id}
               className={cn(
-                'hover:bg-surface-hover flex flex-col rounded-md p-2.5',
+                'flex flex-col rounded-md p-2.5 hover:bg-surface-hover',
                 edge.node.id === props.schemaCheckId ? 'bg-surface-selected' : null,
               )}
             >
@@ -140,11 +140,11 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
                   {edge.node.meta?.commit ?? edge.node.id}
                 </h3>
                 {edge.node.meta?.author ? (
-                  <div className="text-fg-secondary truncate text-xs font-medium">
-                    <span className="overflow-hidden truncate">{edge.node.meta.author}</span>
+                  <div className="truncate text-xs font-medium text-fg-secondary">
+                    <span className="truncate overflow-hidden">{edge.node.meta.author}</span>
                   </div>
                 ) : null}
-                <div className="text-fg-secondary mb-1.5 mt-2.5 flex align-middle text-xs font-medium">
+                <div className="mt-2.5 mb-1.5 flex align-middle text-xs font-medium text-fg-secondary">
                   <div
                     className={cn(
                       edge.node.__typename === 'FailedSchemaCheck' ? 'text-critical' : null,
@@ -159,7 +159,7 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
                   </div>
 
                   {edge.node.serviceName ? (
-                    <div className="ml-auto mr-0 w-1/2 truncate text-right font-bold">
+                    <div className="mr-0 ml-auto w-1/2 truncate text-right font-bold">
                       {edge.node.serviceName}
                     </div>
                   ) : null}
@@ -167,7 +167,7 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
               </Link>
               {edge.node.githubRepository && edge.node.meta ? (
                 <a
-                  className="text-fg-secondary hover:text-fg-secondary -ml-px text-xs font-medium"
+                  className="-ml-px text-xs font-medium text-fg-secondary hover:text-fg-secondary"
                   target="_blank"
                   rel="noreferrer"
                   href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}

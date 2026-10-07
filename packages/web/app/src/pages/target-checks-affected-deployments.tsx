@@ -283,7 +283,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
               >
                 Schema Check
               </Link>
-              <span className="text-fg-secondary mx-2">/</span>
+              <span className="mx-2 text-fg-secondary">/</span>
               <span>Affected App Deployments</span>
             </span>
           }
@@ -291,7 +291,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
             props.coordinate ? (
               <>
                 App deployments affected by breaking change to{' '}
-                <code className="bg-surface-code text-warning rounded-sm px-1 py-0.5 font-mono">
+                <code className="rounded-sm bg-surface-code px-1 py-0.5 font-mono text-warning">
                   {props.coordinate}
                 </code>
               </>

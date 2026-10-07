@@ -16,7 +16,7 @@ export const DocsLink = ({ href, icon, text }: DocsLinkProps) => {
       href={fullUrl}
       target="_blank"
       rel="noreferrer"
-      className="hover:text-fg mt-2 inline-flex items-center whitespace-pre-wrap p-0 text-sm"
+      className="mt-2 inline-flex items-center p-0 text-sm whitespace-pre-wrap hover:text-fg"
     >
       {icon ?? <Book className="mr-2 size-4" />}
       {text}
@@ -33,7 +33,7 @@ export const ProductUpdatesLink = ({ href, text }: { href: string; text: string 
       href={fullUrl}
       target="'_blank"
       rel="noreferrer"
-      className="text-info inline-flex items-center p-0 font-medium transition-colors hover:underline"
+      className="inline-flex items-center p-0 font-medium text-info transition-colors hover:underline"
     >
       <Megaphone className="mr-2 size-4" />
       {text}
