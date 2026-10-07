@@ -16,6 +16,7 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
+import { ServiceFilterButton } from '@/components/target/checks/service-filter-button';
 import {
   ChangesBlock,
   CompositionErrorsList,
@@ -1527,7 +1528,14 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                         ),
                     },
                     ...(schemaCheck.serviceName
-                      ? [{ term: 'Service', description: schemaCheck.serviceName }]
+                      ? [
+                          {
+                            term: 'Service',
+                            description: (
+                              <ServiceFilterButton serviceName={schemaCheck.serviceName} />
+                            ),
+                          },
+                        ]
                       : []),
                     {
                       term: 'Triggered',

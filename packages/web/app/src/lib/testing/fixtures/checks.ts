@@ -39,6 +39,8 @@ export const CHECKS = {
   second: ['c3d4e5f'],
   failedOnly: 'f4i1l3d',
   serviceOnly: '5e7v1ce',
+  /** The open check's own commit, which no list row shows. */
+  active: 'ac71v3c',
   nextCursor: 'cursor-2',
 } as const;
 
@@ -58,7 +60,10 @@ export function schemaChecksNavigation(variables: Variables) {
       : variables.after
         ? page([check('check-3', CHECKS.second[0])], null)
         : page(
-            [check('check-1', CHECKS.first[0]), check('check-2', CHECKS.first[1], true)],
+            [
+              check('check-1', CHECKS.first[0], false, SERVICES[1]),
+              check('check-2', CHECKS.first[1], true),
+            ],
             CHECKS.nextCursor,
           );
   return {
@@ -90,6 +95,51 @@ export function checksPage(projectType: ProjectType = 'FEDERATION') {
             node: { __typename: 'SuccessfulSchemaCheck' as const, id: 'check-1' },
           },
         ],
+      },
+    },
+  };
+}
+
+/**
+ * `ActiveSchemaCheck_ActiveSchemaCheckQuery`: a passing check with nothing to report, so the
+ * detail renders its header and empty sections. Both check types share one `SchemaCheck:<id>`
+ * cache entity, so request it at an id the list does not show or it rewrites that row.
+ */
+export function activeSchemaCheck(variables: { schemaCheckId: string }) {
+  return {
+    __typename: 'Query' as const,
+    project: {
+      __typename: 'Project' as const,
+      id: 'project-1',
+      type: 'FEDERATION',
+      target: {
+        __typename: 'Target' as const,
+        id: TARGET_ID,
+        schemaCheck: {
+          __typename: 'SuccessfulSchemaCheck' as const,
+          id: variables.schemaCheckId,
+          serviceName: SERVICES[0],
+          contextId: null,
+          createdAt: '2026-09-27T10:00:00.000Z',
+          meta: { __typename: 'SchemaCheckMeta' as const, commit: CHECKS.active, author: 'User' },
+          isApproved: false,
+          approvedBy: null,
+          cliApprovalMetadata: null,
+          approvalComment: null,
+          contractChecks: null,
+          hasSchemaCompositionErrors: false,
+          hasSchemaChanges: false,
+          hasUnapprovedBreakingChanges: false,
+          schemaSDL: 'type Query { products: [String!]! }',
+          baseline: null,
+          compositeSchemaSDL: null,
+          supergraphSDL: null,
+          breakingSchemaChanges: null,
+          safeSchemaChanges: null,
+          schemaPolicyWarnings: null,
+          schemaPolicyErrors: null,
+          conditionalBreakingChangeMetadata: null,
+        },
       },
     },
   };

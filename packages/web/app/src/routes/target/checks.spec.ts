@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { CHECKS, checksFixtures, SERVICES } from '@/lib/testing/fixtures/checks';
+import { activeSchemaCheck, CHECKS, checksFixtures, SERVICES } from '@/lib/testing/fixtures/checks';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
@@ -165,6 +165,39 @@ describe('service filter', () => {
       expect(screen.getByRole('combobox', { name: 'Service' }).textContent).toContain('ghost');
     },
   );
+
+  it("filters to a service from a check row's service name", { timeout: 30_000 }, async () => {
+    const testClient = client();
+    const { router } = renderAtUrl(CHECKS_PAGE, { client: testClient });
+    await screen.findByText(CHECKS.first[0]);
+
+    fireEvent.click(screen.getByRole('button', { name: `Show only checks for ${SERVICES[1]}` }));
+
+    await screen.findByText(CHECKS.serviceOnly);
+    expect(router.state.location.search).toMatchObject({ filter_service: SERVICES[1] });
+    expect(router.state.location.pathname).toBe(CHECKS_PAGE);
+    expect(listRequests(testClient).at(-1)).toMatchObject({
+      filters: { serviceName: SERVICES[1] },
+    });
+    expect(testClient.seen).not.toContain('ActiveSchemaCheck_ActiveSchemaCheckQuery');
+  });
+
+  it("filters to a service from the open check's header", { timeout: 30_000 }, async () => {
+    const testClient = client();
+    testClient.fixtures.set('ActiveSchemaCheck_ActiveSchemaCheckQuery', activeSchemaCheck);
+    // An id the list does not show, so the detail's entity does not rewrite a row.
+    const { router } = renderAtUrl(`${CHECKS_PAGE}/check-9`, { client: testClient });
+    const header = await screen.findByRole('button', {
+      name: `Show only checks for ${SERVICES[0]}`,
+    });
+
+    fireEvent.click(header);
+
+    await screen.findByText(CHECKS.serviceOnly);
+    expect(router.state.location.search).toMatchObject({ filter_service: SERVICES[0] });
+    expect(router.state.location.pathname).toBe(`${CHECKS_PAGE}/check-9`);
+    expect(screen.getByText(CHECKS.active)).toBeTruthy();
+  });
 
   it('is absent for a single-schema project', { timeout: 30_000 }, async () => {
     const testClient = createTestClient(
