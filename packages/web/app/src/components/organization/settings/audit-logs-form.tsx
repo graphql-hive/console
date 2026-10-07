@@ -40,7 +40,7 @@ export function AuditLogsForm(props: {
           )}
         />
         <div className="mt-2">
-          <ArrowRightIcon className="text-fg-secondary size-6" />
+          <ArrowRightIcon className="size-6 text-fg-secondary" />
         </div>
         <FormField
           control={form.control}

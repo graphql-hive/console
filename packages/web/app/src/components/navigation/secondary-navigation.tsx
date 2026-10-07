@@ -12,7 +12,7 @@ export function SecondaryNavigation({
   links: NavigationItem[];
 }) {
   return (
-    <div className="h-(--tabs-navbar-height) border-line bg-surface-card relative border-b">
+    <div className="relative h-(--tabs-navbar-height) border-b border-line bg-surface-card">
       <div className="container">
         <Navigation items={links} loading={loading} actions={actions} />
       </div>

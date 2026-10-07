@@ -124,13 +124,13 @@ export function AppDeploymentProtectionForm(props: {
               </div>
             </div>
           </div>
-          <div className="text-fg-default text-sm">
+          <div className="text-sm text-fg-default">
             The creation date check always applies. The inactivity and traffic checks only apply if
             the app deployment has usage data.
           </div>
         </div>
         {messages.length ? (
-          <div className="text-critical space-y-1">
+          <div className="space-y-1 text-critical">
             {messages.map(({ name, message }) => (
               <div key={name}>{message}</div>
             ))}

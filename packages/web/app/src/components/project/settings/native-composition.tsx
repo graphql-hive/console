@@ -44,7 +44,7 @@ const IncrementalNativeCompositionSwitch = (props: {
   return (
     <div
       className={cn(
-        'border-line bg-surface-card flex flex-row items-center gap-x-10 rounded-sm border p-4',
+        'flex flex-row items-center gap-x-10 rounded-sm border border-line bg-surface-card p-4',
         mutation.fetching && 'animate-pulse',
       )}
     >
@@ -216,7 +216,7 @@ export function NativeCompositionSettings(props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-fg-secondary text-sm">
+        <p className="text-sm text-fg-secondary">
           Recommended for most users. Use native GraphQL Federation v2 composition for your project.
         </p>
       </div>
@@ -229,7 +229,7 @@ export function NativeCompositionSettings(props: {
               <div className="font-semibold">Incremental migration</div>
               <Badge content="experimental" variants={{ variant: 'outline' }} />
             </div>
-            <div className="text-fg-secondary text-sm">
+            <div className="text-sm text-fg-secondary">
               Your project is using the experimental incremental migration feature. <br />
               Migrate targets one by one to the native schema composition.
             </div>
@@ -249,7 +249,7 @@ export function NativeCompositionSettings(props: {
       ) : projectQuery.error ? (
         <div className="flex flex-row items-center gap-x-4">
           <div>
-            <HeartCrackIcon className="text-critical size-10" />
+            <HeartCrackIcon className="size-10 text-critical" />
           </div>
           <div>
             <div className="text-base font-semibold">
@@ -262,15 +262,15 @@ export function NativeCompositionSettings(props: {
           <div>
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Compatible ? (
-              <PartyPopperIcon className="text-success size-10" />
+              <PartyPopperIcon className="size-10 text-success" />
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Incompatible ? (
-              <HeartCrackIcon className="text-critical size-10" />
+              <HeartCrackIcon className="size-10 text-critical" />
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Unknown ? (
-              <FlaskConicalIcon className="text-accent size-10" />
+              <FlaskConicalIcon className="size-10 text-accent" />
             ) : null}
           </div>
           <div>
@@ -288,13 +288,13 @@ export function NativeCompositionSettings(props: {
                 ? 'Unclear whether your project is compatible'
                 : null}
             </div>
-            <div className="text-fg-secondary text-sm">
+            <div className="text-sm text-fg-secondary">
               {projectQuery.data.project.nativeFederationCompatibility.status ===
               NativeFederationCompatibilityStatusType.Compatible ? (
                 <>
                   Subgraphs of this project are composed and validated correctly by our{' '}
                   <a
-                    className="text-fg-secondary font-semibold underline-offset-4 hover:underline"
+                    className="font-semibold text-fg-secondary underline-offset-4 hover:underline"
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library
@@ -307,7 +307,7 @@ export function NativeCompositionSettings(props: {
                 <>
                   Our{' '}
                   <a
-                    className="text-fg-secondary font-semibold underline-offset-4 hover:underline"
+                    className="font-semibold text-fg-secondary underline-offset-4 hover:underline"
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library
@@ -333,7 +333,7 @@ export function NativeCompositionSettings(props: {
                   Your project appears to lack any subgraphs at the moment, making it impossible for
                   us to assess compatibility with our{' '}
                   <a
-                    className="text-fg-secondary font-semibold underline-offset-4 hover:underline"
+                    className="font-semibold text-fg-secondary underline-offset-4 hover:underline"
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library

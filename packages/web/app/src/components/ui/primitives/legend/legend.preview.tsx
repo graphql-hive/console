@@ -9,9 +9,9 @@ export const nav: NavPath = 'Primitives/Legend';
 export const Default = createPreview(() => (
   <Legend
     items={[
-      { icon: <AlertTriangle className="text-critical size-3.5" />, label: 'Failed' },
+      { icon: <AlertTriangle className="size-3.5 text-critical" />, label: 'Failed' },
       { icon: <GitCompare className="size-3.5" />, label: 'Schema changed' },
-      { icon: <Check className="text-success size-3.5" />, label: 'Passed' },
+      { icon: <Check className="size-3.5 text-success" />, label: 'Passed' },
     ]}
   />
 ));
@@ -33,13 +33,13 @@ export const AboveContent = createPreview(() => (
     <div className="flex justify-end">
       <Legend
         items={[
-          { icon: <AlertTriangle className="text-critical size-3.5" />, label: 'Failed' },
+          { icon: <AlertTriangle className="size-3.5 text-critical" />, label: 'Failed' },
           { icon: <GitCompare className="size-3.5" />, label: 'Schema changed' },
-          { icon: <Check className="text-success size-3.5" />, label: 'Passed' },
+          { icon: <Check className="size-3.5 text-success" />, label: 'Passed' },
         ]}
       />
     </div>
-    <div className="border-line text-fg-secondary rounded-md border p-4 text-sm">
+    <div className="rounded-md border border-line p-4 text-sm text-fg-secondary">
       The band with the picker goes here.
     </div>
   </div>

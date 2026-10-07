@@ -173,7 +173,7 @@ export function BreakingChangesForm(props: {
             <span>days.</span>
           </div>
           {messages.length ? (
-            <div className="text-critical mt-3 space-y-1">
+            <div className="mt-3 space-y-1 text-critical">
               {messages.map(({ name, message }) => (
                 <div key={name}>{message}</div>
               ))}
@@ -184,7 +184,7 @@ export function BreakingChangesForm(props: {
           <div className="space-y-2">
             <div>
               <div className="font-semibold">Allow breaking change for these clients:</div>
-              <div className="text-fg-secondary text-xs">
+              <div className="text-xs text-fg-secondary">
                 Marks a breaking change as safe when it only affects the following clients.
               </div>
             </div>
@@ -205,7 +205,7 @@ export function BreakingChangesForm(props: {
           <div className="space-y-2">
             <div>
               <div className="font-semibold">Allow breaking change for these app deployments:</div>
-              <div className="text-fg-secondary text-xs">
+              <div className="text-xs text-fg-secondary">
                 Marks a breaking change as safe when it only affects the following app deployments.
               </div>
             </div>
@@ -224,12 +224,12 @@ export function BreakingChangesForm(props: {
               <FormItem group>
                 <div className="space-y-1">
                   <div className="font-semibold">Check usage in these targets:</div>
-                  <div className="text-fg-secondary text-xs">
+                  <div className="text-xs text-fg-secondary">
                     Traffic from the checked targets is what the Conditional Breaking Change
                     threshold is measured against. A change is flagged as breaking only when clients
                     of these targets use the affected field or type. Some common configurations are:
                   </div>
-                  <ul className="text-fg-secondary list-disc space-y-1 pl-4 text-xs">
+                  <ul className="list-disc space-y-1 pl-4 text-xs text-fg-secondary">
                     <li>
                       Check only <span className="font-semibold">production</span> on a development
                       target to allow changes that would only break development clients, while still
@@ -267,7 +267,7 @@ export function BreakingChangesForm(props: {
             )}
           />
         </div>
-        <div className="border-line bg-surface-card text-fg-secondary w-auto max-w-4xl space-y-2 rounded-sm border py-2 pl-5">
+        <div className="w-auto max-w-4xl space-y-2 rounded-sm border border-line bg-surface-card py-2 pl-5 text-fg-secondary">
           <div>
             <div className="font-semibold">Example settings</div>
             <div className="text-sm">Removal of a field is considered breaking if</div>

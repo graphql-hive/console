@@ -39,7 +39,7 @@ export const ProjectCard = (props: {
       days={props.days}
       renderLink={children => (
         <Link
-          className="block pb-5 pt-4"
+          className="block pt-4 pb-5"
           to="/$organizationSlug/$projectSlug"
           disabled={props.cleanOrganizationId == null || project?.slug == null}
           params={{

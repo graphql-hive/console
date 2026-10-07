@@ -156,7 +156,7 @@ export function FormControl({ children }: { children: ReactElement }) {
 export function FormMessage() {
   const { error, formMessageId } = useFormField();
   return (
-    <p id={formMessageId} data-form-message className="text-critical text-control min-h-[1.25rem]">
+    <p id={formMessageId} data-form-message className="min-h-[1.25rem] text-control text-critical">
       {error?.message ? String(error.message) : null}
     </p>
   );

@@ -56,7 +56,7 @@ export function GraphQLUnionTypeComponent(props: {
         <div className="flex flex-col">
           {members.map((member, i) => (
             <GraphQLTypeCardListItem key={member.name} index={i}>
-              <GraphQLTypeAsLink className="text-fg-default font-semibold" type={member.name} />
+              <GraphQLTypeAsLink className="font-semibold text-fg-default" type={member.name} />
               {member.supergraphMetadata && (
                 <SupergraphMetadataList supergraphMetadata={member.supergraphMetadata} />
               )}

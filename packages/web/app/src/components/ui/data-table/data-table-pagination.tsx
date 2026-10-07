@@ -64,7 +64,7 @@ export function DataTablePagination({
       >
         <ChevronLeft className="size-4" />
       </button>
-      <span className="text-fg px-2 font-mono text-xs tabular-nums" aria-live="polite">
+      <span className="px-2 font-mono text-xs text-fg tabular-nums" aria-live="polite">
         {pageIndex + 1} / {pageCount}
       </span>
       <button
@@ -84,7 +84,7 @@ export function DataTablePagination({
       >
         Last
       </button>
-      <label className="text-fg-secondary ml-4 inline-flex items-center gap-2 text-xs">
+      <label className="ml-4 inline-flex items-center gap-2 text-xs text-fg-secondary">
         Go to
         <Input
           size="compact"
@@ -133,7 +133,7 @@ export function DataTableCursorPagination({
 }: DataTableCursorPaginationProps) {
   return (
     <nav role="navigation" aria-label="Pagination" className={`${barClass} justify-between px-2`}>
-      <span className="text-fg-secondary px-2 text-xs">{summary}</span>
+      <span className="px-2 text-xs text-fg-secondary">{summary}</span>
       <span className="inline-flex items-center gap-1">
         {loading ? <Spinner variants={{ size: 'sm' }} /> : null}
         <button

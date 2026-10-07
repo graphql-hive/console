@@ -31,13 +31,13 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
     <Popover
       trigger={
         <button type="button" aria-label="Supergraph metadata" className="my-[5px]">
-          <MetadataIcon className="text-fg size-4" />
+          <MetadataIcon className="size-4 text-fg" />
         </button>
       }
       openOnHover
       width="auto"
       content={
-        <div className="text-fg-default text-xs">
+        <div className="text-xs text-fg-default">
           {props.supergraphMetadata.map((m, i) => (
             <div key={i}>
               <span className="font-bold">{m.name}:</span> {m.content}
@@ -69,7 +69,7 @@ function SubgraphChip(props: {
         service: props.text,
       }}
       style={subgraphChipColors(props.text, resolvedTheme)}
-      className="text-2xs my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center gap-1 rounded-full px-2 font-normal leading-none"
+      className="my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center gap-1 rounded-full px-2 text-2xs leading-none font-normal"
     >
       <span className="min-w-0 truncate">{props.text}</span>
       <PackageIcon size={10} className="shrink-0" />
@@ -198,14 +198,14 @@ export function SupergraphMetadataList(props: {
       {allItems && (
         <Popover
           trigger={
-            <button type="button" className="text-fg flex items-center pl-1 text-xs font-bold">
+            <button type="button" className="flex items-center pl-1 text-xs font-bold text-fg">
               + {allItems.length - previewItems.length} more
             </button>
           }
           openOnHover
           width="auto"
           content={
-            <div className="text-fg-default text-xs">
+            <div className="text-xs text-fg-default">
               <div className="mb-2 font-bold">All Subgraphs</div>
               <div className="w-[250px]">
                 <ScrollArea maxHeight="md">

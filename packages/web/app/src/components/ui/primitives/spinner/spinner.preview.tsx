@@ -5,7 +5,7 @@ import { Spinner } from './spinner';
 export const nav: NavPath = 'Primitives/Spinner';
 
 export const Sizes = createPreview(() => (
-  <div className="text-fg-secondary flex items-end gap-8 text-xs">
+  <div className="flex items-end gap-8 text-xs text-fg-secondary">
     <span className="flex flex-col items-center gap-2">
       <Spinner variants={{ size: 'sm' }} />
       sm
@@ -23,10 +23,10 @@ export const Sizes = createPreview(() => (
 
 export const InContext = createPreview(() => (
   <div className="flex flex-col gap-6 text-sm">
-    <div className="border-line flex h-24 items-center justify-center rounded-md border text-center">
+    <div className="flex h-24 items-center justify-center rounded-md border border-line text-center">
       <Spinner />
     </div>
-    <div className="border-line-subtle bg-neutral-2 dark:bg-neutral-3 flex h-9 items-center justify-between rounded-md border px-4 text-xs">
+    <div className="flex h-9 items-center justify-between rounded-md border border-line-subtle bg-neutral-2 px-4 text-xs dark:bg-neutral-3">
       <span className="text-fg-secondary">Page 2</span>
       <span className="inline-flex items-center gap-2">
         <Spinner variants={{ size: 'sm' }} />

@@ -7,7 +7,7 @@ import { Separator } from './separator';
 export const nav: NavPath = 'Primitives/Separator';
 
 export const Horizontal = createPreview(() => (
-  <div className="text-fg-default flex w-80 flex-col gap-3 text-sm">
+  <div className="flex w-80 flex-col gap-3 text-sm text-fg-default">
     <p>Schema checks run on the composed API schema.</p>
     <Separator />
     <p>Each check compares against the latest valid version.</p>
@@ -48,8 +48,8 @@ export const InToolbar = createPreview(() => {
 
 /** `stretch` fills the row instead, for a divider between things taller than a control. */
 export const Stretch = createPreview(() => (
-  <div className="text-fg-default flex items-center gap-4 text-sm">
-    <div className="border-line h-16 w-40 rounded-md border p-3">A tall neighbour</div>
+  <div className="flex items-center gap-4 text-sm text-fg-default">
+    <div className="h-16 w-40 rounded-md border border-line p-3">A tall neighbour</div>
     <Separator orientation="vertical" />
     <span>control height</span>
     <Separator orientation="vertical" stretch />

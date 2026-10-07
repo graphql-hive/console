@@ -35,7 +35,7 @@ const namedTypeOf = (type: unknown): GraphQLNamedType | null => {
 
 const Section = (props: { title: string; children: React.ReactNode }) => (
   <div className="flex flex-col gap-1">
-    <div className="text-muted-foreground px-2 pt-2 text-[11px] font-medium uppercase tracking-wide">
+    <div className="px-2 pt-2 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
       {props.title}
     </div>
     {props.children}
@@ -47,7 +47,7 @@ const Description = (props: { description?: string | null }) =>
 
 const DeprecationBadge = (props: { reason?: string | null }) => (
   <div className="flex flex-col gap-1 px-2 py-1">
-    <Badge variant="outline" className="text-muted-foreground w-fit">
+    <Badge variant="outline" className="w-fit text-muted-foreground">
       Deprecated
     </Badge>
     {props.reason ? <Markdown content={props.reason} /> : null}
@@ -88,13 +88,13 @@ const FieldRow = (props: {
       <span className="text-muted-foreground">:</span>
       <GraphQLType type={props.type as never} />
       {props.isDeprecated ? (
-        <Badge variant="outline" className="text-muted-foreground ml-auto">
+        <Badge variant="outline" className="ml-auto text-muted-foreground">
           Deprecated
         </Badge>
       ) : null}
     </div>
     {props.description ? (
-      <span className="text-muted-foreground line-clamp-2 whitespace-normal text-left">
+      <span className="line-clamp-2 text-left whitespace-normal text-muted-foreground">
         {props.description}
       </span>
     ) : null}
@@ -299,7 +299,7 @@ export const Docs = () => {
 
     return (
       <>
-        <div className="text-muted-foreground px-2 pt-2 text-xs">
+        <div className="px-2 pt-2 text-xs text-muted-foreground">
           on <span className="text-amber-400">{type.name}</span>
         </div>
         <Description description={field.description} />
@@ -328,7 +328,7 @@ export const Docs = () => {
 
     if (isEmpty) {
       return (
-        <Empty className="px-0! w-full">
+        <Empty className="w-full px-0!">
           <EmptyHeader>
             <EmptyTitle className="text-base">No matches</EmptyTitle>
             <EmptyDescription className="text-xs">
@@ -383,10 +383,10 @@ export const Docs = () => {
   const renderBody = () => {
     if (!schema) {
       return (
-        <Empty className="px-0! w-full">
+        <Empty className="w-full px-0!">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <BookOpenIcon className="text-muted-foreground size-6" />
+              <BookOpenIcon className="size-6 text-muted-foreground" />
             </EmptyMedia>
             <EmptyTitle className="text-base">No schema yet</EmptyTitle>
             <EmptyDescription className="text-xs">
@@ -412,12 +412,12 @@ export const Docs = () => {
 
   return (
     <div className="grid size-full grid-rows-[auto_auto_1fr] pb-0">
-      <div className="border-border flex h-12 items-center gap-2 border-b p-3">
+      <div className="flex h-12 items-center gap-2 border-b border-border p-3">
         {docsNavStack.length > 0 && !isSearchActive ? (
           <Button
             variant="ghost"
             size="icon-sm"
-            className="text-muted-foreground hover:text-foreground p-1! size-6 rounded-sm"
+            className="size-6 rounded-sm p-1! text-muted-foreground hover:text-foreground"
             onClick={popDocs}
           >
             <ChevronLeftIcon className="size-4" />
@@ -428,14 +428,14 @@ export const Docs = () => {
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground ml-auto h-6 px-2 text-xs"
+            className="ml-auto h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
             onClick={resetDocs}
           >
             Root
           </Button>
         ) : null}
       </div>
-      <div className="border-border border-b p-3">
+      <div className="border-b border-border p-3">
         <InputGroup>
           <InputGroupInput
             placeholder="Search the schema"
@@ -443,7 +443,7 @@ export const Docs = () => {
             onChange={e => setSearchValue(e.currentTarget.value)}
           />
           <InputGroupAddon>
-            <SearchIcon className="text-muted-foreground size-4" />
+            <SearchIcon className="size-4 text-muted-foreground" />
           </InputGroupAddon>
         </InputGroup>
       </div>

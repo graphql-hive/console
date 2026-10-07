@@ -63,36 +63,36 @@ function TraceView(props: {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-line sticky top-0 z-10 border-b">
-        <div className="text-fg flex w-full items-center text-xs">
+      <div className="sticky top-0 z-10 border-b border-line">
+        <div className="flex w-full items-center text-xs text-fg">
           <div className="h-12 shrink-0 py-2" style={{ width }}>
             <div className="pl-4">
               <div className="font-medium">Timeline</div>
-              <div className="text-fg-secondary text-xs">Spans and details</div>
+              <div className="text-xs text-fg-secondary">Spans and details</div>
             </div>
           </div>
           <div className="h-12 grow pr-8">
             <div className="relative size-full">
-              <div className="absolute left-0 top-6 -translate-x-1/2 text-center">
+              <div className="absolute top-6 left-0 -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[0])}
               </div>
-              <div className="bg-line absolute bottom-0 left-0 h-2 w-px" />
-              <div className="absolute left-[25%] top-6 -translate-x-1/2 text-center">
+              <div className="absolute bottom-0 left-0 h-2 w-px bg-line" />
+              <div className="absolute top-6 left-[25%] -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[1])}
               </div>
-              <div className="bg-line absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2" />
-              <div className="absolute left-[50%] top-6 -translate-x-1/2 text-center">
+              <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-line" />
+              <div className="absolute top-6 left-[50%] -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[2])}
               </div>
-              <div className="bg-line absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2" />
-              <div className="absolute left-[75%] top-6 -translate-x-1/2 text-center">
+              <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-line" />
+              <div className="absolute top-6 left-[75%] -translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[3])}
               </div>
-              <div className="bg-line absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2" />
-              <div className="absolute right-0 top-6 translate-x-1/2 text-center">
+              <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-line" />
+              <div className="absolute top-6 right-0 translate-x-1/2 text-center">
                 {formatMsTimestamp(timestamps[4])}
               </div>
-              <div className="bg-line absolute bottom-0 right-0 h-2 w-px -translate-x-1/2" />
+              <div className="absolute right-0 bottom-0 h-2 w-px -translate-x-1/2 bg-line" />
             </div>
           </div>
         </div>
@@ -110,11 +110,11 @@ function TraceView(props: {
       </ScrollArea>
       {props.serviceNames && (
         <div className="sticky bottom-0 z-10 px-2 py-4">
-          <div className="text-fg-secondary flex flex-wrap items-center justify-center gap-6 text-xs">
+          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-fg-secondary">
             {props.serviceNames.map(serviceName => (
               <div
                 key={serviceName}
-                className="hover:text-fg flex cursor-pointer items-center gap-2"
+                className="flex cursor-pointer items-center gap-2 hover:text-fg"
                 onMouseEnter={() => setHighlightedServiceName(serviceName)}
                 onMouseLeave={() => setHighlightedServiceName(null)}
               >
@@ -321,7 +321,7 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
       {/* Invisible wider hit area */}
       <div
         className={cn(
-          'bg-line absolute inset-y-0 left-[2px] w-px',
+          'absolute inset-y-0 left-[2px] w-px bg-line',
           isDragging ? 'bg-fg-subtle' : 'hover:bg-surface-hover',
         )}
       />
@@ -396,7 +396,7 @@ type NodeElementProps = {
 function NodeElement(props: NodeElementProps) {
   return (
     <div
-      className={cn('relative z-20 block h-6 min-w-px select-none rounded-sm')}
+      className={cn('relative z-20 block h-6 min-w-px rounded-sm select-none')}
       style={{
         left: `min(${props.leftPositionPercentage}%, 100% - 1px)`,
         width: `${props.widthPercentage}%`,
@@ -404,7 +404,7 @@ function NodeElement(props: NodeElementProps) {
       }}
     >
       <div
-        className="text-fg-default absolute top-1/2 flex -translate-y-1/2 items-center whitespace-nowrap px-[4px] font-mono leading-none"
+        className="absolute top-1/2 flex -translate-y-1/2 items-center px-[4px] font-mono leading-none whitespace-nowrap text-fg-default"
         style={{
           fontSize: '11px',
           ...(props.isNearRightEdge ? { right: '6px' } : { left: 'calc(100% + 6px)' }),
@@ -457,7 +457,7 @@ function SpanNode(props: SpanNodeProps) {
     <>
       <div
         className={cn(
-          'odd:bg-surface-stripe hover:bg-surface-hover pr-8',
+          'pr-8 odd:bg-surface-stripe hover:bg-surface-hover',
           hasException && 'bg-critical-tint odd:bg-critical-tint hover:bg-critical-tint-strong',
           highlightedEvent &&
             highlightedEvent.spanId === span.id &&
@@ -471,7 +471,7 @@ function SpanNode(props: SpanNodeProps) {
           >
             <div
               className={cn(
-                'text-fg-secondary flex h-8 shrink-0 items-center truncate',
+                'flex h-8 shrink-0 items-center truncate text-fg-secondary',
                 canBeCollapsed && 'cursor-pointer',
               )}
             >
@@ -489,13 +489,13 @@ function SpanNode(props: SpanNodeProps) {
             </div>
             <div
               className={cn(
-                'flex w-full items-center whitespace-nowrap align-middle text-xs',
+                'flex w-full items-center align-middle text-xs whitespace-nowrap',
                 isDimmed ? 'text-fg-secondary' : 'text-fg',
               )}
             >
               <span className="mr-1">{span.name}</span>
               {hasException && (
-                <span className="ml-auto mr-1 inline-flex">
+                <span className="mr-1 ml-auto inline-flex">
                   <Badge content="Error" variants={{ variant: 'critical', mono: true }} />
                 </span>
               )}
@@ -558,7 +558,7 @@ function SpanNode(props: SpanNodeProps) {
                     <div className="col-span-2">
                       {/* Timeline visualization */}
                       <div>
-                        <div className="bg-line h-[2px] w-full overflow-hidden">
+                        <div className="h-[2px] w-full overflow-hidden bg-line">
                           <div
                             className="h-full"
                             style={{
@@ -580,7 +580,7 @@ function SpanNode(props: SpanNodeProps) {
                         <div className="col-span-2">
                           {/* Timeline visualization */}
                           <div>
-                            <div className="bg-line h-[2px] w-full overflow-hidden">
+                            <div className="h-[2px] w-full overflow-hidden bg-line">
                               <div
                                 className="h-full"
                                 style={{
@@ -643,7 +643,7 @@ function SpanNode(props: SpanNodeProps) {
                         >
                           <div
                             className={cn(
-                              'absolute left-[-3px] top-[-2px] size-2',
+                              'absolute top-[-2px] left-[-3px] size-2',
                               isError ? 'bg-critical' : 'bg-warning',
                             )}
                           />
@@ -836,8 +836,8 @@ export function TraceSheet(props: TraceSheetProps) {
                         ))
                       ) : (
                         <div className="py-4 text-center">
-                          <AlertTriangle className="text-fg-secondary mx-auto mb-2 size-6" />
-                          <p className="text-fg-secondary text-xs">
+                          <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
+                          <p className="text-xs text-fg-secondary">
                             No attributes found for this trace
                           </p>
                         </div>
@@ -856,8 +856,8 @@ export function TraceSheet(props: TraceSheetProps) {
                         ))
                       ) : (
                         <div className="py-4 text-center">
-                          <AlertTriangle className="text-fg-secondary mx-auto mb-2 size-6" />
-                          <p className="text-fg-secondary text-xs">
+                          <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
+                          <p className="text-xs text-fg-secondary">
                             No resource attributes found for this trace
                           </p>
                         </div>
@@ -868,7 +868,7 @@ export function TraceSheet(props: TraceSheetProps) {
                     <div className="p-4">
                       <div className="space-y-2">
                         {!events.length ? (
-                          <div className="text-fg-subtle text-sm">
+                          <div className="text-sm text-fg-subtle">
                             No events occurred during this trace.
                           </div>
                         ) : (
@@ -1031,11 +1031,11 @@ function TargetInsightsNewPageContent(props: {
             >
               Traces
             </Link>{' '}
-            <span className="text-fg-secondary inline-block px-2 italic">/</span>{' '}
+            <span className="inline-block px-2 text-fg-secondary italic">/</span>{' '}
             {trace ? (
               <>
                 {trace.operationName ?? <span className="text-fg-secondary">{'<unknown>'}</span>}
-                <span className="text-fg-secondary ml-2 font-mono font-normal">
+                <span className="ml-2 font-mono font-normal text-fg-secondary">
                   {trace.id.substring(0, 4)}
                 </span>
               </>
@@ -1064,7 +1064,7 @@ function TargetInsightsNewPageContent(props: {
             {trace && (
               <div className="mt-2 flex items-center gap-3 text-xs">
                 <div className="flex items-center gap-1">
-                  <Clock className="text-fg-secondary size-3" />
+                  <Clock className="size-3 text-fg-secondary" />
                   <span className="text-fg-default">
                     {formatNanoseconds(BigInt(trace.duration))}
                   </span>
@@ -1073,7 +1073,7 @@ function TargetInsightsNewPageContent(props: {
                   content={trace.success ? 'Ok' : 'Error'}
                   variants={{ variant: trace.success ? 'success' : 'critical' }}
                 />
-                <span className="text-fg-default font-mono uppercase">
+                <span className="font-mono text-fg-default uppercase">
                   {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
                 </span>
               </div>
@@ -1104,7 +1104,7 @@ export function TargetTracePage(props: {
   activeSpanTab: string | null;
 }) {
   return (
-    <LayoutContent className="h-(--content-height) flex flex-col">
+    <LayoutContent className="flex h-(--content-height) flex-col">
       <div className="flex min-h-0 flex-1 flex-col">
         <TargetInsightsNewPageContent {...props} />
       </div>
@@ -1417,10 +1417,10 @@ function SpanSheet(props: SpanSheetProps) {
       title={
         <>
           {!span.parentId && 'Root '}Span Details
-          <span className="text-fg-secondary ml-2 font-mono font-normal">
+          <span className="ml-2 font-mono font-normal text-fg-secondary">
             {span.id.substring(0, 4)}
           </span>
-          <span className="text-fg-secondary ml-2">{span.name}</span>
+          <span className="ml-2 text-fg-secondary">{span.name}</span>
         </>
       }
       description={
@@ -1464,9 +1464,9 @@ function SpanSheet(props: SpanSheetProps) {
         <div className="grid grid-cols-2 gap-4 px-6 pb-4 md:grid-cols-4">
           {/* Duration */}
           <div className="flex items-center space-x-2">
-            <Clock className="text-info size-4" />
+            <Clock className="size-4 text-info" />
             <div>
-              <p className="text-fg-secondary text-xs">Duration</p>
+              <p className="text-xs text-fg-secondary">Duration</p>
               <p className="text-sm font-medium">
                 {' '}
                 {formatNanoseconds(computedSpanMetrics.durationNs)}
@@ -1477,9 +1477,9 @@ function SpanSheet(props: SpanSheetProps) {
           {/* Start Time */}
           {computedSpanMetrics.startNs !== 0n && (
             <div className="flex items-center space-x-2">
-              <Play className="text-success size-4" />
+              <Play className="size-4 text-success" />
               <div>
-                <p className="text-fg-secondary text-xs">Start</p>
+                <p className="text-xs text-fg-secondary">Start</p>
                 <p className="text-sm font-medium">
                   {' '}
                   {formatNanoseconds(computedSpanMetrics.startNs)}
@@ -1491,9 +1491,9 @@ function SpanSheet(props: SpanSheetProps) {
           {/* Percentage of Total */}
           {computedSpanMetrics.percentageOfTotal && (
             <div className="flex items-center space-x-2">
-              <PieChart className="text-accent size-4" />
+              <PieChart className="size-4 text-accent" />
               <div>
-                <p className="text-fg-secondary text-xs">% of Total</p>
+                <p className="text-xs text-fg-secondary">% of Total</p>
                 <p className="text-sm font-medium"> {computedSpanMetrics.percentageOfTotal}%</p>
               </div>
             </div>
@@ -1502,9 +1502,9 @@ function SpanSheet(props: SpanSheetProps) {
           {/* Percentage of Parent */}
           {computedSpanMetrics.percentageOfParentSpan && (
             <div className="flex items-center space-x-2">
-              <TreePine className="text-accent size-4" />
+              <TreePine className="size-4 text-accent" />
               <div>
-                <p className="text-fg-secondary text-xs">% of Parent</p>
+                <p className="text-xs text-fg-secondary">% of Parent</p>
                 <p className="text-sm font-medium">
                   {' '}
                   {computedSpanMetrics.percentageOfParentSpan}%
@@ -1515,7 +1515,7 @@ function SpanSheet(props: SpanSheetProps) {
         </div>
       )}
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="border-line border-t">
+        <div className="border-t border-line">
           <Tabs
             size="sm"
             value={activeView}
@@ -1561,8 +1561,8 @@ function SpanSheet(props: SpanSheetProps) {
                 </div>
               ) : (
                 <div className="py-4 text-center">
-                  <AlertTriangle className="text-fg-secondary mx-auto mb-2 size-6" />
-                  <p className="text-fg-secondary text-xs">
+                  <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
+                  <p className="text-xs text-fg-secondary">
                     No span attributes found for this span.
                   </p>
                 </div>
@@ -1583,8 +1583,8 @@ function SpanSheet(props: SpanSheetProps) {
                 </div>
               ) : (
                 <div className="py-4 text-center">
-                  <AlertTriangle className="text-fg-secondary mx-auto mb-2 size-6" />
-                  <p className="text-fg-secondary text-xs">
+                  <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
+                  <p className="text-xs text-fg-secondary">
                     No resource attributes found for this span.
                   </p>
                 </div>
@@ -1614,8 +1614,8 @@ function SpanSheet(props: SpanSheetProps) {
                 </div>
               ) : (
                 <div className="py-4 text-center">
-                  <AlertTriangle className="text-fg-secondary mx-auto mb-2 size-6" />
-                  <p className="text-fg-secondary text-xs">No events found for this span.</p>
+                  <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
+                  <p className="text-xs text-fg-secondary">No events found for this span.</p>
                 </div>
               )}
             </div>
@@ -1645,7 +1645,7 @@ function AttributeRow(props: AttributeRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const actionsNode = (
-    <span className="text-fg ml-auto mr-0 flex">
+    <span className="mr-0 ml-auto flex text-fg">
       <CopyIconButton value={props.value} label="Copy attribute value" />
       <Tooltip
         trigger={
@@ -1663,18 +1663,18 @@ function AttributeRow(props: AttributeRowProps) {
     <div
       key={props.attributeKey}
       className={cn(
-        'border-line flex items-center justify-between border-b p-3 text-xs last:border-0',
+        'flex items-center justify-between border-b border-line p-3 text-xs last:border-0',
         isExpanded && 'flex-col text-left',
       )}
     >
-      <div className={cn('text-fg-secondary flex flex-1 pr-2', isExpanded && 'w-full pr-0')}>
+      <div className={cn('flex flex-1 pr-2 text-fg-secondary', isExpanded && 'w-full pr-0')}>
         {props.attributeKey}
         {isExpanded && actionsNode}
       </div>
       <div
         className={cn(
-          'text-fg text-2xs w-full flex-1 pt-2 font-mono',
-          !isExpanded && 'overflow-hidden text-ellipsis text-nowrap pt-0',
+          'w-full flex-1 pt-2 font-mono text-2xs text-fg',
+          !isExpanded && 'overflow-hidden pt-0 text-nowrap text-ellipsis',
         )}
       >
         {props.value}
@@ -1691,17 +1691,17 @@ function ExceptionTeaser(props: {
   type: string;
 }) {
   return (
-    <div className="border-critical-line bg-critical-tint overflow-hidden rounded-md border">
-      <div className="bg-critical-tint-strong flex items-center justify-between px-3 py-2">
-        <span className="text-critical font-mono text-xs font-medium">{props.type}</span>
+    <div className="overflow-hidden rounded-md border border-critical-line bg-critical-tint">
+      <div className="flex items-center justify-between bg-critical-tint-strong px-3 py-2">
+        <span className="font-mono text-xs font-medium text-critical">{props.type}</span>
         <Badge content={props.name} variants={{ variant: 'critical', size: 'sm', mono: true }} />
       </div>
       <div className="p-3 text-xs">
         <p className="text-fg-default">{props.message}</p>
         {props.stacktrace && (
-          <div className="bg-surface-inset mt-2 rounded-sm">
+          <div className="mt-2 rounded-sm bg-surface-inset">
             <ScrollArea axis="horizontal">
-              <pre className="text-fg-secondary text-2xs p-2 font-mono leading-tight">
+              <pre className="p-2 font-mono text-2xs leading-tight text-fg-secondary">
                 {props.stacktrace}
               </pre>
             </ScrollArea>

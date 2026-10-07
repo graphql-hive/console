@@ -10,5 +10,5 @@ export function Title({ children, className }: { children: ReactNode; className?
 }
 
 export function Subtitle({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cn('text-fg-secondary cursor-default text-sm', className)}>{children}</p>;
+  return <p className={cn('cursor-default text-sm text-fg-secondary', className)}>{children}</p>;
 }
