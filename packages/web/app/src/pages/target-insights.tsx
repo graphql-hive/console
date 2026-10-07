@@ -1,6 +1,7 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
@@ -289,8 +290,13 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
                 selectedRange={dateRangeController.selectedPreset.range}
                 onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
                 startDate={dateRangeController.startDate}
-                validUnits={['y', 'M', 'w', 'd', 'h']}
                 align="start"
+                footer={
+                  <RetentionNote
+                    retentionInDays={dateRangeController.retentionInDays}
+                    subject={dateRangeController.subject}
+                  />
+                }
               />
             }
             afterChips={

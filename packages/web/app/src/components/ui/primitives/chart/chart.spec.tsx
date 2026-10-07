@@ -35,6 +35,16 @@ describe('Chart', () => {
     expect(instance.setOption).toHaveBeenCalledWith(option);
   });
 
+  it('mounts ECharts out of normal flow so its pixel width never widens the page', () => {
+    const { container } = render(<Chart option={{}} height={200} />);
+    const host = container.firstChild as HTMLElement;
+    const mount = (init.mock.calls[0] as unknown[])[0] as HTMLElement;
+    expect(host.className).toContain('relative');
+    expect(host.style.height).toBe('200px');
+    expect(mount.parentElement).toBe(host);
+    expect(mount.className).toContain('absolute');
+  });
+
   it('keeps the instance across re-renders and sets only a changed option', () => {
     const option = { series: [] };
     const { rerender } = render(<Chart option={option} height={200} />);
