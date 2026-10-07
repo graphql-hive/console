@@ -393,17 +393,43 @@ export class GitHubIntegrationManager {
       );
     }
 
+    const output = this.limitOutput(args.output);
+    let retries = 0;
     const result = await withErrorSource(
-      octokit.request('PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}', {
-        owner: args.githubCheckRun.owner,
-        repo: args.githubCheckRun.repository,
-        check_run_id: args.githubCheckRun.id,
-        conclusion: args.conclusion,
-        output: this.limitOutput(args.output),
-        details_url: args.detailsUrl ?? undefined,
-      }),
+      retryOnCheckRunNotFound(
+        () =>
+          octokit.request('PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}', {
+            owner: args.githubCheckRun.owner,
+            repo: args.githubCheckRun.repository,
+            check_run_id: args.githubCheckRun.id,
+            conclusion: args.conclusion,
+            output,
+            details_url: args.detailsUrl ?? undefined,
+          }),
+        (attempt, waitMs) => {
+          retries = attempt;
+          this.logger.warn(
+            'Check-run not visible yet, retrying update (owner=%s, repository=%s, githubCheckRunId=%s, attempt=%s, waitMs=%s)',
+            args.githubCheckRun.owner,
+            args.githubCheckRun.repository,
+            args.githubCheckRun.id,
+            attempt,
+            waitMs,
+          );
+        },
+      ),
       'github',
     );
+
+    if (retries > 0) {
+      this.logger.warn(
+        'Check-run updated after retries (owner=%s, repository=%s, githubCheckRunId=%s, retries=%s)',
+        args.githubCheckRun.owner,
+        args.githubCheckRun.repository,
+        args.githubCheckRun.id,
+        retries,
+      );
+    }
 
     this.logger.debug('Check-run updated (link=%s)', result.data.url);
 
@@ -529,6 +555,31 @@ export class GitHubIntegrationManager {
 
 function isOctokitRequestError(error: unknown): error is RequestError {
   return error instanceof RequestError;
+}
+
+/**
+ * GitHub can answer 404 for a check-run it created a moment earlier (read-after-write lag),
+ * so a brand-new check-run gets a short grace window before the 404 is treated as real.
+ */
+export const checkRunNotFoundRetryWaitsMs: readonly number[] = [500, 1000, 1500];
+
+export async function retryOnCheckRunNotFound<T>(
+  run: () => Promise<T>,
+  onRetry: (attempt: number, waitMs: number) => void,
+  waitsMs: readonly number[] = checkRunNotFoundRetryWaitsMs,
+): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await run();
+    } catch (error) {
+      const waitMs = waitsMs[attempt];
+      if (waitMs === undefined || !isOctokitRequestError(error) || error.status !== 404) {
+        throw error;
+      }
+      onRetry(attempt + 1, waitMs);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+  }
 }
 
 export type GitHubCheckRun = {
