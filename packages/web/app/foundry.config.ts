@@ -126,6 +126,7 @@ export default defineConfig({
         { label: 'Resizable' },
         { label: 'StatCard' },
         { label: 'Stepper' },
+        { label: 'SubgraphName' },
         { label: 'SupportForms' },
         { label: 'TabbedView' },
       ],
