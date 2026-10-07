@@ -23,6 +23,7 @@ module.exports = {
   keywordCase: 'upper',
   // prettier-plugin-tailwindcss sorts against the theme in each package's Tailwind entry stylesheet.
   overrides: [
+    ...prettierConfig.overrides,
     {
       files: 'packages/web/app/**',
       options: { tailwindStylesheet: './packages/web/app/src/index.css' },
