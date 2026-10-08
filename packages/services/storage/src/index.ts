@@ -2768,7 +2768,7 @@ export async function createStorage(
 
       const limit = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
 
-      const { failed, changed } = args.filters ?? {};
+      const { failed, changed, serviceName } = args.filters ?? {};
 
       if (args.cursor) {
         cursor = decodeCreatedAtAndUUIDIdBasedCursor(args.cursor);
@@ -2826,6 +2826,13 @@ export async function createStorage(
                   OR jsonb_typeof("breaking_schema_changes") = 'array'
                   OR "has_contract_schema_changes" = true
                 )
+              `
+              : psql``
+          }
+          ${
+            serviceName
+              ? psql`
+                AND c."service_name" = ${serviceName.toLowerCase()}
               `
               : psql``
           }

@@ -21,6 +21,7 @@ export const targetChecksRoute = createRoute({
     z.object({
       filter_changed: z.boolean().optional().catch(undefined),
       filter_failed: z.boolean().optional().catch(undefined),
+      filter_service: z.string().optional().catch(undefined),
     }),
   ),
   getParentRoute: () => targetRoute,
@@ -28,6 +29,7 @@ export const targetChecksRoute = createRoute({
   loaderDeps: ({ search }) => ({
     changed: search.filter_changed ?? false,
     failed: search.filter_failed ?? false,
+    serviceName: search.filter_service ?? null,
   }),
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug } = loader.params;

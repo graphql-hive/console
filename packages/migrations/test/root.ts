@@ -6,3 +6,4 @@ import './2024.07.23T09.36.00.schema-cleanup-tracker.test';
 import './2025.01.09T00-00-00.legacy-member-scopes.test';
 import './2026.06.05T00-00-00.metric-alert-filter-shared-only.test';
 import './2026.10.02T00-00-02.backfill-graphs.test';
+import './2026.10.07T00-00-00.schema-checks-service-filter-index.test';
