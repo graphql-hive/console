@@ -3,6 +3,7 @@ import zod from 'zod';
 import { isUUID } from '@hive/api/shared/is-uuid';
 import {
   OpenTelemetryConfigurationModel,
+  parseClickHouseConfigFromEnvironment,
   parsePostgresConfigFromEnvironment,
   parseRedisConfigFromEnvironment,
   resolveServerListenOptions,
@@ -114,19 +115,7 @@ const ZendeskSupportModel = zod.union([
   }),
 ]);
 
-const ClickHouseModel = zod.object({
-  CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
-  CLICKHOUSE_HOST: zod.string(),
-  // A plain identifier, so a typo fails at startup rather than on the first query.
-  CLICKHOUSE_DB: emptyString(
-    zod
-      .string()
-      .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, 'must be a plain identifier')
-      .optional(),
-  ),
-  CLICKHOUSE_PORT: NumberFromString,
-  CLICKHOUSE_USERNAME: zod.string(),
-  CLICKHOUSE_PASSWORD: zod.string(),
+const ClickHouseOptionsModel = zod.object({
   CLICKHOUSE_REQUEST_TIMEOUT: emptyString(NumberFromString.optional()),
 });
 
@@ -369,7 +358,7 @@ const configs = {
   base: EnvironmentModel.safeParse(processEnv),
   commerce: CommerceModel.safeParse(processEnv),
   sentry: SentryModel.safeParse(processEnv),
-  clickhouse: ClickHouseModel.safeParse(processEnv),
+  clickhouseOptions: ClickHouseOptionsModel.safeParse(processEnv),
   supertokens: SuperTokensModel.safeParse(processEnv),
   authGithub: AuthGitHubConfigSchema.safeParse(processEnv),
   authGoogle: AuthGoogleConfigSchema.safeParse(processEnv),
@@ -506,6 +495,12 @@ if (postgresConfigResult.type === 'error') {
   environmentErrors.push(...postgresConfigResult.errors);
 }
 
+const clickhouseConfigResult = parseClickHouseConfigFromEnvironment(processEnv);
+
+if (clickhouseConfigResult.type === 'error') {
+  environmentErrors.push(...clickhouseConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -522,7 +517,7 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 const base = extractConfig(configs.base);
 const commerce = extractConfig(configs.commerce);
 const sentry = extractConfig(configs.sentry);
-const clickhouse = extractConfig(configs.clickhouse);
+const clickhouseOptions = extractConfig(configs.clickhouseOptions);
 const supertokens = extractConfig(configs.supertokens);
 const authGithub = extractConfig(configs.authGithub);
 const authGoogle = extractConfig(configs.authGoogle);
@@ -611,15 +606,15 @@ export const env = {
     postgresConfigResult?.type === 'ok'
       ? postgresConfigResult.config
       : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
-  clickhouse: {
-    protocol: clickhouse.CLICKHOUSE_PROTOCOL,
-    host: clickhouse.CLICKHOUSE_HOST,
-    database: clickhouse.CLICKHOUSE_DB ?? 'default',
-    port: clickhouse.CLICKHOUSE_PORT,
-    username: clickhouse.CLICKHOUSE_USERNAME,
-    password: clickhouse.CLICKHOUSE_PASSWORD,
-    requestTimeout: clickhouse.CLICKHOUSE_REQUEST_TIMEOUT,
-  },
+  clickhouse:
+    clickhouseConfigResult.type === 'ok'
+      ? {
+          ...clickhouseConfigResult.config,
+          requestTimeout: clickhouseOptions.CLICKHOUSE_REQUEST_TIMEOUT,
+        }
+      : raiseInvariant(
+          'Unreachable: ClickHouse config errors are caught above via process.exit(1)',
+        ),
   redis:
     redisConfigResult?.type === 'ok'
       ? redisConfigResult.config

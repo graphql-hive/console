@@ -2,6 +2,7 @@ import { type MessagePort } from 'node:worker_threads';
 import { AwsClient } from '../../cdn/providers/aws';
 import type { S3CredentialProvider } from '../../cdn/providers/aws';
 import { ClickHouse } from '../../operations/providers/clickhouse-client';
+import type { ClickHouseConfig } from '../../operations/providers/tokens';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
 import { S3Config } from '../../shared/providers/s3-config';
@@ -33,13 +34,7 @@ export function createWorker(
       readonly endpoint: string;
       readonly credentialProvider: S3CredentialProvider;
     } | null;
-    clickhouse: {
-      readonly host: string;
-      readonly port: number;
-      readonly protocol?: string;
-      readonly username?: string;
-      readonly password?: string;
-    };
+    clickhouse: ClickHouseConfig;
   },
 ) {
   const s3Config = new S3Config([

@@ -1,7 +1,7 @@
 import got from 'got';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
-import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
+import { SpanKind, SpanStatusCode, trace, type ClickHouseConfig } from '@hive/service-common';
 
 // Validate the response envelope only. Row-level shape is the caller's concern
 // (e.g. queryClickHouseWindows parses `data` with its own Zod schema), so the
@@ -10,16 +10,6 @@ const ClickHouseResponseSchema = z.object({
   data: z.array(z.unknown()),
   rows: z.number().optional(),
 });
-
-export type ClickHouseConfig = {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  protocol?: string;
-  /** `CLICKHOUSE_DB`; unset keeps the database this client always used. */
-  database?: string;
-};
 
 const tracer = trace.getTracer('clickhouse-client');
 

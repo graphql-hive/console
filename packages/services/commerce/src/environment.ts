@@ -1,6 +1,8 @@
 import zod from 'zod';
 import {
+  fail,
   OpenTelemetryConfigurationModel,
+  parseClickHouseConfigFromEnvironment,
   parsePostgresConfigFromEnvironment,
   resolveServerListenOptions,
 } from '@hive/service-common';
@@ -23,10 +25,6 @@ export const emptyString = <T extends zod.ZodType>(input: T) => {
     return value;
   }, input);
 };
-
-function raiseInvariant(reason: string): never {
-  throw new Error(reason);
-}
 
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
@@ -72,21 +70,6 @@ const LogModel = zod.object({
   ),
 });
 
-const ClickHouseModel = zod.object({
-  CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
-  CLICKHOUSE_HOST: zod.string(),
-  // A plain identifier, so a typo fails at startup rather than on the first query.
-  CLICKHOUSE_DB: emptyString(
-    zod
-      .string()
-      .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, 'must be a plain identifier')
-      .optional(),
-  ),
-  CLICKHOUSE_PORT: NumberFromString,
-  CLICKHOUSE_USERNAME: zod.string(),
-  CLICKHOUSE_PASSWORD: zod.string(),
-});
-
 const HiveServicesModel = zod.object({
   WEB_APP_URL: emptyString(zod.string().url().optional()),
 });
@@ -103,7 +86,6 @@ const StripeModel = zod.object({
 const configs = {
   base: EnvironmentModel.safeParse(process.env),
   sentry: SentryModel.safeParse(process.env),
-  clickhouse: ClickHouseModel.safeParse(process.env),
   prometheus: PrometheusModel.safeParse(process.env),
   log: LogModel.safeParse(process.env),
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
@@ -129,6 +111,12 @@ if (postgresConfigResult.type === 'error') {
   environmentErrors.push(...postgresConfigResult.errors);
 }
 
+const clickhouseConfigResult = parseClickHouseConfigFromEnvironment(process.env);
+
+if (clickhouseConfigResult.type === 'error') {
+  environmentErrors.push(...clickhouseConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -143,7 +131,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 }
 
 const base = extractConfig(configs.base);
-const clickhouse = extractConfig(configs.clickhouse);
 const sentry = extractConfig(configs.sentry);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
@@ -166,18 +153,14 @@ export const env = {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
   },
-  clickhouse: {
-    protocol: clickhouse.CLICKHOUSE_PROTOCOL,
-    host: clickhouse.CLICKHOUSE_HOST,
-    database: clickhouse.CLICKHOUSE_DB ?? 'default',
-    port: clickhouse.CLICKHOUSE_PORT,
-    username: clickhouse.CLICKHOUSE_USERNAME,
-    password: clickhouse.CLICKHOUSE_PASSWORD,
-  },
+  clickhouse:
+    clickhouseConfigResult.type === 'ok'
+      ? clickhouseConfigResult.config
+      : fail('Unreachable: ClickHouse config errors are caught above via process.exit(1)'),
   postgres:
     postgresConfigResult?.type === 'ok'
       ? postgresConfigResult.config
-      : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
+      : fail('Unreachable: postgres config errors are caught above via process.exit(1)'),
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {
     level: log.LOG_LEVEL ?? 'info',
