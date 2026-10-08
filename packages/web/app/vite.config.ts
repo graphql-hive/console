@@ -49,8 +49,9 @@ export default {
     }),
   ],
   // Keep the default iife worker format: the inline preflight worker breaks as an ES module worker
-  // (e2e laboratory-preflight). The diffs worker has a dynamic import, which iife needs inlined.
-  worker: { rollupOptions: { output: { inlineDynamicImports: true } } },
+  // (e2e laboratory-preflight). The diffs worker's only dynamic import is the wasm engine it never
+  // uses, so leaving it external keeps that worker a single chunk without inlining it.
+  worker: { rollupOptions: { external: ['shiki/wasm'] } },
   build: {
     outDir: 'dist',
     rollupOptions: {
