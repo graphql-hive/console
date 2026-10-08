@@ -1,5 +1,24 @@
 # @graphql-yoga/render-graphiql
 
+## 0.1.21
+
+### Patch Changes
+
+- [#8664](https://github.com/graphql-hive/console/pull/8664)
+  [`eba8664`](https://github.com/graphql-hive/console/commit/eba86647346d0665b7b45e6a2ddba4824ed253ad)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Forward the `endpoint` GraphiQL
+  option to the Lab as its default endpoint.
+
+  `renderLaboratory({ endpoint })` used to drop it, so the Lab always started on the endpoint saved
+  in the browser or, failing that, on the page's own URL. That is wrong when the Lab is served from
+  a path other than the GraphQL endpoint. A configured `endpoint` now wins over a saved one on every
+  load. Leave it unset to keep the previous behavior.
+
+- Updated dependencies
+  [[`9ca986d`](https://github.com/graphql-hive/console/commit/9ca986da183efd20fe3b1ab6630eade3865be470),
+  [`338c7cb`](https://github.com/graphql-hive/console/commit/338c7cbc3077e152e88e5b315bb25522757b4734)]:
+  - @graphql-hive/laboratory@0.3.2
+
 ## 0.1.20
 
 ### Patch Changes
