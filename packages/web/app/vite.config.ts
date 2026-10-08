@@ -28,7 +28,7 @@ export default {
   root: __dirname,
   plugins: [
     tsconfigPaths(),
-    viteFastify({ spa: true, useRelativePaths: true }),
+    viteFastify({ spa: true }),
     react(),
     tailwindcss(),
     reactScanPlugin,
