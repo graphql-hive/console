@@ -112,3 +112,6 @@ minimumReleaseAgeExclude:
   - graphql-modules
   - 'react-foundry'
   - 'graphql-scalars'
+  - '@graphql-codegen/*'
+  - '@eddeee888/gcg-*'
+  - 'graphql-config'
