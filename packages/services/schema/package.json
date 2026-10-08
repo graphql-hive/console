@@ -13,7 +13,7 @@
     "@graphql-tools/merge": "catalog:",
     "@graphql-tools/stitch": "10.2.2",
     "@graphql-tools/stitching-directives": "4.0.27",
-    "@graphql-tools/utils": "12.0.0",
+    "@graphql-tools/utils": "12.0.1",
     "@hive/service-common": "workspace:*",
     "@sentry/node": "catalog:",
     "@theguild/federation-composition": "catalog:",
