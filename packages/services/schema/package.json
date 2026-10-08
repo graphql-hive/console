@@ -25,7 +25,7 @@
     "fastify": "catalog:",
     "fastq": "1.19.1",
     "got": "catalog:",
-    "graphql": "16.9.0",
+    "graphql": "catalog:",
     "ioredis-mock": "catalog:",
     "nock": "catalog:",
     "pino-pretty": "catalog:",

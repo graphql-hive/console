@@ -57,7 +57,7 @@
     "@types/express": "4.17.21",
     "body-parser": "2.3.0",
     "express": "4.21.2",
-    "graphql": "16.9.0",
+    "graphql": "catalog:",
     "graphql-ws": "catalog:",
     "nock": "catalog:",
     "vitest": "catalog:",

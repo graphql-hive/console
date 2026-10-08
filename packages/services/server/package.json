@@ -43,7 +43,7 @@
     "dotenv": "catalog:",
     "fastify": "catalog:",
     "got": "catalog:",
-    "graphql": "16.9.0",
+    "graphql": "catalog:",
     "graphql-yoga": "catalog:",
     "hyperid": "4.0.0",
     "openid-client": "6.8.2",

@@ -63,7 +63,7 @@
     "@types/async-retry": "catalog:",
     "@types/js-md5": "0.8.0",
     "@types/lodash.sortby": "4.7.9",
-    "graphql": "16.9.0",
+    "graphql": "catalog:",
     "nock": "catalog:",
     "tslib": "2.8.1",
     "vitest": "catalog:"

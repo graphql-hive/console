@@ -42,7 +42,7 @@
     "date-fns": "catalog:",
     "dockerode": "5.0.0",
     "dotenv": "catalog:",
-    "graphql": "16.9.0",
+    "graphql": "catalog:",
     "graphql-sse": "catalog:",
     "graphql-yoga": "catalog:",
     "human-id": "4.1.1",

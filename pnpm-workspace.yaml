@@ -100,6 +100,7 @@ catalog:
   zod-validation-error: 3.4.0
   graphql-ws: 6.0.6
   graphql-sse: 2.6.0
+  graphql: 16.14.2
 
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
