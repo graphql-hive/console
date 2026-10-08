@@ -319,35 +319,35 @@ const FIXTURE_IDS = ALL.map(fixture => fixture.id) as [string, ...string[]];
  */
 function VersionPageCard(props: { errors: ReadonlyArray<{ message: string }> }) {
   return (
-    <div className="border-critical-line overflow-hidden rounded-xl border">
-      <div className="border-critical-line bg-critical-tint-subtle flex items-start gap-3 border-b px-5 py-4">
-        <div className="border-critical-line mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
-          <XCircleIcon className="text-critical h-4 w-4" />
+    <div className="overflow-hidden rounded-xl border border-critical-line">
+      <div className="flex items-start gap-3 border-b border-critical-line bg-critical-tint-subtle px-5 py-4">
+        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-critical-line">
+          <XCircleIcon className="h-4 w-4 text-critical" />
         </div>
 
-        <div className="text-fg min-w-0">
+        <div className="min-w-0 text-fg">
           <h3 className="text-sm font-semibold">Supergraph not composable</h3>
           <p className="mt-0.5 text-[12.5px]">
             Errors occurred while attempting to compose the supergraph from its subgraphs.
           </p>
         </div>
 
-        <span className="focus:ring-accent text-2xs border-critical-line bg-critical-tint text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
-          <span className="bg-critical mr-1 h-1.5 w-1.5 rounded-full" />
+        <span className="ml-auto inline-flex items-center rounded-full border border-critical-line bg-critical-tint px-2.5 py-0.5 text-2xs font-semibold text-critical transition-colors focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:outline-none">
+          <span className="mr-1 h-1.5 w-1.5 rounded-full bg-critical" />
           {props.errors.length} error
           {props.errors.length === 1 ? '' : 's'}
         </span>
       </div>
 
-      <div className="text-fg flex items-center gap-2 px-5 pb-1 pt-4">
+      <div className="flex items-center gap-2 px-5 pt-4 pb-1 text-fg">
         <span className="text-sm font-medium">Composition errors</span>
         <CompositionErrorsPopover />
       </div>
 
-      <ul className="divide-critical-line-subtle divide-y px-1 pb-2">
+      <ul className="divide-y divide-critical-line-subtle px-1 pb-2">
         {props.errors.map((err, idx) => (
           <li key={idx} className="flex gap-3 px-4 py-3">
-            <span className="text-critical mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+            <span className="mt-0.5 w-6 shrink-0 font-mono text-xs text-critical select-none">
               {String(idx + 1).padStart(2, '0')}
             </span>
 
@@ -362,7 +362,7 @@ function VersionPageCard(props: { errors: ReadonlyArray<{ message: string }> }) 
 /** Which fixture sits at which row number, since the containers show only the messages. */
 function Legend(props: { fixtures: readonly Fixture[] }) {
   return (
-    <ol className="text-fg-secondary grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+    <ol className="grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-0.5 text-xs text-fg-secondary">
       {props.fixtures.map((fixture, index) => (
         <li key={fixture.id} className="contents">
           <span className="font-mono">{String(index + 1).padStart(2, '0')}</span>
@@ -428,21 +428,21 @@ function RawStringsView(props: { group: keyof typeof GROUPS }) {
     <ol className="flex w-[56rem] flex-col gap-6">
       {GROUPS[props.group].map((fixture, index) => (
         <li key={fixture.id} className="flex flex-col gap-2">
-          <div className="text-fg-secondary flex items-baseline gap-3 text-xs">
+          <div className="flex items-baseline gap-3 text-xs text-fg-secondary">
             <span className="font-mono">{String(index + 1).padStart(2, '0')}</span>
             <span className="font-mono">{fixture.id}</span>
             <span>{fixture.label}</span>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-fg-subtle text-2xs">as served</span>
-              <pre className="bg-surface-inset text-fg-default overflow-x-auto whitespace-pre-wrap break-all rounded-md border px-3 py-2 font-mono text-xs leading-5">
+              <span className="text-2xs text-fg-subtle">as served</span>
+              <pre className="overflow-x-auto rounded-md border bg-surface-inset px-3 py-2 font-mono text-xs leading-5 break-all whitespace-pre-wrap text-fg-default">
                 {JSON.stringify({ message: fixture.message }, null, 2)}
               </pre>
             </div>
             <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-fg-subtle text-2xs">same string, whitespace honored</span>
-              <pre className="bg-surface-inset text-fg-default overflow-x-auto whitespace-pre rounded-md border px-3 py-2 font-mono text-xs leading-5">
+              <span className="text-2xs text-fg-subtle">same string, whitespace honored</span>
+              <pre className="overflow-x-auto rounded-md border bg-surface-inset px-3 py-2 font-mono text-xs leading-5 whitespace-pre text-fg-default">
                 {fixture.message}
               </pre>
             </div>

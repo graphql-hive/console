@@ -29,7 +29,7 @@ export const Default = createPreview(() => (
 
 /** Beside the warning badge that marks a schema coordinate, which is the company it keeps. */
 export const InProse = createPreview(() => (
-  <p className="text-fg w-[40rem] text-sm">
+  <p className="w-[40rem] text-sm text-fg">
     from subgraph <SubgraphName name="billing" />: cannot move to subgraph{' '}
     <SubgraphName name="invoicing" /> using{' '}
     <Badge content='@key(fields: "id")' variants={{ variant: 'warning', padding: 'tight' }} /> of{' '}
@@ -63,7 +63,7 @@ const RULES = [
 
 /** The real composition error renderer, which finds subgraph names in both spellings the composers use. */
 export const InCompositionErrors = createPreview(() => (
-  <ul className="divide-critical-line-subtle w-[56rem] divide-y">
+  <ul className="w-[56rem] divide-y divide-critical-line-subtle">
     {[SATISFIABILITY, ...RULES].map((message, index) => (
       <li key={index} className="py-3">
         <CompositionErrorMessage message={message} />

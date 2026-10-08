@@ -7,13 +7,13 @@ import { PackageIcon } from 'lucide-react';
 export function SubgraphName(props: { name: string }) {
   return (
     <span
-      className="bg-surface-control border-line-strong text-fg text-2xs relative -top-px inline-flex max-w-full items-stretch rounded-sm border align-middle font-mono font-medium leading-none"
+      className="relative -top-px inline-flex max-w-full items-stretch rounded-sm border border-line-strong bg-surface-control align-middle font-mono text-2xs leading-none font-medium text-fg"
       title={props.name}
     >
       <span className="flex items-center px-1">
         <PackageIcon className="size-2.5 shrink-0" />
       </span>
-      <span className="border-line-strong min-w-0 truncate border-l px-1.5 py-[3px]">
+      <span className="min-w-0 truncate border-l border-line-strong px-1.5 py-[3px]">
         {props.name}
       </span>
     </span>

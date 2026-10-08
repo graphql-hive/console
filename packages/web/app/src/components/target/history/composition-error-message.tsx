@@ -104,12 +104,12 @@ function renderCompositionErrorText(message: string): ReactNode[] {
 
 export function CompositionErrorMessage(props: { message: string }) {
   return (
-    <div className="text-fg min-w-0 whitespace-pre-wrap text-sm">
+    <div className="min-w-0 text-sm whitespace-pre-wrap text-fg">
       {splitCompositionErrorMessage(props.message).map((segment, index) =>
         segment.kind === 'code' ? (
           <pre
             key={index}
-            className="bg-surface-inset my-2 overflow-x-auto whitespace-pre rounded-md border px-3 py-2 font-mono text-xs leading-5"
+            className="my-2 overflow-x-auto rounded-md border bg-surface-inset px-3 py-2 font-mono text-xs leading-5 whitespace-pre"
           >
             {segment.text}
           </pre>
