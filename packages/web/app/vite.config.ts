@@ -48,6 +48,8 @@ export default {
       ],
     }),
   ],
+  // https://diffs.com/docs#worker-pool-setup-vite
+  worker: { format: 'es' },
   build: {
     outDir: 'dist',
     rollupOptions: {
