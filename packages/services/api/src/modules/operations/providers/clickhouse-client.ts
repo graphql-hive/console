@@ -63,6 +63,14 @@ export class ClickHouse {
     this.endpoint = `${this.config.protocol ?? 'https'}://${this.config.host}:${this.config.port}`;
   }
 
+  /**
+   * Table names in queries are unqualified, so the database comes from this request setting
+   * (`CLICKHOUSE_DB`). Bound query values arrive as `param_*` keys, so they can't collide with it.
+   */
+  private databaseParam(): { database?: string } {
+    return this.config.database ? { database: this.config.database } : {};
+  }
+
   @atomic(({ query }: { query: SqlStatement }) => hashQuery(query))
   async query<T = unknown>({
     query,
@@ -107,6 +115,7 @@ export class ClickHouse {
             // Max execution time in seconds
             max_execution_time: (this.config.requestTimeout ?? timeout) / 1000,
             query_id: executionId,
+            ...this.databaseParam(),
             ...toQueryParams(query),
           },
           username: this.config.username,
@@ -285,6 +294,7 @@ export class ClickHouse {
             // Max execution time in seconds
             max_execution_time: (this.config.requestTimeout ?? args.timeout) / 1000,
             query_id: executionId,
+            ...this.databaseParam(),
           },
           username: this.config.username,
           password: this.config.password,
@@ -436,6 +446,7 @@ export class ClickHouse {
             query: args.query.sql,
             async_insert: 1,
             wait_for_async_insert: 1,
+            ...this.databaseParam(),
           },
           username: this.config.username,
           password: this.config.password,

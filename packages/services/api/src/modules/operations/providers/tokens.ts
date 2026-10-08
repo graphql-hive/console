@@ -1,11 +1,7 @@
 import { InjectionToken } from 'graphql-modules';
+import type { ClickHouseConfig as BaseClickHouseConfig } from '@hive/service-common';
 
-export interface ClickHouseConfig {
-  host: string;
-  port: number;
-  protocol?: string;
-  username?: string;
-  password?: string;
+export type ClickHouseConfig = BaseClickHouseConfig & {
   /**
    * In milliseconds
    */
@@ -17,6 +13,6 @@ export interface ClickHouseConfig {
       elapsedSeconds?: number;
     },
   ) => void;
-}
+};
 
 export const CLICKHOUSE_CONFIG = new InjectionToken<ClickHouseConfig>('clickhouse-config');

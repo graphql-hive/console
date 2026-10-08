@@ -18,7 +18,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
   await Promise.all(
     [
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.clients_daily_migration
+      CREATE MATERIALIZED VIEW IF NOT EXISTS clients_daily_migration
       (
         target String,
         timestamp AggregateFunction(min, UInt32)
@@ -28,12 +28,12 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       SELECT
         target,
         minState(toUnixTimestamp(timestamp)) as timestamp
-      FROM default.operations
+      FROM operations
       GROUP BY
         target
     `,
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.clients_daily_new
+      CREATE MATERIALIZED VIEW IF NOT EXISTS clients_daily_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         client_name String CODEC(ZSTD(1)),
@@ -59,7 +59,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
         toStartOfDay(timestamp) AS timestamp,
         toStartOfDay(expires_at) AS expires_at,
         count() AS total
-      FROM default.operations
+      FROM operations
       GROUP BY
         target,
         client_name,
@@ -84,7 +84,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       substring(partition_string, 1, 4) as year,
       substring(partition_string, 5, 2) as month,
       substring(partition_string, 7, 2) as day,
-      format('INSERT INTO default.clients_daily_new
+      format('INSERT INTO clients_daily_new
           SELECT
             target,
             client_name,
@@ -93,7 +93,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
             toStartOfDay(timestamp) AS timestamp,
             toStartOfDay(expires_at) AS expires_at,
             count() AS total
-          FROM default.operations
+          FROM operations
           WHERE timestamp >= toDateTime({0}-{1}-{2} 00:00:00, UTC) AND timestamp <= toDateTime({0}-{1}-{2} 23:59:59, UTC)
           GROUP BY
             target,
@@ -106,9 +106,9 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     FROM
       system.parts
     WHERE
-      database = 'default'
+      database = currentDatabase()
       AND table = 'operations'
-      AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM default.clients_daily_migration))
+      AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM clients_daily_migration))
     GROUP BY
       database,
       table,
@@ -123,7 +123,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
 
   // Copy data
   await exec(`
-    INSERT INTO default.clients_daily_new
+    INSERT INTO clients_daily_new
     SELECT
       target,
       client_name,
@@ -132,7 +132,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       toStartOfDay(timestamp) AS timestamp_day,
       toStartOfDay(expires_at) AS expires_at,
       count() AS total
-    FROM default.operations
+    FROM operations
     WHERE timestamp < (
       SELECT
         fromUnixTimestamp(
@@ -142,7 +142,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
             toUnixTimestamp(now())
           )
         )
-        FROM default.clients_daily_migration
+        FROM clients_daily_migration
       )
     GROUP BY
       target,
@@ -153,12 +153,12 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       expires_at
   `);
 
-  await exec(`RENAME TABLE default.clients_daily TO default.clients_daily_old`);
-  await exec(`RENAME TABLE default.clients_daily_new TO default.clients_daily`);
+  await exec(`RENAME TABLE clients_daily TO clients_daily_old`);
+  await exec(`RENAME TABLE clients_daily_new TO clients_daily`);
 
   await Promise.all([
-    exec(`DROP VIEW default.clients_daily_old`),
-    exec(`DROP VIEW default.clients_daily_migration`),
+    exec(`DROP VIEW clients_daily_old`),
+    exec(`DROP VIEW clients_daily_migration`),
   ]);
 };
 

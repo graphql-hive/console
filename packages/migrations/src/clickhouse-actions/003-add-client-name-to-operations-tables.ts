@@ -5,7 +5,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
   await Promise.all(
     [
       `
-        CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_migration
+        CREATE MATERIALIZED VIEW IF NOT EXISTS operations_migration
         (
           target String,
           timestamp AggregateFunction(min, UInt32)
@@ -15,12 +15,12 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
         SELECT
           target,
           minState(toUnixTimestamp(timestamp)) as timestamp
-        FROM default.operations
+        FROM operations
         GROUP BY
           target
       `,
       `
-        CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_daily_new
+        CREATE MATERIALIZED VIEW IF NOT EXISTS operations_daily_new
         (
           target LowCardinality(String) CODEC(ZSTD(1)),
           timestamp DateTime('UTC'),
@@ -48,7 +48,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
           sum(ok) AS total_ok,
           avgState(duration) AS duration_avg,
           quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-        FROM default.operations
+        FROM operations
         GROUP BY
           target,
           hash,
@@ -57,7 +57,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
           expires_at
       `,
       `
-        CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_hourly_new
+        CREATE MATERIALIZED VIEW IF NOT EXISTS operations_hourly_new
         (
           target LowCardinality(String) CODEC(ZSTD(1)),
           timestamp DateTime('UTC'),
@@ -84,7 +84,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
           sum(ok) AS total_ok,
           avgState(duration) AS duration_avg,
           quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-        FROM default.operations
+        FROM operations
         GROUP BY
           target,
           hash,
@@ -106,7 +106,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     //   substring(partition_string, 1, 4) as year,
     //   substring(partition_string, 5, 2) as month,
     //   substring(partition_string, 7, 2) as day,
-    //   format('INSERT INTO default.operations_daily_new
+    //   format('INSERT INTO operations_daily_new
     //       SELECT
     //         target,
     //         toStartOfDay(timestamp) AS timestamp,
@@ -118,7 +118,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     //         avgState(duration) AS duration_avg,
     //         quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
     //       FROM
-    //       default.operations
+    //       operations
     //       WHERE timestamp >= toDateTime(\'{0}-{1}-{2} 00:00:00\', \'UTC\') AND timestamp <= toDateTime(\'{0}-{1}-{2} 23:59:59\', \'UTC\')
     //       GROUP BY
     //         target,
@@ -131,9 +131,9 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     // FROM
     //   system.parts
     // WHERE
-    //   database = 'default'
+    //   database = currentDatabase()
     //   AND table = 'operations'
-    //   AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM default.operations_migration))
+    //   AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM operations_migration))
     // GROUP BY
     //   database,
     //   table,
@@ -148,7 +148,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     //   substring(partition_string, 1, 4) as year,
     //   substring(partition_string, 5, 2) as month,
     //   substring(partition_string, 7, 2) as day,
-    //   format('INSERT INTO default.operations_hourly_new
+    //   format('INSERT INTO operations_hourly_new
     //       SELECT
     //         target,
     //         toStartOfDay(timestamp) AS timestamp,
@@ -160,7 +160,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     //         avgState(duration) AS duration_avg,
     //         quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
     //       FROM
-    //       default.operations
+    //       operations
     //       WHERE timestamp >= toDateTime(\'{0}-{1}-{2} 00:00:00\', \'UTC\') AND timestamp <= toDateTime(\'{0}-{1}-{2} 23:59:59\', \'UTC\')
     //       GROUP BY
     //         target,
@@ -173,9 +173,9 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     // FROM
     //   system.parts
     // WHERE
-    //   database = 'default'
+    //   database = currentDatabase()
     //   AND table = 'operations'
-    //   AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM default.operations_migration))
+    //   AND toInt32(partition) < toInt32((SELECT toYYYYMMDD(fromUnixTimestamp(minMerge(timestamp))) FROM operations_migration))
     // GROUP BY
     //   database,
     //   table,
@@ -192,7 +192,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
   // Copy data
   await exec(`
     INSERT INTO
-      default.operations_daily_new
+      operations_daily_new
     SELECT
       target,
       toStartOfDay(timestamp) AS timestamp_day,
@@ -204,7 +204,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       avgState(duration) AS duration_avg,
       quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
     FROM
-      default.operations
+      operations
     WHERE timestamp < (
       SELECT
         fromUnixTimestamp(
@@ -215,7 +215,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
           )
         )
       FROM
-        default.operations_migration
+        operations_migration
     )
     GROUP BY
       target,
@@ -228,17 +228,17 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
 
   await exec(`
     RENAME TABLE
-      default.operations_daily TO default.operations_daily_old
+      operations_daily TO operations_daily_old
     `);
 
   await exec(`
     RENAME TABLE
-      default.operations_daily_new TO default.operations_daily
+      operations_daily_new TO operations_daily
   `);
 
   await exec(`
     INSERT INTO
-      default.operations_hourly_new
+      operations_hourly_new
     SELECT
       target,
       toStartOfHour(timestamp) AS timestamp,
@@ -249,7 +249,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
       sum(ok) AS total_ok,
       avgState(duration) AS duration_avg,
       quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-    FROM default.operations
+    FROM operations
     WHERE timestamp < (
       SELECT
         fromUnixTimestamp(
@@ -260,7 +260,7 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
           )
         )
       FROM
-        default.operations_migration
+        operations_migration
     )
     GROUP BY
       target,
@@ -272,18 +272,18 @@ const action: Action = async (exec, _query, hiveCloudEnvironment) => {
 
   await exec(`
     RENAME TABLE
-      default.operations_hourly TO default.operations_hourly_old
+      operations_hourly TO operations_hourly_old
   `);
 
   await exec(`
     RENAME TABLE
-      default.operations_hourly_new TO default.operations_hourly
+      operations_hourly_new TO operations_hourly
   `);
 
   await Promise.all([
-    exec(`DROP VIEW default.operations_daily_old`),
-    exec(`DROP VIEW default.operations_hourly_old`),
-    exec(`DROP VIEW default.operations_migration`),
+    exec(`DROP VIEW operations_daily_old`),
+    exec(`DROP VIEW operations_hourly_old`),
+    exec(`DROP VIEW operations_migration`),
   ]);
 };
 
