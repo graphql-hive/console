@@ -34,6 +34,8 @@ export async function migrateClickHouse(
     port: number;
     username: string;
     password: string;
+    /** `CLICKHOUSE_DB`. Every migration names its tables unqualified, so this picks the database. */
+    database?: string;
   },
 ) {
   if (isClickHouseMigrator === false) {
@@ -42,12 +44,14 @@ export async function migrateClickHouse(
   }
 
   const endpoint = `${clickhouse.protocol}://${clickhouse.host}:${clickhouse.port}`;
+  const database = clickhouse.database ?? 'default';
 
   // Make sure people don't accidentally define the GRAPHQL_HIVE_ENVIRONMENT environment variable
   hiveCloudEnvironment = isHiveCloud ? hiveCloudEnvironment : null;
 
   console.log('Migrating ClickHouse');
   console.log('Endpoint:          ', endpoint);
+  console.log('Database:          ', database);
   console.log('Username:          ', clickhouse.username);
   console.log('Password:          ', clickhouse.password.length);
   console.log('isGraphQLHiveCloud:', isHiveCloud);
@@ -93,6 +97,7 @@ export async function migrateClickHouse(
       .post(endpoint, {
         body: query,
         searchParams: {
+          database,
           default_format: 'JSON',
           wait_end_of_query: '1',
           output_format_json_quote_64bit_integers: '1',
@@ -119,6 +124,7 @@ export async function migrateClickHouse(
       .post<QueryResponse<unknown>>(endpoint, {
         body: queryString,
         searchParams: {
+          database,
           default_format: 'JSON',
           output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
@@ -145,7 +151,7 @@ export async function migrateClickHouse(
 
   // Create migrations table
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.migrations (
+    CREATE TABLE IF NOT EXISTS migrations (
       id UInt8,
       timestamp DateTime('UTC'),
     ) ENGINE = MergeTree()
@@ -154,7 +160,7 @@ export async function migrateClickHouse(
 
   // Read migrations table
   const migrationsResponse = await exec(`
-    SELECT id FROM default.migrations ORDER BY id DESC
+    SELECT id FROM migrations ORDER BY id DESC
   `);
 
   console.log('Migrations fetched');
@@ -210,7 +216,7 @@ export async function migrateClickHouse(
     }
 
     await exec(`
-      INSERT INTO default.migrations (id, timestamp) VALUES (${index}, now())
+      INSERT INTO migrations (id, timestamp) VALUES (${index}, now())
     `);
 
     const finishedAt = Date.now();

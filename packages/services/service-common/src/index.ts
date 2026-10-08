@@ -40,6 +40,13 @@ export {
   type PostgresConfig,
 } from './postgres-config';
 export {
+  parseClickHouseConfigFromEnvironment,
+  ClickHouseModel,
+  type ClickHouseEnvironment,
+  type ParseClickHouseConfigFromEnvironmentResult,
+  type ClickHouseConfig,
+} from './clickhouse-config';
+export {
   createRedisClient,
   type Redis,
   type RedisConnectionConfig,

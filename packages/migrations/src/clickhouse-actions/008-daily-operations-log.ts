@@ -35,7 +35,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
         organization,
         toDate(timestamp) AS date,
         count() AS total
-      FROM default.operations
+      FROM operations
       ${where}
       GROUP BY organization, date
   `);
@@ -48,7 +48,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
         organization,
         toDate(timestamp) AS date,
         count() AS total
-      FROM default.subscription_operations
+      FROM subscription_operations
       ${where}
       GROUP BY organization, date
   `);

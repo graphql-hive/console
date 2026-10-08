@@ -18,7 +18,7 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.subscription_operations_daily (
+    CREATE MATERIALIZED VIEW IF NOT EXISTS subscription_operations_daily (
       target LowCardinality(String) CODEC(ZSTD(1)),
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
       expires_at DateTime('UTC') CODEC(DoubleDelta, LZ4),
@@ -41,7 +41,7 @@ export const action: Action = async exec => {
         toStartOfDay(timestamp) AS timestamp,
         toStartOfDay(expires_at) AS expires_at,
         count() AS total
-      FROM default.subscription_operations
+      FROM subscription_operations
       GROUP BY
         target,
         hash,
@@ -52,7 +52,7 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.subscription_target_existence
+    CREATE MATERIALIZED VIEW IF NOT EXISTS subscription_target_existence
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       expires_at DateTime('UTC') CODEC(DoubleDelta, LZ4)
@@ -67,7 +67,7 @@ export const action: Action = async exec => {
       SELECT
         target,
         toStartOfDay(expires_at) AS expires_at
-      FROM default.subscription_operations
+      FROM subscription_operations
       GROUP BY
         target,
         expires_at
