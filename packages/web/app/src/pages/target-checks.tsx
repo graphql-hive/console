@@ -266,11 +266,11 @@ function ChecksPageContent() {
   const target = query.data?.target;
   const hasSchemaChecks = !!target?.schemaChecks.edges.length;
   const hasActiveSchemaCheck = !!schemaCheckId;
-  // Single-schema checks carry no service name, so there is nothing to filter by.
+  // Null (single-schema, no service names) hides the filter. A composite target with no valid
+  // version yet still gets the control, so a name set from a check stays visible.
   const serviceNames =
-    target && target.project.type !== ProjectType.Single
-      ? (target.latestValidSchemaVersion?.serviceNames ?? [])
-      : null;
+    target?.latestValidSchemaVersion?.serviceNames ??
+    (target && target.project.type !== ProjectType.Single ? [] : null);
 
   if (query.error) {
     return (

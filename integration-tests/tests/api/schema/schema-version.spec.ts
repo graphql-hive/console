@@ -217,7 +217,7 @@ test.concurrent(
   },
 );
 
-test.concurrent('serviceNames is empty for a single-schema project', async ({ expect }) => {
+test.concurrent('serviceNames is null for a single-schema project', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
   const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
@@ -240,5 +240,5 @@ test.concurrent('serviceNames is empty for a single-schema project', async ({ ex
     authToken: ownerToken,
   }).then(r => r.expectNoGraphQLErrors());
 
-  expect(result.target?.latestValidSchemaVersion?.serviceNames).toEqual([]);
+  expect(result.target?.latestValidSchemaVersion?.serviceNames).toBeNull();
 });

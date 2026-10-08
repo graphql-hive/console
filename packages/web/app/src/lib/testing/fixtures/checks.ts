@@ -85,7 +85,7 @@ export function checksPage(projectType: ProjectType = 'FEDERATION') {
       latestValidSchemaVersion: {
         __typename: 'SchemaVersion' as const,
         id: 'version-1',
-        serviceNames: projectType === 'SINGLE' ? [] : [...SERVICES],
+        serviceNames: projectType === 'SINGLE' ? null : [...SERVICES],
       },
       schemaChecks: {
         __typename: 'SchemaCheckConnection' as const,
