@@ -34,7 +34,7 @@ import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
-import { File, MultiFileDiff } from '@/components/ui/diffs';
+import { CodeScrollArea, File, MultiFileDiff } from '@/components/ui/diffs';
 import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
 import { Link } from '@/components/ui/link';
 import { NotFound } from '@/components/ui/not-found/not-found';
@@ -938,36 +938,40 @@ function GraphVersionSubgraphChangesView(props: {
 
 export function SDLDiffView(props: { before: string; after: string }) {
   return (
-    <MultiFileDiff
-      options={{
-        disableFileHeader: true,
-        diffStyle: 'unified',
-      }}
-      oldFile={{
-        name: 'schema.graphql',
-        contents: props.before,
-      }}
-      newFile={{
-        name: 'schema.graphql',
-        contents: props.after,
-      }}
-    />
+    <CodeScrollArea>
+      <MultiFileDiff
+        options={{
+          disableFileHeader: true,
+          diffStyle: 'unified',
+        }}
+        oldFile={{
+          name: 'schema.graphql',
+          contents: props.before,
+        }}
+        newFile={{
+          name: 'schema.graphql',
+          contents: props.after,
+        }}
+      />
+    </CodeScrollArea>
   );
 }
 
 export function SDLView(props: { sdl: string }) {
   return (
-    <div className="max-w-[inherit]">
-      <File
-        file={{
-          name: 'schema.graphql',
-          contents: props.sdl,
-        }}
-        options={{
-          disableFileHeader: true,
-        }}
-      />
-    </div>
+    <CodeScrollArea>
+      <div className="max-w-[inherit]">
+        <File
+          file={{
+            name: 'schema.graphql',
+            contents: props.sdl,
+          }}
+          options={{
+            disableFileHeader: true,
+          }}
+        />
+      </div>
+    </CodeScrollArea>
   );
 }
 

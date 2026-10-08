@@ -26,7 +26,7 @@ import {
 } from '@/components/target/history/errors-and-changes';
 import { CopyText } from '@/components/ui/copy-text';
 import { DownloadButton } from '@/components/ui/diff-editor';
-import { File } from '@/components/ui/diffs';
+import { CodeScrollArea, File } from '@/components/ui/diffs';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList } from '@/components/ui/empty-list';
 import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
@@ -71,38 +71,40 @@ function AnnotatedSDLView(props: {
   }>;
 }) {
   return (
-    <div className="max-w-[inherit]">
-      <File
-        file={{
-          name: 'schema.graphql',
-          contents: props.sdl,
-        }}
-        options={{
-          disableFileHeader: true,
-        }}
-        lineAnnotations={props.annotations?.map(annotation => ({
-          lineNumber: annotation.start.line,
-          metadata: { message: annotation.message, severity: annotation.severity },
-        }))}
-        renderAnnotation={annotation => (
-          <div
-            className={cn(
-              'flex items-center border-l-5 pl-1',
-              annotation.metadata.severity === 'warning'
-                ? 'border-warning-line bg-warning-tint text-warning'
-                : 'border-critical bg-critical-tint text-critical',
-            )}
-          >
-            <span>{annotation.metadata.message}</span>
-            {annotation.metadata.severity === 'warning' ? (
-              <TriangleAlertIcon className="mr-2 ml-auto size-4 text-warning" />
-            ) : (
-              <ShieldAlertIcon className="mr-2 ml-auto size-4 text-critical" />
-            )}
-          </div>
-        )}
-      />
-    </div>
+    <CodeScrollArea>
+      <div className="max-w-[inherit]">
+        <File
+          file={{
+            name: 'schema.graphql',
+            contents: props.sdl,
+          }}
+          options={{
+            disableFileHeader: true,
+          }}
+          lineAnnotations={props.annotations?.map(annotation => ({
+            lineNumber: annotation.start.line,
+            metadata: { message: annotation.message, severity: annotation.severity },
+          }))}
+          renderAnnotation={annotation => (
+            <div
+              className={cn(
+                'flex items-center border-l-5 pl-1',
+                annotation.metadata.severity === 'warning'
+                  ? 'border-warning-line bg-warning-tint text-warning'
+                  : 'border-critical bg-critical-tint text-critical',
+              )}
+            >
+              <span>{annotation.metadata.message}</span>
+              {annotation.metadata.severity === 'warning' ? (
+                <TriangleAlertIcon className="mr-2 ml-auto size-4 text-warning" />
+              ) : (
+                <ShieldAlertIcon className="mr-2 ml-auto size-4 text-critical" />
+              )}
+            </div>
+          )}
+        />
+      </div>
+    </CodeScrollArea>
   );
 }
 

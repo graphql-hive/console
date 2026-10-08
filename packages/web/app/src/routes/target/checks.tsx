@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DiffsWorkerPoolProvider } from '@/components/ui/diffs';
 import { loadQuery } from '@/lib/route-utils';
 import {
   ChecksPageQuery,
@@ -58,7 +59,11 @@ export const targetChecksSingleRoute = createRoute({
   },
   component: function TargetChecksSingleRoute() {
     const { schemaCheckId } = targetChecksSingleRoute.useParams();
-    return <TargetChecksSinglePage schemaCheckId={schemaCheckId} />;
+    return (
+      <DiffsWorkerPoolProvider>
+        <TargetChecksSinglePage schemaCheckId={schemaCheckId} />
+      </DiffsWorkerPoolProvider>
+    );
   },
 });
 
