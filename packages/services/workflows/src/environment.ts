@@ -1,6 +1,7 @@
 import zod from 'zod';
 import {
   OpenTelemetryConfigurationModel,
+  parseClickHouseConfigFromEnvironment,
   parsePostgresConfigFromEnvironment,
   parseRedisConfigFromEnvironment,
   resolveServerListenOptions,
@@ -97,19 +98,9 @@ const EmailProviderModel = zod.union([
   SendmailEmailModel,
 ]);
 
-const ClickHouseModel = zod.union([
-  zod.object({
-    CLICKHOUSE: emptyString(zod.literal('0').optional()),
-  }),
-  zod.object({
-    CLICKHOUSE: zod.literal('1'),
-    CLICKHOUSE_HOST: zod.string(),
-    CLICKHOUSE_PORT: NumberFromString,
-    CLICKHOUSE_USERNAME: zod.string(),
-    CLICKHOUSE_PASSWORD: emptyString(zod.string().optional()),
-    CLICKHOUSE_PROTOCOL: emptyString(zod.string().optional()),
-  }),
-]);
+const ClickHouseModel = zod.object({
+  CLICKHOUSE: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
+});
 
 const RequestBrokerModel = zod.union([
   zod.object({
@@ -182,6 +173,15 @@ const postgresConfigResult = parsePostgresConfigFromEnvironment(
 
 if (postgresConfigResult.type === 'error') {
   environmentErrors.push(...postgresConfigResult.errors);
+}
+
+const clickhouseConfigResult =
+  configs.clickhouse.success && configs.clickhouse.data.CLICKHOUSE === '1'
+    ? parseClickHouseConfigFromEnvironment(process.env)
+    : null;
+
+if (clickhouseConfigResult?.type === 'error') {
+  environmentErrors.push(...clickhouseConfigResult.errors);
 }
 
 if (environmentErrors.length) {
@@ -285,13 +285,11 @@ export const env = {
       : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
   clickhouse:
     clickhouse.CLICKHOUSE === '1'
-      ? {
-          host: clickhouse.CLICKHOUSE_HOST,
-          port: clickhouse.CLICKHOUSE_PORT,
-          username: clickhouse.CLICKHOUSE_USERNAME,
-          password: clickhouse.CLICKHOUSE_PASSWORD ?? '',
-          protocol: clickhouse.CLICKHOUSE_PROTOCOL,
-        }
+      ? clickhouseConfigResult?.type === 'ok'
+        ? clickhouseConfigResult.config
+        : raiseInvariant(
+            'Unreachable: ClickHouse config errors are caught above via process.exit(1)',
+          )
       : null,
   requestBroker:
     requestBroker.REQUEST_BROKER === '1'

@@ -1,6 +1,9 @@
 import { config as dotenv } from 'dotenv';
 import zod from 'zod';
-import { parsePostgresConfigFromEnvironment } from '@hive/service-common';
+import {
+  parseClickHouseConfigFromEnvironment,
+  parsePostgresConfigFromEnvironment,
+} from '@hive/service-common';
 
 if (!process.env.RELEASE) {
   dotenv({
@@ -8,15 +11,6 @@ if (!process.env.RELEASE) {
     encoding: 'utf8',
   });
 }
-
-const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
-
-const numberFromNumberOrNumberString = (input: unknown): number | undefined => {
-  if (typeof input == 'number') return input;
-  if (isNumberString(input)) return Number(input);
-};
-
-const NumberFromString = zod.preprocess(numberFromNumberOrNumberString, zod.number().min(1));
 
 // treat an empty string (`''`) as undefined
 const emptyString = <T extends zod.ZodType>(input: T) => {
@@ -42,21 +36,8 @@ const EnvironmentModel = zod.object({
   AWS_REGION: emptyString(zod.string().optional()),
 });
 
-const ClickHouseModel = zod.union([
-  zod.object({
-    CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
-    CLICKHOUSE_HOST: zod.string(),
-    CLICKHOUSE_PORT: NumberFromString,
-    CLICKHOUSE_USERNAME: zod.string(),
-    CLICKHOUSE_PASSWORD: zod.string(),
-  }),
-  zod.object({}),
-]);
-
 const configs = {
   base: EnvironmentModel.safeParse(process.env),
-
-  clickhouse: ClickHouseModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -76,6 +57,14 @@ if (postgresConfigResult.type === 'error') {
   environmentErrors.push(...postgresConfigResult.errors);
 }
 
+const clickhouseConfigResult = process.env.CLICKHOUSE_PROTOCOL
+  ? parseClickHouseConfigFromEnvironment(process.env)
+  : null;
+
+if (clickhouseConfigResult?.type === 'error') {
+  environmentErrors.push(...clickhouseConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -90,7 +79,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 }
 
 const base = extractConfig(configs.base);
-const clickhouse = extractConfig(configs.clickhouse);
 
 export const env = {
   environment: base.ENVIRONMENT,
@@ -99,16 +87,7 @@ export const env = {
     postgresConfigResult?.type === 'ok'
       ? postgresConfigResult.config
       : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
-  clickhouse:
-    'CLICKHOUSE_PROTOCOL' in clickhouse
-      ? {
-          protocol: clickhouse.CLICKHOUSE_PROTOCOL,
-          host: clickhouse.CLICKHOUSE_HOST,
-          port: clickhouse.CLICKHOUSE_PORT,
-          username: clickhouse.CLICKHOUSE_USERNAME,
-          password: clickhouse.CLICKHOUSE_PASSWORD,
-        }
-      : null,
+  clickhouse: clickhouseConfigResult?.type === 'ok' ? clickhouseConfigResult.config : null,
   isMigrator: base.MIGRATOR === 'up',
   isClickHouseMigrator: base.CLICKHOUSE_MIGRATOR === 'up',
   isHiveCloud: base.CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD === '1',

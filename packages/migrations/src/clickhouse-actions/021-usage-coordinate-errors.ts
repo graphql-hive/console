@@ -14,7 +14,7 @@ export const action: Action = async exec => {
    * This table should not be queried directly given any of our known patterns.
    */
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.operation_errors
+    CREATE TABLE IF NOT EXISTS operation_errors
     (
       target UUID
       
@@ -54,7 +54,7 @@ export const action: Action = async exec => {
    * (1) "What is the breakdown of errors for 'User.ssn' over time?"
    *
    * SELECT code, sum(total_errors) as total
-   * FROM default.coordinate_errors_minutely
+   * FROM coordinate_errors_minutely
    * WHERE target = '<uuid>'
    *   AND coordinate = 'User.ssn'
    *   AND timestamp >= now() - INTERVAL 2 HOUR
@@ -65,7 +65,7 @@ export const action: Action = async exec => {
    * SELECT
    *   code
    *   , sum(total_errors) AS total
-   * FROM default.coordinate_errors_minutely
+   * FROM coordinate_errors_minutely
    * WHERE target = '<uuid>'
    *   AND timestamp >= now() - INTERVAL 2 HOUR
    * GROUP BY code
@@ -79,7 +79,7 @@ export const action: Action = async exec => {
    *   hex(hash) AS hash,  -- Converts the 16-byte binary hash to a readable 32-character hex string
    *   code,
    *   sum(total_errors) AS total
-   * FROM default.coordinate_errors_minutely
+   * FROM coordinate_errors_minutely
    * WHERE target = '<uuid>'
    *   AND coordinate = 'User.ssn'
    *   AND timestamp >= now() - INTERVAL 2 HOUR
@@ -98,7 +98,7 @@ export const action: Action = async exec => {
    * (1) "How many errors an operation (hash) returns over time"
    *
    * SELECT sum(total_errors) as total
-   * FROM default.coordinate_errors_minutely
+   * FROM coordinate_errors_minutely
    * WHERE target= '<uuid>'
    *   AND hash = unhex('<hash>')
    *   AND timestamp >= now() - INTERVAL 2 HOUR
@@ -109,7 +109,7 @@ export const action: Action = async exec => {
    * SELECT
    *   , coordinate
    *   , sum(total_errors) AS total
-   * FROM default.coordinate_errors_minutely
+   * FROM coordinate_errors_minutely
    * WHERE target = '<uuid>'
    *   AND hash = unhex('<optional hash>')
    *   AND timestamp >= now() - INTERVAL 2 HOUR
@@ -122,7 +122,7 @@ export const action: Action = async exec => {
    * This could also technically be used to calculate the total number of errors by
    */
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.coordinate_errors_minutely
+    CREATE TABLE IF NOT EXISTS coordinate_errors_minutely
     (
       target UUID
       , hash FixedString(16) CODEC(ZSTD(1))
@@ -153,8 +153,8 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_coordinate_errors_minutely
-    TO default.coordinate_errors_minutely
+    CREATE MATERIALIZED VIEW IF NOT EXISTS mv_coordinate_errors_minutely
+    TO coordinate_errors_minutely
     AS
     SELECT
       target
@@ -164,7 +164,7 @@ export const action: Action = async exec => {
       , error.path as coordinate
       , error.code as code
       , CAST(count() AS UInt32) as total_errors
-    FROM default.operation_errors
+    FROM operation_errors
     ARRAY JOIN errors as error
     GROUP BY
         target
@@ -180,7 +180,7 @@ export const action: Action = async exec => {
    * Cascading hourly metric table
    */
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.coordinate_errors_hourly
+    CREATE TABLE IF NOT EXISTS coordinate_errors_hourly
     (
       target UUID
 
@@ -213,8 +213,8 @@ export const action: Action = async exec => {
     ;
   `);
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_coordinate_errors_hourly
-    TO default.coordinate_errors_hourly
+    CREATE MATERIALIZED VIEW IF NOT EXISTS mv_coordinate_errors_hourly
+    TO coordinate_errors_hourly
     AS
     SELECT
       target
@@ -225,7 +225,7 @@ export const action: Action = async exec => {
       , coordinate
       , code
       , CAST(sum(total_errors) AS UInt32) as total_errors
-    FROM default.coordinate_errors_minutely
+    FROM coordinate_errors_minutely
     GROUP BY
         target
       , coordinate
@@ -243,7 +243,7 @@ export const action: Action = async exec => {
    * Use cascading aggregation to create daily
    */
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.coordinate_errors_daily
+    CREATE TABLE IF NOT EXISTS coordinate_errors_daily
     (
       target UUID
       , hash FixedString(16) CODEC(LZ4)
@@ -271,8 +271,8 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_coordinate_errors_daily
-    TO default.coordinate_errors_daily
+    CREATE MATERIALIZED VIEW IF NOT EXISTS mv_coordinate_errors_daily
+    TO coordinate_errors_daily
     AS
     SELECT
       target
@@ -282,7 +282,7 @@ export const action: Action = async exec => {
       , coordinate
       , code
       , CAST(sum(total_errors) AS UInt32) as total_errors
-    FROM default.coordinate_errors_hourly
+    FROM coordinate_errors_hourly
     GROUP BY
         target
       , coordinate

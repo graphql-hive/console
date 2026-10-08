@@ -39,4 +39,26 @@ describe('renderLaboratory', () => {
   it('lets the host turn it back off', () => {
     expect(mount({ enableDocs: false })?.enableDocs).toBe(false);
   });
+
+  // render-laboratory forwards Yoga's `endpoint` here. A visitor may have a stale endpoint saved
+  // from before the host configured one, so the configured value has to win (#8656).
+  it('lets a host default endpoint win over the saved one', () => {
+    localStorage.setItem(
+      'hive-laboratory:endpoint',
+      JSON.stringify('https://saved.example/graphql'),
+    );
+
+    expect(mount({ defaultEndpoint: 'https://host.example/graphql' })?.defaultEndpoint).toBe(
+      'https://host.example/graphql',
+    );
+  });
+
+  it('falls back to the saved endpoint when the host passes none', () => {
+    localStorage.setItem(
+      'hive-laboratory:endpoint',
+      JSON.stringify('https://saved.example/graphql'),
+    );
+
+    expect(mount()?.defaultEndpoint).toBe('https://saved.example/graphql');
+  });
 });
