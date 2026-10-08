@@ -48,8 +48,9 @@ export default {
       ],
     }),
   ],
-  // https://diffs.com/docs#worker-pool-setup-vite
-  worker: { format: 'es' },
+  // Keep the default iife worker format: the inline preflight worker breaks as an ES module worker
+  // (e2e laboratory-preflight). The diffs worker has a dynamic import, which iife needs inlined.
+  worker: { rollupOptions: { output: { inlineDynamicImports: true } } },
   build: {
     outDir: 'dist',
     rollupOptions: {
