@@ -33,7 +33,7 @@ jobs:
       - name: setup environment
         uses: ./.github/actions/setup
         with:
-          codegen: false # no need to run codegen in this case, we can skip
+          codegen: true
           actor: migrations-test
 
       - name: build workspace dependencies
