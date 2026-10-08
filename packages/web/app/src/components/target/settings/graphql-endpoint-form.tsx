@@ -52,7 +52,7 @@ export function GraphqlEndpointForm(props: {
           </FormItem>
         )}
       />
-      {props.error ? <div className="text-critical text-sm">{props.error}</div> : null}
+      {props.error ? <div className="text-sm text-critical">{props.error}</div> : null}
     </Form>
   );
 }

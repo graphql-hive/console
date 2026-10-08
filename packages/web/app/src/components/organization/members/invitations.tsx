@@ -432,10 +432,10 @@ export function OrganizationInvitations(props: {
       ) : (
         <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-            <MailQuestionIcon className="text-fg-secondary size-10" />
+            <MailQuestionIcon className="size-10 text-fg-secondary" />
 
             <h3 className="mt-4 text-lg font-semibold">No invitations</h3>
-            <p className="text-fg-secondary mb-4 mt-2 text-sm">
+            <p className="mt-2 mb-4 text-sm text-fg-secondary">
               Invitations to join this organization will appear here.
             </p>
           </div>

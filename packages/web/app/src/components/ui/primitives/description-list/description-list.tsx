@@ -90,7 +90,7 @@ function DescriptionListItem({
         {tooltip ? (
           <Tooltip
             trigger={
-              <span className="text-fg-muted inline-flex">
+              <span className="inline-flex text-fg-muted">
                 <Info className="size-3" />
               </span>
             }
@@ -100,7 +100,7 @@ function DescriptionListItem({
       </div>
       {/* An identifier has no spaces to wrap at, so it breaks anywhere rather than overflowing. */}
       <div
-        className={cn('text-fg text-control', mono && 'break-all font-mono')}
+        className={cn('text-control text-fg', mono && 'font-mono break-all')}
         // A value that gets clipped by a narrow column can still be read on hover.
         title={typeof description === 'string' ? description : undefined}
       >

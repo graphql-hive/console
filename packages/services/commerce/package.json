@@ -16,7 +16,7 @@
     "@hive/workflows": "workspace:*",
     "@sentry/node": "catalog:",
     "@trpc/server": "catalog:",
-    "date-fns": "4.1.0",
+    "date-fns": "catalog:",
     "dotenv": "catalog:",
     "fastify": "catalog:",
     "pino-pretty": "catalog:",

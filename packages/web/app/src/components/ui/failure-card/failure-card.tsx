@@ -33,19 +33,19 @@ export function FailureCard({ title, aside, items, viewLabel = 'View' }: Failure
     return null;
   }
   return (
-    <div className="border-critical-line bg-critical-tint-subtle overflow-hidden rounded-md border">
-      <div className="border-critical-line flex items-center gap-2 border-b px-4 py-2.5">
-        <AlertTriangle className="text-critical size-4 shrink-0" />
-        <span className="text-fg text-sm font-medium">{title}</span>
-        {aside ? <span className="text-fg-secondary ml-auto text-xs">{aside}</span> : null}
+    <div className="overflow-hidden rounded-md border border-critical-line bg-critical-tint-subtle">
+      <div className="flex items-center gap-2 border-b border-critical-line px-4 py-2.5">
+        <AlertTriangle className="size-4 shrink-0 text-critical" />
+        <span className="text-sm font-medium text-fg">{title}</span>
+        {aside ? <span className="ml-auto text-xs text-fg-secondary">{aside}</span> : null}
       </div>
-      <ul className="divide-critical-line-subtle divide-y">
+      <ul className="divide-y divide-critical-line-subtle">
         {items.map(item => (
           <li
             key={item.key}
             className="grid grid-cols-[10rem_1fr_auto] items-center gap-4 px-4 py-2 text-sm"
           >
-            <span className="text-fg truncate" title={item.label}>
+            <span className="truncate text-fg" title={item.label}>
               {item.label}
             </span>
             <span className="text-fg-default">

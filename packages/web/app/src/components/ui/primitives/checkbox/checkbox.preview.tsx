@@ -14,7 +14,7 @@ export const Sizes = createPreview(() => (
 ));
 
 export const States = createPreview(() => (
-  <div className="text-control flex flex-col gap-3">
+  <div className="flex flex-col gap-3 text-control">
     <label className="flex items-center gap-2">
       <Checkbox />
       Unchecked
@@ -51,8 +51,8 @@ export const SelectAll = createPreview(() => {
   const allChecked = selected.length === TARGETS.length;
 
   return (
-    <div className="text-control flex w-64 flex-col gap-3">
-      <label className="border-line flex items-center gap-2 border-b pb-3 font-medium">
+    <div className="flex w-64 flex-col gap-3 text-control">
+      <label className="flex items-center gap-2 border-b border-line pb-3 font-medium">
         <Checkbox
           checked={allChecked}
           indeterminate={selected.length > 0 && !allChecked}

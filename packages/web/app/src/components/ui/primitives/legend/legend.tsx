@@ -15,7 +15,7 @@ type LegendProps = {
  */
 export function Legend({ items }: LegendProps) {
   return (
-    <dl className="text-fg-secondary flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+    <dl className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-secondary">
       {items.map(item => (
         <div key={item.label} className="inline-flex items-center gap-1.5">
           <dt className="inline-flex">{item.icon}</dt>

@@ -285,7 +285,7 @@ function LinkOutMenu<TTo extends string>({
         <button
           type="button"
           aria-label={tooltip}
-          className="text-fg-muted hover:text-fg inline-flex items-center"
+          className="inline-flex items-center text-fg-muted hover:text-fg"
         >
           <ExternalLink className="size-3.5" />
           <ChevronDown className="size-3" />
@@ -348,7 +348,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
     }
     case 'number':
       return (
-        <span className="text-fg block text-right tabular-nums">
+        <span className="block text-right text-fg tabular-nums">
           {formatCellNumber(props.value, props.format)}
         </span>
       );
@@ -379,7 +379,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
           {mode === 'relative-info' ? (
             <Tooltip
               trigger={
-                <span className="text-fg-muted inline-flex">
+                <span className="inline-flex text-fg-muted">
                   <Info className="size-3.5" />
                 </span>
               }
@@ -428,7 +428,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
                 <Destination
                   destination={props.targets[0]}
                   aria-label={props.tooltip}
-                  className="text-fg-muted hover:text-fg inline-flex"
+                  className="inline-flex text-fg-muted hover:text-fg"
                 >
                   <ExternalLink className="size-3.5" />
                 </Destination>
@@ -469,14 +469,14 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
     }
     case 'boolean':
       return props.value ? (
-        <Check className="text-success inline size-4" aria-label="Yes" />
+        <Check className="inline size-4 text-success" aria-label="Yes" />
       ) : (
-        <X className="text-fg-muted inline size-4" aria-label="No" />
+        <X className="inline size-4 text-fg-muted" aria-label="No" />
       );
     case 'status': {
       if ('dot' in props) {
         const body = (
-          <span className="text-fg inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5 text-fg">
             <StatusDot color={props.dot} />
             {props.label}
           </span>
@@ -486,7 +486,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       if ('icon' in props) {
         const Icon = props.icon;
         const body = (
-          <span className="text-fg inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5 text-fg">
             {props.label}
             <Icon className={cn('size-3.5', statusIconTone[props.iconTone ?? 'neutral'])} />
           </span>
@@ -494,16 +494,16 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
         return props.tooltip ? <Tooltip trigger={body} content={props.tooltip} /> : body;
       }
       return (
-        <span className="text-fg-default inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 text-fg-default">
           <Badge content={props.from.content} variants={{ variant: props.from.variant }} />
-          <ArrowRight className="text-fg-subtle size-3.5" />
+          <ArrowRight className="size-3.5 text-fg-subtle" />
           <Badge content={props.to.content} variants={{ variant: props.to.variant }} />
         </span>
       );
     }
     case 'avatar':
       return (
-        <span className="text-fg inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 text-fg">
           <Avatar size="xs" alt={props.name} src={props.src} />
           <span className={cn(props.strikethrough && 'line-through')}>{props.name}</span>
           {props.trailing}

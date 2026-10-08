@@ -47,11 +47,11 @@ export function OverlayHeader({
 }) {
   return (
     <div className={cn('flex shrink-0 flex-col gap-1.5 px-6 pt-6', clearCloseButton && 'pr-14')}>
-      <BaseDialog.Title className="text-fg mb-2 text-lg font-normal leading-none">
+      <BaseDialog.Title className="mb-2 text-lg leading-none font-normal text-fg">
         {title}
       </BaseDialog.Title>
       {description != null ? (
-        <BaseDialog.Description className="text-fg-default text-sm">
+        <BaseDialog.Description className="text-sm text-fg-default">
           {description}
         </BaseDialog.Description>
       ) : null}
@@ -94,7 +94,7 @@ export function OverlayFooter({ children }: { children: ReactNode }) {
 
 export function OverlayCloseButton() {
   return (
-    <span className="absolute right-4 top-4">
+    <span className="absolute top-4 right-4">
       <BaseDialog.Close
         render={
           <Button layout="iconOnly" icon={X} aria-label="Close" variant="ghost" size="icon-sm" />

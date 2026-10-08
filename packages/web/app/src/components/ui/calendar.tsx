@@ -65,7 +65,7 @@ function CalendarDayButton({ day: _day, modifiers, className, ...props }: DayBut
   return (
     <button
       className={cn(
-        'text-fg-default hover:text-fg inline-flex size-8 items-center justify-center rounded-sm text-sm font-normal transition-colors',
+        'inline-flex size-8 items-center justify-center rounded-sm text-sm font-normal text-fg-default transition-colors hover:text-fg',
         focusRing,
         modifiers.today && 'bg-surface-hover text-fg',
         modifiers.selected &&

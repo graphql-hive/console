@@ -17,7 +17,7 @@ type StepId = Parameters<typeof Stepper.get>[0];
 
 function StepBody({ label }: { label: string }) {
   return (
-    <div className="border-line text-fg-secondary flex h-40 items-center justify-center rounded-md border border-dashed text-sm">
+    <div className="flex h-40 items-center justify-center rounded-md border border-dashed border-line text-sm text-fg-secondary">
       {label}
     </div>
   );
@@ -31,7 +31,7 @@ function StepBody({ label }: { label: string }) {
  */
 function AccessTokenWizard(props: { defaultStep?: StepId }) {
   return (
-    <div className="bg-surface-overlay w-[40rem] rounded-md p-6">
+    <div className="w-[40rem] rounded-md bg-surface-overlay p-6">
       <Stepper.StepperProvider variant="horizontal" defaultStep={props.defaultStep}>
         {({ stepper }) => (
           <div className="flex flex-col gap-6">

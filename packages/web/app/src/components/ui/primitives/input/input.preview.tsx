@@ -35,12 +35,12 @@ export const States = createPreview(() => (
  */
 export const OnSurface = createPreview(() => (
   <div className="flex flex-wrap gap-6">
-    <div className="bg-neutral-1 flex w-80 flex-col gap-3 rounded-md p-6">
+    <div className="flex w-80 flex-col gap-3 rounded-md bg-neutral-1 p-6">
       <Input placeholder="base, on the page" />
       <Input defaultValue="P99 Latency Spike" />
       <Input placeholder="slug" prefixText="app.graphql-hive.com/" />
     </div>
-    <div className="bg-neutral-3 border-line flex w-80 flex-col gap-3 rounded-md border p-6">
+    <div className="flex w-80 flex-col gap-3 rounded-md border border-line bg-neutral-3 p-6">
       <Input placeholder="raised, in a sheet" onSurface="raised" />
       <Input defaultValue="P99 Latency Spike" onSurface="raised" />
       <Input placeholder="slug" prefixText="app.graphql-hive.com/" onSurface="raised" />

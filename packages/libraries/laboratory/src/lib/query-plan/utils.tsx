@@ -483,14 +483,14 @@ function visitNode(
             {contentPrefix}
             <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
               <span className="font-medium">Service</span>
-              <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+              <span className="overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
                 {node.serviceName}
               </span>
             </div>
             {entity && (
               <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
                 <span className="font-medium">Entity</span>
-                <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
                   {entity}
                 </span>
               </div>
@@ -502,7 +502,7 @@ function visitNode(
                     Show details
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl! max-h-150 h-full w-full">
+                <DialogContent className="h-full max-h-150 w-full max-w-2xl!">
                   <DialogHeader>
                     <DialogTitle>Fetch</DialogTitle>
                   </DialogHeader>
@@ -525,9 +525,9 @@ function visitNode(
         );
 
         return (
-          <div className="bg-muted flex items-center gap-1 rounded-md p-0.5 pl-1 font-mono text-xs leading-none">
+          <div className="flex items-center gap-1 rounded-md bg-muted p-0.5 pl-1 font-mono text-xs leading-none">
             Total paths:
-            <div className="bg-primary/10 border-primary text-primary rounded-sm border px-1 text-xs font-medium leading-none">
+            <div className="rounded-sm border border-primary bg-primary/10 px-1 text-xs leading-none font-medium text-primary">
               {totalPaths}
             </div>
           </div>
@@ -535,10 +535,10 @@ function visitNode(
       };
       result.content = () => {
         return (
-          <div className="*:border-border flex flex-col gap-2 *:border-b *:border-dashed *:pb-2 *:last:border-b-0 *:last:pb-0">
+          <div className="flex flex-col gap-2 *:border-b *:border-dashed *:border-border *:pb-2 *:last:border-b-0 *:last:pb-0">
             <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
               <span className="font-medium">Service</span>
-              <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+              <span className="overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
                 {node.serviceName}
               </span>
             </div>
@@ -550,20 +550,20 @@ function visitNode(
                     {alias.paths.length > 1 ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-secondary-foreground cursor-auto overflow-hidden text-ellipsis whitespace-nowrap">
-                            <div className="bg-card rounded-sm border px-1 text-xs font-medium">
+                          <span className="cursor-auto overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
+                            <div className="rounded-sm border bg-card px-1 text-xs font-medium">
                               {alias.paths.length}
                             </div>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent className="whitespace-pre-wrap font-mono">
+                        <TooltipContent className="font-mono whitespace-pre-wrap">
                           {alias.paths.map(path => renderFlattenPath(path)).join(',\n')}
                         </TooltipContent>
                       </Tooltip>
                     ) : (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="text-secondary-foreground cursor-auto overflow-hidden text-ellipsis whitespace-nowrap">
+                          <span className="cursor-auto overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
                             {renderFlattenPath(alias.paths[0])}
                           </span>
                         </TooltipTrigger>
@@ -573,7 +573,7 @@ function visitNode(
                   </div>
                   <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
                     <span className="font-medium">Enitity</span>
-                    <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+                    <span className="overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
                       {(alias.requires[0] as SelectionInlineFragment).typeCondition}
                     </span>
                   </div>
@@ -588,7 +588,7 @@ function visitNode(
                   </Button>
                 </DialogTrigger>
                 <DialogContent
-                  className="max-w-2xl! max-h-150 h-full w-full"
+                  className="h-full max-h-150 w-full max-w-2xl!"
                   onMouseDown={e => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -620,7 +620,7 @@ function visitNode(
             <span className="font-medium">Path</span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-secondary-foreground cursor-auto overflow-hidden text-ellipsis whitespace-nowrap">
+                <span className="cursor-auto overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
                   {renderFlattenPath(node.path)}
                 </span>
               </TooltipTrigger>
@@ -679,7 +679,7 @@ function visitNode(
           nodes,
           <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
             <span className="font-medium">Include</span>
-            <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
               if: ${node.condition}
             </span>
           </div>,
@@ -692,7 +692,7 @@ function visitNode(
           nodes,
           <div className="grid grid-cols-[1fr_auto] items-center gap-8 overflow-hidden font-mono text-xs">
             <span className="font-medium">Skip</span>
-            <span className="text-secondary-foreground overflow-hidden text-ellipsis whitespace-nowrap">
+            <span className="overflow-hidden text-ellipsis whitespace-nowrap text-secondary-foreground">
               if: ${node.condition}
             </span>
           </div>,
