@@ -222,7 +222,7 @@ export function StateFlow({
         <StateBadge state={fromState} />
         <span className="capitalize">{ALERT_STATE_LABEL[fromState].toLowerCase()}</span>
       </div>
-      <ArrowRight className="text-fg-subtle size-3" />
+      <ArrowRight className="size-3 text-fg-subtle" />
       <div className="inline-flex gap-1">
         <StateBadge state={toState} />
         <span className="capitalize">{ALERT_STATE_LABEL[toState].toLowerCase()}</span>
@@ -259,7 +259,7 @@ export function AlertEventDetail({
       })}
       target="_blank"
       rel="noreferrer"
-      className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
+      className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
     >
       {rule.savedFilter.name}
       <ExternalLink className="size-3" />
@@ -271,7 +271,7 @@ export function AlertEventDetail({
   return (
     <div className="space-y-4 px-4 pb-4">
       <div
-        className={`text-control rounded-md border px-3 py-2 ${STATE_SUMMARY_CLASS[event.toState]}`}
+        className={`rounded-md border px-3 py-2 text-control ${STATE_SUMMARY_CLASS[event.toState]}`}
       >
         {transitionSentence(rule, event.toState, event.value)}
       </div>
@@ -303,8 +303,8 @@ export function AlertEventDetail({
             params={{ organizationSlug, projectSlug, targetSlug, ruleId }}
             className={buttonVariants({ variant: 'primary', layout: 'label' })}
           >
-            <span className="text-control px-2.5 py-1.5">View alert rule detail</span>
-            <span className="border-l-current/20 border-l px-2 py-1.5">
+            <span className="px-2.5 py-1.5 text-control">View alert rule detail</span>
+            <span className="border-l border-l-current/20 px-2 py-1.5">
               <ArrowRight className="size-3.5" />
             </span>
           </Link>

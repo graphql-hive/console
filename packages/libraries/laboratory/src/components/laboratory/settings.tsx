@@ -42,7 +42,7 @@ export const Settings = () => {
   }, [setSettings]);
 
   return (
-    <div className="bg-card size-full overflow-y-auto p-3">
+    <div className="size-full overflow-y-auto bg-card p-3">
       <form id="settings-form" className="mx-auto flex max-w-2xl flex-col gap-4">
         <Card>
           <CardHeader>
@@ -197,7 +197,7 @@ export const Settings = () => {
                         onChange={field.handleChange}
                         defaultLanguage="json"
                         theme="hive-laboratory"
-                        className="bg-input/30 border-input focus-within:border-ring focus-within:ring-ring/50 h-64 rounded rounded-md border focus-within:ring-[3px]"
+                        className="h-64 rounded rounded-md border border-input bg-input/30 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50"
                       />
                     </Field>
                   );

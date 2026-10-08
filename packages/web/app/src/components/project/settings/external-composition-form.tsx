@@ -92,7 +92,7 @@ export function ExternalCompositionForm(props: {
           )}
         />
       </div>
-      {props.error ? <div className="text-critical text-xs">{props.error}</div> : null}
+      {props.error ? <div className="text-xs text-critical">{props.error}</div> : null}
       <div>
         <Button type="submit" disabled={form.formState.isSubmitting}>
           {props.submitLabel}

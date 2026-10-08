@@ -116,8 +116,8 @@ function RadioItem({
   const isCard = variant === 'as-card';
 
   const indicator = isCard ? (
-    <span className="border-line-strong group-data-[checked]:border-accent flex size-5 shrink-0 items-center justify-center rounded-full border">
-      <BaseRadio.Indicator className="bg-accent size-2.5 rounded-full" />
+    <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-line-strong group-data-[checked]:border-accent">
+      <BaseRadio.Indicator className="size-2.5 rounded-full bg-accent" />
     </span>
   ) : null;
 
@@ -136,9 +136,9 @@ function RadioItem({
         <>
           {indicator}
           <span className={isCard ? 'flex flex-col gap-2' : undefined}>
-            <span className={isCard ? 'text-fg font-medium' : undefined}>{item.label}</span>
+            <span className={isCard ? 'font-medium text-fg' : undefined}>{item.label}</span>
             {isCard && item.description ? (
-              <span className="text-fg-default leading-[1.4]">{item.description}</span>
+              <span className="leading-[1.4] text-fg-default">{item.description}</span>
             ) : null}
           </span>
         </>

@@ -243,7 +243,7 @@ const TracesList = memo(function TracesList(
                 maxWidth="md"
                 trigger={
                   <span className="inline-flex items-center gap-2">
-                    <span className="bg-surface-card text-fg-secondary inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
+                    <span className="inline-flex items-center rounded-sm bg-surface-card px-1 py-0.5 text-xs text-fg-secondary uppercase">
                       {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                     </span>
                     {row.original.operationName ?? (
@@ -392,7 +392,7 @@ const TracesList = memo(function TracesList(
 function LabelWithColor(props: { className: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-x-2">
-      <div className={cn('rounded-xs h-[11px] w-[2px]', props.className)} />
+      <div className={cn('h-[11px] w-[2px] rounded-xs', props.className)} />
       <div>{props.children}</div>
     </div>
   );
@@ -517,7 +517,7 @@ function Filters(
 
   return (
     <>
-      <div className="text-fg flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium">
+      <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-fg">
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
@@ -678,7 +678,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         trace ? (
           <>
             {trace.operationName ?? <span className="text-fg-secondary">{'<unknown>'}</span>}
-            <span className="text-fg-secondary ml-2 font-mono font-normal">
+            <span className="ml-2 font-mono font-normal text-fg-secondary">
               {trace.id.substring(0, 4)}
             </span>
           </>
@@ -704,18 +704,18 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         </>
       }
     >
-      <div className="border-line flex items-center gap-3 border-b px-6 pb-4 text-xs">
+      <div className="flex items-center gap-3 border-b border-line px-6 pb-4 text-xs">
         {trace ? (
           <>
             <div className="flex items-center gap-1">
-              <Clock className="text-fg-secondary size-3" />
+              <Clock className="size-3 text-fg-secondary" />
               <span className="text-fg-default">{formatNanoseconds(BigInt(trace.duration))}</span>
             </div>
             <Badge
               content={trace.success ? 'Ok' : 'Error'}
               variants={{ variant: trace.success ? 'success' : 'critical' }}
             />
-            <span className="text-fg-default font-mono uppercase">
+            <span className="font-mono text-fg-default uppercase">
               {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
             </span>
           </>
@@ -1064,13 +1064,13 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
         }
       />
       <div className="mt-4 flex min-h-svh w-full">
-        <aside className="text-fg-default sticky top-4 flex h-full w-64 flex-col">
+        <aside className="sticky top-4 flex h-full w-64 flex-col text-fg-default">
           <div className="flex min-h-0 flex-1 flex-col gap-2">
             <Filters filter={props.filter} options={filterOptions} />
           </div>
         </aside>
         <main className="relative flex min-h-svh flex-1 flex-col">
-          <div className="flex flex-1 flex-col gap-4 pl-4 pt-0">
+          <div className="flex flex-1 flex-col gap-4 pt-0 pl-4">
             <div>
               <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
             </div>

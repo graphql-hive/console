@@ -40,7 +40,7 @@ export function AccessTokenCreatedDialog(props: {
           />
           <label
             htmlFor="AccessTokenCreatedDialog-isConfirmed"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             I stored the access token somewhere safe
           </label>

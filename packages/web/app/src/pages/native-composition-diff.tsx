@@ -144,7 +144,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
               <ul className="divide-critical-line-subtle divide-y px-1 pb-2">
                 {report?.nativeCompositionResult?.errors?.edges?.map((err, idx) => (
                   <li key={idx} className="flex gap-3 px-4 py-3">
-                    <span className="text-critical mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+                    <span className="text-critical mt-0.5 w-6 shrink-0 font-mono text-xs select-none">
                       {String(idx + 1).padStart(2, '0')}
                     </span>
 

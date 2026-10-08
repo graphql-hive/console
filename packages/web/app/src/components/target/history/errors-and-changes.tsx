@@ -158,7 +158,7 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      {props.title && <h2 className="text-fg-default mb-3 font-bold">{props.title}</h2>}
+      {props.title && <h2 className="mb-3 font-bold text-fg-default">{props.title}</h2>}
       <div className="list-inside list-disc space-y-2 text-sm/relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
@@ -231,7 +231,7 @@ function ChangeItem(
               <div>
                 <span className="text-fg-secondary">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
-                  <span className="text-warning cursor-pointer">
+                  <span className="cursor-pointer text-warning">
                     {' '}
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
@@ -239,7 +239,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-surface-selected text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-surface-selected px-2 py-1 align-middle font-bold text-critical">
                       <ActivityIcon className="size-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
@@ -259,7 +259,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="text-fg-inverse bg-warning inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-warning px-2 py-1 align-middle font-bold text-fg-inverse">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -281,7 +281,7 @@ function ChangeItem(
             </div>
           ),
           content: (
-            <div className="pb-4 pt-4">
+            <div className="pt-4 pb-4">
               {change.approval && (
                 <SchemaChangeApproval
                   schemaCheckId={props.schemaCheckId}
@@ -290,15 +290,15 @@ function ChangeItem(
               )}
               {'usageStatistics' in change && change.usageStatistics && metadata ? (
                 <div>
-                  <h4 className="text-fg mb-1 text-sm font-medium">
+                  <h4 className="mb-1 text-sm font-medium text-fg">
                     Affected Operations (based on usage)
                   </h4>
-                  <div className="text-fg-secondary mb-2 flex justify-between text-sm">
+                  <div className="mb-2 flex justify-between text-sm text-fg-secondary">
                     <span>
                       Top 10 operations and clients affected by this change based on usage data.
                     </span>
                     {metadata && (
-                      <span className="text-fg-default text-xs">
+                      <span className="text-xs text-fg-default">
                         See{' '}
                         {metadata.settings.targets.map((target, index, arr) => (
                           <>
@@ -552,7 +552,7 @@ function AffectedAppDeploymentsPanel(props: {
                 arrow
                 content={
                   <div className="space-y-2">
-                    <h5 className="text-fg font-medium">Affected Operations</h5>
+                    <h5 className="font-medium text-fg">Affected Operations</h5>
                     <ScrollArea maxHeight="sm">
                       <ul className="space-y-1 text-sm">
                         {deployment.affectedOperations.edges.map(({ node: op }) => (
@@ -564,7 +564,7 @@ function AffectedAppDeploymentsPanel(props: {
                     </ScrollArea>
                     <Link
                       {...appVersionLink(deployment)}
-                      className="text-accent block pt-2 text-sm hover:underline"
+                      className="block pt-2 text-sm text-accent hover:underline"
                     >
                       Show all ({deployment.totalAffectedOperations}) affected operations
                     </Link>
@@ -580,8 +580,8 @@ function AffectedAppDeploymentsPanel(props: {
 
   return (
     <div>
-      <h4 className="text-fg mb-1 text-sm font-medium">Affected App Deployments</h4>
-      <p className="text-fg-secondary mb-2 text-sm">
+      <h4 className="mb-1 text-sm font-medium text-fg">Affected App Deployments</h4>
+      <p className="mb-2 text-sm text-fg-secondary">
         Top 5 active app deployments that have operations using this schema coordinate (snapshot
         from when the check was run).
       </p>
@@ -601,7 +601,7 @@ function AffectedAppDeploymentsPanel(props: {
             schemaCheckId: props.schemaCheckId,
           }}
           search={{ coordinate: props.coordinate }}
-          className="text-warning mt-2 block text-sm hover:underline"
+          className="mt-2 block text-sm text-warning hover:underline"
         >
           View all ({props.connection.totalCount}) affected app deployments
         </Link>
@@ -618,7 +618,7 @@ function ApprovedByBadge(props: {
     approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
 
   return (
-    <span className="text-success cursor-pointer">
+    <span className="cursor-pointer text-success">
       <CheckIcon className="inline size-3" /> Approved by {approvalName}
     </span>
   );
@@ -687,11 +687,11 @@ export function CompositionErrorsList(props: {
   return (
     <div className="mb-2 px-2">
       <div className="mb-3 flex items-center gap-1.5">
-        <h2 className="text-fg-default font-bold">{props.title}</h2>
+        <h2 className="font-bold text-fg-default">{props.title}</h2>
         <CompositionErrorsPopover />
       </div>
       {props.description ? (
-        <p className="text-fg-default mb-2 text-sm">{props.description}</p>
+        <p className="mb-2 text-sm text-fg-default">{props.description}</p>
       ) : null}
       <ul>
         {props.errors.map((error, index) => (
@@ -708,10 +708,10 @@ export function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="text-success size-4" />
-        <h2 className="text-fg text-base font-medium">No Graph Changes</h2>
+        <CircleCheckIcon className="size-4 text-success" />
+        <h2 className="text-base font-medium text-fg">No Graph Changes</h2>
       </div>
-      <p className="text-fg-secondary text-xs">
+      <p className="text-xs text-fg-secondary">
         There are no changes in this graph for this graph.
       </p>
     </div>

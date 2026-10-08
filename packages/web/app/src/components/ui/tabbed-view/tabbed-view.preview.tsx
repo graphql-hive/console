@@ -36,9 +36,9 @@ const STATUS_LABEL: Record<ContractStatus, string> = {
 };
 
 function StatusGlyph({ status }: { status: ContractStatus }) {
-  if (status === 'failed') return <AlertTriangle className="text-critical size-3.5 shrink-0" />;
+  if (status === 'failed') return <AlertTriangle className="size-3.5 shrink-0 text-critical" />;
   if (status === 'changed') return <GitCompare className="size-3.5 shrink-0" />;
-  return <Check className="text-success size-3.5 shrink-0" />;
+  return <Check className="size-3.5 shrink-0 text-success" />;
 }
 
 /** The picker as the pages build it: the contract's name, its status under a tooltip at the far end. */
@@ -72,26 +72,26 @@ function DetailsView({ contract }: { contract: string }) {
   return (
     <div className="flex flex-col gap-6 text-sm">
       <div>
-        <div className="text-fg mb-3 flex items-center gap-2 font-medium">
+        <div className="mb-3 flex items-center gap-2 font-medium text-fg">
           Breaking Changes
-          <Info className="text-fg-secondary size-3.5" />
+          <Info className="size-3.5 text-fg-secondary" />
         </div>
-        <div className="border-line flex items-center justify-between border-b py-2">
+        <div className="flex items-center justify-between border-b border-line py-2">
           <span className="text-fg-default">
             Field <Badge content="Node.id" variants={{ variant: 'secondary', mono: true }} />{' '}
             changed type from{' '}
             <Badge content="ID!" variants={{ variant: 'secondary', mono: true }} /> to{' '}
             <Badge content="ID" variants={{ variant: 'secondary', mono: true }} /> in {contract}
           </span>
-          <ChevronDown className="text-fg-secondary size-4" />
+          <ChevronDown className="size-4 text-fg-secondary" />
         </div>
       </div>
-      <div className="text-fg-default flex flex-col gap-2">
+      <div className="flex flex-col gap-2 text-fg-default">
         <p>
           Get more out of schema checks by enabling conditional breaking changes based on usage
           data.
         </p>
-        <a href="#" className="hover:text-fg inline-flex items-center gap-2">
+        <a href="#" className="inline-flex items-center gap-2 hover:text-fg">
           <BookOpen className="size-4" />
           Learn more about conditional breaking changes.
           <ExternalLink className="size-3" />
@@ -103,7 +103,7 @@ function DetailsView({ contract }: { contract: string }) {
 
 function SchemaView() {
   return (
-    <pre className="text-fg-default font-mono text-xs leading-relaxed">
+    <pre className="font-mono text-xs leading-relaxed text-fg-default">
       {'type Query {\n  node(id: ID!): Node\n  viewer: User\n}\n\ninterface Node {\n  id: ID\n}'}
     </pre>
   );
@@ -141,18 +141,18 @@ export const ChecksPage = createPreview(() => {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-fg text-xl font-medium">Check 5843350d-f323-4ff3-8dcf-a30bd48f451f</h2>
-        <p className="text-fg-secondary text-sm">Detailed view of the schema check</p>
+        <h2 className="text-xl font-medium text-fg">Check 5843350d-f323-4ff3-8dcf-a30bd48f451f</h2>
+        <p className="text-sm text-fg-secondary">Detailed view of the schema check</p>
       </div>
-      <div className="border-line bg-neutral-2 dark:bg-neutral-3 flex items-center justify-between rounded-md border px-5 py-4">
+      <div className="flex items-center justify-between rounded-md border border-line bg-neutral-2 px-5 py-4 dark:bg-neutral-3">
         <div className="flex gap-24">
           <div>
-            <div className="text-fg-secondary text-xs">Status</div>
-            <div className="text-critical text-sm font-medium">Failed</div>
+            <div className="text-xs text-fg-secondary">Status</div>
+            <div className="text-sm font-medium text-critical">Failed</div>
           </div>
           <div>
-            <div className="text-fg-secondary text-xs">Triggered 3d ago</div>
-            <div className="text-fg text-sm">by User</div>
+            <div className="text-xs text-fg-secondary">Triggered 3d ago</div>
+            <div className="text-sm text-fg">by User</div>
           </div>
         </div>
         <Button variant="destructive">Approve</Button>
@@ -207,7 +207,7 @@ export const ManyTabs = createPreview(() => {
         items={SERVICES.map(name => ({
           value: name,
           label: name,
-          content: <p className="text-fg-default text-sm">The {name} view.</p>,
+          content: <p className="text-sm text-fg-default">The {name} view.</p>,
         }))}
       />
     </div>
@@ -227,7 +227,7 @@ export const Playground = createPreview({
           value: 'changes',
           label: 'Changes',
           content: (
-            <div className="text-fg-default divide-line divide-y text-sm">
+            <div className="divide-y divide-line text-sm text-fg-default">
               <div className="px-5 py-3">Field Node.id changed type from ID! to ID</div>
               <div className="px-5 py-3">Field User.email was removed</div>
             </div>

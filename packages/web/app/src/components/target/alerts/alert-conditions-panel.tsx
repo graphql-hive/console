@@ -126,17 +126,17 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="text-fg text-2xs inline-flex items-center gap-1 font-mono">
+    <span className="inline-flex items-center gap-1 font-mono text-2xs text-fg">
       <TimeAgo date={iso} />
       <Popover
         trigger={
-          <button type="button" aria-label="Exact time" className="text-fg-secondary inline-flex">
+          <button type="button" aria-label="Exact time" className="inline-flex text-fg-secondary">
             <Info className="size-3" />
           </button>
         }
         openOnHover
         width="auto"
-        content={<span className="text-fg-default text-xs">{new Date(iso).toUTCString()}</span>}
+        content={<span className="text-xs text-fg-default">{new Date(iso).toUTCString()}</span>}
       />
     </span>
   );
@@ -193,7 +193,7 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
       })}
       target="_blank"
       rel="noreferrer"
-      className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
+      className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
     >
       {rule.savedFilter.name}
       <ExternalLink className="size-3" />
@@ -203,8 +203,8 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
   );
 
   return (
-    <div className="border-line bg-surface-card space-y-6 border-l px-5 py-3">
-      <h2 className="text-fg mb-2 block text-sm font-semibold">Alert conditions</h2>
+    <div className="space-y-6 border-l border-line bg-surface-card px-5 py-3">
+      <h2 className="mb-2 block text-sm font-semibold text-fg">Alert conditions</h2>
 
       <DescriptionList
         rows={[
@@ -267,10 +267,10 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
         ]}
       />
 
-      <div className="border-line flex items-center justify-between border-y py-4">
+      <div className="flex items-center justify-between border-y border-line py-4">
         <span className="flex flex-col gap-0.5">
-          <span className="text-fg text-sm font-medium">Alert status</span>
-          <span className="text-fg-secondary text-xs">
+          <span className="text-sm font-medium text-fg">Alert status</span>
+          <span className="text-xs text-fg-secondary">
             {rule.enabled
               ? 'Evaluating conditions and sending notifications'
               : "Paused (conditions aren't evaluated)"}

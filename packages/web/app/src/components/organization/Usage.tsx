@@ -80,7 +80,7 @@ export function OrganizationUsageEstimationView(props: {
   });
 
   return (
-    <div className="right-4 top-7">
+    <div className="top-7 right-4">
       <DataWrapper query={query} organizationSlug={organization.slug}>
         {result => (
           <DataTable

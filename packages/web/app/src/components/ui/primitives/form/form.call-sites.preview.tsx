@@ -337,14 +337,14 @@ export const Inventory = createPreview({
 
 function Submitted(props: { values: unknown }) {
   return props.values ? (
-    <pre className="text-fg-default mt-4 text-xs">{JSON.stringify(props.values, null, 2)}</pre>
+    <pre className="mt-4 text-xs text-fg-default">{JSON.stringify(props.values, null, 2)}</pre>
   ) : null;
 }
 
 /** A slot the page fills with a component that runs its own query. */
 function QueryBacked(props: { name: string }) {
   return (
-    <div className="border-line-strong text-fg-secondary rounded-sm border border-dashed p-3 text-xs">
+    <div className="rounded-sm border border-dashed border-line-strong p-3 text-xs text-fg-secondary">
       {props.name} runs its own query, so the page supplies it.
     </div>
   );
@@ -362,7 +362,7 @@ const panelWidth = {
 /** The raised panel a dialog, sheet or card puts the form on, at that overlay's width. */
 function Raised(props: { children: ReactNode; width: keyof typeof panelWidth }) {
   return (
-    <div className={`bg-neutral-3 border-line rounded-md border p-6 ${panelWidth[props.width]}`}>
+    <div className={`rounded-md border border-line bg-neutral-3 p-6 ${panelWidth[props.width]}`}>
       {props.children}
     </div>
   );
@@ -1131,7 +1131,7 @@ function DangerousChangesExample() {
           form={form}
           onSubmit={setSubmitted}
           enabled
-          status={<span className="text-fg-secondary text-sm">Saved</span>}
+          status={<span className="text-sm text-fg-secondary">Saved</span>}
         />
         <Submitted values={submitted} />
       </div>

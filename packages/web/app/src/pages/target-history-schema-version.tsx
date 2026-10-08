@@ -618,7 +618,7 @@ function FilterableSchemaChangeBlock(props: {
       <GenericGraphCard title={props.title}>
         <div className="px-5">
           {filteredChanges?.length ? (
-            <div className="pb-8 pt-2">
+            <div className="pt-2 pb-8">
               <ChangesBlock changes={filteredChanges} />
             </div>
           ) : selectedChangeType !== null ? (
@@ -1157,7 +1157,7 @@ function SchemaVersionHeader(props: {
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-        <h1 className="text-fg text-xl font-semibold leading-tight">Graph Version</h1>
+        <h1 className="text-fg text-xl leading-tight font-semibold">Graph Version</h1>
         <CopyChip
           value={schemaVersion.id}
           label={
@@ -1309,14 +1309,14 @@ const CompositionErrors = (props: {
           </p>
         </div>
 
-        <span className="focus:ring-accent text-2xs border-critical-line bg-critical-tint text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
+        <span className="border-critical-line bg-critical-tint text-2xs text-critical focus:ring-accent ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none">
           <span className="bg-critical mr-1 h-1.5 w-1.5 rounded-full" />
           {compositionErrors.edges.length} error
           {compositionErrors.edges.length === 1 ? '' : 's'}
         </span>
       </div>
 
-      <div className="text-fg flex items-center gap-2 px-5 pb-1 pt-4">
+      <div className="text-fg flex items-center gap-2 px-5 pt-4 pb-1">
         <span className="text-sm font-medium">Composition errors</span>
         <CompositionErrorsPopover />
       </div>
@@ -1324,7 +1324,7 @@ const CompositionErrors = (props: {
       <ul className="divide-critical-line-subtle divide-y px-1 pb-2">
         {compositionErrors.edges.map((err, idx) => (
           <li key={idx} className="flex gap-3 px-4 py-3">
-            <span className="text-critical mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+            <span className="text-critical mt-0.5 w-6 shrink-0 font-mono text-xs select-none">
               {String(idx + 1).padStart(2, '0')}
             </span>
 

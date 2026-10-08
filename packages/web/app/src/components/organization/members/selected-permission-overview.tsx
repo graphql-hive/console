@@ -154,7 +154,7 @@ function PermissionLevelGroup(props: {
             <div className="ml-1 flex max-w-[800px] flex-wrap items-start overflow-x-auto">
               {filteredGroups.map(group =>
                 props.showOnlyAllowedPermissions && group.totalAllowedCount === 0 ? null : (
-                  <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.id}>
+                  <div className="w-[50%] min-w-[400px] pr-12 pb-4" key={group.id}>
                     <PermissionTable
                       title={group.title}
                       permissions={group.permissions.flatMap(permission => {

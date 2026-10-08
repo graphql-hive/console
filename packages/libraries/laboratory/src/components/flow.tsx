@@ -340,7 +340,7 @@ export const Flow = (props: {
     <div
       ref={containerRef}
       className={cn(
-        'bg-background relative h-full w-full touch-none',
+        'relative h-full w-full touch-none bg-background',
         {
           'cursor-grab': !props.disableGestures && !isPanning,
           'cursor-grabbing': !props.disableGestures && isPanning,
@@ -357,7 +357,7 @@ export const Flow = (props: {
       onMouseEnter={() => setIsCanvasActive(true)}
     >
       {!props.disableBackground && (
-        <div className="bg-size-[16px_16px] absolute inset-0 h-full w-full bg-[radial-gradient(hsl(var(--border))_1px,transparent_1px)] opacity-50" />
+        <div className="absolute inset-0 h-full w-full bg-[radial-gradient(hsl(var(--border))_1px,transparent_1px)] bg-size-[16px_16px] opacity-50" />
       )}
       <div
         className={cn('relative', props.className)}
@@ -387,7 +387,7 @@ export const Flow = (props: {
                 }
               }}
               className={cn(
-                'bg-card transition-color absolute flex grid min-w-72 grid-cols-1 grid-rows-1 justify-start gap-2 rounded-lg border p-2 text-sm shadow-sm',
+                'transition-color absolute flex grid min-w-72 grid-cols-1 grid-rows-1 justify-start gap-2 rounded-lg border bg-card p-2 text-sm shadow-sm',
                 {
                   'w-72': !hasChildren,
                   'grid-rows-[auto_1fr]': hasContent || hasChildren,
@@ -410,7 +410,7 @@ export const Flow = (props: {
                   {node.headerSuffix ? node.headerSuffix({ node }) : null}
                 </div>
               </div>
-              <div className="bg-secondary w-full rounded-sm p-2 empty:hidden">
+              <div className="w-full rounded-sm bg-secondary p-2 empty:hidden">
                 {node.content ? node.content({ node }) : null}
               </div>
               {!!node.children?.length && (
@@ -444,16 +444,16 @@ export const Flow = (props: {
                 </div>
               )}
               {hasFollowers && (
-                <div className="border-border bg-background absolute left-full top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all" />
+                <div className="absolute top-1/2 left-full size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-border bg-background transition-all" />
               )}
               {hasPrevious && (
-                <div className="border-border bg-background absolute left-0 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-all" />
+                <div className="absolute top-1/2 left-0 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-border bg-background transition-all" />
               )}
             </div>
           );
         })}
         <svg
-          className="pointer-events-none absolute left-0 top-0 -z-10"
+          className="pointer-events-none absolute top-0 left-0 -z-10"
           style={{ width: graphSize.width, height: graphSize.height }}
         >
           {edges.filter(Boolean).map(edge => {
@@ -467,7 +467,7 @@ export const Flow = (props: {
             return (
               <path
                 key={edge.from + edge.to}
-                className="stroke-border animate-dash transition-color animate-[dash_500ms_linear_infinite] fill-none stroke-2 [stroke-dasharray:12_8]"
+                className="animate-dash transition-color animate-[dash_500ms_linear_infinite] fill-none stroke-border stroke-2 [stroke-dasharray:12_8]"
                 d={roundedOrthogonalPath(
                   orthogonalPoints(
                     {
@@ -487,8 +487,8 @@ export const Flow = (props: {
         </svg>
       </div>
       {!props.isChild && (
-        <div className="absolute left-4 top-4 z-10 flex items-center gap-2">
-          <div className="bg-card grid w-96 grid-cols-[1fr_auto_auto] items-center gap-2 rounded-lg border p-2 shadow-sm">
+        <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+          <div className="grid w-96 grid-cols-[1fr_auto_auto] items-center gap-2 rounded-lg border bg-card p-2 shadow-sm">
             <div className="flex flex-1 items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>

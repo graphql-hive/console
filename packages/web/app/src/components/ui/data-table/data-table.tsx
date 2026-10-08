@@ -136,11 +136,11 @@ function SortHeader<TData>({
           // server-sorted column has no reason to carry one. Shift stacks a tiebreaker
           // the way the handler would.
           onClick={event => column.toggleSorting(undefined, event.shiftKey)}
-          className="text-fg-secondary hover:text-fg inline-flex items-center gap-1 text-xs font-medium"
+          className="inline-flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg"
         >
           {label}
           {sorted && loading ? (
-            <span className="text-success inline-flex">
+            <span className="inline-flex text-success">
               <Spinner label="Sorting" variants={{ size: 'xs', tone: 'current' }} />
             </span>
           ) : (
@@ -153,7 +153,7 @@ function SortHeader<TData>({
             />
           )}
           {sorted && sorting.length > 1 ? (
-            <span className="text-success text-2xs tabular-nums" aria-label="Sort priority">
+            <span className="text-2xs text-success tabular-nums" aria-label="Sort priority">
               {column.getSortIndex() + 1}
             </span>
           ) : null}
@@ -250,7 +250,7 @@ export function DataTable<TData>({
                           {meta?.tooltip ? (
                             <Tooltip
                               trigger={
-                                <span className="text-fg-muted inline-flex">
+                                <span className="inline-flex text-fg-muted">
                                   <Info className="size-3.5" />
                                 </span>
                               }

@@ -48,7 +48,7 @@ function serviceHeader(schema: CompositeSchema) {
         {schema.service ?? 'SDL'}
       </div>
       {schema.url ? (
-        <div className="text-fg-secondary text-xs font-normal">{schema.url}</div>
+        <div className="text-xs font-normal text-fg-secondary">{schema.url}</div>
       ) : null}
     </div>
   );

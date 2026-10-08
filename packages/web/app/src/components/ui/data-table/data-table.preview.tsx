@@ -86,7 +86,7 @@ export const Default = createPreview(() => (
  * dialog or raised card. The block behind it here is that surface.
  */
 export const OnSurface = createPreview(() => (
-  <div className="bg-neutral-3 border-line w-[56rem] rounded-md border p-6">
+  <div className="w-[56rem] rounded-md border border-line bg-neutral-3 p-6">
     <DataTable
       data={CHECKS.slice(0, 4)}
       columns={COLUMNS}
@@ -163,7 +163,7 @@ function ServerSortedTable() {
   );
   return (
     <div className="w-[52rem]">
-      <p className="text-fg-secondary mb-3 text-xs">
+      <p className="mb-3 text-xs text-fg-secondary">
         Sorted by {sorting[0]?.id ?? 'nothing'} {sorting[0]?.desc ? 'descending' : 'ascending'},
         outside the table.
       </p>
@@ -427,7 +427,7 @@ export const Expandable = createPreview(() => (
       columns={COLUMNS}
       getRowId={row => row.id}
       renderSubComponent={row => (
-        <div className="text-fg-default text-control space-y-1 p-4">
+        <div className="space-y-1 p-4 text-control text-fg-default">
           <div>
             Composition for <span className="text-fg">{row.original.service}</span> produced{' '}
             {row.original.changes} schema changes.
@@ -795,7 +795,7 @@ export const Playground = createPreview({
       <div
         className={
           v.onSurface === 'raised'
-            ? 'bg-neutral-3 border-line w-[56rem] rounded-md border p-6'
+            ? 'w-[56rem] rounded-md border border-line bg-neutral-3 p-6'
             : 'w-[52rem]'
         }
       >

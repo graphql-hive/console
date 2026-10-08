@@ -614,7 +614,7 @@ function SavedFilterRowFilters({
         )}
         {loading && <Spinner />}
         {opsQuery.error && !loading && (
-          <span className="text-critical text-xs">
+          <span className="text-xs text-critical">
             {opsQuery.error.graphQLErrors[0]?.message ?? opsQuery.error.message}
           </span>
         )}
@@ -811,7 +811,7 @@ export function TargetInsightsManageFiltersPage(): ReactElement {
     <>
       <Meta title="Manage saved filters" />
       <LayoutContent>
-        <div className="pb-3 pt-6">
+        <div className="pt-6 pb-3">
           <BackLink
             copy="Back to Insights"
             link={{

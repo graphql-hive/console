@@ -154,7 +154,7 @@ export const TermTooltips = createPreview(() => (
  * schema check and schema version pages; the wrapper is the page's.
  */
 export const PageCard = createPreview(() => (
-  <div className="bg-neutral-2 dark:bg-neutral-3 w-[48rem] rounded-md border px-5 py-4">
+  <div className="w-[48rem] rounded-md border bg-neutral-2 px-5 py-4 dark:bg-neutral-3">
     <DescriptionList
       variants={{ termStyle: 'title', columns: 'auto' }}
       rows={[

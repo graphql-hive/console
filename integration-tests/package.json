@@ -39,7 +39,7 @@
     "async-retry": "1.3.3",
     "bcryptjs": "catalog:",
     "csv-parse": "7.0.2",
-    "date-fns": "4.1.0",
+    "date-fns": "catalog:",
     "dockerode": "5.0.0",
     "dotenv": "catalog:",
     "graphql": "16.9.0",
