@@ -43,7 +43,7 @@
     "dockerode": "5.0.0",
     "dotenv": "catalog:",
     "graphql": "16.9.0",
-    "graphql-sse": "2.6.0",
+    "graphql-sse": "catalog:",
     "graphql-yoga": "catalog:",
     "human-id": "4.1.1",
     "set-cookie-parser": "2.7.1",
