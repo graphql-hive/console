@@ -1,6 +1,7 @@
 import { config as dotenv } from 'dotenv';
 import zod from 'zod';
 import type { PostgresConnectionParamaters } from '@hive/postgres';
+import { fail, parseClickHouseConfigFromEnvironment } from '@hive/service-common';
 
 dotenv({
   debug: true,
@@ -23,14 +24,6 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
 
 const NumberFromString = zod.preprocess(numberFromNumberOrNumberString, zod.number().min(1));
 
-const ClickHouseModel = zod.object({
-  CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
-  CLICKHOUSE_HOST: zod.string(),
-  CLICKHOUSE_PORT: NumberFromString,
-  CLICKHOUSE_USERNAME: zod.string(),
-  CLICKHOUSE_PASSWORD: zod.string(),
-});
-
 const PostgresModel = zod.object({
   POSTGRES_SSL: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   POSTGRES_HOST: zod.string(),
@@ -41,7 +34,6 @@ const PostgresModel = zod.object({
 });
 
 const configs = {
-  clickhouse: ClickHouseModel.safeParse(process.env),
   postgres: PostgresModel.safeParse(process.env),
 };
 
@@ -51,6 +43,12 @@ for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
   }
+}
+
+const clickhouseConfigResult = parseClickHouseConfigFromEnvironment(process.env);
+
+if (clickhouseConfigResult.type === 'error') {
+  environmentErrors.push(...clickhouseConfigResult.errors);
 }
 
 if (environmentErrors.length) {
@@ -66,17 +64,13 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
   return config.data;
 }
 
-const clickhouse = extractConfig(configs.clickhouse);
 const postgres = extractConfig(configs.postgres);
 
 export const env = {
-  clickhouse: {
-    protocol: clickhouse.CLICKHOUSE_PROTOCOL,
-    host: clickhouse.CLICKHOUSE_HOST,
-    port: clickhouse.CLICKHOUSE_PORT,
-    username: clickhouse.CLICKHOUSE_USERNAME,
-    password: clickhouse.CLICKHOUSE_PASSWORD,
-  },
+  clickhouse:
+    clickhouseConfigResult.type === 'ok'
+      ? clickhouseConfigResult.config
+      : fail('Unreachable: ClickHouse config errors are caught above via process.exit(1)'),
   postgres: {
     host: postgres.POSTGRES_HOST,
     port: postgres.POSTGRES_PORT,

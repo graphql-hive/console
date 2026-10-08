@@ -14,7 +14,7 @@ export const createSelectStatementForOperationsMinutely = (
     sum(ok) AS total_ok,
     avgState(duration) AS duration_avg,
     quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-  FROM default.${tableName}
+  FROM ${tableName}
   GROUP BY
     target,
     hash,
@@ -36,7 +36,7 @@ export const createSelectStatementForOperationsHourly = (
     sum(ok) AS total_ok,
     avgState(duration) AS duration_avg,
     quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-  FROM default.${tableName}
+  FROM ${tableName}
   GROUP BY
     target,
     hash,
@@ -59,7 +59,7 @@ export const createSelectStatementForOperationsDaily = (
     sum(ok) AS total_ok,
     avgState(duration) AS duration_avg,
     quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-  FROM default.${tableName}
+  FROM ${tableName}
   GROUP BY
     target,
     hash,
@@ -80,7 +80,7 @@ export const createSelectStatementForClientsDaily = (
     toStartOfDay(timestamp) AS timestamp,
     toStartOfDay(expires_at) AS expires_at,
     count() AS total
-  FROM default.${tableName}
+  FROM ${tableName}
   GROUP BY
     target,
     client_name,
@@ -100,7 +100,7 @@ export const createSelectStatementForCoordinatesDaily = (
     toStartOfDay(expires_at) AS expires_at,
     sum(total) AS total,
     coordinate
-  FROM default.${tableName}
+  FROM ${tableName}
   ARRAY JOIN coordinates as coordinate
   GROUP BY
     target,
@@ -118,7 +118,7 @@ export const createSelectStatementForOperationCollectionBody = (
     hash,
     body,
     toStartOfDay(expires_at) AS expires_at
-  FROM default.${tableName}
+  FROM ${tableName}
   GROUP BY
     target,
     hash,
@@ -135,7 +135,7 @@ export const createSelectStatementForOperationCollectionDetails = (
     hash,
     operation_kind,
     toStartOfDay(expires_at) AS expires_at
-  FROM default.${tableName}
+  FROM ${tableName}
   GROUP BY
     target,
     name,
@@ -150,7 +150,7 @@ export const createSelectStatementForTargetExistence = (
   SELECT
     target,
     toStartOfDay(expires_at) AS expires_at
-  FROM default.${tableName}
+  FROM ${tableName}
   GROUP BY
     target,
     expires_at
@@ -183,7 +183,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
     [
       // New and improved codec
       `
-        CREATE TABLE IF NOT EXISTS default.operation_collection_new
+        CREATE TABLE IF NOT EXISTS operation_collection_new
         (
           target LowCardinality(String) CODEC(ZSTD(1)),
           hash String CODEC(ZSTD(1)),
@@ -203,7 +203,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
       `,
       // New and improved codec
       `
-      CREATE TABLE IF NOT EXISTS default.operations_new
+      CREATE TABLE IF NOT EXISTS operations_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
@@ -233,7 +233,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
       // `operations`
       // Completely new view, aggregates data by minute
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_minutely_new
+      CREATE MATERIALIZED VIEW IF NOT EXISTS operations_minutely_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
@@ -256,7 +256,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
       // Adds TTL to the view, no longer depends on `expires_at`
       // Adds and improves codecs
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_hourly_new
+      CREATE MATERIALIZED VIEW IF NOT EXISTS operations_hourly_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
@@ -278,7 +278,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
     `,
       // Adds and improves codecs
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_daily_new
+      CREATE MATERIALIZED VIEW IF NOT EXISTS operations_daily_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
@@ -301,7 +301,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
     `,
       // Adds and improves codecs
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.clients_daily_new
+      CREATE MATERIALIZED VIEW IF NOT EXISTS clients_daily_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         client_name String CODEC(ZSTD(1)),
@@ -324,7 +324,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
       // `operation_collection`
       // Adds and improves codecs
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.coordinates_daily_new
+      CREATE MATERIALIZED VIEW IF NOT EXISTS coordinates_daily_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         hash String CODEC(ZSTD(1)), 
@@ -344,7 +344,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
     `,
       // Adds a new view to easily and quickly query operation bodies
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.operation_collection_body_new
+      CREATE MATERIALIZED VIEW IF NOT EXISTS operation_collection_body_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         hash String CODEC(ZSTD(1)), 
@@ -362,7 +362,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
     `,
       // Adds a new view to easily and quickly query operation details
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.operation_collection_details_new
+      CREATE MATERIALIZED VIEW IF NOT EXISTS operation_collection_details_new
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         name String CODEC(ZSTD(1)),
@@ -380,7 +380,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
       ${createSelectStatementForOperationCollectionDetails('operation_collection_new')}
     `,
       `
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.target_existence
+      CREATE MATERIALIZED VIEW IF NOT EXISTS target_existence
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         expires_at DateTime('UTC') CODEC(DoubleDelta, LZ4)
@@ -399,7 +399,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
   console.timeEnd(label);
 
   const totalOperationsResponse = await query(
-    `SELECT if(count() > ${50_000_000}, 'big', 'small') as size FROM default.operations`,
+    `SELECT if(count() > ${50_000_000}, 'big', 'small') as size FROM operations`,
   );
   const sizeOfOperationsTable = z
     .array(z.object({ size: z.enum(['small', 'big']) }))
@@ -420,8 +420,8 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
   label = 'Inserted data into new tables';
   console.time(label);
   await Promise.all([
-    exec(`INSERT INTO default.operations_new SELECT * FROM default.operations`),
-    exec(`INSERT INTO default.operation_collection_new SELECT * FROM default.operation_collection`),
+    exec(`INSERT INTO operations_new SELECT * FROM operations`),
+    exec(`INSERT INTO operation_collection_new SELECT * FROM operation_collection`),
   ]);
   console.timeEnd(label);
 
@@ -430,32 +430,30 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
   // Rename tables
   // Old tables
   await Promise.all([
-    exec(`RENAME TABLE default.operations TO default.operations_old`),
-    exec(`RENAME TABLE default.operation_collection TO default.operation_collection_old`),
+    exec(`RENAME TABLE operations TO operations_old`),
+    exec(`RENAME TABLE operation_collection TO operation_collection_old`),
   ]);
   // Old views
   await Promise.all([
-    exec(`RENAME TABLE default.operations_hourly TO default.operations_hourly_old`),
-    exec(`RENAME TABLE default.operations_daily TO default.operations_daily_old`),
-    exec(`RENAME TABLE default.coordinates_daily TO default.coordinates_daily_old`),
-    exec(`RENAME TABLE default.clients_daily TO default.clients_daily_old`),
+    exec(`RENAME TABLE operations_hourly TO operations_hourly_old`),
+    exec(`RENAME TABLE operations_daily TO operations_daily_old`),
+    exec(`RENAME TABLE coordinates_daily TO coordinates_daily_old`),
+    exec(`RENAME TABLE clients_daily TO clients_daily_old`),
   ]);
   // New tables
   await Promise.all([
-    exec(`RENAME TABLE default.operations_new TO default.operations`),
-    exec(`RENAME TABLE default.operation_collection_new TO default.operation_collection`),
+    exec(`RENAME TABLE operations_new TO operations`),
+    exec(`RENAME TABLE operation_collection_new TO operation_collection`),
   ]);
   // New views
   await Promise.all([
-    exec(`RENAME TABLE default.operations_minutely_new TO default.operations_minutely`),
-    exec(`RENAME TABLE default.operations_hourly_new TO default.operations_hourly`),
-    exec(`RENAME TABLE default.operations_daily_new TO default.operations_daily`),
-    exec(`RENAME TABLE default.coordinates_daily_new TO default.coordinates_daily`),
-    exec(`RENAME TABLE default.clients_daily_new TO default.clients_daily`),
-    exec(`RENAME TABLE default.operation_collection_body_new TO default.operation_collection_body`),
-    exec(
-      `RENAME TABLE default.operation_collection_details_new TO default.operation_collection_details`,
-    ),
+    exec(`RENAME TABLE operations_minutely_new TO operations_minutely`),
+    exec(`RENAME TABLE operations_hourly_new TO operations_hourly`),
+    exec(`RENAME TABLE operations_daily_new TO operations_daily`),
+    exec(`RENAME TABLE coordinates_daily_new TO coordinates_daily`),
+    exec(`RENAME TABLE clients_daily_new TO clients_daily`),
+    exec(`RENAME TABLE operation_collection_body_new TO operation_collection_body`),
+    exec(`RENAME TABLE operation_collection_details_new TO operation_collection_details`),
   ]);
   console.timeEnd(label);
 
@@ -466,56 +464,56 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
   await Promise.all([
     exec(
       `
-        ALTER TABLE default.operations_minutely
+        ALTER TABLE operations_minutely
         MODIFY QUERY ${createSelectStatementForOperationsMinutely('operations')}
       `,
       modifyQuerySettings,
     ),
     exec(
       `
-        ALTER TABLE default.operations_hourly
+        ALTER TABLE operations_hourly
         MODIFY QUERY ${createSelectStatementForOperationsHourly('operations')}
       `,
       modifyQuerySettings,
     ),
     exec(
       `
-        ALTER TABLE default.operations_daily
+        ALTER TABLE operations_daily
         MODIFY QUERY ${createSelectStatementForOperationsDaily('operations')}
       `,
       modifyQuerySettings,
     ),
     exec(
       `
-        ALTER TABLE default.coordinates_daily
+        ALTER TABLE coordinates_daily
         MODIFY QUERY ${createSelectStatementForCoordinatesDaily('operation_collection')}
       `,
       modifyQuerySettings,
     ),
     exec(
       `
-        ALTER TABLE default.clients_daily
+        ALTER TABLE clients_daily
         MODIFY QUERY ${createSelectStatementForClientsDaily('operations')}
       `,
       modifyQuerySettings,
     ),
     exec(
       `
-        ALTER TABLE default.operation_collection_body
+        ALTER TABLE operation_collection_body
         MODIFY QUERY ${createSelectStatementForOperationCollectionBody('operation_collection')}
       `,
       modifyQuerySettings,
     ),
     exec(
       `
-        ALTER TABLE default.operation_collection_details
+        ALTER TABLE operation_collection_details
         MODIFY QUERY ${createSelectStatementForOperationCollectionDetails('operation_collection')}
       `,
       modifyQuerySettings,
     ),
     exec(
       `
-        ALTER TABLE default.target_existence
+        ALTER TABLE target_existence
         MODIFY QUERY ${createSelectStatementForTargetExistence('operations')}
       `,
       modifyQuerySettings,
@@ -527,8 +525,8 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
   console.time(label);
   // Apply TTLs to new tables
   await Promise.all([
-    exec(`ALTER TABLE default.operations MODIFY TTL timestamp + INTERVAL 3 HOUR`),
-    exec(`ALTER TABLE default.operation_collection MODIFY TTL timestamp + INTERVAL 3 HOUR`),
+    exec(`ALTER TABLE operations MODIFY TTL timestamp + INTERVAL 3 HOUR`),
+    exec(`ALTER TABLE operation_collection MODIFY TTL timestamp + INTERVAL 3 HOUR`),
   ]);
   console.timeEnd(label);
 
@@ -536,15 +534,15 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
   console.time(label);
   // Drop old tables
   await Promise.all([
-    exec(`DROP TABLE default.operations_old`),
-    exec(`DROP TABLE default.operation_collection_old`),
+    exec(`DROP TABLE operations_old`),
+    exec(`DROP TABLE operation_collection_old`),
   ]);
   // Drop old views
   await Promise.all([
-    exec(`DROP TABLE default.operations_hourly_old`),
-    exec(`DROP TABLE default.operations_daily_old`),
-    exec(`DROP TABLE default.coordinates_daily_old`),
-    exec(`DROP TABLE default.clients_daily_old`),
+    exec(`DROP TABLE operations_hourly_old`),
+    exec(`DROP TABLE operations_daily_old`),
+    exec(`DROP TABLE coordinates_daily_old`),
+    exec(`DROP TABLE clients_daily_old`),
   ]);
   console.timeEnd(label);
 };

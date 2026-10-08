@@ -2265,7 +2265,7 @@ export class OperationsReader {
       }>({
         query: sql`
         SELECT MIN(timestamp) as timestamp
-        FROM default.target_field_level_metrics_onboard_timestamp
+        FROM target_field_level_metrics_onboard_timestamp
         PREWHERE target = ${targetId}
       `,
         queryId: 'coordinate_data_synced_coords',

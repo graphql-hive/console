@@ -1,5 +1,3 @@
-import type { GraphiQLOptions } from 'graphql-yoga';
-import type { LaboratoryCollection, LaboratoryProps } from '@graphql-hive/laboratory';
 import {
   editorWorkerService,
   favicon,
@@ -9,36 +7,7 @@ import {
   jsonWorker,
   typescriptWorker,
 } from './laboratory.js';
-
-const mapGraphiQLOptionsToLaboratoryProps = (opts?: RenderLaboratoryOptions): LaboratoryProps => {
-  if (!opts) {
-    return { enableDocs: true };
-  }
-
-  return {
-    enableDocs: true,
-    defaultSettings: {
-      fetch: {
-        credentials: opts.credentials ?? 'same-origin',
-        timeout: opts.timeout,
-        useGETForQueries: opts.useGETForQueries,
-      },
-      subscriptions: {
-        protocol: opts.subscriptionsProtocol ?? 'WS',
-      },
-      introspection: {
-        method: opts.method,
-      },
-    },
-    defaultCollections: opts.defaultCollections,
-  } satisfies LaboratoryProps;
-};
-
-type LaboratoryOptions = {
-  defaultCollections?: LaboratoryCollection[];
-};
-
-type RenderLaboratoryOptions = GraphiQLOptions & LaboratoryOptions;
+import { mapGraphiQLOptionsToLaboratoryProps, type RenderLaboratoryOptions } from './props.js';
 
 export const renderLaboratory = (opts?: RenderLaboratoryOptions) => /* HTML */ `
   <!doctype html>

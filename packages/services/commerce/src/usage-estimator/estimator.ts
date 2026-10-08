@@ -1,19 +1,10 @@
 import { ClickHouse, HttpClient, OperationsReader, sql } from '@hive/api';
-import type { ServiceLogger } from '@hive/service-common';
+import type { ClickHouseConfig, ServiceLogger } from '@hive/service-common';
 import { clickHouseElapsedDuration, clickHouseReadDuration } from './metrics';
 
 export type UsageEstimator = ReturnType<typeof createEstimator>;
 
-export function createEstimator(config: {
-  logger: ServiceLogger;
-  clickhouse: {
-    protocol: string;
-    host: string;
-    port: number;
-    username: string;
-    password: string;
-  };
-}) {
+export function createEstimator(config: { logger: ServiceLogger; clickhouse: ClickHouseConfig }) {
   const { logger } = config;
   const httpClient = new HttpClient();
   const clickhouse = new ClickHouse(

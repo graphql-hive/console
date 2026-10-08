@@ -25,7 +25,7 @@ const StateTableModel = z.array(
 export const action: Action = async (exec, query) => {
   // Create a table to store the state of the migration
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.migration_apply_ttl (
+    CREATE TABLE IF NOT EXISTS migration_apply_ttl (
       table String,
       cleaned Bool DEFAULT false,
       version UInt8
@@ -34,7 +34,7 @@ export const action: Action = async (exec, query) => {
 
   // If a row is already present and has a higher version number (expired rows were dropped), it won't be inserted
   await exec(`
-    INSERT INTO default.migration_apply_ttl (table, version) VALUES
+    INSERT INTO migration_apply_ttl (table, version) VALUES
       ('operations_daily', 1),
       ('coordinates_daily', 1),
       ('clients_daily', 1),
@@ -65,7 +65,7 @@ export const action: Action = async (exec, query) => {
 
   console.log('Dropping migration state table');
   await exec(`
-    DROP TABLE default.migration_apply_ttl
+    DROP TABLE migration_apply_ttl
   `);
 
   async function applyTTL(tableName: string, interval: string) {
@@ -89,7 +89,7 @@ export const action: Action = async (exec, query) => {
       SELECT uuid, name
       FROM system.tables
       WHERE
-        database = 'default'
+        database = currentDatabase()
         AND name = '${tableName}'
       LIMIT 1
     `).then(async r => SystemTablesModel.parse(r.data));
@@ -106,7 +106,7 @@ export const action: Action = async (exec, query) => {
       SELECT name, engine_full
       FROM system.tables
       WHERE
-        database = 'default'
+        database = currentDatabase()
         AND name = '.inner_id.${uuid}'
       LIMIT 1
     `).then(async r => InnerTablesModel.parse(r.data));
@@ -120,7 +120,7 @@ export const action: Action = async (exec, query) => {
 
   async function dropOldRows(uuid: string, tableName: string, interval: string) {
     const [state] = await query(`
-      SELECT table, cleaned FROM default.migration_apply_ttl WHERE table = '${tableName}' ORDER BY version DESC LIMIT 1
+      SELECT table, cleaned FROM migration_apply_ttl WHERE table = '${tableName}' ORDER BY version DESC LIMIT 1
     `).then(r => StateTableModel.parse(r.data));
 
     if (state.cleaned) {
@@ -142,7 +142,7 @@ export const action: Action = async (exec, query) => {
 
     console.log('Deleted old rows from', tableName);
     await exec(`
-      INSERT INTO default.migration_apply_ttl (table, cleaned, version) VALUES ('${tableName}', true, 2);
+      INSERT INTO migration_apply_ttl (table, cleaned, version) VALUES ('${tableName}', true, 2);
     `);
     console.log('Marked as cleaned:', tableName);
   }
