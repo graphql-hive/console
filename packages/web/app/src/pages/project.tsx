@@ -2,15 +2,15 @@ import { ChangeEvent, ReactElement, useCallback, useMemo } from 'react';
 import { MoveDownIcon, MoveUpIcon, SearchIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { z } from 'zod';
-import { Button } from '@/components/base/button/button';
-import { Select } from '@/components/base/floating/select/select';
-import { Input } from '@/components/base/input/input';
-import { Separator } from '@/components/base/separator/separator';
 import { ResourceCard } from '@/components/common/resource-card';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Separator } from '@/components/ui/primitives/separator/separator';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
@@ -46,7 +46,7 @@ const TargetCard = (props: {
       days={props.days}
       renderLink={children => (
         <Link
-          className="block pb-5 pt-4"
+          className="block pt-4 pb-5"
           to="/$organizationSlug/$projectSlug/$targetSlug"
           disabled={organizationSlug == null || projectSlug == null || target?.slug == null}
           params={{

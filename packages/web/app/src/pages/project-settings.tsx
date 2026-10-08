@@ -2,22 +2,22 @@ import { ReactElement, useCallback } from 'react';
 import { ArrowBigDownDashIcon, CheckIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Navigation } from '@/components/base/navigation/navigation';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { CompositionSettings } from '@/components/project/settings/composition';
 import { HiveLogo } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
+import { Navigation } from '@/components/ui/navigation/navigation';
 import {
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
 import { env } from '@/env/frontend';
@@ -92,28 +92,28 @@ function GitHubIntegration(): ReactElement | null {
         }}
       />
       <div>
-        <div className="text-fg-secondary text-sm">
+        <div className="text-sm text-fg-secondary">
           <div>Here's how it will look like in your CI pipeline.</div>
           <div className="my-8 flex w-fit flex-col gap-y-1">
             <div className="flex items-center gap-x-2 pl-1">
-              <CheckIcon className="text-success size-4" />
-              <div className="bg-surface-inverse flex size-6 items-center justify-center rounded-sm">
+              <CheckIcon className="size-4 text-success" />
+              <div className="flex size-6 items-center justify-center rounded-sm bg-surface-inverse">
                 <HiveLogo className="size-4/5" />
               </div>
 
-              <div className="text-fg-default font-semibold">
+              <div className="font-semibold text-fg-default">
                 {organizationSlug} &gt; schema:check &gt; staging
               </div>
               <div className="text-fg-secondary">— No changes</div>
             </div>
             <ArrowBigDownDashIcon className="size-6 self-center" />
             <div className="flex items-center gap-x-2 pl-1">
-              <CheckIcon className="text-success size-4" />
-              <div className="bg-surface-inverse flex size-6 items-center justify-center rounded-sm">
+              <CheckIcon className="size-4 text-success" />
+              <div className="flex size-6 items-center justify-center rounded-sm bg-surface-inverse">
                 <HiveLogo className="size-4/5" />
               </div>
 
-              <div className="text-fg-default font-semibold">
+              <div className="font-semibold text-fg-default">
                 {organizationSlug} &gt; schema:check &gt; {projectSlug} &gt; staging
               </div>
               <div className="text-fg-secondary">— No changes</div>
@@ -380,8 +380,8 @@ function ProjectPolicySettings(props: {
           currentState={currentProject.schemaPolicy}
         />
       ) : (
-        <div className="text-fg-secondary pl-1 text-sm font-bold">
-          <p className="text-fg-inverse mr-4 inline-block">!</p>
+        <div className="pl-1 text-sm font-bold text-fg-secondary">
+          <p className="mr-4 inline-block text-fg-inverse">!</p>
           Organization settings does not allow projects to override policy. Please consult your
           organization administrator.
         </div>

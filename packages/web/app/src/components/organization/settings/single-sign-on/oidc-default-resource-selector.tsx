@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { CheckIcon, XIcon } from 'lucide-react';
 import { useMutation } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
-import { Spinner } from '@/components/base/spinner/spinner';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   createResourceSelectionFromResourceAssignment,
@@ -88,18 +88,18 @@ export function OIDCDefaultResourceSelector(props: {
   function MutateState() {
     if (debouncedMutate.isPending() || mutateState === 'loading') {
       return (
-        <span className="absolute right-0 top-0">
+        <span className="absolute top-0 right-0">
           <Spinner />
         </span>
       );
     }
 
     if (mutateState === 'error') {
-      return <XIcon className="text-critical absolute right-0 top-0" />;
+      return <XIcon className="absolute top-0 right-0 text-critical" />;
     }
 
     if (mutateState === 'success') {
-      return <CheckIcon className="text-success absolute right-0 top-0" />;
+      return <CheckIcon className="absolute top-0 right-0 text-success" />;
     }
 
     return null;

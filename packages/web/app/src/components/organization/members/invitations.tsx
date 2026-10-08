@@ -2,13 +2,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { MailIcon, MailQuestionIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { useToast } from '@/components/base/toast/toast';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useClipboard, useSlugs } from '@/lib/hooks';
@@ -432,10 +432,10 @@ export function OrganizationInvitations(props: {
       ) : (
         <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
           <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-            <MailQuestionIcon className="text-fg-secondary size-10" />
+            <MailQuestionIcon className="size-10 text-fg-secondary" />
 
             <h3 className="mt-4 text-lg font-semibold">No invitations</h3>
-            <p className="text-fg-secondary mb-4 mt-2 text-sm">
+            <p className="mt-2 mb-4 text-sm text-fg-secondary">
               Invitations to join this organization will appear here.
             </p>
           </div>

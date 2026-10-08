@@ -306,3 +306,94 @@ describe('cdn access token updaters through the cache', () => {
     page.unsubscribe();
   });
 });
+
+describe('updateMetricAlertRule through the cache', () => {
+  it('merges the edited rule into the detail page in place', { timeout: 30_000 }, async () => {
+    const { pipe, subscribe } = await import('wonka');
+    const { createTestClient } = await import('@/lib/testing/urql');
+    const { AlertForm_UpdateMetricAlertRuleMutation } = await import(
+      '@/components/target/alerts/alert-form'
+    );
+    const { TargetAlertsDetailPage_RuleConfigQuery } = await import('@/pages/target-alerts-detail');
+    const slugs = { organizationSlug: 'acme', projectSlug: 'shop', targetSlug: 'staging' };
+    const rule = (name: string) => ({
+      __typename: 'MetricAlertRule' as const,
+      id: 'rule-1',
+      name,
+      type: 'TRAFFIC',
+      metric: null,
+      severity: 'WARNING',
+      state: 'NORMAL',
+      enabled: true,
+      timeWindowMinutes: 15,
+      thresholdType: 'FIXED_VALUE',
+      thresholdValue: 100,
+      direction: 'ABOVE',
+      confirmationMinutes: 0,
+      channels: [],
+      savedFilter: null,
+      createdAt: '2026-09-27T10:00:00.000Z',
+      updatedAt: '2026-09-27T10:00:00.000Z',
+      createdBy: null,
+      updatedBy: null,
+    });
+    const client = createTestClient(
+      new Map<string, unknown>([
+        [
+          'TargetAlertsDetailPage_RuleConfigQuery',
+          {
+            __typename: 'Query',
+            target: { __typename: 'Target', id: 'target-1', metricAlertRule: rule('Old name') },
+          },
+        ],
+        [
+          'AlertForm_UpdateMetricAlertRule',
+          {
+            __typename: 'Mutation',
+            updateMetricAlertRule: {
+              __typename: 'UpdateMetricAlertRuleResult',
+              error: null,
+              ok: {
+                __typename: 'UpdateMetricAlertRuleOk',
+                updatedMetricAlertRule: rule('New name'),
+              },
+            },
+          },
+        ],
+      ]),
+    );
+    const requests = () =>
+      client.seen.filter(name => name === 'TargetAlertsDetailPage_RuleConfigQuery').length;
+
+    let latest: { target?: { metricAlertRule?: { name: string } | null } | null } | undefined;
+    const page = pipe(
+      client.query(TargetAlertsDetailPage_RuleConfigQuery, { ...slugs, ruleId: 'rule-1' }),
+      subscribe(result => {
+        latest = result.data;
+      }),
+    );
+    expect(requests()).toBe(1);
+    expect(latest?.target?.metricAlertRule?.name).toBe('Old name');
+
+    const result = await client
+      .mutation(AlertForm_UpdateMetricAlertRuleMutation, {
+        input: {
+          project: {
+            bySelector: {
+              organizationSlug: slugs.organizationSlug,
+              projectSlug: slugs.projectSlug,
+            },
+          },
+          ruleId: 'rule-1',
+          name: 'New name',
+        },
+      })
+      .toPromise();
+
+    // The mutation returns the full rule; the cache must hand it back, not evict it.
+    expect(result.data?.updateMetricAlertRule.ok?.updatedMetricAlertRule.id).toBe('rule-1');
+    expect(latest?.target?.metricAlertRule?.name).toBe('New name');
+    expect(requests()).toBe(1);
+    page.unsubscribe();
+  });
+});

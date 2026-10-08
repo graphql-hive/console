@@ -3,15 +3,15 @@ import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphq
 import { throttle } from 'lodash';
 import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { useTheme } from '@/components/theme/theme-provider';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-group';
 import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useLocalStorage, useSlugs, useToggle } from '@/lib/hooks';
@@ -767,7 +767,7 @@ function LaboratoryPageContent(props: {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Title>Laboratory</Title>
-              <div className="bg-line h-4 w-px" />
+              <div className="h-4 w-px bg-line" />
               <ToggleGroup
                 aria-label="Laboratory version"
                 value={props.defaultLaboratoryTab}
@@ -781,7 +781,7 @@ function LaboratoryPageContent(props: {
                     label: (
                       <>
                         Hive Laboratory
-                        <span className="bg-accent ml-1 size-2 rounded-full" />
+                        <span className="ml-1 size-2 rounded-full bg-accent" />
                       </>
                     ),
                   },
@@ -795,7 +795,7 @@ function LaboratoryPageContent(props: {
               <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
             </p>
           </div>
-          <div className="ml-auto mr-0 flex flex-col justify-center">
+          <div className="mr-0 ml-auto flex flex-col justify-center">
             <div>
               {query.data && !query.data.target?.graphqlEndpointUrl ? (
                 <RouterLink
@@ -847,6 +847,7 @@ function LaboratoryPageContent(props: {
             defaultEndpoint={url}
             theme={resolvedTheme}
             defaultSchemaIntrospection={introspection}
+            enableDocs
             {...laboratoryState}
             plugins={[
               TargetEnvPlugin({
@@ -897,12 +898,12 @@ export function TargetLaboratoryPage(props: {
           </Button>
         }
       >
-        <p className="text-fg-default text-sm">
+        <p className="text-sm text-fg-default">
           You always can switch to the old GraphiQL based Laboratory by using the tab switcher in
           the top left cornder.
         </p>
       </Dialog>
-      <LayoutContent className="h-(--content-height) flex flex-col pb-0">
+      <LayoutContent className="flex h-(--content-height) flex-col pb-0">
         <LaboratoryPageContent {...props} />
       </LayoutContent>
     </>

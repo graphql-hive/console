@@ -1,9 +1,9 @@
 import { ReactElement } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
 import { InfoIcon } from 'lucide-react';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Markdown } from '@/components/v2/markdown';
+import { Markdown } from '@/components/ui/markdown';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
 import { DocsLink } from '../ui/docs-note';
@@ -69,7 +69,7 @@ export function PolicyListItem(props: {
                     <button
                       type="button"
                       aria-label="About this rule"
-                      className="text-accent ml-2 inline-block align-middle"
+                      className="ml-2 inline-block align-middle text-accent"
                     >
                       <InfoIcon className="size-4" />
                     </button>
@@ -95,7 +95,7 @@ export function PolicyListItem(props: {
                 <div>
                   <SeverityLevelToggle canTurnOff={props.overridingParentRule} rule={ruleInfo.id} />
                 </div>
-                <div className="[&>*]:border-l-line grid grow grid-cols-4 align-middle [&>*]:min-h-[40px] [&>*]:border-l-[1px]">
+                <div className="grid grow grid-cols-4 align-middle [&>*]:min-h-[40px] [&>*]:border-l-[1px] [&>*]:border-l-line">
                   {shouldShowRuleConfig && (
                     <PolicyRuleConfig
                       rule={ruleInfo.id}
@@ -107,8 +107,8 @@ export function PolicyListItem(props: {
               </div>
             ) : null}
             {props.overridingParentRule && enabled ? (
-              <div className="text-fg-secondary mt-4 text-xs font-medium">
-                <p className="text-accent mr-2 inline-block text-sm font-medium">!</p>
+              <div className="mt-4 text-xs font-medium text-fg-secondary">
+                <p className="mr-2 inline-block text-sm font-medium text-accent">!</p>
                 You are {severity === RuleInstanceSeverityLevel.Off ? 'disabling' : 'overriding'} a
                 rule configured at the organization level
               </div>

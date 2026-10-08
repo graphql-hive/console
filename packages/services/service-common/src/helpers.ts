@@ -33,6 +33,10 @@ export function invariant(
   throw new Error(value);
 }
 
+export function fail(message: string): never {
+  throw new Error(message);
+}
+
 export function maskToken(token: string, visibleStart = 3, visibleEnd = 3): string {
   if (token.length <= visibleStart + visibleEnd) {
     return token;

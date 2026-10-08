@@ -2,9 +2,9 @@ import { useCallback, useEffect } from 'react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation } from 'urql';
 import { AuthCard, AuthCardStack } from '@/components/auth';
-import { Button } from '@/components/base/button/button';
-import { useToast } from '@/components/base/toast/toast';
 import { Meta } from '@/components/ui/meta';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 
@@ -182,7 +182,7 @@ function AuthVerifyEmail() {
         content={
           <AuthCardStack>
             <div className="flex justify-center">
-              <div className="border-t-fg-muted size-8 animate-spin rounded-full border-2" />
+              <div className="size-8 animate-spin rounded-full border-2 border-t-fg-muted" />
             </div>
           </AuthCardStack>
         }

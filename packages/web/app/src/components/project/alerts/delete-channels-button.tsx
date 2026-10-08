@@ -1,5 +1,5 @@
 import { useMutation } from 'urql';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 

@@ -1,10 +1,6 @@
 import { useMemo, useState } from 'react';
 import { subMinutes } from 'date-fns';
 import { useQuery } from 'urql';
-import { Select } from '@/components/base/floating/select/select';
-import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
-import { PageLead } from '@/components/base/page-lead';
-import { Spinner } from '@/components/base/spinner/spinner';
 import { BackLink } from '@/components/navigation/back-link';
 import { AlertConditionsPanel } from '@/components/target/alerts/alert-conditions-panel';
 import {
@@ -14,6 +10,11 @@ import {
 import { AlertMetricChart } from '@/components/target/alerts/alert-metric-chart';
 import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { AlertStateTransitionsBar } from '@/components/target/alerts/alert-state-transitions-bar';
+import { viewRangeOptions, viewRangeWithin } from '@/components/target/alerts/view-range-options';
+import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
+import { PageLead } from '@/components/ui/page-lead';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { graphql } from '@/gql';
 import {
   MetricAlertRuleDirection,
@@ -26,6 +27,7 @@ import { useSlugs } from '@/lib/hooks';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useLayoutQuery } from '@/lib/hooks/use-layout-query';
 import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -139,14 +141,6 @@ const TargetAlertsDetailPage_StateLogQuery = graphql(`
   }
 `);
 
-const VIEW_RANGE_OPTIONS = [
-  { value: '60', label: 'Last 1 hour' },
-  { value: '360', label: 'Last 6 hours' },
-  { value: '1440', label: 'Last 24 hours' },
-  { value: '10080', label: 'Last 7 days' },
-  { value: '43200', label: 'Last 30 days' },
-] as const;
-
 const METRIC_LABEL_BY_TYPE: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.ErrorRate]: 'error rate',
   [MetricAlertRuleType.Latency]: 'latency',
@@ -198,7 +192,10 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   const { ruleId } = props;
   const navigate = useNavigate();
 
-  const [viewRangeMinutes, setViewRangeMinutes] = useState('60');
+  const [selectedRange, setSelectedRange] = useState('60');
+  const retentionInDays = useLayoutQuery('target').data?.organization?.usageRetentionInDays;
+  const rangeOptions = useMemo(() => viewRangeOptions(retentionInDays), [retentionInDays]);
+  const viewRangeMinutes = viewRangeWithin(rangeOptions, selectedRange);
 
   const [result] = useQuery({
     query: TargetAlertsDetailPage_RuleConfigQuery,
@@ -212,7 +209,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   if (result.error && !result.data) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center py-28">
-        <div className="text-critical text-sm">
+        <div className="text-sm text-critical">
           Failed to load alert rule: {result.error.message}
         </div>
       </div>
@@ -257,16 +254,16 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
         <div className="flex">
           <Select
             aria-label="Time range"
-            options={VIEW_RANGE_OPTIONS}
+            options={rangeOptions}
             value={viewRangeMinutes}
-            onValueChange={setViewRangeMinutes}
+            onValueChange={setSelectedRange}
           />
         </div>
 
         <RuleStateLogSection ruleId={rule.id} viewRangeMinutes={viewRangeMinutes} rule={rule} />
       </div>
 
-      <aside className="w-94 sticky top-6 shrink-0 self-start">
+      <aside className="sticky top-6 w-94 shrink-0 self-start">
         <AlertConditionsPanel
           rule={rule}
           onRuleDeleted={() => {
@@ -320,7 +317,7 @@ function RuleStateLogSection(props: {
   const hasNoData = !data;
   const stateLogStatus =
     result.error && hasNoData ? (
-      <div className="text-critical py-4 text-sm">
+      <div className="py-4 text-sm text-critical">
         Failed to load status transitions: {result.error.message}
       </div>
     ) : result.fetching && hasNoData ? (
@@ -332,7 +329,7 @@ function RuleStateLogSection(props: {
   return (
     <>
       <section className="space-y-2">
-        <h2 className="text-fg m-0 mb-2 text-sm font-medium">Status transitions</h2>
+        <h2 className="m-0 mb-2 text-sm font-medium text-fg">Status transitions</h2>
         {stateLogStatus ?? (
           <AlertStateTransitionsBar
             stateLog={stateLog}
@@ -345,7 +342,7 @@ function RuleStateLogSection(props: {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-fg m-0 text-sm font-medium">
+        <h2 className="m-0 text-sm font-medium text-fg">
           {rule.type === MetricAlertRuleType.ErrorRate
             ? 'Error rate over time'
             : rule.type === MetricAlertRuleType.Latency

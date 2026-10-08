@@ -2,10 +2,10 @@ import { useId, useRef, useState } from 'react';
 import { Check, X } from 'lucide-react';
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@/components/base/button/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { itemVariants } from '@/components/base/floating/shared-styles';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { itemVariants } from '@/components/ui/primitives/floating/shared-styles';
 import {
   Form,
   FormControl,
@@ -13,9 +13,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
-import { Label } from '@/components/base/label/label';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Label } from '@/components/ui/primitives/label/label';
 import { cn } from '@/lib/utils';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
@@ -42,7 +42,7 @@ function TagSuggestions(props: {
 }) {
   return (
     <div className="w-[200px] p-1">
-      <div className="text-fg-secondary px-2 py-1.5 text-xs font-medium">
+      <div className="px-2 py-1.5 text-xs font-medium text-fg-secondary">
         Tags from latest schema version
       </div>
       {props.tags.map(value => (
@@ -52,7 +52,7 @@ function TagSuggestions(props: {
           onClick={() => props.onToggle(value)}
           className={itemVariants({
             selected: props.selected.includes(value),
-            className: 'hover:bg-surface-hover hover:text-fg w-full',
+            className: 'w-full hover:bg-surface-hover hover:text-fg',
           })}
         >
           <Check

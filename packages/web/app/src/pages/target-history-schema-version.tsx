@@ -27,27 +27,27 @@ import {
   TriangleAlertIcon,
   XCircleIcon,
 } from 'lucide-react';
-import reactStringReplace from 'react-string-replace';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { CopyChip } from '@/components/base/copy-chip/copy-chip';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
-import { Select } from '@/components/base/floating/select/select';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Legend } from '@/components/base/legend/legend';
-import { NotFound } from '@/components/base/not-found/not-found';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { StatusDot } from '@/components/base/status-dot/status-dot';
-import { TabbedView } from '@/components/base/tabs/tabbed-view';
+import { CompositionErrorMessage } from '@/components/target/history/composition-error-message';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
 import {
   ChangesBlock,
   CompositionErrorsSection_SchemaErrorConnection,
 } from '@/components/target/history/errors-and-changes';
 import { File, MultiFileDiff } from '@/components/ui/diffs';
+import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
 import { Link } from '@/components/ui/link';
+import { NotFound } from '@/components/ui/not-found/not-found';
+import { Button } from '@/components/ui/primitives/button/button';
+import { CopyChip } from '@/components/ui/primitives/copy-chip/copy-chip';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { QueryError } from '@/components/ui/query-error';
+import { ScopeBar } from '@/components/ui/scope-bar/scope-bar';
+import { TabbedView } from '@/components/ui/tabbed-view/tabbed-view';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
@@ -101,7 +101,7 @@ export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string 
 
   if (isLoading) {
     return (
-      <div className="text-fg-secondary flex size-full flex-col items-center justify-center self-center text-sm">
+      <div className="flex size-full flex-col items-center justify-center self-center text-sm text-fg-secondary">
         <span className="mb-3">
           <Spinner variants={{ size: 'lg' }} />
         </span>
@@ -267,7 +267,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
   const contractPicker = !contractVersions.length ? (
     schemaVersion.contractVersions?.edges ? (
-      <span className="text-fg-default inline-flex items-center gap-1.5 px-2 text-xs">
+      <span className="inline-flex items-center gap-1.5 px-2 text-xs text-fg-default">
         {versionStatusIcon(schemaVersion, DEFAULT_GRAPH_LABELS)}
         Default Graph
       </span>
@@ -300,8 +300,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         })),
       ]}
       size="compact"
-      onSurface="raised"
-      width="md"
+      width="auto"
     />
   );
 
@@ -397,11 +396,6 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
       {/* A monolithic schema has no subgraphs, so its summary sits on the page without tabs. */}
       {schemaVersion.subgraphDiffs ? (
         <div className="mt-3 flex flex-col gap-3">
-          {contractVersions.length ? (
-            <div className="flex justify-end">
-              <Legend items={CONTRACT_STATUS_LEGEND} />
-            </div>
-          ) : null}
           {failures.length ? (
             <div className="mb-3">
               <FailureCard
@@ -411,10 +405,15 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
               />
             </div>
           ) : null}
+          {contractPicker ? (
+            <ScopeBar
+              picker={contractPicker}
+              legend={contractVersions.length ? CONTRACT_STATUS_LEGEND : undefined}
+            />
+          ) : null}
           <TabbedView
             value={selectedView}
             onValueChange={setSelectedView}
-            action={contractPicker}
             items={[
               {
                 value: 'details',
@@ -463,10 +462,10 @@ function versionStatus(version: VersionStatusFlags, labels: VersionStatusLabels)
     return { icon: <GitCompareIcon className="size-3.5" />, label: labels.changed };
   }
   if (version.isComposable) {
-    return { icon: <CheckIcon className="text-success size-3.5" />, label: labels.succeeded };
+    return { icon: <CheckIcon className="size-3.5 text-success" />, label: labels.succeeded };
   }
   return {
-    icon: <TriangleAlertIcon className="text-critical size-3.5" />,
+    icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
     label: labels.failed,
   };
 }
@@ -489,9 +488,9 @@ const CONTRACT_LABELS: VersionStatusLabels = {
 };
 
 const CONTRACT_STATUS_LEGEND = [
-  { icon: <TriangleAlertIcon className="text-critical size-3.5" />, label: 'Failed' },
+  { icon: <TriangleAlertIcon className="size-3.5 text-critical" />, label: 'Failed' },
   { icon: <GitCompareIcon className="size-3.5" />, label: 'Schema changed' },
-  { icon: <CheckIcon className="text-success size-3.5" />, label: 'Passed' },
+  { icon: <CheckIcon className="size-3.5 text-success" />, label: 'Passed' },
 ];
 
 function GraphQLSchemaView(props: {
@@ -619,7 +618,7 @@ function FilterableSchemaChangeBlock(props: {
       <GenericGraphCard title={props.title}>
         <div className="px-5">
           {filteredChanges?.length ? (
-            <div className="pb-8 pt-2">
+            <div className="pt-2 pb-8">
               <ChangesBlock changes={filteredChanges} />
             </div>
           ) : selectedChangeType !== null ? (
@@ -976,10 +975,10 @@ function FirstComposableGraphVersion() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="text-success size-4" />
-        <h2 className="text-fg text-base font-medium">First composable graph</h2>
+        <CircleCheckIcon className="size-4 text-success" />
+        <h2 className="text-base font-medium text-fg">First composable graph</h2>
       </div>
-      <p className="text-fg-secondary text-xs">
+      <p className="text-xs text-fg-secondary">
         Congratulations! This is the first version of the graph that is composable.
       </p>
     </div>
@@ -990,10 +989,10 @@ function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="text-success size-4" />
-        <h2 className="text-fg text-base font-medium">No Graph Changes</h2>
+        <CircleCheckIcon className="size-4 text-success" />
+        <h2 className="text-base font-medium text-fg">No Graph Changes</h2>
       </div>
-      <p className="text-fg-secondary text-xs">There are no public facing changes in the graph.</p>
+      <p className="text-xs text-fg-secondary">There are no public facing changes in the graph.</p>
     </div>
   );
 }
@@ -1158,7 +1157,7 @@ function SchemaVersionHeader(props: {
   return (
     <header>
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-        <h1 className="text-fg text-xl font-semibold leading-tight">Graph Version</h1>
+        <h1 className="text-xl leading-tight font-semibold text-fg">Graph Version</h1>
         <CopyChip
           value={schemaVersion.id}
           label={
@@ -1169,10 +1168,10 @@ function SchemaVersionHeader(props: {
           }
         />
       </div>
-      <p className="text-fg-secondary mt-1.5 text-sm">
+      <p className="mt-1.5 text-sm text-fg-secondary">
         Detailed view of the graph version changes.
       </p>
-      <div className="bg-surface-card mt-6 rounded-md border px-5 py-4">
+      <div className="mt-6 rounded-md border bg-surface-card px-5 py-4">
         <DescriptionList
           variants={{ termStyle: 'title', columns: 'auto' }}
           rows={[
@@ -1233,7 +1232,7 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors',
+              'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors hover:bg-surface-hover',
               isActive ? 'bg-surface-selected' : 'hover:',
             )}
           >
@@ -1261,7 +1260,7 @@ function ChangeTypeToggle(props: {
       <button
         onClick={() => props.onChange(null)}
         className={cn(
-          'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
+          'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs hover:bg-surface-hover',
           props.selectedChangeType === null ? 'bg-surface-selected' : 'hover:',
         )}
       >
@@ -1275,7 +1274,7 @@ function ChangeTypeToggle(props: {
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              'hover:bg-surface-hover inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs',
+              'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs hover:bg-surface-hover',
               isActive ? 'bg-surface-selected' : 'hover:',
             )}
           >
@@ -1297,77 +1296,45 @@ const CompositionErrors = (props: {
   );
 
   return (
-    <div className="border-critical-line overflow-hidden rounded-xl border">
-      <div className="border-critical-line bg-critical-tint-subtle flex items-start gap-3 border-b px-5 py-4">
-        <div className="border-critical-line mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border">
-          <XCircleIcon className="text-critical h-4 w-4" />
+    <div className="overflow-hidden rounded-xl border border-critical-line">
+      <div className="flex items-start gap-3 border-b border-critical-line bg-critical-tint-subtle px-5 py-4">
+        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-critical-line">
+          <XCircleIcon className="h-4 w-4 text-critical" />
         </div>
 
-        <div className="text-fg min-w-0">
+        <div className="min-w-0 text-fg">
           <h3 className="text-sm font-semibold">Supergraph not composable</h3>
           <p className="mt-0.5 text-[12.5px]">
             Errors occurred while attempting to compose the supergraph from its subgraphs.
           </p>
         </div>
 
-        <span className="focus:ring-accent text-2xs border-critical-line bg-critical-tint text-critical ml-auto inline-flex items-center rounded-full border px-2.5 py-0.5 font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2">
-          <span className="bg-critical mr-1 h-1.5 w-1.5 rounded-full" />
+        <span className="ml-auto inline-flex items-center rounded-full border border-critical-line bg-critical-tint px-2.5 py-0.5 text-2xs font-semibold text-critical transition-colors focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:outline-none">
+          <span className="mr-1 h-1.5 w-1.5 rounded-full bg-critical" />
           {compositionErrors.edges.length} error
           {compositionErrors.edges.length === 1 ? '' : 's'}
         </span>
       </div>
 
-      <div className="text-fg flex items-center gap-2 px-5 pt-4">
+      <div className="flex items-center gap-2 px-5 pt-4 pb-1 text-fg">
         <span className="text-sm font-medium">Composition errors</span>
         <CompositionErrorsPopover />
       </div>
 
-      <ul className="divide-line-subtle divide-y px-1 pb-2">
+      <ul className="divide-y divide-critical-line-subtle px-1 pb-2">
         {compositionErrors.edges.map((err, idx) => (
           <li key={idx} className="flex gap-3 px-4 py-3">
-            <span className="text-fg-subtle mt-0.5 w-6 shrink-0 select-none font-mono text-xs">
+            <span className="mt-0.5 w-6 shrink-0 font-mono text-xs text-critical select-none">
               {String(idx + 1).padStart(2, '0')}
             </span>
 
-            <p className="text-fg flex flex-wrap items-baseline gap-y-1 text-sm">
-              <CompositionError message={err.node.message} />
-            </p>
+            <CompositionErrorMessage message={err.node.message} />
           </li>
         ))}
       </ul>
     </div>
   );
 };
-
-export function CompositionError(props: { message: string }) {
-  return reactStringReplace(
-    reactStringReplace(
-      reactStringReplace(props.message, /"([^"]+)"/g, (match, index) => {
-        return <Token key={match + index}>{match}</Token>;
-      }),
-      /(@[^. ]+)/g,
-      (match, index) => {
-        return <Token key={match + index}>{match}</Token>;
-      },
-    ),
-    /Unknown type ([A-Za-z_0-9]+)/g,
-    (match, index) => {
-      return (
-        <span key={match + index}>
-          Unknown type <Token>{match}</Token>
-        </span>
-      );
-    },
-  );
-}
-
-function Token(props: { children: React.ReactNode }) {
-  return (
-    <code className="mx-0.5 inline-flex items-center rounded-md border px-1.5 py-0.5 align-baseline text-xs leading-none">
-      {props.children}
-    </code>
-  );
-}
 
 const SchemaVersionSummary_SchemaVersionFragment = graphql(`
   fragment SchemaVersionSummary_SchemaVersionFragment on SchemaVersion {
@@ -1440,8 +1407,8 @@ const SchemaVersionSummary_ContractVersionFragment = graphql(`
 function SectionHeader(props: { title: string; subtitle: string }) {
   return (
     <div>
-      <h2 className="text-fg text-base font-semibold">{props.title}</h2>
-      <p className="text-fg-secondary mt-0.5 text-sm">{props.subtitle}</p>
+      <h2 className="text-base font-semibold text-fg">{props.title}</h2>
+      <p className="mt-0.5 text-sm text-fg-secondary">{props.subtitle}</p>
     </div>
   );
 }
@@ -1511,7 +1478,7 @@ export const SchemaVersionSummary = (props: {
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader title="Summary" subtitle="Changes introduced by this version." />
-      <div className="bg-surface-card grid grid-cols-3 gap-px overflow-hidden rounded-xl border 2xl:grid-cols-6">
+      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border bg-surface-card 2xl:grid-cols-6">
         <Stat label="Schema changes" value={publicChangeStats.totalChanges} />
         <Stat
           label="Breaking changes"
@@ -1521,7 +1488,7 @@ export const SchemaVersionSummary = (props: {
               publicChangeStats.notSafeChanges ? (
                 <Tooltip
                   trigger={
-                    <span className="text-critical ml-2 flex items-center gap-0.5 text-xs lg:text-sm">
+                    <span className="ml-2 flex items-center gap-0.5 text-xs text-critical lg:text-sm">
                       <ShieldAlertIcon size="14" className="inline" />
                       {publicChangeStats.notSafeChanges} not safe
                     </span>
@@ -1531,7 +1498,7 @@ export const SchemaVersionSummary = (props: {
               ) : (
                 <Tooltip
                   trigger={
-                    <span className="text-success pl-2 text-base">
+                    <span className="pl-2 text-base text-success">
                       <CheckIcon size="14" className="inline" /> All safe
                     </span>
                   }
@@ -1557,12 +1524,12 @@ export const SchemaVersionSummary = (props: {
 
       {schemaVersion.subgraphDiffs && (
         <div className="overflow-hidden rounded-xl border">
-          <div className="bg-surface-card flex items-center justify-between border-b px-5 py-3">
+          <div className="flex items-center justify-between border-b bg-surface-card px-5 py-3">
             <div className="flex items-center gap-2 text-xs font-bold capitalize">
               Subgraph Overview
             </div>
           </div>
-          <ul className="bg-surface-inset divide-y">
+          <ul className="divide-y bg-surface-inset">
             {schemaVersion.subgraphDiffs
               .sort(diff => (diff.__typename === 'SubgraphDiffUnchanged' ? 1 : -1))
               .map((diff, index) => (
@@ -1776,7 +1743,7 @@ function SubgraphLink(props: { url: string }) {
       href={props.url}
       target="_blank"
       rel="noreferrer"
-      className="text-fg-default inline-flex w-fit items-center gap-1 text-xs"
+      className="inline-flex w-fit items-center gap-1 text-xs text-fg-default"
     >
       {props.url}
       <ExternalLink className="h-2.5 w-2.5" />
@@ -1787,7 +1754,7 @@ function SubgraphLink(props: { url: string }) {
 function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actions?: ReactNode }) {
   return (
     <div className="divide-y overflow-hidden rounded-xl border">
-      <div className="bg-surface-card flex items-center gap-4 px-5 py-3.5">
+      <div className="flex items-center gap-4 bg-surface-card px-5 py-3.5">
         <span
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1',

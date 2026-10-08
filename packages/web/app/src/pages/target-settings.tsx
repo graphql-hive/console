@@ -11,14 +11,6 @@ import { formatISO } from 'date-fns';
 import { Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Navigation } from '@/components/base/navigation/navigation';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { Switch } from '@/components/base/switch/switch';
-import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { SchemaEditor } from '@/components/schema-editor';
@@ -44,16 +36,24 @@ import {
   type GraphqlEndpointFormValues,
 } from '@/components/target/settings/graphql-endpoint-form';
 import { CreateAccessTokenModal } from '@/components/target/settings/registry-access-token';
+import { Combobox } from '@/components/ui/combobox';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Meta } from '@/components/ui/meta';
+import { Navigation } from '@/components/ui/navigation/navigation';
 import {
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { Switch } from '@/components/ui/primitives/switch/switch';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { Combobox } from '@/components/v2/combobox';
 import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import {
@@ -312,7 +312,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         <Button variant="outline" onClick={() => setBaseSchema(props.baseSchema)}>
           Reset
         </Button>
-        {isUnsaved && <span className="text-success text-sm">Unsaved changes!</span>}
+        {isUnsaved && <span className="text-sm text-success">Unsaved changes!</span>}
       </div>
     </SubPageLayout>
   );
@@ -335,6 +335,7 @@ function ClientExclusion(
     {
       selectedTargetIds: string[];
       clientsFromSettings: string[];
+      retentionInDays: number;
       value: string[];
     } & Pick<ComponentProps<typeof Combobox>, 'name' | 'disabled' | 'onBlur' | 'onChange'>
   >,
@@ -348,8 +349,9 @@ function ClientExclusion(
         organizationSlug,
         projectSlug,
         targetIds: props.selectedTargetIds,
+        // Clients seen in the last 90 days, or as far back as the plan keeps.
         period: {
-          from: formatISO(subDays(now, 90)),
+          from: formatISO(subDays(now, Math.min(90, props.retentionInDays))),
           to: formatISO(now),
         },
       },
@@ -419,7 +421,7 @@ function AppDeploymentExclusion(
 
   if (availableAppDeploymentNamesQuery.error) {
     return (
-      <div className="text-critical text-sm">Failed to load app deployments. Please try again.</div>
+      <div className="text-sm text-critical">Failed to load app deployments. Please try again.</div>
     );
   }
 
@@ -739,7 +741,7 @@ export const BreakingChanges = () => {
         />
 
         {dangerousAsBreaking.error && (
-          <span className="text-critical ml-2">
+          <span className="ml-2 text-critical">
             {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
               dangerousAsBreaking.error.message}
           </span>
@@ -797,6 +799,7 @@ export const BreakingChanges = () => {
             <ClientExclusion
               selectedTargetIds={targetIds}
               clientsFromSettings={configuration?.excludedClients ?? []}
+              retentionInDays={maxPeriod}
               name={field.name}
               value={field.value}
               onBlur={field.onBlur}
@@ -925,7 +928,7 @@ export const AppDeploymentProtection = () => {
               </p>
               <p>
                 Use{' '}
-                <code className="bg-surface-code rounded-sm px-1 py-0.5 text-xs">
+                <code className="rounded-sm bg-surface-code px-1 py-0.5 text-xs">
                   hive app:retire --force
                 </code>{' '}
                 to bypass protection.
@@ -1591,7 +1594,7 @@ export function DangerousChangeTypeForm({
 
 function JustSavedLabel() {
   return (
-    <div className="text-success inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
+    <div className="inline-flex flex-row items-center gap-1 text-success italic subpixel-antialiased">
       <JustSavedIndicator />
       <span>Saved just now</span>
     </div>
@@ -1599,12 +1602,12 @@ function JustSavedLabel() {
 }
 
 function JustSavedIndicator() {
-  return <Check className="text-success size-5" />;
+  return <Check className="size-5 text-success" />;
 }
 
 function SavedLabel() {
   return (
-    <div className="text-fg-secondary inline-flex flex-row items-center gap-1 italic subpixel-antialiased">
+    <div className="inline-flex flex-row items-center gap-1 text-fg-secondary italic subpixel-antialiased">
       <SavedIndicator />
       <span>All changes saved</span>
     </div>
@@ -1612,12 +1615,12 @@ function SavedLabel() {
 }
 
 function SavedIndicator() {
-  return <Check className="text-fg-secondary size-5" />;
+  return <Check className="size-5 text-fg-secondary" />;
 }
 
 function UnsavedChangesLabel() {
   return (
-    <div className="text-accent inline-flex flex-row items-center gap-2 italic subpixel-antialiased">
+    <div className="inline-flex flex-row items-center gap-2 text-accent italic subpixel-antialiased">
       <PendingIndicator />
       <span>Unsaved changes</span>
     </div>

@@ -3,9 +3,9 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Callout } from '@/components/ui/callout';
 import { Heading } from '@/components/ui/heading';
+import { InlineCode } from '@/components/ui/inline-code';
+import Stat from '@/components/ui/stat';
 import { Text } from '@/components/ui/text';
-import { InlineCode } from '@/components/v2/inline-code';
-import Stat from '@/components/v2/stat';
 import { CallSite, InventoryList } from './shared';
 
 export const nav: NavPath = 'Inventory/Presentational';
@@ -49,7 +49,7 @@ const ENTRIES = [
     coveredBy: 'Typography',
   },
   {
-    source: 'PlanSummary.tsx ×4, organization-subscription.tsx, -manage.tsx, AdminStats.tsx',
+    source: 'PlanSummary.tsx ×4, organization-subscription.tsx, -manage.tsx, admin-stats.tsx',
     origin: 'v2',
     what: 'Stat — a dl/dt/dd compound. A page-local Stat of the same name shadows it elsewhere',
     coveredBy: 'Stat',
@@ -72,7 +72,7 @@ export const Inventory = createPreview({
           <strong>Two pairs do the same job twice.</strong> Alert and Callout are both banners.
           Heading and Text are both typography, and Text has one call site. Each pair disagrees on
           scale, palette and API. Badge, BadgeRounded and Tag were here too until round 5 moved them
-          onto base Badge, StatusDot and Callout; see Base/Primitives/Badge.
+          onto base Badge, StatusDot and Callout; see Primitives/Badge.
           <br />
           <br />
           <strong>Unreachable variants, delete rather than port:</strong> Heading <code>2xl</code>;
@@ -201,7 +201,7 @@ export const Typography = createPreview({
         origin="ui"
         note="Text's only call site, and it does not work. It asks for arrangement='block', but the component destructures color/size/weight/align and calls textVariants({ color, size, weight, align }) - arrangement is never passed through. It also never forwards `as`, so this renders as an inline span. The centring below comes from align, not from block."
       >
-        <div className="border-line w-[28rem] rounded-md border border-dashed p-3">
+        <div className="w-[28rem] rounded-md border border-dashed border-line p-3">
           <Text arrangement="block" align="center" size="small" color="secondary">
             Don&apos;t have an account?{' '}
             <a href="#" className="text-accent underline">
@@ -264,7 +264,7 @@ export const StatPreview = createPreview({
         origin="v2"
         note="A name collision worth knowing about before migrating. That page defines its OWN Stat - `<Stat label value additionalValue />` - which shadows v2/stat entirely and accounts for 6 of the 13 <Stat> matches a naive grep returns. v2/stat has 7 real render sites, not 13."
       >
-        <div className="border-line text-fg-default rounded-md border border-dashed p-3 text-xs">
+        <div className="rounded-md border border-dashed border-line p-3 text-xs text-fg-default">
           Not rendered: it is a page-local component, not a shared primitive. Migrating v2/stat does
           not touch it.
         </div>

@@ -1,29 +1,32 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
-import { formatISO, subDays } from 'date-fns';
+import { formatISO } from 'date-fns';
 import { BellRing, Lock, Users } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { FilterDropdown } from '@/components/base/floating/filter-dropdown/filter-dropdown';
-import type { FilterItem, FilterSelection } from '@/components/base/floating/filter-dropdown/types';
-import { Input } from '@/components/base/input/input';
-import { PageLead } from '@/components/base/page-lead';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { StatCard } from '@/components/base/stat-card/stat-card';
-import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { BackLink } from '@/components/navigation/back-link';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
+import { FilterDropdown } from '@/components/ui/filters/filter-dropdown/filter-dropdown';
+import type { FilterItem, FilterSelection } from '@/components/ui/filters/filter-dropdown/types';
 import { Meta } from '@/components/ui/meta';
+import { PageLead } from '@/components/ui/page-lead';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
+import { StatCard } from '@/components/ui/stat-card/stat-card';
 import { graphql } from '@/gql';
 import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { parse } from '@/lib/date-math';
 import { useSlugs } from '@/lib/hooks';
+import { retentionBoundary } from '@/lib/hooks/use-date-range-controller';
+import { useRangeWithin } from '@/lib/hooks/use-range-within';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
@@ -326,10 +329,10 @@ function SavedFilterRowFilters({
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const { operationHashes, clientFilters } = filter.filters;
 
+  const startDate = useMemo(() => retentionBoundary(dataRetentionInDays), [dataRetentionInDays]);
+  // A range saved before a downgrade, or before retention was enforced, shows the default instead.
   const savedDateRange = filter.filters.dateRange ?? DEFAULT_DATE_RANGE;
-  const [dateRange, setDateRange] = useState(savedDateRange);
-
-  const startDate = useMemo(() => subDays(new Date(), dataRetentionInDays), [dataRetentionInDays]);
+  const [dateRange, setDateRange] = useRangeWithin(savedDateRange, startDate, DEFAULT_DATE_RANGE);
 
   const resolvedPeriod = useMemo(() => {
     const from = parse(dateRange.from);
@@ -573,8 +576,8 @@ function SavedFilterRowFilters({
           selectedRange={dateRange}
           onUpdate={({ preset }) => setDateRange(preset.range)}
           startDate={startDate}
-          validUnits={['y', 'M', 'w', 'd', 'h']}
           align="start"
+          footer={<RetentionNote retentionInDays={dataRetentionInDays} subject="usage data" />}
         />
         {showOperationFilter && operationItems.length > 0 && (
           <FilterDropdown
@@ -610,6 +613,11 @@ function SavedFilterRowFilters({
           />
         )}
         {loading && <Spinner />}
+        {opsQuery.error && !loading && (
+          <span className="text-xs text-critical">
+            {opsQuery.error.graphQLErrors[0]?.message ?? opsQuery.error.message}
+          </span>
+        )}
       </div>
       {filter.viewerCanUpdate && (
         <div className="mt-3 flex gap-2">
@@ -803,7 +811,7 @@ export function TargetInsightsManageFiltersPage(): ReactElement {
     <>
       <Meta title="Manage saved filters" />
       <LayoutContent>
-        <div className="pb-3 pt-6">
+        <div className="pt-6 pb-3">
           <BackLink
             copy="Back to Insights"
             link={{

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { CheckIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { Tabs } from '@/components/base/tabs/tabs';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { Tabs } from '@/components/ui/primitives/tabs/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { ExternalCompositionSettings } from './external-composition';

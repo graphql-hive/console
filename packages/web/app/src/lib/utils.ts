@@ -76,14 +76,8 @@ function readResolvedColors() {
 
 function readChartStyles() {
   const s = getComputedStyle(document.documentElement);
-  const textColor = s.getPropertyValue('--color-fg').trim();
 
   return {
-    styles: {
-      backgroundColor: 'transparent' as const,
-      textStyle: { color: textColor },
-      legend: { textStyle: { color: textColor } },
-    },
     colors: {
       ...readResolvedColors(),
       primary: cssVarHex(s, '--chart-1'),
@@ -159,11 +153,6 @@ export function exhaustiveGuard(_value: never): never {
   throw new Error(
     `Reached forbidden guard function with unexpected value: ${JSON.stringify(_value)}`,
   );
-}
-
-// Validation
-export function isValidUUID(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
 type Truthy<T> = T extends false | '' | 0 | null | undefined ? never : T; // from lodash

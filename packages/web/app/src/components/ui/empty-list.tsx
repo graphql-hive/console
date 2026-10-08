@@ -1,6 +1,6 @@
 import { ReactElement, ReactNode } from 'react';
 import magnifier from '../../../public/images/figures/magnifier.svg?url';
-import { Card } from '@/components/base/card/card';
+import { Card } from '@/components/ui/primitives/card/card';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { Code } from './code';
@@ -32,7 +32,7 @@ export const EmptyList = ({
             className="drag-none"
           />
           <Heading className="text-center">{title}</Heading>
-          <span className="text-fg-secondary text-center text-sm font-medium">{description}</span>
+          <span className="text-center text-sm font-medium text-fg-secondary">{description}</span>
           <div className="py-4">{children}</div>
           {docsUrl && (
             <div className="pb-4">
@@ -68,7 +68,7 @@ export const NoSchemaVersion = ({
     if (recommendedAction === 'check') {
       children = (
         <>
-          <div className="text-fg-secondary flex w-full justify-center py-2 text-xs">
+          <div className="flex w-full justify-center py-2 text-xs text-fg-secondary">
             It's recommended to check that the schema is valid and compatible with the state of the
             registry before publishing.
           </div>
@@ -83,7 +83,7 @@ export const NoSchemaVersion = ({
       children = (
         <>
           {isDistributed && (
-            <div className="text-fg-secondary flex w-full justify-center py-2 text-xs">
+            <div className="flex w-full justify-center py-2 text-xs text-fg-secondary">
               For distributed systems, it's recommended to publish the schema after the service is
               deployed.
             </div>

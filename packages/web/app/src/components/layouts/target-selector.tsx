@@ -1,5 +1,5 @@
-import { Select } from '@/components/base/floating/select/select';
 import { PrimaryNavigationLink } from '@/components/navigation/primary-navigation-link';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import { graphql, useFragment } from '@/gql';
 import { useViewer } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';
@@ -82,7 +82,7 @@ export function TargetSelector(props: {
           linkText={currentOrganization.slug}
         />
       ) : (
-        <div className="bg-surface-skeleton h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
+        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-surface-skeleton" />
       )}
       <div className="text-fg-secondary italic">/</div>
       {currentOrganization && currentProject ? (
@@ -97,7 +97,7 @@ export function TargetSelector(props: {
           linkText={currentProject.slug}
         />
       ) : (
-        <div className="bg-surface-skeleton h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
+        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-surface-skeleton" />
       )}
       <div className="text-fg-secondary italic">/</div>
       {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
@@ -109,7 +109,7 @@ export function TargetSelector(props: {
           data-cy="target-picker-trigger"
         />
       ) : (
-        <div className="bg-surface-skeleton h-5 w-48 max-w-[200px] animate-pulse rounded-full" />
+        <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-surface-skeleton" />
       )}
     </>
   );

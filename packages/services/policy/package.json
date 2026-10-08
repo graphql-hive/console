@@ -9,19 +9,19 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@graphql-eslint/eslint-plugin": "3.20.1",
+    "@graphql-eslint/eslint-plugin": "catalog:",
     "@hive/service-common": "workspace:*",
-    "@sentry/node": "7.120.2",
-    "@trpc/server": "10.45.3",
+    "@sentry/node": "catalog:",
+    "@trpc/server": "catalog:",
     "@types/eslint": "8.56.12",
-    "ajv": "8.18.0",
-    "dotenv": "16.4.7",
+    "ajv": "catalog:",
+    "dotenv": "catalog:",
     "eslint": "8.57.1",
-    "fastify": "5.12.3",
+    "fastify": "catalog:",
     "graphql": "16.9.0",
-    "pino-pretty": "11.3.0",
+    "pino-pretty": "catalog:",
     "zod": "3.25.76",
-    "zod-validation-error": "3.4.0"
+    "zod-validation-error": "catalog:"
   },
   "buildOptions": {
     "runify": true,

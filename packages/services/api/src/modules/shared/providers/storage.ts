@@ -528,7 +528,7 @@ export interface Storage {
     withSDL?: boolean | null;
     /**
      * Optionally include changes (safe; breaking) in the result.
-     * This is seperated for performance reasons.
+     * This is separated for performance reasons.
      */
     withChanges?: boolean;
   }): Promise<

@@ -1,12 +1,12 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { Circle, Settings, TriangleAlertIcon, WandSparkles, XIcon } from 'lucide-react';
 import { editor } from 'monaco-editor/esm/vs/editor/editor.api';
-import { Button } from '@/components/base/button/button';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Select } from '@/components/base/floating/select/select';
-import { Input } from '@/components/base/input/input';
-import { Tabs } from '@/components/base/tabs/tabs';
-import { DiffEditor } from '@/components/v2';
+import { DiffEditor } from '@/components/ui/diff-editor';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Tabs } from '@/components/ui/primitives/tabs/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
@@ -291,7 +291,7 @@ export function ProposalEditor(props: {
                   <>
                     {isNewService ? (
                       <Circle
-                        className="text-success -ml-2 size-4 p-1"
+                        className="-ml-2 size-4 p-1 text-success"
                         fill="currentColor"
                         strokeWidth={0}
                       />
@@ -304,7 +304,7 @@ export function ProposalEditor(props: {
                     ) : (
                       schemaTitle(service)
                     )}
-                    {nameError ? <TriangleAlertIcon className="text-critical size-4" /> : null}
+                    {nameError ? <TriangleAlertIcon className="size-4 text-critical" /> : null}
                     {service.__typename === 'CompositeSchema' ? (
                       <span className="ml-2" onClick={() => onRemoveTab(idx)}>
                         <XIcon className={cn('size-4', !isActiveTab && 'hidden')} />
@@ -318,7 +318,7 @@ export function ProposalEditor(props: {
                     <div className="flex items-center justify-end border-b px-2 py-1">
                       <button
                         type="button"
-                        className="hover:text-accent ml-2 cursor-pointer p-1"
+                        className="ml-2 cursor-pointer p-1 hover:text-accent"
                         title="Prettify schema"
                         onClick={() => {
                           const prettierSource = prettier(activeService?.source ?? '');
@@ -333,7 +333,7 @@ export function ProposalEditor(props: {
                           trigger={
                             <button
                               type="button"
-                              className="hover:text-accent ml-2 cursor-pointer p-1"
+                              className="ml-2 cursor-pointer p-1 hover:text-accent"
                               aria-label="Edit schema settings"
                               title="Edit schema settings"
                             >
@@ -356,7 +356,7 @@ export function ProposalEditor(props: {
                                     invalid={nameError != null}
                                   />
                                   {nameError && (
-                                    <p className="text-critical mt-1 text-xs">{nameError}</p>
+                                    <p className="mt-1 text-xs text-critical">{nameError}</p>
                                   )}
                                 </div>
                               )}

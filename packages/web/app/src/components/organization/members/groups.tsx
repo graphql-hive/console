@@ -10,14 +10,14 @@ import {
 } from 'lucide-react';
 import { useClient, useMutation, useQuery } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Input } from '@/components/base/input/input';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Input } from '@/components/ui/primitives/input/input';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
@@ -93,7 +93,7 @@ export function Groups(): React.ReactElement | null {
         }
       />
       <div className="mt-4 overflow-hidden rounded-lg border">
-        <div className="bg-surface-card grid grid-cols-[1fr_auto_auto] gap-4 border-b px-4 py-3 text-sm font-medium">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-4 border-b bg-surface-card px-4 py-3 text-sm font-medium">
           <div>Group</div>
           <div className="w-24 text-center">Members</div>
           <div className="w-10" />
@@ -308,7 +308,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
       {isExpanded && (
         <>
           {groupDetailed ? (
-            <div className="border-line-subtle border-t">
+            <div className="border-t border-line-subtle">
               <div className="px-4 py-2 pl-16">
                 <div className="mb-2 text-xs font-medium">Role Mappings</div>
                 <div className="space-y-2">
@@ -376,7 +376,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
                     />
                   ))}
                   <button
-                    className="text-warning hover:text-warning flex items-center gap-1.5 py-1 text-xs transition-colors"
+                    className="flex items-center gap-1.5 py-1 text-xs text-warning transition-colors hover:text-warning"
                     onClick={() =>
                       setSheetNode(
                         <ManageGroupMappingSheet
@@ -429,7 +429,7 @@ function GroupRoleMappingRow(props: {
   );
 
   return (
-    <div className="bg-surface-card group flex items-center justify-between rounded-md px-3 py-1.5">
+    <div className="group flex items-center justify-between rounded-md bg-surface-card px-3 py-1.5">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Badge content={groupRoleMapping.role.name} />

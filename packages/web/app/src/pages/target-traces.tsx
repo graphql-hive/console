@@ -2,33 +2,28 @@ import { memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
-import { Bar, BarChart, ReferenceArea, XAxis } from 'recharts';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { RefreshButton } from '@/components/base/button/refresh-button';
-import { DataTable, type DataTablePaginationProp } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
 import { LayoutContent } from '@/components/layouts/layout-content';
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
+import { DataTable, type DataTablePaginationProp } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useChartTheme } from '@/components/ui/primitives/chart/chart-theme';
+import { TimeSeriesChart } from '@/components/ui/primitives/chart/time-series-chart';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { QueryError } from '@/components/ui/query-error';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
-import { usePagedConnection, useSlugs } from '@/lib/hooks';
-import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import { formatNumber, usePagedConnection, useSlugs } from '@/lib/hooks';
+import { carriedRange, useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
@@ -40,21 +35,6 @@ import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/ta
 const tracesRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
 );
-
-const chartConfig = {
-  ok: {
-    label: 'Successful',
-    color: 'hsl(var(--chart-1))',
-  },
-  error: {
-    label: 'Failed',
-    color: 'hsl(var(--chart-2))',
-  },
-  remaining: {
-    label: 'Remaining',
-    color: 'hsl(var(--chart-3))',
-  },
-} satisfies ChartConfig;
 
 const Traffic_TracesStatusBreakdownBucketFragment = graphql(`
   fragment Traffic_TracesStatusBreakdownBucketFragment on TraceStatusBreakdownBucket {
@@ -73,133 +53,31 @@ type TrafficProps = {
 
 const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
   const buckets = useFragment(Traffic_TracesStatusBreakdownBucketFragment, props.buckets);
-  const data = buckets.map(b => ({
-    ok: b.okCountFiltered,
-    error: b.errorCountFiltered,
-    remaining: b.okCountTotal + b.errorCountTotal - b.okCountFiltered - b.errorCountFiltered,
-    timeBucketStart: b.timeBucketStart,
-    timeBucketEnd: b.timeBucketEnd,
-  }));
-  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
-  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const chartContainerRef = useRef<HTMLDivElement>(null);
-
-  // Handle mouse down event to start selection
-  const handleMouseDown = useCallback((e: any) => {
-    if (!e?.activeLabel) return;
-
-    // Check if the click is within the chart area and not on the Y-axis
-    // e.chartX is the x-coordinate of the click relative to the chart
-    if (e.chartX < 40) return; // Prevent selection when clicking on Y-axis area
-
-    setRefAreaLeft(e.activeLabel);
-    setRefAreaRight(null);
-    setIsSelecting(true);
-  }, []);
-
-  // Handle mouse move event during selection
-  const handleMouseMove = useCallback(
-    (e: any) => {
-      if (!isSelecting || !e?.activeLabel) return;
-      setRefAreaRight(e.activeLabel);
-    },
-    [isSelecting],
-  );
-
-  const navigate = tracesRoute.useNavigate();
-
-  // Handle mouse up event to end selection
-  const handleMouseUp = useCallback(() => {
-    if (!refAreaLeft || !refAreaRight) {
-      setIsSelecting(false);
-      return;
-    }
-
-    // Ensure left is always before right
-    let left = refAreaLeft;
-    let right = refAreaRight;
-
-    if (new Date(left).getTime() > new Date(right).getTime()) {
-      [left, right] = [right, left];
-    }
-
-    void navigate({
-      search: (prev: any) => ({ ...prev, from: left, to: right }),
-    });
-
-    setRefAreaLeft(null);
-    setRefAreaRight(null);
-    setIsSelecting(false);
-  }, [refAreaLeft, refAreaRight, navigate]);
-
-  function formatDate(str: string) {
-    return new Date(str).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short', // e.g., "Sep"
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false, // 24-hour format; set true for AM/PM
-    });
-  }
+  const { colors } = useChartTheme();
+  const series = useMemo(() => {
+    const at = (value: (b: (typeof buckets)[number]) => number) =>
+      buckets.map((b): [string, number] => [b.timeBucketStart, value(b)]);
+    return [
+      { name: 'Ok', data: at(b => b.okCountFiltered), color: colors.primary },
+      { name: 'Error', data: at(b => b.errorCountFiltered), color: colors.error },
+      {
+        name: 'Filtered out',
+        data: at(
+          b => b.okCountTotal + b.errorCountTotal - b.okCountFiltered - b.errorCountFiltered,
+        ),
+        color: 'rgba(170,175,180,0.1)',
+      },
+    ];
+  }, [buckets, colors]);
 
   return (
-    <ChartContainer
-      config={chartConfig}
-      className="aspect-auto h-[150px] w-full select-none"
-      ref={chartContainerRef}
-      onMouseLeave={isSelecting ? handleMouseUp : undefined}
-    >
-      <BarChart
-        accessibilityLayer
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        data={data}
-      >
-        <XAxis
-          dataKey="timeBucketStart"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          minTickGap={32}
-          tickFormatter={date => {
-            return formatDate(date);
-          }}
-        />
-        <ChartTooltip
-          content={
-            <ChartTooltipContent
-              className="w-[150px]"
-              labelFormatter={(_, data) => {
-                const payload = data[0]?.payload;
-
-                if (!payload) {
-                  return null;
-                }
-
-                return (
-                  formatDate(payload.timeBucketStart) + ' - ' + formatDate(payload.timeBucketEnd)
-                );
-              }}
-            />
-          }
-        />
-        <Bar stackId="all" dataKey="ok" fill="var(--color-ok)" name="Ok" />
-        <Bar stackId="all" dataKey="error" fill="var(--color-error)" name="Error" />
-        {/*TODO: hide this if there is no filter declared */}
-        <Bar stackId="all" dataKey="remaining" fill="rgba(170,175,180,0.1)" name="Filtered out" />
-        {refAreaLeft && refAreaRight && (
-          <ReferenceArea
-            x1={refAreaLeft}
-            x2={refAreaRight}
-            fill="var(--color-fg)"
-            fillOpacity={0.1}
-          />
-        )}
-      </BarChart>
-    </ChartContainer>
+    <TimeSeriesChart
+      kind="bar"
+      stacked
+      height={150}
+      valueFormatter={formatNumber}
+      series={series}
+    />
   );
 });
 
@@ -259,6 +137,7 @@ const TracesList = memo(function TracesList(
   const data = useFragment(TracesList_Trace, props.traces);
 
   const { organizationSlug, projectSlug, targetSlug } = tracesRoute.useParams();
+  const { from, to } = tracesRoute.useSearch();
 
   const rows = useMemo(() => [...data], [data]);
 
@@ -280,6 +159,7 @@ const TracesList = memo(function TracesList(
                 targetSlug,
                 traceId: row.original.id,
               },
+              search: carriedRange({ from, to }),
             }}
           />
         ),
@@ -363,7 +243,7 @@ const TracesList = memo(function TracesList(
                 maxWidth="md"
                 trigger={
                   <span className="inline-flex items-center gap-2">
-                    <span className="bg-surface-card text-fg-secondary inline-flex items-center rounded-sm px-1 py-0.5 text-xs uppercase">
+                    <span className="inline-flex items-center rounded-sm bg-surface-card px-1 py-0.5 text-xs text-fg-secondary uppercase">
                       {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                     </span>
                     {row.original.operationName ?? (
@@ -476,7 +356,7 @@ const TracesList = memo(function TracesList(
         cell: ({ row }) => <DataTableCell kind="text" mono value={row.original.httpStatusCode} />,
       },
     ],
-    [organizationSlug, projectSlug, targetSlug],
+    [organizationSlug, projectSlug, targetSlug, from, to],
   );
 
   return (
@@ -512,7 +392,7 @@ const TracesList = memo(function TracesList(
 function LabelWithColor(props: { className: string; children: ReactNode }) {
   return (
     <div className="flex items-center gap-x-2">
-      <div className={cn('rounded-xs h-[11px] w-[2px]', props.className)} />
+      <div className={cn('h-[11px] w-[2px] rounded-xs', props.className)} />
       <div>{props.children}</div>
     </div>
   );
@@ -637,7 +517,7 @@ function Filters(
 
   return (
     <>
-      <div className="text-fg flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium">
+      <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-fg">
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
@@ -798,7 +678,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         trace ? (
           <>
             {trace.operationName ?? <span className="text-fg-secondary">{'<unknown>'}</span>}
-            <span className="text-fg-secondary ml-2 font-mono font-normal">
+            <span className="ml-2 font-mono font-normal text-fg-secondary">
               {trace.id.substring(0, 4)}
             </span>
           </>
@@ -824,18 +704,18 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         </>
       }
     >
-      <div className="border-line flex items-center gap-3 border-b px-6 pb-4 text-xs">
+      <div className="flex items-center gap-3 border-b border-line px-6 pb-4 text-xs">
         {trace ? (
           <>
             <div className="flex items-center gap-1">
-              <Clock className="text-fg-secondary size-3" />
+              <Clock className="size-3 text-fg-secondary" />
               <span className="text-fg-default">{formatNanoseconds(BigInt(trace.duration))}</span>
             </div>
             <Badge
               content={trace.success ? 'Ok' : 'Error'}
               variants={{ variant: trace.success ? 'success' : 'critical' }}
             />
-            <span className="text-fg-default font-mono uppercase">
+            <span className="font-mono text-fg-default uppercase">
               {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
             </span>
           </>
@@ -1171,7 +1051,6 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
         sideContent={
           <div className="flex flex-1 justify-end gap-x-4">
             <DateRangePicker
-              validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
               align="end"
@@ -1185,13 +1064,13 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
         }
       />
       <div className="mt-4 flex min-h-svh w-full">
-        <aside className="text-fg-default sticky top-4 flex h-full w-64 flex-col">
+        <aside className="sticky top-4 flex h-full w-64 flex-col text-fg-default">
           <div className="flex min-h-0 flex-1 flex-col gap-2">
             <Filters filter={props.filter} options={filterOptions} />
           </div>
         </aside>
         <main className="relative flex min-h-svh flex-1 flex-col">
-          <div className="flex flex-1 flex-col gap-4 pl-4 pt-0">
+          <div className="flex flex-1 flex-col gap-4 pt-0 pl-4">
             <div>
               <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
             </div>

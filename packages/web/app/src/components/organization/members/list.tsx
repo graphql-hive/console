@@ -12,19 +12,19 @@ import {
 } from 'lucide-react';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { CopyChip } from '@/components/base/copy-chip/copy-chip';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Input } from '@/components/base/input/input';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { useToast } from '@/components/base/toast/toast';
 import { GitHubIcon, GoogleIcon, OpenIdIcon } from '@/components/ui/brand-icon';
 import { Callout } from '@/components/ui/callout';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { CopyChip } from '@/components/ui/primitives/copy-chip/copy-chip';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Input } from '@/components/ui/primitives/input/input';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
@@ -193,7 +193,7 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   if (info?.provisioningStatus === GraphQLSchema.ProvisioningStatus.Active && info.isDisabled) {
     return (
       <span
-        className="bg-critical-tint text-critical flex size-9 items-center justify-center rounded-full"
+        className="flex size-9 items-center justify-center rounded-full bg-critical-tint text-critical"
         aria-label="Disabled user"
       >
         <UserRoundX className="size-5" />
@@ -203,7 +203,7 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   const Icon = info ? UserLock : UserRound;
   return (
     <span
-      className="bg-surface-card flex size-9 items-center justify-center rounded-full"
+      className="flex size-9 items-center justify-center rounded-full bg-surface-card"
       aria-label={info ? 'Provisioned user' : 'User'}
     >
       <Icon className="size-5" />
@@ -229,7 +229,7 @@ function MemberNameCell({ member }: { member: MemberRow }) {
               openOnHover
               width="auto"
               content={
-                <div className="text-fg-default text-xs">
+                <div className="text-xs text-fg-default">
                   <div>Provisioned via SCIM</div>
                   <div>
                     External ID:{' '}
@@ -291,7 +291,7 @@ function MemberRoleCell(props: {
               <button
                 type="button"
                 aria-label="About the owner role"
-                className="text-fg-muted hover:text-fg-default inline-flex"
+                className="inline-flex text-fg-muted hover:text-fg-default"
               >
                 <Info className="size-3.5" />
               </button>
@@ -314,7 +314,7 @@ function MemberRoleCell(props: {
         content="This user is disabled."
       />
     ) : (
-      <div className="ml-auto mr-0 w-fit">
+      <div className="mr-0 ml-auto w-fit">
         <MemberGroups groups={member.groups ?? []} />
       </div>
     );
@@ -386,7 +386,7 @@ function MemberRoleCell(props: {
             }}
             cancel={{ disabled: confirmManagementState.fetching }}
           >
-            <p className="text-fg-default text-sm">
+            <p className="text-sm text-fg-default">
               After confirmation, your identity provider will control this user's status and
               group-based access. Review the pending SCIM values below to avoid removing access
               unintentionally.

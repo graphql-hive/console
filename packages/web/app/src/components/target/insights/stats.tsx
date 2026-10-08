@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useMemo, useState } from 'react';
 import { differenceInMilliseconds } from 'date-fns';
-import ReactECharts from 'echarts-for-react';
+import type { EChartsOption } from 'echarts';
 import {
   ActivityIcon,
   BookIcon,
@@ -11,14 +11,15 @@ import {
   PercentIcon,
   SmileIcon,
 } from 'lucide-react';
-import AutoSizer from 'react-virtualized-auto-sizer';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
-import { StatCard } from '@/components/base/stat-card/stat-card';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Chart } from '@/components/ui/primitives/chart/chart';
+import { useChartTheme, type ChartTheme } from '@/components/ui/primitives/chart/chart-theme';
+import { TimeSeriesChart } from '@/components/ui/primitives/chart/time-series-chart';
+import { StatCard } from '@/components/ui/stat-card/stat-card';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { OperationStatsFilterInput } from '@/gql/graphql';
-import { createAdaptiveTimeFormatter } from '@/lib/date-time';
 import {
   formatDuration,
   formatNumber,
@@ -29,8 +30,7 @@ import {
   useFormattedThroughput,
   useSlugs,
 } from '@/lib/hooks';
-import { pick } from '@/lib/object';
-import { useChartStyles } from '@/lib/utils';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './fallback';
 import { resolutionToMilliseconds } from './utils';
@@ -238,7 +238,7 @@ function OverTimeStats({
   const { failuresOverTime = [], requestsOverTime = [] } =
     useFragment(OverTimeStats_OperationsStatsFragment, operationStats) ?? {};
 
-  const { styles, colors } = useChartStyles();
+  const { colors } = useChartTheme();
 
   const requests = useMemo(() => {
     if (requestsOverTime?.length) {
@@ -262,95 +262,15 @@ function OverTimeStats({
       title="Operations over time"
       description="Timeline of GraphQL requests and failures"
     >
-      <AutoSizer disableHeight>
-        {size => (
-          <ReactECharts
-            style={{ width: size.width, height: 200 }}
-            option={{
-              ...styles,
-              grid: {
-                left: 20,
-                top: 50,
-                right: 20,
-                bottom: 20,
-                containLabel: true,
-              },
-              tooltip: {
-                trigger: 'axis',
-              },
-              xAxis: [
-                {
-                  type: 'time',
-                  boundaryGap: false,
-                  axisLabel: {
-                    formatter: (value: number) =>
-                      createAdaptiveTimeFormatter(
-                        requests[0][0],
-                        requests[requests.length - 1][0],
-                      )(value),
-                  },
-                },
-              ],
-              yAxis: [
-                {
-                  type: 'value',
-                  min: 0,
-                  splitLine: {
-                    lineStyle: {
-                      color: colors.grid,
-                      type: 'dashed',
-                    },
-                  },
-                  axisLabel: {
-                    formatter: (value: number) => formatNumber(value),
-                  },
-                },
-                {
-                  type: 'value',
-                  min: 0,
-                  splitLine: {
-                    lineStyle: {
-                      color: colors.grid,
-                      type: 'dashed',
-                    },
-                  },
-                  axisLabel: {
-                    formatter: (value: number) => formatNumber(value),
-                  },
-                },
-              ],
-              series: [
-                {
-                  type: 'line',
-                  name: 'Requests',
-                  showSymbol: false,
-                  smooth: false,
-                  color: colors.primary,
-                  areaStyle: {},
-                  emphasis: {
-                    focus: 'series',
-                  },
-                  large: true,
-                  data: requests,
-                },
-                {
-                  type: 'line',
-                  name: 'Failures',
-                  showSymbol: false,
-                  smooth: false,
-                  color: colors.error,
-                  areaStyle: {},
-                  emphasis: {
-                    focus: 'series',
-                  },
-                  large: true,
-                  data: failures,
-                },
-              ],
-            }}
-          />
-        )}
-      </AutoSizer>
+      <TimeSeriesChart
+        kind="area"
+        legend
+        valueFormatter={formatNumber}
+        series={[
+          { name: 'Requests', data: requests, color: colors.primary },
+          { name: 'Failures', data: failures, color: colors.error },
+        ]}
+      />
     </Card>
   );
 }
@@ -397,12 +317,41 @@ function getLevelOption() {
   ];
 }
 
+/** Horizontal bars of each label's share, in percent. */
+function percentageBarsOption(
+  theme: ChartTheme,
+  labels: string[],
+  values: string[],
+  clickableLabels = false,
+): EChartsOption {
+  return {
+    grid: theme.grid(),
+    tooltip: { ...theme.tooltip(), trigger: 'item', formatter: '{b0}: {c0}%' },
+    xAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: theme.colors.gridSubtle } },
+      axisLabel: { ...theme.axisLabel, formatter: '{value}%' },
+    },
+    yAxis: {
+      type: 'category',
+      data: labels,
+      triggerEvent: clickableLabels,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: theme.axisLabel,
+    },
+    series: [{ type: 'bar', data: values, color: theme.colors.primary }],
+  };
+}
+
 function ClientsStats(props: {
   operationStats: FragmentType<typeof ClientsStats_OperationsStatsFragment> | null;
 }): ReactElement {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const router = useRouter();
-  const { styles, colors } = useChartStyles();
+  const theme = useChartTheme();
   const operationStats = useFragment(ClientsStats_OperationsStatsFragment, props.operationStats);
   const sortedClients = useMemo(() => {
     return operationStats?.clients.edges?.length
@@ -545,13 +494,74 @@ function ClientsStats(props: {
             targetSlug,
             name: ev.value,
           },
-          search(searchParams) {
-            return pick(searchParams, ['from', 'to']);
-          },
+          search: carriedRange,
         });
       }
     },
     [router],
+  );
+
+  const clientBarEvents = useMemo(() => ({ click: onClientNameClick }), [onClientNameClick]);
+
+  const byClientOption = useMemo(
+    () => percentageBarsOption(theme, byClient.labels, byClient.values, true),
+    [theme, byClient],
+  );
+  const byVersionOption = useMemo(
+    () => percentageBarsOption(theme, byVersion.labels, byVersion.values),
+    [theme, byVersion],
+  );
+
+  const byClientAndVersionOption = useMemo(
+    (): EChartsOption => ({
+      tooltip: {
+        ...theme.tooltip(),
+        trigger: 'item',
+        formatter(dataPoint: any) {
+          const data: { path?: string; name: string; value: number } = dataPoint.data;
+          return `<div>${data.path ?? data.name}</div>Operations: <b>${formatNumber(data.value)}</b>`;
+        },
+      },
+      series: [
+        {
+          name: 'All clients and versions',
+          type: 'treemap',
+          label: {
+            position: ['50%', '50%'],
+            offset: [0, -15],
+            show: true,
+            formatter: '{a|{b}}',
+            overflow: 'none',
+            align: 'center',
+            rich: {
+              a: {
+                padding: 4,
+                height: 15,
+                color: theme.colors.overlayText,
+                backgroundColor: theme.colors.overlayBg,
+              },
+            },
+          },
+          upperLabel: {
+            show: true,
+            height: 30,
+            formatter: '{b}',
+            color: theme.colors.fg,
+            backgroundColor: 'transparent',
+            padding: 5,
+            fontWeight: 'bold',
+            overflow: 'none',
+          },
+          itemStyle: {
+            borderColor: theme.colors.overlayBorder,
+          },
+          levels: getLevelOption(),
+          data: byClientAndVersion,
+          color: theme.colors.primary,
+        },
+      ],
+    }),
+    [theme, byClientAndVersion],
   );
 
   return (
@@ -560,188 +570,14 @@ function ClientsStats(props: {
       title="Clients"
       description="Top 5 - GraphQL API consumers"
     >
-      <AutoSizer disableHeight className="mt-5 flex w-full flex-row gap-x-4">
-        {size => {
-          if (!size.width) {
-            return <></>;
-          }
-
-          const gapX4 = 16;
-          const innerWidth = size.width - gapX4 * 2;
-
-          return (
-            <>
-              <ReactECharts
-                style={{
-                  width: innerWidth / 2,
-                  height: 200,
-                }}
-                onEvents={{
-                  click: onClientNameClick,
-                }}
-                option={{
-                  ...styles,
-                  grid: {
-                    left: 20,
-                    top: 20,
-                    right: 20,
-                    bottom: 20,
-                    containLabel: true,
-                  },
-                  tooltip: {
-                    trigger: 'item',
-                    formatter: '{b0}: {c0}%',
-                  },
-                  xAxis: {
-                    type: 'value',
-                    splitLine: {
-                      lineStyle: {
-                        color: colors.grid,
-                        type: 'dashed',
-                      },
-                    },
-                    axisLabel: {
-                      formatter: '{value}%',
-                    },
-                  },
-                  yAxis: {
-                    type: 'category',
-                    data: byClient.labels,
-                    triggerEvent: true,
-                  },
-                  series: [
-                    {
-                      type: 'bar',
-                      data: byClient.values,
-                      color: colors.primary,
-                    },
-                  ],
-                }}
-              />
-              <ReactECharts
-                style={{ width: innerWidth / 2, height: 200 }}
-                option={{
-                  ...styles,
-                  grid: {
-                    left: 20,
-                    top: 20,
-                    right: 20,
-                    bottom: 20,
-                    containLabel: true,
-                  },
-                  tooltip: {
-                    trigger: 'item',
-                    formatter: '{b0}: {c0}%',
-                  },
-                  xAxis: {
-                    type: 'value',
-                    splitLine: {
-                      lineStyle: {
-                        color: colors.grid,
-                        type: 'dashed',
-                      },
-                    },
-                    axisLabel: {
-                      formatter: '{value}%',
-                    },
-                  },
-                  yAxis: {
-                    type: 'category',
-                    data: byVersion.labels,
-                  },
-                  series: [
-                    {
-                      type: 'bar',
-                      data: byVersion.values,
-                      color: colors.primary,
-                    },
-                  ],
-                }}
-              />
-            </>
-          );
-        }}
-      </AutoSizer>
+      <div className="mt-5 grid grid-cols-2 gap-x-4">
+        <Chart option={byClientOption} height={200} onEvents={clientBarEvents} />
+        <Chart option={byVersionOption} height={200} />
+      </div>
       {isOpen ? (
-        <AutoSizer disableHeight className="mt-5 w-full">
-          {size => {
-            if (!size.width) {
-              return <></>;
-            }
-
-            const gapX4 = 16;
-            const innerWidth = size.width - gapX4;
-
-            return (
-              <ReactECharts
-                style={{ width: innerWidth, height: 400, marginLeft: 'auto', marginRight: 'auto' }}
-                option={{
-                  ...styles,
-                  grid: {
-                    left: 20,
-                    top: 20,
-                    right: 20,
-                    bottom: 20,
-                    containLabel: true,
-                  },
-                  tooltip: {
-                    trigger: 'item',
-                    formatter(dataPoint: {
-                      data: {
-                        path: string;
-                        name: string;
-                        value: number;
-                      };
-                    }) {
-                      return `<div>${dataPoint.data.path ?? dataPoint.data.name}</div>Operations: <b>${formatNumber(dataPoint.data.value)}</b>`;
-                    },
-                  },
-                  legend: {
-                    show: false,
-                  },
-                  series: [
-                    {
-                      name: 'All clients and versions',
-                      type: 'treemap',
-                      label: {
-                        position: ['50%', '50%'],
-                        offset: [0, -15],
-                        show: true,
-                        formatter: '{a|{b}}',
-                        overflow: 'none',
-                        align: 'center',
-                        rich: {
-                          a: {
-                            padding: 4,
-                            height: 15,
-                            color: colors.overlayText,
-                            backgroundColor: colors.overlayBg,
-                          },
-                        },
-                      },
-                      upperLabel: {
-                        show: true,
-                        height: 30,
-                        formatter: '{b}',
-                        color: styles.textStyle.color,
-                        backgroundColor: 'transparent',
-                        padding: 5,
-                        fontWeight: 'bold',
-                        overflow: 'none',
-                      },
-                      itemStyle: {
-                        borderColor: colors.overlayBorder,
-                      },
-                      levels: getLevelOption(),
-                      data: byClientAndVersion,
-                      color: colors.primary,
-                    },
-                  ],
-                }}
-              />
-            );
-          }}
-        </AutoSizer>
+        <div className="mt-5">
+          <Chart option={byClientAndVersionOption} height={400} />
+        </div>
       ) : null}
       <div className="mt-5 w-full text-center">
         <Button variant="outline" onClick={() => setIsOpen(value => !value)}>
@@ -777,7 +613,7 @@ function LatencyOverTimeStats({
 }: {
   operationStats?: FragmentType<typeof LatencyOverTimeStats_OperationStatsFragment> | null;
 }): ReactElement {
-  const { styles, colors } = useChartStyles();
+  const { colors } = useChartTheme();
   const { durationOverTime: duration = [] } =
     useFragment(LatencyOverTimeStats_OperationStatsFragment, operationStats) ?? {};
   const p75 = useMemo(() => {
@@ -809,87 +645,23 @@ function LatencyOverTimeStats({
     return []; // it will use the previous data points when new data is not available yet (fetching)
   }, [duration]);
 
-  function createSeries(name: string, color: string, data: [string, number][]) {
-    return {
-      name,
-      type: 'line',
-      smooth: false,
-      showSymbol: false,
-      color,
-      emphasis: { focus: 'series' },
-      large: true,
-      data,
-    };
-  }
-
-  const series = [
-    createSeries('p75', colors.p75, p75),
-    createSeries('p90', colors.p90, p90),
-    createSeries('p95', colors.p95, p95),
-    createSeries('p99', colors.p99, p99),
-  ];
-
   return (
     <Card
       variants={{ onSurface: 'raised', titleSize: 'large' }}
       title="Latency over time"
       description="Timeline of latency of GraphQL requests"
     >
-      <AutoSizer disableHeight>
-        {size => (
-          <ReactECharts
-            style={{ width: size.width, height: 200 }}
-            option={{
-              ...styles,
-              grid: {
-                left: 20,
-                top: 50,
-                right: 20,
-                bottom: 20,
-                containLabel: true,
-              },
-              tooltip: { trigger: 'axis' },
-              color: series.map(s => s.color),
-              legend: {
-                ...styles.legend,
-                data: series.map(s => s.name),
-              },
-              xAxis: [
-                {
-                  type: 'time',
-                  boundaryGap: false,
-                  splitLine: {
-                    lineStyle: {
-                      color: colors.grid,
-                      type: 'dashed',
-                    },
-                  },
-                  axisLabel: {
-                    formatter: (value: number) =>
-                      createAdaptiveTimeFormatter(p75[0][0], p75[p75.length - 1][0])(value),
-                  },
-                },
-              ],
-              yAxis: [
-                {
-                  type: 'value',
-                  min: 0,
-                  splitLine: {
-                    lineStyle: {
-                      color: colors.grid,
-                      type: 'dashed',
-                    },
-                  },
-                  axisLabel: {
-                    formatter: (value: number) => formatDuration(value, true),
-                  },
-                },
-              ],
-              series,
-            }}
-          />
-        )}
-      </AutoSizer>
+      <TimeSeriesChart
+        kind="line"
+        legend
+        valueFormatter={value => formatDuration(value, true)}
+        series={[
+          { name: 'p75', data: p75, color: colors.p75 },
+          { name: 'p90', data: p90, color: colors.p90 },
+          { name: 'p95', data: p95, color: colors.p95 },
+          { name: 'p99', data: p99, color: colors.p99 },
+        ]}
+      />
     </Card>
   );
 }
@@ -915,7 +687,6 @@ function RpmOverTimeStats({
   resolution: number;
   operationStats: FragmentType<typeof RpmOverTimeStats_OperationStatsFragment> | null;
 }): ReactElement {
-  const { styles, colors } = useChartStyles();
   const { requestsOverTime: requests = [] } =
     useFragment(RpmOverTimeStats_OperationStatsFragment, operationStats) ?? {};
 
@@ -937,78 +708,11 @@ function RpmOverTimeStats({
       title="RPM over time"
       description="Requests per minute"
     >
-      <AutoSizer disableHeight>
-        {size => (
-          <ReactECharts
-            style={{ width: size.width, height: 200 }}
-            option={{
-              ...styles,
-              grid: {
-                left: 20,
-                top: 50,
-                right: 20,
-                bottom: 20,
-                containLabel: true,
-              },
-              tooltip: {
-                trigger: 'axis',
-              },
-              xAxis: [
-                {
-                  type: 'time',
-                  boundaryGap: false,
-                  splitLine: {
-                    lineStyle: {
-                      color: colors.grid,
-                      type: 'dashed',
-                    },
-                  },
-                  axisLabel: {
-                    formatter: (value: number) =>
-                      createAdaptiveTimeFormatter(
-                        rpmOverTime[0][0],
-                        rpmOverTime[rpmOverTime.length - 1][0],
-                      )(value),
-                  },
-                },
-              ],
-              yAxis: [
-                {
-                  type: 'value',
-                  boundaryGap: false,
-                  min: 0,
-                  axisLabel: {
-                    formatter: (value: number) => formatRpm(value),
-                  },
-                  splitLine: {
-                    lineStyle: {
-                      color: colors.grid,
-                      type: 'dashed',
-                    },
-                  },
-                },
-              ],
-              series: [
-                {
-                  type: 'bar',
-                  name: 'RPM',
-                  symbol: 'none',
-                  smooth: false,
-                  areaStyle: {
-                    color: colors.primary,
-                  },
-                  lineStyle: {
-                    color: colors.primary,
-                  },
-                  color: colors.primary,
-                  large: true,
-                  data: rpmOverTime,
-                },
-              ],
-            }}
-          />
-        )}
-      </AutoSizer>
+      <TimeSeriesChart
+        kind="bar"
+        valueFormatter={formatRpm}
+        series={[{ name: 'RPM', data: rpmOverTime }]}
+      />
     </Card>
   );
 }
@@ -1066,7 +770,7 @@ export function OperationsStats({
         : 'success';
 
   return (
-    <section className="text-fg-subtle space-y-12 transition-opacity duration-700 ease-in-out">
+    <section className="space-y-12 text-fg-subtle transition-opacity duration-700 ease-in-out">
       <OperationsFallback state={state} refetch={refetch}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <RequestsStats requests={operationsStats?.totalRequests} dateRangeText={dateRangeText} />

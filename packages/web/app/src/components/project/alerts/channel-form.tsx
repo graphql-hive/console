@@ -1,6 +1,6 @@
 import { useWatch, type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Select } from '@/components/base/floating/select/select';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import {
   Form,
   FormControl,
@@ -8,8 +8,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
 import { AlertChannelType } from '@/gql/graphql';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
@@ -144,7 +144,7 @@ export function ChannelForm(props: {
                   href={setupGuide.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-accent hover:text-accent-muted text-sm"
+                  className="text-sm text-accent hover:text-accent-muted"
                 >
                   {setupGuide.label}
                 </a>

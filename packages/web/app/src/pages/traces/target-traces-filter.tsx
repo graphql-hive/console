@@ -10,14 +10,14 @@ import {
 } from 'react';
 import debounce from 'lodash.debounce';
 import { CircleXIcon, PlusIcon } from 'lucide-react';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Collapsible } from '@/components/base/collapsible/collapsible';
-import { Input } from '@/components/base/input/input';
-import { Separator } from '@/components/base/separator/separator';
-import { focusRing } from '@/components/base/shared-styles';
-import { Slider } from '@/components/base/slider/slider';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Collapsible } from '@/components/ui/primitives/collapsible/collapsible';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Separator } from '@/components/ui/primitives/separator/separator';
+import { focusRing } from '@/components/ui/primitives/shared-styles';
+import { Slider } from '@/components/ui/primitives/slider/slider';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
@@ -178,7 +178,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
         <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
       )}
       {filteredOptions.length === 0 ? (
-        <div className="text-fg-subtle text-center text-sm">No option available</div>
+        <div className="text-center text-sm text-fg-subtle">No option available</div>
       ) : (
         filteredOptions.map((option, index) => (
           <FilterOption
@@ -240,7 +240,7 @@ function Filter(props: { name: string; changes?: number; onReset(): void; childr
                 type="button"
                 aria-label={`Reset ${props.name} filter`}
                 className={cn(
-                  'hover:bg-surface-hover text-fg-secondary group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs transition-colors',
+                  'group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs text-fg-secondary transition-colors hover:bg-surface-hover',
                   focusRing,
                 )}
                 onClick={props.onReset}
@@ -319,25 +319,25 @@ export const DurationFilter = memo(
         <div className="space-y-6 p-2">
           <div className="space-y-2">
             <div className="space-y-1">
-              <label className="text-fg-secondary font-mono text-xs">MIN</label>
+              <label className="font-mono text-xs text-fg-secondary">MIN</label>
               <Input
                 type="number"
                 value={values[0]}
                 onChange={handleMinInputChange}
                 size="compact"
                 mono
-                trailing={<span className="text-fg-secondary font-mono text-xs">ms</span>}
+                trailing={<span className="font-mono text-xs text-fg-secondary">ms</span>}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-fg-secondary font-mono text-xs">MAX</label>
+              <label className="font-mono text-xs text-fg-secondary">MAX</label>
               <Input
                 type="number"
                 value={values[1]}
                 onChange={handleMaxInputChange}
                 size="compact"
                 mono
-                trailing={<span className="text-fg-secondary font-mono text-xs">ms</span>}
+                trailing={<span className="font-mono text-xs text-fg-secondary">ms</span>}
               />
             </div>
           </div>

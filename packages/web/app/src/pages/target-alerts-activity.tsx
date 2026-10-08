@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from 'urql';
-import { Filters } from '@/components/base/floating/filter-menu/filters';
-import { PageLead } from '@/components/base/page-lead';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { AlertActivityChart } from '@/components/target/alerts/alert-activity-chart';
 import { useActivityFilterDimensions } from '@/components/target/alerts/alert-activity-filters';
 import {
@@ -10,6 +9,8 @@ import {
 } from '@/components/target/alerts/alert-activity-table';
 import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { DateRangePicker, type Preset } from '@/components/ui/date-range-picker';
+import { Filters } from '@/components/ui/filters/filter-menu/filters';
+import { PageLead } from '@/components/ui/page-lead';
 import { graphql } from '@/gql';
 import { MetricAlertRuleSeverity, MetricAlertRuleType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
@@ -143,6 +144,7 @@ function ActivityView(props: { retentionInDays: number }) {
   const dateRangeController = useDateRangeController({
     dataRetentionInDays: retentionInDays,
     defaultPreset: presetLast1Hour,
+    subject: 'alert activity',
   });
 
   // The loader revalidates within the minute and moves the bounds when it rolls.
@@ -217,8 +219,13 @@ function ActivityView(props: { retentionInDays: number }) {
               selectedRange={dateRangeController.selectedPreset.range}
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
               startDate={dateRangeController.startDate}
-              validUnits={['d', 'h', 'm']}
               align="start"
+              footer={
+                <RetentionNote
+                  retentionInDays={dateRangeController.retentionInDays}
+                  subject={dateRangeController.subject}
+                />
+              }
             />
           }
         />

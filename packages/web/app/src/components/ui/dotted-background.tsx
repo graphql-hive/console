@@ -5,11 +5,11 @@ export function DottedBackground(props: { children: React.ReactNode; className?:
   return (
     <div
       className={clsx(
-        'bg-dot-line-strong bg-surface-inset relative flex size-full items-center justify-center',
+        'relative flex size-full items-center justify-center bg-surface-inset bg-dot-line-strong',
         props.className,
       )}
     >
-      <div className="bg-surface-inset mask-[radial-gradient(ellipse_at_center,transparent_20%,black)] pointer-events-none absolute inset-0 flex items-center justify-center" />
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-surface-inset mask-[radial-gradient(ellipse_at_center,transparent_20%,black)]" />
       {props.children}
     </div>
   );

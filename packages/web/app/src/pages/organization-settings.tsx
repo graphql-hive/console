@@ -1,12 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Navigation } from '@/components/base/navigation/navigation';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { useToast } from '@/components/base/toast/toast';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
@@ -14,18 +8,24 @@ import {
   AuditLogsFormSchema,
   type AuditLogsFormValues,
 } from '@/components/organization/settings/audit-logs-form';
+import { TransferOrganizationOwnershipModal } from '@/components/organization/settings/transfer-ownership-dialog';
 import { PolicySettings } from '@/components/policy/policy-settings';
 import { GitHubIcon, SlackIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
+import { Navigation } from '@/components/ui/navigation/navigation';
 import {
   PageLayout,
   PageLayoutContent,
   SubPageLayout,
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { ResourceDetails } from '@/components/ui/resource-details';
-import { TransferOrganizationOwnershipModal } from '@/components/v2/modals';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
@@ -474,7 +474,7 @@ function OrganizationPolicySettings(props: {
         currentState={currentOrganization.schemaPolicy}
       >
         {({ allowOverrides, setAllowOverrides }) => (
-          <div className="flex items-center pl-1 pt-2">
+          <div className="flex items-center pt-2 pl-1">
             <Checkbox
               id="allowOverrides"
               checked={allowOverrides}
@@ -482,7 +482,7 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={setAllowOverrides}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className="text-fg-default ml-2 inline-block text-sm">
+            <label htmlFor="allowOverrides" className="ml-2 inline-block text-sm text-fg-default">
               Allow projects to override or disable rules
             </label>
           </div>

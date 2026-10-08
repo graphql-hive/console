@@ -321,6 +321,7 @@ export async function main() {
         port: env.clickhouse.port,
         username: env.clickhouse.username,
         password: env.clickhouse.password,
+        database: env.clickhouse.database,
         requestTimeout: env.clickhouse.requestTimeout,
         onReadEnd(query, timings) {
           clickHouseReadDuration.labels({ query }).observe(timings.totalSeconds);
@@ -696,16 +697,41 @@ export async function main() {
         method: ['POST'],
         url: '/gc',
         handler(req, reply) {
-          if (global.gc) {
-            logger.debug('gc requested');
-            global.gc();
-            void reply.status(200);
-            void reply.send('gc triggered');
-          } else {
+          const gc = global.gc;
+          if (!gc) {
             logger.debug('gc requested but not available');
             void reply.status(500);
             void reply.send('gc not available');
+            return;
           }
+
+          logger.debug('gc requested');
+          // A single collection leaves memory behind that the next pass frees (compilation cache,
+          // weak lists, deferred frees), so collect until the heap stops shrinking and report the
+          // usage measured right after the final pass, before this handler allocates anything else.
+          const maxPasses = 10;
+          const stableThresholdBytes = 16 * 1024;
+          let passes = 0;
+          let previousHeapUsed = Number.POSITIVE_INFINITY;
+          let mem = process.memoryUsage();
+          while (passes < maxPasses) {
+            gc({ type: 'major', execution: 'sync', flavor: 'last-resort' });
+            passes++;
+            mem = process.memoryUsage();
+            if (Math.abs(previousHeapUsed - mem.heapUsed) < stableThresholdBytes) {
+              break;
+            }
+            previousHeapUsed = mem.heapUsed;
+          }
+          logger.debug('gc completed after %d passes, raw memory usage: %j', passes, mem);
+
+          void reply.send({
+            heapTotal: mem.heapTotal,
+            heapUsed: mem.heapUsed,
+            external: mem.external,
+            rss: mem.rss,
+            passes,
+          });
         },
       });
     }

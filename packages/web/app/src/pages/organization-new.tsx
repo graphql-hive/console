@@ -2,8 +2,6 @@ import { ReactElement } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { useToast } from '@/components/base/toast/toast';
 import {
   CreateOrganizationForm,
   CreateOrganizationFormSchema,
@@ -12,6 +10,8 @@ import {
 import { HiveLogo } from '@/components/ui/brand-icon';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { Meta } from '@/components/ui/meta';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -23,7 +23,7 @@ export function NewOrgPage(): ReactElement {
       <Meta title="Create Organization" />
       <DottedBackground className="min-h-screen">
         <div className="flex h-full grow items-center">
-          <div className="absolute right-6 top-6">
+          <div className="absolute top-6 right-6">
             <Button
               variant="outline"
               onClick={() =>
@@ -35,7 +35,7 @@ export function NewOrgPage(): ReactElement {
               <LogOutIcon className="mr-2 size-4" /> Sign out
             </Button>
           </div>
-          <Link to="/" className="absolute left-6 top-6">
+          <Link to="/" className="absolute top-6 left-6">
             <HiveLogo className="size-10" />
           </Link>
           <CreateOrganization />

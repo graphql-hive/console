@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from 'urql';
-import type { FilterDimension } from '@/components/base/floating/filter-menu/filter-menu';
+import type { FilterDimension } from '@/components/ui/filters/filter-menu/filter-menu';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';

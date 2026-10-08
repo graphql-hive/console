@@ -9,11 +9,11 @@ import {
   SignInFormSchema,
   type SignInFormValues,
 } from '@/components/auth/sign-in-form';
-import { Button } from '@/components/base/button/button';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { useToast } from '@/components/base/toast/toast';
 import { GitHubIcon, GoogleIcon, OktaIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { Text } from '@/components/ui/text';
 import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
 import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
@@ -34,7 +34,7 @@ export function SignInButton(props: {
         <Tooltip trigger={props.children} content="You signed in with it last time." side="top" />
         <span
           aria-hidden
-          className="animate-shimmer bg-size-[200%_100%] pointer-events-none absolute inset-0 rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--line-strong)/0.35),70%,transparent)]"
+          className="pointer-events-none absolute inset-0 animate-shimmer rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--line-strong)/0.35),70%,transparent)] bg-size-[200%_100%]"
         />
       </span>
     );

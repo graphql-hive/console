@@ -1,8 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import { AlertCircleIcon, PartyPopperIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { focusRingQuiet } from '@/components/base/shared-styles';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   ExplorerFilteredEmptyState,
@@ -21,6 +19,8 @@ import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { focusRingQuiet } from '@/components/ui/primitives/shared-styles';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
@@ -154,10 +154,10 @@ function InternalUnusedSchemaView(props: {
     return (
       <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
         <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-          <PartyPopperIcon className="text-success size-10" />
+          <PartyPopperIcon className="size-10 text-success" />
 
           <h3 className="mt-4 text-lg font-semibold">No unused types</h3>
-          <p className="text-fg-secondary mb-4 mt-2 text-sm">
+          <p className="mt-2 mb-4 text-sm text-fg-secondary">
             It looks like you are using all typea in your schema, congratulations!
           </p>
         </div>
@@ -184,7 +184,7 @@ function InternalUnusedSchemaView(props: {
     <div className="space-y-6">
       {unusedFieldsMessage.length ? (
         <div>
-          <p className="text-fg-secondary text-sm">
+          <p className="text-sm text-fg-secondary">
             You have a total of {unusedFieldsMessage} within {unused.types} different types in the
             selected time period
           </p>

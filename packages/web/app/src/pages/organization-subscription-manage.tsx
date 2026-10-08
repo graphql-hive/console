@@ -1,10 +1,5 @@
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
-import { Input } from '@/components/base/input/input';
-import { PageLead } from '@/components/base/page-lead';
-import { Slider } from '@/components/base/slider/slider';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import {
   BillingPaymentMethodForm,
@@ -15,8 +10,13 @@ import { formatMillionOrBillion } from '@/components/organization/billing/helper
 import { PlanSummary } from '@/components/organization/billing/PlanSummary';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
+import { PageLead } from '@/components/ui/page-lead';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Slider } from '@/components/ui/primitives/slider/slider';
 import { QueryError } from '@/components/ui/query-error';
-import Stat from '@/components/v2/stat';
+import Stat from '@/components/ui/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
@@ -35,6 +35,7 @@ const ManageSubscriptionInner_OrganizationFragment = graphql(`
       }
     }
     plan
+    usageRetentionInDays
     monthlyOperationsLimit
     ...BillingPaymentMethod_OrganizationFragment
   }
@@ -65,7 +66,8 @@ export const BillingsPlanQuery = graphql(`
   }
 `);
 
-const BillingDowngradeMutation = graphql(`
+// A plan change returns the organization's new retention, so every cached document follows it.
+export const BillingDowngradeMutation = graphql(`
   mutation ManageSubscription_DowngradeToHobby($organizationSlug: String!) {
     downgradeToHobby(input: { organization: { organizationSlug: $organizationSlug } }) {
       previousPlan
@@ -368,14 +370,14 @@ function Inner(props: {
                   <>
                     <div className="my-8 w-1/2">
                       <Heading>Define your reserved volume</Heading>
-                      <p className="text-fg-secondary text-sm">
+                      <p className="text-sm text-fg-secondary">
                         Pro plan requires to defined quota of reported operations.
                       </p>
-                      <p className="text-fg-secondary text-sm">
+                      <p className="text-sm text-fg-secondary">
                         Pick a volume a little higher than you think you'll need to avoid being rate
                         limited.
                       </p>
-                      <p className="text-fg-secondary text-sm">
+                      <p className="text-sm text-fg-secondary">
                         Don't worry, you can always adjust it later.
                       </p>
                       <div className="mt-5 pl-2.5">
@@ -484,7 +486,7 @@ function SubscriptionSlider({
 
       <div className="ml-auto w-48">
         <Input ref={inputRef} value={inputValue} onChange={handleInputChange} onBlur={handleBlur} />
-        {inputError && <div className="text-critical mt-1 text-end text-sm">{inputError}</div>}
+        {inputError && <div className="mt-1 text-end text-sm text-critical">{inputError}</div>}
       </div>
     </div>
   );

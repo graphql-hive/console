@@ -1,6 +1,6 @@
 import { ReactElement, useCallback, useState } from 'react';
 import { Fragment } from 'react/jsx-runtime';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import { FragmentType } from '@/gql';
 import { ProposalOverview_ReviewCommentsFragment, ReviewComments } from '../Review';
 import { ChangeRow } from './components';
@@ -68,7 +68,7 @@ export function Line(props: LineProps & { beforeLine: number; afterLine: number 
       {props.annotations?.map((node, i) => (
         <Fragment key={`annotations-${i}`}>
           {node.lineText && (
-            <code className="bg-surface-code text-fg mb-3 block w-full p-3 pl-6">
+            <code className="mb-3 block w-full bg-surface-code p-3 pl-6 text-fg">
               {node.lineText}
             </code>
           )}

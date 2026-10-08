@@ -16,7 +16,7 @@ const tableColumns = `
 
 export const action: Action = async exec => {
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.operations_by_target_daily
+    CREATE TABLE IF NOT EXISTS operations_by_target_daily
     (
       ${tableColumns}
     )
@@ -31,7 +31,7 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_by_target_daily_mv TO default.operations_by_target_daily
+    CREATE MATERIALIZED VIEW IF NOT EXISTS operations_by_target_daily_mv TO operations_by_target_daily
     AS (
       SELECT
         target,
@@ -40,7 +40,7 @@ export const action: Action = async exec => {
         CAST(sum(ok) AS UInt32) AS total_ok,
         avgState(duration) AS duration_avg,
         quantilesTDigestState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-      FROM default.operations
+      FROM operations
       GROUP BY
         target,
         timestamp

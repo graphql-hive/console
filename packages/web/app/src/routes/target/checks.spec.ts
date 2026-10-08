@@ -58,7 +58,7 @@ describe('schema checks list', () => {
     await screen.findByText(CHECKS.first[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
     await screen.findByText(CHECKS.second[0]);
-    const toggle = screen.getByLabelText('Show only failed checks');
+    const toggle = screen.getByRole('switch', { name: 'Show only failed checks' });
 
     fireEvent.click(toggle);
 
@@ -70,7 +70,7 @@ describe('schema checks list', () => {
       filters: { changed: false, failed: true },
     });
     // The side nav stayed mounted: whether checks exist does not depend on the filters.
-    expect(screen.getByLabelText('Show only failed checks')).toBe(toggle);
+    expect(screen.getByRole('switch', { name: 'Show only failed checks' })).toBe(toggle);
     expect(testClient.requests('ChecksPageQuery')).toHaveLength(1);
   });
 
@@ -89,7 +89,7 @@ describe('schema checks list', () => {
     const { router } = renderAtUrl(`${CHECKS_PAGE}/check-2`, { client: client() });
     await screen.findByText(CHECKS.first[1]);
 
-    fireEvent.click(screen.getByLabelText('Show only failed checks'));
+    fireEvent.click(screen.getByRole('switch', { name: 'Show only failed checks' }));
 
     await waitFor(() =>
       expect(router.state.location.search).toMatchObject({ filter_failed: true }),

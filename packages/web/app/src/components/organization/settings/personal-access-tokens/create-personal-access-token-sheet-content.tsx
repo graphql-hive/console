@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { Form } from '@/components/base/form/form';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { useToast } from '@/components/base/toast/toast';
 import { Heading } from '@/components/ui/heading';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Form } from '@/components/ui/primitives/form/form';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
@@ -184,7 +184,7 @@ export function CreatePersonalAccessTokenSheetContent(
             <Stepper.StepperControls>
               <Button
                 variant="outline"
-                onClick={stepper.prev}
+                onClick={() => void stepper.prev()}
                 disabled={stepper.isFirst || createPersonalAccessTokenState.fetching}
               >
                 Go back
@@ -213,7 +213,7 @@ export function CreatePersonalAccessTokenSheetContent(
                             form.setFocus('description');
                             return;
                           }
-                          stepper.next();
+                          void stepper.next();
                         },
                       );
                     }
@@ -225,12 +225,12 @@ export function CreatePersonalAccessTokenSheetContent(
                           return;
                         }
 
-                        stepper.next();
+                        void stepper.next();
                       });
                     }
 
                     if (stepper.current.id === 'step-3-resources') {
-                      stepper.next();
+                      void stepper.next();
                     }
                   }}
                 >
@@ -242,13 +242,13 @@ export function CreatePersonalAccessTokenSheetContent(
         >
           <Form form={form} onSubmit={() => {}}>
             <Stepper.StepperNavigation>
-              {stepper.all.map(step => (
+              {stepper.steps.map(step => (
                 <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
                   <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
                 </Stepper.StepperStep>
               ))}
             </Stepper.StepperNavigation>
-            {stepper.switch({
+            {stepper.match({
               'step-1-general': () => <AccessTokenGeneralStep form={form} />,
               'step-2-permissions': () => (
                 <AccessTokenPermissionsStep form={form}>
@@ -282,7 +282,7 @@ export function CreatePersonalAccessTokenSheetContent(
               'step-4-confirmation': () => (
                 <>
                   <Heading>Confirm and create Access Token</Heading>
-                  <p className="text-fg-secondary text-sm">
+                  <p className="text-sm text-fg-secondary">
                     Please please review the selected permissions and resources to ensure they align
                     with your intended access needs.
                   </p>

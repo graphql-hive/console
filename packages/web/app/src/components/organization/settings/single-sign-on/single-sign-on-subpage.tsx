@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { KeyIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { useToast } from '@/components/base/toast/toast';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
@@ -85,7 +85,7 @@ export function SingleSignOnSubpage(): React.ReactNode {
           text: 'Documentation',
         }}
       />
-      <div className="text-fg-secondary max-w-[800px] space-y-4">
+      <div className="max-w-[800px] space-y-4 text-fg-secondary">
         {(query.fetching || query.stale) && !oidcIntegration ? (
           <LoadingSkeleton />
         ) : oidcIntegration ? (

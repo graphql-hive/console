@@ -113,15 +113,30 @@ jobs:
           PNPM_CONFIG_PROVENANCE: true
 
       - name: extract published cli version
-        if:
-          steps.changesets.outputs.published && contains(steps.changesets.outputs.publishedPackages,
-          '"@graphql-hive/cli"')
         id: cli
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
         run: |
-          echo '${{steps.changesets.outputs.publishedPackages}}' > cli-ver.json
-          VERSION=`echo $(jq -r '.[] | select(.name | endswith("@graphql-hive/cli")).version' cli-ver.json)`
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "publish=true" >> $GITHUB_OUTPUT
+          VERSION=$(echo "${PUBLISHED_PACKAGES:-[]}" | jq -r '.[] | select(.name == "@graphql-hive/cli") | .version')
+
+          # A re-run does not publish the CLI to npm again, so it would skip the tarballs and the
+          # Docker image. When a re-run of the commit that changed the CLI version finds that
+          # version as the latest on npm, build them again. A re-run of an older release must not
+          # move the stable channel and the latest image tag back to its version.
+          if [ -z "$VERSION" ] && [ "$GITHUB_RUN_ATTEMPT" -gt 1 ]; then
+            CURRENT=$(jq -r .version packages/libraries/cli/package.json)
+            PREVIOUS=$(git show HEAD~1:packages/libraries/cli/package.json 2>/dev/null | jq -r .version || true)
+            LATEST=$(npm view @graphql-hive/cli dist-tags.latest 2>/dev/null || true)
+            if [ -n "$PREVIOUS" ] && [ "$CURRENT" != "$PREVIOUS" ] && [ "$CURRENT" = "$LATEST" ]; then
+              echo "Re-run: building the tarballs and the Docker image of @graphql-hive/cli@$CURRENT again"
+              VERSION=$CURRENT
+            fi
+          fi
+
+          if [ -n "$VERSION" ]; then
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: extract published hive version
         if:
@@ -138,6 +153,29 @@ jobs:
       - name: Install NSIS
         run: |
           sudo apt-get -y install nsis
+
+      # npm publish returns before the new versions are visible to npm install. `oclif pack` runs
+      # `npm install --production`, so it fails with ETARGET when the CLI depends on a package that
+      # was published in this run, such as @graphql-hive/core.
+      - name: wait for the CLI's dependencies on npm
+        if: steps.cli.outputs.publish == 'true'
+        working-directory: packages/libraries/cli
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+        run: |
+          for package in $(echo "$PUBLISHED_PACKAGES" | jq -r --argjson deps "$(jq '.dependencies | keys' package.json)" \
+            '.[] | select(.name as $name | $deps | index($name)) | "\(.name)@\(.version)"'); do
+            for attempt in $(seq 1 60); do
+              if npm view "$package" version >/dev/null 2>&1; then
+                echo "$package is available on npm"
+                continue 2
+              fi
+              echo "Attempt ${attempt}: $package is not on npm yet, retrying in 15s"
+              sleep 15
+            done
+            echo "::error::$package did not become available on npm within 15 minutes"
+            exit 1
+          done
 
       - name: pack tarballs
         if: steps.cli.outputs.publish == 'true'
@@ -184,7 +222,9 @@ jobs:
 
   publish-stable-docker-cli:
     needs: stable
-    if: needs.stable.outputs.cliPublish == 'true'
+    # The image only needs the CLI on npm, so build it even when a later step of the stable job,
+    # such as packing the tarballs, fails.
+    if: ${{ !cancelled() && needs.stable.outputs.cliPublish == 'true' }}
     uses: ./.github/workflows/dockerize-cli.yaml
     with:
       cliVersion: ${{ needs.stable.outputs.cliVersion }}

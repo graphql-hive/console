@@ -2,18 +2,18 @@ import { useCallback, useMemo, useState } from 'react';
 import { LockIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { Badge } from '@/components/base/badge/badge';
-import { Button } from '@/components/base/button/button';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { useToast } from '@/components/base/toast/toast';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -221,7 +221,7 @@ function OrganizationMemberRoleView(props: {
           />
           <label
             htmlFor="show-only-granted-permissions"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Show only granted permissions
           </label>
@@ -394,7 +394,7 @@ function OrganizationMemberRoleCreator(props: {
               />
               <label
                 htmlFor="show-only-granted-permissions"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 Show only granted permissions
               </label>
@@ -509,7 +509,7 @@ function RoleNameCell(props: {
             content={
               <div className="flex flex-col items-start gap-y-1 p-2">
                 <div className="text-xs font-medium">This role is locked</div>
-                <div className="text-fg-secondary text-xs">
+                <div className="text-xs text-fg-secondary">
                   Locked roles are created by the system and cannot be modified or deleted.
                 </div>
               </div>
@@ -528,7 +528,7 @@ function RoleNameCell(props: {
             content={
               <div className="flex flex-col items-start gap-y-2">
                 <div className="font-medium">Default role for new members</div>
-                <div className="text-fg-secondary text-sm">
+                <div className="text-sm text-fg-secondary">
                   <p>New members will be assigned to this role by default.</p>
                   {props.canChangeOIDCDefaultRole ? (
                     <p>

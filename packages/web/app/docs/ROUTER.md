@@ -14,7 +14,7 @@ sections nav around an outlet, and each section is a child route. Chrome mounts 
 mounted while you move between siblings; a page is just its content, wrapped in `<LayoutContent>`.
 
 **2. A nav is a list of `Link`s; the router decides which one is current.** `Navigation`
-(`src/components/base/navigation/navigation.tsx`) takes items
+(`src/components/ui/navigation/navigation.tsx`) takes items
 `{ label, to, params, search?, exact?, visible?, attrs? }` (the label is also the key, so unique
 within one nav) and marks the current one from the URL through the router's own active-link rules.
 There is no `page` prop, no `value`, no route metadata and no pathname parsing. The item whose `to`
@@ -147,6 +147,10 @@ For the rest of the route state:
   other route uses JSON. See `src/router.ts`.
 - A redirect target read from the URL (`redirectToPath`) goes through `redirectToPathSchema` in
   `src/lib/route-utils.ts`, so it is a path on this app or `/` by the time anything follows it.
+- A date range (`from`, `to`) is URL state and nothing else: a link into a period page carries the
+  current one with `carriedRange(search)`, a bare URL takes the page's default, and a range the
+  loader cannot read or the retention does not cover resets to that default with a toast. See
+  DATA.md.
 
 ## Recipes
 

@@ -1,10 +1,16 @@
 import { type ReactNode } from 'react';
 import { type UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Button } from '@/components/base/button/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/base/form/form';
-import { Input } from '@/components/base/input/input';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Button } from '@/components/ui/primitives/button/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/primitives/form/form';
+import { Input } from '@/components/ui/primitives/input/input';
 
 export const RegistryTokenFormSchema = z.object({
   tokenDescription: z

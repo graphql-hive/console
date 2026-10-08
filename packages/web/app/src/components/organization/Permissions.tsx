@@ -1,7 +1,7 @@
 import clsx from 'clsx';
-import { Select } from '@/components/base/floating/select/select';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import type { OnSurface } from '@/components/base/shared-styles';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@/gql/graphql';
 import { NoAccess, Scope } from '@/lib/access/common';
 import { truthy } from '@/lib/utils';
@@ -40,8 +40,8 @@ export const PermissionScopeItem = <
       data-cy={props.dataCy}
     >
       <div>
-        <div className="text-fg font-semibold">{props.scope.name}</div>
-        <div className="text-fg-secondary text-xs">{props.scope.description}</div>
+        <div className="font-semibold text-fg">{props.scope.name}</div>
+        <div className="text-xs text-fg-secondary">{props.scope.description}</div>
       </div>
       <Select
         aria-label={`${props.scope.name} access`}

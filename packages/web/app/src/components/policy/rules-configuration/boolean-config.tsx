@@ -1,6 +1,6 @@
 import { ReactElement, useEffect } from 'react';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -22,7 +22,7 @@ export const PolicyBooleanToggle = (props: {
 
   const label = (
     <label
-      className="text-fg-secondary pb-1 pl-2 font-mono text-xs"
+      className="pb-1 pl-2 font-mono text-xs text-fg-secondary"
       htmlFor={`${props.rule}_${props.propertyName}`}
     >
       {props.title}

@@ -120,7 +120,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
     id: 'schema' as const,
     /**
      * Compose and validate schemas via the schema service.
-     * - Requests time out after 30 seconds and result in a human readable error response
+     * - Requests time out after 60 seconds and result in a human readable error response
      * - In case the incoming request is canceled, the call to the schema service is aborted
      */
     async composeAndValidate(
@@ -148,11 +148,14 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           : 'none',
       );
 
-      const timeoutAbortSignal = AbortSignal.timeout(30_000);
+      // Deadlock guard for a hanging schema service. The schema service enforces the composition
+      // budget itself (SCHEMA_COMPOSITION_TIMEOUT_MS, 60s by default) and answers with a structured
+      // error, so this must not be lower than that value.
+      const timeoutAbortSignal = AbortSignal.timeout(60_000);
 
       const onTimeout = () => {
         providerConfig.logger.debug(
-          'Composition HTTP request aborted due to timeout of 30 seconds.',
+          'Composition HTTP request aborted due to timeout of 60 seconds.',
         );
       };
       timeoutAbortSignal.addEventListener('abort', onTimeout);
@@ -171,7 +174,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
             contracts: config.contracts,
           },
           {
-            // Limit the maximum time allowed for composition requests to 30 seconds to avoid a dead-lock
+            // Limit the maximum time allowed for composition requests to 60 seconds to avoid a dead-lock
             signal: timeoutAbortSignal,
           },
         );

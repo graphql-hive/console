@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import { isChunkLoadError, reloadOnChunkError } from '@/lib/chunk-error';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
@@ -36,7 +36,7 @@ export function ErrorComponent(props: { error: any; message?: string }) {
     // inside a layout now, and an unpositioned `absolute` would put it over the header.
     <div className="relative flex size-full items-center justify-center">
       {isLoggedIn ? (
-        <div className="absolute right-6 top-6">
+        <div className="absolute top-6 right-6">
           <Button
             variant="outline"
             onClick={() =>

@@ -10,7 +10,7 @@ import lodash from 'lodash';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
-import { invariant, trace, traceFn } from '@hive/service-common';
+import { fail, invariant, trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
   SchemaChangeType,
@@ -27,8 +27,10 @@ import { AlertsManager } from '../../alerts/providers/alerts-manager';
 import { AppDeployments } from '../../app-deployments/providers/app-deployments';
 import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
+import { GraphStore } from '../../graph/providers/graph-store';
 import {
   GitHubIntegrationManager,
+  isGitHubClientError,
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
@@ -202,6 +204,7 @@ export class SchemaPublisher {
     private registryChecks: RegistryChecks,
     private appDeployments: AppDeployments,
     private schemaRevisions: SchemaRevisionStore,
+    private graphStore: GraphStore,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -976,7 +979,7 @@ export class SchemaPublisher {
         contracts: latestSchemaVersionContracts
           ? await Promise.all(
               latestSchemaVersionContracts?.edges.map(async edge => ({
-                contractId: edge.node.contractId,
+                contractId: edge.node.contractId ?? fail('contract id must exist.'),
                 contractName: edge.node.contractName,
                 comparedContractVersionId:
                   edge.node.schemaCompositionErrors === null
@@ -1604,7 +1607,7 @@ export class SchemaPublisher {
           signal,
         },
         async () => {
-          const [organization, project, target] = await Promise.all([
+          const [organization, project, target, defaultGraph] = await Promise.all([
             this.storage.getOrganization({
               organizationId: selector.organizationId,
             }),
@@ -1617,6 +1620,7 @@ export class SchemaPublisher {
               projectId: selector.projectId,
               targetId: selector.targetId,
             }),
+            this.graphStore.findGraphForTargetIdByName(selector.targetId, 'default'),
           ]);
 
           schemaDeleteCount.inc({ model: 'modern', projectType: project.type });
@@ -1729,6 +1733,7 @@ export class SchemaPublisher {
                   name: affectedService.service_name,
                   versionId: affectedService.id,
                 },
+                graph: defaultGraph,
                 composable: deleteResult.state.composable,
                 diffSchemaVersionId: latestComposableVersion?.version.id ?? null,
                 changes: deleteResult.state.changes,
@@ -1903,7 +1908,7 @@ export class SchemaPublisher {
       metadata: !!input.metadata,
     });
 
-    const [organization, project, target, baseSchema] = await Promise.all([
+    const [organization, project, target, baseSchema, defaultGraph] = await Promise.all([
       this.storage.getOrganization({
         organizationId: organizationId,
       }),
@@ -1916,12 +1921,12 @@ export class SchemaPublisher {
         projectId: projectId,
         targetId: targetId,
       }),
-
       this.storage.getBaseSchema({
         organizationId: organizationId,
         projectId: projectId,
         targetId: targetId,
       }),
+      this.graphStore.findGraphForTargetIdByName(targetId, 'default'),
     ]);
 
     const [latestVersion, latestComposable] = await Promise.all([
@@ -2332,7 +2337,8 @@ export class SchemaPublisher {
 
     let schemaVersion: SchemaVersion;
     try {
-      schemaVersion = await this.schemaManager.createPublishVersion({
+      schemaVersion = await this.schemaVersions.createPublishSchemaVersion({
+        graph: defaultGraph,
         valid: composable,
         organizationId: organizationId,
         projectId: project.id,
@@ -3177,6 +3183,8 @@ export class SchemaPublisher {
     const [
       targetLatestSchemaVersion,
       targetLatestValidSchemaVersion,
+      targetDefaultGraph,
+      originDefaultGraph,
       originPublicSchemaSdl,
       originSupergraphSdl,
       originLogEdges,
@@ -3187,6 +3195,10 @@ export class SchemaPublisher {
       // The latest versions within the target we promote to
       this.schemaManager.getMaybeLatestVersion(target),
       this.schemaManager.getMaybeLatestValidVersion(target),
+      // the default graph in the target we promote to
+      this.graphStore.findGraphForTargetIdByName(target.id, 'default'),
+      // the default graph in the target we promote from
+      this.graphStore.findGraphForTargetIdByName(originTarget.id, 'default'),
       // We have some old schema versions that do not store the SDLs on the record
       // we need to use the helpers to ensure the SDL is produced for these
       this.schemaVersionHelper.getCompositeSchemaSdl(originSchemaVersion),
@@ -3326,11 +3338,13 @@ export class SchemaPublisher {
     const schemaVersion = await this.schemaVersions.createPromotionSchemaVersion({
       target: {
         target,
+        graph: targetDefaultGraph,
         latestVersion: targetLatestSchemaVersion,
         latestValidVersion: targetLatestValidSchemaVersion,
       },
       origin: {
         target: originTarget,
+        graph: originDefaultGraph,
         version: originSchemaVersion,
         publicSchemaSdl: originPublicSchemaSdl,
         supergraphSdl: originSupergraphSdl,
@@ -3557,8 +3571,12 @@ export class SchemaPublisher {
         schemaCheck,
         checkRun,
       };
-    } catch (error: any) {
-      Sentry.captureException(error);
+    } catch (error: unknown) {
+      this.reportCheckRunUpdateFailure(error, {
+        operation: 'check',
+        organizationId: args.project.orgId,
+        githubCheckRun: args.githubCheckRun,
+      });
       return {
         __typename: 'GitHubSchemaCheckError' as const,
         message: 'The schema check ran, but the GitHub check-run could not be updated.',
@@ -3793,12 +3811,54 @@ export class SchemaPublisher {
         message: title,
       } as const;
     } catch (error: unknown) {
-      Sentry.captureException(error);
+      this.reportCheckRunUpdateFailure(error, {
+        operation: 'publish',
+        organizationId,
+        githubCheckRun,
+      });
       return {
         __typename: 'GitHubSchemaPublishError',
         message: `Failed to create the check-run`,
       } as const;
     }
+  }
+
+  private reportCheckRunUpdateFailure(
+    error: unknown,
+    args: {
+      operation: 'check' | 'publish';
+      organizationId: string;
+      githubCheckRun: { owner: string; repository: string; id: number };
+    },
+  ) {
+    const contexts = {
+      'GitHub Check Run': {
+        organizationId: args.organizationId,
+        owner: args.githubCheckRun.owner,
+        repository: args.githubCheckRun.repository,
+        githubCheckRunId: args.githubCheckRun.id,
+      },
+    };
+
+    if (isGitHubClientError(error)) {
+      this.logger.warn(
+        'GitHub rejected the check-run update (operation=%s, organizationId=%s, owner=%s, repository=%s, githubCheckRunId=%s, status=%s)',
+        args.operation,
+        args.organizationId,
+        args.githubCheckRun.owner,
+        args.githubCheckRun.repository,
+        args.githubCheckRun.id,
+        error.status,
+      );
+      Sentry.captureException(error, {
+        level: 'warning',
+        tags: { operation: args.operation, github_status: error.status },
+        contexts,
+      });
+      return;
+    }
+
+    Sentry.captureException(error, { tags: { operation: args.operation }, contexts });
   }
 
   private errorsToMarkdown(
@@ -3902,7 +3962,7 @@ export function changesToMarkdown(
 
   if (printListOfChanges) {
     writeChanges('Breaking', breakingChanges, lines);
-    writeChanges('Dangrous', dangerousChanges, lines);
+    writeChanges('Dangerous', dangerousChanges, lines);
     writeChanges('Safe', safeChanges, lines);
   }
 

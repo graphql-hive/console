@@ -129,6 +129,9 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
         return subgraph;
       });
 
+    // Shared by the main composition and every contract composition of this run.
+    const deadline = Date.now() + deps.requestTimeoutMs;
+
     /** Determine the correct compose method... */
     let compose: (subgraphs: Array<SubgraphInput>) => Promise<
       ComposerMethodResult & {
@@ -152,7 +155,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
           logger: deps.logger,
           requestId: args.requestId,
           subgraphs,
-          requestTimeoutMs: deps.requestTimeoutMs,
+          deadline,
           transformToPublicSdl: deps.transformToPublicSdl,
         });
     } else {

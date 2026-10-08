@@ -48,16 +48,21 @@ export const Target: Pick<
       targetId: target.id,
     });
   },
-  clientStats: async (target, args, _ctx) => {
+  // The stats parents only hold the period; checking here fails once instead of per child field.
+  clientStats: async (target, args, { injector }) => {
+    const period = parseDateRangeInput(args.period);
+    await injector
+      .get(OperationsManager)
+      .assertPeriodWithinRetention({ organizationId: target.orgId, period });
     return {
-      period: parseDateRangeInput(args.period),
+      period,
       organization: target.orgId,
       project: target.projectId,
       target: target.id,
       clientName: args.clientName,
     };
   },
-  operationsStats: async (target, args, _ctx) => {
+  operationsStats: async (target, args, { injector }) => {
     // Validate clientVersionFilters size limits to prevent DoS via large SQL IN clauses
     const clientVersionFilters = args.filter?.clientVersionFilters;
     if (clientVersionFilters) {
@@ -75,8 +80,12 @@ export const Target: Pick<
       }
     }
 
+    const period = parseDateRangeInput(args.period);
+    await injector
+      .get(OperationsManager)
+      .assertPeriodWithinRetention({ organizationId: target.orgId, period });
     return {
-      period: parseDateRangeInput(args.period),
+      period,
       organization: target.orgId,
       project: target.projectId,
       target: target.id,
@@ -94,9 +103,13 @@ export const Target: Pick<
       excludeClientVersionFilters: args.filter?.excludeClientVersionFilters ?? false,
     };
   },
-  schemaCoordinateStats: async (target, args, _ctx) => {
+  schemaCoordinateStats: async (target, args, { injector }) => {
+    const period = parseDateRangeInput(args.period);
+    await injector
+      .get(OperationsManager)
+      .assertPeriodWithinRetention({ organizationId: target.orgId, period });
     return {
-      period: parseDateRangeInput(args.period),
+      period,
       organization: target.orgId,
       project: target.projectId,
       target: target.id,

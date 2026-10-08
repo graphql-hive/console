@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
 import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
 
 /** Shows a freshly created token once, and only lets go once the user says they stored it. */
 export function AccessTokenCreatedDialog(props: {
@@ -40,7 +40,7 @@ export function AccessTokenCreatedDialog(props: {
           />
           <label
             htmlFor="AccessTokenCreatedDialog-isConfirmed"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             I stored the access token somewhere safe
           </label>

@@ -2,14 +2,14 @@ import { useCallback, useEffect } from 'react';
 import { LogOutIcon } from 'lucide-react';
 import { SessionAuth, useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { useToast } from '@/components/base/toast/toast';
 import { HiveLogo } from '@/components/ui/brand-icon';
+import { DataWrapper } from '@/components/ui/data-wrapper';
 import { DottedBackground } from '@/components/ui/dotted-background';
 import { Meta } from '@/components/ui/meta';
-import { DataWrapper } from '@/components/v2/data-wrapper';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -127,12 +127,12 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
       <HiveStripeWrapper>
         <Meta title={orgName ? `Invitation to ${orgName}` : 'Invitation'} />
         <DottedBackground className="min-h-[100vh]">
-          <div className="absolute right-6 top-6">
+          <div className="absolute top-6 right-6">
             <Button variant="outline" onClick={() => router.navigate({ to: '/logout' })}>
               <LogOutIcon className="mr-2 size-4" /> Sign out
             </Button>
           </div>
-          <Link to="/" className="absolute left-6 top-6">
+          <Link to="/" className="absolute top-6 left-6">
             <HiveLogo className="size-10" />
           </Link>
           <div className="container md:w-3/5 lg:w-1/2">
@@ -171,7 +171,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                         You've been invited to become a member of{' '}
                         <span className="font-semibold">{invitation.name}</span>.
                       </p>
-                      <p className="text-fg-secondary mt-2">
+                      <p className="mt-2 text-fg-secondary">
                         By accepting the invitation, you will be able to collaborate with other
                         members of this organization.
                       </p>

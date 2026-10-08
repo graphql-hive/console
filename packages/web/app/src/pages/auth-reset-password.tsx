@@ -14,9 +14,9 @@ import {
   type NewPasswordFormValues,
   type ResetPasswordFormValues,
 } from '@/components/auth/reset-password-forms';
-import { Button } from '@/components/base/button/button';
-import { useToast } from '@/components/base/toast/toast';
 import { Meta } from '@/components/ui/meta';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
@@ -119,7 +119,7 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
               <span className="font-semibold">{form.getValues().email}</span>, if it exists in our
               system.
             </p>
-            <p className="text-fg-secondary text-sm">
+            <p className="text-sm text-fg-secondary">
               If you don't receive an email, try to{' '}
               <button type="button" className="underline" onClick={resetEmail.reset}>
                 reset your password again

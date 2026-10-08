@@ -1,8 +1,8 @@
 import { ReactElement, useEffect } from 'react';
 import { useForm, UseFormReturn } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';

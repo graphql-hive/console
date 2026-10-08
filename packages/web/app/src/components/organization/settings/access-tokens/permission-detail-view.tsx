@@ -1,6 +1,6 @@
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Badge } from '@/components/base/badge/badge';
 import { PermissionTable } from '@/components/organization/permission-table';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Badge } from '@/components/ui/primitives/badge/badge';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { permissionLevelToResourceName } from './shared-helpers';
 
@@ -52,7 +52,7 @@ export function PermissionDetailView(props: {
           content: (
             <div className="flex max-w-[800px] flex-wrap items-start overflow-x-auto pl-2">
               {group.resolvedPermissionGroups.map(group => (
-                <div className="w-[50%] min-w-[400px] pb-4 pr-12" key={group.title}>
+                <div className="w-[50%] min-w-[400px] pr-12 pb-4" key={group.title}>
                   <PermissionTable
                     title={group.title}
                     permissions={group.permissions.map(permission => ({

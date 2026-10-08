@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
-import { useToast } from '@/components/base/toast/toast';
 import { Callout } from '@/components/ui/callout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
@@ -240,7 +240,7 @@ export function OIDCRegisteredDomainSheet(props: {
     <>
       <Stepper.StepperProvider
         variant="horizontal"
-        initialStep={
+        defaultStep={
           domain ? (domain.verifiedAt ? 'step-3-complete' : 'step-2-challenge') : 'step-1-general'
         }
       >
@@ -255,7 +255,7 @@ export function OIDCRegisteredDomainSheet(props: {
                 {domain?.domainName && <span className="ml-3 font-mono">{domain?.domainName}</span>}
               </>
             }
-            footer={stepper.switch({
+            footer={stepper.match({
               'step-1-general': () => (
                 <>
                   <Button variant="outline" onClick={props.onClose}>
@@ -289,7 +289,7 @@ export function OIDCRegisteredDomainSheet(props: {
                     <Button
                       data-button-next-complete
                       variant="primary"
-                      onClick={() => onVerifyDomain(() => stepper.goTo('step-3-complete'))}
+                      onClick={() => onVerifyDomain(() => void stepper.goTo('step-3-complete'))}
                       disabled={
                         verifyDomainMutationState.fetching ||
                         deleteDomainMutationState.fetching ||
@@ -321,14 +321,14 @@ export function OIDCRegisteredDomainSheet(props: {
           >
             {isInStepperProcess && (
               <Stepper.StepperNavigation className="pb-4">
-                {stepper.all.map(step => (
+                {stepper.steps.map(step => (
                   <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
                     <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
                   </Stepper.StepperStep>
                 ))}
               </Stepper.StepperNavigation>
             )}
-            {stepper.switch({
+            {stepper.match({
               'step-1-general': () => <RegisterDomainForm form={form} onSubmit={onCreateDomain} />,
               'step-2-challenge': () => (
                 <>
@@ -337,7 +337,7 @@ export function OIDCRegisteredDomainSheet(props: {
                     challenge.
                   </p>
                   <p>Within your hosted zone create the following DNS record.</p>
-                  <div className={cn(!domain?.challenge && 'opacity-33 pointer-events-none')}>
+                  <div className={cn(!domain?.challenge && 'pointer-events-none opacity-33')}>
                     <DescriptionList
                       rows={[
                         {
@@ -400,7 +400,7 @@ export function OIDCRegisteredDomainSheet(props: {
               ),
             })}
             {stepper.current.id === 'step-2-challenge' && challengeError ? (
-              <p className="text-critical mt-4">{challengeError}</p>
+              <p className="mt-4 text-critical">{challengeError}</p>
             ) : null}
           </Sheet>
         )}

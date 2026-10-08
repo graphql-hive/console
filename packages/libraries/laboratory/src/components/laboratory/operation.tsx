@@ -168,10 +168,10 @@ export const ResponseHeaders = ({ historyItem }: { historyItem?: LaboratoryHisto
 export const ResponsePreflight = ({ historyItem }: { historyItem?: LaboratoryHistory | null }) => {
   return (
     <ScrollArea className="h-full">
-      <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
+      <div className="flex flex-col gap-1.5 p-3 whitespace-pre-wrap">
         {historyItem?.preflightLogs?.map((log, i) => (
           <div className="gap-2 font-mono" key={i}>
-            <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
+            <span className="text-xs text-muted-foreground">{log.createdAt}</span>{' '}
             <span
               className={cn('text-xs font-medium', {
                 'text-blue-400': log.level === 'info',
@@ -204,7 +204,7 @@ export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHis
       <Empty className="size-full">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <NetworkIcon className="text-muted-foreground size-6" />
+            <NetworkIcon className="size-6 text-muted-foreground" />
           </EmptyMedia>
           <EmptyTitle>{historyItem ? 'No query plan' : 'No query plan yet'}</EmptyTitle>
           <EmptyDescription>
@@ -220,7 +220,7 @@ export const ResponseQueryPlan = ({ historyItem }: { historyItem?: LaboratoryHis
   return (
     <div className="relative size-full">
       <ToggleGroup
-        className="bg-card absolute right-4 top-4 z-10 shadow-sm"
+        className="absolute top-4 right-4 z-10 bg-card shadow-sm"
         type="single"
         variant="outline"
         value={mode}
@@ -258,7 +258,7 @@ export const ResponseSubscription = ({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-border flex h-12 border-b p-3 text-base font-medium">
+      <div className="flex h-12 border-b border-border p-3 text-base font-medium">
         Subscription
         <div className="ml-auto flex items-center gap-2">
           {isActiveOperationLoading ? (
@@ -287,7 +287,7 @@ export const ResponseSubscription = ({
                 const height = 20.5 * value.split('\n').length;
 
                 return (
-                  <div className="border-border border-b" style={{ height: `${height}px` }} key={i}>
+                  <div className="border-b border-border" style={{ height: `${height}px` }} key={i}>
                     <Editor
                       key={response.createdAt}
                       value={value}
@@ -336,8 +336,8 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
   return (
     <Tabs
       defaultValue="response"
-      className={cn('bg-card grid size-full grid-rows-[auto_1fr]', {
-        'z-100 absolute inset-0 size-full': isFullScreen,
+      className={cn('grid size-full grid-rows-[auto_1fr] bg-card', {
+        'absolute inset-0 z-100 size-full': isFullScreen,
       })}
     >
       <TabsList className="h-[50px] w-full items-center justify-start rounded-none border-b bg-transparent p-3">
@@ -347,7 +347,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
               <Button
                 variant="ghost"
                 size="sm"
-                className="mr-2 mt-0.5 h-6 w-6"
+                className="mt-0.5 mr-2 h-6 w-6"
                 onClick={() => setIsFullScreen(false)}
               >
                 <PanelLeftOpenIcon className="size-4" />
@@ -361,7 +361,7 @@ export const Response = ({ historyItem }: { historyItem?: LaboratoryHistoryReque
               <Button
                 variant="ghost"
                 size="sm"
-                className="mr-2 mt-0.5 h-6 w-6"
+                className="mt-0.5 mr-2 h-6 w-6"
                 onClick={() => setIsFullScreen(true)}
               >
                 <PanelLeftCloseIcon className="size-4" />
@@ -782,7 +782,7 @@ export const Query = (props: {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="border-border flex w-full items-center gap-2 overflow-hidden border-b p-3">
+      <div className="flex w-full items-center gap-2 overflow-hidden border-b border-border p-3">
         <span className="text-base font-medium">Operation</span>
         {checkPermissions?.('collectionsOperations:create') && (
           <Toggle
@@ -791,7 +791,7 @@ export const Query = (props: {
             variant="default"
             pressed={isActiveOperationSavedToCollection}
             disabled={isActiveOperationSavedToCollection}
-            className="data-[state=on]:*:[svg]:fill-yellow-500 data-[state=on]:*:[svg]:stroke-yellow-500 h-6 data-[state=on]:bg-transparent"
+            className="h-6 data-[state=on]:bg-transparent data-[state=on]:*:[svg]:fill-yellow-500 data-[state=on]:*:[svg]:stroke-yellow-500"
             onClick={openSaveToCollectionDialog}
           >
             <BookmarkIcon className="size-4" />
@@ -805,10 +805,10 @@ export const Query = (props: {
                 onClick={copyAsCurl}
                 variant="ghost"
                 size="icon-sm"
-                className="p-1! size-6 rounded-sm"
+                className="size-6 rounded-sm p-1!"
                 aria-label="Copy as cURL"
               >
-                <SquareTerminal className="text-muted-foreground size-4" />
+                <SquareTerminal className="size-4 text-muted-foreground" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Copy as cURL</TooltipContent>
@@ -839,7 +839,7 @@ export const Query = (props: {
             size="sm"
             variant="default"
             pressed={preflight?.enabled}
-            className="hover:text-accent-foreground bg-input/30 border-input hover:bg-input/50 h-6 rounded-sm border shadow-sm data-[state=on]:bg-transparent"
+            className="h-6 rounded-sm border border-input bg-input/30 shadow-sm hover:bg-input/50 hover:text-accent-foreground data-[state=on]:bg-transparent"
             onClick={() => {
               setPreflight({
                 ...(preflight ?? { script: '', enabled: true }),
@@ -953,15 +953,15 @@ export const Operation = (props: {
   }, [props.historyItem]);
 
   return (
-    <div className="bg-card relative size-full">
-      <ResizablePanelGroup direction="horizontal" className="size-full">
-        <ResizablePanel defaultSize={25}>
+    <div className="relative size-full bg-card">
+      <ResizablePanelGroup orientation="horizontal" className="size-full">
+        <ResizablePanel defaultSize="25%">
           <Builder operation={operation} operationName={operationName} isReadOnly={isReadOnly} />
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel minSize={10} defaultSize={40}>
-          <ResizablePanelGroup direction="vertical">
-            <ResizablePanel defaultSize={70}>
+        <ResizablePanel minSize="10%" defaultSize="40%">
+          <ResizablePanelGroup orientation="vertical">
+            <ResizablePanel defaultSize="70%">
               <Query
                 operation={operation}
                 isReadOnly={isReadOnly}
@@ -969,7 +969,7 @@ export const Operation = (props: {
               />
             </ResizablePanel>
             <ResizableHandle />
-            <ResizablePanel minSize={10} defaultSize={30}>
+            <ResizablePanel minSize="10%" defaultSize="30%">
               <Tabs className="grid size-full grid-rows-[auto_1fr]" defaultValue="variables">
                 <TabsList className="h-[49.5px] w-full justify-start rounded-none border-b bg-transparent p-3">
                   <TabsTrigger value="variables" className="grow-0 rounded-sm">
@@ -996,7 +996,7 @@ export const Operation = (props: {
           </ResizablePanelGroup>
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel minSize={10} defaultSize={35}>
+        <ResizablePanel minSize="10%" defaultSize="35%">
           {historyItem ? (
             <>
               {'responses' in historyItem ? (
@@ -1009,7 +1009,7 @@ export const Operation = (props: {
             <Empty className="size-full">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
-                  <HistoryIcon className="text-muted-foreground size-6" />
+                  <HistoryIcon className="size-6 text-muted-foreground" />
                 </EmptyMedia>
                 <EmptyTitle>No history yet</EmptyTitle>
                 <EmptyDescription>

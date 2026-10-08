@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
 import { Info } from 'lucide-react';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { InputCopy } from './input-copy';
 
 /** Renders readonly properties for resources. Used on settings pages. */
@@ -10,7 +10,7 @@ export function ResourceDetails(props: { id: string; label: string }): ReactElem
       <InputCopy value={props.id} prefixText={props.label} />
       <Tooltip
         trigger={
-          <button type="button" aria-label="What this ID is for" className="text-fg-secondary ml-2">
+          <button type="button" aria-label="What this ID is for" className="ml-2 text-fg-secondary">
             <Info className="size-4" />
           </button>
         }

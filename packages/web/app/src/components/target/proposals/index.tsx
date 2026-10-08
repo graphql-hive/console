@@ -489,7 +489,7 @@ export function Proposal(props: {
               <Fragment key={cursor}>
                 {/* @todo if node.resolvedBy/resolvedAt is set, then minimize this */}
                 {withPreview === true && node.lineText && (
-                  <code className="text-fg bg-surface-code mb-3 block w-full p-3 pl-6">
+                  <code className="mb-3 block w-full bg-surface-code p-3 pl-6 text-fg">
                     {node.lineText}
                   </code>
                 )}
@@ -511,7 +511,7 @@ export function Proposal(props: {
           coordinates={reviewssByCoordinate.keys().toArray()}
           annotate={(coordinate, withPreview) => (
             <>
-              <div className="text-fg-subtle p-2 text-sm">
+              <div className="p-2 text-sm text-fg-subtle">
                 This comment refers to a schema coordinate that no longer exists.
               </div>
               {annotations(coordinate, withPreview)}

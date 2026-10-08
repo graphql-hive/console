@@ -11,15 +11,6 @@ import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { TriangleAlert } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import z from 'zod';
-import { Button } from '@/components/base/button/button';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Input } from '@/components/base/input/input';
-import { Label } from '@/components/base/label/label';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { Tabs } from '@/components/base/tabs/tabs';
-import { Textarea } from '@/components/base/textarea/textarea';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { ProposalChangeDetail } from '@/components/target/proposals/change-detail';
 import { ProposalEditor, ServiceTab } from '@/components/target/proposals/editor';
@@ -30,9 +21,18 @@ import {
 } from '@/components/target/proposals/save-proposal-modal';
 import { schemaTitle } from '@/components/target/proposals/util';
 import { Callout } from '@/components/ui/callout';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Input } from '@/components/ui/primitives/input/input';
+import { Label } from '@/components/ui/primitives/label/label';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { Tabs } from '@/components/ui/primitives/tabs/tabs';
+import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
@@ -107,7 +107,7 @@ export function TargetProposalsNewPage() {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className="h-(--content-height) flex min-h-[300px] flex-col pb-0">
+      <LayoutContent className="flex h-(--content-height) min-h-[300px] flex-col pb-0">
         <SaveProposalProvider>
           <ProposalsNewContent />
         </SaveProposalProvider>
@@ -136,7 +136,7 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
               >
                 Schema Proposals
               </Link>{' '}
-              <span className="text-fg-secondary inline-block px-2 italic">/</span> New
+              <span className="inline-block px-2 text-fg-secondary italic">/</span> New
             </span>
           }
           description="Collaborate on schema changes to reduce friction during development."
@@ -647,7 +647,7 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
       <Title>{props.title}</Title>
       <div className="mb-6">
         {props.error ? (
-          <div className="text-critical flex items-center">
+          <div className="flex items-center text-critical">
             <TriangleAlert className="mr-2 size-4" />
             {props.error}
           </div>

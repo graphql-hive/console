@@ -1,9 +1,8 @@
 import { useCallback, useState } from 'react';
-import { AdminStats, Filters } from '@/components/admin/AdminStats';
-import { Checkbox } from '@/components/base/checkbox/checkbox';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Page } from '@/components/common';
+import { AdminStats, Filters } from '@/components/admin/admin-stats';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 
 type FilterKey = keyof Filters;
@@ -44,11 +43,11 @@ export function ManagePage() {
   );
 
   return (
-    <Page title="Hive Stats">
+    <div className="p-4">
+      <h2 className="text-xl font-bold text-fg-inverse">Hive Stats</h2>
       <div className="flex flex-col">
         <div className="flex gap-4 pb-2">
           <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
             align="end"
@@ -97,6 +96,6 @@ export function ManagePage() {
           filters={filters}
         />
       </div>
-    </Page>
+    </div>
   );
 }

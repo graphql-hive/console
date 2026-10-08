@@ -1,20 +1,20 @@
 import { ReactElement, useMemo, useState } from 'react';
 import { AlertOctagonIcon, BugPlayIcon, CheckIcon, PlusIcon, SettingsIcon } from 'lucide-react';
 import { useMutation } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
-import { RadioGroup } from '@/components/base/radio-group/radio-group';
-import { Switch } from '@/components/base/switch/switch';
-import { useToast } from '@/components/base/toast/toast';
 import { Callout } from '@/components/ui/callout';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Heading } from '@/components/ui/heading';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
+import { Switch } from '@/components/ui/primitives/switch/switch';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
@@ -536,9 +536,9 @@ function OIDCDomainConfiguration(props: {
       </div>
       <Card title="Domain Settings" description="Settings for the verified domains.">
         <div className="flex items-center justify-between space-x-4">
-          <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+          <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
             <p>Require OIDC Login</p>
-            <p className="max-w-[500px] text-xs font-normal leading-snug">
+            <p className="max-w-[500px] text-xs leading-snug font-normal">
               Enforce sign in/up through OIDC for verified domains. Any other login method will be
               blocked. The organization owner is excluded from this restriction.
             </p>
@@ -750,9 +750,9 @@ function OIDCAccessSettings(props: {
             <Card title="SCIM Provision Defaults">
               <div className="space-y-5">
                 <div className="flex items-center justify-between space-x-4">
-                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                  <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
                     <p>Organization access restricted to (active) provisioned users</p>
-                    <p className="text-fg-secondary max-w-[500px] text-xs font-normal leading-snug">
+                    <p className="max-w-[500px] text-xs leading-snug font-normal text-fg-secondary">
                       Only (active) users provisioned via SCIM can access the organization.
                       <br />
                       <span className="font-bold">
@@ -762,14 +762,14 @@ function OIDCAccessSettings(props: {
                   </div>
                 </div>
                 <div className="flex items-center justify-between space-x-4">
-                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                  <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
                     <p>Sync groups via SCIM</p>
-                    <p className="text-fg-secondary max-w-[500px] text-xs font-normal leading-snug">
+                    <p className="max-w-[500px] text-xs leading-snug font-normal text-fg-secondary">
                       Groups are provisioned and updated via SCIM.{' '}
                       <Link
                         to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
+                        className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
                       >
                         Manage Groups
                       </Link>
@@ -777,14 +777,14 @@ function OIDCAccessSettings(props: {
                   </div>
                 </div>
                 <div className="flex items-center justify-between space-x-4">
-                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                  <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
                     <p>Sync users via SCIM</p>
-                    <p className="text-fg-secondary max-w-[500px] text-xs font-normal leading-snug">
+                    <p className="max-w-[500px] text-xs leading-snug font-normal text-fg-secondary">
                       Users are provisioned and updated via SCIM.{' '}
                       <Link
                         to="/$organizationSlug/view/members"
                         params={{ organizationSlug: organization.slug }}
-                        className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
+                        className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
                       >
                         Manage Users
                       </Link>
@@ -794,7 +794,7 @@ function OIDCAccessSettings(props: {
                     <div>
                       <Popover
                         trigger={
-                          <button type="button" className="text-warning flex text-xs">
+                          <button type="button" className="flex text-xs text-warning">
                             {organization.pendingSCIMManagementConfirmationsCount} SCIM provisioning
                             conflict
                             {organization.pendingSCIMManagementConfirmationsCount === 1 ? '' : 's'}
@@ -802,7 +802,7 @@ function OIDCAccessSettings(props: {
                         }
                         openOnHover
                         content={
-                          <div className="text-fg-default space-y-2 text-sm">
+                          <div className="space-y-2 text-sm text-fg-default">
                             <p>
                               SCIM provisioning matched existing organization members. Review each
                               match before allowing SCIM to manage the account.
@@ -811,7 +811,7 @@ function OIDCAccessSettings(props: {
                               to="/$organizationSlug/view/members"
                               params={{ organizationSlug: organization.slug }}
                               search={{ showPendingSCIMManagementConfirmations: true }}
-                              className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
+                              className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
                             >
                               Review conflicts
                             </Link>
@@ -822,14 +822,14 @@ function OIDCAccessSettings(props: {
                   )}
                 </div>
                 <div className="flex items-center justify-between space-x-4">
-                  <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                  <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
                     <p>Assign permissions via groups</p>
-                    <p className="text-fg-secondary max-w-[500px] text-xs font-normal leading-snug">
+                    <p className="max-w-[500px] text-xs leading-snug font-normal text-fg-secondary">
                       Assign role mappings to groups to grant permissions to group members.{' '}
                       <Link
                         to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        className="text-accent hover:text-accent-muted inline-flex items-center gap-1"
+                        className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
                       >
                         Manage Groups
                       </Link>
@@ -846,9 +846,9 @@ function OIDCAccessSettings(props: {
           >
             <div className="space-y-5">
               <div className="flex items-center justify-between space-x-4">
-                <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
                   <p>Require OIDC to Join</p>
-                  <p className="text-fg-secondary text-xs font-normal leading-snug">
+                  <p className="text-xs leading-snug font-normal text-fg-secondary">
                     Restricts new accounts joining the organization to be authenticated via OIDC.
                     <br />
                     <span className="font-bold">
@@ -864,9 +864,9 @@ function OIDCAccessSettings(props: {
                 />
               </div>
               <div className="flex items-center justify-between space-x-4">
-                <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
                   <p>Require OIDC to Access</p>
-                  <p className="text-fg-secondary text-xs font-normal leading-snug">
+                  <p className="text-xs leading-snug font-normal text-fg-secondary">
                     Prompt users to authenticate with OIDC before accessing the organization.
                     <br />
                     <span className="font-bold">
@@ -883,9 +883,9 @@ function OIDCAccessSettings(props: {
                 />
               </div>
               <div className="flex items-center justify-between space-x-4">
-                <div className="flex flex-col space-y-1 text-sm font-medium leading-none">
+                <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
                   <p>Require Invitation to Join</p>
-                  <p className="text-fg-secondary text-xs font-normal leading-snug">
+                  <p className="text-xs leading-snug font-normal text-fg-secondary">
                     Restricts only invited OIDC accounts to join the organization.
                   </p>
                 </div>
@@ -899,14 +899,14 @@ function OIDCAccessSettings(props: {
               </div>
               <div
                 className={cn(
-                  'space-y-1 text-sm font-medium leading-none',
+                  'space-y-1 text-sm leading-none font-medium',
                   isAdmin ? null : 'cursor-not-allowed',
                 )}
               >
                 <p>Default Member Role</p>
                 <div className="flex items-start justify-between space-x-4">
                   <div className="flex basis-2/3 flex-col md:basis-1/2">
-                    <p className="text-fg-secondary text-xs font-normal leading-snug">
+                    <p className="text-xs leading-snug font-normal text-fg-secondary">
                       This role is assigned to new members who sign in via OIDC.{' '}
                       <span className="font-medium">
                         Only members with the Admin role can modify it.

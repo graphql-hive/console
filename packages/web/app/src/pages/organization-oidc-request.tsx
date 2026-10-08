@@ -1,9 +1,9 @@
 import { Lock } from 'lucide-react';
-import { Button } from '@/components/base/button/button';
-import { Card } from '@/components/base/card/card';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
 import { useRouter } from '@tanstack/react-router';
 
 export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToPath: string }) {
@@ -15,11 +15,11 @@ export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToP
       <LayoutContent>
         <div className="my-6">
           <Card variants={{ onSurface: 'raised' }}>
-            <div className="min-h-140 flex flex-col items-center justify-center gap-y-6">
-              <Lock className="stroke-warning size-20" />
+            <div className="flex min-h-140 flex-col items-center justify-center gap-y-6">
+              <Lock className="size-20 stroke-warning" />
               <div className="flex flex-col gap-y-2 text-center">
                 <Heading>Single sign-on</Heading>
-                <span className="text-fg-secondary text-center text-sm font-medium">
+                <span className="text-center text-sm font-medium text-fg-secondary">
                   To access the organization's resources, authenticate your account with single
                   sign-on.
                 </span>

@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { RefreshCcwIcon } from 'lucide-react';
 import { CombinedError } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { useToast } from '@/components/base/toast/toast';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
+import { Button } from '@/components/ui/primitives/button/button';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 
@@ -105,7 +105,7 @@ export function LegacyCompositionSettings(props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-fg-secondary text-sm">
+        <p className="text-sm text-fg-secondary">
           Not recommended. Migrate towards using Native Federation v2.
         </p>
         <ProductUpdatesLink href="2023-10-10-native-federation-2" text="Read the announcement!" />

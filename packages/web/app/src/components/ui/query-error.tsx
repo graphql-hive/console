@@ -2,8 +2,8 @@ import { ReactElement } from 'react';
 import cookies from 'js-cookie';
 import { LogOutIcon } from 'lucide-react';
 import { CombinedError } from 'urql';
-import { Button } from '@/components/base/button/button';
 import { commonErrorStrings } from '@/components/error';
+import { Button } from '@/components/ui/primitives/button/button';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -37,7 +37,7 @@ export function QueryError({
   return (
     <div className={cn('flex size-full items-center justify-center', className)}>
       {showLogoutButton && (
-        <div className="absolute right-6 top-6">
+        <div className="absolute top-6 right-6">
           <Button
             variant="outline"
             onClick={() =>
@@ -83,9 +83,9 @@ export function QueryError({
 
             {requestId ? (
               <div className="mt-6 text-xs">
-                <div className="text-fg-default inline-flex items-center">
-                  <div className="bg-warning-tint rounded-l-sm p-2">Error ID</div>
-                  <div className="bg-warning-tint-subtle rounded-r-sm p-2">{requestId}</div>
+                <div className="inline-flex items-center text-fg-default">
+                  <div className="rounded-l-sm bg-warning-tint p-2">Error ID</div>
+                  <div className="rounded-r-sm bg-warning-tint-subtle p-2">{requestId}</div>
                 </div>
               </div>
             ) : null}

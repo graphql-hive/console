@@ -1,6 +1,6 @@
 import { useMutation } from 'urql';
-import { AlertDialog } from '@/components/base/overlays/alert-dialog/alert-dialog';
-import { useToast } from '@/components/base/toast/toast';
+import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 
@@ -41,7 +41,7 @@ export function DeleteRuleConfirmationDialog(props: DeleteRuleConfirmationDialog
       title="Delete this alert rule?"
       description={
         <>
-          This will permanently delete <span className="text-fg font-medium">{props.ruleName}</span>
+          This will permanently delete <span className="font-medium text-fg">{props.ruleName}</span>
           , its incident history, and state-log entries. This cannot be undone.
         </>
       }

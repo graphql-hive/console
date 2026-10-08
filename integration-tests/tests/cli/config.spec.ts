@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import { execa } from '@esm2cjs/execa';
 
 const binPath = resolve(__dirname, '../../../packages/libraries/cli/bin/run');
-const cliDir = resolve(__dirname, '../../../packages/libraries/cli');
 
 test('an invalid hive.json is an invalid configuration error', async () => {
   const dir = await mkdtemp(resolve(tmpdir(), 'hive-cli-config-'));
@@ -22,7 +21,6 @@ test('an invalid hive.json is an invalid configuration error', async () => {
         PATH: process.env.PATH,
         HIVE_TOKEN: 'test-token',
         HIVE_NO_ERROR_TIP: '1',
-        OCLIF_CLI_CUSTOM_PATH: cliDir,
         OCLIF_COLUMNS: '1000',
         NODE_OPTIONS: '--no-deprecation',
       },

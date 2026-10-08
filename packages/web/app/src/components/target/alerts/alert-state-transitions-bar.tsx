@@ -1,4 +1,4 @@
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { MetricAlertRuleState } from '@/gql/graphql';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 
@@ -14,16 +14,6 @@ export const ALERT_STATE_LABEL: Record<MetricAlertRuleState, string> = {
   [MetricAlertRuleState.Pending]: 'Pending',
   [MetricAlertRuleState.Firing]: 'Firing',
   [MetricAlertRuleState.Recovering]: 'Recovering',
-};
-
-export const ALERT_STATE_DOT_COLOR: Record<
-  MetricAlertRuleState,
-  'red' | 'yellow' | 'green' | 'orange'
-> = {
-  [MetricAlertRuleState.Normal]: 'green',
-  [MetricAlertRuleState.Pending]: 'yellow',
-  [MetricAlertRuleState.Firing]: 'red',
-  [MetricAlertRuleState.Recovering]: 'orange',
 };
 
 type StateChange = {
@@ -148,7 +138,7 @@ export function AlertStateTransitionsBar({
       className="space-y-2"
       style={{ paddingLeft: ALERT_CHART_INSET_LEFT, paddingRight: ALERT_CHART_INSET_RIGHT }}
     >
-      <div className="border-line flex h-4 w-full overflow-hidden rounded-sm border">
+      <div className="flex h-4 w-full overflow-hidden rounded-sm border border-line">
         {segments.map((seg, i) => {
           const widthPct = ((seg.endMs - seg.startMs) / rangeMs) * 100;
           if (widthPct <= 0) return null;
@@ -166,7 +156,7 @@ export function AlertStateTransitionsBar({
               }
               content={
                 <div className="text-xs">
-                  <div className="text-fg font-medium">{labelForSegment(seg.state)}</div>
+                  <div className="font-medium text-fg">{labelForSegment(seg.state)}</div>
                   <div className="text-fg-secondary">
                     {formatTimestamp(new Date(seg.startMs).toISOString())} →{' '}
                     {formatTimestamp(new Date(seg.endMs).toISOString())}
@@ -177,7 +167,7 @@ export function AlertStateTransitionsBar({
           );
         })}
       </div>
-      <div className="text-fg-secondary flex justify-between text-[11px]">
+      <div className="flex justify-between text-[11px] text-fg-secondary">
         {ticks.map((tick, i) => (
           <span key={i}>{formatTick(tick, rangeMs)}</span>
         ))}

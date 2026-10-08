@@ -16,19 +16,6 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { DescriptionList } from '@/components/base/description-list/description-list';
-import { FailureCard, formatCount } from '@/components/base/failure-card/failure-card';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Select } from '@/components/base/floating/select/select';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Label } from '@/components/base/label/label';
-import { Legend } from '@/components/base/legend/legend';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { Spinner } from '@/components/base/spinner/spinner';
-import { Switch } from '@/components/base/switch/switch';
-import { TabbedView, type TabbedViewItem } from '@/components/base/tabs/tabbed-view';
-import { Textarea } from '@/components/base/textarea/textarea';
 import {
   ChangesBlock,
   CompositionErrorsList,
@@ -37,15 +24,28 @@ import {
   NoGraphChanges,
 } from '@/components/target/history/errors-and-changes';
 import { CopyText } from '@/components/ui/copy-text';
+import { DownloadButton } from '@/components/ui/diff-editor';
 import { File } from '@/components/ui/diffs';
 import { DocsLink } from '@/components/ui/docs-note';
 import { EmptyList } from '@/components/ui/empty-list';
+import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
 import { Heading } from '@/components/ui/heading';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
+import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Label } from '@/components/ui/primitives/label/label';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import { Switch } from '@/components/ui/primitives/switch/switch';
+import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import { QueryError } from '@/components/ui/query-error';
+import { ScopeBar } from '@/components/ui/scope-bar/scope-bar';
+import { TabbedView, type TabbedViewItem } from '@/components/ui/tabbed-view/tabbed-view';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { DownloadButton } from '@/components/v2/diff-editor';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
@@ -86,7 +86,7 @@ function AnnotatedSDLView(props: {
         renderAnnotation={annotation => (
           <div
             className={cn(
-              'border-l-5 flex items-center pl-1',
+              'flex items-center border-l-5 pl-1',
               annotation.metadata.severity === 'warning'
                 ? 'border-warning-line bg-warning-tint text-warning'
                 : 'border-critical bg-critical-tint text-critical',
@@ -94,9 +94,9 @@ function AnnotatedSDLView(props: {
           >
             <span>{annotation.metadata.message}</span>
             {annotation.metadata.severity === 'warning' ? (
-              <TriangleAlertIcon className="text-warning ml-auto mr-2 size-4" />
+              <TriangleAlertIcon className="mr-2 ml-auto size-4 text-warning" />
             ) : (
-              <ShieldAlertIcon className="text-critical ml-auto mr-2 size-4" />
+              <ShieldAlertIcon className="mr-2 ml-auto size-4 text-critical" />
             )}
           </div>
         )}
@@ -112,7 +112,7 @@ function SDLSingleView(props: {
 }): ReactElement {
   return (
     <div className="w-full">
-      <div className="border-line-subtle flex items-center justify-between border-b px-2 py-1">
+      <div className="flex items-center justify-between border-b border-line-subtle px-2 py-1">
         <div className="px-2 font-bold">{props.title}</div>
         <div className="ml-auto flex h-[36px] items-center px-2">
           {props.sdl && props.downloadFileName && (
@@ -136,7 +136,7 @@ function SDLSingleDiffToggleView(props: {
 
   return (
     <div className="w-full">
-      <div className="border-line-subtle flex items-center justify-between border-b px-2 py-1">
+      <div className="flex items-center justify-between border-b border-line-subtle px-2 py-1">
         <div className="px-2 font-bold">{title}</div>
         <div className="ml-auto flex h-[36px] items-center px-2">
           {props.after && props.downloadFileName && (
@@ -197,8 +197,8 @@ function ApproveFailedSchemaCheckModal(props: {
   if (mutation.error) {
     return (
       <div className="space-y-2">
-        <h4 className="font-medium leading-none">Oops. Something unexpected happened</h4>
-        <p className="text-fg-secondary text-sm">{mutation.error.message}</p>
+        <h4 className="leading-none font-medium">Oops. Something unexpected happened</h4>
+        <p className="text-sm text-fg-secondary">{mutation.error.message}</p>
         <div className="text-right">
           <Button onSurface="raised" onClick={props.onClose}>
             Close
@@ -211,8 +211,8 @@ function ApproveFailedSchemaCheckModal(props: {
   if (mutation.data?.approveFailedSchemaCheck.error) {
     return (
       <div className="space-y-2">
-        <h4 className="font-medium leading-none">Approval failed</h4>
-        <p className="text-fg-secondary text-sm">
+        <h4 className="leading-none font-medium">Approval failed</h4>
+        <p className="text-sm text-fg-secondary">
           {mutation.data.approveFailedSchemaCheck.error.message}
         </p>
         <div className="text-right">
@@ -227,7 +227,7 @@ function ApproveFailedSchemaCheckModal(props: {
   if (mutation.data?.approveFailedSchemaCheck.ok) {
     return (
       <div className="space-y-2">
-        <h4 className="font-medium leading-none">
+        <h4 className="leading-none font-medium">
           The schema check has been approved successfully!
         </h4>
         <div className="text-right">
@@ -241,11 +241,11 @@ function ApproveFailedSchemaCheckModal(props: {
 
   return (
     <div className="space-y-2">
-      <h4 className="font-medium leading-none">Finish your approval</h4>
+      <h4 className="leading-none font-medium">Finish your approval</h4>
       <div>
-        <p className="text-fg-secondary text-sm">Acknowledge and accept breaking changes.</p>
+        <p className="text-sm text-fg-secondary">Acknowledge and accept breaking changes.</p>
         {props?.contextId ? (
-          <p className="text-fg-secondary text-sm">
+          <p className="text-sm text-fg-secondary">
             Approval applies to all future changes within the context of a pull request or branch
             lifecycle: <span className="font-medium">{props?.contextId}</span>
           </p>
@@ -304,7 +304,7 @@ const BreakingChangesTitle = () => {
         align="start"
         width="xl"
         content={
-          <div className="text-fg-default font-normal">
+          <div className="font-normal text-fg-default">
             <h5 className="mb-1 text-lg font-bold">Breaking Changes</h5>
             <p className="mb-2 text-sm">Schema changes that can potentially break clients.</p>
             <h6 className="mb-1 font-bold">Breaking Change Approval</h6>
@@ -328,18 +328,16 @@ const PolicyInfo = () => {
   return (
     <Popover
       trigger={
-        <button type="button" aria-label="About policy line numbers" className="ml-2 inline-block">
-          <InfoIcon size={14} />
+        <button type="button" aria-label="About policy line numbers">
+          <InfoIcon className="h-3 w-3" />
         </button>
       }
       openOnHover
-      align="start"
-      width="auto"
+      width="lg"
       content={
-        <p className="text-fg-default text-sm">
-          Schema policy checks run on the composed API schema. Line numbers
-          <br />
-          reflect that and will not match the lines from the source schema.
+        <p className="text-xs text-fg-default">
+          Schema policy checks run on the composed API schema. Line numbers reflect that and will
+          not match the lines from the source schema.
         </p>
       }
     />
@@ -355,21 +353,22 @@ const PolicyBlock = (props: {
   const policies = useFragment(SchemaPolicyEditor_PolicyWarningsFragment, props.policies);
   return (
     <div>
-      <h2 className="text-fg-secondary mb-3 text-sm font-bold">
-        {props.title} <PolicyInfo />
-      </h2>
+      <div className="mb-3 flex items-center gap-1.5">
+        <h2 className="font-bold text-fg-default">{props.title}</h2>
+        <PolicyInfo />
+      </div>
       <ul className="list-inside list-disc pl-3 text-sm/relaxed">
         {policies.edges.map((edge, key) => (
           <li
             key={key}
             className={cn(props.type === 'warning' ? 'text-warning' : 'text-critical', 'my-1')}
           >
-            <span className="text-fg-secondary text-left">
+            <span className="text-left text-fg-secondary">
               {labelize(edge.node.message.replace(/\.$/, ''))}{' '}
             </span>
             {edge.node.start?.line ? (
               <span
-                className="text-fg-muted ml-1 cursor-default text-xs hover:underline"
+                className="ml-1 cursor-default text-xs text-fg-muted hover:underline"
                 onClick={() => props.goToline?.(edge.node.start?.line || undefined)}
               >
                 on line {edge.node.start.line}
@@ -380,7 +379,7 @@ const PolicyBlock = (props: {
                 <button
                   type="button"
                   aria-label="Which rule"
-                  className="text-fg-subtle ml-2 inline-block"
+                  className="ml-2 inline-block text-fg-subtle"
                 >
                   <CircleQuestionMarkIcon size={16} />
                 </button>
@@ -388,7 +387,7 @@ const PolicyBlock = (props: {
               openOnHover
               width="auto"
               content={
-                <p className="text-fg-default text-sm">
+                <p className="text-sm text-fg-default">
                   rule: <span className="text-fg">{edge.node.ruleId}</span>
                 </p>
               }
@@ -437,7 +436,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
 
   if (!schemaCheck.conditionalBreakingChangeMetadata) {
     return (
-      <div className="text-fg-secondary mb-5 mt-10 text-sm">
+      <div className="mt-10 mb-5 text-sm text-fg-secondary">
         Get more out of schema checks by enabling conditional breaking changes based on usage data.
         <br />
         <DocsLink
@@ -457,7 +456,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
   const allTargets = schemaCheck.conditionalBreakingChangeMetadata.settings.targets;
 
   return (
-    <div className="text-fg-secondary mb-5 mt-10 text-sm">
+    <div className="mt-10 mb-5 text-sm text-fg-secondary">
       <p>
         Based on{' '}
         <span className="text-fg">
@@ -488,12 +487,12 @@ function ConditionalBreakingChangesMetadataSection(props: {
               trigger={<Button variant="link">{excludedTargets.length} more</Button>}
               content={
                 <div className="p-2">
-                  <h4 className="text-fg mb-2 text-sm font-semibold">All Targets</h4>
+                  <h4 className="mb-2 text-sm font-semibold text-fg">All Targets</h4>
                   <ScrollArea height="sm">
-                    <div className="divide-line grid grid-cols-1 divide-y">
+                    <div className="grid grid-cols-1 divide-y divide-line">
                       {allTargets.map((target, index) => (
                         <div key={index} className="py-2">
-                          <div className="text-fg-secondary line-clamp-3 text-sm">
+                          <div className="line-clamp-3 text-sm text-fg-secondary">
                             {target.slug}
                           </div>
                         </div>
@@ -1213,7 +1212,7 @@ function SchemaChecksView(props: {
   const contractChecks = schemaCheck.contractChecks?.edges ?? [];
   // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
   const contractPicker = !contractChecks.length ? (
-    <span className="text-fg-default inline-flex items-center gap-1.5 px-2 text-xs">
+    <span className="inline-flex items-center gap-1.5 px-2 text-xs text-fg-default">
       {checkStatusIcon(schemaCheck, 'Schema changed')}
       Default Graph
     </span>
@@ -1243,8 +1242,7 @@ function SchemaChecksView(props: {
         })),
       ]}
       size="compact"
-      onSurface="raised"
-      width="md"
+      width="auto"
     />
   );
 
@@ -1272,26 +1270,9 @@ function SchemaChecksView(props: {
     projectType: props.projectType,
   });
   const active = contractView ?? defaultView;
-  const view = (
-    <TabbedView
-      items={active.items}
-      value={active.value}
-      onValueChange={active.onValueChange}
-      action={contractPicker}
-      bodyPadding="none"
-    />
-  );
-
-  if (!contractChecks.length) {
-    return view;
-  }
-
   // The picker opens on the default graph, so a contract that failed is named here first.
   return (
     <div className="mt-3 flex flex-col gap-3">
-      <div className="flex justify-end">
-        <Legend items={CONTRACT_STATUS_LEGEND} />
-      </div>
       {failures.length ? (
         <div className="mb-3">
           <FailureCard
@@ -1301,15 +1282,24 @@ function SchemaChecksView(props: {
           />
         </div>
       ) : null}
-      {view}
+      <ScopeBar
+        picker={contractPicker}
+        legend={contractChecks.length ? CONTRACT_STATUS_LEGEND : undefined}
+      />
+      <TabbedView
+        items={active.items}
+        value={active.value}
+        onValueChange={active.onValueChange}
+        bodyPadding="none"
+      />
     </div>
   );
 }
 
 const CONTRACT_STATUS_LEGEND = [
-  { icon: <TriangleAlertIcon className="text-critical size-3.5" />, label: 'Failed' },
+  { icon: <TriangleAlertIcon className="size-3.5 text-critical" />, label: 'Failed' },
   { icon: <GitCompareIcon className="size-3.5" />, label: 'Schema changed' },
-  { icon: <CheckIcon className="text-success size-3.5" />, label: 'Passed' },
+  { icon: <CheckIcon className="size-3.5 text-success" />, label: 'Passed' },
 ];
 
 /**
@@ -1362,19 +1352,19 @@ type CheckStatusFlags = {
 function checkStatus(check: CheckStatusFlags, changedLabel: string) {
   if (check.hasSchemaCompositionErrors) {
     return {
-      icon: <TriangleAlertIcon className="text-critical size-3.5" />,
+      icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
       label: 'Composition failed.',
     };
   }
   if (check.hasUnapprovedBreakingChanges) {
     return {
-      icon: <TriangleAlertIcon className="text-critical size-3.5" />,
+      icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
       label: 'Unapproved breaking changes!',
     };
   }
   if (check.baseline?.compositionErrors?.length) {
     return {
-      icon: <TriangleAlertIcon className="text-critical size-3.5" />,
+      icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
       label: 'Baseline composition failed.',
     };
   }
@@ -1382,7 +1372,7 @@ function checkStatus(check: CheckStatusFlags, changedLabel: string) {
     return { icon: <GitCompareIcon className="size-3.5" />, label: changedLabel };
   }
   return {
-    icon: <CheckIcon className="text-success size-3.5" />,
+    icon: <CheckIcon className="size-3.5 text-success" />,
     label: 'Composition succeeded.',
   };
 }
@@ -1482,7 +1472,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
   if (query.fetching || query.stale) {
     return (
       <div className="flex h-fit flex-1 items-center justify-center self-center">
-        <div className="text-fg-secondary flex flex-col items-center text-sm">
+        <div className="flex flex-col items-center text-sm text-fg-secondary">
           <span className="mb-3">
             <Spinner variants={{ size: 'lg' }} />
           </span>
@@ -1520,7 +1510,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
         <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
       <div className="mb-3">
-        <div className="bg-surface-card flex items-center gap-4 rounded-md border px-5 py-4">
+        <div className="flex items-center gap-4 rounded-md border bg-surface-card px-5 py-4">
           <div className="min-w-0 flex-1">
             <DescriptionList
               variants={{ termStyle: 'title', columns: 'auto' }}
@@ -1557,6 +1547,18 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                                 <span title={schemaCheck.meta.commit}>
                                   {schemaCheck.meta.commit}
                                 </span>
+                              </CopyText>
+                            ),
+                          },
+                        ]
+                      : []),
+                    ...(schemaCheck.contextId
+                      ? [
+                          {
+                            term: 'Context ID',
+                            description: (
+                              <CopyText>
+                                <span title={schemaCheck.contextId}>{schemaCheck.contextId}</span>
                               </CopyText>
                             ),
                           },
@@ -1600,12 +1602,12 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
         </div>
         {schemaCheck.__typename === 'SuccessfulSchemaCheck' && schemaCheck.isApproved ? (
           <div className="py-6">
-            <div className="border-line-subtle text-fg-secondary flex flex-row items-center gap-x-6 rounded-md border p-4 font-medium">
+            <div className="flex flex-row items-center gap-x-6 rounded-md border border-line-subtle p-4 font-medium text-fg-secondary">
               <div>
                 <Tooltip
                   trigger={
                     <span className="inline-flex">
-                      <BadgeCheck className="text-success size-6" />
+                      <BadgeCheck className="size-6 text-success" />
                     </span>
                   }
                   content={
@@ -1620,19 +1622,19 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                 />
               </div>
               <div>
-                <p className="text-sm font-medium leading-none">
+                <p className="text-sm leading-none font-medium">
                   {schemaCheck.approvedBy?.displayName ??
                     schemaCheck.cliApprovalMetadata?.displayName ??
                     'unknown'}
                 </p>
-                <p className="text-fg-secondary text-sm">
+                <p className="text-sm text-fg-secondary">
                   {schemaCheck.approvedBy?.email ??
                     schemaCheck.cliApprovalMetadata?.email ??
                     'unknown'}
                 </p>
               </div>
               {schemaCheck.approvalComment ? (
-                <div className="text-fg text-sm italic">
+                <div className="text-sm text-fg italic">
                   <span>„ </span>
                   {schemaCheck.approvalComment}
                   <span> ”</span>

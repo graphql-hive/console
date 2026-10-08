@@ -28,8 +28,8 @@ const previewEnv: Plugin = {
 };
 
 export default defineConfig({
-  // Widened past `base/` so real app components can be previewed too, not just design-system
-  // primitives. Previews of app components render inside the stand-in router in
+  // Widened past `ui/primitives/` so real app components can be previewed too, not just
+  // design-system primitives. Previews of app components render inside the stand-in router in
   // `foundry.router.tsx` and stand in for query data with `makeFragmentData`.
   previews: 'src/components/**/*.preview.tsx',
   title: 'Hive Console Components',
@@ -38,34 +38,29 @@ export default defineConfig({
   // a preview's `nav` export into a type error instead of a stray top-level group.
   nav: [
     {
-      label: 'Base',
+      label: 'Primitives',
       children: [
         {
           label: 'Foundations',
           children: [{ label: 'Focus' }, { label: 'SemanticColors' }, { label: 'TypeScale' }],
         },
-        {
-          label: 'Primitives',
-          children: [
-            { label: 'Accordion' },
-            { label: 'Avatar' },
-            { label: 'Badge' },
-            { label: 'Button' },
-            { label: 'Card' },
-            { label: 'Collapsible' },
-            { label: 'CopyChip' },
-            { label: 'Input' },
-            { label: 'Legend' },
-            { label: 'ScrollArea' },
-            { label: 'Separator' },
-            { label: 'Skeleton' },
-            { label: 'Spinner' },
-            { label: 'StatCard' },
-            { label: 'StatusDot' },
-            { label: 'Tabs' },
-            { label: 'Textarea' },
-          ],
-        },
+        { label: 'Accordion' },
+        { label: 'Avatar' },
+        { label: 'Badge' },
+        { label: 'Button' },
+        { label: 'Card' },
+        { label: 'Collapsible' },
+        { label: 'CopyChip' },
+        { label: 'DescriptionList' },
+        { label: 'Input' },
+        { label: 'Legend' },
+        { label: 'ScrollArea' },
+        { label: 'Separator' },
+        { label: 'Skeleton' },
+        { label: 'Spinner' },
+        { label: 'StatusDot' },
+        { label: 'Tabs' },
+        { label: 'Textarea' },
         {
           label: 'FormControls',
           children: [
@@ -81,8 +76,6 @@ export default defineConfig({
         {
           label: 'Floating',
           children: [
-            { label: 'FilterDropdown' },
-            { label: 'FilterMenu' },
             { label: 'Menu' },
             { label: 'Popover' },
             { label: 'PortalContainer' },
@@ -100,33 +93,41 @@ export default defineConfig({
           children: [{ label: 'Toast' }],
         },
         {
-          label: 'Navigation',
-          children: [{ label: 'Navigation', children: [{ label: 'Component Examples' }] }],
+          label: 'Charts',
+          children: [{ label: 'Chart' }, { label: 'Sparkline' }, { label: 'TimeSeriesChart' }],
         },
-        // Data and layout
-        { label: 'DataTable' },
-        { label: 'DescriptionList' },
       ],
     },
-    // The `ui/` and `v2/` primitives queued for migration to `base/`, rendered as they ship
-    // today. Each entry transcribes every real call site, so a replacement can be judged
+    // The legacy `ui/` primitives (some formerly in `v2/`) queued for migration to `ui/primitives/`,
+    // as they ship today. Each entry transcribes every real call site, so a replacement can be judged
     // against the current thing rather than against invented examples, and so there is a
     // coverage checklist to migrate through. Entries are deleted as their component lands.
     {
       label: 'Inventory',
       children: [{ label: 'Presentational' }, { label: 'V2Leftovers' }],
     },
-    // App components, as opposed to the design-system primitives above. Each preview
-    // reproduces a real call site so a base-component change can be judged against the
-    // compositions that actually ship.
+    // Composites and app components, built from the primitives above. Each preview reproduces
+    // real call sites so a primitive change can be judged against the compositions that ship.
     {
       label: 'Components',
       children: [
         { label: 'BillingPlanPicker' },
+        { label: 'Calendar' },
+        { label: 'CompositionErrors' },
+        { label: 'DataTable' },
+        { label: 'DateRangePicker' },
         { label: 'FailureCard' },
+        { label: 'Filters', children: [{ label: 'FilterDropdown' }, { label: 'FilterMenu' }] },
+        { label: 'Navigation', children: [{ label: 'Component Examples' }] },
         { label: 'NotFound' },
         { label: 'PageLead' },
         { label: 'PagePending' },
+        { label: 'RefreshButton' },
+        { label: 'Resizable' },
+        { label: 'ScopeBar' },
+        { label: 'StatCard' },
+        { label: 'Stepper' },
+        { label: 'SubgraphName' },
         { label: 'SupportForms' },
         { label: 'TabbedView' },
       ],

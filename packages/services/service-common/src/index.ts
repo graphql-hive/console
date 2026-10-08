@@ -11,7 +11,7 @@ export { cleanRequestId, maskToken } from './helpers';
 export { sentryInit } from './sentry';
 export { scrubBasicAuth } from './scrub';
 export { createMskIamTokenProvider } from './iam-msk';
-export { invariant } from './helpers';
+export { invariant, fail } from './helpers';
 export {
   generatePresignedToken,
   startTokenRefreshTimer,
@@ -39,6 +39,13 @@ export {
   type ParsePostgresConfigFromEnvironmentResult,
   type PostgresConfig,
 } from './postgres-config';
+export {
+  parseClickHouseConfigFromEnvironment,
+  ClickHouseModel,
+  type ClickHouseEnvironment,
+  type ParseClickHouseConfigFromEnvironmentResult,
+  type ClickHouseConfig,
+} from './clickhouse-config';
 export {
   createRedisClient,
   type Redis,

@@ -30,6 +30,8 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
+// ECharts draws on a canvas, which jsdom does not implement.
+vi.mock('@/components/ui/primitives/chart/chart', () => ({ Chart: () => null }));
 
 // A signed-in session without SuperTokens: the wrappers pass through and the session exists.
 vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
@@ -712,6 +714,51 @@ describe('alerts sections', () => {
       expect(seen.filter(name => name.endsWith('LayoutQuery'))).toEqual(['TargetLayoutQuery']);
     },
   );
+});
+
+describe('the range in the URL', () => {
+  // Alerts is a period page too, but its activity log has its own default and retention.
+  const PERIOD_ITEMS = ['Explorer', 'Traces', 'Insights'];
+
+  function navRange(name: string) {
+    const nav = screen.getByRole('navigation', { name: 'Secondary' });
+    const href = within(nav).getByRole('link', { name }).getAttribute('href') ?? '';
+    return new URL(href, 'http://localhost').searchParams.get('from');
+  }
+
+  beforeEach(() => {
+    client.current = createTestClient(layoutFixtures());
+  });
+
+  it('travels through the nav from a page that has one', { timeout: 30_000 }, async () => {
+    at(`${TARGET}/insights?from=now-1d&to=now`);
+    await screen.findByRole('link', { name: 'Insights', current: 'page' });
+
+    for (const name of PERIOD_ITEMS) {
+      expect(navRange(name)).toContain('now-1d');
+    }
+    expect(navRange('Alerts')).toBeNull();
+    expect(navRange('Checks')).toBeNull();
+  });
+
+  it('is kept from Insights and Explorer when the retention does not cover it', async () => {
+    // Traces keeps data for a year; the fixture organization keeps usage for 30 days.
+    at(`${TARGET}/traces?from=now-90d&to=now`);
+    await screen.findByRole('link', { name: 'Traces', current: 'page' });
+
+    expect(navRange('Traces')).toContain('now-90d');
+    expect(navRange('Insights')).toBeNull();
+    expect(navRange('Explorer')).toBeNull();
+  });
+
+  it('is not invented by a page without one', { timeout: 30_000 }, async () => {
+    at(`${TARGET}/checks`);
+    await screen.findByRole('link', { name: 'Checks', current: 'page' });
+
+    for (const name of PERIOD_ITEMS) {
+      expect(navRange(name)).toBeNull();
+    }
+  });
 });
 
 describe('permission gates', () => {

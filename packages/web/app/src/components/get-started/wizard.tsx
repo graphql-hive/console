@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
 import { Circle, CircleCheck } from 'lucide-react';
-import { Sheet } from '@/components/base/overlays/sheet/sheet';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { cn } from '@/lib/utils';
 
 export function GetStartedWizard({
@@ -92,19 +92,19 @@ function Task({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        'border-line hover:bg-surface-selected bg-surface-hover relative block rounded-lg border p-4',
+        'relative block rounded-lg border border-line bg-surface-hover p-4 hover:bg-surface-selected',
         completed ? 'opacity-70' : null,
       )}
     >
       <div className="flex items-start space-x-3">
         {completed ? (
-          <CircleCheck className="text-accent size-5" />
+          <CircleCheck className="size-5 text-accent" />
         ) : (
-          <Circle className="text-accent size-5" />
+          <Circle className="size-5 text-accent" />
         )}
         <div className="w-0 flex-1">
-          <p className="text-fg font-medium leading-5">{title}</p>
-          <p className="text-fg-secondary mt-1 text-sm">{description}</p>
+          <p className="leading-5 font-medium text-fg">{title}</p>
+          <p className="mt-1 text-sm text-fg-secondary">{description}</p>
         </div>
       </div>
     </a>

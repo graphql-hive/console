@@ -1,5 +1,104 @@
 # hive
 
+## 12.1.0
+
+### Minor Changes
+
+- [#8518](https://github.com/graphql-hive/console/pull/8518)
+  [`f5d702b`](https://github.com/graphql-hive/console/commit/f5d702ba61dfa272af67d5057e2067378d837c70)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Introduce internal entities for graphs. This
+  release is an intermediate rollout step required to bring the database and application into a
+  consistent state before subsequent graph-related changes are deployed.
+
+### Patch Changes
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-4mh8-r7rc-xpvc](https://github.com/advisories/GHSA-4mh8-r7rc-xpvc).
+
+- [#8609](https://github.com/graphql-hive/console/pull/8609)
+  [`7e443af`](https://github.com/graphql-hive/console/commit/7e443af54d09bf4ed4297436c10de9bfae492468)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Fixes a long-standing client
+  crash (graphcache) after modifying a Metric Alert
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [GHSA-44g4-m2mj-wpvx](https://github.com/advisories/GHSA-44g4-m2mj-wpvx),
+  [GHSA-9fr6-4gfg-395g](https://github.com/advisories/GHSA-9fr6-4gfg-395g),
+  [GHSA-vh66-26gq-q6x8](https://github.com/advisories/GHSA-vh66-26gq-q6x8),
+  [GHSA-j8rh-479h-cp32](https://github.com/advisories/GHSA-j8rh-479h-cp32),
+  [GHSA-r4gj-5m52-g5wh](https://github.com/advisories/GHSA-r4gj-5m52-g5wh),
+  [GHSA-4hqw-qxg8-jxx2](https://github.com/advisories/GHSA-4hqw-qxg8-jxx2),
+  [GHSA-3pq3-5fj3-cg6v](https://github.com/advisories/GHSA-3pq3-5fj3-cg6v),
+  [GHSA-m8m8-qj5v-23w3](https://github.com/advisories/GHSA-m8m8-qj5v-23w3),
+  [GHSA-c29m-xwm3-cm6r](https://github.com/advisories/GHSA-c29m-xwm3-cm6r),
+  [GHSA-542g-h47m-68v8](https://github.com/advisories/GHSA-542g-h47m-68v8),
+  [GHSA-mghh-pgcx-3jjj](https://github.com/advisories/GHSA-mghh-pgcx-3jjj) and
+  [GHSA-x97p-jq2g-jp4f](https://github.com/advisories/GHSA-x97p-jq2g-jp4f).
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-f596-whhp-79r4](https://github.com/advisories/GHSA-f596-whhp-79r4).
+
+- [#8607](https://github.com/graphql-hive/console/pull/8607)
+  [`b936b9a`](https://github.com/graphql-hive/console/commit/b936b9a23f7193fcfb17f85bb38f7cf26f148819)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-p98j-92pf-mc4p](https://github.com/advisories/GHSA-p98j-92pf-mc4p).
+
+## 12.0.0
+
+### Major Changes
+
+- [#8603](https://github.com/graphql-hive/console/pull/8603)
+  [`79631e2`](https://github.com/graphql-hive/console/commit/79631e2326443960cd2ff9824fbe521e482a530b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Replace `Mutation.disableContract` mutation with
+  `Mutation.deleteContract`, which permanently deletes contracts instead of soft-deleting them.
+  Historical contract versions are retained and remain available from their schema versions.
+
+  Remove `Contract.isDisabled` and `Target.activeContracts`. Use `Target.contracts` as the single
+  source of truth for existing contracts; legacy disabled contracts are excluded from this
+  connection.
+
+- [#8601](https://github.com/graphql-hive/console/pull/8601)
+  [`762334e`](https://github.com/graphql-hive/console/commit/762334ed80bfa94ccbdf6ee07a9fe6f6ec9583f9)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Creating a contract now requires alphanumeric
+  names.
+
+### Patch Changes
+
+- [#8597](https://github.com/graphql-hive/console/pull/8597)
+  [`b94f2d2`](https://github.com/graphql-hive/console/commit/b94f2d2a6407b72ded8615a2acd29b7059bdf336)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix the trace list and trace filter options
+  occasionally omitting recently ingested traces of a target after a filtered request. ClickHouse's
+  query condition cache keyed the verdicts of these queries by their PREWHERE only while a separate
+  WHERE dropped granules through skip indexes; the queries now carry every condition in a single
+  PREWHERE.
+
+## 11.16.1
+
+### Patch Changes
+
+- [#8590](https://github.com/graphql-hive/console/pull/8590)
+  [`914d28d`](https://github.com/graphql-hive/console/commit/914d28d48a2cca5a7050f7595e9ecbea657a9cdb)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-jvvf-x445-j334](https://github.com/advisories/GHSA-jvvf-x445-j334) and
+  [GHSA-hrr3-gc8f-f4qj](https://github.com/advisories/GHSA-hrr3-gc8f-f4qj).
+
+- [#8491](https://github.com/graphql-hive/console/pull/8491)
+  [`94032da`](https://github.com/graphql-hive/console/commit/94032dad6e9eb8bf88e39b366c2f6929e7df17b1)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix subscription operations' client version parsing
+  so they can populate app deployment "last used" tracking. Subscription operations were splitting
+  `persistedDocumentHash` on `/` instead of `~` (the actual `appName~appVersion~hash` format used
+  everywhere else).
+
+- [#8590](https://github.com/graphql-hive/console/pull/8590)
+  [`914d28d`](https://github.com/graphql-hive/console/commit/914d28d48a2cca5a7050f7595e9ecbea657a9cdb)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-253c-mchw-3w2r](https://github.com/advisories/GHSA-253c-mchw-3w2r).
+
 ## 11.16.0
 
 ### Minor Changes

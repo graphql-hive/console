@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { Info } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Badge } from '@/components/base/badge/badge';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { PageLead } from '@/components/base/page-lead';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { PageLead } from '@/components/ui/page-lead';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { graphql } from '@/gql';
 import {
   AlertChannelType,
@@ -220,7 +220,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                 <button
                   type="button"
                   aria-label="Destinations"
-                  className="text-fg-muted hover:text-fg-default inline-flex"
+                  className="inline-flex text-fg-muted hover:text-fg-default"
                   // The row opens the rule; a click on the icon only means the popover.
                   onClick={event => event.stopPropagation()}
                 >
@@ -236,7 +236,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                       <span className="text-fg-secondary">
                         {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
                       </span>
-                      <span className="text-fg font-mono">{c.detail ?? c.name}</span>
+                      <span className="font-mono text-fg">{c.detail ?? c.name}</span>
                     </div>
                   ))}
                 </div>
@@ -337,7 +337,7 @@ export function TargetAlertsRulesPage() {
       />
 
       {result.error && !data ? (
-        <div className="text-critical flex justify-center py-12 text-sm">
+        <div className="flex justify-center py-12 text-sm text-critical">
           Failed to load alert rules: {result.error.message}
         </div>
       ) : (

@@ -1,16 +1,16 @@
 import { format } from 'date-fns';
 import { useClient, useQuery } from 'urql';
 import { AppFilter } from '@/components/apps/app-filter';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { NotFound } from '@/components/base/not-found/not-found';
-import { PageLead } from '@/components/base/page-lead';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { BackLink } from '@/components/navigation/back-link';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DateWithTimeAgo } from '@/components/ui/date-with-time-ago';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
+import { NotFound } from '@/components/ui/not-found/not-found';
+import { PageLead } from '@/components/ui/page-lead';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
@@ -304,10 +304,10 @@ function TargetAppVersionContent(props: {
           </div>
         </div>
         {coordinates ? (
-          <div className="border-warning-line bg-warning-tint mt-4 flex items-center justify-between rounded-md border px-4 py-2 text-sm">
+          <div className="mt-4 flex items-center justify-between rounded-md border border-warning-line bg-warning-tint px-4 py-2 text-sm">
             <span>
               Showing operations affected by{' '}
-              <code className="bg-surface-code text-warning rounded-sm px-1 py-0.5 font-mono">
+              <code className="rounded-sm bg-surface-code px-1 py-0.5 font-mono text-warning">
                 {coordinates}
               </code>
             </span>
@@ -348,12 +348,12 @@ function TargetAppVersionContent(props: {
         ) : (
           <>
             <div className="mb-3">
-              <div className="border-line text-fg-secondary grid grid-flow-col grid-rows-2 items-center justify-between gap-4 rounded-md border px-4 py-3 font-medium md:grid-rows-1">
+              <div className="grid grid-flow-col grid-rows-2 items-center justify-between gap-4 rounded-md border border-line px-4 py-3 font-medium text-fg-secondary md:grid-rows-1">
                 <div className="min-w-0">
                   <div className="text-xs">Status</div>
                   <div
                     className={cn(
-                      'text-fg truncate text-sm font-semibold',
+                      'truncate text-sm font-semibold text-fg',
                       appDeployment?.status === AppDeploymentStatus.Retired && 'text-critical',
                       appDeployment?.status === AppDeploymentStatus.Pending && 'text-fg-default',
                     )}
@@ -370,13 +370,13 @@ function TargetAppVersionContent(props: {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs">Total Documents</div>
-                  <div className={cn('text-fg truncate text-center text-sm font-semibold')}>
+                  <div className={cn('truncate text-center text-sm font-semibold text-fg')}>
                     {appDeployment?.totalDocumentCount ?? '...'}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs">Created</div>
-                  <div className="text-fg text-sm font-semibold">
+                  <div className="text-sm font-semibold text-fg">
                     {appDeployment?.createdAt ? (
                       <DateWithTimeAgo
                         date={appDeployment.createdAt}
@@ -389,20 +389,20 @@ function TargetAppVersionContent(props: {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs">Activated</div>
-                  <div className="text-fg text-sm font-semibold">
+                  <div className="text-sm font-semibold text-fg">
                     {appDeployment?.activatedAt ? (
                       <DateWithTimeAgo
                         date={appDeployment.activatedAt}
                         dateFormatStr="MMM d, yyyy HH:mm:ss"
                       />
                     ) : (
-                      <span className="text-fg-secondary font-normal">—</span>
+                      <span className="font-normal text-fg-secondary">—</span>
                     )}
                   </div>
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs">Last Used</div>
-                  <div className="text-fg text-sm font-semibold">
+                  <div className="text-sm font-semibold text-fg">
                     {data.fetching ? (
                       '...'
                     ) : appDeployment?.lastUsed ? (
@@ -411,7 +411,7 @@ function TargetAppVersionContent(props: {
                         dateFormatStr="MMM d, yyyy HH:mm:ss"
                       />
                     ) : (
-                      <span className="text-fg-secondary font-normal">No Usage Data</span>
+                      <span className="font-normal text-fg-secondary">No Usage Data</span>
                     )}
                   </div>
                 </div>

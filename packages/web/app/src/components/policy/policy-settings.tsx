@@ -1,8 +1,9 @@
 import { ReactElement, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Form } from '@/components/base/form/form';
+import { DataWrapper } from '@/components/ui/data-wrapper';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Form } from '@/components/ui/primitives/form/form';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import {
   PolicySettings_SchemaPolicyFragmentFragment,
@@ -12,7 +13,6 @@ import {
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Callout } from '../ui/callout';
-import { DataWrapper } from '../v2';
 import { PolicyListItem } from './policy-list-item';
 import { PolicyFormSchema, type PolicyFormValues } from './rules-configuration';
 
@@ -123,7 +123,7 @@ function PolicySettingsListForm({
             })
           : null}
         <div className="flex items-center justify-end">
-          {isDirty ? <p className="text-fg-secondary pr-2 text-sm">Unsaved changes</p> : null}
+          {isDirty ? <p className="pr-2 text-sm text-fg-secondary">Unsaved changes</p> : null}
 
           <Button disabled={!isDirty || saving || !isValid || !onSave} type="submit">
             Update Policy
@@ -137,7 +137,7 @@ function PolicySettingsListForm({
           </Callout>
         ) : null}
       </div>
-      <div className="divide-line grid grid-cols-1 divide-y">
+      <div className="grid grid-cols-1 divide-y divide-line">
         {availableRules.map(availableRule => (
           <PolicyListItem
             disabled={!onSave}

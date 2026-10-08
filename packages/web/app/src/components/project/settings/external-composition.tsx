@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Check, RefreshCw, RotateCw, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { CombinedError, useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { useToast } from '@/components/base/toast/toast';
 import { ProductUpdatesLink } from '@/components/ui/docs-note';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
@@ -122,7 +122,7 @@ const ExternalCompositionStatus = () => {
           trigger={
             <span className="inline-flex">
               <RefreshCw
-                className="text-fg-secondary size-5 animate-spin cursor-default"
+                className="size-5 animate-spin cursor-default text-fg-secondary"
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -155,7 +155,7 @@ const ExternalCompositionStatus = () => {
           trigger={
             <span className="inline-flex">
               <X
-                className="text-critical size-5 cursor-default"
+                className="size-5 cursor-default text-critical"
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -170,7 +170,7 @@ const ExternalCompositionStatus = () => {
           trigger={
             <span className="inline-flex">
               <Check
-                className="text-success size-5 cursor-default"
+                className="size-5 cursor-default text-success"
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -287,7 +287,7 @@ export const ExternalCompositionSettings = (props: {
   return (
     <div className="flex flex-col items-start gap-y-6">
       <div>
-        <p className="text-fg-secondary max-w-2xl text-sm">
+        <p className="max-w-2xl text-sm text-fg-secondary">
           For advanced users, you can configure an endpoint for external schema compositions. This
           can be used to implement custom composition logic.
         </p>

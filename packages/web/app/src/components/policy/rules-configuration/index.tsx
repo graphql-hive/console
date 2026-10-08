@@ -2,7 +2,7 @@ import { ReactElement } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
 import { z } from 'zod';
 import { DocsLink } from '@/components/ui/docs-note';
-import { Markdown } from '@/components/v2/markdown';
+import { Markdown } from '@/components/ui/markdown';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
 import { PolicyBooleanToggle } from './boolean-config';
 import { PolicyEnumSelect } from './enum-config';

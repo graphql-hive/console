@@ -1,24 +1,23 @@
-import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Navigation, type NavigationItem } from '@/components/ui/navigation/navigation';
 import { useSlugs } from '@/lib/hooks';
 import type { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useLocation } from '@tanstack/react-router';
-import { rememberExplorerPeriod } from './period';
 
-// One picker for the four views: a preset lands in the URL and is remembered for a bare one.
+// One picker for the four views: a preset lands in the URL, which the tabs carry between them.
 export function DateRangeFilter(props: { controller: ReturnType<typeof useDateRangeController> }) {
   const { controller } = props;
   return (
     <DateRangePicker
       size="compact"
-      validUnits={['y', 'M', 'w', 'd', 'h']}
       selectedRange={controller.selectedPreset.range}
       startDate={controller.startDate}
       align="start"
-      onUpdate={({ preset }) => {
-        rememberExplorerPeriod(preset.range);
-        controller.setSelectedPreset(preset);
-      }}
+      onUpdate={({ preset }) => controller.setSelectedPreset(preset)}
+      footer={
+        <RetentionNote retentionInDays={controller.retentionInDays} subject={controller.subject} />
+      }
     />
   );
 }

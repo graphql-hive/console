@@ -4,10 +4,6 @@ import { buildSchema } from 'graphql';
 import { EraserIcon, MaximizeIcon, MinimizeIcon, SaveIcon, ShareIcon } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { useMutation, useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Collapsible } from '@/components/base/collapsible/collapsible';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { useToast } from '@/components/base/toast/toast';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
 import { CreateOperationModal } from '@/components/target/laboratory/create-operation-modal';
@@ -15,6 +11,10 @@ import { useTheme } from '@/components/theme/theme-provider';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Collapsible } from '@/components/ui/primitives/collapsible/collapsible';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
+import { useToast } from '@/components/ui/primitives/toast/toast';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useClipboard, useSlugs, useToggle } from '@/lib/hooks';
@@ -48,8 +48,8 @@ import { Repeater } from '@repeaterjs/repeater';
 import { Link as RouterLink, useRouter } from '@tanstack/react-router';
 import 'graphiql/style.css';
 import '@graphiql/plugin-explorer/style.css';
-import { Menu } from '@/components/base/floating/menu/menu';
-import { ToggleGroup } from '@/components/base/toggle-group/toggle-group';
+import { Menu } from '@/components/ui/primitives/floating/menu/menu';
+import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-group';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { Kit } from '@/lib/kit';
 
@@ -426,7 +426,7 @@ function LaboratoryPageContent(props: {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Title>Laboratory</Title>
-            <div className="bg-line h-4 w-px" />
+            <div className="h-4 w-px bg-line" />
             <ToggleGroup
               aria-label="Laboratory version"
               value={props.defaultLaboratoryTab}
@@ -440,7 +440,7 @@ function LaboratoryPageContent(props: {
                   label: (
                     <>
                       Hive Laboratory
-                      <span className="bg-accent ml-1 size-2 rounded-full" />
+                      <span className="ml-1 size-2 rounded-full bg-accent" />
                     </>
                   ),
                 },
@@ -452,7 +452,7 @@ function LaboratoryPageContent(props: {
             <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
           </p>
         </div>
-        <div className="ml-auto mr-0 flex flex-col justify-center">
+        <div className="mr-0 ml-auto flex flex-col justify-center">
           <div>
             {query.data && !query.data.target?.graphqlEndpointUrl ? (
               <RouterLink
@@ -554,7 +554,7 @@ function LaboratoryPageContent(props: {
             visiblePlugin={operationCollectionsPlugin}
             schema={schema}
             forcedTheme={resolvedTheme}
-            className={isFullScreen ? 'bg-editor-backdrop fixed inset-0' : ''}
+            className={isFullScreen ? 'fixed inset-0 bg-editor-backdrop' : ''}
             onTabChange={handleTabChange}
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
@@ -606,7 +606,7 @@ export function TargetLaboratoryPage(props: {
   return (
     <>
       <Meta title="Schema laboratory" />
-      <LayoutContent className="h-(--content-height) flex flex-col pb-0">
+      <LayoutContent className="flex h-(--content-height) flex-col pb-0">
         <PromptProvider>
           <LaboratoryPageContent {...props} />
           <PromptManager />
@@ -653,7 +653,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   return (
     <div
       id="preflight-logs"
-      className="bg-editor-backdrop flex max-h-[200px] w-full flex-col overflow-hidden"
+      className="flex max-h-[200px] w-full flex-col overflow-hidden bg-editor-backdrop"
     >
       <Collapsible
         variant="panel"
@@ -679,7 +679,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
             {props.logs.length === 0 ? (
               <div
                 data-cy="empty-state"
-                className="text-fg-secondary flex flex-col items-center justify-center"
+                className="flex flex-col items-center justify-center text-fg-secondary"
               >
                 <p>No logs available</p>
                 <p>Execute a query to see logs</p>

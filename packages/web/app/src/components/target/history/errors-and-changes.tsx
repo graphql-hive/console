@@ -3,26 +3,29 @@ import { clsx } from 'clsx';
 import { format } from 'date-fns';
 import { ActivityIcon, BoxIcon, CheckIcon, CircleCheckIcon } from 'lucide-react';
 import reactStringReplace from 'react-string-replace';
-import { Accordion } from '@/components/base/accordion/accordion';
-import { Button } from '@/components/base/button/button';
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { ScrollArea } from '@/components/base/scroll-area/scroll-area';
-import { Label, Label as LegacyLabel } from '@/components/common';
+import { CompositionErrorMessage } from '@/components/target/history/composition-error-message';
 import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
-import { Heading } from '@/components/ui/heading';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Accordion } from '@/components/ui/primitives/accordion/accordion';
+import { Badge } from '@/components/ui/primitives/badge/badge';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 
+function ChangeBadge({ content }: { content: string }) {
+  return <Badge content={content} variants={{ padding: 'tight', variant: 'warning' }} />;
+}
+
 export function labelize(message: string) {
-  // Replace '...' and "..." with <Label>...</Label>
   return reactStringReplace(message.replace(/"/g, "'"), /'((?:[^'\\]|\\.)+?)'/g, (match, i) => (
-    <Label key={i}>{match.replace(/\\'/g, "'")}</Label>
+    <ChangeBadge key={i + match} content={match.replace(/\\'/g, "'")} />
   ));
 }
 
@@ -155,7 +158,7 @@ export function ChangesBlock(
 ): ReactElement | null {
   return (
     <div>
-      {props.title && <h2 className="text-fg-secondary mb-3 font-bold">{props.title}</h2>}
+      {props.title && <h2 className="mb-3 font-bold text-fg-default">{props.title}</h2>}
       <div className="list-inside list-disc space-y-2 text-sm/relaxed">
         {props.changesWithUsage?.map((change, key) => (
           <ChangeItem
@@ -228,7 +231,7 @@ function ChangeItem(
               <div>
                 <span className="text-fg-secondary">{labelize(change.message)}</span>
                 {change.isSafeBasedOnUsage && (
-                  <span className="text-warning cursor-pointer">
+                  <span className="cursor-pointer text-warning">
                     {' '}
                     <CheckIcon className="inline size-3" /> Safe based on usage data
                   </span>
@@ -236,7 +239,7 @@ function ChangeItem(
                 {'usageStatistics' in change && change.usageStatistics && (
                   <>
                     {' '}
-                    <span className="bg-surface-selected text-critical inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-surface-selected px-2 py-1 align-middle font-bold text-critical">
                       <ActivityIcon className="size-4 stroke-[1px]" />
                       <span className="text-xs">
                         {change.usageStatistics.topAffectedOperations.length}
@@ -256,7 +259,7 @@ function ChangeItem(
                 {'affectedAppDeployments' in change && change.affectedAppDeployments?.totalCount ? (
                   <>
                     {' '}
-                    <span className="text-fg-inverse bg-warning inline-flex items-center space-x-1 rounded-sm px-2 py-1 align-middle font-bold">
+                    <span className="inline-flex items-center space-x-1 rounded-sm bg-warning px-2 py-1 align-middle font-bold text-fg-inverse">
                       <BoxIcon className="size-4 stroke-[2px]" />
                       <span className="text-xs">
                         {change.affectedAppDeployments.totalCount}{' '}
@@ -278,7 +281,7 @@ function ChangeItem(
             </div>
           ),
           content: (
-            <div className="pb-4 pt-4">
+            <div className="pt-4 pb-4">
               {change.approval && (
                 <SchemaChangeApproval
                   schemaCheckId={props.schemaCheckId}
@@ -287,15 +290,15 @@ function ChangeItem(
               )}
               {'usageStatistics' in change && change.usageStatistics && metadata ? (
                 <div>
-                  <h4 className="text-fg mb-1 text-sm font-medium">
+                  <h4 className="mb-1 text-sm font-medium text-fg">
                     Affected Operations (based on usage)
                   </h4>
-                  <div className="text-fg-secondary mb-2 flex justify-between text-sm">
+                  <div className="mb-2 flex justify-between text-sm text-fg-secondary">
                     <span>
                       Top 10 operations and clients affected by this change based on usage data.
                     </span>
                     {metadata && (
-                      <span className="text-fg-default text-xs">
+                      <span className="text-xs text-fg-default">
                         See{' '}
                         {metadata.settings.targets.map((target, index, arr) => (
                           <>
@@ -549,7 +552,7 @@ function AffectedAppDeploymentsPanel(props: {
                 arrow
                 content={
                   <div className="space-y-2">
-                    <h5 className="text-fg font-medium">Affected Operations</h5>
+                    <h5 className="font-medium text-fg">Affected Operations</h5>
                     <ScrollArea maxHeight="sm">
                       <ul className="space-y-1 text-sm">
                         {deployment.affectedOperations.edges.map(({ node: op }) => (
@@ -561,7 +564,7 @@ function AffectedAppDeploymentsPanel(props: {
                     </ScrollArea>
                     <Link
                       {...appVersionLink(deployment)}
-                      className="text-accent block pt-2 text-sm hover:underline"
+                      className="block pt-2 text-sm text-accent hover:underline"
                     >
                       Show all ({deployment.totalAffectedOperations}) affected operations
                     </Link>
@@ -577,8 +580,8 @@ function AffectedAppDeploymentsPanel(props: {
 
   return (
     <div>
-      <h4 className="text-fg mb-1 text-sm font-medium">Affected App Deployments</h4>
-      <p className="text-fg-secondary mb-2 text-sm">
+      <h4 className="mb-1 text-sm font-medium text-fg">Affected App Deployments</h4>
+      <p className="mb-2 text-sm text-fg-secondary">
         Top 5 active app deployments that have operations using this schema coordinate (snapshot
         from when the check was run).
       </p>
@@ -598,7 +601,7 @@ function AffectedAppDeploymentsPanel(props: {
             schemaCheckId: props.schemaCheckId,
           }}
           search={{ coordinate: props.coordinate }}
-          className="text-warning mt-2 block text-sm hover:underline"
+          className="mt-2 block text-sm text-warning hover:underline"
         >
           View all ({props.connection.totalCount}) affected app deployments
         </Link>
@@ -615,7 +618,7 @@ function ApprovedByBadge(props: {
     approval.approvedBy?.displayName ?? approval.cliApprovalMetadata?.displayName ?? '<unknown>';
 
   return (
-    <span className="text-success cursor-pointer">
+    <span className="cursor-pointer text-success">
       <CheckIcon className="inline size-3" /> Approved by {approvalName}
     </span>
   );
@@ -683,17 +686,17 @@ export function CompositionErrorsList(props: {
 }) {
   return (
     <div className="mb-2 px-2">
-      <Heading className="my-2">
-        {props.title}
+      <div className="mb-3 flex items-center gap-1.5">
+        <h2 className="font-bold text-fg-default">{props.title}</h2>
         <CompositionErrorsPopover />
-      </Heading>
+      </div>
       {props.description ? (
-        <p className="text-fg-default mb-2 text-sm">{props.description}</p>
+        <p className="mb-2 text-sm text-fg-default">{props.description}</p>
       ) : null}
       <ul>
         {props.errors.map((error, index) => (
           <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
-            <CompositionError message={error.message} />
+            <CompositionErrorMessage message={error.message} />
           </li>
         ))}
       </ul>
@@ -701,36 +704,14 @@ export function CompositionErrorsList(props: {
   );
 }
 
-function CompositionError(props: { message: string }) {
-  return reactStringReplace(
-    reactStringReplace(
-      reactStringReplace(props.message, /"([^"]+)"/g, (match, index) => {
-        return <LegacyLabel key={match + index}>{match}</LegacyLabel>;
-      }),
-      /(@[^. ]+)/g,
-      (match, index) => {
-        return <LegacyLabel key={match + index}>{match}</LegacyLabel>;
-      },
-    ),
-    /Unknown type ([A-Za-z_0-9]+)/g,
-    (match, index) => {
-      return (
-        <span key={match + index}>
-          Unknown type <LegacyLabel>{match}</LegacyLabel>
-        </span>
-      );
-    },
-  );
-}
-
 export function NoGraphChanges() {
   return (
     <div className="cursor-default">
       <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="text-success size-4" />
-        <h2 className="text-fg text-base font-medium">No Graph Changes</h2>
+        <CircleCheckIcon className="size-4 text-success" />
+        <h2 className="text-base font-medium text-fg">No Graph Changes</h2>
       </div>
-      <p className="text-fg-secondary text-xs">
+      <p className="text-xs text-fg-secondary">
         There are no changes in this graph for this graph.
       </p>
     </div>

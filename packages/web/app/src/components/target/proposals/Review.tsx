@@ -1,6 +1,6 @@
 import { Fragment, ReactElement, useContext } from 'react';
 import { CheckIcon, PlusIcon } from 'lucide-react';
-import { Button } from '@/components/base/button/button';
+import { Button } from '@/components/ui/primitives/button/button';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
@@ -34,7 +34,7 @@ export function ReviewComments(props: {
 
   return (
     <>
-      <div className="bg-surface-inset border-line-strong mb-2 rounded-sm border px-6 py-4 font-sans">
+      <div className="mb-2 rounded-sm border border-line-strong bg-surface-inset px-6 py-4 font-sans">
         {review.comments?.edges?.map(({ node: comment }, idx) => {
           return (
             <ReviewComment key={`comment-${comment.id}`} first={idx === 0} comment={comment} />
@@ -42,7 +42,7 @@ export function ReviewComments(props: {
         })}
       </div>
       {/* @todo check if able to reply */}
-      <div className="mb-6 ml-6 mt-3 flex gap-4 font-sans">
+      <div className="mt-3 mb-6 ml-6 flex gap-4 font-sans">
         <Button variant="outline" type="button">
           <PlusIcon size={16} className="mr-1" />
           Reply
@@ -74,7 +74,7 @@ export function ReviewComment(props: {
   return (
     <>
       <div className={cn(!props.first && 'pl-4', 'flex grow flex-row align-middle')}>
-        <div className="text-fg-secondary flex grow font-bold">{comment.author ?? 'Unknown'}</div>
+        <div className="flex grow font-bold text-fg-secondary">{comment.author ?? 'Unknown'}</div>
         <div className="flex text-xs">
           {!!comment.updatedAt && 'updated '}
           <TimeAgo date={comment.updatedAt ?? comment.createdAt} className="text-fg-secondary" />

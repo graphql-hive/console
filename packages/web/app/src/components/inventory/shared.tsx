@@ -4,11 +4,11 @@ import { type ReactNode } from 'react';
  * Shared furniture for the inventory previews in this folder.
  *
  * Each preview here transcribes every real call site of a `ui/` or `v2/` component queued for
- * migration to `base/`, rendering the **old** component as it ships today. That gives a "before"
+ * migration to `primitives/`, rendering the **old** component as it ships today. That gives a "before"
  * to judge a replacement against, and a coverage checklist to migrate through.
  *
- * These live outside `base/` on purpose: they import the old components, and `base/` should not
- * grow edges into `ui/`/`v2/` even in preview files.
+ * These live outside `primitives/` on purpose: they import the old components, and `primitives/`
+ * should not grow edges into the legacy `ui/` components even in preview files.
  *
  * Not named `*.preview.tsx`, so foundry does not mount it as a preview of its own.
  */
@@ -33,9 +33,9 @@ export function CallSite(props: {
       <div className="flex flex-col gap-1">
         <span className="flex items-center gap-1.5">
           <OriginTag origin={props.origin} />
-          <code className="text-fg-secondary font-mono text-xs">{props.source}</code>
+          <code className="font-mono text-xs text-fg-secondary">{props.source}</code>
         </span>
-        {props.note ? <p className="text-fg-default max-w-prose text-xs">{props.note}</p> : null}
+        {props.note ? <p className="max-w-prose text-xs text-fg-default">{props.note}</p> : null}
       </div>
       {props.children}
     </div>
@@ -46,7 +46,7 @@ export function CallSite(props: {
 export function CallSiteGroup(props: { label: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-6">
-      <h3 className="text-fg text-sm font-medium">{props.label}</h3>
+      <h3 className="text-sm font-medium text-fg">{props.label}</h3>
       {props.children}
     </section>
   );
@@ -81,10 +81,10 @@ export function OriginTag(props: { origin: Origin }) {
     <span
       className={
         {
-          ui: 'bg-surface-hover text-fg-default rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          v2: 'bg-surface-selected text-fg rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          base: 'bg-success-muted/20 text-success-muted rounded-xs text-2xs px-1 py-px font-mono leading-none',
-          raw: 'bg-warning-tint text-warning rounded-xs text-2xs px-1 py-px font-mono leading-none',
+          ui: 'rounded-xs bg-surface-hover px-1 py-px font-mono text-2xs leading-none text-fg-default',
+          v2: 'rounded-xs bg-surface-selected px-1 py-px font-mono text-2xs leading-none text-fg',
+          base: 'rounded-xs bg-success-muted/20 px-1 py-px font-mono text-2xs leading-none text-success-muted',
+          raw: 'rounded-xs bg-warning-tint px-1 py-px font-mono text-2xs leading-none text-warning',
         }[props.origin]
       }
     >
@@ -106,23 +106,23 @@ export function InventoryList(props: {
   return (
     <div className="flex max-w-3xl flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <h3 className="text-fg text-sm font-medium">{props.component}</h3>
-        <p className="text-fg-default text-xs">{props.entries.length} call sites</p>
+        <h3 className="text-sm font-medium text-fg">{props.component}</h3>
+        <p className="text-xs text-fg-default">{props.entries.length} call sites</p>
         {props.summary ? (
-          <div className="text-fg-default max-w-prose text-xs">{props.summary}</div>
+          <div className="max-w-prose text-xs text-fg-default">{props.summary}</div>
         ) : null}
       </div>
       <ul className="flex flex-col">
         {props.entries.map(entry => (
           <li
             key={entry.source}
-            className="border-line flex flex-col gap-0.5 border-b py-2 last:border-b-0"
+            className="flex flex-col gap-0.5 border-b border-line py-2 last:border-b-0"
           >
             <span className="flex items-center gap-1.5">
               <OriginTag origin={entry.origin} />
-              <code className="text-fg-default font-mono text-xs">{entry.source}</code>
+              <code className="font-mono text-xs text-fg-default">{entry.source}</code>
             </span>
-            <span className="text-fg-secondary text-xs">
+            <span className="text-xs text-fg-secondary">
               {entry.what}
               {entry.coveredBy ? ` — covered by "${entry.coveredBy}"` : null}
             </span>

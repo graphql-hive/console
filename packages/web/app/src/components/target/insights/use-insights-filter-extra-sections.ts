@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { MenuEntryList, MenuSection } from '@/components/base/floating/menu/menu';
+import type { MenuEntryList, MenuSection } from '@/components/ui/primitives/floating/menu/menu';
 
 export type SavedFilterView = {
   id: string;

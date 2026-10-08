@@ -1,4 +1,4 @@
-import { Select } from '@/components/base/floating/select/select';
+import { Select } from '@/components/ui/primitives/floating/select/select';
 import { graphql, useFragment } from '@/gql';
 import { useViewer } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';
@@ -20,7 +20,7 @@ export function OrganizationSelector(props: { currentOrganizationSlug: string })
   )?.nodes;
 
   if (!organizations) {
-    return <div className="bg-surface-skeleton h-5 w-48 animate-pulse rounded-full" />;
+    return <div className="h-5 w-48 animate-pulse rounded-full bg-surface-skeleton" />;
   }
 
   return (

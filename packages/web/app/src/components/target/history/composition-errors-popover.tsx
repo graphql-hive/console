@@ -1,5 +1,5 @@
 import { InfoIcon } from 'lucide-react';
-import { Popover } from '@/components/base/floating/popover/popover';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 
 export function CompositionErrorsPopover() {
   return (
@@ -13,11 +13,11 @@ export function CompositionErrorsPopover() {
       width="lg"
       content={
         <div>
-          <p className="text-fg-default text-xs">
+          <p className="text-xs text-fg-default">
             If composition errors occur it is impossible to generate a supergraph and public API
             schema.
           </p>
-          <p className="text-fg-default mt-2 text-xs">
+          <p className="mt-2 text-xs text-fg-default">
             Composition errors can be caused by changes to the underlying subgraphs that causes
             conflicts with other subgraphs.
           </p>

@@ -2,10 +2,6 @@ import { useMemo } from 'react';
 import { buildASTSchema, buildSchema, GraphQLSchema, parse } from 'graphql';
 import { ChartPie, CheckIcon, FileDiffIcon, List, PencilIcon, XIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
-import { Navigation, type NavigationItem } from '@/components/base/navigation/navigation';
-import { Skeleton } from '@/components/base/skeleton/skeleton';
-import { Spinner } from '@/components/base/spinner/spinner';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { CompositionErrorsSection_SchemaErrorConnection } from '@/components/target/history/errors-and-changes';
 import {
@@ -17,8 +13,12 @@ import { SaveProposalProvider } from '@/components/target/proposals/save-proposa
 import { StageTransitionSelect } from '@/components/target/proposals/stage-transition-select';
 import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
+import { Navigation, type NavigationItem } from '@/components/ui/navigation/navigation';
 import { Subtitle, Title } from '@/components/ui/page';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
+import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
@@ -161,7 +161,7 @@ export function TargetProposalsSinglePage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className="h-(--content-height) flex min-h-[300px] flex-col pb-0">
+      <LayoutContent className="flex h-(--content-height) min-h-[300px] flex-col pb-0">
         <ProposalsContent {...props} />
       </LayoutContent>
     </>
@@ -401,7 +401,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 >
                   Schema Proposals
                 </Link>{' '}
-                <span className="text-fg-secondary inline-block px-2 italic">/</span>{' '}
+                <span className="inline-block px-2 text-fg-secondary italic">/</span>{' '}
                 {/* @todo use query data to show loading */}
                 {props.proposalId ? (
                   `${props.proposalId}`
@@ -416,7 +416,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="bg-surface-inset flex w-full grow flex-col rounded-sm p-4">
+      <div className="flex w-full grow flex-col rounded-sm bg-surface-inset p-4">
         {query.fetching ? (
           <Spinner />
         ) : (
@@ -477,11 +477,11 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   />
                 </div>
               </div>
-              <div className="mb-6 mt-2">
+              <div className="mt-2 mb-6">
                 {proposal.description ? (
                   <div className="w-full border-l-2 p-4">{proposal.description}</div>
                 ) : null}
-                <div className="text-fg-secondary mt-4 pr-2 text-right text-xs">
+                <div className="mt-4 pr-2 text-right text-xs text-fg-secondary">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
               </div>
@@ -552,7 +552,7 @@ function TabbedContent(props: {
 
   return (
     <div className="w-full">
-      <div className="border-line border-b">
+      <div className="border-b border-line">
         <Navigation aria-label="Proposal" items={sections} size="sm" />
       </div>
       <div className="flex grow flex-row pt-4">

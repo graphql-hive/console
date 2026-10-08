@@ -36,7 +36,7 @@ const EnvironmentModel = zod.object({
   RELEASE: emptyString(zod.string().optional()),
   ENCRYPTION_SECRET: zod.string(),
   AWS_REGION: emptyString(zod.string().optional()),
-  COMPOSITION_WORKER_COUNT: zod.number().min(1).default(4),
+  COMPOSITION_WORKER_COUNT: NumberFromString(1).optional().default(4),
   COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB: NumberFromString(1).optional().default(512),
   COMPOSITION_WORKER_TRACK_MEMORY_USAGE: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]),
@@ -58,10 +58,11 @@ const RequestBrokerModel = zod.union([
 ]);
 
 const TimingsModel = zod.object({
-  SCHEMA_CACHE_TTL_MS: NumberFromString().default(30000),
+  /** Must not be lower than SCHEMA_COMPOSITION_TIMEOUT_MS (see cache.ts). */
+  SCHEMA_CACHE_TTL_MS: NumberFromString().default(65_000),
   SCHEMA_CACHE_SUCCESS_TTL_MS: zod.optional(NumberFromString()),
-  SCHEMA_COMPOSITION_TIMEOUT_MS: NumberFromString(30_000).default(30_000),
-  SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS: NumberFromString(9_000).default(9_000),
+  SCHEMA_COMPOSITION_TIMEOUT_MS: NumberFromString(1_000).default(60_000),
+  SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS: zod.optional(NumberFromString(1_000)),
   SCHEMA_CACHE_POLL_INTERVAL_MS: NumberFromString(100).default(150),
 });
 
@@ -194,13 +195,17 @@ export const env = {
       timings.SCHEMA_CACHE_SUCCESS_TTL_MS ||
       timings.SCHEMA_CACHE_TTL_MS /* Fallback to cacheTTL if not set */,
     cachePollInterval: timings.SCHEMA_CACHE_POLL_INTERVAL_MS,
-    /** timeout of the composition in worker */
+    /** Timeout of the whole composition in the worker; the main process kills the worker when exceeded. */
     schemaCompositionTimeout: timings.SCHEMA_COMPOSITION_TIMEOUT_MS,
     /**
-     * Timeout of calls to the external composition endpoint within worker
-     * NOTE: This value should always be lower than the schemaCompositionTimeout
+     * Total budget for calling the external composition service within one composition,
+     * including retries and contract compositions.
+     * Must stay below schemaCompositionTimeout so the external timeout error reaches the user
+     * before the worker is killed; the 5s margin covers worker queueing and response processing.
      */
-    schemaExternalCompositionTimeout: timings.SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS,
+    schemaExternalCompositionTimeout:
+      timings.SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS ??
+      Math.max(timings.SCHEMA_COMPOSITION_TIMEOUT_MS - 5_000, 1_000),
   },
   requestBroker:
     requestBroker.REQUEST_BROKER === '1'

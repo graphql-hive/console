@@ -1,25 +1,33 @@
 import { ReactElement, ReactNode, useMemo, useState } from 'react';
 import { LinkIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { Button } from '@/components/base/button/button';
-import { Select } from '@/components/base/floating/select/select';
-import { Label } from '@/components/base/label/label';
-import { NotFound, resourceAccessDescription } from '@/components/base/not-found/not-found';
-import { Dialog } from '@/components/base/overlays/dialog/dialog';
 import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Link as UiLink } from '@/components/ui/link';
+import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
+import { Button } from '@/components/ui/primitives/button/button';
+import { Select } from '@/components/ui/primitives/floating/select/select';
+import { Label } from '@/components/ui/primitives/label/label';
+import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { graphql } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useSlugs, useToggle, useViewer } from '@/lib/hooks';
+import {
+  carriedRange,
+  retentionBoundary,
+  startsWithin,
+} from '@/lib/hooks/use-date-range-controller';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
-import { Tabs } from '../base/tabs/tabs';
+import { useLocation } from '@tanstack/react-router';
+import { Tabs } from '../ui/primitives/tabs/tabs';
 import { TargetLayoutQuery } from './queries';
 
 export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {
   const params = useSlugs('target');
+  // The period pages share the range the URL holds; a page without one carries nothing.
+  const range = carriedRange(useLocation().search);
 
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [query] = useQuery({
@@ -30,6 +38,14 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
 
   const viewer = useViewer();
   const currentOrganization = query.data?.organization;
+  // Usage pages reset a range the retention does not cover; carrying one there would only earn a toast.
+  const retention = currentOrganization?.usageRetentionInDays;
+  const usageRange =
+    range.from !== undefined &&
+    retention !== undefined &&
+    !startsWithin({ from: range.from }, retentionBoundary(retention))
+      ? {}
+      : range;
   const currentProject = query.data?.organization?.project;
   const currentTarget = query.data?.organization?.project?.target;
 
@@ -69,6 +85,7 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       label: 'Explorer',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/explorer',
                       params,
+                      search: usageRange,
                     },
                     {
                       label: 'History',
@@ -79,13 +96,14 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       label: 'Insights',
                       to: '/$organizationSlug/$projectSlug/$targetSlug/insights',
                       params,
-                      search: {},
+                      search: usageRange,
                     },
                     {
                       label: 'Traces',
                       visible: currentTarget.viewerCanAccessTraces,
                       to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
                       params,
+                      search: range,
                     },
                     {
                       label: 'Apps',
@@ -105,6 +123,7 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
                       to: '/$organizationSlug/$projectSlug/$targetSlug/proposals',
                       params,
                     },
+                    // Alert activity has its own default and a shorter retention; a usage range would mostly reset.
                     {
                       label: 'Alerts',
                       visible: currentTarget.viewerCanUseMetricAlertRules,
@@ -152,7 +171,7 @@ const ConnectSchemaModalQuery = graphql(`
         type
       }
       cdnUrl
-      activeContracts(first: 20) {
+      contracts(first: 20) {
         edges {
           node {
             id
@@ -206,7 +225,7 @@ export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: ()
     if (selectedGraph === 'DEFAULT_GRAPH') {
       return null;
     }
-    return query.data?.target?.activeContracts.edges.find(
+    return query.data?.target?.contracts.edges.find(
       ({ node }) => node.contractName === selectedGraph,
     )?.node;
   }, [selectedGraph]);
@@ -242,14 +261,14 @@ export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: ()
       <div className="max-w-[600px]">
         {target && (
           <>
-            <div className="mb-5 mt-1 flex flex-row justify-start gap-3">
+            <div className="mt-1 mb-5 flex flex-row justify-start gap-3">
               <div>
                 <Label htmlFor="cdn-graph" label="Graph Variant" />
                 <Select
                   id="cdn-graph"
                   options={[
                     { value: 'DEFAULT_GRAPH', label: 'Default Graph' },
-                    ...target.activeContracts.edges.map(({ node }) => ({
+                    ...target.contracts.edges.map(({ node }) => ({
                       value: node.contractName,
                       label: node.contractName,
                     })),

@@ -1,7 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import { InfoIcon } from 'lucide-react';
-import { Popover } from '@/components/base/floating/popover/popover';
-import { Combobox } from '@/components/v2/combobox';
+import { Combobox } from '@/components/ui/combobox';
+import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 
@@ -34,12 +34,12 @@ export const PolicyMultiSelect = (props: {
           {props.tooltip ? (
             <Popover
               trigger={
-                <button type="button" aria-label="About this option" className="text-accent ml-2">
+                <button type="button" aria-label="About this option" className="ml-2 text-accent">
                   <InfoIcon className="size-4" />
                 </button>
               }
               openOnHover
-              content={<p className="text-fg-default text-sm">{props.tooltip}</p>}
+              content={<p className="text-sm text-fg-default">{props.tooltip}</p>}
             />
           ) : null}
         </div>

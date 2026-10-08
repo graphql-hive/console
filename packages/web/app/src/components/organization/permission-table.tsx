@@ -1,6 +1,6 @@
-import { DataTable } from '@/components/base/data-table/data-table';
-import { DataTableCell } from '@/components/base/data-table/data-table-cell';
-import { Tooltip } from '@/components/base/floating/tooltip/tooltip';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import type { ColumnDef } from '@tanstack/react-table';
 
 export type PermissionRow = {
@@ -45,7 +45,7 @@ const PERMISSION_COLUMNS: ColumnDef<PermissionRow, unknown>[] = [
 export function PermissionTable(props: { title: string; permissions: PermissionRow[] }) {
   return (
     <div>
-      <h4 className="text-fg mb-2 text-sm font-medium">{props.title}</h4>
+      <h4 className="mb-2 text-sm font-medium text-fg">{props.title}</h4>
       <DataTable
         data={props.permissions}
         columns={PERMISSION_COLUMNS}

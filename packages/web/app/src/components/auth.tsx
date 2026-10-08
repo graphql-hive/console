@@ -1,4 +1,4 @@
-import { Card } from '@/components/base/card/card';
+import { Card } from '@/components/ui/primitives/card/card';
 
 export function AuthCardStack(props: { children: React.ReactNode }) {
   return <div className="grid gap-y-4">{props.children}</div>;
@@ -7,9 +7,9 @@ export function AuthCardStack(props: { children: React.ReactNode }) {
 export function AuthOrSeparator() {
   return (
     <div className="flex flex-row items-center justify-between gap-x-4">
-      <div className="bg-line-subtle h-px w-full" />
-      <div className="text-fg-muted text-center">or</div>
-      <div className="bg-line-subtle h-px w-full" />
+      <div className="h-px w-full bg-line-subtle" />
+      <div className="text-center text-fg-muted">or</div>
+      <div className="h-px w-full bg-line-subtle" />
     </div>
   );
 }

@@ -1,9 +1,7 @@
 import { ReactElement, useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery } from 'urql';
-import { RefreshButton } from '@/components/base/button/refresh-button';
-import { Filters } from '@/components/base/floating/filter-menu/filters';
-import type { FilterItem } from '@/components/base/floating/filter-menu/types';
 import { LayoutContent } from '@/components/layouts/layout-content';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { OperationsList } from '@/components/target/insights/list';
 import { SaveFilterButton } from '@/components/target/insights/save-filter-button';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
@@ -16,9 +14,12 @@ import {
 } from '@/components/target/insights/use-insights-filter-extra-sections';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
+import { Filters } from '@/components/ui/filters/filter-menu/filters';
+import type { FilterItem } from '@/components/ui/filters/filter-menu/types';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { graphql } from '@/gql';
 import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
@@ -289,8 +290,13 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
                 selectedRange={dateRangeController.selectedPreset.range}
                 onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
                 startDate={dateRangeController.startDate}
-                validUnits={['y', 'M', 'w', 'd', 'h']}
                 align="start"
+                footer={
+                  <RetentionNote
+                    retentionInDays={dateRangeController.retentionInDays}
+                    subject={dateRangeController.subject}
+                  />
+                }
               />
             }
             afterChips={
