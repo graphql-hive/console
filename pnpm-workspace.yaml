@@ -68,6 +68,7 @@ catalog:
   immer: 11.1.21
   ioredis-mock: 8.9.0
   itty-router: 4.2.2
+  jsdom: 30.1.2
   kafkajs: 2.2.4
   lru-cache: 11.5.2
   lucide-react: 1.51.0
