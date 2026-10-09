@@ -283,9 +283,13 @@ export const Preflight = () => {
               </div>
             </div>
             <ScrollArea className="h-full">
-              <div className="flex flex-col gap-1.5 p-3 whitespace-pre-wrap">
+              <div
+                role="log"
+                aria-label="Preflight logs"
+                className="flex flex-col gap-1.5 p-3 whitespace-pre-wrap"
+              >
                 {logs.map((log, i) => (
-                  <div className="gap-2 font-mono" key={i}>
+                  <div className="gap-2 font-mono" data-level={log.level} key={i}>
                     <span className="text-xs text-muted-foreground">{log.createdAt}</span>{' '}
                     <span
                       className={cn('text-xs font-medium', {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DocumentNode,
   ExecutionResult,
@@ -61,6 +61,8 @@ export interface LaboratoryOperationsActions {
     operation: Omit<LaboratoryOperation, 'id'> & { id?: string },
   ) => LaboratoryOperation;
   setOperations: (operations: LaboratoryOperation[]) => void;
+  /** Renames an operation in place once the host has stored it under its own id. */
+  replaceOperationId: (previousId: string, id: string) => void;
   updateActiveOperation: (operation: Partial<Omit<LaboratoryOperation, 'id'>>) => void;
   deleteOperation: (operationId: string) => void;
   /** With a schema, an abstract field is given `__typename` so it is never selection-less. */
@@ -179,6 +181,21 @@ export const useOperations = (
     (operations: LaboratoryOperation[]) => {
       _setOperations(operations);
       props.onOperationsChange?.(operations);
+    },
+    [props],
+  );
+
+  // Persisted ids arrive after the fact, so the rename reads the latest state, not a closure.
+  const operationsRef = useRef(operations);
+  operationsRef.current = operations;
+
+  const replaceOperationId = useCallback(
+    (previousId: string, id: string) => {
+      const newOperations = operationsRef.current.map(o =>
+        o.id === previousId ? { ...o, id } : o,
+      );
+      _setOperations(newOperations);
+      props.onOperationsChange?.(newOperations);
     },
     [props],
   );
@@ -537,6 +554,7 @@ export const useOperations = (
   return {
     operations,
     setOperations,
+    replaceOperationId,
     runActiveOperation,
     setActiveOperation,
     activeOperation,
