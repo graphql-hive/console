@@ -1,7 +1,7 @@
-import { createOrganizationAccessToken } from 'testkit/flow';
-import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
+import { ProjectType } from 'testkit/gql/graphql';
 import { assertNonNullish } from 'testkit/utils';
-import { graphql } from '../../../testkit/gql';
+import { psql } from '@hive/postgres';
+import { DocumentType, graphql } from '../../../testkit/gql';
 import { execute } from '../../../testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
 
@@ -17,6 +17,171 @@ const SchemaByCommitQuery = graphql(/* GraphQL */ `
     }
   }
 `);
+
+const PaginatedSchemaVersionsQuery = graphql(/* GraphQL */ `
+  query PaginatedSchemaVersionsQuery(
+    $targetRef: TargetReferenceInput!
+    $first: Int!
+    $after: String
+  ) {
+    target(reference: $targetRef) {
+      schemaVersions(first: $first, after: $after) {
+        edges {
+          cursor
+          node {
+            meta {
+              commit
+            }
+          }
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+      }
+    }
+  }
+`);
+
+test.concurrent(
+  'schema version pagination excludes legacy versions without duplicates',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    for (const commit of ['legacy-1', 'legacy-2']) {
+      await token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+    }
+
+    await using db = await seed.createDbConnection();
+    await db.pool.query(psql`
+      UPDATE "schema_versions"
+      SET
+        "graph_id" = NULL
+        , "graph_metadata" = NULL
+      WHERE "target_id" = ${target.id}
+    `);
+
+    for (const commit of ['linked-1', 'linked-2']) {
+      await token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+    }
+
+    const commits: Array<string | null> = [];
+    let after: string | null = null;
+    let result: DocumentType<typeof PaginatedSchemaVersionsQuery>;
+
+    do {
+      result = await execute({
+        document: PaginatedSchemaVersionsQuery,
+        authToken: token.secret,
+        variables: {
+          targetRef: { byId: target.id },
+          first: 1,
+          after,
+        },
+      }).then(r => r.expectNoGraphQLErrors());
+
+      const connection = result.target?.schemaVersions;
+      assertNonNullish(connection);
+      expect(connection.edges).toHaveLength(1);
+
+      commits.push(connection.edges[0].node.meta?.commit ?? null);
+      after = connection.pageInfo.endCursor;
+      if (!connection.pageInfo.hasNextPage) {
+        break;
+      }
+    } while (after);
+
+    expect(commits).toEqual(['linked-2', 'linked-1']);
+    expect(new Set(commits).size).toBe(commits.length);
+  },
+);
+
+test.concurrent(
+  'schema version pagination includes legacy versions without duplicates for backfilled graph',
+  async () => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken, target } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+    await using db = await seed.createDbConnection();
+
+    await db.pool.query(psql`
+      UPDATE "graphs"
+      SET "is_backfilled" = TRUE
+      WHERE "target_id" = ${target.id}
+    `);
+
+    for (const commit of ['legacy-1', 'legacy-2']) {
+      await token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+    }
+
+    await db.pool.query(psql`
+    UPDATE "schema_versions"
+    SET
+      "graph_id" = NULL
+      , "graph_metadata" = NULL
+    WHERE "target_id" = ${target.id}
+    `);
+
+    for (const commit of ['linked-1', 'linked-2']) {
+      await token
+        .publishSchema({
+          commit,
+          sdl: `type Query { ${commit.replace('-', '_')}: String }`,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+    }
+
+    const commits: Array<string | null> = [];
+    let after: string | null = null;
+    let result: DocumentType<typeof PaginatedSchemaVersionsQuery>;
+
+    do {
+      result = await execute({
+        document: PaginatedSchemaVersionsQuery,
+        authToken: token.secret,
+        variables: {
+          targetRef: { byId: target.id },
+          first: 1,
+          after,
+        },
+      }).then(r => r.expectNoGraphQLErrors());
+
+      const connection = result.target?.schemaVersions;
+      assertNonNullish(connection);
+      expect(connection.edges).toHaveLength(1);
+
+      commits.push(connection.edges[0].node.meta?.commit ?? null);
+      after = connection.pageInfo.endCursor;
+      if (!connection.pageInfo.hasNextPage) {
+        break;
+      }
+    } while (after);
+
+    expect(commits).toEqual(['linked-2', 'linked-1', 'legacy-2', 'legacy-1']);
+    expect(new Set(commits).size).toBe(commits.length);
+  },
+);
 
 test.concurrent(
   'schema version by commit returns latest schema for the commit',
@@ -168,3 +333,77 @@ test.concurrent(
     expect(schema.latestValidVersion?.sdl).toMatchInlineSnapshot(sdl);
   },
 );
+
+const LatestValidVersionServiceNamesQuery = graphql(/* GraphQL */ `
+  query LatestValidVersionServiceNamesQuery($selector: TargetSelectorInput!) {
+    target(reference: { bySelector: $selector }) {
+      latestValidSchemaVersion {
+        id
+        serviceNames
+      }
+    }
+  }
+`);
+
+test.concurrent(
+  'serviceNames lists the services of a version, lowercased and sorted',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(
+      ProjectType.Federation,
+    );
+    const token = await createTargetAccessToken({});
+
+    // Published out of order and with mixed case; the field normalises both.
+    for (const [service, sdl] of [
+      ['users', 'type Query { users: [String!]! }'],
+      ['Products', 'type Query { products: [String!]! }'],
+    ] as const) {
+      const result = await token
+        .publishSchema({ service, url: `https://api.com/${service}`, sdl })
+        .then(r => r.expectNoGraphQLErrors());
+      expect(result.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+    }
+
+    const result = await execute({
+      document: LatestValidVersionServiceNamesQuery,
+      variables: {
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.target?.latestValidSchemaVersion?.serviceNames).toEqual(['products', 'users']);
+  },
+);
+
+test.concurrent('serviceNames is null for a single-schema project', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, organization } = await createOrg();
+  const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+  const token = await createTargetAccessToken({});
+
+  const publishResult = await token
+    .publishSchema({ sdl: 'type Query { ping: String }' })
+    .then(r => r.expectNoGraphQLErrors());
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  const result = await execute({
+    document: LatestValidVersionServiceNamesQuery,
+    variables: {
+      selector: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.target?.latestValidSchemaVersion?.serviceNames).toBeNull();
+});

@@ -1,10 +1,58 @@
+import { useLayoutEffect, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import {
   File as FileImpl,
   MultiFileDiff as MultiFileDiffImpl,
+  useWorkerPool,
+  Virtualizer,
+  WorkerPoolContextProvider,
   type FileProps,
   type MultiFileDiffProps,
 } from '@pierre/diffs/react';
-import { useTheme } from '../theme/theme-provider';
+import WorkerUrl from '@pierre/diffs/worker/worker.js?worker&url';
+import { useTheme, type ResolvedTheme } from '../theme/theme-provider';
+
+function pierreTheme(resolvedTheme: ResolvedTheme) {
+  return resolvedTheme === 'dark' ? 'pierre-dark' : 'pierre-light';
+}
+
+function workerFactory(): Worker {
+  return new Worker(WorkerUrl, { type: 'module' });
+}
+
+export function DiffsWorkerPoolProvider({ children }: { children: ReactNode }) {
+  const { resolvedTheme } = useTheme();
+  if (typeof Worker === 'undefined') {
+    return children;
+  }
+  return (
+    <WorkerPoolContextProvider
+      poolOptions={{ workerFactory, poolSize: 2 }}
+      highlighterOptions={{ theme: pierreTheme(resolvedTheme), langs: ['graphql'] }}
+    >
+      {children}
+      <WorkerPoolTheme />
+    </WorkerPoolContextProvider>
+  );
+}
+
+function WorkerPoolTheme() {
+  const workerPool = useWorkerPool();
+  const { resolvedTheme } = useTheme();
+  useLayoutEffect(() => {
+    void workerPool?.setRenderOptions({ theme: pierreTheme(resolvedTheme) });
+  }, [workerPool, resolvedTheme]);
+  return null;
+}
+
+// Has a height because the virtualizer only renders lines inside its own scroll region.
+export function CodeScrollArea(props: { className?: string; children: ReactNode }) {
+  return (
+    <Virtualizer className={cn('max-h-[70vh] overflow-auto', props.className)}>
+      {props.children}
+    </Virtualizer>
+  );
+}
 
 export function File<LAnnotation = undefined, Caret = undefined>(
   props: FileProps<LAnnotation, Caret>,
@@ -14,7 +62,7 @@ export function File<LAnnotation = undefined, Caret = undefined>(
     <FileImpl
       {...props}
       options={{
-        theme: resolvedTheme === 'dark' ? 'pierre-dark' : 'pierre-light',
+        theme: pierreTheme(resolvedTheme),
         ...props.options,
       }}
     />
@@ -29,7 +77,7 @@ export function MultiFileDiff<LAnnotation = undefined, Caret = undefined>(
     <MultiFileDiffImpl
       {...props}
       options={{
-        theme: resolvedTheme === 'dark' ? 'pierre-dark' : 'pierre-light',
+        theme: pierreTheme(resolvedTheme),
         ...props.options,
       }}
     />

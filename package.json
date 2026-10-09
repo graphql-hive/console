@@ -56,6 +56,7 @@
     "seed:org": "tsx scripts/seed-organization.mts",
     "seed:schemas": "tsx scripts/seed-schemas.ts",
     "seed:scim-users-groups": "tsx scripts/seed-scim-users-groups/seed-scim-users-groups.mts",
+    "seed:stitching-checks": "tsx scripts/seed-stitching-checks.mts",
     "seed:usage": "tsx scripts/seed-usage.ts",
     "sourcemaps:inject": "./scripts/sourcemaps-inject.sh",
     "sourcemaps:upload": "./scripts/sourcemaps-upload.sh",

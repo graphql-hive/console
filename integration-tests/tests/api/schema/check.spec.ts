@@ -4,6 +4,7 @@ import {
   RuleInstanceSeverityLevel,
 } from 'testkit/gql/graphql';
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
+import { invariant } from '@hive/service-common';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { createStorage } from '@hive/storage';
 import { checkSchema } from '../../../testkit/flow';
@@ -2574,7 +2575,8 @@ function connectionString() {
 test.concurrent(
   'checking a valid schema onto a broken schema succeeds (prior schema has deprecated non-nullable input)',
   async () => {
-    const { createOrg } = await initSeed().createOwner();
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
@@ -2596,6 +2598,9 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
+    const graphStore = await seed.getGraphStore();
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    invariant(graph, 'Graph must exist.');
     await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
@@ -2626,7 +2631,7 @@ test.concurrent(
       supergraphChanges: null,
       schemaMetadata: null,
       metadataAttributes: null,
-      graph: null,
+      graph,
     });
     await storage.destroy();
 
@@ -3058,3 +3063,73 @@ test.concurrent(
     }
   },
 );
+
+const SchemaChecksQuery = graphql(/* GraphQL */ `
+  query SchemaChecksOnTargetQuery($selector: TargetSelectorInput!, $filters: SchemaChecksFilter) {
+    target(reference: { bySelector: $selector }) {
+      schemaChecks(first: 10, filters: $filters) {
+        edges {
+          node {
+            id
+            serviceName
+          }
+        }
+      }
+    }
+  }
+`);
+
+test.concurrent('schema checks can be filtered by service name', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, organization } = await createOrg();
+  const { createTargetAccessToken, project, target } = await createProject(ProjectType.Federation);
+  const token = await createTargetAccessToken({});
+
+  const checkIds: string[] = [];
+  for (const [sdl, service] of [
+    ['type Query { users: [String!]! }', 'users'],
+    ['type Query { products: [String!]! }', 'products'],
+    ['type Query { users: [String!]! me: String }', 'users'],
+  ] as const) {
+    const result = await token.checkSchema(sdl, service).then(r => r.expectNoGraphQLErrors());
+    if (result.schemaCheck.__typename !== 'SchemaCheckSuccess' || !result.schemaCheck.schemaCheck) {
+      throw new Error(`Expected SchemaCheckSuccess, got ${result.schemaCheck.__typename}`);
+    }
+    checkIds.push(result.schemaCheck.schemaCheck.id);
+  }
+  const [firstUsers, products, secondUsers] = checkIds;
+
+  const schemaChecks = (filters: { serviceName?: string } | null) =>
+    execute({
+      document: SchemaChecksQuery,
+      variables: {
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+        filters,
+      },
+      authToken: ownerToken,
+    })
+      .then(r => r.expectNoGraphQLErrors())
+      .then(r => r.target?.schemaChecks.edges.map(edge => edge.node));
+
+  await expect(schemaChecks({ serviceName: 'users' })).resolves.toEqual([
+    { id: secondUsers, serviceName: 'users' },
+    { id: firstUsers, serviceName: 'users' },
+  ]);
+  // The filter is lowercased like the service name was on write.
+  await expect(schemaChecks({ serviceName: 'Users' })).resolves.toEqual([
+    { id: secondUsers, serviceName: 'users' },
+    { id: firstUsers, serviceName: 'users' },
+  ]);
+  await expect(schemaChecks({ serviceName: 'products' })).resolves.toEqual([
+    { id: products, serviceName: 'products' },
+  ]);
+  await expect(schemaChecks(null)).resolves.toEqual([
+    { id: secondUsers, serviceName: 'users' },
+    { id: products, serviceName: 'products' },
+    { id: firstUsers, serviceName: 'users' },
+  ]);
+});
