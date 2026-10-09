@@ -20,6 +20,8 @@ import { TargetLaboratoryPageQuery } from '@/lib/hooks/laboratory/use-operation-
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
+import { migrateLegacyLaboratoryStorage } from '@/lib/laboratory-legacy-storage';
+import { withLinkedOperation } from '@/lib/laboratory-linked-operation';
 import {
   Laboratory,
   LaboratoryCollection,
@@ -30,9 +32,8 @@ import {
   LaboratoryPreflight,
   LaboratorySettings,
   LaboratoryTab,
-  LaboratoryTabOperation,
 } from '@graphql-hive/laboratory';
-import { Link as RouterLink, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link as RouterLink, useRouter } from '@tanstack/react-router';
 
 function useApiTabValueState(graphqlEndpointUrl: string | null) {
   const [state, setState] = useResetState<'mockApi' | 'linkedApi'>(() => {
@@ -59,6 +60,10 @@ function useApiTabValueState(graphqlEndpointUrl: string | null) {
     ),
   ] as const;
 }
+
+const laboratoryRoute = getRouteApi(
+  '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/laboratory',
+);
 
 const localStoragePrefix = 'hive:laboratory:';
 
@@ -311,6 +316,9 @@ export const UpdatePreflightScriptMutation = graphql(`
 `);
 
 function useLaboratoryState() {
+  // Idempotent, so it can run on every render ahead of the reads below.
+  migrateLegacyLaboratoryStorage();
+
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [{ data, fetching: dataFetching }] = useQuery({
     query: LaboratoryQuery,
@@ -520,6 +528,15 @@ function useLaboratoryState() {
       ? search.operationString
       : null;
 
+  const navigate = laboratoryRoute.useNavigate();
+
+  // A persisted-document link imports once; the param must not survive a reload.
+  useEffect(() => {
+    if (operationString) {
+      void navigate({ search: prev => ({ ...prev, operationString: undefined }), replace: true });
+    }
+  }, [navigate, operationString]);
+
   const operationFromQueryString = useMemo(() => {
     if (operationString) {
       try {
@@ -544,14 +561,20 @@ function useLaboratoryState() {
     return null;
   }, [operationString]);
 
-  const defaultOperations = useMemo(() => {
+  const linkedState = useMemo(() => {
+    const stored = {
+      operations: getLocalStorageState('operations', []),
+      tabs: getLocalStorageState('tabs', []),
+      activeTabId: getLocalStorageState('activeTabId', null),
+    };
+
     if (operationFromQueryString) {
-      return [...getLocalStorageState('operations', []), operationFromQueryString];
+      return withLinkedOperation(stored, operationFromQueryString, 'content');
     }
 
     if (currentOperation) {
-      return [
-        ...getLocalStorageState('operations', []),
+      return withLinkedOperation(
+        stored,
         {
           id: currentOperation.id,
           name: currentOperation.name,
@@ -559,44 +582,12 @@ function useLaboratoryState() {
           variables: currentOperation.variables ?? '{}',
           headers: currentOperation.headers ?? '{}',
           extensions: '{}',
-        } satisfies LaboratoryOperation,
-      ];
-    }
-
-    return getLocalStorageState('operations', []);
-  }, [currentOperation, operationFromQueryString]);
-
-  const defaultTabs = useMemo(() => {
-    if (operationFromQueryString) {
-      return [
-        ...getLocalStorageState('tabs', []),
-        {
-          id: operationFromQueryString.id,
-          type: 'operation',
-          data: operationFromQueryString,
-        } satisfies LaboratoryTabOperation,
-      ];
-    }
-
-    if (currentOperation) {
-      return [
-        ...getLocalStorageState('tabs', []),
-        {
-          id: currentOperation.id,
-          type: 'operation',
-          data: {
-            id: currentOperation.id,
-            type: 'operation',
-            data: {
-              id: currentOperation.id,
-              name: currentOperation.name,
-            },
-          } satisfies LaboratoryTabOperation,
         },
-      ];
+        'id',
+      );
     }
 
-    return getLocalStorageState('tabs', []);
+    return stored;
   }, [currentOperation, operationFromQueryString]);
 
   const operationIdFromSearch = useOperationFromQueryString();
@@ -615,15 +606,15 @@ function useLaboratoryState() {
   return {
     fetching,
     defaultCollections: collections,
-    defaultOperations,
+    defaultOperations: linkedState.operations,
     defaultHistory: historyData ?? [],
-    defaultTabs,
-    defaultActiveTabId: getLocalStorageState('activeTabId', null),
+    defaultTabs: linkedState.tabs,
+    defaultActiveTabId: linkedState.activeTabId,
     defaultSettings: getLocalStorageState('settings', null),
     defaultPreflight: preflight?.preflightScript?.sourceCode
       ? {
           script: preflight.preflightScript.sourceCode,
-          enabled: getLocalStorageState('preflightEnabled', true),
+          enabled: getLocalStorageState('preflightEnabled', false),
         }
       : null,
     defaultEnv: getLocalStorageState('env', {}),
@@ -678,7 +669,7 @@ function useLaboratoryState() {
     },
     onPreflightChange: (preflight: LaboratoryPreflight | null) => {
       updatePreflight(preflight ?? { script: '', enabled: true });
-      setLocalStorageState('preflightEnabled', preflight?.enabled ?? true);
+      setLocalStorageState('preflightEnabled', preflight?.enabled ?? false);
     },
     // One script per target, stored server side, so it is not private to the person editing it.
     preflightNotice:
