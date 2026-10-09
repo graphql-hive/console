@@ -231,6 +231,12 @@ export async function loadSchemaSdl(
     if (error instanceof HiveCLIError) {
       throw error;
     }
+    if (isAggregateError(error)) {
+      const hiveCliError = error.errors.find(error => error instanceof HiveCLIError);
+      if (hiveCliError) {
+        throw hiveCliError;
+      }
+    }
     if (isUrlPointer(pointer)) {
       throw new SchemaFileNotFoundError(pointer, error instanceof Error ? error : String(error));
     }
