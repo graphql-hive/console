@@ -16,6 +16,7 @@ import {
   IntrospectionError,
   InvalidFederationSubgraphError,
   InvalidSDLError,
+  isAggregateError,
   SchemaFileEmptyError,
   SchemaFileNotFoundError,
 } from './errors';
@@ -233,8 +234,12 @@ export async function loadSchemaSdl(
     if (isUrlPointer(pointer)) {
       throw new SchemaFileNotFoundError(pointer, error instanceof Error ? error : String(error));
     }
-    if (error instanceof GraphQLError) {
-      throw new InvalidSDLError(error);
+    if (isAggregateError(error)) {
+      const maybeGraphQLError: GraphQLError | null =
+        error.errors[0]?.name === 'GraphQLError' ? (error.errors[0] as GraphQLError) : null;
+      if (maybeGraphQLError) {
+        throw new InvalidSDLError(maybeGraphQLError);
+      }
     }
     if (error instanceof Error && error.name === 'NoTypeDefinitionsFound') {
       if (isExistingFile(pointer)) {
