@@ -1,7 +1,7 @@
 import { type MigrationExecutor } from '../pg-migrator';
 
 export default {
-  name: '2026.10.02T00-00-03.schema-versions-legacy-pagination-index.ts',
+  name: '2026.10.09T00-00-00.schema-versions-legacy-pagination-index.ts',
   noTransaction: true,
   run: ({ psql }) => [
     {
