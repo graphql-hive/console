@@ -1,5 +1,22 @@
 # hive
 
+## 13.0.1
+
+### Patch Changes
+
+- [#8542](https://github.com/graphql-hive/console/pull/8542)
+  [`5e3ca16`](https://github.com/graphql-hive/console/commit/5e3ca169022b6561eb984aa642e3b22e53338421)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add a partial index on `schema_versions` records
+  without a `graph_metadata`, so that listing the schema versions of a graph that was backfilled
+  from a target does not scan every newer record of that target.
+
+- [#8643](https://github.com/graphql-hive/console/pull/8643)
+  [`4b8bd44`](https://github.com/graphql-hive/console/commit/4b8bd440b6fde60b77bccfd42987bdd627290258)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix the schema service composition scheduler
+  leaving a terminated worker in the pool after a handled composition error. The next composition
+  assigned to that worker was silently dropped and timed out after 60 seconds. Workers are now kept
+  alive after handled errors, and any worker that exits is replaced immediately.
+
 ## 13.0.0
 
 ### Major Changes
