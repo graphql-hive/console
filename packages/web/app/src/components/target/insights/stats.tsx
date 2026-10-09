@@ -30,7 +30,7 @@ import {
   useFormattedThroughput,
   useSlugs,
 } from '@/lib/hooks';
-import { pick } from '@/lib/object';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './fallback';
 import { resolutionToMilliseconds } from './utils';
@@ -494,9 +494,7 @@ function ClientsStats(props: {
             targetSlug,
             name: ev.value,
           },
-          search(searchParams) {
-            return pick(searchParams, ['from', 'to']);
-          },
+          search: carriedRange,
         });
       }
     },
@@ -772,7 +770,7 @@ export function OperationsStats({
         : 'success';
 
   return (
-    <section className="text-fg-subtle space-y-12 transition-opacity duration-700 ease-in-out">
+    <section className="space-y-12 text-fg-subtle transition-opacity duration-700 ease-in-out">
       <OperationsFallback state={state} refetch={refetch}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <RequestsStats requests={operationsStats?.totalRequests} dateRangeText={dateRangeText} />

@@ -751,3 +751,69 @@ test.concurrent('accepts a shared saved filter on an alert', async ({ expect }) 
   expect(result.ok).toBeTruthy();
   expect(result.ok!.addedMetricAlertRule.id).toBeDefined();
 });
+
+test.concurrent(
+  'a % change rule needs twice its window inside the retention',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, organization, setFeatureFlag, setDataRetention } = await createOrg();
+    await setFeatureFlag('metricAlertRules', true);
+    const { project, target, addMetricAlertRule, updateMetricAlertRule } = await createProject(
+      ProjectType.Single,
+    );
+    const organizationSlug = organization.slug;
+    const projectSlug = project.slug;
+    const byProject = { project: { bySelector: { organizationSlug, projectSlug } } };
+    const traffic = (input: {
+      name: string;
+      timeWindowMinutes: number;
+      thresholdType: MetricAlertRuleThresholdType;
+    }) => ({
+      target: { bySelector: { organizationSlug, projectSlug, targetSlug: target.slug } },
+      type: MetricAlertRuleType.Traffic,
+      thresholdValue: 50,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Warning,
+      channelIds: [],
+      ...input,
+    });
+    const change = MetricAlertRuleThresholdType.PercentageChange;
+    const fixed = MetricAlertRuleThresholdType.FixedValue;
+
+    // A new organization keeps 7 days: a 7d % change needs 14.
+    const weekOf7 = await addMetricAlertRule(
+      traffic({ name: 'week', timeWindowMinutes: 10080, thresholdType: change }),
+    );
+    expect(weekOf7.error!.message).toContain('retention');
+    const threeDays = await addMetricAlertRule(
+      traffic({ name: 'three days', timeWindowMinutes: 4320, thresholdType: change }),
+    );
+    expect(threeDays.ok).toBeTruthy();
+    const fixedWeek = await addMetricAlertRule(
+      traffic({ name: 'fixed week', timeWindowMinutes: 10080, thresholdType: fixed }),
+    );
+    expect(fixedWeek.ok).toBeTruthy();
+    const toChange = await updateMetricAlertRule({
+      ...byProject,
+      ruleId: fixedWeek.ok!.addedMetricAlertRule.id,
+      thresholdType: change,
+    });
+    expect(toChange.error!.message).toContain('retention');
+
+    await setDataRetention(30);
+    const weekOf30 = await addMetricAlertRule(
+      traffic({ name: 'week of 30', timeWindowMinutes: 10080, thresholdType: change }),
+    );
+    expect(weekOf30.ok).toBeTruthy();
+    const ruleId = weekOf30.ok!.addedMetricAlertRule.id;
+
+    // After a downgrade the rule keeps running; only a save that touches the pair is refused.
+    await setDataRetention(7);
+    expect((await updateMetricAlertRule({ ...byProject, ruleId, enabled: false })).ok).toBeTruthy();
+    expect(
+      (await updateMetricAlertRule({ ...byProject, ruleId, name: 'week, paused' })).ok,
+    ).toBeTruthy();
+    const resaved = await updateMetricAlertRule({ ...byProject, ruleId, timeWindowMinutes: 10080 });
+    expect(resaved.error!.message).toContain('retention');
+  },
+);

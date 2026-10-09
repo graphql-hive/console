@@ -578,8 +578,8 @@ function PreflightContent() {
       <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
       <div className="relative">
         {preflight.isEnabled ? null : (
-          <div className="text-fg bg-editor-backdrop/90 absolute inset-0 z-20 flex items-center justify-center p-4">
-            <div className="bg-editor rounded-md p-4 text-sm">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-editor-backdrop/90 p-4 text-fg">
+            <div className="rounded-md bg-editor p-4 text-sm">
               Preflight Script is disabled and will not be executed
             </div>
           </div>
@@ -730,7 +730,7 @@ function PreflightModal({
       }
       footer={
         <>
-          <p className="text-fg-default me-auto flex items-center gap-2 text-sm">
+          <p className="me-auto flex items-center gap-2 text-sm text-fg-default">
             <InfoIcon className="size-4 shrink-0" />
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
@@ -814,9 +814,9 @@ function PreflightModal({
               </span>
             </Button>
           </div>
-          <div className="bg-editor flex h-1/2 flex-col">
+          <div className="flex h-1/2 flex-col bg-editor">
             <ScrollArea fill ref={consoleRef} data-cy="console-output">
-              <section className="py-2.5 pl-[26px] pr-2.5 font-mono text-xs/[18px]">
+              <section className="py-2.5 pr-2.5 pl-[26px] font-mono text-xs/[18px]">
                 {logs.map((log, index) => (
                   <LogLine key={index} log={log} />
                 ))}

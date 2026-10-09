@@ -18,7 +18,7 @@ export const nav: NavPath = 'Primitives/Tabs';
 // ---------------------------------------------------------------------------
 
 function Copy({ children }: { children: ReactNode }) {
-  return <p className="text-fg-default text-sm">{children}</p>;
+  return <p className="text-sm text-fg-default">{children}</p>;
 }
 
 /** project/settings/composition.tsx: the active mode carries a check. */
@@ -195,8 +195,8 @@ export const ManyTabs = createPreview(() => {
   return (
     <div className="flex flex-col gap-10">
       <Labelled label="proposals/editor.tsx, the service strip, in a two-column layout at 40rem">
-        <div className="border-line flex w-[40rem] rounded-md border">
-          <div className="border-line text-fg-secondary w-40 shrink-0 border-r p-3 text-xs">
+        <div className="flex w-[40rem] rounded-md border border-line">
+          <div className="w-40 shrink-0 border-r border-line p-3 text-xs text-fg-secondary">
             Services
           </div>
           <div className="flex flex-1 flex-col p-3">
@@ -256,7 +256,7 @@ export const Playground = createPreview({
 function Labelled(props: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-fg-secondary text-xs">{props.label}</span>
+      <span className="text-xs text-fg-secondary">{props.label}</span>
       {props.children}
     </div>
   );

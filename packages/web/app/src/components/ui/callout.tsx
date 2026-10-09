@@ -40,7 +40,7 @@ const Callout = React.forwardRef<
   return (
     <div ref={ref} className={cn(calloutVariants({ type }), className)} {...props}>
       <div
-        className="select-none text-xl"
+        className="text-xl select-none"
         style={{
           fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
         }}

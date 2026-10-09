@@ -47,7 +47,7 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
     <Button
       variant="ghost"
       size="sm"
-      className={cn('bg-background group sticky top-0 w-full justify-start px-2', {
+      className={cn('group sticky top-0 w-full justify-start bg-background px-2', {
         'bg-accent/50': isActive,
       })}
       onClick={() => {
@@ -79,7 +79,7 @@ export const HistoryOperationItem = (props: { historyItem: LaboratoryHistoryRequ
               <AlertDialogTrigger asChild>
                 <Button
                   variant="link"
-                  className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                  className="ml-auto p-1! pr-0! text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                   onClick={e => {
                     e.stopPropagation();
                   }}
@@ -127,13 +127,13 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
       <CollapsibleTrigger asChild>
         <Button
           variant="ghost"
-          className="bg-background group sticky top-0 w-full justify-start px-2"
+          className="group sticky top-0 w-full justify-start bg-background px-2"
           size="sm"
         >
           {isOpen ? (
-            <FolderOpenIcon className="text-muted-foreground size-4" />
+            <FolderOpenIcon className="size-4 text-muted-foreground" />
           ) : (
-            <FolderClockIcon className="text-muted-foreground size-4" />
+            <FolderClockIcon className="size-4 text-muted-foreground" />
           )}
           {props.group.date}
           <AlertDialog>
@@ -142,7 +142,7 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="link"
-                    className="text-muted-foreground hover:text-destructive p-1! pr-0! ml-auto opacity-0 transition-opacity group-hover:opacity-100"
+                    className="ml-auto p-1! pr-0! text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                     onClick={e => {
                       e.stopPropagation();
                     }}
@@ -178,7 +178,7 @@ export const HistoryGroup = (props: { group: { date: string; items: LaboratoryHi
           </AlertDialog>
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className={cn('border-border ml-4 flex flex-col gap-1 border-l pl-2')}>
+      <CollapsibleContent className={cn('ml-4 flex flex-col gap-1 border-l border-border pl-2')}>
         {props.group.items.map(h => {
           return <HistoryOperationItem key={h.id} historyItem={h as LaboratoryHistoryRequest} />;
         })}
@@ -229,7 +229,7 @@ export const History = () => {
 
   return (
     <div className="grid size-full grid-rows-[auto_1fr] pb-0">
-      <div className="border-border flex h-12 items-center gap-2 border-b p-3">
+      <div className="flex h-12 items-center gap-2 border-b border-border p-3">
         <span className="text-base font-medium">History</span>
         <div className="ml-auto flex items-center">
           <AlertDialog>
@@ -239,7 +239,7 @@ export const History = () => {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="text-muted-foreground hover:text-destructive p-1! size-6 rounded-sm"
+                    className="size-6 rounded-sm p-1! text-muted-foreground hover:text-destructive"
                     disabled={history.length === 0}
                   >
                     <TrashIcon className="size-4" />
@@ -281,10 +281,10 @@ export const History = () => {
                 return <HistoryGroup key={group.date} group={group} />;
               })
             ) : (
-              <Empty className="px-0! w-full">
+              <Empty className="w-full px-0!">
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <ClockIcon className="text-muted-foreground size-6" />
+                    <ClockIcon className="size-6 text-muted-foreground" />
                   </EmptyMedia>
                   <EmptyTitle className="text-base">No history yet</EmptyTitle>
                   <EmptyDescription className="text-xs">

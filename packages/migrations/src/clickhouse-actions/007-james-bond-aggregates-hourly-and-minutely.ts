@@ -15,7 +15,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
   await Promise.all([
     // Create hourly and minutely aggregates for coordinates
     exec(`
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.coordinates_hourly
+      CREATE MATERIALIZED VIEW IF NOT EXISTS coordinates_hourly
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         hash String CODEC(ZSTD(1)), 
@@ -38,7 +38,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
           toStartOfHour(expires_at) AS expires_at,
           sum(total) AS total,
           coordinate
-        FROM default.operation_collection
+        FROM operation_collection
         ARRAY JOIN coordinates as coordinate
         ${where}
         GROUP BY
@@ -49,7 +49,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
           expires_at
     `),
     exec(`
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.coordinates_minutely
+      CREATE MATERIALIZED VIEW IF NOT EXISTS coordinates_minutely
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         hash String CODEC(ZSTD(1)), 
@@ -72,7 +72,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
           toStartOfMinute(expires_at) AS expires_at,
           sum(total) AS total,
           coordinate
-        FROM default.operation_collection
+        FROM operation_collection
         ARRAY JOIN coordinates as coordinate
         ${where}
         GROUP BY
@@ -84,7 +84,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
     `),
     // Create hourly and minutely aggregates for clients
     exec(`
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.clients_hourly
+      CREATE MATERIALIZED VIEW IF NOT EXISTS clients_hourly
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         client_name String CODEC(ZSTD(1)),
@@ -110,7 +110,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
         toStartOfHour(timestamp) AS timestamp,
         toStartOfHour(expires_at) AS expires_at,
         count() AS total
-      FROM default.operations
+      FROM operations
       ${where}
       GROUP BY
         target,
@@ -121,7 +121,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
         expires_at
     `),
     exec(`
-      CREATE MATERIALIZED VIEW IF NOT EXISTS default.clients_minutely
+      CREATE MATERIALIZED VIEW IF NOT EXISTS clients_minutely
       (
         target LowCardinality(String) CODEC(ZSTD(1)),
         client_name String CODEC(ZSTD(1)),
@@ -147,7 +147,7 @@ export const action: Action = async (exec, _query, hiveCloudEnvironment) => {
         toStartOfMinute(timestamp) AS timestamp,
         toStartOfMinute(expires_at) AS expires_at,
         count() AS total
-      FROM default.operations
+      FROM operations
       ${where}
       GROUP BY
         target,

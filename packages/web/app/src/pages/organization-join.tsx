@@ -127,12 +127,12 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
       <HiveStripeWrapper>
         <Meta title={orgName ? `Invitation to ${orgName}` : 'Invitation'} />
         <DottedBackground className="min-h-[100vh]">
-          <div className="absolute right-6 top-6">
+          <div className="absolute top-6 right-6">
             <Button variant="outline" onClick={() => router.navigate({ to: '/logout' })}>
               <LogOutIcon className="mr-2 size-4" /> Sign out
             </Button>
           </div>
-          <Link to="/" className="absolute left-6 top-6">
+          <Link to="/" className="absolute top-6 left-6">
             <HiveLogo className="size-10" />
           </Link>
           <div className="container md:w-3/5 lg:w-1/2">
@@ -171,7 +171,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                         You've been invited to become a member of{' '}
                         <span className="font-semibold">{invitation.name}</span>.
                       </p>
-                      <p className="text-fg-secondary mt-2">
+                      <p className="mt-2 text-fg-secondary">
                         By accepting the invitation, you will be able to collaborate with other
                         members of this organization.
                       </p>

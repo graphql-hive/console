@@ -2,6 +2,7 @@ import type { Pool } from 'pg';
 import {
   createPool,
   createTypeParserPreset,
+  parseDsn,
   type DatabasePool,
   type Interceptor,
   type PrimitiveValueExpression,
@@ -136,19 +137,21 @@ export class PostgresDatabasePool implements CommonQueryMethods {
         return await this.pool.transaction(async methods => {
           try {
             return await handler({
-              exists: methods.exists,
-              any: methods.any,
-              maybeOne: methods.maybeOne,
+              // Slonik binds connection methods to a class instance that uses `this`, so forward
+              // the calls rather than copying the functions.
+              exists: (sql, values) => methods.exists(sql, values),
+              any: (sql, values) => methods.any(sql, values),
+              maybeOne: (sql, values) => methods.maybeOne(sql, values),
               async query(
                 sql: QuerySqlToken<any>,
                 values?: PrimitiveValueExpression[],
               ): Promise<void> {
                 await methods.query(sql, values);
               },
-              oneFirst: methods.oneFirst,
-              maybeOneFirst: methods.maybeOneFirst,
-              anyFirst: methods.anyFirst,
-              one: methods.one,
+              oneFirst: (sql, values) => methods.oneFirst(sql, values),
+              maybeOneFirst: (sql, values) => methods.maybeOneFirst(sql, values),
+              anyFirst: (sql, values) => methods.anyFirst(sql, values),
+              one: (sql, values) => methods.one(sql, values),
               transaction<T>(name: string, handler: (methods: CommonQueryMethods) => Promise<T>) {
                 // We just mark this as a virtual transaction, it still runs as part of the current one.
                 const span = tracer.startSpan(`Virtual PG Transaction: ${name}`, {
@@ -219,21 +222,30 @@ export async function createPostgresDatabasePool(args: {
   additionalInterceptors?: Interceptor[];
   statementTimeout?: number;
 }) {
-  const isProvider = typeof args.connectionParameters === 'function';
+  const provider =
+    typeof args.connectionParameters === 'function'
+      ? (args.connectionParameters as ConnectionStringProvider)
+      : null;
 
-  const connectionStringOrProvider: string | (() => Promise<string>) = isProvider
-    ? (args.connectionParameters as ConnectionStringProvider)
+  const connectionString = provider
+    ? await provider()
     : typeof args.connectionParameters === 'string'
       ? args.connectionParameters
       : createConnectionString(args.connectionParameters as PostgresConnectionParamaters);
 
-  const pool = await createPool(connectionStringOrProvider, {
+  const pool = await createPool(connectionString, {
     interceptors: dbInterceptors.concat(args.additionalInterceptors ?? []),
     typeParsers,
     captureStackTrace: false,
     maximumPoolSize: args.maximumPoolSize,
     idleTimeout: 30000,
     statementTimeout: args.statementTimeout,
+    // Already the default in slonik 48.19; pinned so the spans the old slonik.patch stripped
+    // cannot come back with a default flip.
+    tracing: false,
+    // Slonik asks for the password on every new connection, so a rotated IAM token is picked up
+    // without recreating the pool. parseDsn is what slonik uses on the connection string itself.
+    ...(provider ? { password: async () => parseDsn(await provider()).password ?? '' } : {}),
   });
 
   function interceptError<K extends Exclude<keyof SlonikCommonQueryMethods, 'transaction'>>(

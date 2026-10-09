@@ -60,3 +60,12 @@ export const METRIC_ALERT_RULE_TIME_WINDOW_MAX_MINUTES = 7 * MINUTES_PER_DAY; //
 // must be a whole number of days. Mirrors DAILY_THRESHOLD_MINUTES in the workflows
 // evaluator; keep the two in sync.
 export const METRIC_ALERT_RULE_DAILY_ROLLUP_THRESHOLD_MINUTES = 7 * MINUTES_PER_DAY; // 10080
+
+// A PERCENTAGE_CHANGE rule reads its window and the one before it, so both have to be inside
+// the organization's retention. Mirrors percentChangeWindowFits in the web app; keep in sync.
+export function percentChangeWindowFitsRetention(
+  timeWindowMinutes: number,
+  retentionInDays: number,
+): boolean {
+  return timeWindowMinutes * 2 <= retentionInDays * MINUTES_PER_DAY;
+}

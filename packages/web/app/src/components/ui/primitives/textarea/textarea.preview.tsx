@@ -22,10 +22,10 @@ export const States = createPreview(() => (
 /** Same ladder as Input: `raised` for a description field inside a sheet or dialog, and focus lifts the fill. */
 export const OnSurface = createPreview(() => (
   <div className="flex flex-wrap gap-6">
-    <div className="bg-neutral-1 w-80 rounded-md p-6">
+    <div className="w-80 rounded-md bg-neutral-1 p-6">
       <Textarea placeholder="base, on the page" />
     </div>
-    <div className="bg-neutral-3 border-line w-80 rounded-md border p-6">
+    <div className="w-80 rounded-md border border-line bg-neutral-3 p-6">
       <Textarea placeholder="raised, in a sheet" onSurface="raised" />
     </div>
   </div>

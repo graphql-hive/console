@@ -207,7 +207,7 @@ export function CreateProjectAccessTokenSheetContent(
             <Stepper.StepperControls>
               <Button
                 variant="outline"
-                onClick={stepper.prev}
+                onClick={() => void stepper.prev()}
                 disabled={stepper.isFirst || createOrganizationAccessTokenState.fetching}
               >
                 Go back
@@ -240,7 +240,7 @@ export function CreateProjectAccessTokenSheetContent(
                             form.setFocus('description');
                             return;
                           }
-                          stepper.next();
+                          void stepper.next();
                         },
                       );
                     }
@@ -252,12 +252,12 @@ export function CreateProjectAccessTokenSheetContent(
                           return;
                         }
 
-                        stepper.next();
+                        void stepper.next();
                       });
                     }
 
                     if (stepper.current.id === 'step-3-resources') {
-                      stepper.next();
+                      void stepper.next();
                     }
                   }}
                 >
@@ -269,13 +269,13 @@ export function CreateProjectAccessTokenSheetContent(
         >
           <Form form={form} onSubmit={() => {}}>
             <Stepper.StepperNavigation>
-              {stepper.all.map(step => (
+              {stepper.steps.map(step => (
                 <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
                   <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
                 </Stepper.StepperStep>
               ))}
             </Stepper.StepperNavigation>
-            {stepper.switch({
+            {stepper.match({
               'step-1-general': () => <AccessTokenGeneralStep form={form} />,
               'step-2-permissions': () => (
                 <AccessTokenPermissionsStep form={form}>
@@ -308,7 +308,7 @@ export function CreateProjectAccessTokenSheetContent(
               'step-4-confirmation': () => (
                 <>
                   <Heading>Confirm and create Access Token</Heading>
-                  <p className="text-fg-secondary text-sm">
+                  <p className="text-sm text-fg-secondary">
                     Please please review the selected permissions and resources to ensure they align
                     with your intended access needs.
                   </p>

@@ -44,11 +44,10 @@ export function ManagePage() {
 
   return (
     <div className="p-4">
-      <h2 className="text-fg-inverse text-xl font-bold">Hive Stats</h2>
+      <h2 className="text-xl font-bold text-fg-inverse">Hive Stats</h2>
       <div className="flex flex-col">
         <div className="flex gap-4 pb-2">
           <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h', 'm']}
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
             align="end"

@@ -1,6 +1,9 @@
 import * as fs from 'fs';
 import zod from 'zod';
-import { resolveServerListenOptions } from '@hive/service-common';
+import {
+  parseClickHouseConfigFromEnvironment,
+  resolveServerListenOptions,
+} from '@hive/service-common';
 
 const isNumberString = (input: unknown) => zod.string().regex(/^\d+$/).safeParse(input).success;
 
@@ -73,12 +76,7 @@ const KafkaModel = zod.union([
   }),
 ]);
 
-const ClickHouseModel = zod.object({
-  CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
-  CLICKHOUSE_HOST: zod.string(),
-  CLICKHOUSE_PORT: NumberFromString,
-  CLICKHOUSE_USERNAME: zod.string(),
-  CLICKHOUSE_PASSWORD: zod.string(),
+const ClickHouseOptionsModel = zod.object({
   CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS: emptyString(NumberFromString.optional()),
   CLICKHOUSE_ASYNC_INSERT_MAX_DATA_SIZE: emptyString(NumberFromString.optional()),
   // Whether ClickHouse waits for the async insert to flush before acking. Defaults to 0
@@ -140,7 +138,7 @@ const configs = {
 
   log: LogModel.safeParse(process.env),
 
-  clickhouse: ClickHouseModel.safeParse(process.env),
+  clickhouseOptions: ClickHouseOptionsModel.safeParse(process.env),
 
   migration: MigrationModel.safeParse(process.env),
 };
@@ -166,6 +164,12 @@ if (configs.kafka.success && configs.kafka.data.KAFKA_AWS_IAM_AUTH_ENABLED === '
   }
 }
 
+const clickhouseConfigResult = parseClickHouseConfigFromEnvironment(process.env);
+
+if (clickhouseConfigResult.type === 'error') {
+  environmentErrors.push(...clickhouseConfigResult.errors);
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -184,7 +188,7 @@ const sentry = extractConfig(configs.sentry);
 const kafka = extractConfig(configs.kafka);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
-const clickhouse = extractConfig(configs.clickhouse);
+const clickhouseOptions = extractConfig(configs.clickhouseOptions);
 const migration = extractConfig(configs.migration);
 
 export const env = {
@@ -235,16 +239,19 @@ export const env = {
             : null,
     },
   },
-  clickhouse: {
-    protocol: clickhouse.CLICKHOUSE_PROTOCOL,
-    host: clickhouse.CLICKHOUSE_HOST,
-    port: clickhouse.CLICKHOUSE_PORT,
-    username: clickhouse.CLICKHOUSE_USERNAME,
-    password: clickhouse.CLICKHOUSE_PASSWORD,
-    async_insert_busy_timeout_ms: clickhouse.CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS ?? 30_000,
-    async_insert_max_data_size: clickhouse.CLICKHOUSE_ASYNC_INSERT_MAX_DATA_SIZE ?? 200_000_000,
-    wait_for_async_insert: clickhouse.CLICKHOUSE_WAIT_FOR_ASYNC_INSERT === '1' ? 1 : 0,
-  },
+  clickhouse:
+    clickhouseConfigResult.type === 'ok'
+      ? {
+          ...clickhouseConfigResult.config,
+          async_insert_busy_timeout_ms:
+            clickhouseOptions.CLICKHOUSE_ASYNC_INSERT_BUSY_TIMEOUT_MS ?? 30_000,
+          async_insert_max_data_size:
+            clickhouseOptions.CLICKHOUSE_ASYNC_INSERT_MAX_DATA_SIZE ?? 200_000_000,
+          wait_for_async_insert: clickhouseOptions.CLICKHOUSE_WAIT_FOR_ASYNC_INSERT === '1' ? 1 : 0,
+        }
+      : raiseInvariant(
+          'Unreachable: ClickHouse config errors are caught above via process.exit(1)',
+        ),
   heartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
   sentry: sentry.SENTRY === '1' ? { dsn: sentry.SENTRY_DSN } : null,
   log: {

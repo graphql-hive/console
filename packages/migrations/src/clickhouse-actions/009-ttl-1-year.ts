@@ -28,7 +28,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
 
   // Tables with `timestamp` column
   const withTimestamp = await query(`
-    SELECT uuid, name FROM system.tables WHERE name IN (
+    SELECT uuid, name FROM system.tables WHERE database = currentDatabase() AND name IN (
       'coordinates_daily',
       'clients_daily',
       'operations_daily',
@@ -53,7 +53,7 @@ export const action: Action = async (exec, query, hiveCloudEnvironment) => {
   // We need a gradual migration to make these tables depend on `timestamp` column.
   // We're going to do it in a separate migration.
   const withoutTimestamp = await query(`
-    SELECT uuid, name FROM system.tables WHERE name IN (
+    SELECT uuid, name FROM system.tables WHERE database = currentDatabase() AND name IN (
       'target_existence',
       'operation_collection_details',
       'operation_collection_body',

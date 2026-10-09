@@ -1,6 +1,6 @@
 import Agent from 'agentkeepalive';
 import { got, Response as GotResponse } from 'got';
-import type { ServiceLogger } from '@hive/service-common';
+import type { ClickHouseConfig as BaseClickhouseConfig, ServiceLogger } from '@hive/service-common';
 import { compressGzip } from '@hive/usage-common';
 import * as Sentry from '@sentry/node';
 import { writeDuration } from './metrics';
@@ -13,16 +13,11 @@ import {
   subscriptionOperationsOrder,
 } from './serializer';
 
-export interface ClickHouseConfig {
-  protocol: string;
-  host: string;
-  port: number;
-  username: string;
-  password: string;
+export type ClickHouseConfig = BaseClickhouseConfig & {
   async_insert_busy_timeout_ms: number;
   async_insert_max_data_size: number;
   wait_for_async_insert: number;
-}
+};
 
 const operationsFields = operationsOrder.join(', ');
 const subscriptionOperationsFields = subscriptionOperationsOrder.join(', ');
@@ -177,6 +172,7 @@ async function writeCsv(
       body,
       searchParams: {
         query,
+        database: config.database,
         async_insert: 1,
         wait_for_async_insert: config.wait_for_async_insert,
         async_insert_busy_timeout_ms: config.async_insert_busy_timeout_ms,

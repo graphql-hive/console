@@ -23,6 +23,7 @@ import { atomic, cache, stringifySelector } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
 import { Session } from '../../auth/lib/authz';
+import { GraphStore, type Graph } from '../../graph/providers/graph-store';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { ProjectStore } from '../../project/providers/project-store';
@@ -83,6 +84,7 @@ export class SchemaManager {
     private breakingSchemaChangeUsageHelper: BreakingSchemaChangeUsageHelper,
     private idTranslator: IdTranslator,
     private schemaVersions: SchemaVersionStore,
+    private graphs: GraphStore,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
@@ -90,10 +92,10 @@ export class SchemaManager {
       selectors => {
         return Promise.all(
           selectors.map(async selector => {
+            const graph = await graphs.getDefaultGraphForTargetId(selector.targetId);
+
             return {
-              ...(await this.schemaVersions.getLatestValidSchemaVersionForTargetId(
-                selector.targetId,
-              )),
+              ...(await this.schemaVersions.getLatestValidSchemaVersionForGraph(graph)),
               projectId: selector.projectId,
               targetId: selector.targetId,
               organizationId: selector.organizationId,
@@ -109,9 +111,10 @@ export class SchemaManager {
     );
   }
 
-  async hasSchema(target: Target) {
+  async hasPublishedSchemaVersionInDefaultGraph(target: Target) {
     this.logger.debug('Checking if schema is available (targetId=%s)', target.id);
-    return this.schemaVersions.anyVersionExistsForTarget(target);
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
+    return this.schemaVersions.anyVersionExistsForGraph(graph);
   }
 
   @traceFn('SchemaManager.compose', {
@@ -159,7 +162,7 @@ export class SchemaManager {
       },
     });
 
-    const [organization, project, target] = await Promise.all([
+    const [organization, project, graph] = await Promise.all([
       this.storage.getOrganization({
         organizationId: selector.organizationId,
       }),
@@ -167,11 +170,7 @@ export class SchemaManager {
         organizationId: selector.organizationId,
         projectId: selector.projectId,
       }),
-      this.targetStore.getTarget({
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-        targetId: selector.targetId,
-      }),
+      this.graphs.getDefaultGraphForTargetId(selector.targetId),
     ]);
 
     if (project.type !== ProjectType.FEDERATION) {
@@ -181,8 +180,8 @@ export class SchemaManager {
       };
     }
 
-    const latestSchemas = await this.getLatestSchemaVersionWithSchemaLogs({
-      target,
+    const latestSchemas = await this.getLatestSchemaVersionWithSchemaLogsForGraph({
+      graph,
       onlyComposable: input.onlyComposable,
     });
 
@@ -275,14 +274,25 @@ export class SchemaManager {
     return this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id);
   }
 
+  async getServiceNamesOfVersion(schemaVersion: SchemaVersion) {
+    const project = await this.projectManager.getProjectById(schemaVersion.projectId);
+    // Single-schema pushes carry no service name, so there is nothing to list.
+    if (project.type === ProjectType.SINGLE) {
+      return null;
+    }
+    this.logger.debug('Fetching service names (schemaVersionId=%s)', schemaVersion.id);
+    return this.schemaVersions.getServiceNamesBySchemaVersionId(schemaVersion.id);
+  }
+
   async getMatchingServiceSchemaOfVersions(versions: { before: string | null; after: string }) {
     this.logger.debug('Fetching service schema of versions (selector=%o)', versions);
     return this.schemaVersions.getMatchingServiceSchemaOfVersions(versions);
   }
 
-  async getMaybeLatestValidVersion(target: Target) {
-    this.logger.debug('Fetching maybe latest valid version (targetId=%o)', target.id);
-    const version = await this.schemaVersions.getMaybeLatestValidSchemaVersion(target);
+  async getMaybeLatestValidVersionForGraph(graph: Graph) {
+    this.logger.debug('Fetching maybe latest valid version (graphId=%s)', graph.id);
+
+    const version = await this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(graph);
 
     if (!version) {
       return null;
@@ -290,17 +300,18 @@ export class SchemaManager {
 
     return {
       ...version,
-      projectId: target.projectId,
-      targetId: target.id,
-      organizationId: target.orgId,
+      projectId: graph.projectId,
+      targetId: graph.targetId,
+      organizationId: graph.organizationId,
     };
   }
 
-  async getSchemaVersionWithTargetBySchemaVersionIdForProject(
+  async getSchemaVersionWithTargetAndGraphBySchemaVersionIdForProject(
     project: Project,
     schemaVersionId: string,
   ): Promise<null | {
     target: Target;
+    graph: Graph;
     schemaVersion: SchemaVersion & {
       projectId: string;
       targetId: string;
@@ -331,7 +342,18 @@ export class SchemaManager {
 
     if (target.projectId !== project.id) {
       this.logger.debug(
-        'The found schema version does not belong to the specified target. (expectedProjectId=%s, actualProjectId=%s)',
+        'The found schema version does not belong to the specified project. (expectedProjectId=%s, actualProjectId=%s)',
+        project.id,
+        target.projectId,
+      );
+      return null;
+    }
+
+    const graph = await this.graphs.findGraphForSchemaVersion(schemaVersion);
+
+    if (!graph) {
+      this.logger.debug(
+        'The graph the schema version belongs to was deleted.',
         project.id,
         target.projectId,
       );
@@ -339,13 +361,15 @@ export class SchemaManager {
     }
 
     this.logger.debug(
-      'The schema version and its target were found.. (targetId=%s, schemaVersionId=%s)',
+      'The schema version, target and graph were found. (targetId=%s, schemaVersionId=%s, graphId=%s)',
       schemaVersion.targetId,
       schemaVersion.id,
+      graph.id,
     );
 
     return {
       target,
+      graph,
       schemaVersion: {
         ...schemaVersion,
         projectId: target.projectId,
@@ -360,9 +384,9 @@ export class SchemaManager {
     return this.latestSchemaVersionLoader.load(selector);
   }
 
-  async getMaybeLatestVersion(target: Target) {
-    this.logger.debug('Fetching maybe latest version (targetId=%o)', target.id);
-    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+  async getMaybeLatestVersionForGraph(graph: Graph) {
+    this.logger.debug('Fetching maybe latest version (graphId=%s)', graph.id);
+    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
 
     if (!latest) {
       return null;
@@ -370,9 +394,9 @@ export class SchemaManager {
 
     return {
       ...latest,
-      projectId: target.projectId,
-      targetId: target.id,
-      organizationId: target.orgId,
+      projectId: graph.projectId,
+      targetId: graph.targetId,
+      organizationId: graph.organizationId,
     };
   }
 
@@ -406,10 +430,13 @@ export class SchemaManager {
   /**
    * Retrieve the latest schema version including the schema logs.
    */
-  async getLatestSchemaVersionWithSchemaLogs(args: { target: Target; onlyComposable?: boolean }) {
+  async getLatestSchemaVersionWithSchemaLogsForGraph(args: {
+    graph: Graph;
+    onlyComposable?: boolean;
+  }) {
     const schemaVersion = await (args.onlyComposable
-      ? this.getMaybeLatestValidVersion(args.target)
-      : this.getMaybeLatestVersion(args.target));
+      ? this.getMaybeLatestValidVersionForGraph(args.graph)
+      : this.getMaybeLatestVersionForGraph(args.graph));
 
     if (!schemaVersion) {
       return null;
@@ -423,14 +450,18 @@ export class SchemaManager {
     };
   }
 
-  async getPaginatedSchemaVersionsForTargetId(
-    target: Target,
+  async getPaginatedSchemaVersionsForGraph(
+    graph: Graph,
     args: {
       first: number | null;
       cursor: null | string;
     },
   ) {
-    const connection = await this.schemaVersions.getPaginatedSchemaVersionsForTarget(target, args);
+    const first = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
+    const connection = await this.schemaVersions.getPaginatedSchemaVersionsForGraph(graph, {
+      first,
+      cursor: args.cursor,
+    });
 
     return {
       ...connection,
@@ -438,9 +469,9 @@ export class SchemaManager {
         ...edge,
         node: {
           ...edge.node,
-          organizationId: target.orgId,
-          projectId: target.projectId,
-          targetId: target.id,
+          organizationId: graph.organizationId,
+          projectId: graph.projectId,
+          targetId: graph.targetId,
         },
       })),
     };
@@ -550,14 +581,17 @@ export class SchemaManager {
     await this.storage.updateBaseSchema(selector, newBaseSchema);
   }
 
-  countSchemaVersionsOfProject(project: Project, period: DateRange | null): Promise<number> {
+  countSchemaVersionsOfDefaultGraphsInProject(
+    project: Project,
+    period: DateRange | null,
+  ): Promise<number> {
     this.logger.debug('Fetching schema versions count of project (projectId=%s)', project.id);
-    return this.schemaVersions.countSchemaVersionsOfProject(project, period);
+    return this.schemaVersions.countSchemaVersionsOfDefaultGraphsInProject(project, period);
   }
 
-  countSchemaVersionsOfTarget(target: Target, period: DateRange | null): Promise<number> {
-    this.logger.debug('Fetching schema versions count of target (targetId=%s)', target.id);
-    return this.schemaVersions.countSchemaVersionsOfTarget(target, period);
+  countSchemaVersionsOfGraph(graph: Graph, period: DateRange | null): Promise<number> {
+    this.logger.debug('Fetching schema versions count of graph (graphId=%s)', graph.id);
+    return this.schemaVersions.countSchemaVersionsOfTarget(graph, period);
   }
 
   async completeGetStartedCheck(
@@ -1058,7 +1092,9 @@ export class SchemaManager {
     });
 
     const target = await this.targetManager.getTargetById({ targetId: selector.targetId });
-    const record = await this.schemaVersions.getSchemaVersionForTargetByCommit(target, args.commit);
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
+
+    const record = await this.schemaVersions.getSchemaVersionForGraphByCommit(graph, args.commit);
 
     if (!record) {
       return null;
@@ -1173,7 +1209,8 @@ export class SchemaManager {
 
     const results = await Promise.all(
       targets.map(async target => {
-        const schemaVersion = await this.getMaybeLatestValidVersion(target);
+        const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
+        const schemaVersion = await this.getMaybeLatestValidVersionForGraph(graph);
 
         if (schemaVersion === null) {
           return {
@@ -1284,6 +1321,24 @@ export class SchemaManager {
     return {
       status,
       results,
+    };
+  }
+
+  async getSchemaVersionForGraphById(graph: Graph, id: string) {
+    if (!isUUID(id)) {
+      this.logger.debug('Invalid UUID provided. (versionId=%s)', id);
+      return null;
+    }
+    const version = await this.schemaVersions.getSchemaVersionForGraphById(graph, id);
+
+    if (!version) {
+      return null;
+    }
+
+    return {
+      projectId: graph.projectId,
+      organizationId: graph.organizationId,
+      ...version,
     };
   }
 

@@ -161,7 +161,7 @@ export function TargetProposalsSinglePage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className="h-(--content-height) flex min-h-[300px] flex-col pb-0">
+      <LayoutContent className="flex h-(--content-height) min-h-[300px] flex-col pb-0">
         <ProposalsContent {...props} />
       </LayoutContent>
     </>
@@ -401,7 +401,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 >
                   Schema Proposals
                 </Link>{' '}
-                <span className="text-fg-secondary inline-block px-2 italic">/</span>{' '}
+                <span className="inline-block px-2 text-fg-secondary italic">/</span>{' '}
                 {/* @todo use query data to show loading */}
                 {props.proposalId ? (
                   `${props.proposalId}`
@@ -416,7 +416,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="bg-surface-inset flex w-full grow flex-col rounded-sm p-4">
+      <div className="flex w-full grow flex-col rounded-sm bg-surface-inset p-4">
         {query.fetching ? (
           <Spinner />
         ) : (
@@ -477,11 +477,11 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   />
                 </div>
               </div>
-              <div className="mb-6 mt-2">
+              <div className="mt-2 mb-6">
                 {proposal.description ? (
                   <div className="w-full border-l-2 p-4">{proposal.description}</div>
                 ) : null}
-                <div className="text-fg-secondary mt-4 pr-2 text-right text-xs">
+                <div className="mt-4 pr-2 text-right text-xs text-fg-secondary">
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
               </div>
@@ -552,7 +552,7 @@ function TabbedContent(props: {
 
   return (
     <div className="w-full">
-      <div className="border-line border-b">
+      <div className="border-b border-line">
         <Navigation aria-label="Proposal" items={sections} size="sm" />
       </div>
       <div className="flex grow flex-row pt-4">

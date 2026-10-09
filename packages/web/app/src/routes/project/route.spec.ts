@@ -56,6 +56,18 @@ describe('project overview route', () => {
     expect(variables).toEqual({ ...PROJECT_SLUGS, chartResolution: resolution, period });
     expect(['cache-and-network', 'network-only']).toContain(policy);
   });
+
+  it('asks for a week on a plan that keeps a week', { timeout: 30_000 }, async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(NOW));
+    const fixtures = layoutFixtures();
+    fixtures.set('ProjectLayoutQuery', projectLayout({}, { usageRetentionInDays: 7 }));
+    const { client } = await loadedAt(PROJECT, fixtures);
+
+    const { period } = overviewPeriod(new UTCDate(NOW), 7);
+    const [[variables]] = requestsOf(client, 'ProjectOverviewPageQuery');
+    expect(variables).toEqual({ ...PROJECT_SLUGS, chartResolution: 7, period });
+  });
 });
 
 describe('project alerts route', () => {

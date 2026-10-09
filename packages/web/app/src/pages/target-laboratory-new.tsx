@@ -758,7 +758,7 @@ function LaboratoryPageContent(props: {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <Title>Laboratory</Title>
-              <div className="bg-line h-4 w-px" />
+              <div className="h-4 w-px bg-line" />
               <ToggleGroup
                 aria-label="Laboratory version"
                 value={props.defaultLaboratoryTab}
@@ -772,7 +772,7 @@ function LaboratoryPageContent(props: {
                     label: (
                       <>
                         Hive Laboratory
-                        <span className="bg-accent ml-1 size-2 rounded-full" />
+                        <span className="ml-1 size-2 rounded-full bg-accent" />
                       </>
                     ),
                   },
@@ -786,7 +786,7 @@ function LaboratoryPageContent(props: {
               <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
             </p>
           </div>
-          <div className="ml-auto mr-0 flex flex-col justify-center">
+          <div className="mr-0 ml-auto flex flex-col justify-center">
             <div>
               {query.data && !query.data.target?.graphqlEndpointUrl ? (
                 <RouterLink
@@ -889,12 +889,12 @@ export function TargetLaboratoryPage(props: {
           </Button>
         }
       >
-        <p className="text-fg-default text-sm">
+        <p className="text-sm text-fg-default">
           You always can switch to the old GraphiQL based Laboratory by using the tab switcher in
           the top left cornder.
         </p>
       </Dialog>
-      <LayoutContent className="h-(--content-height) flex flex-col pb-0">
+      <LayoutContent className="flex h-(--content-height) flex-col pb-0">
         <LaboratoryPageContent {...props} />
       </LayoutContent>
     </>

@@ -1,5 +1,114 @@
 # hive
 
+## 13.0.0
+
+### Major Changes
+
+- [#8534](https://github.com/graphql-hive/console/pull/8534)
+  [`2d5d278`](https://github.com/graphql-hive/console/commit/2d5d27887371d7617f3d659dc801339ac0724dbe)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING CHANGE**: Before upgrading to this
+  version, you must first upgrade to hive@12.1.0. Do not upgrade directly from an earlier version
+  while the system is serving traffic.
+
+  To perform a rolling upgrade:
+
+  1. Upgrade all running services to `hive@12.1.0`.
+  2. Wait until all database migrations for `hive@12.1.0` have completed successfully.
+  3. Upgrade all services to this major version.
+
+  If downtime is acceptable, you can instead stop all traffic and running services, then upgrade
+  directly to this version and run the migrations before bringing the system back online.
+
+  ***
+
+  Backfill `graphs` table for existing `targets` and `contracts` to bring the database into a
+  consistent state.
+
+### Minor Changes
+
+- [#8635](https://github.com/graphql-hive/console/pull/8635)
+  [`a46d954`](https://github.com/graphql-hive/console/commit/a46d954c01e518645e0c6b1d73467b22c85efa53)
+  Thanks [@Abhist17](https://github.com/Abhist17)! - Add the `CLICKHOUSE_DB` environment variable to
+  choose which ClickHouse database Hive Console uses, so one ClickHouse server can host other
+  databases alongside it. Every service sends it as the `database` request setting; the database
+  must already exist. Unset, it is `default`, which is where Hive Console has always put its tables.
+
+  Resolves https://github.com/graphql-hive/console/issues/8634
+
+- [#8613](https://github.com/graphql-hive/console/pull/8613)
+  [`6664b16`](https://github.com/graphql-hive/console/commit/6664b16386e2cbf48ca27435b6907fe9d9e4859a)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - The date range lives in the URL
+  and stays inside the organization's usage retention: presets past it are greyed out, a link
+  outside it resets with a toast, and the API rejects usage reads that start before it
+  (`PERIOD_OUTSIDE_RETENTION`).
+
+  Self-hosted instances: retention is now enforced. An instance that never configured it stores 7
+  days per organization; set `CLICKHOUSE_TTL_TABLES` (for example `1 YEAR`) to raise it, as
+  described under "Data Retention" in the
+  [self-hosting guide](https://the-guild.dev/graphql/hive/docs/schema-registry/self-hosting/get-started).
+
+  Metric alert rules: a `% change vs. previous` rule reads twice its window, so the form greys out
+  windows past half the organization's retention and the API rejects them. A 3d window preset is
+  added.
+
+### Patch Changes
+
+- [#8623](https://github.com/graphql-hive/console/pull/8623)
+  [`2cd4297`](https://github.com/graphql-hive/console/commit/2cd429775d237f9272838d7e9aec9d38e05a9cff)
+  Thanks [@Abhist17](https://github.com/Abhist17)! - Pass `REDIS_USERNAME` to the Redis client when
+  authenticating with a password. It was parsed and documented for Redis ACL authentication, but
+  only reached the client when AWS IAM auth was enabled, so ACL users could not connect.
+
+  Resolves https://github.com/graphql-hive/console/issues/8140
+
+- [#8644](https://github.com/graphql-hive/console/pull/8644)
+  [`febd8a3`](https://github.com/graphql-hive/console/commit/febd8a309d2d687e0568217738803d7c9ab7e84e)
+  Thanks [@jdolle](https://github.com/jdolle)! - Schema service: add 20 second and 45 second buckets
+  to the composition duration histograms, and make `COMPOSITION_WORKER_COUNT` configurable from the
+  environment. It was declared as a number, so any value set in the environment (always a string)
+  failed validation on startup.
+
+- [#8619](https://github.com/graphql-hive/console/pull/8619)
+  [`8d4903c`](https://github.com/graphql-hive/console/commit/8d4903c9eff5b3e50964d3650ddaab7d0b12ab60)
+  Thanks [@jdolle](https://github.com/jdolle)! - Restore the documented 60 second budget for
+  external schema composition. `SCHEMA_COMPOSITION_TIMEOUT_MS` now defaults to 60 seconds, and
+  `SCHEMA_EXTERNAL_COMPOSITION_TIMEOUT_MS` defaults to 5 seconds less than it. The external timeout
+  is now one budget for the whole external composition call, shared by retries and contract
+  compositions, instead of a per-attempt limit: a fast failure (connection refused, reset, 5xx) is
+  retried with the time that is left, a slow service gets the whole budget on its first attempt, and
+  a spent budget is not retried. The GraphQL API and the workflows service no longer cap schema
+  service requests at 30 seconds, which silently limited any schema service setting; the cap is now
+  60 seconds.
+
+- [#8632](https://github.com/graphql-hive/console/pull/8632)
+  [`b1d5dd2`](https://github.com/graphql-hive/console/commit/b1d5dd2aa1281dc8e9676dd978376f93b6266094)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-xjh9-v7x6-24jw](https://github.com/advisories/GHSA-xjh9-v7x6-24jw).
+
+- [#8665](https://github.com/graphql-hive/console/pull/8665)
+  [`a83ee0d`](https://github.com/graphql-hive/console/commit/a83ee0d96871698690c107c95e362020eaa7f1cf)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Retry the GitHub check-run update
+  for a few seconds when GitHub answers 404 right after creating the check-run, so a schema check or
+  publish no longer fails on GitHub's read-after-write lag.
+
+- [#8666](https://github.com/graphql-hive/console/pull/8666)
+  [`d50f988`](https://github.com/graphql-hive/console/commit/d50f9888634af9cc45e796971c2ce687c8e1b80b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix OIDC sign-in intermittently failing with
+  "Please try again.". The server-generated OAuth state was base64url-encoded and could contain
+  `--`, the delimiter used to separate the state from the OIDC integration id, so about 1% of OIDC
+  logins could not find their pending sign-in state.
+
+- [#8622](https://github.com/graphql-hive/console/pull/8622)
+  [`423ac7f`](https://github.com/graphql-hive/console/commit/423ac7fb85b4fdac99b9c6e99d3441a8def3936d)
+  Thanks [@Abhist17](https://github.com/Abhist17)! - Show the context ID of a schema check on the
+  check details page. Approvals of breaking changes are tied to that ID, but it was only visible
+  inside the approval dialog of a failed check.
+
+- [#8614](https://github.com/graphql-hive/console/pull/8614)
+  [`08eb209`](https://github.com/graphql-hive/console/commit/08eb209d245626b136b97a2b3ca6a619d3796c18)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Set and expire the redis key for a sign in attempt
+  state in the same statement
+
 ## 12.1.0
 
 ### Minor Changes

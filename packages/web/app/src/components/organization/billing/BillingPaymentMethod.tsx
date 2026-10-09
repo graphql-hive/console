@@ -133,7 +133,7 @@ export const BillingPaymentMethodForm = ({
             }}
           />
 
-          <div className="text-fg-secondary text-sm">
+          <div className="text-sm text-fg-secondary">
             All payments and subscriptions are processed securely by{' '}
             <Link
               as="a"

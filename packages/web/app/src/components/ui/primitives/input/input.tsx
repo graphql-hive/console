@@ -143,14 +143,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           className={cn(
             controlSize[(size ?? 'default') as ControlSize],
             prefixSurface[onSurface ?? 'base'],
-            'text-fg-secondary inline-flex shrink-0 items-center whitespace-nowrap rounded-l-sm border border-r-0 px-3 text-sm',
+            'inline-flex shrink-0 items-center rounded-l-sm border border-r-0 px-3 text-sm whitespace-nowrap text-fg-secondary',
           )}
         >
           {prefixText}
         </span>
       ) : null}
       {LeadingIcon ? (
-        <LeadingIcon className="text-fg-muted pointer-events-none absolute left-3 size-4" />
+        <LeadingIcon className="pointer-events-none absolute left-3 size-4 text-fg-muted" />
       ) : null}
       {input}
       {trailing ? (
