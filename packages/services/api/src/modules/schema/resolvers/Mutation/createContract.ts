@@ -27,7 +27,7 @@ export const createContract: NonNullable<MutationResolvers['createContract']> = 
 
   return {
     error: {
-      message: 'Something went wrong.',
+      message: result.message ?? 'Something went wrong.',
       details: result.errors,
     },
   };

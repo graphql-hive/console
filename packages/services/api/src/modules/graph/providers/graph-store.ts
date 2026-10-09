@@ -1,6 +1,9 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
 import { PostgresDatabasePool, psql, type CommonQueryMethods } from '@hive/postgres';
+import { invariant } from '@hive/service-common';
+import { batch } from '../../../shared/helpers';
+import type { SchemaVersion } from '../../schema/providers/schema-version-store';
 import { Logger } from '../../shared/providers/logger';
 
 const ContractGraphConfigModel = z.object({
@@ -108,24 +111,71 @@ export class GraphStore {
       .then(GraphModel.parse);
   }
 
-  async findGraphForTargetIdByName(targetId: string, graphName: string): Promise<Graph | null> {
-    this.logger.debug(
-      'find graph by target id and name (targetId=%s, graphName=%s)',
-      targetId,
-      graphName,
+  private findGraphForTargetIdByNameBatched = batch<
+    { targetId: string; graphName: string },
+    Graph | null
+  >(async args => {
+    this.logger.debug('find graphs by target ids and names (args=%o)', args);
+
+    const graphs = await this.pg
+      .any(
+        psql`
+        SELECT
+          ${graphFields}
+        FROM
+          "graphs"
+        WHERE
+          ("target_id", "name") IN (
+            SELECT * FROM ${psql.unnest(
+              args.map(arg => [arg.targetId, arg.graphName]),
+              ['uuid', 'text'],
+            )}
+          )
+      `,
+      )
+      .then(z.array(GraphModel).parse);
+
+    const graphByTargetIdAndName = new Map(
+      graphs.map(graph => [`${graph.targetId}:${graph.name}`, graph]),
     );
 
-    const query = psql`
+    return args.map(arg => graphByTargetIdAndName.get(`${arg.targetId}:${arg.graphName}`) ?? null);
+  });
+
+  findGraphForTargetIdByName(targetId: string, graphName: string): Promise<Graph | null> {
+    return this.findGraphForTargetIdByNameBatched({ targetId, graphName });
+  }
+
+  async findGraphForSchemaVersion(schemaVersion: SchemaVersion): Promise<Graph | null> {
+    const query = psql`/* findGraphForSchemaVersion */
       SELECT
         ${graphFields}
       FROM
         "graphs"
       WHERE
-        "target_id" = ${targetId}
-        AND "name" = ${graphName}
+        ${
+          schemaVersion.graphId
+            ? psql`"id" = ${schemaVersion.graphId}`
+            : /** If `graphId` is null we can find the relevant graph by a legacy lookup. */
+              psql`
+                "target_id" = ${schemaVersion.targetId}
+                AND "type" = 'BASE'
+                AND "is_backfilled" = TRUE
+              `
+        }
     `;
 
-    return this.pg.maybeOne(query).then(GraphModel.nullable().parse);
+    return await this.pg.maybeOne(query).then(GraphModel.nullable().parse);
+  }
+
+  /**
+   * Every target owns a `default` graph (created with the target, backfilled for older ones),
+   * so a missing one is a data-integrity error rather than a lookup miss.
+   */
+  async getDefaultGraphForTargetId(targetId: string): Promise<Graph> {
+    const graph = await this.findGraphForTargetIdByNameBatched({ targetId, graphName: 'default' });
+    invariant(graph, `No graph with name 'default' exists. (targetId=${targetId})`);
+    return graph;
   }
 
   async deleteGraphByTargetIdAndName(

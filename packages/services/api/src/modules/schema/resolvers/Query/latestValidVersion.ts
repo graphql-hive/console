@@ -1,7 +1,8 @@
+import type { QueryResolvers } from '../../../../__generated__/types';
+import { GraphStore } from '../../../graph/providers/graph-store';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
-import type { QueryResolvers } from './../../../../__generated__/types';
 
 export const latestValidVersion: NonNullable<QueryResolvers['latestValidVersion']> = async (
   _,
@@ -25,6 +26,7 @@ export const latestValidVersion: NonNullable<QueryResolvers['latestValidVersion'
     });
 
     const target = await injector.get(TargetManager).getTargetById({ targetId: selector.targetId });
-    return injector.get(SchemaManager).getMaybeLatestValidVersion(target);
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
+    return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph);
   }
 };
