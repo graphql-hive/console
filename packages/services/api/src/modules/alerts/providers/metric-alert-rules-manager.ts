@@ -8,6 +8,7 @@ import {
   METRIC_ALERT_RULE_TIME_WINDOW_MIN_MINUTES,
   METRIC_ALERT_RULES_PER_TARGET_LIMIT,
   MINUTES_PER_DAY,
+  percentChangeWindowFitsRetention,
 } from '../../commerce/constants';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { Logger } from '../../shared/providers/logger';
@@ -159,6 +160,11 @@ export class MetricAlertRulesManager {
 
     this.assertTypeMetricPairing(input.type, input.metric);
     this.assertTimeWindowInRange(input.timeWindowMinutes);
+    await this.assertPercentChangeWindowWithinRetention(
+      input.organizationId,
+      input.thresholdType,
+      input.timeWindowMinutes,
+    );
 
     // Channels and the saved filter must belong to the same project as the
     // target. The DB foreign keys allow cross-project references on their
@@ -247,6 +253,15 @@ export class MetricAlertRulesManager {
 
     if (input.timeWindowMinutes != null) {
       this.assertTimeWindowInRange(input.timeWindowMinutes);
+    }
+    // Checked on the effective pair, and only when the call touches it: toggling or renaming a
+    // rule must keep working after a downgrade.
+    if (input.thresholdType != null || input.timeWindowMinutes != null) {
+      await this.assertPercentChangeWindowWithinRetention(
+        input.organizationId,
+        input.thresholdType ?? existing.thresholdType,
+        input.timeWindowMinutes ?? existing.timeWindowMinutes,
+      );
     }
 
     if (input.channelIds) {
@@ -349,6 +364,24 @@ export class MetricAlertRulesManager {
     ) {
       throw new MetricAlertRuleValidationError(
         'Time windows of 7 days or more must be a whole number of days.',
+      );
+    }
+  }
+
+  // The form greys these windows out; this guards direct API callers.
+  private async assertPercentChangeWindowWithinRetention(
+    organizationId: string,
+    thresholdType: MetricAlertRule['thresholdType'],
+    timeWindowMinutes: number,
+  ): Promise<void> {
+    if (thresholdType !== 'PERCENTAGE_CHANGE') {
+      return;
+    }
+    const organization = await this.organizationManager.getOrganization({ organizationId });
+    const retentionInDays = organization.monthlyRateLimit.retentionInDays;
+    if (!percentChangeWindowFitsRetention(timeWindowMinutes, retentionInDays)) {
+      throw new MetricAlertRuleValidationError(
+        `A PERCENTAGE_CHANGE rule reads twice its time window (${timeWindowMinutes * 2} minutes), more than the organization's retention of ${retentionInDays} days.`,
       );
     }
   }

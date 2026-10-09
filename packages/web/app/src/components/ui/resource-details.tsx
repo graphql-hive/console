@@ -10,7 +10,7 @@ export function ResourceDetails(props: { id: string; label: string }): ReactElem
       <InputCopy value={props.id} prefixText={props.label} />
       <Tooltip
         trigger={
-          <button type="button" aria-label="What this ID is for" className="text-fg-secondary ml-2">
+          <button type="button" aria-label="What this ID is for" className="ml-2 text-fg-secondary">
             <Info className="size-4" />
           </button>
         }

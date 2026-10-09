@@ -201,7 +201,7 @@ export const Typography = createPreview({
         origin="ui"
         note="Text's only call site, and it does not work. It asks for arrangement='block', but the component destructures color/size/weight/align and calls textVariants({ color, size, weight, align }) - arrangement is never passed through. It also never forwards `as`, so this renders as an inline span. The centring below comes from align, not from block."
       >
-        <div className="border-line w-[28rem] rounded-md border border-dashed p-3">
+        <div className="w-[28rem] rounded-md border border-dashed border-line p-3">
           <Text arrangement="block" align="center" size="small" color="secondary">
             Don&apos;t have an account?{' '}
             <a href="#" className="text-accent underline">
@@ -264,7 +264,7 @@ export const StatPreview = createPreview({
         origin="v2"
         note="A name collision worth knowing about before migrating. That page defines its OWN Stat - `<Stat label value additionalValue />` - which shadows v2/stat entirely and accounts for 6 of the 13 <Stat> matches a naive grep returns. v2/stat has 7 real render sites, not 13."
       >
-        <div className="border-line text-fg-default rounded-md border border-dashed p-3 text-xs">
+        <div className="rounded-md border border-dashed border-line p-3 text-xs text-fg-default">
           Not rendered: it is a page-local component, not a shared primitive. Migrating v2/stat does
           not touch it.
         </div>

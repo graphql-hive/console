@@ -27,7 +27,7 @@ import { Encryptor } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
-import { createNewSession, validatePassword } from './supertokens-at-home/shared';
+import { createNewSession, createOIDCState, validatePassword } from './supertokens-at-home/shared';
 import type { WorkloadIdentityFederationProvider } from './workload-identity-federation';
 
 type BroadcastOIDCIntegrationLog = (oidcOrganizationId: string, message: string) => void;
@@ -901,7 +901,7 @@ export async function registerSupertokensAtHome(
         };
 
         let redirectTo = oidClient.buildAuthorizationUrl(oidClientConfig, parameters);
-        const state = oidClient.randomState();
+        const state = createOIDCState();
 
         redirectTo.searchParams.set('state', state);
         await oauthCache.put(state, {

@@ -474,7 +474,7 @@ function OrganizationPolicySettings(props: {
         currentState={currentOrganization.schemaPolicy}
       >
         {({ allowOverrides, setAllowOverrides }) => (
-          <div className="flex items-center pl-1 pt-2">
+          <div className="flex items-center pt-2 pl-1">
             <Checkbox
               id="allowOverrides"
               checked={allowOverrides}
@@ -482,7 +482,7 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={setAllowOverrides}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className="text-fg-default ml-2 inline-block text-sm">
+            <label htmlFor="allowOverrides" className="ml-2 inline-block text-sm text-fg-default">
               Allow projects to override or disable rules
             </label>
           </div>

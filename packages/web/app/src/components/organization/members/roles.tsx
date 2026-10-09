@@ -221,7 +221,7 @@ function OrganizationMemberRoleView(props: {
           />
           <label
             htmlFor="show-only-granted-permissions"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Show only granted permissions
           </label>
@@ -394,7 +394,7 @@ function OrganizationMemberRoleCreator(props: {
               />
               <label
                 htmlFor="show-only-granted-permissions"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 Show only granted permissions
               </label>
@@ -509,7 +509,7 @@ function RoleNameCell(props: {
             content={
               <div className="flex flex-col items-start gap-y-1 p-2">
                 <div className="text-xs font-medium">This role is locked</div>
-                <div className="text-fg-secondary text-xs">
+                <div className="text-xs text-fg-secondary">
                   Locked roles are created by the system and cannot be modified or deleted.
                 </div>
               </div>
@@ -528,7 +528,7 @@ function RoleNameCell(props: {
             content={
               <div className="flex flex-col items-start gap-y-2">
                 <div className="font-medium">Default role for new members</div>
-                <div className="text-fg-secondary text-sm">
+                <div className="text-sm text-fg-secondary">
                   <p>New members will be assigned to this role by default.</p>
                   {props.canChangeOIDCDefaultRole ? (
                     <p>

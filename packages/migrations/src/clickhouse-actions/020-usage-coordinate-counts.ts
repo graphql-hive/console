@@ -12,7 +12,7 @@ export const action: Action = async exec => {
    * availability) should be (1-N)/N, not 0%
    */
   await exec(`
-    ALTER TABLE default.operations
+    ALTER TABLE operations
     ADD COLUMN IF NOT EXISTS coordinate_totals Map(String, UInt32)
     DEFAULT map()
     CODEC(ZSTD(1))
@@ -30,7 +30,7 @@ export const action: Action = async exec => {
    * (1) Total request count for a coordinate (used to calculate availability)
    *
    * SELECT sum(total) as total
-   * FROM default.coordinate_counts_minutely
+   * FROM coordinate_counts_minutely
    * WHERE target = '<uuid>'
    *   AND coordinate = 'User.ssn'
    *   AND timestamp >= now() - INTERVAL 2 HOUR
@@ -40,7 +40,7 @@ export const action: Action = async exec => {
    * (2) For an operation, how many times was a field requested?
    *
    * SELECT hash, coordinate, sum(total) as total
-   * FROM default.coordinate_counts_minutely
+   * FROM coordinate_counts_minutely
    * WHERE target = '<uuid>'
    *   AND hash = unhex('<hash>')
    *   AND timestamp >= now() - INTERVAL 2 HOUR
@@ -49,7 +49,7 @@ export const action: Action = async exec => {
    *
    */
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.coordinate_counts_minutely
+    CREATE TABLE IF NOT EXISTS coordinate_counts_minutely
     (
       target UUID
       
@@ -86,8 +86,8 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_coordinate_counts_minutely
-    TO default.coordinate_counts_minutely
+    CREATE MATERIALIZED VIEW IF NOT EXISTS mv_coordinate_counts_minutely
+    TO coordinate_counts_minutely
     AS
     SELECT
       target
@@ -97,7 +97,7 @@ export const action: Action = async exec => {
       , coord_total.1 as coordinate
       -- Cast the UInt64 sum back down to UInt32 to match the target table
       , CAST(sum(coord_total.2) AS UInt32) as total
-    FROM default.operations
+    FROM operations
     ARRAY JOIN coordinate_totals as coord_total
     GROUP BY
         target
@@ -113,7 +113,7 @@ export const action: Action = async exec => {
    * Cascading hourly coordinate counts table
    */
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.coordinate_counts_hourly
+    CREATE TABLE IF NOT EXISTS coordinate_counts_hourly
     (
       target UUID
       , hash FixedString(16) CODEC(LZ4)
@@ -139,8 +139,8 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_coordinate_counts_hourly
-    TO default.coordinate_counts_hourly
+    CREATE MATERIALIZED VIEW IF NOT EXISTS mv_coordinate_counts_hourly
+    TO coordinate_counts_hourly
     AS
     SELECT
       target
@@ -149,7 +149,7 @@ export const action: Action = async exec => {
       , toStartOfHour(expires_at) AS expires_at
       , coordinate
       , CAST(sum(total) AS UInt32) as total
-    FROM default.coordinate_counts_minutely
+    FROM coordinate_counts_minutely
     GROUP BY
         target
       , coordinate
@@ -163,7 +163,7 @@ export const action: Action = async exec => {
    * Cascading daily coordinate counts table
    */
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.coordinate_counts_daily
+    CREATE TABLE IF NOT EXISTS coordinate_counts_daily
     (
       target UUID
       , hash FixedString(16) CODEC(LZ4)
@@ -189,8 +189,8 @@ export const action: Action = async exec => {
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_coordinate_counts_daily
-    TO default.coordinate_counts_daily
+    CREATE MATERIALIZED VIEW IF NOT EXISTS mv_coordinate_counts_daily
+    TO coordinate_counts_daily
     AS
     SELECT
       target
@@ -199,7 +199,7 @@ export const action: Action = async exec => {
       , toStartOfDay(expires_at) AS expires_at
       , coordinate
       , CAST(sum(total) AS UInt32) as total
-    FROM default.coordinate_counts_hourly
+    FROM coordinate_counts_hourly
     GROUP BY
         target
       , coordinate
@@ -216,7 +216,7 @@ export const action: Action = async exec => {
    * the start time for that target.
    */
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.target_field_level_metrics_onboard_timestamp
+    CREATE TABLE IF NOT EXISTS target_field_level_metrics_onboard_timestamp
     (
       target UUID
       , timestamp SimpleAggregateFunction(min, DateTime('UTC')) CODEC(DoubleDelta, ZSTD(1))
@@ -230,17 +230,17 @@ export const action: Action = async exec => {
 
   /**
    * Materialized View that updates the oldest timestamp table.
-   * It hooks directly into the root default.operations table to catch
+   * It hooks directly into the root operations table to catch
    * timestamps the moment they enter the system.
    */
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.mv_target_field_level_metrics_onboard_timestamp
-    TO default.target_field_level_metrics_onboard_timestamp
+    CREATE MATERIALIZED VIEW IF NOT EXISTS mv_target_field_level_metrics_onboard_timestamp
+    TO target_field_level_metrics_onboard_timestamp
     AS
     SELECT
       target
       , min(timestamp) AS timestamp
-    FROM default.operations
+    FROM operations
     WHERE notEmpty(coordinate_totals)
     GROUP BY target
     ;

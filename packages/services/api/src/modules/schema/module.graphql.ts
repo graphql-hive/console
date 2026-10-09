@@ -264,6 +264,7 @@ export default gql`
   input SchemaChecksFilter {
     failed: Boolean
     changed: Boolean
+    serviceName: String
   }
 
   type SchemaConnection {
@@ -1076,6 +1077,11 @@ export default gql`
     """
     schemas: SchemaConnection! @tag(name: "public")
     """
+    Lowercased, sorted names of the services published in this version.
+    Null for single-schema projects.
+    """
+    serviceNames: [String!]
+    """
     The supergraph SDL for a federation schema.
     """
     supergraph: String @tag(name: "public")
@@ -1100,7 +1106,7 @@ export default gql`
       The period to use in order to determind whether a field is unused.
       A field is unused if it has not been requested within the specified period.
 
-      Defaults to the last 30 days by default.
+      Defaults to the last 30 days, capped at the organization's usage retention.
       """
       period: SchemaExplorerPeriodInput @tag(name: "public")
     ): UnusedSchemaExplorer @tag(name: "public")
@@ -1111,7 +1117,7 @@ export default gql`
       """
       The period for which the usage data should be included within the result.
 
-      Defaults to the last 30 days by default.
+      Defaults to the last 30 days, capped at the organization's usage retention.
       """
       period: SchemaExplorerPeriodInput @tag(name: "public")
     ): DeprecatedSchemaExplorer @tag(name: "public")

@@ -7,7 +7,6 @@ import { fetchLatestSchema, fetchLatestValidSchema } from './flow';
 import { getServiceHost } from './utils';
 
 const binPath = resolve(__dirname, '../../packages/libraries/cli/bin/run');
-const cliDir = resolve(__dirname, '../../packages/libraries/cli');
 
 async function generateTmpFile(content: string, extension: string) {
   const dir = tmpdir();
@@ -23,7 +22,6 @@ async function exec(cmd: string, env?: Record<string, string>) {
   const outout = await execaCommand(`${binPath} ${cmd}`, {
     shell: true,
     env: {
-      OCLIF_CLI_CUSTOM_PATH: cliDir,
       NODE_OPTIONS: '--no-deprecation',
       ...env,
     },

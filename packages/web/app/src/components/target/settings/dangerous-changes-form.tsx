@@ -76,7 +76,7 @@ const dangerousChangeList = (
 
 /** The dot beside a value that differs from what is saved. */
 export function PendingIndicator() {
-  return <span className="bg-accent inline-block size-2 rounded-full" />;
+  return <span className="inline-block size-2 rounded-full bg-accent" />;
 }
 
 function includesAll(selected: readonly DangerousChangeType[], types: DangerousChangeType[]) {
@@ -122,15 +122,15 @@ export function DangerousChangesForm(props: {
   return (
     <div className={cn('transition-opacity duration-150', !props.enabled && 'opacity-50')}>
       <Form form={form} onSubmit={props.onSubmit}>
-        <div className="border-line bg-surface-card text-fg-secondary block w-auto max-w-4xl rounded-sm border px-5 py-3">
-          <div className="text-fg mb-3 mt-1 font-semibold">
+        <div className="block w-auto max-w-4xl rounded-sm border border-line bg-surface-card px-5 py-3 text-fg-secondary">
+          <div className="mt-1 mb-3 font-semibold text-fg">
             Select Failing Dangerous Change Types
           </div>
           <FormField
             control={form.control}
             name="failAllDangerousChanges"
             render={({ field }) => (
-              <div className="flex items-center gap-1 whitespace-nowrap border-b pb-3">
+              <div className="flex items-center gap-1 border-b pb-3 whitespace-nowrap">
                 <Checkbox
                   id={`${id}-all`}
                   disabled={!props.enabled}
@@ -196,7 +196,7 @@ export function DangerousChangesForm(props: {
           {props.status}
         </div>
         {props.error ? (
-          <div className="text-critical flex flex-row items-center gap-1 p-2">
+          <div className="flex flex-row items-center gap-1 p-2 text-critical">
             <XIcon className="size-4" />
             <span className="font-semibold">{props.error.title}</span>
             <span>{props.error.description}</span>

@@ -8,6 +8,7 @@ import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
 import { formatDuration, useSlugs } from '@/lib/hooks';
+import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import type { ColumnDef } from '@tanstack/react-table';
 import { OperationsFallback } from './fallback';
 
@@ -56,22 +57,19 @@ function OperationsTable({
               operationName: row.original.name,
               operationHash: row.original.hash,
             },
-            search: {
-              from: selectedPeriod?.from ? encodeURIComponent(selectedPeriod.from) : undefined,
-              to: selectedPeriod?.to ? encodeURIComponent(selectedPeriod.to) : undefined,
-            },
+            search: carriedRange(selectedPeriod ?? {}),
           }}
           trailing={
             row.original.name === 'anonymous' ? (
               <Popover
                 trigger={
                   <button type="button" aria-label="Anonymous operation" className="inline-flex">
-                    <TriangleAlert className="text-warning size-3.5" />
+                    <TriangleAlert className="size-3.5 text-warning" />
                   </button>
                 }
                 openOnHover
                 content={
-                  <p className="text-fg-default text-sm">
+                  <p className="text-sm text-fg-default">
                     Anonymous operation detected. Naming your operations is a recommended practice
                   </p>
                 }

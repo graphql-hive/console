@@ -1,4 +1,3 @@
-import { createPeriod, parseDateRangeInput } from '../../../shared/helpers';
 import { buildASTSchema } from '../../../shared/schema';
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { Logger } from '../../shared/providers/logger';
@@ -23,6 +22,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
   schemas: (version, _, { injector }) => {
     return injector.get(SchemaManager).getMaybeSchemasOfVersion(version);
   },
+  serviceNames: (version, _, { injector }) => {
+    return injector.get(SchemaManager).getServiceNamesOfVersion(version);
+  },
   schemaCompositionErrors: async (version, _, { injector }) => {
     return injector.get(SchemaVersionHelper).getSchemaCompositionErrors(version);
   },
@@ -45,6 +47,10 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return version.baseSchema ?? null;
   },
   explorer: async (version, { usage }, { injector }) => {
+    // Checked before the schema work, so a bad period fails once and early.
+    const period = await injector
+      .get(OperationsManager)
+      .usagePeriod({ organizationId: version.organizationId }, usage?.period);
     // @todo use graphql resolve info to optimize this query
     const [schemaAst, supergraphAst] = await Promise.all([
       injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
@@ -60,7 +66,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
     return {
       schema: buildASTSchema(schemaAst),
       usage: {
-        period: usage?.period ? parseDateRangeInput(usage.period) : createPeriod('30d'),
+        period,
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,
@@ -86,9 +92,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
       return null;
     }
 
-    const period = args.period?.absoluteRange
-      ? parseDateRangeInput(args.period.absoluteRange)
-      : createPeriod('30d');
+    const period = await injector
+      .get(OperationsManager)
+      .usagePeriod({ organizationId: version.organizationId }, args.period?.absoluteRange);
 
     const usedCoordinates = await injector.get(OperationsManager).getReportedSchemaCoordinates({
       targetId: version.targetId,
@@ -141,9 +147,9 @@ export const SchemaVersion: SchemaVersionResolvers = {
 
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
 
-    const period = args.period?.absoluteRange
-      ? parseDateRangeInput(args.period.absoluteRange)
-      : createPeriod('30d');
+    const period = await injector
+      .get(OperationsManager)
+      .usagePeriod({ organizationId: version.organizationId }, args.period?.absoluteRange);
 
     logger.debug(
       'Start filtering full schema SDL into deprecated schema SDL. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',

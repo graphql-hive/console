@@ -93,7 +93,7 @@ export function Groups(): React.ReactElement | null {
         }
       />
       <div className="mt-4 overflow-hidden rounded-lg border">
-        <div className="bg-surface-card grid grid-cols-[1fr_auto_auto] gap-4 border-b px-4 py-3 text-sm font-medium">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-4 border-b bg-surface-card px-4 py-3 text-sm font-medium">
           <div>Group</div>
           <div className="w-24 text-center">Members</div>
           <div className="w-10" />
@@ -308,7 +308,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
       {isExpanded && (
         <>
           {groupDetailed ? (
-            <div className="border-line-subtle border-t">
+            <div className="border-t border-line-subtle">
               <div className="px-4 py-2 pl-16">
                 <div className="mb-2 text-xs font-medium">Role Mappings</div>
                 <div className="space-y-2">
@@ -376,7 +376,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
                     />
                   ))}
                   <button
-                    className="text-warning hover:text-warning flex items-center gap-1.5 py-1 text-xs transition-colors"
+                    className="flex items-center gap-1.5 py-1 text-xs text-warning transition-colors hover:text-warning"
                     onClick={() =>
                       setSheetNode(
                         <ManageGroupMappingSheet
@@ -429,7 +429,7 @@ function GroupRoleMappingRow(props: {
   );
 
   return (
-    <div className="bg-surface-card group flex items-center justify-between rounded-md px-3 py-1.5">
+    <div className="group flex items-center justify-between rounded-md bg-surface-card px-3 py-1.5">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Badge content={groupRoleMapping.role.name} />

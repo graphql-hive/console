@@ -43,7 +43,7 @@ export function LabelHint({ tooltip, icon: Icon = Info, name }: LabelHintProps &
         <button
           type="button"
           aria-label={`About ${name}`}
-          className="text-fg-muted hover:text-fg-default inline-flex"
+          className="inline-flex text-fg-muted hover:text-fg-default"
         >
           <Icon className="size-3" />
         </button>

@@ -56,6 +56,7 @@ async function main() {
       .post(endpoint, {
         body: query,
         searchParams: {
+          database: clickhouse.database,
           default_format: 'JSON',
           output_format_json_quote_64bit_integers: '1',
           wait_end_of_query: '1',
@@ -90,14 +91,14 @@ async function main() {
       substring(partition_string, 1, 4) as year,
       substring(partition_string, 5, 2) as month,
       substring(partition_string, 7, 2) as day,
-      format('INSERT INTO default.operations_new
-          SELECT * FROM default.operations
+      format('INSERT INTO operations_new
+          SELECT * FROM operations
           WHERE timestamp >= toDateTime(\\'{0}-{1}-{2} 00:00:00\\', \\'UTC\\') AND timestamp <= toDateTime(\\'{0}-{1}-{2} 23:59:59\\', \\'UTC\\')
       ', year, month, day) as "insertStatement"
     FROM
       system.parts
     WHERE
-      database = 'default'
+      database = currentDatabase()
       AND table = 'operations'
       AND toInt32(partition) < toInt32('${ingestAfter.replace(/-/g, '')}')
     GROUP BY
@@ -153,14 +154,14 @@ async function main() {
       substring(partition_string, 1, 4) as year,
       substring(partition_string, 5, 2) as month,
       substring(partition_string, 7, 2) as day,
-      format('INSERT INTO default.operation_collection_new
-          SELECT * FROM default.operation_collection
+      format('INSERT INTO operation_collection_new
+          SELECT * FROM operation_collection
           WHERE timestamp >= toDateTime(\\'{0}-{1}-{2} 00:00:00\\', \\'UTC\\') AND timestamp <= toDateTime(\\'{0}-{1}-{2} 23:59:59\\', \\'UTC\\')
       ', year, month, day) as "insertStatement"
     FROM
       system.parts
     WHERE
-      database = 'default'
+      database = currentDatabase()
       AND table = 'operation_collection'
       AND toInt32(partition) < toInt32('${ingestAfter.replace(/-/g, '')}')
     GROUP BY
@@ -220,66 +221,60 @@ async function main() {
   // Rename tables
   // Old tables
   await Promise.all([
-    execute(`RENAME TABLE default.operations TO default.operations_old`, {
+    execute(`RENAME TABLE operations TO operations_old`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.operation_collection TO default.operation_collection_old`, {
+    execute(`RENAME TABLE operation_collection TO operation_collection_old`, {
       progressBar: renamingBar,
     }),
   ]);
   // Old views
   await Promise.all([
-    execute(`RENAME TABLE default.operations_hourly TO default.operations_hourly_old`, {
+    execute(`RENAME TABLE operations_hourly TO operations_hourly_old`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.operations_daily TO default.operations_daily_old`, {
+    execute(`RENAME TABLE operations_daily TO operations_daily_old`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.coordinates_daily TO default.coordinates_daily_old`, {
+    execute(`RENAME TABLE coordinates_daily TO coordinates_daily_old`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.clients_daily TO default.clients_daily_old`, {
+    execute(`RENAME TABLE clients_daily TO clients_daily_old`, {
       progressBar: renamingBar,
     }),
   ]);
   // New tables
   await Promise.all([
-    execute(`RENAME TABLE default.operations_new TO default.operations`, {
+    execute(`RENAME TABLE operations_new TO operations`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.operation_collection_new TO default.operation_collection`, {
+    execute(`RENAME TABLE operation_collection_new TO operation_collection`, {
       progressBar: renamingBar,
     }),
   ]);
   // New views
   await Promise.all([
-    execute(`RENAME TABLE default.operations_minutely_new TO default.operations_minutely`, {
+    execute(`RENAME TABLE operations_minutely_new TO operations_minutely`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.operations_hourly_new TO default.operations_hourly`, {
+    execute(`RENAME TABLE operations_hourly_new TO operations_hourly`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.operations_daily_new TO default.operations_daily`, {
+    execute(`RENAME TABLE operations_daily_new TO operations_daily`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.coordinates_daily_new TO default.coordinates_daily`, {
+    execute(`RENAME TABLE coordinates_daily_new TO coordinates_daily`, {
       progressBar: renamingBar,
     }),
-    execute(`RENAME TABLE default.clients_daily_new TO default.clients_daily`, {
+    execute(`RENAME TABLE clients_daily_new TO clients_daily`, {
       progressBar: renamingBar,
     }),
-    execute(
-      `RENAME TABLE default.operation_collection_body_new TO default.operation_collection_body`,
-      {
-        progressBar: renamingBar,
-      },
-    ),
-    execute(
-      `RENAME TABLE default.operation_collection_details_new TO default.operation_collection_details`,
-      {
-        progressBar: renamingBar,
-      },
-    ),
+    execute(`RENAME TABLE operation_collection_body_new TO operation_collection_body`, {
+      progressBar: renamingBar,
+    }),
+    execute(`RENAME TABLE operation_collection_details_new TO operation_collection_details`, {
+      progressBar: renamingBar,
+    }),
   ]);
 
   const modifyQueryBar = progressBar.create(7, 0, null, {
@@ -290,7 +285,7 @@ async function main() {
   await Promise.all([
     execute(
       `
-        ALTER TABLE default.operations_minutely
+        ALTER TABLE operations_minutely
         MODIFY QUERY ${createSelectStatementForOperationsMinutely('operations')}
       `,
       {
@@ -300,7 +295,7 @@ async function main() {
     ),
     execute(
       `
-        ALTER TABLE default.operations_hourly
+        ALTER TABLE operations_hourly
         MODIFY QUERY ${createSelectStatementForOperationsHourly('operations')}
       `,
       {
@@ -310,7 +305,7 @@ async function main() {
     ),
     execute(
       `
-        ALTER TABLE default.operations_daily
+        ALTER TABLE operations_daily
         MODIFY QUERY ${createSelectStatementForOperationsDaily('operations')}
       `,
       {
@@ -320,7 +315,7 @@ async function main() {
     ),
     execute(
       `
-        ALTER TABLE default.coordinates_daily
+        ALTER TABLE coordinates_daily
         MODIFY QUERY ${createSelectStatementForCoordinatesDaily('operation_collection')}
       `,
       {
@@ -330,7 +325,7 @@ async function main() {
     ),
     execute(
       `
-        ALTER TABLE default.clients_daily
+        ALTER TABLE clients_daily
         MODIFY QUERY ${createSelectStatementForClientsDaily('operations')}
       `,
       {
@@ -340,7 +335,7 @@ async function main() {
     ),
     execute(
       `
-        ALTER TABLE default.operation_collection_body
+        ALTER TABLE operation_collection_body
         MODIFY QUERY ${createSelectStatementForOperationCollectionBody('operation_collection')}
       `,
       {
@@ -350,7 +345,7 @@ async function main() {
     ),
     execute(
       `
-        ALTER TABLE default.operation_collection_details
+        ALTER TABLE operation_collection_details
         MODIFY QUERY ${createSelectStatementForOperationCollectionDetails('operation_collection')}
       `,
       {
@@ -360,7 +355,7 @@ async function main() {
     ),
     execute(
       `
-        ALTER TABLE default.target_existence
+        ALTER TABLE target_existence
         MODIFY QUERY ${createSelectStatementForTargetExistence('operations')}
       `,
       {
@@ -376,18 +371,18 @@ async function main() {
   console.log(`! It's a manual process to avoid accidental deletion of data.`);
 
   console.log('\n1. Apply TTLs to new tables');
-  console.log(`  ALTER TABLE default.operations MODIFY TTL timestamp + INTERVAL 3 HOUR`);
-  console.log(`  ALTER TABLE default.operation_collection MODIFY TTL timestamp + INTERVAL 3 HOUR`);
+  console.log(`  ALTER TABLE operations MODIFY TTL timestamp + INTERVAL 3 HOUR`);
+  console.log(`  ALTER TABLE operation_collection MODIFY TTL timestamp + INTERVAL 3 HOUR`);
 
   console.log('\n2. Drop old tables');
-  console.log(`  DROP TABLE default.operations_old`);
-  console.log(`  DROP TABLE default.operation_collection_old`);
+  console.log(`  DROP TABLE operations_old`);
+  console.log(`  DROP TABLE operation_collection_old`);
 
   console.log('\n3. Drop old views');
-  console.log(`  DROP TABLE default.operations_hourly_old`);
-  console.log(`  DROP TABLE default.operations_daily_old`);
-  console.log(`  DROP TABLE default.coordinates_daily_old`);
-  console.log(`  DROP TABLE default.clients_daily_old`);
+  console.log(`  DROP TABLE operations_hourly_old`);
+  console.log(`  DROP TABLE operations_daily_old`);
+  console.log(`  DROP TABLE coordinates_daily_old`);
+  console.log(`  DROP TABLE clients_daily_old`);
 
   console.log('\n4. Enjoy storage size reduction!');
 }

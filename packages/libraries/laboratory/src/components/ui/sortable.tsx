@@ -423,7 +423,7 @@ function SortableItem(props: SortableItemProps) {
         ref={composedRef}
         style={composedStyle}
         className={cn(
-          'focus-visible:ring-ring focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-offset-1',
+          'focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-hidden',
           {
             'touch-none select-none': asHandle,
             'cursor-default': context.flatCursor,
@@ -471,7 +471,7 @@ function SortableItemHandle(props: SortableItemHandleProps) {
       ref={composedRef}
       className={cn(
         'select-none disabled:pointer-events-none disabled:opacity-50',
-        context.flatCursor ? 'cursor-default' : 'data-dragging:cursor-grabbing cursor-grab',
+        context.flatCursor ? 'cursor-default' : 'cursor-grab data-dragging:cursor-grabbing',
         className,
       )}
       disabled={isDisabled}

@@ -3,6 +3,7 @@ import { differenceInMilliseconds } from 'date-fns';
 import { ActivityIcon, BookIcon, GlobeIcon, HistoryIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
+import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
 import { Meta } from '@/components/ui/meta';
@@ -110,11 +111,16 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
         </div>
         <div className="flex justify-end gap-x-2">
           <DateRangePicker
-            validUnits={['y', 'M', 'w', 'd', 'h']}
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
             align="end"
             onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
+            footer={
+              <RetentionNote
+                retentionInDays={dateRangeController.retentionInDays}
+                subject={dateRangeController.subject}
+              />
+            }
           />
           <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>
@@ -189,7 +195,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                   : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
                       <Link
                         key={operation.id}
-                        className="text-fg-default hover:text-fg-default hover:bg-surface-hover flex items-center rounded-md px-2 py-1 hover:underline hover:underline-offset-2"
+                        className="flex items-center rounded-md px-2 py-1 text-fg-default hover:bg-surface-hover hover:text-fg-default hover:underline hover:underline-offset-2"
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                         params={{
                           organizationSlug,

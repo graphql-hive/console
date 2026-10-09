@@ -49,14 +49,14 @@ test.concurrent(
       })
       .then(r => r.expectNoGraphQLErrors());
 
-    expect(await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id)).toMatchObject({
+    expect(await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph)).toMatchObject({
       graphId: graph.id,
     });
 
     const deleteResult = await token.deleteSchema('service').then(r => r.expectNoGraphQLErrors());
     expect(deleteResult.schemaDelete.__typename).toEqual('SchemaDeleteSuccess');
 
-    expect(await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id)).toMatchObject({
+    expect(await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph)).toMatchObject({
       graphId: graph.id,
     });
 
@@ -74,7 +74,7 @@ test.concurrent(
     ).then(r => r.expectNoGraphQLErrors());
     expect(promoteResult.schemaVersionPromote.error).toEqual(null);
 
-    expect(await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id)).toMatchObject({
+    expect(await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph)).toMatchObject({
       graphId: graph.id,
     });
   },

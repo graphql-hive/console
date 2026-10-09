@@ -41,10 +41,10 @@ export const Preflight = () => {
   const logs = preflightLogs ?? [];
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="size-full">
-      <ResizablePanel defaultSize={50} className="bg-card">
+    <ResizablePanelGroup orientation="horizontal" className="size-full">
+      <ResizablePanel defaultSize="50%" className="bg-card">
         <div className="grid size-full grid-rows-[auto_auto_1fr] pb-0">
-          <div className="border-border flex w-full items-center gap-2 border-b p-3">
+          <div className="flex w-full items-center gap-2 border-b border-border p-3">
             <span className="text-base font-medium">Preflight</span>
             <div className="ml-auto flex items-center gap-2">
               {isPreflightRunning ? (
@@ -71,7 +71,7 @@ export const Preflight = () => {
             belongs here. Where a script is saved, and who else can read it, is the host's to
             say through `preflightNotice`.
           */}
-          <div className="border-border text-muted-foreground border-b px-3 py-2 text-xs">
+          <div className="border-b border-border px-3 py-2 text-xs text-muted-foreground">
             <TriangleAlertIcon className="mr-1.5 inline size-3.5 align-[-2px]" />
             Preflight scripts run in this browser as part of your requests. Prefer{' '}
             <code className="font-mono">lab.prompt()</code> over writing secrets into the script.
@@ -265,10 +265,10 @@ export const Preflight = () => {
         </div>
       </ResizablePanel>
       <ResizableHandle />
-      <ResizablePanel minSize={10} defaultSize={50} className="bg-card">
+      <ResizablePanel minSize="10%" defaultSize="50%" className="bg-card">
         {logs.length > 0 ? (
           <div className="grid size-full grid-rows-[auto_1fr] pb-0">
-            <div className="border-border flex h-12 w-full items-center gap-2 border-b p-3">
+            <div className="flex h-12 w-full items-center gap-2 border-b border-border p-3">
               <span className="text-base font-medium">Logs</span>
               <div className="ml-auto flex items-center gap-2">
                 <Button
@@ -283,10 +283,10 @@ export const Preflight = () => {
               </div>
             </div>
             <ScrollArea className="h-full">
-              <div className="flex flex-col gap-1.5 whitespace-pre-wrap p-3">
+              <div className="flex flex-col gap-1.5 p-3 whitespace-pre-wrap">
                 {logs.map((log, i) => (
                   <div className="gap-2 font-mono" key={i}>
-                    <span className="text-muted-foreground text-xs">{log.createdAt}</span>{' '}
+                    <span className="text-xs text-muted-foreground">{log.createdAt}</span>{' '}
                     <span
                       className={cn('text-xs font-medium', {
                         'text-blue-400': log.level === 'info',
@@ -299,7 +299,7 @@ export const Preflight = () => {
                       {log.level.toUpperCase()}
                     </span>{' '}
                     {log.line ? (
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-xs text-muted-foreground">
                         ({log.line}:{log.column}){' '}
                       </span>
                     ) : null}
@@ -330,7 +330,7 @@ export const Preflight = () => {
           <Empty className="size-full">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <HistoryIcon className="text-muted-foreground size-6" />
+                <HistoryIcon className="size-6 text-muted-foreground" />
               </EmptyMedia>
               <EmptyTitle>No logs yet</EmptyTitle>
               <EmptyDescription>

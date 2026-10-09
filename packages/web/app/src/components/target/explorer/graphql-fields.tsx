@@ -76,7 +76,7 @@ export function GraphQLFields(props: {
                             <button
                               type="button"
                               aria-label="Unused arguments"
-                              className="text-accent mr-1 text-sm"
+                              className="mr-1 text-sm text-accent"
                             >
                               *
                             </button>
@@ -84,7 +84,7 @@ export function GraphQLFields(props: {
                           openOnHover
                           width="auto"
                           content={
-                            <p className="text-fg-default text-sm">
+                            <p className="text-sm text-fg-default">
                               This field is used but the presented arguments are not.
                             </p>
                           }
@@ -96,7 +96,7 @@ export function GraphQLFields(props: {
                           <button
                             type="button"
                             aria-label="Deprecated arguments"
-                            className="text-accent mr-1 text-sm"
+                            className="mr-1 text-sm text-accent"
                           >
                             *
                           </button>
@@ -104,7 +104,7 @@ export function GraphQLFields(props: {
                         openOnHover
                         width="auto"
                         content={
-                          <p className="text-fg-default text-sm">
+                          <p className="text-sm text-fg-default">
                             This field is not deprecated but the presented arguments are.
                           </p>
                         }
@@ -120,7 +120,7 @@ export function GraphQLFields(props: {
                     )}
                     <span className="mr-1">:</span>
                     <GraphQLTypeAsLink
-                      className="text-fg-default font-semibold"
+                      className="font-semibold text-fg-default"
                       type={field.type}
                     />
                   </div>

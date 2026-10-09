@@ -66,7 +66,7 @@ export const Widths = createPreview(() => (
         description="The dialog is full width below this width's max-width and never wider than it."
         footer={<Button variant="primary">Done</Button>}
       >
-        <p className="text-fg-default text-sm">
+        <p className="text-sm text-fg-default">
           Contracts, delete confirmations and most forms sit at md. Role editors and the OIDC debug
           view need xl.
         </p>

@@ -168,6 +168,19 @@ describe('insights route', () => {
 });
 
 describe('operation route', () => {
+  it('receives the range the list row carries', { timeout: 30_000 }, async () => {
+    const client = createTestClient(fixtures());
+    renderAtUrl(INSIGHTS, { client });
+    const links = await screen.findAllByRole('link', { name: OPERATION.name });
+
+    const hrefs = links.map(link => new URL(link.getAttribute('href') ?? '', 'http://localhost'));
+    const row = hrefs.find(
+      url => url.pathname === `${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}`,
+    );
+    expect(row?.searchParams.get('from')).toContain(from);
+    expect(row?.searchParams.get('to')).toContain(to);
+  });
+
   it('is not preloaded when an operations row is hovered', { timeout: 30_000 }, async () => {
     const client = createTestClient(fixtures());
     renderAtUrl(INSIGHTS, { client });
@@ -212,6 +225,27 @@ describe('operation route', () => {
     ]) {
       expect(requests(client, name)).toBe(1);
     }
+  });
+});
+
+describe('a range the route cannot read', () => {
+  it('resets to the last day on an operation, noting it', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    const router = createAppRouter({
+      history: createMemoryHistory({
+        initialEntries: [
+          `${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?from=garbage&to=now`,
+        ],
+      }),
+      urqlClient: client,
+    });
+    await router.load();
+
+    await waitFor(() =>
+      expect(router.state.location.search).toEqual({ from: 'now-1d', to: 'now' }),
+    );
+    expect(router.state.location.state.rangeReset).toBe('unreadable');
+    expect(router.history.length).toBe(1);
   });
 });
 

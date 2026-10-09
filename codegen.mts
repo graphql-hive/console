@@ -10,13 +10,7 @@ const config: CodegenConfig = {
     './packages/services/api/src': defineConfig(
       {
         typeDefsFilePath: false,
-        mergeSchema: {
-          path: '../../../../schema.graphql',
-          config: {
-            includeDirectives: true,
-            append: '\n\n directive @oneOf on INPUT_OBJECT',
-          },
-        },
+        mergeSchema: false,
         resolverGeneration: 'minimal',
         resolverMainFileMode: 'modules',
         resolverTypesPath: './__generated__/types.ts',
@@ -61,6 +55,15 @@ const config: CodegenConfig = {
         },
       },
     ),
+    // schema-ast omits the @oneOf definition (graphql-js treats it as built-in), but the
+    // published schema needs it declared (#6679), so append it.
+    './schema.graphql': {
+      plugins: [
+        'schema-ast',
+        { add: { placement: 'append', content: 'directive @oneOf on INPUT_OBJECT' } },
+      ],
+      config: { includeDirectives: true },
+    },
     './packages/web/app/src/gql/': {
       documents: ['./packages/web/app/src/(components|lib|pages|server)/**/*.ts(x)?'],
       preset: 'client',

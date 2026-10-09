@@ -83,6 +83,7 @@ async function main() {
         port: env.clickhouse.port,
         username: env.clickhouse.username,
         password: env.clickhouse.password,
+        database: env.clickhouse.database,
       },
     });
 

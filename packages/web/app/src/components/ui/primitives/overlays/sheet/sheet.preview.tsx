@@ -106,20 +106,20 @@ export const EdgeToEdge = createPreview(() => (
     title={
       <>
         Span Details
-        <span className="text-fg-secondary ml-2 font-mono font-normal">a3f9</span>
+        <span className="ml-2 font-mono font-normal text-fg-secondary">a3f9</span>
       </>
     }
     description="Span ID: a3f9c2d1e8b74f60"
   >
     <ScrollArea fill>
-      <ul className="divide-line border-line divide-y border-t text-sm">
+      <ul className="divide-y divide-line border-t border-line text-sm">
         {[
           'http.method GET',
           'http.route /graphql',
           'graphql.operation.name GetUser',
           'db.system postgres',
         ].map(row => (
-          <li key={row} className="text-fg-default px-6 py-3 font-mono">
+          <li key={row} className="px-6 py-3 font-mono text-fg-default">
             {row}
           </li>
         ))}

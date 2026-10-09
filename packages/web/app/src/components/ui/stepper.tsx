@@ -5,7 +5,7 @@ import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { focusRing } from '@/components/ui/primitives/shared-styles';
 import { cn } from '@/lib/utils';
-import * as Stepperize from '@stepperize/react';
+import * as Stepperize from '@stepperize/react/headless';
 
 //#region Types
 type StepperVariant = 'horizontal' | 'vertical' | 'circle';
@@ -17,12 +17,14 @@ type StepperConfig = {
   tracking?: boolean;
 };
 
-type DefineStepperProps<Steps extends Stepperize.Step[]> = Omit<
-  Stepperize.StepperReturn<Steps>,
-  'Scoped'
+type StepState = 'active' | 'completed' | 'inactive';
+
+type DefineStepperProps<Steps extends readonly Stepperize.Step[]> = Omit<
+  Stepperize.StepperDefinition<Steps>,
+  'Provider'
 > & {
   StepperProvider: (
-    props: Omit<Stepperize.ScopedProps<Steps>, 'children'> &
+    props: Omit<Stepperize.ProviderProps<Steps>, 'children'> &
       StepperConfig & {
         children:
           | React.ReactNode
@@ -68,10 +70,14 @@ const useStepperProvider = (): StepperConfig => {
 
 //#region Define Stepper
 
-const defineStepper = <const Steps extends Stepperize.Step[]>(
+const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
   ...steps: Steps
 ): DefineStepperProps<Steps> => {
-  const { Scoped, useStepper, ...rest } = Stepperize.defineStepper(...steps);
+  // The library rejects duplicate ids at the type level, which it cannot prove for a generic
+  // tuple; the cast hands it the tuple as given.
+  const { Provider, useStepperContext, ...rest } = Stepperize.defineStepper(
+    steps as Parameters<typeof Stepperize.defineStepper<Steps>>[0],
+  );
 
   const StepperContainer = ({
     children,
@@ -80,13 +86,13 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
       | React.ReactNode
       | ((props: { stepper: Stepperize.Stepper<Steps> }) => React.ReactNode);
   }) => {
-    const stepper = useStepper();
+    const stepper = useStepperContext();
     return <>{typeof children === 'function' ? children({ stepper }) : children}</>;
   };
 
   return {
     ...rest,
-    useStepper,
+    useStepperContext,
     StepperProvider: ({
       variant = 'horizontal',
       labelOrientation = 'horizontal',
@@ -96,9 +102,9 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
     }) => {
       return (
         <StepperContext.Provider value={{ variant, labelOrientation, tracking }}>
-          <Scoped initialStep={props.initialStep} initialMetadata={props.initialMetadata}>
-            <StepperContainer {...props}>{children}</StepperContainer>
-          </Scoped>
+          <Provider {...props}>
+            <StepperContainer>{children}</StepperContainer>
+          </Provider>
         </StepperContext.Provider>
       );
     },
@@ -123,19 +129,15 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
     },
     StepperStep: ({ children, className, icon, clickable, ...props }) => {
       const { variant, labelOrientation } = useStepperProvider();
-      const { current } = useStepper();
+      const stepper = useStepperContext();
 
-      const utils = rest.utils;
       const steps = rest.steps;
+      const stepIndex = steps.findIndex(step => step.id === props.of);
 
-      const stepIndex = utils.getIndex(props.of);
-      const step = steps[stepIndex];
-      const currentIndex = utils.getIndex(current.id);
+      const isLast = stepIndex === steps.length - 1;
+      const isActive = stepper.is(props.of);
 
-      const isLast = utils.getLast().id === props.of;
-      const isActive = current.id === props.of;
-
-      const dataState = getStepState(currentIndex, stepIndex);
+      const dataState = STATE_FOR_STATUS[stepper.status(props.of)];
       const childMap = useStepChildren(children);
 
       const title = childMap.get('title');
@@ -175,7 +177,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
             data-disabled={props.disabled}
           >
             <button
-              id={`step-${step.id}`}
+              id={`step-${props.of}`}
               type="button"
               role="tab"
               tabIndex={dataState !== 'inactive' ? 0 : -1}
@@ -192,7 +194,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
               aria-posinset={stepIndex + 1}
               aria-setsize={steps.length}
               aria-selected={isActive}
-              onKeyDown={e => onStepKeyDown(e, utils.getNext(props.of), utils.getPrev(props.of))}
+              onKeyDown={e => onStepKeyDown(e, steps[stepIndex + 1], steps[stepIndex - 1])}
               {...props}
             >
               {icon ?? stepIndex + 1}
@@ -278,7 +280,7 @@ const StepperTitle = ({ children, className, ...props }: React.ComponentProps<'h
 
 const StepperDescription = ({ children, className, ...props }: React.ComponentProps<'p'>) => {
   return (
-    <p className={cn('text-fg-secondary text-sm', className)} {...props}>
+    <p className={cn('text-sm text-fg-secondary', className)} {...props}>
       {children}
     </p>
   );
@@ -407,6 +409,12 @@ const classForSeparator = cva(
 
 //#region Utils
 
+const STATE_FOR_STATUS: Record<Stepperize.StepStatus, StepState> = {
+  active: 'active',
+  previous: 'completed',
+  upcoming: 'inactive',
+};
+
 function scrollIntoStepperPanel(node: HTMLDivElement | null, tracking?: boolean) {
   if (tracking) {
     node?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -438,8 +446,8 @@ const extractChildren = (children: React.ReactNode) => {
 
 const onStepKeyDown = (
   e: React.KeyboardEvent<HTMLButtonElement>,
-  nextStep: Stepperize.Step,
-  prevStep: Stepperize.Step,
+  nextStep: Stepperize.Step | undefined,
+  prevStep: Stepperize.Step | undefined,
 ) => {
   const { key } = e;
   const directions = {
@@ -465,16 +473,6 @@ const onStepKeyDown = (
       stepElement.focus();
     }
   }
-};
-
-const getStepState = (currentIndex: number, stepIndex: number) => {
-  if (currentIndex === stepIndex) {
-    return 'active';
-  }
-  if (currentIndex > stepIndex) {
-    return 'completed';
-  }
-  return 'inactive';
 };
 
 //#endregion Utils

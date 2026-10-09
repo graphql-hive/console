@@ -109,8 +109,8 @@ export function CreateProjectForm(props: {
                       )}
                     />
                     <div>
-                      <span className="text-fg text-sm font-medium">{title}</span>
-                      <p className="text-fg-default text-sm">{description}</p>
+                      <span className="text-sm font-medium text-fg">{title}</span>
+                      <p className="text-sm text-fg-default">{description}</p>
                     </div>
                   </>
                 ),

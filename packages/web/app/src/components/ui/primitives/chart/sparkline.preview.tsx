@@ -21,7 +21,7 @@ export const SharedScale = createPreview(() => (
       { name: 'billing', data: QUIET },
     ].map(project => (
       <Card key={project.name} variants={{ onSurface: 'raised', bodyPadding: 'none' }}>
-        <div className="pb-5 pt-4">
+        <div className="pt-4 pb-5">
           <Sparkline name="Requests" data={project.data} max={HIGHEST} />
           <h4 className="px-4 pt-4 text-lg font-bold">{project.name}</h4>
         </div>
@@ -37,7 +37,7 @@ export const SharedScale = createPreview(() => (
 export const Loading = createPreview(() => (
   <div className="w-[24rem]">
     <Card variants={{ onSurface: 'raised', bodyPadding: 'none' }}>
-      <div className="pb-5 pt-4">
+      <div className="pt-4 pb-5">
         <Sparkline
           name="Requests"
           data={[
