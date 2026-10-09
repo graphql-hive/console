@@ -282,7 +282,7 @@ export const InsightsDimensionsLoading = createPreview(() => {
     <div className="flex flex-wrap items-center gap-2">
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
-      <span className="text-fg-subtle text-xs">{loaded ? 'items loaded' : 'loading items…'}</span>
+      <span className="text-xs text-fg-subtle">{loaded ? 'items loaded' : 'loading items…'}</span>
     </div>
   );
 });

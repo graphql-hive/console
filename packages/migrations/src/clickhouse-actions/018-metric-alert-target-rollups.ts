@@ -17,7 +17,7 @@ const selectByTarget = (bucket: 'toStartOfMinute' | 'toStartOfHour') => `
     CAST(sum(ok) AS UInt32) AS total_ok,
     avgState(duration) AS duration_avg,
     quantilesTDigestState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-  FROM default.operations
+  FROM operations
   GROUP BY
     target,
     timestamp
@@ -31,7 +31,7 @@ const createRollup = async (
   ttlInterval: string,
 ) => {
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.${table}
+    CREATE TABLE IF NOT EXISTS ${table}
     (
       ${tableColumns}
     )
@@ -44,7 +44,7 @@ const createRollup = async (
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.${table}_mv TO default.${table}
+    CREATE MATERIALIZED VIEW IF NOT EXISTS ${table}_mv TO ${table}
     AS (
       ${selectByTarget(bucket)}
     )

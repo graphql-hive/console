@@ -2,7 +2,7 @@ import type { Action } from '../clickhouse';
 
 const statements = [
   `
-    CREATE TABLE IF NOT EXISTS default.operation_collection
+    CREATE TABLE IF NOT EXISTS operation_collection
     (
       target LowCardinality(String),
       hash String,
@@ -23,7 +23,7 @@ const statements = [
     SETTINGS index_granularity = 8192
   `,
   `
-    CREATE TABLE IF NOT EXISTS default.operations
+    CREATE TABLE IF NOT EXISTS operations
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       timestamp DateTime('UTC'),
@@ -45,7 +45,7 @@ const statements = [
     SETTINGS index_granularity = 8192
   `,
   `
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_hourly
+    CREATE MATERIALIZED VIEW IF NOT EXISTS operations_hourly
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       timestamp DateTime('UTC'),
@@ -70,7 +70,7 @@ const statements = [
       sum(ok) AS total_ok,
       avgState(duration) AS duration_avg,
       quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-    FROM default.operations
+    FROM operations
     GROUP BY
       target,
       hash,
@@ -79,7 +79,7 @@ const statements = [
   `,
 
   `
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.operations_daily
+    CREATE MATERIALIZED VIEW IF NOT EXISTS operations_daily
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       timestamp DateTime('UTC'),
@@ -105,7 +105,7 @@ const statements = [
       sum(ok) AS total_ok,
       avgState(duration) AS duration_avg,
       quantilesState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
-    FROM default.operations
+    FROM operations
     GROUP BY
       target,
       hash,
@@ -113,7 +113,7 @@ const statements = [
       expires_at
   `,
   `
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.coordinates_daily
+    CREATE MATERIALIZED VIEW IF NOT EXISTS coordinates_daily
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       hash String CODEC(ZSTD(1)),
@@ -135,7 +135,7 @@ const statements = [
       toStartOfDay(expires_at) AS "expires_at",
       sum(total) AS total,
       coordinate
-    FROM default.operation_collection
+    FROM operation_collection
     ARRAY JOIN coordinates as coordinate
     GROUP BY
       target,
@@ -145,7 +145,7 @@ const statements = [
       expires_at
   `,
   `
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.clients_daily
+    CREATE MATERIALIZED VIEW IF NOT EXISTS clients_daily
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       client_name String CODEC(ZSTD(1)),
@@ -171,7 +171,7 @@ const statements = [
       toStartOfDay(timestamp) AS "timestamp",
       toStartOfDay(expires_at) AS "expires_at",
       count() AS total
-    FROM default.operations
+    FROM operations
     GROUP BY
       target,
       client_name,

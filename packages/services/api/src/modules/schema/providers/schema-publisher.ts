@@ -30,6 +30,7 @@ import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider'
 import { GraphStore } from '../../graph/providers/graph-store';
 import {
   GitHubIntegrationManager,
+  isGitHubClientError,
   type GitHubCheckRun,
 } from '../../integrations/providers/github-integration-manager';
 import { OperationsReader } from '../../operations/providers/operations-reader';
@@ -3570,8 +3571,12 @@ export class SchemaPublisher {
         schemaCheck,
         checkRun,
       };
-    } catch (error: any) {
-      Sentry.captureException(error);
+    } catch (error: unknown) {
+      this.reportCheckRunUpdateFailure(error, {
+        operation: 'check',
+        organizationId: args.project.orgId,
+        githubCheckRun: args.githubCheckRun,
+      });
       return {
         __typename: 'GitHubSchemaCheckError' as const,
         message: 'The schema check ran, but the GitHub check-run could not be updated.',
@@ -3806,12 +3811,54 @@ export class SchemaPublisher {
         message: title,
       } as const;
     } catch (error: unknown) {
-      Sentry.captureException(error);
+      this.reportCheckRunUpdateFailure(error, {
+        operation: 'publish',
+        organizationId,
+        githubCheckRun,
+      });
       return {
         __typename: 'GitHubSchemaPublishError',
         message: `Failed to create the check-run`,
       } as const;
     }
+  }
+
+  private reportCheckRunUpdateFailure(
+    error: unknown,
+    args: {
+      operation: 'check' | 'publish';
+      organizationId: string;
+      githubCheckRun: { owner: string; repository: string; id: number };
+    },
+  ) {
+    const contexts = {
+      'GitHub Check Run': {
+        organizationId: args.organizationId,
+        owner: args.githubCheckRun.owner,
+        repository: args.githubCheckRun.repository,
+        githubCheckRunId: args.githubCheckRun.id,
+      },
+    };
+
+    if (isGitHubClientError(error)) {
+      this.logger.warn(
+        'GitHub rejected the check-run update (operation=%s, organizationId=%s, owner=%s, repository=%s, githubCheckRunId=%s, status=%s)',
+        args.operation,
+        args.organizationId,
+        args.githubCheckRun.owner,
+        args.githubCheckRun.repository,
+        args.githubCheckRun.id,
+        error.status,
+      );
+      Sentry.captureException(error, {
+        level: 'warning',
+        tags: { operation: args.operation, github_status: error.status },
+        contexts,
+      });
+      return;
+    }
+
+    Sentry.captureException(error, { tags: { operation: args.operation }, contexts });
   }
 
   private errorsToMarkdown(

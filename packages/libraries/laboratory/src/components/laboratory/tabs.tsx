@@ -239,7 +239,7 @@ export const Tab = (props: {
       return customTab.icon;
     }
 
-    return <FileIcon className="text-muted-foreground size-4" />;
+    return <FileIcon className="size-4 text-muted-foreground" />;
   }, [props.item, isError]);
 
   return (
@@ -249,7 +249,7 @@ export const Tab = (props: {
           value={props.item.id}
           asHandle
           className={cn(
-            'data-dragging:opacity-0 flex h-12 w-max items-stretch',
+            'flex h-12 w-max items-stretch data-dragging:opacity-0',
             props.isOverlay && 'bg-background',
             props.isOverlay && !isActive && 'h-12',
           )}
@@ -278,7 +278,7 @@ export const Tab = (props: {
           >
             <div
               className={cn(
-                'text-muted-foreground hover:text-foreground group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm transition-all',
+                'group relative flex h-full cursor-pointer items-center gap-2 border-t-2 border-transparent px-3 pb-1 text-sm text-muted-foreground transition-all hover:text-foreground',
                 props.activeTab?.id === props.item.id && 'border-primary bg-card text-foreground',
               )}
               data-state={props.activeTab?.id === props.item.id ? 'active' : 'inactive'}
@@ -310,11 +310,11 @@ export const Tab = (props: {
                   props.handleDeleteTab(props.item.id);
                 }}
               >
-                <XIcon className="text-muted-foreground size-3" />
+                <XIcon className="size-3 text-muted-foreground" />
               </button>
             </div>
           </div>
-          <div className="bg-border mb-px w-px" />
+          <div className="mb-px w-px bg-border" />
         </Sortable.Item>
       </ContextMenuTrigger>
       <ContextMenuContent>
@@ -417,7 +417,7 @@ export const Tabs = ({ className }: { className?: string }) => {
     <div
       className={cn('relative z-10 grid size-full grid-cols-[1fr_auto] overflow-hidden', className)}
     >
-      <div className="bg-border absolute bottom-0 left-0 -z-10 h-px w-full" />
+      <div className="absolute bottom-0 left-0 -z-10 h-px w-full bg-border" />
       <div className="overflow-hidden">
         <ScrollArea className="size-full whitespace-nowrap">
           <div className="flex items-stretch">

@@ -53,7 +53,7 @@ const planCollection: {
           href="https://the-guild.dev"
           target="_blank"
           rel="noreferrer"
-          className="text-accent font-medium transition-colors hover:underline"
+          className="font-medium text-accent transition-colors hover:underline"
         >
           The Guild
         </a>
@@ -76,7 +76,7 @@ function Plan(plan: {
     // card so the footers line up across plans with different feature counts.
     <div className="flex h-full w-full flex-col justify-between self-stretch">
       <div>
-        <h2 className="text-fg-default flex items-center justify-between text-base font-bold">
+        <h2 className="flex items-center justify-between text-base font-bold text-fg-default">
           {plan.name}
           {plan.isActive && <Badge content="CURRENT PLAN" variants={{ variant: 'default' }} />}
         </h2>
@@ -87,16 +87,16 @@ function Plan(plan: {
           ) : (
             <>
               ${plan.price}
-              <span className="text-fg-secondary text-sm">/mo</span>
+              <span className="text-sm text-fg-secondary">/mo</span>
             </>
           )}
         </div>
-        <div className="text-fg-secondary text-sm">{plan.description}</div>
+        <div className="text-sm text-fg-secondary">{plan.description}</div>
         <div className="mt-6 flex flex-col gap-2">
           {plan.features.map((feature, i) => (
             <div key={i}>
-              <div className="text-fg-secondary flex items-center gap-1 text-sm">
-                <Check className="text-fg-secondary size-5" />
+              <div className="flex items-center gap-1 text-sm text-fg-secondary">
+                <Check className="size-5 text-fg-secondary" />
                 {feature}
               </div>
             </div>
@@ -105,8 +105,8 @@ function Plan(plan: {
       </div>
       {plan.footer && (
         <div>
-          <div className="border-line mx-auto my-4 w-9/12 border-b" />
-          <div className="text-fg-default text-xs">{plan.footer}</div>
+          <div className="mx-auto my-4 w-9/12 border-b border-line" />
+          <div className="text-xs text-fg-default">{plan.footer}</div>
         </div>
       )}
     </div>

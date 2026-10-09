@@ -211,7 +211,7 @@ export const Infotip = createPreview(() => (
       }
       openOnHover
       content={
-        <p className="text-fg-default text-sm">
+        <p className="text-sm text-fg-default">
           Your membership has insufficient authority for assigning this permission.
         </p>
       }
@@ -227,7 +227,7 @@ export const Infotip = createPreview(() => (
         openOnHover
         width="lg"
         content={
-          <div className="text-fg-default text-sm font-normal">
+          <div className="text-sm font-normal text-fg-default">
             <p>
               This Contract is no longer active and no more contract versions or contract checks
               will be published for it.

@@ -1,5 +1,6 @@
 import { config as dotenv } from 'dotenv';
 import zod from 'zod';
+import { parseClickHouseConfigFromEnvironment } from '@hive/service-common';
 
 dotenv({
   debug: true,
@@ -39,21 +40,8 @@ const PostgresModel = zod.object({
   POSTGRES_PASSWORD: emptyString(zod.string().optional()),
 });
 
-const ClickHouseModel = zod.union([
-  zod.object({
-    CLICKHOUSE_PROTOCOL: zod.union([zod.literal('http'), zod.literal('https')]),
-    CLICKHOUSE_HOST: zod.string(),
-    CLICKHOUSE_PORT: NumberFromString,
-    CLICKHOUSE_USERNAME: zod.string(),
-    CLICKHOUSE_PASSWORD: zod.string(),
-  }),
-  zod.object({}),
-]);
-
 const configs = {
   base: EnvironmentModel.safeParse(process.env),
-
-  clickhouse: ClickHouseModel.safeParse(process.env),
 
   postgres: PostgresModel.safeParse(process.env),
 };
@@ -64,6 +52,14 @@ for (const config of Object.values(configs)) {
   if (config.success === false) {
     environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
   }
+}
+
+const clickhouseConfigResult = process.env.CLICKHOUSE_PROTOCOL
+  ? parseClickHouseConfigFromEnvironment(process.env)
+  : null;
+
+if (clickhouseConfigResult?.type === 'error') {
+  environmentErrors.push(...clickhouseConfigResult.errors);
 }
 
 if (environmentErrors.length) {
@@ -81,7 +77,6 @@ function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Out
 
 const base = extractConfig(configs.base);
 const postgres = extractConfig(configs.postgres);
-const clickhouse = extractConfig(configs.clickhouse);
 
 export const env = {
   environment: base.ENVIRONMENT,
@@ -94,16 +89,7 @@ export const env = {
     password: postgres.POSTGRES_PASSWORD,
     ssl: postgres.POSTGRES_SSL === '1',
   },
-  clickhouse:
-    'CLICKHOUSE_PROTOCOL' in clickhouse
-      ? {
-          protocol: clickhouse.CLICKHOUSE_PROTOCOL,
-          host: clickhouse.CLICKHOUSE_HOST,
-          port: clickhouse.CLICKHOUSE_PORT,
-          username: clickhouse.CLICKHOUSE_USERNAME,
-          password: clickhouse.CLICKHOUSE_PASSWORD,
-        }
-      : null,
+  clickhouse: clickhouseConfigResult?.type === 'ok' ? clickhouseConfigResult.config : null,
   isMigrator: base.MIGRATOR === 'up',
   isClickHouseMigrator: base.CLICKHOUSE_MIGRATOR === 'up',
 } as const;

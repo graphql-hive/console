@@ -238,7 +238,7 @@ export function Select({
                           })
                         }
                       >
-                        <BaseSelect.ItemIndicator className="absolute left-2 top-2 inline-flex items-center">
+                        <BaseSelect.ItemIndicator className="absolute top-2 left-2 inline-flex items-center">
                           <Check className="size-3" />
                         </BaseSelect.ItemIndicator>
                         <BaseSelect.ItemText>
@@ -247,7 +247,7 @@ export function Select({
                             {option.label}
                           </span>
                           {option.description ? (
-                            <span className="text-fg-muted block truncate text-xs">
+                            <span className="block truncate text-xs text-fg-muted">
                               {option.description}
                             </span>
                           ) : null}

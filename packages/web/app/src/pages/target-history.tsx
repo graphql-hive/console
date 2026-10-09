@@ -111,7 +111,7 @@ function VersionsList(props: { versionId?: string }): ReactElement {
         <Link
           key={version.id}
           className={cn(
-            'flex items-stretch gap-3 rounded-lg py-3 pl-2 pr-3',
+            'flex items-stretch gap-3 rounded-lg py-3 pr-3 pl-2',
             'hover:bg-surface-hover',
             versionId === version.id && 'bg-surface-selected',
           )}
@@ -138,17 +138,17 @@ function VersionsList(props: { versionId?: string }): ReactElement {
                   : version.id.substring(0, 8)}
               </div>
               {version.origin.__typename === 'SchemaVersionPublishOrigin' && (
-                <span className="text-2xs text-success font-mono uppercase tracking-wide">
+                <span className="font-mono text-2xs tracking-wide text-success uppercase">
                   Published
                 </span>
               )}
               {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
-                <span className="text-2xs text-critical font-mono uppercase tracking-wide">
+                <span className="font-mono text-2xs tracking-wide text-critical uppercase">
                   Removed
                 </span>
               )}
               {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-                <span className="text-2xs text-info font-mono uppercase tracking-wide">
+                <span className="font-mono text-2xs tracking-wide text-info uppercase">
                   Promoted
                 </span>
               )}
@@ -198,7 +198,7 @@ function VersionsList(props: { versionId?: string }): ReactElement {
                 </code>
               )}
             </div>
-            <div className="mb-0 mt-auto hidden text-right text-xs sm:block">
+            <div className="mt-auto mb-0 hidden text-right text-xs sm:block">
               <TimeAgo date={version.date} />
             </div>
           </div>
@@ -310,7 +310,7 @@ function HistoryPageContent() {
             <Subtitle>Recently published versions.</Subtitle>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-5">
-            <div className="border-line-subtle bg-surface-inset flex min-h-0 min-w-[420px] grow flex-col rounded-md border">
+            <div className="flex min-h-0 min-w-[420px] grow flex-col rounded-md border border-line-subtle bg-surface-inset">
               <ScrollArea fill>
                 <div className="flex flex-col gap-2.5 p-2.5">
                   <VersionsList versionId={versionId} />

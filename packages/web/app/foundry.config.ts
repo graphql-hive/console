@@ -113,6 +113,7 @@ export default defineConfig({
       children: [
         { label: 'BillingPlanPicker' },
         { label: 'Calendar' },
+        { label: 'CompositionErrors' },
         { label: 'DataTable' },
         { label: 'DateRangePicker' },
         { label: 'FailureCard' },
@@ -123,8 +124,10 @@ export default defineConfig({
         { label: 'PagePending' },
         { label: 'RefreshButton' },
         { label: 'Resizable' },
+        { label: 'ScopeBar' },
         { label: 'StatCard' },
         { label: 'Stepper' },
+        { label: 'SubgraphName' },
         { label: 'SupportForms' },
         { label: 'TabbedView' },
       ],

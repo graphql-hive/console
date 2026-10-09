@@ -46,7 +46,7 @@ const TargetCard = (props: {
       days={props.days}
       renderLink={children => (
         <Link
-          className="block pb-5 pt-4"
+          className="block pt-4 pb-5"
           to="/$organizationSlug/$projectSlug/$targetSlug"
           disabled={organizationSlug == null || projectSlug == null || target?.slug == null}
           params={{

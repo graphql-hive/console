@@ -110,7 +110,7 @@ export function Navigation({
       }
     >
       {[0, 1, 2].map(index => (
-        <div key={index} className="bg-neutral-5 h-5 w-12 animate-pulse rounded-full" />
+        <div key={index} className="h-5 w-12 animate-pulse rounded-full bg-neutral-5" />
       ))}
     </div>
   ) : (

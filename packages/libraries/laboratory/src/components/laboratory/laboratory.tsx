@@ -210,10 +210,10 @@ const LaboratoryContent = () => {
         }
 
         return (
-          <Empty className="px-0! w-full">
+          <Empty className="w-full px-0!">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <FileIcon className="text-muted-foreground size-6" />
+                <FileIcon className="size-6 text-muted-foreground" />
               </EmptyMedia>
               <EmptyTitle>No operation selected</EmptyTitle>
               <EmptyDescription>
@@ -333,7 +333,7 @@ const LaboratoryContent = () => {
         ) : null}
         <div
           className={cn(
-            'z-100 relative mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
+            'relative z-100 mt-auto flex aspect-square h-12 w-full items-center justify-center border-l-2 border-transparent',
             {
               'border-primary': activePanel === 'settings',
             },
@@ -423,7 +423,7 @@ const LaboratoryContent = () => {
           <div className="w-full">
             <Tabs />
           </div>
-          <div className="bg-card relative flex-1 overflow-hidden">{contentNode}</div>
+          <div className="relative flex-1 overflow-hidden bg-card">{contentNode}</div>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
@@ -639,7 +639,7 @@ export const Laboratory = (
     <ShadowRootContainer>
       <style>{`${laboratoryStyles}\n${monacoStyles}`}</style>
       <div
-        className={cn('hive-laboratory bg-background size-full', props.theme, {
+        className={cn('hive-laboratory size-full bg-background', props.theme, {
           'fixed inset-0 z-50': isFullScreen,
         })}
         ref={setContainer}

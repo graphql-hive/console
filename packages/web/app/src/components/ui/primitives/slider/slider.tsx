@@ -42,8 +42,8 @@ export function Slider<V extends SliderValue>({
     >
       {/* Vertical padding widens the hit area past the 4px track. */}
       <BaseSlider.Control className="flex w-full cursor-pointer items-center py-2">
-        <BaseSlider.Track className="bg-neutral-5 relative h-1 w-full select-none rounded-full">
-          <BaseSlider.Indicator className="bg-accent rounded-full" />
+        <BaseSlider.Track className="relative h-1 w-full rounded-full bg-neutral-5 select-none">
+          <BaseSlider.Indicator className="rounded-full bg-accent" />
           {(isRange ? [0, 1] : [0]).map(index => (
             <BaseSlider.Thumb
               key={index}
@@ -51,7 +51,7 @@ export function Slider<V extends SliderValue>({
               aria-label={
                 isRange ? `${ariaLabel} ${index === 0 ? 'minimum' : 'maximum'}` : ariaLabel
               }
-              className={`bg-neutral-12 size-4 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${focusRing}`}
+              className={`size-4 rounded-full bg-neutral-12 shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${focusRing}`}
             />
           ))}
         </BaseSlider.Track>

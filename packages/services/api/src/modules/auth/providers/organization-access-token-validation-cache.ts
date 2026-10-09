@@ -1,5 +1,5 @@
 import { BentoCache, bentostore } from 'bentocache';
-import { memoryDriver } from 'bentocache/build/src/drivers/memory';
+import { memoryDriver } from 'bentocache/drivers/memory';
 import { Injectable, Scope } from 'graphql-modules';
 import { prometheusPlugin } from '@bentocache/plugin-prometheus';
 import {

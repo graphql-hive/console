@@ -157,10 +157,10 @@ export const TransferOrganizationOwnershipModal = ({
       <div className="flex flex-col gap-5">
         <TransferOwnershipForm form={form} onSubmit={onSubmit} members={members} />
 
-        <div className="border-line h-0 w-full border-t" />
+        <div className="h-0 w-full border-t border-line" />
 
         <div className="font-medium">About the ownership transfer</div>
-        <ul className="text-fg-default list-inside list-disc px-2 text-sm">
+        <ul className="list-inside list-disc px-2 text-sm text-fg-default">
           <li>
             The new owner will receive a confirmation email. If the new owner doesn't accept the
             transfer within 24 hours, the invitation will expire.

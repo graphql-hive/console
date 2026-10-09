@@ -85,7 +85,7 @@ export function SingleSignOnSubpage(): React.ReactNode {
           text: 'Documentation',
         }}
       />
-      <div className="text-fg-secondary max-w-[800px] space-y-4">
+      <div className="max-w-[800px] space-y-4 text-fg-secondary">
         {(query.fetching || query.stale) && !oidcIntegration ? (
           <LoadingSkeleton />
         ) : oidcIntegration ? (

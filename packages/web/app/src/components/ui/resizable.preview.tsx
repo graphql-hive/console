@@ -5,7 +5,7 @@ export const nav: NavPath = 'Components/Resizable';
 
 function Pane({ label }: { label: string }) {
   return (
-    <div className="text-fg-secondary flex h-full items-center justify-center text-xs">{label}</div>
+    <div className="flex h-full items-center justify-center text-xs text-fg-secondary">{label}</div>
   );
 }
 
@@ -15,7 +15,7 @@ function Pane({ label }: { label: string }) {
  * focus. The box has the fixed height a vertical group needs for its percentages to mean anything.
  */
 export const TraceSplit = createPreview(() => (
-  <div className="border-line h-[28rem] w-[48rem] rounded-md border border-dashed">
+  <div className="h-[28rem] w-[48rem] rounded-md border border-dashed border-line">
     <ResizablePanelGroup orientation="vertical">
       <ResizablePanel defaultSize="70%" minSize="20%" maxSize="80%">
         <Pane label="Span waterfall (defaultSize 70%, minSize 20%, maxSize 80%)" />
@@ -30,7 +30,7 @@ export const TraceSplit = createPreview(() => (
 
 /** The default orientation, side by side, with the bare divider and no grip. */
 export const Horizontal = createPreview(() => (
-  <div className="border-line h-[16rem] w-[48rem] rounded-md border border-dashed">
+  <div className="h-[16rem] w-[48rem] rounded-md border border-dashed border-line">
     <ResizablePanelGroup>
       <ResizablePanel defaultSize="50%" minSize="10%">
         <Pane label="Left" />

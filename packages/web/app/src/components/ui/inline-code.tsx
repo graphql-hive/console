@@ -4,10 +4,10 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 export const InlineCode = (props: { content: string }) => {
   const { toast } = useToast();
   return (
-    <span className="bg-surface-code flex items-center gap-2 break-all rounded-md py-1 font-mono text-sm">
+    <span className="flex items-center gap-2 rounded-md bg-surface-code py-1 font-mono text-sm break-all">
       <code className="grow px-3">{props.content}</code>
       <button
-        className="hover:text-warning cursor-pointer p-2"
+        className="cursor-pointer p-2 hover:text-warning"
         onClick={async ev => {
           ev.preventDefault();
           await navigator.clipboard.writeText(props.content);

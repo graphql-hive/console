@@ -133,31 +133,31 @@ function SlackPreview(props: PreviewProps) {
 
   return (
     <div className="space-y-1">
-      <div className="text-fg-secondary mb-2 text-xs font-medium">Slack preview</div>
-      <div className="bg-surface-card border-line rounded-md border p-3">
+      <div className="mb-2 text-xs font-medium text-fg-secondary">Slack preview</div>
+      <div className="rounded-md border border-line bg-surface-card p-3">
         {/* Bot header */}
         <div className="mb-2 flex items-center gap-2">
-          <div className="bg-accent text-accent text-2xs flex size-5 items-center justify-center rounded-sm font-bold">
+          <div className="flex size-5 items-center justify-center rounded-sm bg-accent text-2xs font-bold text-accent">
             H
           </div>
-          <span className="text-fg text-sm font-bold">Hive Alerts</span>
-          <span className="text-fg-subtle text-xs">APP</span>
+          <span className="text-sm font-bold text-fg">Hive Alerts</span>
+          <span className="text-xs text-fg-subtle">APP</span>
         </div>
 
         {/* Attachment with colored bar */}
         <div className="flex">
           <div className={`${colors.bar} w-1 shrink-0 rounded-l`} />
-          <div className="bg-surface-card rounded-r p-3 text-sm leading-relaxed">
-            <div className="text-fg font-bold">{props.alertName || 'Untitled alert'}</div>
-            <div className="text-fg-secondary mt-1">
+          <div className="rounded-r bg-surface-card p-3 text-sm leading-relaxed">
+            <div className="font-bold text-fg">{props.alertName || 'Untitled alert'}</div>
+            <div className="mt-1 text-fg-secondary">
               {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
             </div>
-            <div className="text-fg-secondary mt-1">
+            <div className="mt-1 text-fg-secondary">
               Target:{' '}
-              <code className="bg-surface-code rounded-sm px-1 text-xs">{props.targetSlug}</code> in{' '}
-              <code className="bg-surface-code rounded-sm px-1 text-xs">{props.projectSlug}</code>
+              <code className="rounded-sm bg-surface-code px-1 text-xs">{props.targetSlug}</code> in{' '}
+              <code className="rounded-sm bg-surface-code px-1 text-xs">{props.projectSlug}</code>
             </div>
-            <div className="text-accent mt-1">View alert in Hive</div>
+            <div className="mt-1 text-accent">View alert in Hive</div>
           </div>
         </div>
       </div>
@@ -205,10 +205,10 @@ function WebhookPreview(props: PreviewProps) {
 
   return (
     <div className="space-y-3">
-      <div className="text-fg-secondary mb-2 text-xs font-medium">Webhook payload preview</div>
-      <div className="bg-surface-card border-line rounded-md border p-3">
+      <div className="mb-2 text-xs font-medium text-fg-secondary">Webhook payload preview</div>
+      <div className="rounded-md border border-line bg-surface-card p-3">
         <ScrollArea axis="horizontal">
-          <pre className="text-fg-default text-xs leading-relaxed">
+          <pre className="text-xs leading-relaxed text-fg-default">
             {JSON.stringify(payload, null, 2)}
           </pre>
         </ScrollArea>
@@ -240,31 +240,31 @@ function TeamsPreview(props: PreviewProps) {
 
   return (
     <div className="space-y-1">
-      <div className="text-fg-secondary mb-2 text-xs font-medium">Teams preview</div>
-      <div className="bg-surface-card border-line overflow-hidden rounded-md border">
+      <div className="mb-2 text-xs font-medium text-fg-secondary">Teams preview</div>
+      <div className="overflow-hidden rounded-md border border-line bg-surface-card">
         {/* Theme color bar */}
         <div className={`${colors.bar} h-1`} />
         <div className="p-3">
-          <div className="text-fg font-bold">{props.alertName || 'Untitled alert'}</div>
+          <div className="font-bold text-fg">{props.alertName || 'Untitled alert'}</div>
           <div className="mt-2 space-y-1 text-sm">
             <div className="flex">
-              <span className="text-fg-secondary w-20">Condition</span>
+              <span className="w-20 text-fg-secondary">Condition</span>
               <span className="text-fg-default">
                 {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
               </span>
             </div>
             <div className="flex">
-              <span className="text-fg-secondary w-20">Severity</span>
+              <span className="w-20 text-fg-secondary">Severity</span>
               <span className={colors.text}>{props.severity}</span>
             </div>
             <div className="flex">
-              <span className="text-fg-secondary w-20">Target</span>
+              <span className="w-20 text-fg-secondary">Target</span>
               <span className="text-fg-default">
                 {props.targetSlug} in {props.projectSlug}
               </span>
             </div>
           </div>
-          <div className="text-accent mt-2 text-sm">View alert in Hive</div>
+          <div className="mt-2 text-sm text-accent">View alert in Hive</div>
         </div>
       </div>
     </div>
@@ -283,34 +283,34 @@ function DiscordPreview(props: PreviewProps) {
 
   return (
     <div className="space-y-1">
-      <div className="text-fg-secondary mb-2 text-xs font-medium">Discord preview</div>
-      <div className="bg-surface-card border-line flex overflow-hidden rounded-md border">
+      <div className="mb-2 text-xs font-medium text-fg-secondary">Discord preview</div>
+      <div className="flex overflow-hidden rounded-md border border-line bg-surface-card">
         {/* Discord embeds render the severity color as a vertical bar. */}
         <div className={`${colors.bar} w-1 shrink-0`} />
         <div className="p-3">
-          <div className="text-fg font-bold">
+          <div className="font-bold text-fg">
             🔴 {props.alertName || 'Untitled alert'} — triggered
           </div>
-          <div className="text-fg-secondary mt-2 text-sm">
+          <div className="mt-2 text-sm text-fg-secondary">
             {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
           </div>
           <div className="mt-3 space-y-1 text-sm">
             <div className="flex">
-              <span className="text-fg-secondary w-20">Type</span>
+              <span className="w-20 text-fg-secondary">Type</span>
               <span className="text-fg-default">{props.alertType}</span>
             </div>
             <div className="flex">
-              <span className="text-fg-secondary w-20">Severity</span>
+              <span className="w-20 text-fg-secondary">Severity</span>
               <span className={colors.text}>{props.severity}</span>
             </div>
             <div className="flex">
-              <span className="text-fg-secondary w-20">Target</span>
+              <span className="w-20 text-fg-secondary">Target</span>
               <span className="text-fg-default">
                 {props.targetSlug} in {props.projectSlug}
               </span>
             </div>
           </div>
-          <div className="text-accent mt-2 text-sm">View alert in Hive</div>
+          <div className="mt-2 text-sm text-accent">View alert in Hive</div>
         </div>
       </div>
     </div>
@@ -320,7 +320,7 @@ function DiscordPreview(props: PreviewProps) {
 export function AlertPreview(props: PreviewProps) {
   if (!props.channelType) {
     return (
-      <div className="text-fg-subtle text-sm italic">
+      <div className="text-sm text-fg-subtle italic">
         Select a destination to preview the alert.
       </div>
     );
@@ -347,7 +347,7 @@ export function AlertPreview(props: PreviewProps) {
   return (
     <div className="space-y-2">
       {preview}
-      <p className="text-fg-subtle text-xs">
+      <p className="text-xs text-fg-subtle">
         Preview is illustrative. Actual notifications will include live metric values.
       </p>
     </div>

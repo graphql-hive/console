@@ -16,9 +16,9 @@ const STATUS_LABEL: Record<Status, string> = {
 };
 
 function StatusGlyph({ status }: { status: Status }) {
-  if (status === 'failed') return <AlertTriangle className="text-critical size-3.5 shrink-0" />;
+  if (status === 'failed') return <AlertTriangle className="size-3.5 shrink-0 text-critical" />;
   if (status === 'changed') return <GitCompare className="size-3.5 shrink-0" />;
-  return <Check className="text-success size-3.5 shrink-0" />;
+  return <Check className="size-3.5 shrink-0 text-success" />;
 }
 
 const LEGEND = [
@@ -112,7 +112,7 @@ export const VersionPage = createPreview(() => {
 export const NoContracts = createPreview(() => (
   <ScopeBar
     picker={
-      <span className="text-fg-default inline-flex items-center gap-1.5 px-2 text-xs">
+      <span className="inline-flex items-center gap-1.5 px-2 text-xs text-fg-default">
         {statusTooltip('ok')}
         Default Graph
       </span>

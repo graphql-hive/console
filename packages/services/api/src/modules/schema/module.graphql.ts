@@ -264,6 +264,7 @@ export default gql`
   input SchemaChecksFilter {
     failed: Boolean
     changed: Boolean
+    serviceName: String
   }
 
   type SchemaConnection {
@@ -1075,6 +1076,11 @@ export default gql`
     For federation these are the subgraphs/services.
     """
     schemas: SchemaConnection! @tag(name: "public")
+    """
+    Lowercased, sorted names of the services published in this version.
+    Null for single-schema projects.
+    """
+    serviceNames: [String!]
     """
     The supergraph SDL for a federation schema.
     """

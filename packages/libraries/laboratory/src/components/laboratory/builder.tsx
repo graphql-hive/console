@@ -129,7 +129,7 @@ export const BuilderArgument = (props: {
       key={props.field.name}
       className={cn(
         buttonVariants({ variant: 'ghost', size: 'sm' }),
-        'text-muted-foreground p-1! w-full justify-start text-xs',
+        'w-full justify-start p-1! text-xs text-muted-foreground',
         {
           'text-foreground-primary': isInQuery,
         },
@@ -243,7 +243,7 @@ export const BuilderScalarField = (props: {
         <div
           className={cn(
             buttonVariants({ variant: 'ghost', size: 'sm' }),
-            'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+            'group sticky top-0 z-10 w-full justify-start overflow-hidden bg-card p-1! text-xs text-muted-foreground',
             {
               'text-foreground-primary': isInQuery,
             },
@@ -252,8 +252,8 @@ export const BuilderScalarField = (props: {
             top: `${(props.path.length - 2) * 32}px`,
           }}
         >
-          <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-          <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+          <div className="absolute top-0 left-0 -z-20 size-full bg-card" />
+          <div className="absolute top-0 left-0 -z-10 size-full transition-colors group-hover:bg-accent/50" />
           <Checkbox
             onClick={e => e.stopPropagation()}
             checked={isInQuery}
@@ -271,7 +271,7 @@ export const BuilderScalarField = (props: {
           {props.label ?? (
             <span
               className={cn({
-                'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+                '-mx-0.5 rounded-sm bg-primary px-0.5 text-primary-foreground': shouldHighlight,
               })}
             >
               {props.field.name}
@@ -291,7 +291,7 @@ export const BuilderScalarField = (props: {
             <Button
               variant="ghost"
               className={cn(
-                'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+                'group sticky top-0 z-10 w-full justify-start overflow-hidden bg-card p-1! text-xs text-muted-foreground',
                 {
                   'text-foreground-primary': isInQuery,
                 },
@@ -301,10 +301,10 @@ export const BuilderScalarField = (props: {
               }}
               size="sm"
             >
-              <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-              <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+              <div className="absolute top-0 left-0 -z-20 size-full bg-card" />
+              <div className="absolute top-0 left-0 -z-10 size-full transition-colors group-hover:bg-accent/50" />
               <ChevronDownIcon
-                className={cn('text-muted-foreground size-4 transition-all', {
+                className={cn('size-4 text-muted-foreground transition-all', {
                   '-rotate-90': !isOpen,
                 })}
               />
@@ -326,7 +326,7 @@ export const BuilderScalarField = (props: {
               {props.label ?? (
                 <span
                   className={cn({
-                    'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+                    '-mx-0.5 rounded-sm bg-primary px-0.5 text-primary-foreground': shouldHighlight,
                   })}
                 >
                   {props.field.name}
@@ -336,7 +336,7 @@ export const BuilderScalarField = (props: {
             </Button>
           </CollapsibleTrigger>
         </BuilderRowContextMenu>
-        <CollapsibleContent className="border-border relative z-0 ml-3 flex flex-col border-l pl-2">
+        <CollapsibleContent className="relative z-0 ml-3 flex flex-col border-l border-border pl-2">
           {isOpen && (
             <div>
               {args.length > 0 && (
@@ -345,7 +345,7 @@ export const BuilderScalarField = (props: {
                     <Button
                       variant="ghost"
                       className={cn(
-                        'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+                        'group sticky top-0 z-10 w-full justify-start overflow-hidden bg-card p-1! text-xs text-muted-foreground',
                         {
                           'text-foreground-primary': hasArgs,
                         },
@@ -356,7 +356,7 @@ export const BuilderScalarField = (props: {
                       size="sm"
                     >
                       <ChevronDownIcon
-                        className={cn('text-muted-foreground size-4 transition-all', {
+                        className={cn('size-4 text-muted-foreground transition-all', {
                           '-rotate-90': !isOpen,
                         })}
                       />
@@ -370,7 +370,7 @@ export const BuilderScalarField = (props: {
                       [arguments]
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="border-border ml-3 flex flex-col border-l pl-2">
+                  <CollapsibleContent className="ml-3 flex flex-col border-l border-border pl-2">
                     {args.map(arg => (
                       <BuilderArgument
                         key={arg.name}
@@ -398,7 +398,7 @@ export const BuilderScalarField = (props: {
         key={props.field.name}
         className={cn(
           buttonVariants({ variant: 'ghost', size: 'sm' }),
-          'text-muted-foreground p-1! w-full justify-start text-xs',
+          'w-full justify-start p-1! text-xs text-muted-foreground',
           {
             'text-foreground-primary': isInQuery,
           },
@@ -425,7 +425,7 @@ export const BuilderScalarField = (props: {
         {props.label ?? (
           <span
             className={cn({
-              'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+              '-mx-0.5 rounded-sm bg-primary px-0.5 text-primary-foreground': shouldHighlight,
             })}
           >
             {props.field.name}
@@ -534,7 +534,7 @@ export const BuilderObjectField = (props: {
         <div
           className={cn(
             buttonVariants({ variant: 'ghost', size: 'sm' }),
-            'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+            'group sticky top-0 z-10 w-full justify-start overflow-hidden bg-card p-1! text-xs text-muted-foreground',
             {
               'text-foreground-primary': isInQuery,
             },
@@ -543,8 +543,8 @@ export const BuilderObjectField = (props: {
             top: `${(props.path.length - 2) * 32}px`,
           }}
         >
-          <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-          <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+          <div className="absolute top-0 left-0 -z-20 size-full bg-card" />
+          <div className="absolute top-0 left-0 -z-10 size-full transition-colors group-hover:bg-accent/50" />
           <Checkbox
             onClick={e => e.stopPropagation()}
             checked={isInQuery}
@@ -562,7 +562,7 @@ export const BuilderObjectField = (props: {
           {props.label ?? (
             <span
               className={cn({
-                'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+                '-mx-0.5 rounded-sm bg-primary px-0.5 text-primary-foreground': shouldHighlight,
               })}
             >
               {props.field.name}
@@ -581,7 +581,7 @@ export const BuilderObjectField = (props: {
           <Button
             variant="ghost"
             className={cn(
-              'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+              'group sticky top-0 z-10 w-full justify-start overflow-hidden bg-card p-1! text-xs text-muted-foreground',
               {
                 'text-foreground-primary': isInQuery,
               },
@@ -591,10 +591,10 @@ export const BuilderObjectField = (props: {
             }}
             size="sm"
           >
-            <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-            <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+            <div className="absolute top-0 left-0 -z-20 size-full bg-card" />
+            <div className="absolute top-0 left-0 -z-10 size-full transition-colors group-hover:bg-accent/50" />
             <ChevronDownIcon
-              className={cn('text-muted-foreground size-4 transition-all', {
+              className={cn('size-4 text-muted-foreground transition-all', {
                 '-rotate-90': !isOpen,
               })}
             />
@@ -616,7 +616,7 @@ export const BuilderObjectField = (props: {
             {props.label ?? (
               <span
                 className={cn({
-                  'text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5': shouldHighlight,
+                  '-mx-0.5 rounded-sm bg-primary px-0.5 text-primary-foreground': shouldHighlight,
                 })}
               >
                 {props.field.name}
@@ -626,7 +626,7 @@ export const BuilderObjectField = (props: {
           </Button>
         </CollapsibleTrigger>
       </BuilderRowContextMenu>
-      <CollapsibleContent className="border-border relative z-0 ml-4 flex flex-col border-l pl-1">
+      <CollapsibleContent className="relative z-0 ml-4 flex flex-col border-l border-border pl-1">
         {isOpen && (
           <div>
             {args.length > 0 && (
@@ -635,7 +635,7 @@ export const BuilderObjectField = (props: {
                   <Button
                     variant="ghost"
                     className={cn(
-                      'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+                      'group sticky top-0 z-10 w-full justify-start overflow-hidden bg-card p-1! text-xs text-muted-foreground',
                       {
                         'text-foreground-primary': hasArgs,
                       },
@@ -646,7 +646,7 @@ export const BuilderObjectField = (props: {
                     size="sm"
                   >
                     <ChevronDownIcon
-                      className={cn('text-muted-foreground size-4 transition-all', {
+                      className={cn('size-4 text-muted-foreground transition-all', {
                         '-rotate-90': !isOpen,
                       })}
                     />
@@ -660,7 +660,7 @@ export const BuilderObjectField = (props: {
                     [arguments]
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="border-border ml-4 flex flex-col border-l pl-1">
+                <CollapsibleContent className="ml-4 flex flex-col border-l border-border pl-1">
                   {args.map(arg => (
                     <BuilderArgument
                       key={arg.name}
@@ -798,7 +798,7 @@ export const BuilderTypeConditionField = (props: {
           <Button
             variant="ghost"
             className={cn(
-              'text-muted-foreground bg-card p-1! group sticky top-0 z-10 w-full justify-start overflow-hidden text-xs',
+              'group sticky top-0 z-10 w-full justify-start overflow-hidden bg-card p-1! text-xs text-muted-foreground',
               {
                 'text-foreground-primary': isInQuery,
               },
@@ -808,10 +808,10 @@ export const BuilderTypeConditionField = (props: {
             }}
             size="sm"
           >
-            <div className="bg-card absolute left-0 top-0 -z-20 size-full" />
-            <div className="group-hover:bg-accent/50 absolute left-0 top-0 -z-10 size-full transition-colors" />
+            <div className="absolute top-0 left-0 -z-20 size-full bg-card" />
+            <div className="absolute top-0 left-0 -z-10 size-full transition-colors group-hover:bg-accent/50" />
             <ChevronDownIcon
-              className={cn('text-muted-foreground size-4 transition-all', {
+              className={cn('size-4 text-muted-foreground transition-all', {
                 '-rotate-90': !isOpen,
               })}
             />
@@ -825,7 +825,7 @@ export const BuilderTypeConditionField = (props: {
           </Button>
         </CollapsibleTrigger>
       </BuilderRowContextMenu>
-      <CollapsibleContent className="border-border relative z-0 ml-4 flex flex-col border-l pl-1">
+      <CollapsibleContent className="relative z-0 ml-4 flex flex-col border-l border-border pl-1">
         {isOpen && (
           <div>
             {fields.map(child => (
@@ -1035,7 +1035,7 @@ export const BuilderSearchResults = (props: {
                 if (isMatch) {
                   return (
                     <Fragment key={index}>
-                      <span className="text-primary-foreground bg-primary -mx-0.5 rounded-sm px-0.5">
+                      <span className="-mx-0.5 rounded-sm bg-primary px-0.5 text-primary-foreground">
                         {part}
                       </span>
                       {index < path.split('.').length - 1 && '.'}
@@ -1190,7 +1190,7 @@ export const Builder = (props: {
   }, [endpointValue, throttleSetEndpoint]);
 
   return (
-    <div className="bg-card flex size-full flex-col overflow-hidden">
+    <div className="flex size-full flex-col overflow-hidden bg-card">
       <div className="flex items-center gap-3 px-3 pt-3">
         <span className="text-base font-medium">Builder</span>
         <div className="ml-auto flex items-center gap-3">
@@ -1208,7 +1208,7 @@ export const Builder = (props: {
               }}
               variant="ghost"
               size="sm"
-              className="p-1! h-6 rounded-sm !px-1.5"
+              className="h-6 rounded-sm p-1! !px-1.5"
             >
               <SettingsIcon className="size-4" />
               Introspection settings
@@ -1221,10 +1221,10 @@ export const Builder = (props: {
                   onClick={() => setOpenPaths([])}
                   variant="ghost"
                   size="icon-sm"
-                  className="p-1! size-6 rounded-sm"
+                  className="size-6 rounded-sm p-1!"
                   disabled={openPaths.length === 0}
                 >
-                  <CopyMinusIcon className="text-muted-foreground size-4" />
+                  <CopyMinusIcon className="size-4 text-muted-foreground" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Collapse all</TooltipContent>
@@ -1272,7 +1272,7 @@ export const Builder = (props: {
             onValueChange={value => setTabValue(value as OperationTypeNode)}
             className="flex size-full flex-col gap-0"
           >
-            <div className="border-border flex items-center border-b p-3">
+            <div className="flex items-center border-b border-border p-3">
               <TabsList className="w-full">
                 <TabsTrigger value="query" disabled={queryFields.length === 0} className="text-xs">
                   Query
@@ -1294,7 +1294,7 @@ export const Builder = (props: {
               </TabsList>
             </div>
             {schema && (
-              <div className="border-border sticky top-0 z-10 border-b p-3">
+              <div className="sticky top-0 z-10 border-b border-border p-3">
                 <InputGroup className="pr-0">
                   <InputGroupInput
                     placeholder="Search fields"
@@ -1302,7 +1302,7 @@ export const Builder = (props: {
                     onChange={e => setSearchValue(e.currentTarget.value)}
                   />
                   <InputGroupAddon>
-                    <SearchIcon className="text-muted-foreground size-4" />
+                    <SearchIcon className="size-4 text-muted-foreground" />
                   </InputGroupAddon>
                   <InputGroupAddon align="inline-end" className="py-0 pr-1.5">
                     <BuilderSearchModeToggle
@@ -1435,10 +1435,10 @@ export const Builder = (props: {
             </div>
           </Tabs>
         ) : (
-          <Empty className="px-0! h-96 w-full">
+          <Empty className="h-96 w-full px-0!">
             <EmptyHeader>
               <EmptyMedia variant="icon">
-                <FolderIcon className="text-muted-foreground size-6" />
+                <FolderIcon className="size-6 text-muted-foreground" />
               </EmptyMedia>
               <EmptyTitle className="text-base">No endpoint selected</EmptyTitle>
               <EmptyDescription className="text-xs">

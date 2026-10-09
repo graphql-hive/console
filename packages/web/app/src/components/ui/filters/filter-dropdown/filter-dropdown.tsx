@@ -78,7 +78,7 @@ export function FilterDropdown({
       style={disabled ? disabledStyle : undefined}
     >
       {/* Label — static */}
-      <span className="text-control px-2.5 py-1.5">{label}</span>
+      <span className="px-2.5 py-1.5 text-control">{label}</span>
 
       {/* Operator — dropdown for "is" / "is not" */}
       {onExcludeModeChange && (

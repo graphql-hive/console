@@ -1,0 +1,13 @@
+diff --git a/dist/factories/createPgDriverFactory.js b/dist/factories/createPgDriverFactory.js
+--- a/dist/factories/createPgDriverFactory.js
++++ b/dist/factories/createPgDriverFactory.js
+@@ -235,7 +235,8 @@
+                             });
+                         }
+                         if (Array.isArray(result)) {
+-                            throw new InvalidInputError("Must not use multiple statements in a single query.");
++                            // Hive migrations run several statements per query; upstream declined a flag (gajus/slonik#769).
++                            result = result[result.length - 1];
+                         }
+                         return {
+                             command: result.command,

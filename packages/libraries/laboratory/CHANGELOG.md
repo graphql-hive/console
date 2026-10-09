@@ -1,5 +1,20 @@
 # @graphql-hive/laboratory
 
+## 0.3.2
+
+### Patch Changes
+
+- [#8630](https://github.com/graphql-hive/console/pull/8630)
+  [`9ca986d`](https://github.com/graphql-hive/console/commit/9ca986da183efd20fe3b1ab6630eade3865be470)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Accept `lucide-react` 1.x as a
+  peer dependency alongside 0.548.
+
+- [#8638](https://github.com/graphql-hive/console/pull/8638)
+  [`338c7cb`](https://github.com/graphql-hive/console/commit/338c7cbc3077e152e88e5b315bb25522757b4734)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Upgrade the bundled
+  `react-resizable-panels` behind the laboratory's split panes to v4. Dragging, keyboard resizing
+  and limits behave as before; double-clicking a divider now resets the split.
+
 ## 0.3.1
 
 ### Patch Changes
