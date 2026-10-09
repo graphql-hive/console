@@ -46,6 +46,7 @@ export class ContractsManager {
     if (!selector) {
       return {
         type: 'error' as const,
+        message: 'Something went wrong.',
         errors: {
           target: 'Target not found.',
         },
@@ -66,10 +67,18 @@ export class ContractsManager {
 
     const sourceGraph = await this.graphStore.findGraphForTargetIdByName(targetId, 'default');
 
+    if (!sourceGraph) {
+      return {
+        type: 'error' as const,
+        message: "Graph 'default' not found.",
+        errors: {},
+      };
+    }
+
     return await this.contracts.createContract({
       organizationId,
       projectId,
-      sourceGraphId: sourceGraph?.id ?? null,
+      sourceGraphId: sourceGraph.id,
       contract: {
         ...args.contract,
         targetId,

@@ -4,6 +4,7 @@ import { Target } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { batch } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -29,6 +30,7 @@ export class AppDeploymentsManager {
     private targetManager: TargetManager,
     private appDeployments: AppDeployments,
     private idTranslator: IdTranslator,
+    private graphs: GraphStore,
   ) {
     this.logger = logger.child({ source: 'AppDeploymentsManager' });
   }
@@ -205,9 +207,10 @@ export class AppDeploymentsManager {
     });
 
     const target = await this.targetManager.getTargetById(selector);
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
 
     return await this.appDeployments.addDocumentsToAppDeployment({
-      target,
+      graph,
       appDeployment: args.appDeployment,
       operations: args.documents,
     });
