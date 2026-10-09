@@ -347,8 +347,9 @@ export class SchemaVersionStore {
             )
             .then(PreviousVersionIdsModel.parse);
 
-    // Only insert the schema version for the contract if the provided values match
-    // We want to ensure that all new records are as consistent as possible
+    // Start dual-writing when this contract has no predecessor, or once both predecessor
+    // records have been backfilled into schema_versions. This prevents creating gaps in the
+    // contract version chain while the backfill is still in progress.
     if (
       references.diffSchemaVersionId === args.diffSchemaVersionId &&
       references.previousSchemaVersionId === args.previousSchemaVersionId
