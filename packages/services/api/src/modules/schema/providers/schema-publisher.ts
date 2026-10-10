@@ -2165,6 +2165,7 @@ export class SchemaPublisher {
           force: false,
           initial: false,
           valid: true,
+          isValid: true,
           changes: [],
           errors: [],
 
@@ -2224,6 +2225,7 @@ export class SchemaPublisher {
           force: false,
           initial: false,
           valid: false,
+          isValid: false,
           changes,
           errors,
           organizationId: organization.id,
@@ -2267,6 +2269,7 @@ export class SchemaPublisher {
           force: false,
           initial: false,
           valid: false,
+          isValid: false,
           changes: [],
           errors,
           organizationId: organization.id,
@@ -2483,6 +2486,7 @@ export class SchemaPublisher {
         force: false,
         initial: publishResult.state.initial,
         valid: publishResult.state.composable,
+        isValid: true,
         changes: publishResult.state.changes ?? [],
         errors,
         messages: publishResult.state.messages ?? [],
@@ -3734,6 +3738,7 @@ export class SchemaPublisher {
     initial,
     force,
     valid,
+    isValid,
     changes,
     errors,
     messages,
@@ -3750,6 +3755,8 @@ export class SchemaPublisher {
     initial: boolean;
     force?: boolean | null;
     valid: boolean;
+    /** Whether the registry accepted the schema. A stored version that does not compose is still accepted. */
+    isValid: boolean;
     changes: Array<SchemaChangeType>;
     errors: readonly Types.SchemaError[];
     messages?: string[];
@@ -3814,6 +3821,7 @@ export class SchemaPublisher {
       return {
         __typename: 'GitHubSchemaPublishSuccess',
         message: title,
+        isValid,
       } as const;
     } catch (error: unknown) {
       this.reportCheckRunUpdateFailure(error, {
