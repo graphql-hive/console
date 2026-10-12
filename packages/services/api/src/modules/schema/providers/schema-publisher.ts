@@ -3589,8 +3589,8 @@ export class SchemaPublisher {
   private async publishGraphManifest(args: {
     schemaVersion: SchemaVersion;
     contractSchemaVersions: Array<SchemaVersion> | null;
+    referenceDate: Date;
   }) {
-    const referenceDate = new Date();
     const manifest: z.TypeOf<typeof GraphManifestModel> = {
       graphs: {},
     };
@@ -3618,7 +3618,7 @@ export class SchemaPublisher {
       artifactType: 'manifest.json',
       artifact: manifest,
       contractName: null,
-      referenceDate,
+      referenceDate: args.referenceDate,
     });
   }
 
@@ -3762,7 +3762,7 @@ export class SchemaPublisher {
         );
       }
 
-      await this.publishGraphManifest({ schemaVersion, contractSchemaVersions });
+      await this.publishGraphManifest({ schemaVersion, contractSchemaVersions, referenceDate });
     }
 
     await Promise.all(actions);
