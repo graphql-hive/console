@@ -2346,7 +2346,6 @@ export class SchemaPublisher {
 
     const composable = publishResult.state.composable;
     const fullSchemaSdl = publishResult.state.fullSchemaSdl;
-    const publishState = publishResult.state;
 
     if (composable && !fullSchemaSdl) {
       throw new Error('Version is composable but the full schema SDL is missing');
