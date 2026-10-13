@@ -3607,7 +3607,7 @@ export class SchemaPublisher {
           id: schemaVersion.id,
           artifactPath:
             schemaVersion.graphMetadata.type === 'contract'
-              ? `/artifacts/v1/${args.schemaVersion.targetId}/version/${schemaVersion.id}/contracts/${formatContractName(schemaVersion.graphMetadata.name)}`
+              ? `/artifacts/v1/${args.schemaVersion.targetId}/version/${args.schemaVersion.id}/contracts/${formatContractName(schemaVersion.graphMetadata.name)}`
               : `/artifacts/v1/${schemaVersion.targetId}/version/${schemaVersion.id}`,
         },
       };
@@ -3749,6 +3749,7 @@ export class SchemaPublisher {
             artifact: contractVersion.compositeSchemaSDL,
             contractName,
             versionId: contractVersion.id,
+            contractSourceSchemaVersionId: contractVersion.sourceSchemaVersionId,
             graphId: contractVersion.graphMetadata.id,
           }),
           this.artifactStorageWriter.writeArtifact({
@@ -3757,6 +3758,7 @@ export class SchemaPublisher {
             artifact: contractVersion.supergraphSDL,
             contractName,
             versionId: contractVersion.id,
+            contractSourceSchemaVersionId: contractVersion.sourceSchemaVersionId,
             graphId: contractVersion.graphMetadata.id,
           }),
         );
