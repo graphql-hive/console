@@ -415,6 +415,7 @@ export class ClickHouse {
     queryId: string;
     data: unknown[][];
     timeout: number;
+    signal?: AbortSignal;
   }): Promise<void> {
     const startedAt = Date.now();
     const executionId = args.queryId + '-' + Math.random().toString(16).substring(2);
@@ -478,6 +479,7 @@ export class ClickHouse {
             secureConnect: 2000,
             request: 30_000,
           },
+          signal: args.signal,
           agent: {
             http: httpAgent,
             https: httpsAgent,
