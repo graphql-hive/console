@@ -45,6 +45,7 @@ const ParamsModel = zod.object({
     zod.literal('services'),
     zod.literal('schema'),
     zod.literal('supergraph'),
+    zod.literal('manifest.json'),
   ]),
   contractName: zod
     .string()
@@ -186,9 +187,32 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
     }
 
     if (result.type === 'response') {
+      const sharedHeaders: Record<string, string> = {};
       const etag = result.headers.get('etag');
       // S3/R2 returns custom metadata with x-amz-meta- prefix
-      const schemaVersionId = result.headers.get('x-amz-meta-x-hive-schema-version-id');
+      const graphVersionId =
+        result.headers.get('x-amz-meta-x-hive-graph-version-id') ??
+        result.headers.get('x-amz-meta-x-hive-schema-version-id');
+      const updatedAt = result.headers.get('x-amz-meta-x-hive-updated-at');
+      const graphId = result.headers.get('x-amz-meta-x-hive-graph-id');
+
+      if (etag) {
+        sharedHeaders['etag'] = etag;
+      }
+
+      if (graphVersionId) {
+        sharedHeaders['x-hive-schema-version-id'] = graphVersionId;
+        sharedHeaders['x-hive-graph-version-id'] = graphVersionId;
+      }
+
+      if (graphId) {
+        sharedHeaders['x-hive-graph-id'] = graphId;
+      }
+
+      if (updatedAt) {
+        sharedHeaders['last-modified'] = updatedAt;
+      }
+
       const text = result.body;
 
       if (params.artifactType === 'metadata') {
@@ -215,8 +239,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
               status: 200,
               headers: {
                 'Content-Type': 'application/json',
-                ...(etag ? { etag } : {}),
-                ...(schemaVersionId ? { 'x-hive-schema-version-id': schemaVersionId } : {}),
+                ...sharedHeaders,
               },
             },
             params.targetId,
@@ -235,8 +258,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
               params.artifactType === 'metadata' || params.artifactType === 'services'
                 ? 'application/json'
                 : 'text/plain',
-            ...(etag ? { etag } : {}),
-            ...(schemaVersionId ? { 'x-hive-schema-version-id': schemaVersionId } : {}),
+            ...sharedHeaders,
           },
         },
         params.targetId,
@@ -313,6 +335,28 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
       const etag = result.headers.get('etag');
       // S3/R2 returns custom metadata with x-amz-meta- prefix
       const schemaVersionId = result.headers.get('x-amz-meta-x-hive-schema-version-id');
+      const updatedAt = result.headers.get('x-amz-meta-x-hive-updated-at');
+      const graphId = result.headers.get('x-amz-meta-x-hive-graph-id');
+
+      const sharedHeaders: Record<string, string> = {};
+
+      if (etag) {
+        sharedHeaders['etag'] = etag;
+      }
+
+      if (graphId) {
+        sharedHeaders['x-hive-graph-id'] = graphId;
+      }
+
+      if (schemaVersionId) {
+        sharedHeaders['x-hive-schema-version-id'] = schemaVersionId;
+        sharedHeaders['x-hive-graph-version-id'] = schemaVersionId;
+      }
+
+      if (updatedAt) {
+        sharedHeaders['Last-Modified'] = updatedAt;
+      }
+
       const text = result.body;
 
       if (params.artifactType === 'metadata') {
@@ -332,8 +376,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
               headers: {
                 'Content-Type': 'application/json',
                 'Cache-Control': 'public, max-age=31536000, immutable',
-                ...(etag ? { etag } : {}),
-                ...(schemaVersionId ? { 'x-hive-schema-version-id': schemaVersionId } : {}),
+                ...sharedHeaders,
               },
             },
             params.targetId,
@@ -354,8 +397,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
                 : 'text/plain',
             // Versioned artifacts are immutable - aggressive caching
             'Cache-Control': 'public, max-age=31536000, immutable',
-            ...(etag ? { etag } : {}),
-            ...(schemaVersionId ? { 'x-hive-schema-version-id': schemaVersionId } : {}),
+            ...sharedHeaders,
           },
         },
         params.targetId,
