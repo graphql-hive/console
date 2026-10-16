@@ -47,8 +47,10 @@ export const Target: Pick<
   hasSchema: (target, _, { injector }) => {
     return injector.get(SchemaManager).hasPublishedSchemaVersionInDefaultGraph(target);
   },
-  schemaCheck: async (target, args, { injector }) => {
-    const schemaCheck = await injector.get(SchemaManager).findSchemaCheckForTarget(target, args.id);
+  schemaCheck: async (target, args, { injector }, info) => {
+    const schemaCheck = await injector
+      .get(SchemaManager)
+      .findSchemaCheckForTarget(target, args.id, { withSDL: isSDLRequested(info) });
 
     if (schemaCheck == null) {
       return null;
@@ -63,17 +65,7 @@ export const Target: Pick<
     );
   },
   schemaChecks: async (target, args, { injector }, info) => {
-    const operationSelectsSDL = isFieldRequestedDeep(info, [
-      ['SchemaCheck', 'baseline'],
-      ['SuccessfulSchemaCheck', 'baseline'],
-      ['FailedSchemaCheck', 'baseline'],
-      ['SuccessfulSchemaCheck', 'schemaSDL'],
-      ['SuccessfulSchemaCheck', 'compositeSchemaSDL'],
-      ['SuccessfulSchemaCheck', 'supergraphSDL'],
-      ['FailedSchemaCheck', 'compositeSchemaSDL'],
-      ['FailedSchemaCheck', 'supergraphSDL'],
-      ['FailedSchemaCheck', 'schemaSDL'],
-    ]);
+    const operationSelectsSDL = isSDLRequested(info);
 
     const isSchemaChangesSelected = isFieldRequestedDeep(
       info,
@@ -129,3 +121,17 @@ export const Target: Pick<
     });
   },
 };
+
+/** Whether the operation reads a check's SDLs, its own or its baseline's. */
+export function isSDLRequested(info: Parameters<typeof isFieldRequestedDeep>[0]) {
+  return isFieldRequestedDeep(info, [
+    ...['SchemaCheck', 'SuccessfulSchemaCheck', 'FailedSchemaCheck'].flatMap(typeName =>
+      ['schemaSDL', 'previousSchemaSDL', 'compositeSchemaSDL', 'supergraphSDL'].map(
+        fieldName => [typeName, fieldName] as const,
+      ),
+    ),
+    ...['sdl', 'publicSdl', 'supergraphSdl'].map(
+      fieldName => ['SchemaCheckBaseline', fieldName] as const,
+    ),
+  ]);
+}
