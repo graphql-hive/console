@@ -3707,6 +3707,7 @@ export class SchemaPublisher {
             versionId: contractVersion.id,
             contractSourceSchemaVersionId: contractVersion.sourceSchemaVersionId,
             graphId: contractVersion.graphMetadata.id,
+            referenceDate,
           }),
           this.artifactStorageWriter.writeArtifact({
             targetId: schemaVersion.targetId,
@@ -3716,6 +3717,7 @@ export class SchemaPublisher {
             versionId: contractVersion.id,
             contractSourceSchemaVersionId: contractVersion.sourceSchemaVersionId,
             graphId: contractVersion.graphMetadata.id,
+            referenceDate,
           }),
         );
       }
