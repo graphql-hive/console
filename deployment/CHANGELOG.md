@@ -1,5 +1,69 @@
 # hive
 
+## 14.1.0
+
+### Minor Changes
+
+- [#8679](https://github.com/graphql-hive/console/pull/8679)
+  [`bd8f0f2`](https://github.com/graphql-hive/console/commit/bd8f0f211e5e5fdebe84ad2093b9f7087cc8a3a5)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Record which targets a breaking
+  change was used in. Schema checks and publishes with conditional breaking changes now store
+  per-target request counts for each breaking change and for each of its top affected operations,
+  exposed as `affectedTargets` on `SchemaChangeUsageStatistics` and
+  `SchemaChangeUsageStatisticsAffectedOperation` in the public GraphQL API.
+
+- [#8679](https://github.com/graphql-hive/console/pull/8679)
+  [`bd8f0f2`](https://github.com/graphql-hive/console/commit/bd8f0f211e5e5fdebe84ad2093b9f7087cc8a3a5)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Expose `SchemaChange.path` and
+  `SchemaCheckConditionalBreakingChangeMetadata.settings` on the public GraphQL API, so the targets
+  and schema coordinate behind a breaking change's usage can be read without parsing the change
+  message.
+
+### Patch Changes
+
+- [#8679](https://github.com/graphql-hive/console/pull/8679)
+  [`bd8f0f2`](https://github.com/graphql-hive/console/commit/bd8f0f211e5e5fdebe84ad2093b9f7087cc8a3a5)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Check access before resolving
+  `BreakingChangeMetadataTarget.target`; load a schema check's changes in `Target.schemaChecks` when
+  only `hasSchemaChanges`, `hasUnapprovedBreakingChanges` or `cliApprovalMetadata` is selected;
+  expose `breakingChangeFormula`, `requestCount` and the excluded app deployments on a check's
+  conditional breaking change settings; and stop storing usage statistics for changes found safe by
+  the nullability check.
+
+- [#8717](https://github.com/graphql-hive/console/pull/8717)
+  [`4512feb`](https://github.com/graphql-hive/console/commit/4512feb5ca9c5e068ce0309543b0371a85766566)
+  Thanks [@dotansimha](https://github.com/dotansimha)! - Upgrade `got` to v16 to fix ClickHouse
+  requests failing with `write ECANCELED` (`Canceled because of SSL destruction`) instead of being
+  retried.
+
+  Since Node.js v24.20.0, a connection that closes while a request body is still being sent reports
+  the error to `got` in a way that `got` v14 turned into an immediate failure, skipping the retry
+  logic of the ClickHouse clients.
+
+  `got` v16.1.0 also retries requests with a `FormData` body, which the ClickHouse client uses for
+  audit log inserts and some operations queries.
+
+- [#8679](https://github.com/graphql-hive/console/pull/8679)
+  [`bd8f0f2`](https://github.com/graphql-hive/console/commit/bd8f0f211e5e5fdebe84ad2093b9f7087cc8a3a5)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Listing `Target.schemaChecks`
+  with only `hasSchemaChanges` or `hasUnapprovedBreakingChanges` selected no longer loads each
+  check's change lists; both flags are computed in the database.
+
+- [#8679](https://github.com/graphql-hive/console/pull/8679)
+  [`bd8f0f2`](https://github.com/graphql-hive/console/commit/bd8f0f211e5e5fdebe84ad2093b9f7087cc8a3a5)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Fix `Target.schemaChecks`
+  returning no changes when they are selected through the `SchemaCheck` interface or through
+  `schemaChanges`, which made the public API list every check without its changes.
+
+- [#8712](https://github.com/graphql-hive/console/pull/8712)
+  [`6c7ab24`](https://github.com/graphql-hive/console/commit/6c7ab246933674ce74fd0a208e366f1958306247)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Fix the schema check and history
+  pages freezing on the Public Schema and Supergraph diffs of large schemas. Both schemas are now
+  sorted before they are compared, so definitions that only moved (for example when types move
+  between subgraphs) no longer show as changes, and a diff too large to compute shows a notice
+  instead of locking the page. The unchanged Public Schema view of a check now shows the public
+  schema instead of the service SDL.
+
 ## 14.0.1
 
 ### Patch Changes
