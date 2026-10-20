@@ -5,6 +5,7 @@ import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { PermissionDetailView } from './permission-detail-view';
 import { TokenExpiration } from './token-expiration';
+import * as styles from './access-token-detail-view-sheet.css';
 
 const AccessTokenDetailViewSheet_OrganizationQuery = graphql(`
   query AccessTokenDetailViewSheet_OrganizationQuery(
@@ -60,12 +61,12 @@ export function AccessTokenDetailViewSheet(props: AccessTokenDetailViewSheetProp
         <>
           {accessToken?.description}
           <br />
-          <span className="font-medium">Expires:</span>{' '}
+          <span className={styles.accessTokenDetailViewSheetSpan}>Expires:</span>{' '}
           <TokenExpiration expiresAt={accessToken?.expiresAt ?? null} />
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className={styles.accessTokenDetailViewSheetDiv}>
         {accessToken?.resolvedResourcePermissionGroups.map(resolvedResourcePermissionGroup => (
           <PermissionDetailView
             resolvedResourcePermissionGroup={resolvedResourcePermissionGroup}

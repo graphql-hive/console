@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/primitives/input/input';
 import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import * as GraphQLSchema from '@/gql/graphql';
 import { expirationPeriods } from './shared-helpers';
+import * as styles from './access-token-form.css';
 
 /** @soure packages/services/api/src/modules/organization/providers/organization-access-tokens.ts */
 export const TitleInputModel = z
@@ -51,7 +52,7 @@ export type AccessTokenFormValues = z.infer<typeof AccessTokenFormSchema>;
 export function AccessTokenGeneralStep(props: { form: UseFormReturn<AccessTokenFormValues> }) {
   const { form } = props;
   return (
-    <div className="flex max-w-sm flex-col gap-5">
+    <div className={styles.accessTokenGeneralStepDiv}>
       <Heading>General</Heading>
       <FormField
         control={form.control}

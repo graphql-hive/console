@@ -12,6 +12,7 @@ import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as styles from './transfer-ownership-dialog.css';
 
 const TransferOrganizationOwnership_Request = graphql(`
   mutation TransferOrganizationOwnership_Request($input: RequestOrganizationTransferInput!) {
@@ -154,22 +155,24 @@ export const TransferOrganizationOwnershipModal = ({
         </>
       }
     >
-      <div className="flex flex-col gap-5">
+      <div className={styles.transferOrganizationOwnershipModalDiv}>
         <TransferOwnershipForm form={form} onSubmit={onSubmit} members={members} />
 
-        <div className="h-0 w-full border-t border-line" />
+        <div className={styles.transferOrganizationOwnershipModalDiv2} />
 
-        <div className="font-medium">About the ownership transfer</div>
-        <ul className="list-inside list-disc px-2 text-sm text-fg-default">
+        <div className={styles.transferOrganizationOwnershipModalDiv3}>
+          About the ownership transfer
+        </div>
+        <ul className={styles.transferOrganizationOwnershipModalUl}>
           <li>
             The new owner will receive a confirmation email. If the new owner doesn't accept the
             transfer within 24 hours, the invitation will expire.
           </li>
-          <li className="pt-3">
+          <li className={styles.transferOrganizationOwnershipModalLi}>
             When you transfer an organization to one of the members, the new owner will get access
             to organization's contents, projects, members, and settings.
           </li>
-          <li className="pt-3">
+          <li className={styles.transferOrganizationOwnershipModalLi2}>
             You will keep your access to the organization's contents, projects, members, and
             settings, except you won't be able to remove the organization.
           </li>

@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
+import * as styles from './connect-provider-form.css';
 
 /** The endpoints a discovery document must carry, and the only client-side validated fields. */
 export const OIDCMetadataSchema = z.object({
@@ -207,7 +208,7 @@ export function OIDCMetadataUrlForm(props: {
               label="Metadata URL"
               tooltip="Provide the OIDC metadata URL to automatically fill in the fields below."
             />
-            <div className="flex flex-row justify-center gap-x-4">
+            <div className={styles.oIDCMetadataUrlFormDiv}>
               <FormControl>
                 <Input
                   onSurface="raised"
@@ -217,7 +218,7 @@ export function OIDCMetadataUrlForm(props: {
                   disabled={field.disabled || props.isPending}
                 />
               </FormControl>
-              <div className="shrink-0">
+              <div className={styles.oIDCMetadataUrlFormDiv2}>
                 <Button type="submit" onSurface="raised" disabled={props.isPending}>
                   {props.isPending ? 'Fetching...' : 'Fetch endpoints'}
                 </Button>

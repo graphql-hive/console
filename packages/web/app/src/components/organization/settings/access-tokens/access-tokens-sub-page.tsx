@@ -10,6 +10,7 @@ import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { AccessTokenCreatedDialog } from './access-token-created-dialog';
 import { AccessTokensTable } from './access-tokens-table';
 import { CreateAccessTokenSheetContent } from './create-access-token-sheet-content';
+import * as styles from './access-tokens-sub-page.css';
 
 export const AccessTokensSubPage_OrganizationQuery = graphql(`
   query AccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
@@ -125,7 +126,7 @@ export function AccessTokensSubPage(): React.ReactNode {
           </>
         }
       />
-      <div className="my-3.5 space-y-4" data-cy="organization-settings-access-tokens">
+      <div className={styles.accessTokensSubPageDiv} data-cy="organization-settings-access-tokens">
         {query.error ? (
           <QueryError
             organizationSlug={organizationSlug}

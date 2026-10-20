@@ -9,6 +9,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import { useResolvedColors } from '@/lib/utils';
 import { CardElement as StripeCardElement } from '@stripe/react-stripe-js';
+import * as styles from './BillingPaymentMethod.css';
 
 const GenerateStripeLinkMutation = graphql(`
   mutation GenerateStripeLinkMutation($selector: OrganizationSelectorInput!) {
@@ -52,17 +53,17 @@ export const ManagePaymentMethod = (props: {
   }
 
   return (
-    <div className="mt-4">
+    <div className={styles.managePaymentMethodDiv}>
       <Card
         variants={{ onSurface: 'base', titleSize: 'large' }}
         title="Payment Method and Billing Settings"
       >
         <div>
-          <p className="pb-4">
+          <p className={styles.managePaymentMethodP}>
             Your current payment method is <strong>{info.brand.toUpperCase()}</strong> ending with{' '}
             {info.last4} (expires {info.expMonth}/{info.expYear}).
           </p>
-          <p className="pb-4">
+          <p className={styles.managePaymentMethodP2}>
             To manage or change your payment method, billing settings, billing email, Tax ID, you
             can use the Stripe customer dashboard:
           </p>
@@ -89,8 +90,9 @@ export const ManagePaymentMethod = (props: {
             {mutation.fetching || loadingDashboard ? (
               'Loading...'
             ) : (
-              <div className="flex items-center">
-                <ExternalLink className="mr-1 size-4" /> Stripe Billing Dashboard
+              <div className={styles.managePaymentMethodDiv2}>
+                <ExternalLink className={styles.managePaymentMethodExternalLink} /> Stripe Billing
+                Dashboard
               </div>
             )}
           </Button>
@@ -109,12 +111,12 @@ export const BillingPaymentMethodForm = ({
   const colors = useResolvedColors();
 
   return (
-    <div className="w-1/2">
+    <div className={styles.billingPaymentMethodFormDiv}>
       <Card variants={{ onSurface: 'raised' }}>
-        <div className="flex flex-col gap-6">
+        <div className={styles.billingPaymentMethodFormDiv2}>
           <Heading>Payment Method</Heading>
           <StripeCardElement
-            className="grow"
+            className={styles.billingPaymentMethodFormStripeCardElement}
             onChange={e => {
               if (e.error || !e.complete) {
                 onValidationChange?.(false);
@@ -133,7 +135,7 @@ export const BillingPaymentMethodForm = ({
             }}
           />
 
-          <div className="text-sm text-fg-secondary">
+          <div className={styles.billingPaymentMethodFormDiv3}>
             All payments and subscriptions are processed securely by{' '}
             <Link
               as="a"

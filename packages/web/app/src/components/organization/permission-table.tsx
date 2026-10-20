@@ -2,6 +2,7 @@ import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import type { ColumnDef } from '@tanstack/react-table';
+import * as styles from './permission-table.css';
 
 export type PermissionRow = {
   id: string;
@@ -28,7 +29,7 @@ const PERMISSION_COLUMNS: ColumnDef<PermissionRow, unknown>[] = [
         return (
           <Tooltip
             trigger={
-              <span className="inline-flex">
+              <span className={styles.span}>
                 <DataTableCell kind="badge" items={{ content: 'Allowed', variant: 'warning' }} />
               </span>
             }
@@ -45,7 +46,7 @@ const PERMISSION_COLUMNS: ColumnDef<PermissionRow, unknown>[] = [
 export function PermissionTable(props: { title: string; permissions: PermissionRow[] }) {
   return (
     <div>
-      <h4 className="mb-2 text-sm font-medium text-fg">{props.title}</h4>
+      <h4 className={styles.permissionTableH4}>{props.title}</h4>
       <DataTable
         data={props.permissions}
         columns={PERMISSION_COLUMNS}

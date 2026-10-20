@@ -1,5 +1,6 @@
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { timeRelative } from './shared-helpers';
+import * as styles from './token-expiration.css';
 
 const EXPIRED_TEXT = 'EXPIRED';
 
@@ -11,7 +12,7 @@ export function TokenExpiration(props: { expiresAt: string | null }) {
     if (text === EXPIRED_TEXT) {
       return (
         <Tooltip
-          trigger={<span className="text-critical">{text}</span>}
+          trigger={<span className={styles.tokenExpirationSpan}>{text}</span>}
           content={expiresDate.toLocaleString()}
           align="start"
         />

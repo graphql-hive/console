@@ -26,6 +26,7 @@ import { DebugOIDCIntegrationModal } from './debug-oidc-integration-modal';
 import { OIDCDefaultResourceSelector } from './oidc-default-resource-selector';
 import { OIDCDefaultRoleSelector } from './oidc-default-role-selector';
 import { OIDCRegisteredDomainSheet } from './oidc-registered-domain-sheet';
+import * as styles from './oidc-integration-configuration.css';
 
 const UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation = graphql(`
   mutation UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation(
@@ -207,9 +208,9 @@ export function OIDCIntegrationConfiguration(props: {
   };
 
   return (
-    <div className="space-y-10">
-      <div className="space-y-2">
-        <div className="flex justify-between">
+    <div className={styles.oIDCIntegrationConfigurationDiv}>
+      <div className={styles.oIDCIntegrationConfigurationDiv2}>
+        <div className={styles.oIDCIntegrationConfigurationDiv3}>
           <Heading size="lg">Overview</Heading>
           <Tooltip
             trigger={
@@ -259,8 +260,8 @@ export function OIDCIntegrationConfiguration(props: {
           ]}
         />
       </div>
-      <div className="space-y-2">
-        <div className="flex justify-between">
+      <div className={styles.oIDCIntegrationConfigurationDiv4}>
+        <div className={styles.oIDCIntegrationConfigurationDiv5}>
           <Heading size="lg">OIDC Configuration</Heading>
           <Tooltip
             trigger={
@@ -312,7 +313,7 @@ export function OIDCIntegrationConfiguration(props: {
                   term: 'User ID Claim',
                   tooltip: 'The claim that should be used to uniquely identify an user.',
                   description: oidcIntegration.userIdClaim ?? (
-                    <span className="text-fg-secondary">none set</span>
+                    <span className={styles.oIDCIntegrationConfigurationSpan}>none set</span>
                   ),
                   mono: true,
                 },
@@ -322,7 +323,7 @@ export function OIDCIntegrationConfiguration(props: {
                   description: oidcIntegration.additionalScopes.length ? (
                     oidcIntegration.additionalScopes.join(' ')
                   ) : (
-                    <span className="text-fg-subtle">none</span>
+                    <span className={styles.oIDCIntegrationConfigurationSpan2}>none</span>
                   ),
                   mono: true,
                 },
@@ -340,7 +341,7 @@ export function OIDCIntegrationConfiguration(props: {
         organization={organization}
         onRestrictionChange={onOidcRestrictionChange}
       />
-      <div className="space-y-2">
+      <div className={styles.oIDCIntegrationConfigurationDiv6}>
         <Heading size="lg">Remove OIDC Provider</Heading>
         <p>Completly disconnect the OIDC provider and all configuration.</p>
         <Button variant="destructive" onClick={() => setModalState(ModalState.openDelete)}>
@@ -506,9 +507,9 @@ function OIDCDomainConfiguration(props: {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex justify-between">
+    <div className={styles.oIDCDomainConfigurationDiv}>
+      <div className={styles.oIDCDomainConfigurationDiv2}>
+        <div className={styles.oIDCDomainConfigurationDiv3}>
           <Heading size="lg">Registered Domains</Heading>
           <Tooltip
             trigger={
@@ -535,10 +536,10 @@ function OIDCDomainConfiguration(props: {
         />
       </div>
       <Card title="Domain Settings" description="Settings for the verified domains.">
-        <div className="flex items-center justify-between space-x-4">
-          <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
+        <div className={styles.oIDCDomainConfigurationDiv4}>
+          <div className={styles.oIDCDomainConfigurationDiv5}>
             <p>Require OIDC Login</p>
-            <p className="max-w-[500px] text-xs leading-snug font-normal">
+            <p className={styles.oIDCDomainConfigurationP}>
               Enforce sign in/up through OIDC for verified domains. Any other login method will be
               blocked. The organization owner is excluded from this restriction.
             </p>
@@ -696,7 +697,7 @@ function OIDCAccessSettings(props: {
     <div>
       <Heading>User Provisioning</Heading>
       <p>Configure how users should be provisioned by your identity provider.</p>
-      <div className="mt-2 space-y-4 rounded-lg border p-6">
+      <div className={styles.oIDCAccessSettingsDiv}>
         <RadioGroup
           variant="as-card"
           orientation="horizontal"
@@ -748,43 +749,43 @@ function OIDCAccessSettings(props: {
         {isSCIMProvisioningEnabled ? (
           <>
             <Card title="SCIM Provision Defaults">
-              <div className="space-y-5">
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
+              <div className={styles.oIDCAccessSettingsDiv2}>
+                <div className={styles.oIDCAccessSettingsDiv3}>
+                  <div className={styles.oIDCAccessSettingsDiv4}>
                     <p>Organization access restricted to (active) provisioned users</p>
-                    <p className="max-w-[500px] text-xs leading-snug font-normal text-fg-secondary">
+                    <p className={styles.oIDCAccessSettingsP}>
                       Only (active) users provisioned via SCIM can access the organization.
                       <br />
-                      <span className="font-bold">
+                      <span className={styles.oIDCAccessSettingsSpan}>
                         The organization owner is excluded from this restriction.
                       </span>
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
+                <div className={styles.oIDCAccessSettingsDiv5}>
+                  <div className={styles.oIDCAccessSettingsDiv6}>
                     <p>Sync groups via SCIM</p>
-                    <p className="max-w-[500px] text-xs leading-snug font-normal text-fg-secondary">
+                    <p className={styles.oIDCAccessSettingsP2}>
                       Groups are provisioned and updated via SCIM.{' '}
                       <Link
                         to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
+                        className={styles.oIDCAccessSettingsLink}
                       >
                         Manage Groups
                       </Link>
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
+                <div className={styles.oIDCAccessSettingsDiv7}>
+                  <div className={styles.oIDCAccessSettingsDiv8}>
                     <p>Sync users via SCIM</p>
-                    <p className="max-w-[500px] text-xs leading-snug font-normal text-fg-secondary">
+                    <p className={styles.oIDCAccessSettingsP3}>
                       Users are provisioned and updated via SCIM.{' '}
                       <Link
                         to="/$organizationSlug/view/members"
                         params={{ organizationSlug: organization.slug }}
-                        className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
+                        className={styles.oIDCAccessSettingsLink2}
                       >
                         Manage Users
                       </Link>
@@ -794,7 +795,7 @@ function OIDCAccessSettings(props: {
                     <div>
                       <Popover
                         trigger={
-                          <button type="button" className="flex text-xs text-warning">
+                          <button type="button" className={styles.oIDCAccessSettingsButton}>
                             {organization.pendingSCIMManagementConfirmationsCount} SCIM provisioning
                             conflict
                             {organization.pendingSCIMManagementConfirmationsCount === 1 ? '' : 's'}
@@ -802,7 +803,7 @@ function OIDCAccessSettings(props: {
                         }
                         openOnHover
                         content={
-                          <div className="space-y-2 text-sm text-fg-default">
+                          <div className={styles.oIDCAccessSettingsDiv9}>
                             <p>
                               SCIM provisioning matched existing organization members. Review each
                               match before allowing SCIM to manage the account.
@@ -811,7 +812,7 @@ function OIDCAccessSettings(props: {
                               to="/$organizationSlug/view/members"
                               params={{ organizationSlug: organization.slug }}
                               search={{ showPendingSCIMManagementConfirmations: true }}
-                              className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
+                              className={styles.oIDCAccessSettingsLink3}
                             >
                               Review conflicts
                             </Link>
@@ -821,15 +822,15 @@ function OIDCAccessSettings(props: {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
+                <div className={styles.oIDCAccessSettingsDiv10}>
+                  <div className={styles.oIDCAccessSettingsDiv11}>
                     <p>Assign permissions via groups</p>
-                    <p className="max-w-[500px] text-xs leading-snug font-normal text-fg-secondary">
+                    <p className={styles.oIDCAccessSettingsP4}>
                       Assign role mappings to groups to grant permissions to group members.{' '}
                       <Link
                         to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
+                        className={styles.oIDCAccessSettingsLink4}
                       >
                         Manage Groups
                       </Link>
@@ -844,14 +845,14 @@ function OIDCAccessSettings(props: {
             title="OIDC Provision Settings"
             description="Customize the provision behaviour vor OIDC."
           >
-            <div className="space-y-5">
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
+            <div className={styles.oIDCAccessSettingsDiv12}>
+              <div className={styles.oIDCAccessSettingsDiv13}>
+                <div className={styles.oIDCAccessSettingsDiv14}>
                   <p>Require OIDC to Join</p>
-                  <p className="text-xs leading-snug font-normal text-fg-secondary">
+                  <p className={styles.oIDCAccessSettingsP5}>
                     Restricts new accounts joining the organization to be authenticated via OIDC.
                     <br />
-                    <span className="font-bold">
+                    <span className={styles.oIDCAccessSettingsSpan2}>
                       Existing non-OIDC members will keep their access.
                     </span>
                   </p>
@@ -863,13 +864,13 @@ function OIDCAccessSettings(props: {
                   }
                 />
               </div>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
+              <div className={styles.oIDCAccessSettingsDiv15}>
+                <div className={styles.oIDCAccessSettingsDiv16}>
                   <p>Require OIDC to Access</p>
-                  <p className="text-xs leading-snug font-normal text-fg-secondary">
+                  <p className={styles.oIDCAccessSettingsP6}>
                     Prompt users to authenticate with OIDC before accessing the organization.
                     <br />
-                    <span className="font-bold">
+                    <span className={styles.oIDCAccessSettingsSpan3}>
                       Existing users without OIDC credentials will not be able to access the
                       organization.
                     </span>
@@ -882,10 +883,10 @@ function OIDCAccessSettings(props: {
                   }
                 />
               </div>
-              <div className="flex items-center justify-between space-x-4">
-                <div className="flex flex-col space-y-1 text-sm leading-none font-medium">
+              <div className={styles.oIDCAccessSettingsDiv17}>
+                <div className={styles.oIDCAccessSettingsDiv18}>
                   <p>Require Invitation to Join</p>
-                  <p className="text-xs leading-snug font-normal text-fg-secondary">
+                  <p className={styles.oIDCAccessSettingsP7}>
                     Restricts only invited OIDC accounts to join the organization.
                   </p>
                 </div>
@@ -899,21 +900,21 @@ function OIDCAccessSettings(props: {
               </div>
               <div
                 className={cn(
-                  'space-y-1 text-sm leading-none font-medium',
-                  isAdmin ? null : 'cursor-not-allowed',
+                  styles.oIDCAccessSettingsDiv19,
+                  isAdmin ? null : styles.oIDCAccessSettingsDiv20,
                 )}
               >
                 <p>Default Member Role</p>
-                <div className="flex items-start justify-between space-x-4">
-                  <div className="flex basis-2/3 flex-col md:basis-1/2">
-                    <p className="text-xs leading-snug font-normal text-fg-secondary">
+                <div className={styles.oIDCAccessSettingsDiv21}>
+                  <div className={styles.oIDCAccessSettingsDiv22}>
+                    <p className={styles.oIDCAccessSettingsP8}>
                       This role is assigned to new members who sign in via OIDC.{' '}
-                      <span className="font-medium">
+                      <span className={styles.oIDCAccessSettingsSpan4}>
                         Only members with the Admin role can modify it.
                       </span>
                     </p>
                   </div>
-                  <div className="flex min-w-[150px] basis-1/3 md:basis-1/2">
+                  <div className={styles.oIDCAccessSettingsDiv23}>
                     <OIDCDefaultRoleSelector
                       width="full"
                       disabled={!isAdmin}
@@ -925,7 +926,7 @@ function OIDCAccessSettings(props: {
                 </div>
               </div>
             </div>
-            <div className="mt-2">
+            <div className={styles.oIDCAccessSettingsDiv24}>
               <OIDCDefaultResourceSelector
                 oidcIntegrationId={oidcIntegration.id}
                 organization={organization}
@@ -1005,7 +1006,7 @@ function RemoveOIDCIntegrationModal(props: {
       ) : oidcIntegrationId === null ? (
         <p>This organization does not have an OIDC integration.</p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className={styles.removeOIDCIntegrationModalDiv}>
           <Callout type="warning">
             This action is not reversible and revoke access to all users that have signed in with
             this OIDC integration.

@@ -5,6 +5,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { MemberRoleSelector } from '../../members/member-role-selector';
 import { ResourceSelection, ResourceSelector } from '../../members/resource-selector';
 import { SelectedPermissionOverview } from '../../members/selected-permission-overview';
+import * as styles from './role-mapping-picker-sheet.css';
 
 const RoleMappingPickerSheet_OrganizationFragment = graphql(`
   fragment RoleMappingPickerSheet_OrganizationFragment on Organization {
@@ -62,8 +63,8 @@ export function RoleMappingPickerSheet(props: {
       description={props.description}
       footer={props.actions}
     >
-      <div className="pt-2">
-        <Heading size="lg" className="mb-1 text-sm">
+      <div className={styles.roleMappingPickerSheetDiv}>
+        <Heading size="lg" className={styles.roleMappingPickerSheetHeading}>
           Assigned Member Role
         </Heading>
         <MemberRoleSelector
@@ -73,7 +74,7 @@ export function RoleMappingPickerSheet(props: {
           selectedRoleId={props.selectedRoleId}
           onSelectRoleId={props.onSelectedRoleIdChange}
         />
-        <p className="mt-2 text-sm text-fg-secondary">
+        <p className={styles.roleMappingPickerSheetP}>
           The role assigned to the user that will grant permissions.
         </p>
         {selectedRole && (
@@ -85,11 +86,11 @@ export function RoleMappingPickerSheet(props: {
           />
         )}
       </div>
-      <div className="pt-10">
-        <Heading size="lg" className="mb-1 text-sm">
+      <div className={styles.roleMappingPickerSheetDiv2}>
+        <Heading size="lg" className={styles.roleMappingPickerSheetHeading2}>
           Assigned Resources
         </Heading>
-        <p className="mt-2 text-sm text-fg-secondary">
+        <p className={styles.roleMappingPickerSheetP2}>
           Specify the resources on which the permissions will be granted.
         </p>
         <ResourceSelector

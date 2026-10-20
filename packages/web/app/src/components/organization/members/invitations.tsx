@@ -24,6 +24,7 @@ import {
   ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
 } from './resource-selector';
+import * as styles from './invitations.css';
 
 const MemberInvitationForm_InviteByEmail = graphql(`
   mutation MemberInvitationForm_InviteByEmail($input: InviteToOrganizationByEmailInput!) {
@@ -95,8 +96,10 @@ function SendInvitation(props: {
     console.error('Viewer role not found in organization member roles');
     return (
       <>
-        <div className="text-critical">Viewer role not found in organization member roles</div>
-        <div className="text-fg-secondary">Please contact support.</div>
+        <div className={styles.sendInvitationDiv}>
+          Viewer role not found in organization member roles
+        </div>
+        <div className={styles.sendInvitationDiv2}>Please contact support.</div>
       </>
     );
   }
@@ -178,7 +181,7 @@ export function MemberInvitationButton(props: {
       onOpenChange={setOpen}
       trigger={
         <Button data-cy="send-invite-trigger">
-          <MailIcon size={14} className="mr-2" /> Send Invite
+          <MailIcon size={14} className={styles.memberInvitationButtonMailIcon} /> Send Invite
         </Button>
       }
       width="xl"
@@ -430,12 +433,12 @@ export function OrganizationInvitations(props: {
           pagination={{ kind: 'none' }}
         />
       ) : (
-        <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
-          <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-            <MailQuestionIcon className="size-10 text-fg-secondary" />
+        <div className={styles.organizationInvitationsDiv}>
+          <div className={styles.organizationInvitationsDiv2}>
+            <MailQuestionIcon className={styles.organizationInvitationsMailQuestionIcon} />
 
-            <h3 className="mt-4 text-lg font-semibold">No invitations</h3>
-            <p className="mt-2 mb-4 text-sm text-fg-secondary">
+            <h3 className={styles.organizationInvitationsH3}>No invitations</h3>
+            <p className={styles.organizationInvitationsP}>
               Invitations to join this organization will appear here.
             </p>
           </div>

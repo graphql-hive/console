@@ -3,6 +3,7 @@ import { Accordion } from '@/components/ui/primitives/accordion/accordion';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { permissionLevelToResourceName } from './shared-helpers';
+import * as styles from './permission-detail-view.css';
 
 const PermissionDetailView_ResolvedResourcePermissionGroup = graphql(`
   fragment PermissionDetailView_ResolvedResourcePermissionGroup on ResolvedResourcePermissionGroup {
@@ -50,9 +51,9 @@ export function PermissionDetailView(props: {
           label: group.title,
           trailing: <span>{totalAllowedCount} allowed</span>,
           content: (
-            <div className="flex max-w-[800px] flex-wrap items-start overflow-x-auto pl-2">
+            <div className={styles.permissionDetailViewDiv}>
               {group.resolvedPermissionGroups.map(group => (
-                <div className="w-[50%] min-w-[400px] pr-12 pb-4" key={group.title}>
+                <div className={styles.permissionDetailViewDiv2} key={group.title}>
                   <PermissionTable
                     title={group.title}
                     permissions={group.permissions.map(permission => ({
@@ -64,17 +65,17 @@ export function PermissionDetailView(props: {
                   />
                 </div>
               ))}
-              <div className="w-full space-y-1">
+              <div className={styles.permissionDetailViewDiv3}>
                 {group.resolvedResourceIds == null ? (
-                  <p className="text-critical">
+                  <p className={styles.permissionDetailViewP}>
                     Not granted on any {permissionLevelToResourceName(group.level).slice(0, -1)}.
                   </p>
                 ) : (
                   <>
-                    <p className="text-fg-secondary">
+                    <p className={styles.permissionDetailViewP2}>
                       Granted on {permissionLevelToResourceName(group.level)}:
                     </p>
-                    <ul className="flex list-none flex-wrap gap-1">
+                    <ul className={styles.permissionDetailViewUl}>
                       {group.resolvedResourceIds.map(id => (
                         <li key={id}>
                           <Badge content={id} variants={{ variant: 'outline', mono: true }} />

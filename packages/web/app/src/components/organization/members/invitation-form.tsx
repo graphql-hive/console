@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
 import { RoleSelector } from './common';
+import * as styles from './invitation-form.css';
 
 export const MemberInvitationFormSchema = z.object({
   email: z
@@ -52,8 +53,8 @@ export function MemberInvitationForm(props: {
   const { form } = props;
   return (
     <Form form={form} onSubmit={props.onSubmit}>
-      <div className="flex flex-row items-start gap-6">
-        <div className="grow">
+      <div className={styles.memberInvitationFormDiv}>
+        <div className={styles.memberInvitationFormDiv2}>
           <FormField
             control={form.control}
             name="email"
@@ -93,7 +94,7 @@ export function MemberInvitationForm(props: {
         />
       </div>
       {props.resources}
-      <div className="flex justify-end">
+      <div className={styles.memberInvitationFormDiv3}>
         <Button
           type="submit"
           onSurface="raised"

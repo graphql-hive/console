@@ -8,6 +8,7 @@ import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { ResultOf } from '@graphql-typed-document-node/core';
+import * as styles from './permission-selector.css';
 
 // PermissionSelector_OrganizationFragment
 
@@ -105,18 +106,16 @@ export function PermissionSelector(props: PermissionSelectorProps) {
             <span>{group.selectedPermissionCount} selected</span>
           ) : undefined,
         content: (
-          <div className="pt-1 pl-2">
+          <div className={styles.permissionSelectorDiv}>
             {group.permissions.map(permission => {
               const needsDependency =
                 !!permission.dependsOnId &&
                 !props.selectedPermissionIds.has(permission.dependsOnId);
 
               return (
-                <div className="relative" key={permission.id}>
+                <div className={styles.permissionSelectorDiv2} key={permission.id}>
                   <div
-                    className={cn(
-                      'flex flex-row items-center justify-between space-x-4 pr-2 pb-2 text-sm',
-                    )}
+                    className={cn(styles.permissionSelectorDiv3)}
                     data-permission-id={permission.id}
                     ref={ref => {
                       if (ref) {
@@ -126,14 +125,15 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                   >
                     <div
                       className={cn(
-                        (needsDependency || !permission.isAssignableByViewer) && 'opacity-30',
+                        (needsDependency || !permission.isAssignableByViewer) &&
+                          styles.permissionSelectorDiv4,
                       )}
                     >
-                      <div className="font-semibold text-fg">{permission.title}</div>
-                      <div className="text-xs text-fg-default">{permission.description}</div>
+                      <div className={styles.permissionSelectorDiv5}>{permission.title}</div>
+                      <div className={styles.permissionSelectorDiv6}>{permission.description}</div>
                     </div>
                     {permission.isAssignableByViewer === false ? (
-                      <div className="flex grow justify-end">
+                      <div className={styles.permissionSelectorDiv7}>
                         <Popover
                           trigger={
                             <button type="button" aria-label="Why this cannot be assigned">
@@ -142,7 +142,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                           }
                           openOnHover
                           content={
-                            <p className="text-sm text-fg-default">
+                            <p className={styles.permissionSelectorP}>
                               Your membership has insufficient authority for assigning this
                               permission.
                             </p>
@@ -150,21 +150,23 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         />
                       </div>
                     ) : permission.warning && props.selectedPermissionIds.has(permission.id) ? (
-                      <div className="flex grow justify-end">
+                      <div className={styles.permissionSelectorDiv8}>
                         <Popover
                           trigger={
                             <button type="button" aria-label="Warning">
-                              <TriangleAlert className="text-warning" />
+                              <TriangleAlert className={styles.permissionSelectorTriangleAlert} />
                             </button>
                           }
                           openOnHover
-                          content={<p className="text-sm text-fg-default">{permission.warning}</p>}
+                          content={
+                            <p className={styles.permissionSelectorP2}>{permission.warning}</p>
+                          }
                         />
                       </div>
                     ) : (
                       !!permission.dependsOnId &&
                       permissionToGroupTitleMapping.has(permission.dependsOnId) && (
-                        <div className="flex grow justify-end">
+                        <div className={styles.permissionSelectorDiv9}>
                           <Popover
                             trigger={
                               <button type="button" aria-label="Depends on another permission">
@@ -173,7 +175,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                             }
                             openOnHover
                             content={
-                              <p className="text-sm text-fg-default">
+                              <p className={styles.permissionSelectorP3}>
                                 This permission depends on another permission.{' '}
                                 <Button
                                   variant="link"
@@ -250,7 +252,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                     />
                   </div>
                   {focusedPermission === permission.id && (
-                    <div className="pointer-events-none absolute top-[-4px] right-0 bottom-[3px] left-[-7px] rounded-sm border border-warning" />
+                    <div className={styles.permissionSelectorDiv10} />
                   )}
                 </div>
               );

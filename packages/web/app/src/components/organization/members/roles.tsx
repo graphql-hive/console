@@ -23,6 +23,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { PermissionSelector } from './permission-selector';
 import { RoleFields, RoleForm, RoleFormSchema, type RoleFormValues } from './role-form';
 import { SelectedPermissionOverview } from './selected-permission-overview';
+import * as styles from './roles.css';
 
 const OrganizationMemberRoleEditor_UpdateMemberRoleMutation = graphql(`
   mutation OrganizationMemberRoleEditor_UpdateMemberRoleMutation($input: UpdateMemberRoleInput!) {
@@ -202,8 +203,8 @@ function OrganizationMemberRoleView(props: {
   const [showOnlyGrantedPermissions, setShowOnlyGrantedPermissions] = useState(true);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex h-[400px] flex-col space-y-2">
+    <div className={styles.organizationMemberRoleViewDiv}>
+      <div className={styles.organizationMemberRoleViewDiv2}>
         <ScrollArea fill>
           <SelectedPermissionOverview
             showOnlyAllowedPermissions={showOnlyGrantedPermissions}
@@ -212,8 +213,8 @@ function OrganizationMemberRoleView(props: {
           />
         </ScrollArea>
       </div>
-      <div className="flex items-center justify-end gap-2">
-        <div className="mr-2 flex items-center space-x-2">
+      <div className={styles.organizationMemberRoleViewDiv3}>
+        <div className={styles.organizationMemberRoleViewDiv4}>
           <Checkbox
             id="show-only-granted-permissions"
             checked={showOnlyGrantedPermissions}
@@ -221,7 +222,7 @@ function OrganizationMemberRoleView(props: {
           />
           <label
             htmlFor="show-only-granted-permissions"
-            className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className={styles.organizationMemberRoleViewLabel}
           >
             Show only granted permissions
           </label>
@@ -386,7 +387,7 @@ function OrganizationMemberRoleCreator(props: {
           </>
         ) : (
           <>
-            <div className="mr-2 flex items-center space-x-2">
+            <div className={styles.organizationMemberRoleCreatorDiv}>
               <Checkbox
                 id="show-only-granted-permissions"
                 checked={showOnlyGrantedPermissions}
@@ -394,7 +395,7 @@ function OrganizationMemberRoleCreator(props: {
               />
               <label
                 htmlFor="show-only-granted-permissions"
-                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className={styles.organizationMemberRoleCreatorLabel}
               >
                 Show only granted permissions
               </label>
@@ -429,7 +430,7 @@ function OrganizationMemberRoleCreator(props: {
           }
         />
       ) : (
-        <div className="flex h-[400px] flex-col">
+        <div className={styles.organizationMemberRoleCreatorDiv2}>
           <ScrollArea fill>
             <SelectedPermissionOverview
               activePermissionIds={Array.from(selectedPermissions)}
@@ -501,15 +502,15 @@ function RoleNameCell(props: {
         {role.isLocked ? (
           <Tooltip
             trigger={
-              <span className="inline-flex">
-                <LockIcon className="size-4" />
+              <span className={styles.roleNameCellSpan}>
+                <LockIcon className={styles.roleNameCellLockIcon} />
               </span>
             }
             side="right"
             content={
-              <div className="flex flex-col items-start gap-y-1 p-2">
-                <div className="text-xs font-medium">This role is locked</div>
-                <div className="text-xs text-fg-secondary">
+              <div className={styles.roleNameCellDiv}>
+                <div className={styles.roleNameCellDiv2}>This role is locked</div>
+                <div className={styles.roleNameCellDiv3}>
                   Locked roles are created by the system and cannot be modified or deleted.
                 </div>
               </div>
@@ -526,9 +527,9 @@ function RoleNameCell(props: {
             openOnHover
             side="right"
             content={
-              <div className="flex flex-col items-start gap-y-2">
-                <div className="font-medium">Default role for new members</div>
-                <div className="text-sm text-fg-secondary">
+              <div className={styles.roleNameCellDiv4}>
+                <div className={styles.roleNameCellDiv5}>Default role for new members</div>
+                <div className={styles.roleNameCellDiv6}>
                   <p>New members will be assigned to this role by default.</p>
                   {props.canChangeOIDCDefaultRole ? (
                     <p>
@@ -539,7 +540,7 @@ function RoleNameCell(props: {
                         params={{
                           organizationSlug,
                         }}
-                        className="underline"
+                        className={styles.roleNameCellLink}
                       >
                         OIDC settings
                       </Link>

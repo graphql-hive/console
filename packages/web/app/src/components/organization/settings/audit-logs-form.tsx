@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
+import * as styles from './audit-logs-form.css';
 
 export const AuditLogsFormSchema = z.object({
   startDate: z.string(),
@@ -26,7 +27,7 @@ export function AuditLogsForm(props: {
   const { form } = props;
   return (
     <Form form={form} onSubmit={props.onSubmit}>
-      <div className="flex flex-row justify-evenly gap-x-8">
+      <div className={styles.auditLogsFormDiv}>
         <FormField
           control={form.control}
           name="startDate"
@@ -39,8 +40,8 @@ export function AuditLogsForm(props: {
             </FormItem>
           )}
         />
-        <div className="mt-2">
-          <ArrowRightIcon className="size-6 text-fg-secondary" />
+        <div className={styles.auditLogsFormDiv2}>
+          <ArrowRightIcon className={styles.auditLogsFormArrowRightIcon} />
         </div>
         <FormField
           control={form.control}
@@ -55,7 +56,7 @@ export function AuditLogsForm(props: {
           )}
         />
       </div>
-      <div className="mt-3">
+      <div className={styles.auditLogsFormDiv3}>
         <Button
           width="full"
           type="submit"

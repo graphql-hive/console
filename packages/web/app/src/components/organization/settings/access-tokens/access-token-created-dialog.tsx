@@ -3,6 +3,7 @@ import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import * as styles from './access-token-created-dialog.css';
 
 /** Shows a freshly created token once, and only lets go once the user says they stored it. */
 export function AccessTokenCreatedDialog(props: {
@@ -26,13 +27,13 @@ export function AccessTokenCreatedDialog(props: {
       }}
       cancel={false}
     >
-      <div className="flex flex-col gap-4">
+      <div className={styles.accessTokenCreatedDialogDiv}>
         <InputCopy value={props.privateAccessKey} onSurface="raised" />
         <Callout type="info">
           This is your unique API key and it is non-recoverable. If you lose this key, you will need
           to create a new one.
         </Callout>
-        <div className="flex items-center space-x-2">
+        <div className={styles.accessTokenCreatedDialogDiv2}>
           <Checkbox
             id="AccessTokenCreatedDialog-isConfirmed"
             checked={isConfirmed}
@@ -40,7 +41,7 @@ export function AccessTokenCreatedDialog(props: {
           />
           <label
             htmlFor="AccessTokenCreatedDialog-isConfirmed"
-            className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            className={styles.accessTokenCreatedDialogLabel}
           >
             I stored the access token somewhere safe
           </label>

@@ -6,6 +6,7 @@ import {
 } from '@/components/organization/billing/BillingPlanPicker';
 import { makeFragmentData } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
+import * as styles from './billing-plan-picker.preview.css';
 
 export const nav: NavPath = 'Components/BillingPlanPicker';
 
@@ -29,7 +30,7 @@ const plans = [
 
 /** The common case: on Hobby, Hobby selected, so "CURRENT PLAN" sits on the selected card. */
 export const Default = createPreview(() => (
-  <div className="w-[64rem]">
+  <div className={styles.div}>
     <BillingPlanPicker
       plans={plans}
       value={BillingPlanType.Hobby}
@@ -44,7 +45,7 @@ export const Default = createPreview(() => (
  * land on different cards, which is the only state where the two readouts can be told apart.
  */
 export const UpgradingFromHobby = createPreview(() => (
-  <div className="w-[64rem]">
+  <div className={styles.div2}>
     <BillingPlanPicker
       plans={plans}
       value={BillingPlanType.Pro}
@@ -56,7 +57,7 @@ export const UpgradingFromHobby = createPreview(() => (
 
 /** What a viewer without `billing:update` sees: no hover affordance, cards inert. */
 export const Disabled = createPreview(() => (
-  <div className="w-[64rem]">
+  <div className={styles.div3}>
     <BillingPlanPicker
       disabled
       plans={plans}
@@ -90,7 +91,7 @@ export const Playground = createPreview({
   render: v => {
     const [value, setValue] = useState(v.activePlan);
     return (
-      <div className="w-[64rem]">
+      <div className={styles.div4}>
         <BillingPlanPicker
           disabled={v.disabled}
           plans={v.plans}

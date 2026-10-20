@@ -11,6 +11,7 @@ import { AccessTokenCreatedDialog } from '../access-tokens/access-token-created-
 import { CreateAccessTokenState } from '../access-tokens/access-tokens-sub-page';
 import { CreatePersonalAccessTokenSheetContent } from './create-personal-access-token-sheet-content';
 import { PersonalAccessTokensTable } from './personal-access-tokens-table';
+import * as styles from './personal-access-tokens-sub-page.css';
 
 export const PersonalAccessTokensSubPage_OrganizationQuery = graphql(`
   query PersonalAccessTokensSubPage_OrganizationQuery($organizationSlug: String!) {
@@ -124,7 +125,10 @@ export function PersonalAccessTokensSubPage(): React.ReactNode {
           </>
         }
       />
-      <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
+      <div
+        className={styles.personalAccessTokensSubPageDiv}
+        data-cy="organization-settings-personal-access-tokens"
+      >
         {query.error ? (
           <QueryError
             organizationSlug={organizationSlug}

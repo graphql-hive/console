@@ -10,6 +10,7 @@ import {
   ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
 } from '../../members/resource-selector';
+import * as styles from './oidc-default-resource-selector.css';
 
 const OIDCDefaultResourceSelector_UpdateMutation = graphql(`
   mutation OIDCDefaultResourceSelector_UpdateMutation(
@@ -88,18 +89,18 @@ export function OIDCDefaultResourceSelector(props: {
   function MutateState() {
     if (debouncedMutate.isPending() || mutateState === 'loading') {
       return (
-        <span className="absolute top-0 right-0">
+        <span className={styles.mutateStateSpan}>
           <Spinner />
         </span>
       );
     }
 
     if (mutateState === 'error') {
-      return <XIcon className="absolute top-0 right-0 text-critical" />;
+      return <XIcon className={styles.mutateStateXIcon} />;
     }
 
     if (mutateState === 'success') {
-      return <CheckIcon className="absolute top-0 right-0 text-success" />;
+      return <CheckIcon className={styles.mutateStateCheckIcon} />;
     }
 
     return null;
@@ -119,7 +120,7 @@ export function OIDCDefaultResourceSelector(props: {
   );
 
   return (
-    <div className="relative">
+    <div className={styles.oIDCDefaultResourceSelectorDiv}>
       <MutateState />
       <ResourceSelector
         selection={selection}

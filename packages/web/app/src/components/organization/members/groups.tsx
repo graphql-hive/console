@@ -24,6 +24,7 @@ import { useSlugs } from '@/lib/hooks';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
 import { ManageGroupMappingSheet } from './groups/manage-group-mapping-sheet';
+import * as styles from './groups.css';
 
 // By slug, so the route loader can start it from the URL alone.
 export const Groups_OrganizationGroupQuery = graphql(`
@@ -82,7 +83,7 @@ export function Groups(): React.ReactElement | null {
         subPageTitle="Groups"
         description="Manage group to role and resource mappings."
         sideContent={
-          <div className="w-56">
+          <div className={styles.groupsDiv}>
             <Input
               placeholder="Search by group name"
               leadingIcon={SearchIcon}
@@ -92,48 +93,45 @@ export function Groups(): React.ReactElement | null {
           </div>
         }
       />
-      <div className="mt-4 overflow-hidden rounded-lg border">
-        <div className="grid grid-cols-[1fr_auto_auto] gap-4 border-b bg-surface-card px-4 py-3 text-sm font-medium">
+      <div className={styles.groupsDiv2}>
+        <div className={styles.groupsDiv3}>
           <div>Group</div>
-          <div className="w-24 text-center">Members</div>
-          <div className="w-10" />
+          <div className={styles.groupsDiv4}>Members</div>
+          <div className={styles.groupsDiv5} />
         </div>
-        <div className="divide-y">
+        <div className={styles.groupsDiv6}>
           {!organization ? (
-            <div role="status" aria-label="Loading groups" className="divide-y">
-              <span className="sr-only">Loading groups</span>
+            <div role="status" aria-label="Loading groups" className={styles.groupsDiv7}>
+              <span className={styles.groupsSpan}>Loading groups</span>
               {Array.from({ length: 8 }, (_, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="block size-4">
+                <div key={index} className={styles.groupsDiv8}>
+                  <div className={styles.groupsDiv9}>
+                    <span className={styles.groupsSpan2}>
                       <Skeleton variants={{ shape: 'block' }} />
                     </span>
                     <Skeleton variants={{ shape: 'circle' }} />
-                    <div className="flex items-center gap-2">
-                      <span className="flex w-32">
+                    <div className={styles.groupsDiv10}>
+                      <span className={styles.groupsSpan3}>
                         <Skeleton variants={{ width: 'full' }} />
                       </span>
-                      <span className="flex w-28">
+                      <span className={styles.groupsSpan4}>
                         <Skeleton variants={{ size: 'lg', width: 'full' }} />
                       </span>
                     </div>
                   </div>
-                  <div className="flex w-24 justify-center">
-                    <span className="flex w-6">
+                  <div className={styles.groupsDiv11}>
+                    <span className={styles.groupsSpan5}>
                       <Skeleton variants={{ width: 'full' }} />
                     </span>
                   </div>
-                  <div className="w-10" />
+                  <div className={styles.groupsDiv12} />
                 </div>
               ))}
             </div>
           ) : organization.groups.edges.length === 0 ? (
-            <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-              <h3 className="text-base font-semibold">No groups synced yet</h3>
-              <p className="mt-2 max-w-md text-sm leading-6">
+            <div className={styles.groupsDiv13}>
+              <h3 className={styles.groupsH3}>No groups synced yet</h3>
+              <p className={styles.groupsP}>
                 Groups will appear here after they are provisioned from your identity provider via
                 SCIM. Once synced, you can map them to roles and resources.
               </p>
@@ -146,7 +144,7 @@ export function Groups(): React.ReactElement | null {
         </div>
       </div>
 
-      <div className="px-4 py-3">
+      <div className={styles.groupsDiv14}>
         <Button
           variant="ghost"
           width="full"
@@ -167,7 +165,7 @@ export function Groups(): React.ReactElement | null {
         </Button>
       </div>
 
-      <p className="mt-4 text-xs">
+      <p className={styles.groupsP2}>
         Groups are synced from your identity provider via SCIM. Role assignments configured here
         determine what permissions group members receive.
       </p>
@@ -260,32 +258,27 @@ function GroupRow(props: GroupRowProps): ReactNode {
 
   return (
     <div>
-      <div
-        className={cn(
-          'grid cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3 transition-colors',
-        )}
-        onClick={onToggleExpand}
-      >
-        <div className="flex items-center gap-3">
+      <div className={cn(styles.groupRowDiv)} onClick={onToggleExpand}>
+        <div className={styles.groupRowDiv2}>
           <button
-            className="rounded-sm p-0.5 transition-colors"
+            className={styles.groupRowButton}
             onClick={e => {
               e.stopPropagation();
               onToggleExpand();
             }}
           >
             {isExpanded ? (
-              <ChevronDownIcon className="h-4 w-4" />
+              <ChevronDownIcon className={styles.groupRowChevronDownIcon} />
             ) : (
-              <ChevronRightIcon className="h-4 w-4" />
+              <ChevronRightIcon className={styles.groupRowChevronRightIcon} />
             )}
           </button>
-          <div className={cn('flex h-9 w-9 items-center justify-center rounded-full')}>
-            <UsersIcon className="h-4 w-4" />
+          <div className={cn(styles.groupRowDiv3)}>
+            <UsersIcon className={styles.groupRowUsersIcon} />
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className={cn('text-sm font-medium')}>{group.name}</span>
+          <div className={styles.groupRowDiv4}>
+            <div className={styles.groupRowDiv5}>
+              <span className={cn(styles.groupRowSpan)}>{group.name}</span>
               <Badge
                 variants={{ variant: 'outline' }}
                 content={
@@ -298,20 +291,20 @@ function GroupRow(props: GroupRowProps): ReactNode {
           </div>
         </div>
 
-        <div className="w-24 text-center">
-          <span className="text-sm">{group.memberCount}</span>
+        <div className={styles.groupRowDiv6}>
+          <span className={styles.groupRowSpan2}>{group.memberCount}</span>
         </div>
 
-        <div className="w-8" />
+        <div className={styles.groupRowDiv7} />
       </div>
 
       {isExpanded && (
         <>
           {groupDetailed ? (
-            <div className="border-t border-line-subtle">
-              <div className="px-4 py-2 pl-16">
-                <div className="mb-2 text-xs font-medium">Role Mappings</div>
-                <div className="space-y-2">
+            <div className={styles.groupRowDiv8}>
+              <div className={styles.groupRowDiv9}>
+                <div className={styles.groupRowDiv10}>Role Mappings</div>
+                <div className={styles.groupRowDiv11}>
                   {groupDetailed.roleMappings.map(groupRoleMapping => (
                     <GroupRoleMappingRow
                       key={groupRoleMapping.id}
@@ -376,7 +369,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
                     />
                   ))}
                   <button
-                    className="flex items-center gap-1.5 py-1 text-xs text-warning transition-colors hover:text-warning"
+                    className={styles.groupRowButton2}
                     onClick={() =>
                       setSheetNode(
                         <ManageGroupMappingSheet
@@ -388,7 +381,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
                       )
                     }
                   >
-                    <PlusIcon className="h-3 w-3" />
+                    <PlusIcon className={styles.groupRowPlusIcon} />
                     Add role mapping
                   </button>
                 </div>
@@ -429,12 +422,12 @@ function GroupRoleMappingRow(props: {
   );
 
   return (
-    <div className="group flex items-center justify-between rounded-md bg-surface-card px-3 py-1.5">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
+    <div className={cn(styles.groupRoleMappingRowDiv, 'group')}>
+      <div className={styles.groupRoleMappingRowDiv2}>
+        <div className={styles.groupRoleMappingRowDiv3}>
           <Badge content={groupRoleMapping.role.name} />
-          <span className="text-xs">on</span>
-          <span className="text-sm">
+          <span className={styles.groupRoleMappingRowSpan}>on</span>
+          <span className={styles.groupRoleMappingRowSpan2}>
             {groupRoleMapping.resourceAssignment.mode ===
             GraphQLSchema.ResourceAssignmentModeType.All ? (
               'all resources'
@@ -447,11 +440,11 @@ function GroupRoleMappingRow(props: {
           </span>
         </div>
       </div>
-      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className={styles.groupRoleMappingRowDiv4}>
         <Tooltip
           trigger={
             <Button variant="ghost" size="icon-sm" onClick={props.onClickEdit}>
-              <PencilIcon className="size-3" />
+              <PencilIcon className={styles.groupRoleMappingRowPencilIcon} />
             </Button>
           }
           content="Edit mapping"
@@ -459,7 +452,7 @@ function GroupRoleMappingRow(props: {
         <Tooltip
           trigger={
             <Button variant="ghost" size="icon-sm" onClick={props.onClickDelete}>
-              <Trash2Icon className="size-3" />
+              <Trash2Icon className={styles.groupRoleMappingRowTrash2Icon} />
             </Button>
           }
           content="Remove mapping"

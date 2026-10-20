@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { VirtualLogList } from '@/components/ui/virtual-log-list';
 import { DocumentType, graphql } from '@/gql';
+import * as styles from './debug-oidc-integration-modal.css';
 
 const SubscribeToOIDCIntegrationLogSubscription = graphql(`
   subscription oidcProviderLog($oidcIntegrationId: ID!) {
@@ -92,7 +93,7 @@ export function DebugOIDCIntegrationModal(props: {
         </>
       }
     >
-      <VirtualLogList logs={logs} className="h-[300px]" />
+      <VirtualLogList logs={logs} className={styles.debugOIDCIntegrationModalVirtualLogList} />
     </Dialog>
   );
 }

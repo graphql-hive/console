@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/primitives/badge/badge';
 import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
+import * as styles from './BillingPlanPicker.css';
 
 const planCollection: {
   [key in BillingPlanType]: {
@@ -32,7 +33,7 @@ const planCollection: {
     ],
     footer: (
       <>
-        <div className="mb-2 text-sm font-bold">Free 30 days trial period</div>
+        <div className={styles.div}>Free 30 days trial period</div>
       </>
     ),
   },
@@ -45,16 +46,11 @@ const planCollection: {
       'Change your plan at any time',
       'Improved pricing as you scale',
       '12 months of usage data retention',
-      <span key="enterprise" className="gap-1">
+      <span key="enterprise" className={styles.span}>
         GraphQL/APIs support and guidance
         <br />
         from{' '}
-        <a
-          href="https://the-guild.dev"
-          target="_blank"
-          rel="noreferrer"
-          className="font-medium text-accent transition-colors hover:underline"
-        >
+        <a href="https://the-guild.dev" target="_blank" rel="noreferrer" className={styles.a}>
           The Guild
         </a>
       </span>,
@@ -74,29 +70,29 @@ function Plan(plan: {
   return (
     // `self-stretch` because the radio item centers its content, and a plan body must fill the
     // card so the footers line up across plans with different feature counts.
-    <div className="flex h-full w-full flex-col justify-between self-stretch">
+    <div className={styles.planDiv}>
       <div>
-        <h2 className="flex items-center justify-between text-base font-bold text-fg-default">
+        <h2 className={styles.planH2}>
           {plan.name}
           {plan.isActive && <Badge content="CURRENT PLAN" variants={{ variant: 'default' }} />}
         </h2>
 
-        <div className="text-3xl font-bold">
+        <div className={styles.planDiv2}>
           {typeof plan.price === 'string' ? (
             plan.price
           ) : (
             <>
               ${plan.price}
-              <span className="text-sm text-fg-secondary">/mo</span>
+              <span className={styles.planSpan}>/mo</span>
             </>
           )}
         </div>
-        <div className="text-sm text-fg-secondary">{plan.description}</div>
-        <div className="mt-6 flex flex-col gap-2">
+        <div className={styles.planDiv3}>{plan.description}</div>
+        <div className={styles.planDiv4}>
           {plan.features.map((feature, i) => (
             <div key={i}>
-              <div className="flex items-center gap-1 text-sm text-fg-secondary">
-                <Check className="size-5 text-fg-secondary" />
+              <div className={styles.planDiv5}>
+                <Check className={styles.planCheck} />
                 {feature}
               </div>
             </div>
@@ -105,8 +101,8 @@ function Plan(plan: {
       </div>
       {plan.footer && (
         <div>
-          <div className="mx-auto my-4 w-9/12 border-b border-line" />
-          <div className="text-xs text-fg-default">{plan.footer}</div>
+          <div className={styles.planDiv6} />
+          <div className={styles.planDiv7}>{plan.footer}</div>
         </div>
       )}
     </div>

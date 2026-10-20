@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { SupportTicketPriority } from '@/gql/graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as styles from './support-forms.preview.css';
 
 export const nav: NavPath = 'Components/SupportForms';
 
@@ -27,7 +28,7 @@ export const nav: NavPath = 'Components/SupportForms';
 
 function Submitted(props: { values: unknown }) {
   return props.values ? (
-    <pre className="mt-4 text-xs text-fg-default">{JSON.stringify(props.values, null, 2)}</pre>
+    <pre className={styles.submittedPre}>{JSON.stringify(props.values, null, 2)}</pre>
   ) : null;
 }
 
@@ -79,7 +80,7 @@ export const Reply = createPreview(() => {
     defaultValues: { body: '' },
   });
   return (
-    <div className="max-w-xl">
+    <div className={styles.div}>
       <ReplyTicketForm
         form={form}
         onSubmit={values => {

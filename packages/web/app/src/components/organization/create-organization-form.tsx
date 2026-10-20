@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
+import * as styles from './create-organization-form.css';
 
 export const CreateOrganizationFormSchema = z.object({
   slug: z
@@ -34,7 +35,7 @@ export function CreateOrganizationForm(props: {
 }) {
   const { form } = props;
   return (
-    <div className="container w-4/5 max-w-[520px] md:w-3/5">
+    <div className={styles.createOrganizationFormDiv}>
       <Form form={form} onSubmit={props.onSubmit}>
         <Card
           variants={{ onSurface: 'raised', titleSize: 'large' }}
@@ -58,7 +59,7 @@ export function CreateOrganizationForm(props: {
               </FormItem>
             )}
           />
-          <div className="mt-6 flex items-center">
+          <div className={styles.createOrganizationFormDiv2}>
             <Button
               type="submit"
               width="full"

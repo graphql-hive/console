@@ -25,6 +25,7 @@ import {
   type AccessTokenFormValues,
 } from '../access-tokens/access-token-form';
 import { permissionLevelToResourceName, resolveResources } from '../access-tokens/shared-helpers';
+import * as styles from './create-personal-access-token-sheet-content.css';
 
 const CreatePersonalAccessTokenSheetContent_OrganizationFragment = graphql(`
   fragment CreatePersonalAccessTokenSheetContent_OrganizationFragment on Organization {
@@ -282,12 +283,14 @@ export function CreatePersonalAccessTokenSheetContent(
               'step-4-confirmation': () => (
                 <>
                   <Heading>Confirm and create Access Token</Heading>
-                  <p className="text-sm text-fg-secondary">
+                  <p className={styles.createPersonalAccessTokenSheetContentP}>
                     Please please review the selected permissions and resources to ensure they align
                     with your intended access needs.
                   </p>
                   {form.getValues().permissions.length === 0 ? (
-                    <p className="mt-3">No permissions are selected.</p>
+                    <p className={styles.createPersonalAccessTokenSheetContentP2}>
+                      No permissions are selected.
+                    </p>
                   ) : (
                     <SelectedPermissionOverview
                       activePermissionIds={form.getValues().permissions}
@@ -297,15 +300,15 @@ export function CreatePersonalAccessTokenSheetContent(
                       showOnlyAllowedPermissions
                       isExpanded
                       additionalGroupContent={group => (
-                        <div className="w-full space-y-1">
+                        <div className={styles.createPersonalAccessTokenSheetContentDiv}>
                           {resolvedResources === null ? (
                             <>Granted on all {permissionLevelToResourceName(group.level)}</>
                           ) : (
                             <>
-                              <p className="text-fg-secondary">
+                              <p className={styles.createPersonalAccessTokenSheetContentP3}>
                                 Granted on {permissionLevelToResourceName(group.level)}:
                               </p>
-                              <ul className="flex list-none flex-wrap gap-1">
+                              <ul className={styles.createPersonalAccessTokenSheetContentUl}>
                                 {!resolvedResources[group.level]?.length && (
                                   <li>
                                     <Badge

@@ -9,6 +9,7 @@ import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { OIDCIntegrationConfiguration } from './oidc-integration-configuration';
+import * as styles from './single-sign-on-subpage.css';
 
 export const SingleSignOnSubpageQuery = graphql(`
   query SingleSignOnSubpageQuery($organizationSlug: String!) {
@@ -85,7 +86,7 @@ export function SingleSignOnSubpage(): React.ReactNode {
           text: 'Documentation',
         }}
       />
-      <div className="max-w-[800px] space-y-4 text-fg-secondary">
+      <div className={styles.singleSignOnSubpageDiv}>
         {(query.fetching || query.stale) && !oidcIntegration ? (
           <LoadingSkeleton />
         ) : oidcIntegration ? (
@@ -95,12 +96,12 @@ export function SingleSignOnSubpage(): React.ReactNode {
           />
         ) : (
           <>
-            <div className="mt-5">
+            <div className={styles.singleSignOnSubpageDiv2}>
               <Button
                 onClick={() => setModalState(ConnectSingleSignOnProviderState.open)}
                 data-button-connect-open-id-provider
               >
-                <KeyIcon className="mr-2" />
+                <KeyIcon className={styles.singleSignOnSubpageKeyIcon} />
                 Connect Open ID Connect Provider
               </Button>
             </div>
@@ -166,20 +167,20 @@ function LoadingSkeleton() {
   return (
     <>
       {/* Overview Section */}
-      <section className="space-y-8">
-        <span className="flex w-24">
+      <section className={styles.loadingSkeletonSection}>
+        <span className={styles.loadingSkeletonSpan}>
           <Skeleton variants={{ size: 'xl', width: 'full' }} />
         </span>
-        <span className="flex w-72">
+        <span className={styles.loadingSkeletonSpan2}>
           <Skeleton variants={{ width: 'full' }} />
         </span>
-        <div className="space-y-3">
+        <div className={styles.loadingSkeletonDiv}>
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="flex gap-8">
-              <span className="flex w-36">
+            <div key={i} className={styles.loadingSkeletonDiv2}>
+              <span className={styles.loadingSkeletonSpan3}>
                 <Skeleton variants={{ width: 'full' }} />
               </span>
-              <span className="flex w-80">
+              <span className={styles.loadingSkeletonSpan4}>
                 <Skeleton variants={{ width: 'full' }} />
               </span>
             </div>
@@ -188,17 +189,17 @@ function LoadingSkeleton() {
       </section>
 
       {/* OIDC Configuration Section */}
-      <section className="space-y-8">
-        <span className="flex w-40">
+      <section className={styles.loadingSkeletonSection2}>
+        <span className={styles.loadingSkeletonSpan5}>
           <Skeleton variants={{ size: 'xl', width: 'full' }} />
         </span>
-        <div className="space-y-3">
+        <div className={styles.loadingSkeletonDiv3}>
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="flex gap-8">
-              <span className="flex w-36">
+            <div key={i} className={styles.loadingSkeletonDiv4}>
+              <span className={styles.loadingSkeletonSpan6}>
                 <Skeleton variants={{ width: 'full' }} />
               </span>
-              <span className="flex w-72">
+              <span className={styles.loadingSkeletonSpan7}>
                 <Skeleton variants={{ width: 'full' }} />
               </span>
             </div>
@@ -207,39 +208,39 @@ function LoadingSkeleton() {
       </section>
 
       {/* Registered Domains Section */}
-      <section className="space-y-8">
-        <span className="flex w-44">
+      <section className={styles.loadingSkeletonSection3}>
+        <span className={styles.loadingSkeletonSpan8}>
           <Skeleton variants={{ size: 'xl', width: 'full' }} />
         </span>
-        <span className="flex w-96">
+        <span className={styles.loadingSkeletonSpan9}>
           <Skeleton variants={{ width: 'full' }} />
         </span>
-        <div className="flex gap-8">
-          <span className="flex w-24">
+        <div className={styles.loadingSkeletonDiv5}>
+          <span className={styles.loadingSkeletonSpan10}>
             <Skeleton variants={{ width: 'full' }} />
           </span>
-          <span className="flex w-24">
+          <span className={styles.loadingSkeletonSpan11}>
             <Skeleton variants={{ width: 'full' }} />
           </span>
         </div>
       </section>
 
       {/* Access Settings Section */}
-      <section className="space-y-8">
-        <span className="flex w-36">
+      <section className={styles.loadingSkeletonSection4}>
+        <span className={styles.loadingSkeletonSpan12}>
           <Skeleton variants={{ size: 'xl', width: 'full' }} />
         </span>
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="flex items-start justify-between">
-            <div className="space-y-2">
-              <span className="flex w-40">
+          <div key={i} className={styles.loadingSkeletonDiv6}>
+            <div className={styles.loadingSkeletonDiv7}>
+              <span className={styles.loadingSkeletonSpan13}>
                 <Skeleton variants={{ width: 'full' }} />
               </span>
-              <span className="flex w-72">
+              <span className={styles.loadingSkeletonSpan14}>
                 <Skeleton variants={{ size: 'sm', width: 'full' }} />
               </span>
             </div>
-            <span className="block h-6 w-11">
+            <span className={styles.loadingSkeletonSpan15}>
               <Skeleton variants={{ shape: 'block' }} />
             </span>
           </div>
