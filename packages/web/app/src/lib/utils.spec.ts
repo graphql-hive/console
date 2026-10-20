@@ -4,20 +4,13 @@ import { renderHook } from '@testing-library/react';
 import { cn, useResolvedColors } from './utils';
 
 describe('cn', () => {
-  it('keeps a text colour next to one of the theme font sizes', () => {
-    // Regression: tailwind-merge read `text-control` and `text-2xs` as colours and dropped the
-    // colour merged with them, so every base field rendered in its inherited colour.
-    expect(cn('text-fg h-9 text-control')).toBe('text-fg h-9 text-control');
-    expect(cn('text-fg text-2xs font-mono')).toBe('text-fg text-2xs font-mono');
+  it('joins class names and drops the falsy ones', () => {
+    expect(cn('flex', undefined, false && 'hidden', null, 'grid')).toBe('flex grid');
+    expect(cn(['flex', 'grid'], { hidden: true, block: false })).toBe('flex grid hidden');
   });
 
-  it('still resolves a font size conflict to the last one', () => {
-    expect(cn('text-sm', 'text-control')).toBe('text-control');
-    expect(cn('text-control', 'text-sm')).toBe('text-sm');
-  });
-
-  it('still resolves a colour conflict to the last one', () => {
-    expect(cn('text-fg-default text-control', 'text-fg')).toBe('text-control text-fg');
+  it('keeps every class: conflicts are for the cascade layers, not the join', () => {
+    expect(cn('flex', 'grid', 'flex')).toBe('flex grid flex');
   });
 });
 

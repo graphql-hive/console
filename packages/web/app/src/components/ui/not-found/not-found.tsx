@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
 import connection from '../../../../public/images/figures/connection.svg?url';
 import ghost from '../../../../public/images/figures/ghost.svg?url';
-import { clsx } from 'clsx';
 import { Button } from '@/components/ui/primitives/button/button';
 import { lenient } from '@/lib/recipe';
 import { useRouter } from '@tanstack/react-router';
@@ -53,7 +52,7 @@ export function NotFound({
       alt=""
       width={200}
       height={200}
-      className={clsx(styles.notFoundImg, 'drag-none')}
+      className={styles.notFoundImg}
     />
   );
 

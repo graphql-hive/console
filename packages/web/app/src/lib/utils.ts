@@ -1,17 +1,15 @@
 import { useLayoutEffect, useState } from 'react';
 import { clsx, type ClassValue } from 'clsx';
-import { extendTailwindMerge } from 'tailwind-merge';
 import { useTheme } from '@/components/theme/theme-provider';
 
-// tailwind-merge only knows the stock font sizes. Without this it reads `text-control` as a
-// colour and drops the real colour merged next to it (`text-fg text-control`).
-const twMerge = extendTailwindMerge({
-  extend: { classGroups: { 'font-size': [{ text: ['control'] }] } },
-});
-
 // Style-related
+/**
+ * Joins class names, dropping the falsy ones. Classes are Vanilla Extract styles now, so there
+ * are no utility conflicts to merge: when two styles set the same property, the cascade layers in
+ * `src/styles/layers.css.ts` decide, with a call site's style winning over a component's.
+ */
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return clsx(inputs);
 }
 
 /** Convert HSL values (h in degrees, s and l in percent) to a hex string. */

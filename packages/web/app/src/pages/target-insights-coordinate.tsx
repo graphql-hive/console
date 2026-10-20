@@ -343,7 +343,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
               <div
                 className={cn(
                   styles.schemaCoordinateViewDiv11,
-                  showFieldLevelMetrics ? 'show' : styles.schemaCoordinateViewDiv12,
+                  !showFieldLevelMetrics && styles.schemaCoordinateViewDiv12,
                 )}
               >
                 <p className={styles.schemaCoordinateViewP2}>

@@ -1320,10 +1320,7 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
           <button
             key={m.id}
             onClick={() => props.onChange(m.id)}
-            className={cn(
-              styles.viewModeToggleButton,
-              isActive ? styles.viewModeToggleButton2 : 'hover:',
-            )}
+            className={cn(styles.viewModeToggleButton, isActive && styles.viewModeToggleButton2)}
           >
             <Icon className={styles.viewModeToggleIcon} />
             {m.label}
@@ -1350,7 +1347,7 @@ function ChangeTypeToggle(props: {
         onClick={() => props.onChange(null)}
         className={cn(
           styles.changeTypeToggleButton,
-          props.selectedChangeType === null ? styles.changeTypeToggleButton2 : 'hover:',
+          props.selectedChangeType === null && styles.changeTypeToggleButton2,
         )}
       >
         <span className={cn(styles.changeTypeToggleSpan, styles.changeTypeToggleSpan2)} />
@@ -1364,7 +1361,7 @@ function ChangeTypeToggle(props: {
             onClick={() => props.onChange(m.id)}
             className={cn(
               styles.changeTypeToggleButton3,
-              isActive ? styles.changeTypeToggleButton4 : 'hover:',
+              isActive && styles.changeTypeToggleButton4,
             )}
           >
             <span className={cn(styles.changeTypeToggleSpan3, m.dotColor)} />

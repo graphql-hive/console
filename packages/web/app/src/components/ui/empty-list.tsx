@@ -25,13 +25,7 @@ export const EmptyList = ({
     <div className={cn(styles.emptyListDiv, className)}>
       <Card variants={{ onSurface: 'raised', bodyPadding: 'none' }}>
         <div className={styles.emptyListDiv2}>
-          <img
-            src={magnifier}
-            alt="Magnifier illustration"
-            width="200"
-            height="200"
-            className="drag-none"
-          />
+          <img src={magnifier} alt="Magnifier illustration" width="200" height="200" />
           <Heading className={styles.emptyListHeading}>{title}</Heading>
           <span className={styles.emptyListSpan}>{description}</span>
           <div className={styles.emptyListDiv3}>{children}</div>

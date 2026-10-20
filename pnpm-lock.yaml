@@ -2355,9 +2355,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: 5.1.2
         version: 5.1.2(vite@7.3.6(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
-      class-variance-authority:
-        specifier: 0.7.1
-        version: 0.7.1
       clsx:
         specifier: 2.1.1
         version: 2.1.1
@@ -2475,9 +2472,6 @@ importers:
       supertokens-web-js:
         specifier: 0.9.0
         version: 0.9.0
-      tailwind-merge:
-        specifier: 'catalog:'
-        version: 3.7.0
       tailwindcss:
         specifier: 'catalog:'
         version: 4.3.3

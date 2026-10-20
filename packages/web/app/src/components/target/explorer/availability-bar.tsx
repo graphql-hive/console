@@ -26,11 +26,7 @@ export default function AvailabilityBar({
       aria-valuemax={100}
     >
       <div
-        className={cn(
-          styles.availabilityBarDiv2,
-          isLessThan100 && styles.availabilityBarDiv3,
-          'border-hive-laboratory-background',
-        )}
+        className={cn(styles.availabilityBarDiv2, isLessThan100 && styles.availabilityBarDiv3)}
         style={{ width: fillWidth }}
       />
     </div>
