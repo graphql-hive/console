@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { useRouter } from '@tanstack/react-router';
+import * as styles from './service-filter-button.css';
 
 /** Narrows the checks list to one service. It only sets the filter; the row and the header already open the check. */
 export function ServiceFilterButton(props: { serviceName: string; className?: string }) {
@@ -7,7 +8,7 @@ export function ServiceFilterButton(props: { serviceName: string; className?: st
   return (
     <button
       type="button"
-      className={cn('truncate hover:underline', props.className)}
+      className={cn(styles.serviceFilterButtonButton, props.className)}
       aria-label={`Show only checks for ${props.serviceName}`}
       onClick={() =>
         void router.navigate({

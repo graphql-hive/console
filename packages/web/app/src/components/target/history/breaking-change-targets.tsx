@@ -8,6 +8,7 @@ import { useSlugs } from '@/lib/hooks';
 import { formatCount } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+import * as styles from './breaking-change-targets.css';
 
 export type CheckTarget = {
   id: string;
@@ -47,7 +48,7 @@ function UnusedTargetsMenu(props: {
       trigger={
         <Button variant="ghost" size="compact">
           {props.unused.length} without usage
-          <ChevronDownIcon className="size-3" />
+          <ChevronDownIcon className={styles.unusedTargetsMenuChevronDownIcon} />
         </Button>
       }
       sections={[
@@ -98,13 +99,13 @@ export function BreakingChangeTargets(props: {
       id: 'usage',
       meta: { width: 'fill' },
       cell: ({ row }) => (
-        <span className="inline-flex items-center gap-2">
+        <span className={styles.breakingChangeTargetsSpan}>
           <Badge
             content={formatCount(row.original.count, 'request', row.original.countFormatted)}
             variants={{ variant: 'outline' }}
           />
           {row.original.operationCount ? (
-            <span className="text-xs text-fg-secondary">
+            <span className={styles.breakingChangeTargetsSpan2}>
               from {formatCount(row.original.operationCount, 'operation')}
             </span>
           ) : null}
@@ -118,7 +119,7 @@ export function BreakingChangeTargets(props: {
         row.original.target.target ? (
           <Button variant="primary" size="compact" render={link(row.original.target.target.slug)}>
             Verify in Insights
-            <ExternalLinkIcon className="size-3" />
+            <ExternalLinkIcon className={styles.breakingChangeTargetsExternalLinkIcon} />
           </Button>
         ) : null,
     },

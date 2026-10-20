@@ -11,6 +11,7 @@ import { SavedFilterVisibilityType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { UpdateFilterButton } from './update-filter-button';
 import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
+import * as styles from './save-filter-button.css';
 
 const InsightsCreateSavedFilter_Mutation = graphql(`
   mutation InsightsCreateSavedFilter($input: CreateSavedFilterInput!) {
@@ -67,7 +68,7 @@ export function SaveFilterButton({
 
   if (activeView?.viewerCanUpdate) {
     return (
-      <div className="flex items-center gap-x-2">
+      <div className={styles.saveFilterButtonDiv}>
         <UpdateFilterButton
           activeView={activeView}
           currentFilters={currentFilters}
@@ -167,7 +168,7 @@ function CreateFilterButton({
       title="Save to filter collections"
       trigger={<BaseButton label="Save this filter view" variant="action" size="compact" />}
       content={
-        <div className="space-y-3">
+        <div className={styles.createFilterButtonDiv}>
           <div>
             <Input
               placeholder="Name this filter collection"

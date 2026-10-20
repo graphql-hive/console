@@ -20,6 +20,7 @@ import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
 import { AlertRuleEnabledToggle } from './alert-rule-enabled-toggle';
 import { DeleteRuleConfirmationDialog } from './delete-rule-confirmation-dialog';
+import * as styles from './alert-conditions-panel.css';
 
 const TYPE_CATEGORY: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.ErrorRate]: 'Reliability',
@@ -126,17 +127,19 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className="inline-flex items-center gap-1 font-mono text-2xs text-fg">
+    <span className={styles.relativeTimestampSpan}>
       <TimeAgo date={iso} />
       <Popover
         trigger={
-          <button type="button" aria-label="Exact time" className="inline-flex text-fg-secondary">
-            <Info className="size-3" />
+          <button type="button" aria-label="Exact time" className={styles.relativeTimestampButton}>
+            <Info className={styles.relativeTimestampInfo} />
           </button>
         }
         openOnHover
         width="auto"
-        content={<span className="text-xs text-fg-default">{new Date(iso).toUTCString()}</span>}
+        content={
+          <span className={styles.relativeTimestampSpan2}>{new Date(iso).toUTCString()}</span>
+        }
       />
     </span>
   );
@@ -145,7 +148,7 @@ function RelativeTimestamp({ iso }: { iso: string }) {
 function UserCell({ user }: { user: User }) {
   if (!user) return <>—</>;
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className={styles.userCellSpan}>
       <Avatar size="xs" alt={user.displayName} />
       <span>{user.displayName}</span>
     </span>
@@ -193,18 +196,18 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
       })}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"
+      className={styles.alertConditionsPanelLink}
     >
       {rule.savedFilter.name}
-      <ExternalLink className="size-3" />
+      <ExternalLink className={styles.alertConditionsPanelExternalLink} />
     </Link>
   ) : (
     '—'
   );
 
   return (
-    <div className="space-y-6 border-l border-line bg-surface-card px-5 py-3">
-      <h2 className="mb-2 block text-sm font-semibold text-fg">Alert conditions</h2>
+    <div className={styles.alertConditionsPanelDiv}>
+      <h2 className={styles.alertConditionsPanelH2}>Alert conditions</h2>
 
       <DescriptionList
         rows={[
@@ -220,9 +223,11 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
               {
                 term: 'Severity',
                 description: (
-                  <span className="inline-flex items-center gap-0.5">
+                  <span className={styles.alertConditionsPanelSpan}>
                     <StatusDot color={SEVERITY_DOT_COLOR[rule.severity]} />
-                    <span className="capitalize">{rule.severity.toLowerCase()}</span>
+                    <span className={styles.alertConditionsPanelSpan2}>
+                      {rule.severity.toLowerCase()}
+                    </span>
                   </span>
                 ),
               },
@@ -232,7 +237,9 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
             items: [
               {
                 term: 'Condition',
-                description: <span className="capitalize">{conditionLabel}</span>,
+                description: (
+                  <span className={styles.alertConditionsPanelSpan3}>{conditionLabel}</span>
+                ),
               },
               {
                 term: 'Threshold type',
@@ -267,10 +274,10 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
         ]}
       />
 
-      <div className="flex items-center justify-between border-y border-line py-4">
-        <span className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-fg">Alert status</span>
-          <span className="text-xs text-fg-secondary">
+      <div className={styles.alertConditionsPanelDiv2}>
+        <span className={styles.alertConditionsPanelSpan4}>
+          <span className={styles.alertConditionsPanelSpan5}>Alert status</span>
+          <span className={styles.alertConditionsPanelSpan6}>
             {rule.enabled
               ? 'Evaluating conditions and sending notifications'
               : "Paused (conditions aren't evaluated)"}
@@ -279,7 +286,7 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
         <AlertRuleEnabledToggle ruleId={rule.id} enabled={rule.enabled} />
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className={styles.alertConditionsPanelDiv3}>
         <ModifyAlertSheet rule={rule} />
         <DeleteRuleButton ruleId={rule.id} ruleName={rule.name} onDeleted={onRuleDeleted} />
       </div>

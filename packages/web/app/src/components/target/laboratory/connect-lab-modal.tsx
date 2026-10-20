@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
+import * as styles from './connect-lab-modal.css';
 
 const Laboratory_IsCDNEnabledFragment = graphql(`
   fragment Laboratory_IsCDNEnabledFragment on Query {
@@ -56,37 +57,39 @@ export const ConnectLabModalContent = (props: {
         </Button>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className={styles.connectLabModalContentDiv}>
         {props?.isCDNEnabled ? (
           <div>
-            <h3 className="text-sm text-fg">High-availability CDN:</h3>
-            <Callout className="mt-2" type="info">
+            <h3 className={styles.connectLabModalContentH3}>High-availability CDN:</h3>
+            <Callout className={styles.connectLabModalContentCallout} type="info">
               If you want to consume the GraphQL schema for a tool like GraphQL Code Generator, we
               instead recommend using the high-availability CDN instead.
             </Callout>
           </div>
         ) : null}
-        <span className="text-sm text-fg">You can use the following endpoint:</span>
+        <span className={styles.connectLabModalContentSpan}>
+          You can use the following endpoint:
+        </span>
         <InputCopy value={props.endpoint} onSurface="raised" />
-        <span className="text-sm text-fg">
+        <span className={styles.connectLabModalContentSpan2}>
           To authenticate, use the following HTTP headers, with a token that has `target:read`
           scope:
         </span>
         {/* A header line with a link inside, not a pill: a code block rather than a Badge. */}
-        <code className="inline-flex items-center gap-x-1 rounded-sm bg-surface-code p-2 text-sm text-fg-default">
+        <code className={styles.connectLabModalContentCode}>
           X-Hive-Key:
           <Link
             as="a"
             variant="secondary"
             target="_blank"
-            className="underline underline-offset-2"
+            className={styles.connectLabModalContentLink}
             rel="noreferrer"
             href={props.docsUrl}
           >
             YOUR_TOKEN_HERE
           </Link>
         </code>
-        <p className="text-sm text-fg-secondary">
+        <p className={styles.connectLabModalContentP}>
           Read the{' '}
           <Link as="a" variant="primary" target="_blank" rel="noreferrer" href={props.docsUrl}>
             Managing Tokens

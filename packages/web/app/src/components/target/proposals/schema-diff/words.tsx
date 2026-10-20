@@ -1,6 +1,7 @@
 import { DirectiveLocation } from 'graphql';
 import { cn } from '@/lib/utils';
 import { Change } from './components';
+import * as styles from './words.css';
 
 export type WordProps = {
   /** If this word is associated with a coordinate */
@@ -19,12 +20,12 @@ export function Word(props: WordProps) {
     <Change type={props.change}>
       <span
         className={cn(
-          props.kind === 'description' && 'text-fg-subtle',
-          props.kind === 'field' && 'text-fg-default',
-          props.kind === 'keyword' && 'text-fg-secondary',
-          props.kind === 'literal' && 'text-fg-default',
-          props.kind === 'location' && 'text-warning',
-          props.kind === 'type' && 'text-warning',
+          props.kind === 'description' && styles.wordSpan,
+          props.kind === 'field' && styles.wordSpan2,
+          props.kind === 'keyword' && styles.wordSpan3,
+          props.kind === 'literal' && styles.wordSpan4,
+          props.kind === 'location' && styles.wordSpan5,
+          props.kind === 'type' && styles.wordSpan6,
         )}
       >
         {props.text}

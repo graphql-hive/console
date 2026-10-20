@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/primitives/input/input';
 import { Label } from '@/components/ui/primitives/label/label';
 import { cn } from '@/lib/utils';
+import * as styles from './contract-form.css';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
 export const CONTRACT_FORM_ID = 'create-contract-form';
@@ -41,10 +42,8 @@ function TagSuggestions(props: {
   onToggle: (tag: string) => void;
 }) {
   return (
-    <div className="w-[200px] p-1">
-      <div className="px-2 py-1.5 text-xs font-medium text-fg-secondary">
-        Tags from latest schema version
-      </div>
+    <div className={styles.tagSuggestionsDiv}>
+      <div className={styles.tagSuggestionsDiv2}>Tags from latest schema version</div>
       {props.tags.map(value => (
         <button
           key={value}
@@ -52,13 +51,15 @@ function TagSuggestions(props: {
           onClick={() => props.onToggle(value)}
           className={cn(
             itemVariants({ selected: props.selected.includes(value) }),
-            'w-full hover:bg-surface-hover hover:text-fg',
+            styles.tagSuggestionsButton,
           )}
         >
           <Check
             className={cn(
-              'mr-2 size-4',
-              props.selected.includes(value) ? 'opacity-100' : 'opacity-0',
+              styles.tagSuggestionsCheck,
+              props.selected.includes(value)
+                ? styles.tagSuggestionsCheck2
+                : styles.tagSuggestionsCheck3,
             )}
           />
           {value}
@@ -109,9 +110,9 @@ function TagsField(props: {
   }
 
   return (
-    <div className="flex">
-      <div className="flex-1">
-        <div className="flex w-full max-w-sm items-center gap-2">
+    <div className={styles.tagsFieldDiv}>
+      <div className={styles.tagsFieldDiv2}>
+        <div className={styles.tagsFieldDiv3}>
           <Input
             ref={inputRef}
             id={props.id}
@@ -155,7 +156,7 @@ function TagsField(props: {
           }
         />
       </div>
-      <div className="flex flex-1 flex-wrap gap-1 pl-3">
+      <div className={styles.tagsFieldDiv4}>
         {props.value.map(value => (
           <Button
             key={value}
@@ -169,7 +170,7 @@ function TagsField(props: {
             }}
           >
             {value}
-            <X className="size-3" />
+            <X className={styles.tagsFieldX} />
           </Button>
         ))}
       </div>
@@ -247,7 +248,7 @@ export function ContractForm(props: {
         render={({ field }) => (
           <FormItem group>
             <FormLabel label="Remove unreachable Types" />
-            <div className="flex items-center gap-2 pl-1">
+            <div className={styles.contractFormDiv}>
               <Checkbox
                 id={pruneId}
                 checked={field.value}

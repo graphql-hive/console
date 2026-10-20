@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ChangeRowContext } from './context';
+import * as styles from './components.css';
 
 const TAB = <>&nbsp;&nbsp;</>;
 
@@ -39,10 +40,7 @@ export function ChangeDocument(props: { children: ReactNode; className?: string 
     <ScrollArea axis="horizontal">
       <table
         aria-label="change-document"
-        className={cn(
-          'min-w-full cursor-default font-mono text-sm whitespace-pre text-fg',
-          props.className,
-        )}
+        className={cn(styles.changeDocumentTable, props.className)}
       >
         {props.children}
       </table>
@@ -85,38 +83,37 @@ export function ChangeRow(props: {
       <tr>
         <td
           className={cn(
-            'w-[42px] min-w-fit bg-surface-card pr-3 text-right text-fg-subtle select-none',
+            styles.changeRowTd,
             props.className,
-            (props.type === 'removal' || removed) && 'bg-diff-removed-gutter',
-            props.type === 'addition' && 'invisible',
+            (props.type === 'removal' || removed) && styles.changeRowTd2,
+            props.type === 'addition' && styles.changeRowTd3,
           )}
         >
           {props.beforeLine}
         </td>
         <td
           className={cn(
-            'w-[42px] min-w-fit bg-surface-card pr-3 text-right text-fg-subtle select-none',
+            styles.changeRowTd4,
             props.className,
-            props.type === 'removal' && 'invisible',
-            (props.type === 'addition' || added) && 'bg-diff-added-gutter',
+            props.type === 'removal' && styles.changeRowTd5,
+            (props.type === 'addition' || added) && styles.changeRowTd6,
           )}
         >
           {props.afterLine}
         </td>
         <td
           className={cn(
-            'bg-surface-inset px-2',
+            styles.changeRowTd7,
             props.className,
-            props.type === 'removal' && 'bg-diff-removed',
-            props.type === 'addition' && 'bg-diff-added',
+            props.type === 'removal' && styles.changeRowTd8,
+            props.type === 'addition' && styles.changeRowTd9,
           )}
         >
           <span
             className={cn(
-              'bg-surface-inset',
-              props.type === 'removal' &&
-                'bg-diff-removed line-through decoration-diff-removed-strike',
-              props.type === 'addition' && 'bg-diff-added',
+              styles.changeRowSpan,
+              props.type === 'removal' && styles.changeRowSpan2,
+              props.type === 'addition' && styles.changeRowSpan3,
             )}
           >
             {!!props.indent &&
@@ -125,17 +122,17 @@ export function ChangeRow(props: {
               ))}
             {props.severityLevel === SeverityLevelType.Breaking && (
               <span title="Breaking Change">
-                <XIcon className="inline-block text-critical" />
+                <XIcon className={styles.changeRowXIcon} />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Dangerous && (
               <span title="Dangerous Change">
-                <TriangleAlert className="mr-1 inline-block size-4 text-warning" />
+                <TriangleAlert className={styles.changeRowTriangleAlert} />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Safe && (
               <span title="Safe Change">
-                <CheckIcon className="mr-1 inline-block text-success" />
+                <CheckIcon className={styles.changeRowCheckIcon} />
               </span>
             )}
             {props.children}
@@ -159,16 +156,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
     }
   }, [change.removal]);
 
-  return (
-    <span
-      className={cn(
-        'bg-diff-removed line-through decoration-diff-removed-strike hover:bg-diff-removed-hover',
-        props.className,
-      )}
-    >
-      {props.children}
-    </span>
-  );
+  return <span className={cn(styles.removalSpan, props.className)}>{props.children}</span>;
 }
 
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
@@ -178,11 +166,7 @@ function Addition(props: { children: ReactNode; className?: string }): ReactNode
       setAdded(true);
     }
   }, [change.addition]);
-  return (
-    <span className={cn('bg-diff-added hover:bg-diff-added-hover', props.className)}>
-      {props.children}
-    </span>
-  );
+  return <span className={cn(styles.additionSpan, props.className)}>{props.children}</span>;
 }
 
 export function Change({

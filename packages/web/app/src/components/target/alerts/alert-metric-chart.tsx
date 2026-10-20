@@ -14,6 +14,7 @@ import {
   visibleSeries,
   windowAggregates,
 } from './alert-threshold';
+import * as styles from './alert-metric-chart.css';
 
 export const AlertMetricChart_OperationsStatsFragment = graphql(`
   fragment AlertMetricChart_OperationsStatsFragment on OperationsStats {
@@ -161,11 +162,11 @@ export function AlertMetricChart({
 
   if (data.length === 0) {
     return (
-      <div className="flex h-[200px] items-center justify-center rounded-md border border-line bg-surface-card px-4">
+      <div className={styles.alertMetricChartDiv}>
         {error && !loading ? (
-          <span className="text-center text-sm text-critical">{error}</span>
+          <span className={styles.alertMetricChartSpan}>{error}</span>
         ) : (
-          <span className={loading ? 'text-sm text-fg-subtle' : 'text-sm text-fg-subtle italic'}>
+          <span className={loading ? styles.alertMetricChartSpan2 : styles.alertMetricChartSpan3}>
             {loading ? 'Loading chart data...' : 'No data available for this range.'}
           </span>
         )}
@@ -396,24 +397,31 @@ export function AlertMetricChart({
   }
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-center gap-x-2 text-control text-fg-secondary">
+    <div className={styles.alertMetricChartDiv2}>
+      <div className={styles.alertMetricChartDiv3}>
         {hasPreviousWindow ? (
           <>
             <span>
               Previous {seriesName.toLowerCase()}: {formatAggregate(previousAgg)}
             </span>
             <span>→ current: {formatAggregate(currentAgg)}</span>
-            <span className="font-medium" style={deltaBreaches ? { color: markColor } : undefined}>
+            <span
+              className={styles.alertMetricChartSpan4}
+              style={deltaBreaches ? { color: markColor } : undefined}
+            >
               Δ{' '}
               {deltaPercent == null
                 ? '—'
                 : `${deltaPercent >= 0 ? '+' : ''}${deltaPercent.toFixed(1)}%`}
             </span>
-            {isLatency ? <span className="italic">(latency Δ is approximate)</span> : null}
+            {isLatency ? (
+              <span className={styles.alertMetricChartSpan5}>(latency Δ is approximate)</span>
+            ) : null}
           </>
         ) : (
-          <span className="italic">No previous window in this range to compare.</span>
+          <span className={styles.alertMetricChartSpan6}>
+            No previous window in this range to compare.
+          </span>
         )}
       </div>
       {chart}

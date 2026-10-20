@@ -23,6 +23,7 @@ import {
   CdnTokenFormSchema,
   type CdnTokenFormValues,
 } from './cdn-token-form';
+import * as styles from './cdn-access-tokens.css';
 
 const cdnRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
@@ -93,7 +94,7 @@ export function CreateCDNAccessTokenModal(props: {
           </Button>
         }
       >
-        <div className="flex flex-col gap-4">
+        <div className={styles.createCDNAccessTokenModalDiv}>
           <Callout type="warning">
             Please store this access token securely. You will not be able to see it again.
           </Callout>
@@ -295,7 +296,7 @@ export function CDNAccessTokens(): React.ReactElement {
         }}
       />
 
-      <div className="my-3.5 flex justify-between">
+      <div className={styles.cDNAccessTokensDiv}>
         <Button
           render={
             <Link

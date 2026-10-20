@@ -5,6 +5,7 @@ import { FragmentType } from '@/gql';
 import { ProposalOverview_ReviewCommentsFragment, ReviewComments } from '../Review';
 import { ChangeRow } from './components';
 import { Word, WordProps } from './words';
+import * as styles from './lines.css';
 
 type AnnotationProps = {
   lineText: string;
@@ -30,7 +31,7 @@ export function LineGroup(props: { children?: ReactElement[]; collapsible?: bool
       <tbody>
         {props.children?.slice(0, 3)}
         <tr>
-          <td colSpan={3} className="text-fg-subtle">
+          <td colSpan={3} className={styles.lineGroupTd}>
             ...
           </td>
         </tr>
@@ -42,7 +43,7 @@ export function LineGroup(props: { children?: ReactElement[]; collapsible?: bool
           </td>
         </tr>
         <tr>
-          <td colSpan={3} className="text-fg-subtle">
+          <td colSpan={3} className={styles.lineGroupTd2}>
             ...
           </td>
         </tr>
@@ -67,11 +68,7 @@ export function Line(props: LineProps & { beforeLine: number; afterLine: number 
       ))}
       {props.annotations?.map((node, i) => (
         <Fragment key={`annotations-${i}`}>
-          {node.lineText && (
-            <code className="mb-3 block w-full bg-surface-code p-3 pl-6 text-fg">
-              {node.lineText}
-            </code>
-          )}
+          {node.lineText && <code className={styles.lineCode}>{node.lineText}</code>}
           <ReviewComments review={node} />
         </Fragment>
       ))}

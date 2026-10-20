@@ -8,6 +8,7 @@ import { Form, FormField, FormItem, FormMessage } from '@/components/ui/primitiv
 import { Label } from '@/components/ui/primitives/label/label';
 import { DangerousChangeType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import * as styles from './dangerous-changes-form.css';
 
 export const DangerousChangesFormSchema = z
   .object({
@@ -76,7 +77,7 @@ const dangerousChangeList = (
 
 /** The dot beside a value that differs from what is saved. */
 export function PendingIndicator() {
-  return <span className="inline-block size-2 rounded-full bg-accent" />;
+  return <span className={styles.pendingIndicatorSpan} />;
 }
 
 function includesAll(selected: readonly DangerousChangeType[], types: DangerousChangeType[]) {
@@ -120,17 +121,22 @@ export function DangerousChangesForm(props: {
   }
 
   return (
-    <div className={cn('transition-opacity duration-150', !props.enabled && 'opacity-50')}>
+    <div
+      className={cn(
+        styles.dangerousChangesFormDiv,
+        !props.enabled && styles.dangerousChangesFormDiv2,
+      )}
+    >
       <Form form={form} onSubmit={props.onSubmit}>
-        <div className="block w-auto max-w-4xl rounded-sm border border-line bg-surface-card px-5 py-3 text-fg-secondary">
-          <div className="mt-1 mb-3 font-semibold text-fg">
+        <div className={styles.dangerousChangesFormDiv3}>
+          <div className={styles.dangerousChangesFormDiv4}>
             Select Failing Dangerous Change Types
           </div>
           <FormField
             control={form.control}
             name="failAllDangerousChanges"
             render={({ field }) => (
-              <div className="flex items-center gap-1 border-b pb-3 whitespace-nowrap">
+              <div className={styles.dangerousChangesFormDiv5}>
                 <Checkbox
                   id={`${id}-all`}
                   disabled={!props.enabled}
@@ -143,8 +149,9 @@ export function DangerousChangesForm(props: {
                 <Label htmlFor={`${id}-all`} variant="inline" label="Fail All Dangerous Changes" />
                 <span
                   className={cn(
-                    'grow pl-4',
-                    field.value === saved?.failAllDangerousChanges && 'hidden',
+                    styles.dangerousChangesFormSpan,
+                    field.value === saved?.failAllDangerousChanges &&
+                      styles.dangerousChangesFormSpan2,
                   )}
                 >
                   <PendingIndicator />
@@ -152,13 +159,13 @@ export function DangerousChangesForm(props: {
               </div>
             )}
           />
-          <div className="my-3">or fail only:</div>
+          <div className={styles.dangerousChangesFormDiv6}>or fail only:</div>
           <FormField
             control={form.control}
             name="failingChangeTypes"
             render={() => (
               <FormItem group>
-                <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                <div className={styles.dangerousChangesFormDiv7}>
                   {dangerousChangeList.map(({ label, types }, index) => {
                     const checked = failAll || includesAll(selected, types);
                     const disabled = !props.enabled || failAll;
@@ -166,7 +173,7 @@ export function DangerousChangesForm(props: {
                     const changed =
                       !failAll && includesAll(selected, types) !== includesAll(savedTypes, types);
                     return (
-                      <div className="flex min-w-0 items-center gap-x-1" key={label}>
+                      <div className={styles.dangerousChangesFormDiv8} key={label}>
                         <Checkbox
                           id={`${id}-${index}`}
                           checked={checked}
@@ -174,7 +181,12 @@ export function DangerousChangesForm(props: {
                           onCheckedChange={state => toggleTypes(types, !!state)}
                         />
                         <Label htmlFor={`${id}-${index}`} variant="inline" label={label} />
-                        <span className={cn('grow pr-4 text-right', !changed && 'hidden')}>
+                        <span
+                          className={cn(
+                            styles.dangerousChangesFormSpan3,
+                            !changed && styles.dangerousChangesFormSpan4,
+                          )}
+                        >
                           <PendingIndicator />
                         </span>
                       </div>
@@ -186,7 +198,7 @@ export function DangerousChangesForm(props: {
             )}
           />
         </div>
-        <div className="flex flex-row items-center gap-5">
+        <div className={styles.dangerousChangesFormDiv9}>
           <Button
             type="submit"
             disabled={form.formState.isSubmitting || !props.enabled || !form.formState.isDirty}
@@ -196,9 +208,9 @@ export function DangerousChangesForm(props: {
           {props.status}
         </div>
         {props.error ? (
-          <div className="flex flex-row items-center gap-1 p-2 text-critical">
-            <XIcon className="size-4" />
-            <span className="font-semibold">{props.error.title}</span>
+          <div className={styles.dangerousChangesFormDiv10}>
+            <XIcon className={styles.dangerousChangesFormXIcon} />
+            <span className={styles.dangerousChangesFormSpan5}>{props.error.title}</span>
             <span>{props.error.description}</span>
           </div>
         ) : null}

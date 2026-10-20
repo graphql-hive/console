@@ -17,6 +17,7 @@ import {
   RegistryTokenFormSchema,
   type RegistryTokenFormValues,
 } from './registry-token-form';
+import * as styles from './registry-access-token.css';
 
 export const CreateAccessToken_CreateTokenMutation = graphql(`
   mutation CreateAccessToken_CreateToken($input: CreateTokenInput!) {
@@ -176,7 +177,7 @@ export function ModalContent(props: {
 
 export function CreatedTokenContent(props: { secret: string }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className={styles.createdTokenContentDiv}>
       <InputCopy value={props.secret} onSurface="raised" />
       <Callout type="info">
         This is your unique API key and it is non-recoverable. If you lose this key, you will need

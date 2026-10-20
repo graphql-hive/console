@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import reactStringReplace from 'react-string-replace';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { SubgraphName } from '@/components/ui/subgraph-name/subgraph-name';
+import * as styles from './composition-error-message.css';
 
 const QUERY_HEAD = 'The following supergraph API query:';
 const QUERY_TAIL = 'cannot be satisfied by the subgraphs because:';
@@ -104,13 +105,10 @@ function renderCompositionErrorText(message: string): ReactNode[] {
 
 export function CompositionErrorMessage(props: { message: string }) {
   return (
-    <div className="min-w-0 text-sm whitespace-pre-wrap text-fg">
+    <div className={styles.compositionErrorMessageDiv}>
       {splitCompositionErrorMessage(props.message).map((segment, index) =>
         segment.kind === 'code' ? (
-          <pre
-            key={index}
-            className="my-2 overflow-x-auto rounded-md border bg-surface-inset px-3 py-2 font-mono text-xs leading-5 whitespace-pre"
-          >
+          <pre key={index} className={styles.compositionErrorMessagePre}>
             {segment.text}
           </pre>
         ) : (
@@ -119,12 +117,14 @@ export function CompositionErrorMessage(props: { message: string }) {
             return (
               <span
                 key={`${index}-${lineIndex}`}
-                className="flex"
+                className={styles.compositionErrorMessageSpan}
                 style={depth ? { marginLeft: `${depth}em` } : undefined}
               >
                 {/* A gutter cell rather than a negative text-indent, which badges inherit and clip. */}
-                {bullet ? <span className="w-[1em] shrink-0 select-none">-</span> : null}
-                <span className="min-w-0">{renderCompositionErrorText(text)}</span>
+                {bullet ? <span className={styles.compositionErrorMessageSpan2}>-</span> : null}
+                <span className={styles.compositionErrorMessageSpan3}>
+                  {renderCompositionErrorText(text)}
+                </span>
               </span>
             );
           })

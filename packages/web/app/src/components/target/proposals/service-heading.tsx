@@ -1,6 +1,7 @@
 import { useState, type MouseEventHandler } from 'react';
 import { Box, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import * as styles from './service-heading.css';
 
 export enum ServiceHeadingType {
   NEW,
@@ -21,28 +22,33 @@ export function ServiceHeading(props: {
   return (
     <div
       className={cn(
-        'mt-2 flex flex-row items-center rounded-sm bg-accent-tint px-4 py-2 text-base font-semibold text-accent',
-        props.onClick !== undefined && 'cursor-pointer hover:underline',
-        props.onClick !== undefined && isOpen && 'rounded-b-none',
+        styles.serviceHeadingDiv,
+        props.onClick !== undefined && styles.serviceHeadingDiv2,
+        props.onClick !== undefined && isOpen && styles.serviceHeadingDiv3,
       )}
       onClick={e => {
         props.onClick?.(e);
         setIsOpen(!isOpen);
       }}
     >
-      <div className="flex grow flex-row items-center">
-        <Box className="mr-2 size-4" />
+      <div className={styles.serviceHeadingDiv4}>
+        <Box className={styles.serviceHeadingBox} />
         <span>{props.serviceName}</span>
         {props.type === ServiceHeadingType.NEW ? (
-          <span className="ml-2 text-xs text-success">*NEW*</span>
+          <span className={styles.serviceHeadingSpan}>*NEW*</span>
         ) : null}
         {props.type === ServiceHeadingType.DELETED ? (
-          <span className="ml-2 text-xs text-critical">*DELETED*</span>
+          <span className={styles.serviceHeadingSpan2}>*DELETED*</span>
         ) : null}
       </div>
       {showToggleIcon && (
-        <div className="flex">
-          <ChevronDown className={cn('size-4 transition', isOpen && '-rotate-180')} />
+        <div className={styles.serviceHeadingDiv5}>
+          <ChevronDown
+            className={cn(
+              styles.serviceHeadingChevronDown,
+              isOpen && styles.serviceHeadingChevronDown2,
+            )}
+          />
         </div>
       )}
     </div>

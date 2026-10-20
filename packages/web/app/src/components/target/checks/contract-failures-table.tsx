@@ -4,6 +4,7 @@ import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
 import type { ColumnDef } from '@tanstack/react-table';
+import * as styles from './contract-failures-table.css';
 
 export type ContractFailure = {
   key: string;
@@ -31,10 +32,10 @@ export function ContractFailuresTable(props: {
       id: 'reason',
       meta: { width: 'fill' },
       cell: ({ row }) => (
-        <span className="inline-flex items-center gap-2">
+        <span className={styles.contractFailuresTableSpan}>
           <Badge content={row.original.reason} variants={{ variant: 'critical' }} />
           {row.original.detail ? (
-            <span className="text-xs text-fg-secondary">{row.original.detail}</span>
+            <span className={styles.contractFailuresTableSpan2}>{row.original.detail}</span>
           ) : null}
         </span>
       ),

@@ -5,6 +5,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
 import { AnnotatedContext } from './schema-diff/components';
+import * as styles from './Review.css';
 
 export const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
   fragment ProposalOverview_ReviewCommentsFragment on SchemaProposalReview {
@@ -34,7 +35,7 @@ export function ReviewComments(props: {
 
   return (
     <>
-      <div className="mb-2 rounded-sm border border-line-strong bg-surface-inset px-6 py-4 font-sans">
+      <div className={styles.reviewCommentsDiv}>
         {review.comments?.edges?.map(({ node: comment }, idx) => {
           return (
             <ReviewComment key={`comment-${comment.id}`} first={idx === 0} comment={comment} />
@@ -42,13 +43,13 @@ export function ReviewComments(props: {
         })}
       </div>
       {/* @todo check if able to reply */}
-      <div className="mt-3 mb-6 ml-6 flex gap-4 font-sans">
+      <div className={styles.reviewCommentsDiv2}>
         <Button variant="outline" type="button">
-          <PlusIcon size={16} className="mr-1" />
+          <PlusIcon size={16} className={styles.reviewCommentsPlusIcon} />
           Reply
         </Button>
         <Button variant="outline" type="button">
-          <CheckIcon size={16} className="mr-1" />
+          <CheckIcon size={16} className={styles.reviewCommentsCheckIcon} />
           Resolve
         </Button>
       </div>
@@ -73,14 +74,17 @@ export function ReviewComment(props: {
   const comment = useFragment(ProposalOverview_CommentFragment, props.comment);
   return (
     <>
-      <div className={cn(!props.first && 'pl-4', 'flex grow flex-row align-middle')}>
-        <div className="flex grow font-bold text-fg-secondary">{comment.author ?? 'Unknown'}</div>
-        <div className="flex text-xs">
+      <div className={cn(!props.first && styles.reviewCommentDiv, styles.reviewCommentDiv2)}>
+        <div className={styles.reviewCommentDiv3}>{comment.author ?? 'Unknown'}</div>
+        <div className={styles.reviewCommentDiv4}>
           {!!comment.updatedAt && 'updated '}
-          <TimeAgo date={comment.updatedAt ?? comment.createdAt} className="text-fg-secondary" />
+          <TimeAgo
+            date={comment.updatedAt ?? comment.createdAt}
+            className={styles.reviewCommentTimeAgo}
+          />
         </div>
       </div>
-      <div className="mt-2 flex-row">{comment.body}</div>
+      <div className={styles.reviewCommentDiv5}>{comment.body}</div>
     </>
   );
 }

@@ -4,6 +4,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { DetachedAnnotations, ReviewComments } from './Review';
 import { AnnotatedProvider } from './schema-diff/components';
 import { SchemaDiff } from './schema-diff/core';
+import * as styles from './index.css';
 
 /**
  * Fragment containing a list of reviews. Each review is tied to a coordinate
@@ -489,9 +490,7 @@ export function Proposal(props: {
               <Fragment key={cursor}>
                 {/* @todo if node.resolvedBy/resolvedAt is set, then minimize this */}
                 {withPreview === true && node.lineText && (
-                  <code className="mb-3 block w-full bg-surface-code p-3 pl-6 text-fg">
-                    {node.lineText}
-                  </code>
+                  <code className={styles.annotateCode}>{node.lineText}</code>
                 )}
                 <ReviewComments review={node} />
               </Fragment>
@@ -511,7 +510,7 @@ export function Proposal(props: {
           coordinates={reviewssByCoordinate.keys().toArray()}
           annotate={(coordinate, withPreview) => (
             <>
-              <div className="p-2 text-sm text-fg-subtle">
+              <div className={styles.proposalDiv}>
                 This comment refers to a schema coordinate that no longer exists.
               </div>
               {annotations(coordinate, withPreview)}
@@ -528,7 +527,7 @@ export function Proposal(props: {
   } catch (e: unknown) {
     return (
       <div className={props.className}>
-        <div className="text-lg">Invalid SDL</div>
+        <div className={styles.proposalDiv2}>Invalid SDL</div>
         <div>{e instanceof Error ? e.message : String(e)}</div>
       </div>
     );

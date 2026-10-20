@@ -11,6 +11,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { prettier, schemaTitle } from './util';
+import * as styles from './editor.css';
 
 export type Service =
   | {
@@ -235,7 +236,7 @@ export function ProposalEditor(props: {
 
   return (
     <div>
-      <div className="flex grow border-b pb-4 pl-2">
+      <div className={styles.proposalEditorDiv}>
         <ServiceSelect
           targetFragment={props.selectFragment ?? undefined}
           onSelect={onAddService}
@@ -256,7 +257,7 @@ export function ProposalEditor(props: {
       </div>
       {props.error}
       {activeService && (
-        <div className="mt-4">
+        <div className={styles.proposalEditorDiv2}>
           <Tabs
             value={tabValue(activeService, activeIndex)}
             onValueChange={value =>
@@ -291,7 +292,7 @@ export function ProposalEditor(props: {
                   <>
                     {isNewService ? (
                       <Circle
-                        className="-ml-2 size-4 p-1 text-success"
+                        className={styles.proposalEditorCircle}
                         fill="currentColor"
                         strokeWidth={0}
                       />
@@ -300,25 +301,32 @@ export function ProposalEditor(props: {
                       'single schema'
                     ) : hasEmptyName ? (
                       // The tab keeps its width and a name while the field is empty.
-                      <span className="italic">unnamed service</span>
+                      <span className={styles.proposalEditorSpan}>unnamed service</span>
                     ) : (
                       schemaTitle(service)
                     )}
-                    {nameError ? <TriangleAlertIcon className="size-4 text-critical" /> : null}
+                    {nameError ? (
+                      <TriangleAlertIcon className={styles.proposalEditorTriangleAlertIcon} />
+                    ) : null}
                     {service.__typename === 'CompositeSchema' ? (
-                      <span className="ml-2" onClick={() => onRemoveTab(idx)}>
-                        <XIcon className={cn('size-4', !isActiveTab && 'hidden')} />
+                      <span className={styles.proposalEditorSpan2} onClick={() => onRemoveTab(idx)}>
+                        <XIcon
+                          className={cn(
+                            styles.proposalEditorXIcon,
+                            !isActiveTab && styles.proposalEditorXIcon2,
+                          )}
+                        />
                       </span>
                     ) : null}
                   </>
                 ),
                 tooltip: nameError,
                 content: (
-                  <div className="rounded-sm border">
-                    <div className="flex items-center justify-end border-b px-2 py-1">
+                  <div className={styles.proposalEditorDiv3}>
+                    <div className={styles.proposalEditorDiv4}>
                       <button
                         type="button"
-                        className="ml-2 cursor-pointer p-1 hover:text-accent"
+                        className={styles.proposalEditorButton}
                         title="Prettify schema"
                         onClick={() => {
                           const prettierSource = prettier(activeService?.source ?? '');
@@ -326,18 +334,18 @@ export function ProposalEditor(props: {
                           editor?.setValue(prettierSource);
                         }}
                       >
-                        <WandSparkles className="size-4" />
+                        <WandSparkles className={styles.proposalEditorWandSparkles} />
                       </button>
                       {service.__typename === 'CompositeSchema' && (
                         <Popover
                           trigger={
                             <button
                               type="button"
-                              className="ml-2 cursor-pointer p-1 hover:text-accent"
+                              className={styles.proposalEditorButton2}
                               aria-label="Edit schema settings"
                               title="Edit schema settings"
                             >
-                              <Settings className="size-4" />
+                              <Settings className={styles.proposalEditorSettings} />
                             </button>
                           }
                           align="end"
@@ -345,10 +353,10 @@ export function ProposalEditor(props: {
                           title="Settings"
                           description="Additional service configuration"
                           content={
-                            <div className="flex flex-col gap-4 text-sm">
+                            <div className={styles.proposalEditorDiv5}>
                               {isNewService && (
                                 <div>
-                                  <div className="mb-2 font-semibold">Service name</div>
+                                  <div className={styles.proposalEditorDiv6}>Service name</div>
                                   <Input
                                     onSurface="raised"
                                     value={service.service ?? ''}
@@ -356,12 +364,12 @@ export function ProposalEditor(props: {
                                     invalid={nameError != null}
                                   />
                                   {nameError && (
-                                    <p className="mt-1 text-xs text-critical">{nameError}</p>
+                                    <p className={styles.proposalEditorP}>{nameError}</p>
                                   )}
                                 </div>
                               )}
                               <div>
-                                <div className="mb-2 font-semibold">Service URL</div>
+                                <div className={styles.proposalEditorDiv7}>Service URL</div>
                                 <Input
                                   onSurface="raised"
                                   value={service.url ?? ''}
@@ -428,7 +436,7 @@ function ServiceSelect(props: {
   }
 
   return schemaEdges && schemaEdges.length > 1 ? (
-    <div className="flex grow flex-row">
+    <div className={styles.serviceSelectDiv}>
       <Select
         aria-label="Add a service"
         options={selectableServices}
@@ -439,8 +447,8 @@ function ServiceSelect(props: {
         width="md"
       />
       <Button variant="link" onClick={props.onSelectNew}>
-        <span className="whitespace-nowrap">
-          + New<span className="hidden sm:inline-block">&nbsp;Service</span>
+        <span className={styles.serviceSelectSpan}>
+          + New<span className={styles.serviceSelectSpan2}>&nbsp;Service</span>
         </span>
       </Button>
     </div>

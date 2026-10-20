@@ -12,6 +12,7 @@ import {
 import { GraphQLArguments } from './graphql-arguments';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { useExplorerFieldFiltering } from './utils';
+import * as styles from './graphql-fields.css';
 
 const GraphQLFields_FieldFragment = graphql(`
   fragment GraphQLFields_FieldFragment on GraphQLField {
@@ -54,7 +55,7 @@ export function GraphQLFields(props: {
 
   return (
     <>
-      <div className="flex flex-col">
+      <div className={styles.graphQLFieldsDiv}>
         {sortedAndFilteredFields.map((field, i) => {
           const coordinate = `${props.typeName}.${field.name}`;
           const isUsed = field.usage.total > 0;
@@ -64,8 +65,8 @@ export function GraphQLFields(props: {
 
           return (
             <GraphQLTypeCardListItem key={field.name} index={i}>
-              <div className="w-full">
-                <div className="flex w-full flex-row items-baseline justify-between">
+              <div className={styles.graphQLFieldsDiv2}>
+                <div className={styles.graphQLFieldsDiv3}>
                   <div>
                     {props.warnAboutUnusedArguments &&
                       isUsed &&
@@ -76,7 +77,7 @@ export function GraphQLFields(props: {
                             <button
                               type="button"
                               aria-label="Unused arguments"
-                              className="mr-1 text-sm text-accent"
+                              className={styles.graphQLFieldsButton}
                             >
                               *
                             </button>
@@ -84,7 +85,7 @@ export function GraphQLFields(props: {
                           openOnHover
                           width="auto"
                           content={
-                            <p className="text-sm text-fg-default">
+                            <p className={styles.graphQLFieldsP}>
                               This field is used but the presented arguments are not.
                             </p>
                           }
@@ -96,7 +97,7 @@ export function GraphQLFields(props: {
                           <button
                             type="button"
                             aria-label="Deprecated arguments"
-                            className="mr-1 text-sm text-accent"
+                            className={styles.graphQLFieldsButton2}
                           >
                             *
                           </button>
@@ -104,29 +105,32 @@ export function GraphQLFields(props: {
                         openOnHover
                         width="auto"
                         content={
-                          <p className="text-sm text-fg-default">
+                          <p className={styles.graphQLFieldsP2}>
                             This field is not deprecated but the presented arguments are.
                           </p>
                         }
                       />
                     )}
                     <DeprecationNote deprecationReason={field.deprecationReason}>
-                      <LinkToCoordinatePage coordinate={coordinate} className="font-semibold">
+                      <LinkToCoordinatePage
+                        coordinate={coordinate}
+                        className={styles.graphQLFieldsLinkToCoordinatePage}
+                      >
                         {field.name}
                       </LinkToCoordinatePage>
                     </DeprecationNote>
                     {field.args.length > 0 && (
                       <GraphQLArguments parentCoordinate={coordinate} args={field.args} />
                     )}
-                    <span className="mr-1">:</span>
+                    <span className={styles.graphQLFieldsSpan}>:</span>
                     <GraphQLTypeAsLink
-                      className="font-semibold text-fg-default"
+                      className={styles.graphQLFieldsGraphQLTypeAsLink}
                       type={field.type}
                     />
                   </div>
-                  <div className="flex flex-row items-center">
+                  <div className={styles.graphQLFieldsDiv4}>
                     {field.supergraphMetadata && (
-                      <div className="ml-1">
+                      <div className={styles.graphQLFieldsDiv5}>
                         <SupergraphMetadataList supergraphMetadata={field.supergraphMetadata} />
                       </div>
                     )}

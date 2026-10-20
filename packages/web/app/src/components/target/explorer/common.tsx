@@ -17,20 +17,18 @@ import AvailabilityBar from './availability-bar';
 import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { matchesSubgraphFilter, useExplorerFieldFiltering } from './utils';
+import * as styles from './common.css';
 
 export function Description(props: { description: string }) {
   const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
 
   return (
     <div
-      className={clsx('mt-0 mb-2 block max-w-screen-sm', {
+      className={clsx(styles.descriptionDiv, {
         hidden: !isDescriptionsVisible,
       })}
     >
-      <Markdown
-        className={clsx('text-left text-sm text-fg-secondary')}
-        content={props.description}
-      />
+      <Markdown className={clsx(styles.descriptionMarkdown)} content={props.description} />
     </div>
   );
 }
@@ -119,15 +117,19 @@ export function SchemaExplorerUsageStats(props: {
   ];
 
   return (
-    <div className="ml-3 flex flex-row items-center gap-2 text-xs">
-      <div className="grow">
-        <div className="min-w-[25px] text-center">{formatNumber(usage.total)}</div>
+    <div className={styles.schemaExplorerUsageStatsDiv}>
+      <div className={styles.schemaExplorerUsageStatsDiv2}>
+        <div className={styles.schemaExplorerUsageStatsDiv3}>{formatNumber(usage.total)}</div>
       </div>
       {availability !== null ? (
-        <div className="min-w-[25px]">
+        <div className={styles.schemaExplorerUsageStatsDiv4}>
           <Popover
             trigger={
-              <button type="button" aria-label="Field stats" className="block w-full cursor-help">
+              <button
+                type="button"
+                aria-label="Field stats"
+                className={styles.schemaExplorerUsageStatsButton}
+              >
                 <AvailabilityBar availability={availability} />
               </button>
             }
@@ -135,32 +137,41 @@ export function SchemaExplorerUsageStats(props: {
             align="end"
             width="auto"
             content={
-              <div className="text-left">
-                <div className="mb-1 text-lg font-bold">{capitalize(kindLabel)} Stats</div>
+              <div className={styles.schemaExplorerUsageStatsDiv5}>
+                <div className={styles.schemaExplorerUsageStatsDiv6}>
+                  {capitalize(kindLabel)} Stats
+                </div>
                 {hasFieldLevelMetrics ? (
-                  <div className="max-w-60">
-                    <span className="font-bold">Requests</span> counts how many client requests
-                    asked for a field, whereas <span className="font-bold">Resolutions</span> counts
+                  <div className={styles.schemaExplorerUsageStatsDiv7}>
+                    <span className={styles.schemaExplorerUsageStatsSpan}>Requests</span> counts how
+                    many client requests asked for a field, whereas{' '}
+                    <span className={styles.schemaExplorerUsageStatsSpan2}>Resolutions</span> counts
                     the actual number of times your backend executed code to fetch that field's data
                     (which can multiply within lists or drop to zero if a parent returned null).
                   </div>
                 ) : null}
-                <div className="mt-4 space-y-1 text-left">
+                <div className={styles.schemaExplorerUsageStatsDiv8}>
                   <div>
-                    <span className="font-bold">{formatNumber(usage.total)} Requests</span>{' '}
+                    <span className={styles.schemaExplorerUsageStatsSpan3}>
+                      {formatNumber(usage.total)} Requests
+                    </span>{' '}
                     {hasFieldLevelMetrics ? 'with' : null}
                   </div>
                   {usage.totalResolutions ? (
-                    <div className="font-bold">
+                    <div className={styles.schemaExplorerUsageStatsDiv9}>
                       {formatNumber(usage.totalResolutions)} Resolutions
                     </div>
                   ) : null}
                   {usage.errorTotal ? (
-                    <div className="font-bold">{formatNumber(usage.errorTotal)} Errors</div>
+                    <div className={styles.schemaExplorerUsageStatsDiv10}>
+                      {formatNumber(usage.errorTotal)} Errors
+                    </div>
                   ) : null}
                   <div>
                     for{' '}
-                    <span className="text-warning">{availability.toFixed(2)}% Availability</span>
+                    <span className={styles.schemaExplorerUsageStatsSpan4}>
+                      {availability.toFixed(2)}% Availability
+                    </span>
                   </div>
                 </div>
               </div>
@@ -170,8 +181,12 @@ export function SchemaExplorerUsageStats(props: {
       ) : null}
       <Popover
         trigger={
-          <button type="button" aria-label="Usage" className="cursor-help text-xl">
-            <ActivityIcon className="h-6 w-auto" />
+          <button
+            type="button"
+            aria-label="Usage"
+            className={styles.schemaExplorerUsageStatsButton2}
+          >
+            <ActivityIcon className={styles.schemaExplorerUsageStatsActivityIcon} />
           </button>
         }
         openOnHover
@@ -180,7 +195,9 @@ export function SchemaExplorerUsageStats(props: {
         width="lg"
         content={
           <div>
-            <div className="mb-1 text-lg font-medium">{capitalize(kindLabel)} Usage</div>
+            <div className={styles.schemaExplorerUsageStatsDiv11}>
+              {capitalize(kindLabel)} Usage
+            </div>
             {usage.isUsed === false ? (
               <div>This {kindLabel} is currently not in use.</div>
             ) : (
@@ -188,17 +205,21 @@ export function SchemaExplorerUsageStats(props: {
                 <ul>
                   <li>
                     This {kindLabel} has been queried in{' '}
-                    <span className="font-medium text-fg">{formatNumber(usage.total)}</span>{' '}
+                    <span className={styles.schemaExplorerUsageStatsSpan5}>
+                      {formatNumber(usage.total)}
+                    </span>{' '}
                     requests.
                   </li>
                   <li>
-                    <span className="font-medium text-fg">{toDecimal(percentage)}%</span> of all
-                    requests use this {kindLabel}.
+                    <span className={styles.schemaExplorerUsageStatsSpan6}>
+                      {toDecimal(percentage)}%
+                    </span>{' '}
+                    of all requests use this {kindLabel}.
                   </li>
                 </ul>
 
                 {Array.isArray(usage.topOperations) && (
-                  <div className="mt-4">
+                  <div className={styles.schemaExplorerUsageStatsDiv12}>
                     <DataTable
                       data={usage.topOperations}
                       columns={topOperationColumns}
@@ -216,8 +237,12 @@ export function SchemaExplorerUsageStats(props: {
 
       <Popover
         trigger={
-          <button type="button" aria-label="Client usage" className="cursor-help p-1 text-xl">
-            <UsersIcon className="size-4" />
+          <button
+            type="button"
+            aria-label="Client usage"
+            className={styles.schemaExplorerUsageStatsButton3}
+          >
+            <UsersIcon className={styles.schemaExplorerUsageStatsUsersIcon} />
           </button>
         }
         openOnHover
@@ -225,16 +250,18 @@ export function SchemaExplorerUsageStats(props: {
         width="auto"
         content={
           <>
-            <div className="mb-1 text-lg font-medium">Client Usage</div>
+            <div className={styles.schemaExplorerUsageStatsDiv13}>Client Usage</div>
 
             {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
               <>
-                <div className="mb-2">This {kindLabel} is used by the following clients:</div>
+                <div className={styles.schemaExplorerUsageStatsDiv14}>
+                  This {kindLabel} is used by the following clients:
+                </div>
                 <ul>
                   {usage.usedByClients.map(clientName => (
-                    <li key={clientName} className="font-bold">
+                    <li key={clientName} className={styles.schemaExplorerUsageStatsLi}>
                       <Link
-                        className="text-warning hover:underline hover:underline-offset-2"
+                        className={styles.schemaExplorerUsageStatsLink}
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                         params={{
                           organizationSlug,
@@ -298,14 +325,14 @@ export function DeprecationNote(props: {
 
   return (
     <Tooltip
-      trigger={<span className="line-through">{props.children}</span>}
+      trigger={<span className={styles.deprecationNoteSpan}>{props.children}</span>}
       side="right"
       sideOffset={5}
       maxWidth="screen"
       content={
         <>
-          <div className="mb-2">Deprecation reason</div>
-          <Markdown className="text-fg-secondary" content={props.deprecationReason} />
+          <div className={styles.deprecationNoteDiv}>Deprecation reason</div>
+          <Markdown className={styles.deprecationNoteMarkdown} content={props.deprecationReason} />
         </>
       }
     />
@@ -333,21 +360,21 @@ export function GraphQLTypeCard(props: {
   }
 
   return (
-    <div className="rounded-md border-2 border-line">
-      <div className="flex flex-row justify-between p-4">
+    <div className={styles.graphQLTypeCardDiv}>
+      <div className={styles.graphQLTypeCardDiv2}>
         <div>
-          <div className="flex flex-row items-center gap-2">
-            <div className="font-normal text-fg-secondary">{props.kind}</div>
-            <div className="font-semibold">
+          <div className={styles.graphQLTypeCardDiv3}>
+            <div className={styles.graphQLTypeCardDiv4}>{props.kind}</div>
+            <div className={styles.graphQLTypeCardDiv5}>
               <GraphQLTypeAsLink type={props.name} />
             </div>
           </div>
           {props.description && <Description description={props.description} />}
         </div>
         {Array.isArray(props.implements) && props.implements.length > 0 && (
-          <div className="flex flex-row items-center text-sm text-fg-secondary">
-            <div className="mx-2">implements</div>
-            <div className="flex flex-row gap-2">
+          <div className={styles.graphQLTypeCardDiv6}>
+            <div className={styles.graphQLTypeCardDiv7}>implements</div>
+            <div className={styles.graphQLTypeCardDiv8}>
               {props.implements.map(t => (
                 <GraphQLTypeAsLink key={t} type={t} />
               ))}
@@ -378,8 +405,8 @@ export function GraphQLTypeCardListItem(props: {
     <div
       onClick={props.onClick}
       className={clsx(
-        'flex flex-row items-center justify-between p-4 text-sm',
-        props.index % 2 ? '' : 'bg-surface-stripe',
+        styles.graphQLTypeCardListItemDiv,
+        props.index % 2 ? '' : styles.graphQLTypeCardListItemDiv2,
         props.className,
       )}
     >
@@ -390,7 +417,7 @@ export function GraphQLTypeCardListItem(props: {
 
 export function ExplorerFilteredEmptyState() {
   return (
-    <div className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-fg-secondary">
+    <div className={styles.explorerFilteredEmptyStateDiv}>
       No schema coordinates match the active filters.
     </div>
   );
@@ -412,21 +439,27 @@ export function GraphQLInputFields(props: {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className={styles.graphQLInputFieldsDiv}>
       {sortedAndFilteredFields.map((field, i) => {
         const coordinate = `${props.typeName}.${field.name}`;
         return (
           <GraphQLTypeCardListItem key={field.name} index={i}>
             <div>
-              <div className="flex w-full flex-row items-center justify-between">
-                <div className="text-fg-secondary">
+              <div className={styles.graphQLInputFieldsDiv2}>
+                <div className={styles.graphQLInputFieldsDiv3}>
                   <DeprecationNote deprecationReason={field.deprecationReason}>
-                    <LinkToCoordinatePage coordinate={coordinate} className="font-semibold text-fg">
+                    <LinkToCoordinatePage
+                      coordinate={coordinate}
+                      className={styles.graphQLInputFieldsLinkToCoordinatePage}
+                    >
                       {field.name}
                     </LinkToCoordinatePage>
                   </DeprecationNote>
-                  <span className="mr-1">:</span>
-                  <GraphQLTypeAsLink className="font-semibold" type={field.type} />
+                  <span className={styles.graphQLInputFieldsSpan}>:</span>
+                  <GraphQLTypeAsLink
+                    className={styles.graphQLInputFieldsGraphQLTypeAsLink}
+                    type={field.type}
+                  />
                 </div>
                 {typeof props.totalRequests === 'number' && (
                   <SchemaExplorerUsageStats
@@ -452,20 +485,17 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
   return (
     <Popover
       trigger={
-        <button
-          type="button"
-          className={cn('hover:underline hover:underline-offset-4', props.className)}
-        >
+        <button type="button" className={cn(styles.graphQLTypeAsLinkButton, props.className)}>
           {props.type}
         </button>
       }
       side="right"
       arrow
       content={
-        <div className="flex flex-col gap-y-2">
+        <div className={styles.graphQLTypeAsLinkDiv}>
           <p>
             <Link
-              className="text-xs font-normal hover:underline hover:underline-offset-2"
+              className={styles.graphQLTypeAsLinkLink}
               to="/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename"
               params={{
                 organizationSlug,
@@ -475,13 +505,13 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
               }}
               search={search}
             >
-              Visit in <span className="font-medium">Explorer</span>
+              Visit in <span className={styles.graphQLTypeAsLinkSpan}>Explorer</span>
             </Link>
-            <span className="text-xs text-fg-secondary"> - displays a full type</span>
+            <span className={styles.graphQLTypeAsLinkSpan2}> - displays a full type</span>
           </p>
           <p>
             <Link
-              className="text-xs font-normal hover:underline hover:underline-offset-2"
+              className={styles.graphQLTypeAsLinkLink2}
               to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
               params={{
                 organizationSlug,
@@ -491,9 +521,9 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
               }}
               search={carriedRange(search)}
             >
-              Visit in <span className="font-medium">Insights</span>
+              Visit in <span className={styles.graphQLTypeAsLinkSpan3}>Insights</span>
             </Link>
-            <span className="text-xs text-fg-secondary"> - usage insights</span>
+            <span className={styles.graphQLTypeAsLinkSpan4}> - usage insights</span>
           </p>
         </div>
       }
@@ -515,7 +545,7 @@ export const LinkToCoordinatePage = React.forwardRef<
   return (
     <Link
       ref={ref}
-      className={cn('hover:underline hover:underline-offset-2', props.className)}
+      className={cn(styles.link, props.className)}
       to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
       params={{
         organizationSlug,
@@ -544,21 +574,25 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
   }, [props.count]);
 
   return (
-    <div className="flex w-full flex-col">
+    <div className={styles.graphQLFieldsSkeletonDiv}>
       {widths.map((width, index) => (
-        <GraphQLTypeCardListItem key={index} index={index} className="w-full">
-          <div className="flex w-full flex-row items-center gap-2">
-            <span className={cn('my-1 flex', width)}>
+        <GraphQLTypeCardListItem
+          key={index}
+          index={index}
+          className={styles.graphQLFieldsSkeletonGraphQLTypeCardListItem}
+        >
+          <div className={styles.graphQLFieldsSkeletonDiv2}>
+            <span className={cn(styles.graphQLFieldsSkeletonSpan, width)}>
               <Skeleton variants={{ width: 'full' }} />
             </span>
-            <div className="ml-auto flex flex-row items-center gap-2">
-              <span className="my-1 block size-4">
+            <div className={styles.graphQLFieldsSkeletonDiv3}>
+              <span className={styles.graphQLFieldsSkeletonSpan2}>
                 <Skeleton variants={{ shape: 'block' }} />
               </span>
-              <span className="my-1 block size-4">
+              <span className={styles.graphQLFieldsSkeletonSpan3}>
                 <Skeleton variants={{ shape: 'block' }} />
               </span>
-              <span className="my-1 block size-4">
+              <span className={styles.graphQLFieldsSkeletonSpan4}>
                 <Skeleton variants={{ shape: 'block' }} />
               </span>
             </div>
@@ -571,10 +605,10 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
 
 export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
   return (
-    <div className="rounded-md border-2 border-line-subtle">
-      <div className="flex flex-row justify-between p-4">
-        <div className="flex flex-row items-center gap-2">
-          <span className="my-1 flex w-32">
+    <div className={styles.graphQLTypeCardSkeletonDiv}>
+      <div className={styles.graphQLTypeCardSkeletonDiv2}>
+        <div className={styles.graphQLTypeCardSkeletonDiv3}>
+          <span className={styles.graphQLTypeCardSkeletonSpan}>
             <Skeleton variants={{ width: 'full' }} />
           </span>
         </div>

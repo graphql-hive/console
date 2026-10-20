@@ -8,6 +8,7 @@ import { numberInput } from '@/components/ui/primitives/form/number-input';
 import { Input } from '@/components/ui/primitives/input/input';
 import { AppDeploymentProtectionRuleLogicType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import * as styles from './app-deployment-protection-form.css';
 
 const wholeDays = (min: number, minMessage: string) =>
   numberInput(
@@ -80,20 +81,27 @@ export function AppDeploymentProtectionForm(props: {
   });
 
   return (
-    <div className={cn('text-fg-secondary', !props.enabled && 'pointer-events-none opacity-25')}>
+    <div
+      className={cn(
+        styles.appDeploymentProtectionFormDiv,
+        !props.enabled && styles.appDeploymentProtectionFormDiv2,
+      )}
+    >
       <Form form={form} onSubmit={props.onSubmit}>
-        <div className="space-y-4">
+        <div className={styles.appDeploymentProtectionFormDiv3}>
           <div>
-            <div className="mb-2">An app deployment can only be retired if it</div>
-            <div className="ml-4 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className={styles.appDeploymentProtectionFormDiv4}>
+              An app deployment can only be retired if it
+            </div>
+            <div className={styles.appDeploymentProtectionFormDiv5}>
+              <div className={styles.appDeploymentProtectionFormDiv6}>
                 <span>was created at least</span>
                 {number('minDaysSinceCreation', 'Minimum days since creation', { min: 0 })}
                 <span>days ago and has not been used for at least</span>
                 {number('minDaysInactive', 'Minimum days inactive', { min: 0 })}
                 <span>days</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className={styles.appDeploymentProtectionFormDiv7}>
                 <FormField
                   control={form.control}
                   name="ruleLogic"
@@ -124,23 +132,25 @@ export function AppDeploymentProtectionForm(props: {
               </div>
             </div>
           </div>
-          <div className="text-sm text-fg-default">
+          <div className={styles.appDeploymentProtectionFormDiv8}>
             The creation date check always applies. The inactivity and traffic checks only apply if
             the app deployment has usage data.
           </div>
         </div>
         {messages.length ? (
-          <div className="space-y-1 text-critical">
+          <div className={styles.appDeploymentProtectionFormDiv9}>
             {messages.map(({ name, message }) => (
               <div key={name}>{message}</div>
             ))}
           </div>
         ) : null}
-        <div className="flex items-center gap-2">
+        <div className={styles.appDeploymentProtectionFormDiv10}>
           <Button type="submit" disabled={form.formState.isSubmitting}>
             Save
           </Button>
-          {props.error ? <span className="text-critical">{props.error}</span> : null}
+          {props.error ? (
+            <span className={styles.appDeploymentProtectionFormSpan}>{props.error}</span>
+          ) : null}
         </div>
       </Form>
     </div>

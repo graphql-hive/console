@@ -4,6 +4,7 @@ import { CallSite } from '@/components/inventory/shared';
 import { CompositionErrorMessage } from './composition-error-message';
 import { CompositionErrorsPopover } from './composition-errors-popover';
 import { CompositionErrorsList } from './errors-and-changes';
+import * as styles from './composition-errors.preview.css';
 
 export const nav: NavPath = 'Components/CompositionErrors';
 
@@ -319,37 +320,35 @@ const FIXTURE_IDS = ALL.map(fixture => fixture.id) as [string, ...string[]];
  */
 function VersionPageCard(props: { errors: ReadonlyArray<{ message: string }> }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-critical-line">
-      <div className="flex items-start gap-3 border-b border-critical-line bg-critical-tint-subtle px-5 py-4">
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-critical-line">
-          <XCircleIcon className="h-4 w-4 text-critical" />
+    <div className={styles.versionPageCardDiv}>
+      <div className={styles.versionPageCardDiv2}>
+        <div className={styles.versionPageCardDiv3}>
+          <XCircleIcon className={styles.versionPageCardXCircleIcon} />
         </div>
 
-        <div className="min-w-0 text-fg">
-          <h3 className="text-sm font-semibold">Supergraph not composable</h3>
-          <p className="mt-0.5 text-[12.5px]">
+        <div className={styles.versionPageCardDiv4}>
+          <h3 className={styles.versionPageCardH3}>Supergraph not composable</h3>
+          <p className={styles.versionPageCardP}>
             Errors occurred while attempting to compose the supergraph from its subgraphs.
           </p>
         </div>
 
-        <span className="ml-auto inline-flex items-center rounded-full border border-critical-line bg-critical-tint px-2.5 py-0.5 text-2xs font-semibold text-critical transition-colors focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:outline-none">
-          <span className="mr-1 h-1.5 w-1.5 rounded-full bg-critical" />
+        <span className={styles.versionPageCardSpan}>
+          <span className={styles.versionPageCardSpan2} />
           {props.errors.length} error
           {props.errors.length === 1 ? '' : 's'}
         </span>
       </div>
 
-      <div className="flex items-center gap-2 px-5 pt-4 pb-1 text-fg">
-        <span className="text-sm font-medium">Composition errors</span>
+      <div className={styles.versionPageCardDiv5}>
+        <span className={styles.versionPageCardSpan3}>Composition errors</span>
         <CompositionErrorsPopover />
       </div>
 
-      <ul className="divide-y divide-critical-line-subtle px-1 pb-2">
+      <ul className={styles.versionPageCardUl}>
         {props.errors.map((err, idx) => (
-          <li key={idx} className="flex gap-3 px-4 py-3">
-            <span className="mt-0.5 w-6 shrink-0 font-mono text-xs text-critical select-none">
-              {String(idx + 1).padStart(2, '0')}
-            </span>
+          <li key={idx} className={styles.versionPageCardLi}>
+            <span className={styles.versionPageCardSpan4}>{String(idx + 1).padStart(2, '0')}</span>
 
             <CompositionErrorMessage message={err.message} />
           </li>
@@ -362,11 +361,11 @@ function VersionPageCard(props: { errors: ReadonlyArray<{ message: string }> }) 
 /** Which fixture sits at which row number, since the containers show only the messages. */
 function Legend(props: { fixtures: readonly Fixture[] }) {
   return (
-    <ol className="grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-0.5 text-xs text-fg-secondary">
+    <ol className={styles.legendOl}>
       {props.fixtures.map((fixture, index) => (
-        <li key={fixture.id} className="contents">
-          <span className="font-mono">{String(index + 1).padStart(2, '0')}</span>
-          <span className="font-mono">{fixture.id}</span>
+        <li key={fixture.id} className={styles.legendLi}>
+          <span className={styles.legendSpan}>{String(index + 1).padStart(2, '0')}</span>
+          <span className={styles.legendSpan2}>{fixture.id}</span>
           <span>{fixture.label}</span>
         </li>
       ))}
@@ -377,7 +376,7 @@ function Legend(props: { fixtures: readonly Fixture[] }) {
 function BothContainers(props: { fixtures: readonly Fixture[] }) {
   const errors = props.fixtures.map(fixture => ({ message: fixture.message }));
   return (
-    <div className="flex w-[56rem] flex-col gap-8">
+    <div className={styles.bothContainersDiv}>
       <Legend fixtures={props.fixtures} />
       <CallSite source="pages/target-history-schema-version.tsx:1299-1336" origin="raw">
         <VersionPageCard errors={errors} />
@@ -425,26 +424,24 @@ export const Playground = createPreview({
  */
 function RawStringsView(props: { group: keyof typeof GROUPS }) {
   return (
-    <ol className="flex w-[56rem] flex-col gap-6">
+    <ol className={styles.rawStringsViewOl}>
       {GROUPS[props.group].map((fixture, index) => (
-        <li key={fixture.id} className="flex flex-col gap-2">
-          <div className="flex items-baseline gap-3 text-xs text-fg-secondary">
-            <span className="font-mono">{String(index + 1).padStart(2, '0')}</span>
-            <span className="font-mono">{fixture.id}</span>
+        <li key={fixture.id} className={styles.rawStringsViewLi}>
+          <div className={styles.rawStringsViewDiv}>
+            <span className={styles.rawStringsViewSpan}>{String(index + 1).padStart(2, '0')}</span>
+            <span className={styles.rawStringsViewSpan2}>{fixture.id}</span>
             <span>{fixture.label}</span>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-2xs text-fg-subtle">as served</span>
-              <pre className="overflow-x-auto rounded-md border bg-surface-inset px-3 py-2 font-mono text-xs leading-5 break-all whitespace-pre-wrap text-fg-default">
+          <div className={styles.rawStringsViewDiv2}>
+            <div className={styles.rawStringsViewDiv3}>
+              <span className={styles.rawStringsViewSpan3}>as served</span>
+              <pre className={styles.rawStringsViewPre}>
                 {JSON.stringify({ message: fixture.message }, null, 2)}
               </pre>
             </div>
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-2xs text-fg-subtle">same string, whitespace honored</span>
-              <pre className="overflow-x-auto rounded-md border bg-surface-inset px-3 py-2 font-mono text-xs leading-5 whitespace-pre text-fg-default">
-                {fixture.message}
-              </pre>
+            <div className={styles.rawStringsViewDiv4}>
+              <span className={styles.rawStringsViewSpan4}>same string, whitespace honored</span>
+              <pre className={styles.rawStringsViewPre2}>{fixture.message}</pre>
             </div>
           </div>
         </li>

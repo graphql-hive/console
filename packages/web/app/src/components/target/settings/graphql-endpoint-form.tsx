@@ -9,6 +9,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
+import * as styles from './graphql-endpoint-form.css';
 
 export const GraphqlEndpointFormSchema = z.object({
   graphqlEndpointUrl: z
@@ -35,7 +36,7 @@ export function GraphqlEndpointForm(props: {
         name="graphqlEndpointUrl"
         render={({ field }) => (
           <FormItem>
-            <div className="flex flex-row items-center gap-2">
+            <div className={styles.graphqlEndpointFormDiv}>
               <FormControl>
                 <Input
                   placeholder="Endpoint Url"
@@ -52,7 +53,7 @@ export function GraphqlEndpointForm(props: {
           </FormItem>
         )}
       />
-      {props.error ? <div className="text-sm text-critical">{props.error}</div> : null}
+      {props.error ? <div className={styles.graphqlEndpointFormDiv2}>{props.error}</div> : null}
     </Form>
   );
 }

@@ -1,6 +1,7 @@
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { MetricAlertRuleState } from '@/gql/graphql';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
+import * as styles from './alert-state-transitions-bar.css';
 
 export const ALERT_STATE_COLOR: Record<MetricAlertRuleState, string> = {
   [MetricAlertRuleState.Normal]: 'bg-success',
@@ -135,10 +136,10 @@ export function AlertStateTransitionsBar({
     // Pad to the metric chart's fixed plot insets so the bar's segments and
     // tick labels line up time-wise with the chart below it.
     <div
-      className="space-y-2"
+      className={styles.alertStateTransitionsBarDiv}
       style={{ paddingLeft: ALERT_CHART_INSET_LEFT, paddingRight: ALERT_CHART_INSET_RIGHT }}
     >
-      <div className="flex h-4 w-full overflow-hidden rounded-sm border border-line">
+      <div className={styles.alertStateTransitionsBarDiv2}>
         {segments.map((seg, i) => {
           const widthPct = ((seg.endMs - seg.startMs) / rangeMs) * 100;
           if (widthPct <= 0) return null;
@@ -147,7 +148,7 @@ export function AlertStateTransitionsBar({
               key={i}
               trigger={
                 <div
-                  className={`${colorForSegment(seg.state)} h-full`}
+                  className={`${colorForSegment(seg.state)} ${styles.alertStateTransitionsBarDiv3}`}
                   style={{ width: `${widthPct}%` }}
                   aria-label={`${labelForSegment(seg.state)} ${formatTimestamp(
                     new Date(seg.startMs).toISOString(),
@@ -155,9 +156,11 @@ export function AlertStateTransitionsBar({
                 />
               }
               content={
-                <div className="text-xs">
-                  <div className="font-medium text-fg">{labelForSegment(seg.state)}</div>
-                  <div className="text-fg-secondary">
+                <div className={styles.alertStateTransitionsBarDiv4}>
+                  <div className={styles.alertStateTransitionsBarDiv5}>
+                    {labelForSegment(seg.state)}
+                  </div>
+                  <div className={styles.alertStateTransitionsBarDiv6}>
                     {formatTimestamp(new Date(seg.startMs).toISOString())} →{' '}
                     {formatTimestamp(new Date(seg.endMs).toISOString())}
                   </div>
@@ -167,7 +170,7 @@ export function AlertStateTransitionsBar({
           );
         })}
       </div>
-      <div className="flex justify-between text-[11px] text-fg-secondary">
+      <div className={styles.alertStateTransitionsBarDiv7}>
         {ticks.map((tick, i) => (
           <span key={i}>{formatTick(tick, rangeMs)}</span>
         ))}

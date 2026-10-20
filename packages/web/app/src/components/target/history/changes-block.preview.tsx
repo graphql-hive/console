@@ -15,6 +15,7 @@ import {
   ChangesBlock_SchemaChangeWithUsageFragment,
   ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment,
 } from './errors-and-changes';
+import * as styles from './changes-block.preview.css';
 
 export const nav: NavPath = 'Components/ChangesBlock';
 
@@ -173,7 +174,7 @@ function ChangesView(props: {
   const { targets, changes } = buildChanges(props);
   return (
     <RouterAt path={PATH}>
-      <div className="w-[72rem]">
+      <div className={styles.changesViewDiv}>
         <ChangesBlock
           schemaCheckId="check-1"
           title="Breaking Changes"
@@ -213,9 +214,9 @@ const CONTRACTS = [
 
 const statusIcon = (failed: boolean) =>
   failed ? (
-    <TriangleAlertIcon className="size-3.5 text-critical" />
+    <TriangleAlertIcon className={styles.statusIconTriangleAlertIcon} />
   ) : (
-    <GitCompareIcon className="size-3.5" />
+    <GitCompareIcon className={styles.statusIconGitCompareIcon} />
   );
 
 function CheckPageView(props: { usedTargets: number; unusedTargets: number; operations: number }) {
@@ -227,18 +228,21 @@ function CheckPageView(props: { usedTargets: number; unusedTargets: number; oper
 
   return (
     <RouterAt path={PATH}>
-      <div className="w-[72rem]">
-        <div className="py-6">
+      <div className={styles.checkPageViewDiv}>
+        <div className={styles.checkPageViewDiv2}>
           <Title>Check 629ff60a-8ef3-4ca6-8cff-ae0e9d17dad4</Title>
           <Subtitle>Detailed view of the schema check</Subtitle>
         </div>
-        <div className="mb-3">
+        <div className={styles.checkPageViewDiv3}>
           <DescriptionList
             variants={{ termStyle: 'title', columns: 'auto' }}
             rows={[
               {
                 items: [
-                  { term: 'Status', description: <span className="text-critical">Failed</span> },
+                  {
+                    term: 'Status',
+                    description: <span className={styles.checkPageViewSpan}>Failed</span>,
+                  },
                   { term: 'Service', description: 'products' },
                   { term: 'Triggered', description: '1w ago by User' },
                 ],
@@ -246,8 +250,8 @@ function CheckPageView(props: { usedTargets: number; unusedTargets: number; oper
             ]}
           />
         </div>
-        <div className="mt-3 flex flex-col gap-3">
-          <div className="mb-3">
+        <div className={styles.checkPageViewDiv4}>
+          <div className={styles.checkPageViewDiv5}>
             <ContractFailuresTable
               title={`${failures.length} of ${CONTRACTS.length} contracts failed`}
               aside={`${CONTRACTS.length - failures.length} passed`}
@@ -267,7 +271,7 @@ function CheckPageView(props: { usedTargets: number; unusedTargets: number; oper
                 value={graph}
                 onValueChange={setGraph}
                 label={
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className={styles.checkPageViewSpan2}>
                     {statusIcon(true)}
                     {selected?.name ?? 'Default Graph'}
                   </span>
@@ -295,8 +299,8 @@ function CheckPageView(props: { usedTargets: number; unusedTargets: number; oper
                 label: 'Details',
                 icon: ListIcon,
                 content: (
-                  <div className="p-5">
-                    <div className="mb-5">
+                  <div className={styles.checkPageViewDiv6}>
+                    <div className={styles.checkPageViewDiv7}>
                       <ChangesBlock
                         schemaCheckId="check-1"
                         title="Breaking Changes"

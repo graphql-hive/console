@@ -3,6 +3,7 @@ import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/al
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
+import * as styles from './delete-rule-confirmation-dialog.css';
 
 const DeleteRuleConfirmationDialog_Mutation = graphql(`
   mutation DeleteRuleConfirmationDialog_Mutation($input: DeleteMetricAlertRulesInput!) {
@@ -41,8 +42,9 @@ export function DeleteRuleConfirmationDialog(props: DeleteRuleConfirmationDialog
       title="Delete this alert rule?"
       description={
         <>
-          This will permanently delete <span className="font-medium text-fg">{props.ruleName}</span>
-          , its incident history, and state-log entries. This cannot be undone.
+          This will permanently delete{' '}
+          <span className={styles.deleteRuleConfirmationDialogSpan}>{props.ruleName}</span>, its
+          incident history, and state-log entries. This cannot be undone.
         </>
       }
       confirm={{

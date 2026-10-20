@@ -6,6 +6,7 @@ import {
   useExplorerFilterDimensions,
   type ExplorerFilterDimensionsOptions,
 } from './use-explorer-filter-dimensions';
+import * as styles from './explorer-header.css';
 
 /**
  * The header shared by all four explorer views: the page lead paired with the
@@ -30,11 +31,11 @@ export function ExplorerHeader({
   const dimensions = useExplorerFilterDimensions(dimensionOptions);
 
   return (
-    <div className="py-6">
+    <div className={styles.explorerHeaderDiv}>
       {/* items-start keeps the tabs level with the title rather than centred
           against the lead's two lines. PageLead's own bottom margin provides
           the gap down to the filter bar. */}
-      <div className="flex items-start justify-between gap-4">
+      <div className={styles.explorerHeaderDiv2}>
         <PageLead title={title} description={description} />
         <SchemaVariantFilter />
       </div>

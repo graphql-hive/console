@@ -37,6 +37,7 @@ import { AlertPreview, type AlertPreviewChannelType } from './alert-notification
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 import { percentChangeWindowFits, percentChangeWindowReason } from './percent-change-window';
 import { previewWindowMinutes } from './preview-window';
+import * as styles from './alert-form.css';
 
 export const AlertForm_ChannelsQuery = graphql(`
   query AlertForm_ChannelsQuery($organizationSlug: String!, $projectSlug: String!) {
@@ -635,10 +636,8 @@ export function AlertForm(props: AlertFormProps) {
 
   return (
     <Form form={form} onSubmit={onSubmit}>
-      <div className={showPreview ? 'flex gap-8' : undefined}>
-        <div
-          className={showPreview ? 'max-w-[700px] min-w-0 space-y-6' : 'min-w-0 flex-1 space-y-6'}
-        >
+      <div className={showPreview ? styles.alertFormDiv : undefined}>
+        <div className={showPreview ? styles.alertFormDiv2 : styles.alertFormDiv3}>
           {/* Section 1: Destination */}
           <Card
             title="1. Destination"
@@ -648,7 +647,7 @@ export function AlertForm(props: AlertFormProps) {
                 <Link
                   to="/$organizationSlug/$projectSlug/view/alerts"
                   params={{ organizationSlug, projectSlug }}
-                  className="text-accent underline"
+                  className={styles.alertFormLink}
                 >
                   here
                 </Link>
@@ -656,7 +655,7 @@ export function AlertForm(props: AlertFormProps) {
               </>
             }
           >
-            <div className="space-y-4">
+            <div className={styles.alertFormDiv4}>
               {fields.map((field, index) => (
                 <FormField
                   key={field.id}
@@ -665,7 +664,7 @@ export function AlertForm(props: AlertFormProps) {
                   render={({ field: channelField }) => (
                     <FormItem>
                       {index === 0 && <FormLabel label="Channel" />}
-                      <div className="flex items-center gap-3">
+                      <div className={styles.alertFormDiv5}>
                         <FormControl>
                           <Select
                             // Only the first row has the visible label.
@@ -684,7 +683,7 @@ export function AlertForm(props: AlertFormProps) {
                           aria-label={`Remove channel ${index + 1}`}
                           onClick={() => remove(index)}
                         >
-                          <X className="size-4" />
+                          <X className={styles.alertFormX} />
                         </Button>
                       </div>
                       <FormMessage />
@@ -693,7 +692,7 @@ export function AlertForm(props: AlertFormProps) {
                 />
               ))}
               <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
-                <Plus className="mr-1 size-3.5" />
+                <Plus className={styles.alertFormPlus} />
                 {fields.length === 0 ? 'Add destination' : 'Add another destination'}
               </Button>
             </div>
@@ -704,7 +703,7 @@ export function AlertForm(props: AlertFormProps) {
             title="2. Alert type and range"
             description="Select the alert type and range for this alert."
           >
-            <div className="flex items-start gap-6">
+            <div className={styles.alertFormDiv6}>
               <FormField
                 control={form.control}
                 name="metricSelection"
@@ -749,7 +748,7 @@ export function AlertForm(props: AlertFormProps) {
             title="3. Alert name and severity"
             description="Choose a name for your alert and the severity level."
           >
-            <div className="flex items-start gap-6">
+            <div className={styles.alertFormDiv7}>
               <FormField
                 control={form.control}
                 name="name"
@@ -780,7 +779,7 @@ export function AlertForm(props: AlertFormProps) {
                           ariaLabel: sev.label,
                           content: (
                             <>
-                              <span className={`size-2 rounded-full ${sev.dotClass}`} />
+                              <span className={`${styles.alertFormSpan} ${sev.dotClass}`} />
                               {sev.label}
                             </>
                           ),
@@ -799,9 +798,9 @@ export function AlertForm(props: AlertFormProps) {
             title="4. Condition, threshold, value"
             description="Select the firing condition, threshold type, and value for this alert. Use advanced settings to debounce false positives."
           >
-            <div className="space-y-6">
-              <div className="flex flex-col items-start gap-2">
-                <div className="flex gap-6">
+            <div className={styles.alertFormDiv8}>
+              <div className={styles.alertFormDiv9}>
+                <div className={styles.alertFormDiv10}>
                   <FormField
                     control={form.control}
                     name="direction"
@@ -860,7 +859,7 @@ export function AlertForm(props: AlertFormProps) {
                     )}
                   />
                 </div>
-                <p className="text-control text-fg-secondary">
+                <p className={styles.alertFormP}>
                   {isPercentageChange
                     ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
                         watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'
@@ -900,7 +899,7 @@ export function AlertForm(props: AlertFormProps) {
                     value: 'advanced',
                     label: 'Advanced settings',
                     content: (
-                      <div className="space-y-4">
+                      <div className={styles.alertFormDiv11}>
                         <FormField
                           control={form.control}
                           name="savedFilterId"
@@ -951,7 +950,7 @@ export function AlertForm(props: AlertFormProps) {
                                 tooltip={
                                   <>
                                     Wait for the condition to exist for{' '}
-                                    <span className="font-medium text-fg">
+                                    <span className={styles.alertFormSpan2}>
                                       {field.value || '0'}
                                     </span>{' '}
                                     minutes before firing. Helps prevent false alarms from brief
@@ -975,7 +974,7 @@ export function AlertForm(props: AlertFormProps) {
             </div>
           </Card>
 
-          <div className="flex justify-end gap-2">
+          <div className={styles.alertFormDiv12}>
             {onCancel ? (
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                 Cancel
@@ -988,7 +987,7 @@ export function AlertForm(props: AlertFormProps) {
         </div>
 
         {showPreview ? (
-          <div className="sticky top-6 min-w-0 flex-1 self-start">
+          <div className={styles.alertFormDiv13}>
             <AlertPreview
               alertName={watchedValues.name}
               metricLabel={metricOption?.label ?? 'Total requests'}

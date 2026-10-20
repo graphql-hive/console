@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import type { ReactNode } from 'react';
 import type * as Urql from 'urql';
+import * as protectionStyles from '@/components/target/settings/app-deployment-protection-form.css';
+import * as breakingStyles from '@/components/target/settings/breaking-changes-form.css';
 import { ToastProvider } from '@/components/ui/primitives/toast/toast';
 import { DangerousChangeType } from '@/gql/graphql';
 import type * as Router from '@tanstack/react-router';
@@ -400,12 +402,16 @@ describe('AppDeploymentProtection', () => {
         appDeploymentProtectionConfiguration: { isEnabled: false },
       },
     });
-    expect(numberInput('minDaysInactive').closest('.opacity-25')).toBeNull();
+    expect(
+      numberInput('minDaysInactive').closest(
+        `.${protectionStyles.appDeploymentProtectionFormDiv2}`,
+      ),
+    ).toBeNull();
 
     renderSection({ isEnabled: false });
     expect(
       (document.querySelectorAll('input[name="minDaysInactive"]')[1] as HTMLElement).closest(
-        '.opacity-25',
+        `.${protectionStyles.appDeploymentProtectionFormDiv2}`,
       ),
     ).not.toBeNull();
   });
@@ -596,11 +602,13 @@ describe('BreakingChanges', () => {
     expect(urql.mutate.mock.calls[1][0]).toEqual({
       input: { failDiffOnDangerousChange: false, target: { bySelector: selector } },
     });
-    expect(numberInput('period').closest('.opacity-25')).toBeNull();
+    expect(numberInput('period').closest(`.${breakingStyles.breakingChangesFormDiv2}`)).toBeNull();
 
     renderSection({ isEnabled: false });
     expect(
-      (document.querySelectorAll('input[name="period"]')[1] as HTMLElement).closest('.opacity-25'),
+      (document.querySelectorAll('input[name="period"]')[1] as HTMLElement).closest(
+        `.${breakingStyles.breakingChangesFormDiv2}`,
+      ),
     ).not.toBeNull();
   });
 });

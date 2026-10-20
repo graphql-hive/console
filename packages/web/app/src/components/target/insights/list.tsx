@@ -11,6 +11,7 @@ import { formatDuration, useSlugs } from '@/lib/hooks';
 import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import type { ColumnDef } from '@tanstack/react-table';
 import { OperationsFallback } from './fallback';
+import * as styles from './list.css';
 
 interface Operation {
   id: string;
@@ -63,13 +64,17 @@ function OperationsTable({
             row.original.name === 'anonymous' ? (
               <Popover
                 trigger={
-                  <button type="button" aria-label="Anonymous operation" className="inline-flex">
-                    <TriangleAlert className="size-3.5 text-warning" />
+                  <button
+                    type="button"
+                    aria-label="Anonymous operation"
+                    className={styles.operationsTableButton}
+                  >
+                    <TriangleAlert className={styles.operationsTableTriangleAlert} />
                   </button>
                 }
                 openOnHover
                 content={
-                  <p className="text-sm text-fg-default">
+                  <p className={styles.operationsTableP}>
                     Anonymous operation detected. Naming your operations is a recommended practice
                   </p>
                 }
@@ -162,7 +167,7 @@ function OperationsTable({
   ];
 
   return (
-    <div className="mt-12">
+    <div className={styles.operationsTableDiv}>
       <Card
         variants={{ onSurface: 'raised', titleSize: 'large' }}
         title="Operations"

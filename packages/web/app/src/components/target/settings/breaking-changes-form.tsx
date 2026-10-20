@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/primitives/label/label';
 import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { BreakingChangeFormulaType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import * as styles from './breaking-changes-form.css';
 
 /**
  * The period is capped by the organization's usage retention, so the schema is built per page.
@@ -118,11 +119,16 @@ export function BreakingChangesForm(props: {
   }
 
   return (
-    <div className={cn('text-fg-default', !props.enabled && 'pointer-events-none opacity-25')}>
+    <div
+      className={cn(
+        styles.breakingChangesFormDiv,
+        !props.enabled && styles.breakingChangesFormDiv2,
+      )}
+    >
       <Form form={form} onSubmit={props.onSubmit}>
         <div>
           <div>A schema change is considered as breaking only if it affects more than</div>
-          <div className="my-2 w-auto max-w-4xl">
+          <div className={styles.breakingChangesFormDiv3}>
             <FormField
               control={form.control}
               name="breakingChangeFormula"
@@ -141,7 +147,7 @@ export function BreakingChangesForm(props: {
                       content: (
                         <span
                           data-cy="target-cbc-breakingChangeFormula-option-percentage"
-                          className="inline-flex items-center gap-2"
+                          className={styles.breakingChangesFormSpan}
                         >
                           {number('percentage', 'Percent of traffic', { step: 0.01 })}
                           Percent of Traffic
@@ -155,7 +161,7 @@ export function BreakingChangesForm(props: {
                       content: (
                         <span
                           data-cy="target-cbc-breakingChangeFormula-option-requestCount"
-                          className="inline-flex items-center gap-2"
+                          className={styles.breakingChangesFormSpan2}
                         >
                           {number('requestCount', 'Total operations', { step: 1 })}
                           Total Operations
@@ -167,28 +173,30 @@ export function BreakingChangesForm(props: {
               )}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={styles.breakingChangesFormDiv4}>
             <span>in the past</span>
             {number('period', 'Period in days', { min: 1, max: props.maxPeriod })}
             <span>days.</span>
           </div>
           {messages.length ? (
-            <div className="mt-3 space-y-1 text-critical">
+            <div className={styles.breakingChangesFormDiv5}>
               {messages.map(({ name, message }) => (
                 <div key={name}>{message}</div>
               ))}
             </div>
           ) : null}
         </div>
-        <div className="space-y-6">
-          <div className="space-y-2">
+        <div className={styles.breakingChangesFormDiv6}>
+          <div className={styles.breakingChangesFormDiv7}>
             <div>
-              <div className="font-semibold">Allow breaking change for these clients:</div>
-              <div className="text-xs text-fg-secondary">
+              <div className={styles.breakingChangesFormDiv8}>
+                Allow breaking change for these clients:
+              </div>
+              <div className={styles.breakingChangesFormDiv9}>
                 Marks a breaking change as safe when it only affects the following clients.
               </div>
             </div>
-            <div className="max-w-[420px]">
+            <div className={styles.breakingChangesFormDiv10}>
               <FormField
                 control={form.control}
                 name="excludedClients"
@@ -196,20 +204,22 @@ export function BreakingChangesForm(props: {
                   targetIds.length > 0 ? (
                     <>{props.clientExclusion(field, targetIds)}</>
                   ) : (
-                    <div className="text-fg-secondary">Select targets first</div>
+                    <div className={styles.breakingChangesFormDiv11}>Select targets first</div>
                   )
                 }
               />
             </div>
           </div>
-          <div className="space-y-2">
+          <div className={styles.breakingChangesFormDiv12}>
             <div>
-              <div className="font-semibold">Allow breaking change for these app deployments:</div>
-              <div className="text-xs text-fg-secondary">
+              <div className={styles.breakingChangesFormDiv13}>
+                Allow breaking change for these app deployments:
+              </div>
+              <div className={styles.breakingChangesFormDiv14}>
                 Marks a breaking change as safe when it only affects the following app deployments.
               </div>
             </div>
-            <div className="max-w-[420px]">
+            <div className={styles.breakingChangesFormDiv15}>
               <FormField
                 control={form.control}
                 name="excludedAppDeployments"
@@ -222,29 +232,31 @@ export function BreakingChangesForm(props: {
             name="targetIds"
             render={({ field }) => (
               <FormItem group>
-                <div className="space-y-1">
-                  <div className="font-semibold">Check usage in these targets:</div>
-                  <div className="text-xs text-fg-secondary">
+                <div className={styles.breakingChangesFormDiv16}>
+                  <div className={styles.breakingChangesFormDiv17}>
+                    Check usage in these targets:
+                  </div>
+                  <div className={styles.breakingChangesFormDiv18}>
                     Traffic from the checked targets is what the Conditional Breaking Change
                     threshold is measured against. A change is flagged as breaking only when clients
                     of these targets use the affected field or type. Some common configurations are:
                   </div>
-                  <ul className="list-disc space-y-1 pl-4 text-xs text-fg-secondary">
+                  <ul className={styles.breakingChangesFormUl}>
                     <li>
-                      Check only <span className="font-semibold">production</span> on a development
-                      target to allow changes that would only break development clients, while still
-                      blocking changes that production clients depend on.
+                      Check only <span className={styles.breakingChangesFormSpan3}>production</span>{' '}
+                      on a development target to allow changes that would only break development
+                      clients, while still blocking changes that production clients depend on.
                     </li>
                     <li>
-                      Check <span className="font-semibold">staging</span> and{' '}
-                      <span className="font-semibold">production</span> on the production target to
-                      protect clients that are only exercised in staging.
+                      Check <span className={styles.breakingChangesFormSpan4}>staging</span> and{' '}
+                      <span className={styles.breakingChangesFormSpan5}>production</span> on the
+                      production target to protect clients that are only exercised in staging.
                     </li>
                   </ul>
                 </div>
-                <div className="space-y-2 pl-2">
+                <div className={styles.breakingChangesFormDiv19}>
                   {props.targets.map(target => (
-                    <div key={target.id} className="flex items-center gap-x-2">
+                    <div key={target.id} className={styles.breakingChangesFormDiv20}>
                       <Checkbox
                         id={`${id}-${target.id}`}
                         checked={field.value.includes(target.id)}
@@ -267,25 +279,29 @@ export function BreakingChangesForm(props: {
             )}
           />
         </div>
-        <div className="w-auto max-w-4xl space-y-2 rounded-sm border border-line bg-surface-card py-2 pl-5 text-fg-secondary">
+        <div className={styles.breakingChangesFormDiv21}>
           <div>
-            <div className="font-semibold">Example settings</div>
-            <div className="text-sm">Removal of a field is considered breaking if</div>
+            <div className={styles.breakingChangesFormDiv22}>Example settings</div>
+            <div className={styles.breakingChangesFormDiv23}>
+              Removal of a field is considered breaking if
+            </div>
           </div>
-          <div className="text-sm">
+          <div className={styles.breakingChangesFormDiv24}>
             <Badge content="0%" variants={{ variant: 'warning' }} /> - the field was used at least
             once in past 30 days
           </div>
-          <div className="text-sm">
+          <div className={styles.breakingChangesFormDiv25}>
             <Badge content="10%" variants={{ variant: 'warning' }} /> - the field was requested by
             more than 10% of all GraphQL operations in recent 30 days
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={styles.breakingChangesFormDiv26}>
           <Button type="submit" disabled={form.formState.isSubmitting}>
             Save
           </Button>
-          {props.error ? <span className="text-critical">{props.error}</span> : null}
+          {props.error ? (
+            <span className={styles.breakingChangesFormSpan6}>{props.error}</span>
+          ) : null}
         </div>
       </Form>
     </div>

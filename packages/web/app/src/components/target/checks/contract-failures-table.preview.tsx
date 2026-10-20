@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { formatCount } from '@/lib/utils';
 import { ContractFailuresTable } from './contract-failures-table';
+import * as styles from './contract-failures-table.preview.css';
 
 export const nav: NavPath = 'Components/ContractFailures';
 
@@ -29,21 +30,19 @@ const CHECK_FAILURES = [
 export const Default = createPreview(() => {
   const [viewing, setViewing] = useState<string | null>(null);
   return (
-    <div className="flex w-[56rem] flex-col gap-3">
+    <div className={styles.div}>
       <ContractFailuresTable
         title="3 of 11 contracts failed"
         aside="8 passed"
         items={CHECK_FAILURES.map(item => ({ ...item, onView: () => setViewing(item.key) }))}
       />
-      <p className="text-xs text-fg-secondary">
-        {viewing ? `Scoped to ${viewing}` : 'Nothing picked yet'}
-      </p>
+      <p className={styles.p}>{viewing ? `Scoped to ${viewing}` : 'Nothing picked yet'}</p>
     </div>
   );
 });
 
 export const Versions = createPreview(() => (
-  <div className="w-[56rem]">
+  <div className={styles.div2}>
     <ContractFailuresTable
       title="1 of 11 contracts failed"
       aside="10 passed"
@@ -61,7 +60,7 @@ export const Versions = createPreview(() => (
 ));
 
 export const Many = createPreview(() => (
-  <div className="w-[56rem]">
+  <div className={styles.div3}>
     <ContractFailuresTable
       title="6 of 11 contracts failed"
       aside="5 passed"
@@ -84,7 +83,7 @@ export const Many = createPreview(() => (
 ));
 
 export const WithoutView = createPreview(() => (
-  <div className="w-[56rem]">
+  <div className={styles.div4}>
     <ContractFailuresTable title="3 of 11 contracts failed" items={CHECK_FAILURES} />
   </div>
 ));

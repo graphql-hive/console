@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
+import * as styles from './collection-form.css';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
 export const COLLECTION_FORM_ID = 'create-collection-form';
@@ -64,7 +65,7 @@ export function CollectionForm(props: {
           </FormItem>
         )}
       />
-      <Callout type="info" className="mt-0">
+      <Callout type="info" className={styles.collectionFormCallout}>
         This collection will be available to everyone in the organization
       </Callout>
     </Form>

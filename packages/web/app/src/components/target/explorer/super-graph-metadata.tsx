@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
+import * as styles from './super-graph-metadata.css';
 
 function stringToHue(str: string) {
   let hash = 0;
@@ -30,17 +31,17 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
   return (
     <Popover
       trigger={
-        <button type="button" aria-label="Supergraph metadata" className="my-[5px]">
-          <MetadataIcon className="size-4 text-fg" />
+        <button type="button" aria-label="Supergraph metadata" className={styles.metadataButton}>
+          <MetadataIcon className={styles.metadataMetadataIcon} />
         </button>
       }
       openOnHover
       width="auto"
       content={
-        <div className="text-xs text-fg-default">
+        <div className={styles.metadataDiv}>
           {props.supergraphMetadata.map((m, i) => (
             <div key={i}>
-              <span className="font-bold">{m.name}:</span> {m.content}
+              <span className={styles.metadataSpan}>{m.name}:</span> {m.content}
             </div>
           ))}
         </div>
@@ -69,11 +70,11 @@ function SubgraphChip(props: {
         service: props.text,
       }}
       style={subgraphChipColors(props.text, resolvedTheme)}
-      className="my-0.5 ml-1.5 inline-flex h-6 max-w-24 cursor-pointer items-center gap-1 rounded-full px-2 text-2xs leading-none font-normal"
+      className={styles.subgraphChipLink}
     >
-      <span className="min-w-0 truncate">{props.text}</span>
-      <PackageIcon size={10} className="shrink-0" />
-      {props.metadata?.length && <span className="shrink-0 text-[8px] font-bold">*</span>}
+      <span className={styles.subgraphChipSpan}>{props.text}</span>
+      <PackageIcon size={10} className={styles.subgraphChipPackageIcon} />
+      {props.metadata?.length && <span className={styles.subgraphChipSpan2}>*</span>}
     </Link>
   );
 
@@ -86,11 +87,11 @@ function SubgraphChip(props: {
       trigger={inner}
       content={
         <>
-          <span className="font-bold">{props.text}</span> subgraph
+          <span className={styles.subgraphChipSpan3}>{props.text}</span> subgraph
           {props.metadata?.map((m, index) => (
             <Fragment key={`${index}`}>
               <br />
-              <span className="font-bold">{m.content}</span> {m.name}
+              <span className={styles.subgraphChipSpan4}>{m.content}</span> {m.name}
             </Fragment>
           )) ?? null}
         </>
@@ -192,24 +193,24 @@ export function SupergraphMetadataList(props: {
   const [previewItems, allItems] = items ?? [null, null];
 
   return (
-    <div className="flex w-full justify-end gap-1">
+    <div className={styles.supergraphMetadataListDiv}>
       {meta}
       {previewItems}
       {allItems && (
         <Popover
           trigger={
-            <button type="button" className="flex items-center pl-1 text-xs font-bold text-fg">
+            <button type="button" className={styles.supergraphMetadataListButton}>
               + {allItems.length - previewItems.length} more
             </button>
           }
           openOnHover
           width="auto"
           content={
-            <div className="text-xs text-fg-default">
-              <div className="mb-2 font-bold">All Subgraphs</div>
-              <div className="w-[250px]">
+            <div className={styles.supergraphMetadataListDiv2}>
+              <div className={styles.supergraphMetadataListDiv3}>All Subgraphs</div>
+              <div className={styles.supergraphMetadataListDiv4}>
                 <ScrollArea maxHeight="md">
-                  <div className="flex flex-wrap gap-1 py-1">{allItems}</div>
+                  <div className={styles.supergraphMetadataListDiv5}>{allItems}</div>
                 </ScrollArea>
               </div>
             </div>

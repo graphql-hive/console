@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import * as styles from './availability-bar.css';
 
 export default function AvailabilityBar({
   availability,
@@ -18,10 +19,7 @@ export default function AvailabilityBar({
 
   return (
     <div
-      className={cn(
-        'relative flex h-2 w-full items-center overflow-hidden rounded-sm bg-critical',
-        className,
-      )}
+      className={cn(styles.availabilityBarDiv, className)}
       role="progressbar"
       aria-valuenow={safePercent}
       aria-valuemin={0}
@@ -29,8 +27,9 @@ export default function AvailabilityBar({
     >
       <div
         className={cn(
-          'h-full bg-success transition-all duration-300 ease-in-out',
-          isLessThan100 && 'border-hive-laboratory-background border-r',
+          styles.availabilityBarDiv2,
+          isLessThan100 && styles.availabilityBarDiv3,
+          'border-hive-laboratory-background',
         )}
         style={{ width: fillWidth }}
       />
