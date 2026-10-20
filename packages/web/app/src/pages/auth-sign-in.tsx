@@ -22,6 +22,7 @@ import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
+import * as styles from './auth-sign-in.css';
 
 export function SignInButton(props: {
   children: React.ReactElement;
@@ -30,12 +31,9 @@ export function SignInButton(props: {
 }) {
   if (props.previousSignIn) {
     return (
-      <span className="relative inline-flex w-full">
+      <span className={styles.signInButtonSpan}>
         <Tooltip trigger={props.children} content="You signed in with it last time." side="top" />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 animate-shimmer rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--line-strong)/0.35),70%,transparent)] bg-size-[200%_100%]"
-        />
+        <span aria-hidden className={styles.signInButtonSpan2} />
       </span>
     );
   }
@@ -184,7 +182,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                         email: email || undefined,
                         redirectToPath: props.redirectToPath,
                       }}
-                      className="ml-auto inline-block text-sm underline"
+                      className={styles.authSignInPageLink}
                     >
                       Forgot your password?
                     </Link>
@@ -210,7 +208,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
-                      <GoogleIcon className="mr-4 size-4" /> Login with Google
+                      <GoogleIcon className={styles.authSignInPageGoogleIcon} /> Login with Google
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -222,7 +220,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
-                      <GitHubIcon className="mr-4 size-4" /> Login with Github
+                      <GitHubIcon className={styles.authSignInPageGitHubIcon} /> Login with Github
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -235,7 +233,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
-                      <OktaIcon className="mr-4 size-4" /> Login with Okta
+                      <OktaIcon className={styles.authSignInPageOktaIcon} /> Login with Okta
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -249,13 +247,14 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                         <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
                       }
                     >
-                      <CircleUserRound className="mr-4 size-4" /> Login with SSO
+                      <CircleUserRound className={styles.authSignInPageCircleUserRound} /> Login
+                      with SSO
                     </Button>
                   </SignInButton>
                 ) : null}
               </>
             </AuthCardStack>
-            <div className="mt-4">
+            <div className={styles.authSignInPageDiv}>
               <Text arrangement="block" align="center" size="small" color="secondary">
                 Don't have an account?{' '}
                 <Link
@@ -264,7 +263,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                     redirectToPath: props.redirectToPath,
                   }}
                   data-auth-link="sign-up"
-                  className="underline"
+                  className={styles.authSignInPageLink2}
                 >
                   Sign up
                 </Link>

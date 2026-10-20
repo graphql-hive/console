@@ -28,6 +28,7 @@ import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { useCollections } from './use-collections';
 import { useCurrentOperation } from './use-current-operation';
 import { useSyncOperationState } from './use-sync-operation-state';
+import * as styles from './use-operation-collections-plugin.css';
 
 // The accordion hands out no ref, so the operation opened from the URL is found by id instead.
 const targetRoute = getRouteApi(
@@ -301,11 +302,11 @@ export function Content() {
   const renderedCollections = collections.map(collection => ({
     value: collection.id,
     label: (
-      <span className="inline-flex items-center gap-x-3">
+      <span className={styles.contentSpan}>
         {accordionValue.includes(collection.id) ? (
-          <FolderOpenIcon className="size-4" />
+          <FolderOpenIcon className={styles.contentFolderOpenIcon} />
         ) : (
-          <FolderIcon className="size-4" />
+          <FolderIcon className={styles.contentFolderIcon} />
         )}
         {collection.name}
       </span>
@@ -322,7 +323,7 @@ export function Content() {
             className="graphiql-toolbar-button"
             data-cy="collection-menu-trigger"
           >
-            <EllipsisIcon className="size-4" />
+            <EllipsisIcon className={styles.contentEllipsisIcon} />
           </button>
         }
         sections={[
@@ -358,10 +359,10 @@ export function Content() {
       />
     ) : undefined,
     content: (
-      <div className="space-y-0 pb-2 pl-2">
+      <div className={styles.contentDiv}>
         {collection.operations.edges.length ? (
           collection.operations.edges.map(({ node }) => (
-            <div key={node.id} className="flex items-center">
+            <div key={node.id} className={styles.contentDiv2}>
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
                 params={{
@@ -372,17 +373,18 @@ export function Content() {
                 search={{ operation: node.id }}
                 data-cy={`operation-${node.name}`}
                 className={cn(
-                  'flex w-full items-center gap-x-3 rounded-sm p-2 font-normal text-fg-muted hover:bg-surface-hover hover:text-fg hover:no-underline',
+                  styles.contentLink,
                   node.id === queryParamsOperationId && [
-                    'bg-surface-selected text-fg',
+                    styles.contentLink2,
                     currentOperation &&
                       node.id === currentOperation.id &&
                       !isSame &&
-                      'hive-badge-is-changed relative',
+                      styles.contentLink3,
+                    'hive-badge-is-changed',
                   ],
                 )}
               >
-                <SquareTerminalIcon className="size-4" />
+                <SquareTerminalIcon className={styles.contentSquareTerminalIcon} />
                 {node.name}
               </Link>
               <Menu
@@ -391,9 +393,9 @@ export function Content() {
                 trigger={
                   <button
                     type="button"
-                    className="graphiql-toolbar-button text-fg opacity-0 transition-opacity [div:hover>&]:opacity-100"
+                    className={cn(styles.contentButton, 'graphiql-toolbar-button')}
                   >
-                    <EllipsisIcon className="size-4" />
+                    <EllipsisIcon className={styles.contentEllipsisIcon2} />
                   </button>
                 }
                 sections={[
@@ -428,9 +430,9 @@ export function Content() {
             </div>
           ))
         ) : (
-          <div className="text-center">
+          <div className={styles.contentDiv3}>
             <Button variant="link" onClick={() => void addOperation(collection.id)}>
-              <PlusIcon className="mr-1 inline size-4" /> Add Operation
+              <PlusIcon className={styles.contentPlusIcon} /> Add Operation
             </Button>
           </div>
         )}
@@ -442,11 +444,11 @@ export function Content() {
 
   return (
     <>
-      <div className="mb-5 flex items-center justify-between gap-1">
+      <div className={styles.contentDiv4}>
         <div className="graphiql-doc-explorer-title">Operations</div>
         {target?.viewerCanModifyLaboratory && (
           // The flex item needs min-w-0 for the label inside to truncate; the button fills it.
-          <span className="flex min-w-0">
+          <span className={styles.contentSpan2}>
             <Tooltip
               trigger={
                 <Button
@@ -460,9 +462,9 @@ export function Content() {
                     toggleCollectionModal();
                   }}
                 >
-                  <span className="flex min-w-0 items-center gap-1">
-                    <PlusIcon className="size-4 shrink-0" />
-                    <span className="truncate">New collection</span>
+                  <span className={styles.contentSpan3}>
+                    <PlusIcon className={styles.contentPlusIcon2} />
+                    <span className={styles.contentSpan4}>New collection</span>
                   </span>
                 </Button>
               }
@@ -472,8 +474,8 @@ export function Content() {
         )}
       </div>
       {loading ? (
-        <div role="status" aria-label="Loading collections" className="flex flex-col gap-3 px-2">
-          <span className="sr-only">Loading collections</span>
+        <div role="status" aria-label="Loading collections" className={styles.contentDiv5}>
+          <span className={styles.contentSpan5}>Loading collections</span>
           {[0, 1, 2].map(index => (
             <Skeleton key={index} variants={{ width: 'full' }} />
           ))}
@@ -489,12 +491,12 @@ export function Content() {
           attrs={{ id: COLLECTIONS_ID }}
         />
       ) : (
-        <div className="flex h-fit flex-1 items-center justify-center">
-          <div className="flex flex-col items-center">
+        <div className={styles.contentDiv6}>
+          <div className={styles.contentDiv7}>
             <BookmarkIcon size={30} />
-            <div className="mt-2 text-xs">There are no collections available.</div>
+            <div className={styles.contentDiv8}>There are no collections available.</div>
             {canEdit && (
-              <div className="mt-3">
+              <div className={styles.contentDiv9}>
                 <Button
                   onClick={() => {
                     if (collectionId) {

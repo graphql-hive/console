@@ -19,6 +19,7 @@ import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
 import { getRouteApi, Link } from '@tanstack/react-router';
+import * as styles from './target-insights-client.css';
 
 const clientRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name',
@@ -104,12 +105,12 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
+      <div className={styles.clientViewDiv}>
         <div>
           <Title>{props.clientName}</Title>
           <Subtitle>GraphQL API consumer insights</Subtitle>
         </div>
-        <div className="flex justify-end gap-x-2">
+        <div className={styles.clientViewDiv2}>
           <DateRangePicker
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
@@ -125,10 +126,10 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
           <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>
       </div>
-      <div className="space-y-4 pb-8">
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
-          <div className="col-span-4">
-            <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
+      <div className={styles.clientViewDiv3}>
+        <div className={styles.clientViewDiv4}>
+          <div className={styles.clientViewDiv5}>
+            <div className={styles.clientViewDiv6}>
               <StatCard
                 title="Total calls"
                 icon={GlobeIcon}
@@ -162,7 +163,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
               />
             </div>
           </div>
-          <div className="col-span-4">
+          <div className={styles.clientViewDiv7}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Activity"
@@ -176,8 +177,8 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
             </Card>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-4 grid">
+        <div className={styles.clientViewDiv8}>
+          <div className={styles.clientViewDiv9}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Operations"
@@ -195,7 +196,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                   : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
                       <Link
                         key={operation.id}
-                        className="flex items-center rounded-md px-2 py-1 text-fg-default hover:bg-surface-hover hover:text-fg-default hover:underline hover:underline-offset-2"
+                        className={styles.clientViewLink}
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                         params={{
                           organizationSlug,
@@ -206,10 +207,10 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                         }}
                         search={searchParams => pick(searchParams, ['from', 'to'])}
                       >
-                        <p className="truncate text-sm font-medium">{operation.name}</p>
-                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                        <p className={styles.clientViewP}>{operation.name}</p>
+                        <div className={styles.clientViewDiv10}>
                           <div>{formatNumber(operation.count)}</div>{' '}
-                          <div className="min-w-[70px] text-right">
+                          <div className={styles.clientViewDiv11}>
                             {toDecimal((operation.count * 100) / totalRequests)}%
                           </div>
                         </div>
@@ -219,7 +220,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
             </Card>
           </div>
 
-          <div className="col-span-3 grid">
+          <div className={styles.clientViewDiv12}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Versions"
@@ -238,11 +239,11 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                 {isLoading
                   ? null
                   : query.data?.target?.clientStats.versions.map(version => (
-                      <div key={version.version} className="flex items-center py-1">
-                        <p className="truncate text-sm font-medium">{version.version}</p>
-                        <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                      <div key={version.version} className={styles.clientViewDiv13}>
+                        <p className={styles.clientViewP2}>{version.version}</p>
+                        <div className={styles.clientViewDiv14}>
                           <div>{formatNumber(version.count)}</div>
-                          <div className="min-w-[70px] text-right">
+                          <div className={styles.clientViewDiv15}>
                             {toDecimal((version.count * 100) / totalRequests)}%
                           </div>
                         </div>
@@ -307,7 +308,7 @@ function ClientInsightsPageContent(props: { name: string }) {
 
   if (!query.data?.hasCollectedOperations) {
     return (
-      <div className="py-8">
+      <div className={styles.clientInsightsPageContentDiv}>
         <EmptyList
           title="Hive is waiting for your first collected operation"
           description="You can collect usage of your GraphQL API with Hive Client"

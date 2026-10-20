@@ -28,6 +28,7 @@ import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
+import * as styles from './target-explorer-deprecated.css';
 
 const DeprecatedSchemaView_DeprecatedSchemaExplorerFragment = graphql(`
   fragment DeprecatedSchemaView_DeprecatedSchemaExplorerFragment on DeprecatedSchemaExplorer {
@@ -105,12 +106,12 @@ function InternalDeprecatedSchemaView(props: {
 
   if (types.length === 0) {
     return (
-      <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
-        <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-          <PartyPopperIcon className="size-10 text-success" />
+      <div className={styles.internalDeprecatedSchemaViewDiv}>
+        <div className={styles.internalDeprecatedSchemaViewDiv2}>
+          <PartyPopperIcon className={styles.internalDeprecatedSchemaViewPartyPopperIcon} />
 
-          <h3 className="mt-4 text-lg font-semibold">No deprecations found</h3>
-          <p className="mt-2 mb-4 text-sm text-fg-secondary">
+          <h3 className={styles.internalDeprecatedSchemaViewH3}>No deprecations found</h3>
+          <p className={styles.internalDeprecatedSchemaViewP}>
             It looks like you are maintaining your schema well, congratulations!
           </p>
         </div>
@@ -127,7 +128,7 @@ function InternalDeprecatedSchemaView(props: {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={styles.internalDeprecatedSchemaViewDiv3}>
       <div>
         <>
           {letters.map(letter => (
@@ -138,11 +139,11 @@ function InternalDeprecatedSchemaView(props: {
                   type="button"
                   onClick={() => setSelectedLetter(letter)}
                   className={cn(
-                    'inline-flex h-9 items-center px-2 py-1 text-sm font-medium transition-colors',
+                    styles.internalDeprecatedSchemaViewButton,
                     focusRingQuiet,
                     letter === activeLetter
-                      ? 'bg-surface-selected text-accent'
-                      : 'text-fg-secondary hover:bg-surface-hover hover:text-accent',
+                      ? styles.internalDeprecatedSchemaViewButton2
+                      : styles.internalDeprecatedSchemaViewButton3,
                   )}
                 >
                   {letter}
@@ -153,7 +154,7 @@ function InternalDeprecatedSchemaView(props: {
           ))}
         </>
       </div>
-      <div className="flex flex-col gap-4">
+      <div className={styles.internalDeprecatedSchemaViewDiv4}>
         {(typesGroupedByFirstLetter.get(activeLetter) ?? []).map((type, i) => {
           return (
             <TypeRenderer
@@ -266,15 +267,16 @@ function DeprecatedSchemaExplorer() {
           {latestValidSchemaVersion?.deprecatedSchema && latestSchemaVersion ? (
             <>
               {latestSchemaVersion.id !== latestValidSchemaVersion.id && (
-                <Alert className="mb-3">
-                  <AlertCircleIcon className="size-4" />
+                <Alert className={styles.deprecatedSchemaExplorerAlert}>
+                  <AlertCircleIcon className={styles.deprecatedSchemaExplorerAlertCircleIcon} />
                   <AlertTitle>Outdated Schema</AlertTitle>
-                  <AlertDescription className="max-w-[600px]">
-                    The latest schema version is <span className="font-bold">not valid</span> , thus
+                  <AlertDescription className={styles.deprecatedSchemaExplorerAlertDescription}>
+                    The latest schema version is{' '}
+                    <span className={styles.deprecatedSchemaExplorerSpan}>not valid</span> , thus
                     the explorer might not be accurate as it is showing the{' '}
-                    <span className="font-bold">latest valid</span> schema version. We recommend you
-                    to publish a new schema version that is composable before using this explorer
-                    for decision making.
+                    <span className={styles.deprecatedSchemaExplorerSpan2}>latest valid</span>{' '}
+                    schema version. We recommend you to publish a new schema version that is
+                    composable before using this explorer for decision making.
                     <br />
                     <br />
                     <Link
@@ -286,7 +288,10 @@ function DeprecatedSchemaExplorer() {
                         versionId: latestSchemaVersion.id,
                       }}
                     >
-                      <span className="font-bold"> See the invalid schema version</span>
+                      <span className={styles.deprecatedSchemaExplorerSpan3}>
+                        {' '}
+                        See the invalid schema version
+                      </span>
                     </Link>
                   </AlertDescription>
                 </Alert>

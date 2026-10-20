@@ -30,6 +30,7 @@ import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useLayoutQuery } from '@/lib/hooks/use-layout-query';
 import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
+import * as styles from './target-alerts-detail.css';
 
 // The rule's configuration, revalidated by the route and updated in place, so the Modify sheet
 // under it is never torn down. The live, time-windowed state log is RuleStateLogSection's own query.
@@ -208,8 +209,8 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   // cache-and-network refetch errors but we still hold data, we keep showing it.
   if (result.error && !result.data) {
     return (
-      <div className="flex h-fit flex-1 items-center justify-center py-28">
-        <div className="text-sm text-critical">
+      <div className={styles.targetAlertsDetailPageDiv}>
+        <div className={styles.targetAlertsDetailPageDiv2}>
           Failed to load alert rule: {result.error.message}
         </div>
       </div>
@@ -218,7 +219,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
 
   if (!rule && (result.fetching || result.stale)) {
     return (
-      <div className="flex h-fit flex-1 items-center justify-center py-28">
+      <div className={styles.targetAlertsDetailPageDiv3}>
         <Spinner />
       </div>
     );
@@ -235,8 +236,8 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
   }
 
   return (
-    <div className="flex gap-8 pt-7">
-      <div className="min-w-0 flex-1 space-y-6">
+    <div className={styles.targetAlertsDetailPageDiv4}>
+      <div className={styles.targetAlertsDetailPageDiv5}>
         <BackLink
           copy="Back to Alerts"
           link={{
@@ -251,7 +252,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
 
         <PageLead description={buildDescription(rule)} title={rule.name} />
 
-        <div className="flex">
+        <div className={styles.targetAlertsDetailPageDiv6}>
           <Select
             aria-label="Time range"
             options={rangeOptions}
@@ -263,7 +264,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
         <RuleStateLogSection ruleId={rule.id} viewRangeMinutes={viewRangeMinutes} rule={rule} />
       </div>
 
-      <aside className="sticky top-6 w-94 shrink-0 self-start">
+      <aside className={styles.targetAlertsDetailPageAside}>
         <AlertConditionsPanel
           rule={rule}
           onRuleDeleted={() => {
@@ -317,19 +318,19 @@ function RuleStateLogSection(props: {
   const hasNoData = !data;
   const stateLogStatus =
     result.error && hasNoData ? (
-      <div className="py-4 text-sm text-critical">
+      <div className={styles.ruleStateLogSectionDiv}>
         Failed to load status transitions: {result.error.message}
       </div>
     ) : result.fetching && hasNoData ? (
-      <div className="flex justify-center py-6">
+      <div className={styles.ruleStateLogSectionDiv2}>
         <Spinner />
       </div>
     ) : null;
 
   return (
     <>
-      <section className="space-y-2">
-        <h2 className="m-0 mb-2 text-sm font-medium text-fg">Status transitions</h2>
+      <section className={styles.ruleStateLogSectionSection}>
+        <h2 className={styles.ruleStateLogSectionH2}>Status transitions</h2>
         {stateLogStatus ?? (
           <AlertStateTransitionsBar
             stateLog={stateLog}
@@ -341,8 +342,8 @@ function RuleStateLogSection(props: {
         )}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="m-0 text-sm font-medium text-fg">
+      <section className={styles.ruleStateLogSectionSection2}>
+        <h2 className={styles.ruleStateLogSectionH22}>
           {rule.type === MetricAlertRuleType.ErrorRate
             ? 'Error rate over time'
             : rule.type === MetricAlertRuleType.Latency

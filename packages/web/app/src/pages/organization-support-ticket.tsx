@@ -21,6 +21,7 @@ import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
+import * as styles from './organization-support-ticket.css';
 
 const ReplyTicketForm_SupportTicketReplyMutation = graphql(`
   mutation ReplyTicketForm_SupportTicketReplyMutation($input: SupportTicketReplyInput!) {
@@ -99,29 +100,21 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
   const isSupport = comment.fromSupport;
 
   return (
-    <div
-      className={cn(
-        'flex w-full flex-row items-end space-x-2',
-        isSupport ? 'justify-end' : 'justify-start',
-      )}
-    >
-      {isSupport ? null : <UserIcon className="size-6 text-accent" />}
+    <div className={cn(styles.commentDiv, isSupport ? styles.commentDiv2 : styles.commentDiv3)}>
+      {isSupport ? null : <UserIcon className={styles.commentUserIcon} />}
       <Tooltip
         trigger={
           <div
-            className={cn(
-              'inline-block max-w-[70%] rounded-lg bg-surface-selected p-2 text-left text-fg-default',
-              isSupport ? 'rounded-br-none' : 'rounded-bl-none',
-            )}
+            className={cn(styles.commentDiv4, isSupport ? styles.commentDiv5 : styles.commentDiv6)}
           >
             {comment.body}
           </div>
         }
-        content={<TimeAgo date={comment.createdAt} className="text-fg-secondary" />}
+        content={<TimeAgo date={comment.createdAt} className={styles.commentTimeAgo} />}
         side="bottom"
       />
       {isSupport ? (
-        <img className="block size-6" src="/just-logo.svg" alt="Hive Console logo" />
+        <img className={styles.commentImg} src="/just-logo.svg" alt="Hive Console logo" />
       ) : null}
     </div>
   );
@@ -165,59 +158,63 @@ function SupportTicket(props: {
 
   return (
     <>
-      <div className="py-6">
-        <div className="flex flex-row items-start justify-between gap-x-6">
-          <div className="flex-1 border-r border-line pr-6">
-            <Title className="flex flex-row items-center gap-x-2">
+      <div className={styles.supportTicketDiv}>
+        <div className={styles.supportTicketDiv2}>
+          <div className={styles.supportTicketDiv3}>
+            <Title className={styles.supportTicketTitle}>
               <Link
                 to="/$organizationSlug/view/support"
                 params={{
                   organizationSlug: organization.slug,
                 }}
-                className="text-lg font-semibold tracking-tight text-accent underline-offset-4 hover:underline"
+                className={styles.supportTicketLink}
               >
                 Tickets
               </Link>
-              <span className="text-lg font-semibold tracking-tight text-fg-secondary">
-                <ChevronRightIcon className="size-4" />
+              <span className={styles.supportTicketSpan}>
+                <ChevronRightIcon className={styles.supportTicketChevronRightIcon} />
               </span>
               <span>{ticket.subject}</span>
             </Title>
             <Subtitle>Support ticket detailed view</Subtitle>
-            <div className="space-y-6 py-12">
+            <div className={styles.supportTicketDiv4}>
               {comments.map(comment => (
                 <Comment key={comment.node.id} node={comment.node} />
               ))}
 
-              <div className="mt-6">
+              <div className={styles.supportTicketDiv5}>
                 <ReplyTicket ticketId={ticket.id} onSubmit={props.refetch} />
               </div>
             </div>
           </div>
-          <div className="w-1/3 shrink-0 text-sm">
-            <div className="flex flex-col gap-y-6 text-left">
-              <div className="space-y-0">
-                <div className="font-semibold text-fg">Support Ticket ID</div>
-                <div className="text-fg-secondary">{ticket.id}</div>
+          <div className={styles.supportTicketDiv6}>
+            <div className={styles.supportTicketDiv7}>
+              <div className={styles.supportTicketDiv8}>
+                <div className={styles.supportTicketDiv9}>Support Ticket ID</div>
+                <div className={styles.supportTicketDiv10}>{ticket.id}</div>
               </div>
-              <div className="space-y-0">
-                <div className="font-semibold text-fg">Status</div>
-                <div className="text-fg-secondary">
+              <div className={styles.supportTicketDiv11}>
+                <div className={styles.supportTicketDiv12}>Status</div>
+                <div className={styles.supportTicketDiv13}>
                   {ticket.status}
-                  <div className="text-xs">{statusDescription[ticket.status]}</div>
+                  <div className={styles.supportTicketDiv14}>
+                    {statusDescription[ticket.status]}
+                  </div>
                 </div>
               </div>
-              <div className="space-y-0">
-                <div className="font-semibold text-fg">Priority</div>
-                <div className="text-fg-secondary">
+              <div className={styles.supportTicketDiv15}>
+                <div className={styles.supportTicketDiv16}>Priority</div>
+                <div className={styles.supportTicketDiv17}>
                   {ticket.priority}
-                  <div className="text-xs">{priorityDescription[ticket.priority]}</div>
+                  <div className={styles.supportTicketDiv18}>
+                    {priorityDescription[ticket.priority]}
+                  </div>
                 </div>
               </div>
-              <div className="space-y-0">
-                <div className="font-semibold text-fg">Last updated</div>
+              <div className={styles.supportTicketDiv19}>
+                <div className={styles.supportTicketDiv20}>Last updated</div>
                 <div>
-                  <TimeAgo date={ticket.updatedAt} className="text-xs text-fg-secondary" />
+                  <TimeAgo date={ticket.updatedAt} className={styles.supportTicketTimeAgo} />
                 </div>
               </div>
             </div>
@@ -270,12 +267,12 @@ function SupportTicketPageContent(props: { ticketId: string }) {
   const ticket = currentOrganization?.supportTicket;
 
   return (
-    <LayoutContent className="flex flex-col gap-y-10">
+    <LayoutContent className={styles.supportTicketPageContentLayoutContent}>
       {currentOrganization ? (
         ticket ? (
           <SupportTicket organization={currentOrganization} ticket={ticket} refetch={refetch} />
         ) : (
-          <div className="py-6">
+          <div className={styles.supportTicketPageContentDiv}>
             <NotFound
               title="Support ticket not found."
               description="The support ticket you are looking for does not exist or you do not have access to it."

@@ -15,6 +15,7 @@ import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
 import { useTimed } from '@/lib/hooks/use-timed';
 import { cn } from '@/lib/utils';
+import * as styles from './native-composition-diff.css';
 
 type NativeCompositionDiffProps = {
   projectId: string;
@@ -105,23 +106,25 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
   )[nativeFederationCompatibility.status];
 
   return (
-    <div className="p-8">
-      <Heading className="mb-4">Native Composition Report</Heading>
+    <div className={styles.nativeCompositionDiffDiv}>
+      <Heading className={styles.nativeCompositionDiffHeading}>Native Composition Report</Heading>
 
-      <div className="flex items-center gap-4 rounded-sm border border-line px-8 py-4 text-xs dark:bg-surface-card">
-        <MetaCell label="Project" className="flex-1 truncate text-left">
+      <div className={styles.nativeCompositionDiffDiv2}>
+        <MetaCell label="Project" className={styles.nativeCompositionDiffMetaCell}>
           {project.slug}
         </MetaCell>
-        <MetaCell label="Status" className="flex-1 items-center truncate text-left">
+        <MetaCell label="Status" className={styles.nativeCompositionDiffMetaCell2}>
           <StatusDot color={statusColor} />
 
-          <span className="ml-1 truncate">{nativeFederationCompatibility.status}</span>
+          <span className={styles.nativeCompositionDiffSpan}>
+            {nativeFederationCompatibility.status}
+          </span>
         </MetaCell>
-        <div className="col-span-2 flex-none text-right" />
+        <div className={styles.nativeCompositionDiffDiv3} />
       </div>
       <PageLayout>
-        <div className="w-48 shrink-0">
-          <div className="p-4 text-xs font-bold">View Target</div>
+        <div className={styles.nativeCompositionDiffDiv4}>
+          <div className={styles.nativeCompositionDiffDiv5}>View Target</div>
           <Tabs
             orientation="vertical"
             value={String(page)}
@@ -129,9 +132,11 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
             items={results.map((result, index) => ({
               value: String(index),
               label: (
-                <span className="flex items-center">
+                <span className={styles.nativeCompositionDiffSpan2}>
                   <StatusDot color={result?.compatible ? 'success' : 'critical'} />
-                  <span className="ml-1">{result?.target?.slug ?? `Target ${index}`}</span>
+                  <span className={styles.nativeCompositionDiffSpan3}>
+                    {result?.target?.slug ?? `Target ${index}`}
+                  </span>
                 </span>
               ),
             }))}
@@ -140,11 +145,11 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
         <PageLayoutContent>
           {report?.nativeCompositionResult?.errors?.edges?.length ? (
             <>
-              <div className="py-3 text-lg font-bold">Composition Errors</div>
-              <ul className="divide-y divide-critical-line-subtle px-1 pb-2">
+              <div className={styles.nativeCompositionDiffDiv6}>Composition Errors</div>
+              <ul className={styles.nativeCompositionDiffUl}>
                 {report?.nativeCompositionResult?.errors?.edges?.map((err, idx) => (
-                  <li key={idx} className="flex gap-3 px-4 py-3">
-                    <span className="mt-0.5 w-6 shrink-0 font-mono text-xs text-critical select-none">
+                  <li key={idx} className={styles.nativeCompositionDiffLi}>
+                    <span className={styles.nativeCompositionDiffSpan4}>
                       {String(idx + 1).padStart(2, '0')}
                     </span>
 
@@ -155,16 +160,16 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
             </>
           ) : null}
 
-          <div className="flex flex-col gap-4 lg:flex-row">
-            <div className="flex w-full grow flex-col items-start">
-              <div className="py-3 text-lg font-bold">Schema Comparison</div>
+          <div className={styles.nativeCompositionDiffDiv7}>
+            <div className={styles.nativeCompositionDiffDiv8}>
+              <div className={styles.nativeCompositionDiffDiv9}>Schema Comparison</div>
               {report?.currentSupergraphSdl === report?.nativeCompositionResult?.supergraphSdl ? (
-                <div className="w-full">
+                <div className={styles.nativeCompositionDiffDiv10}>
                   {report?.schemaVersion?.schemas.edges.length ? (
                     <>
                       The generated supergraph SDL from your existing composition setup and our{' '}
                       <a
-                        className="font-semibold text-fg-secondary underline-offset-4 hover:underline"
+                        className={styles.nativeCompositionDiffA}
                         href="https://github.com/the-guild-org/federation"
                       >
                         Open Source composition library
@@ -176,11 +181,11 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                   )}
                   {nativeFederationCompatibility.status ===
                   NativeFederationCompatibilityStatusType.Compatible ? (
-                    <div className="pt-2">
+                    <div className={styles.nativeCompositionDiffDiv11}>
                       Review other targets to identify the cause of incompatibility
                     </div>
                   ) : null}
-                  <div className="my-4">
+                  <div className={styles.nativeCompositionDiffDiv12}>
                     <Button
                       variant="link"
                       anchor={{
@@ -192,13 +197,13 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                   </div>
                 </div>
               ) : (
-                <div className="w-full">
-                  <span className="font-semibold">
+                <div className={styles.nativeCompositionDiffDiv13}>
+                  <span className={styles.nativeCompositionDiffSpan5}>
                     There are differences in the generated supergraph SDL
                   </span>{' '}
                   between your existing composition setup and native composition. Review these
                   changes carefully to determine how they could impact your gateway.
-                  <div className="mt-4 min-h-full w-full">
+                  <div className={styles.nativeCompositionDiffDiv14}>
                     <DiffEditor
                       before={report?.currentSupergraphSdl ?? ''}
                       downloadFileName={`latest_composable_supergraph_${report.target?.id ?? 'target'}.graphql`}
@@ -208,14 +213,14 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                 </div>
               )}
             </div>
-            <div className="flex min-w-fit flex-col gap-4">
+            <div className={styles.nativeCompositionDiffDiv15}>
               <Tooltip
                 // show only for disabled buttons
                 open={!report?.schemaVersion?.schemas.edges.length && isTooltipOpen}
                 onOpenChange={setIsTooltipOpen}
                 maxWidth="screen"
                 trigger={
-                  <span className="inline-flex max-w-64 text-right">
+                  <span className={styles.nativeCompositionDiffSpan6}>
                     <Button
                       width="full"
                       variant="outline"
@@ -233,17 +238,17 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                       }}
                     >
                       {copied ? (
-                        <CheckIcon className="mr-2 size-4 text-fg-subtle" />
+                        <CheckIcon className={styles.nativeCompositionDiffCheckIcon} />
                       ) : (
-                        <CopyIcon className="mr-2 size-4 text-fg-subtle" />
+                        <CopyIcon className={styles.nativeCompositionDiffCopyIcon} />
                       )}{' '}
                       Copy services JSON
                     </Button>
                   </span>
                 }
                 content={
-                  <span className="flex items-center text-pretty">
-                    <XIcon className="mr-1 size-4 text-critical" />{' '}
+                  <span className={styles.nativeCompositionDiffSpan7}>
+                    <XIcon className={styles.nativeCompositionDiffXIcon} />{' '}
                     <span>
                       Cannot copy services JSON because there are no services published for this
                       target.
@@ -282,9 +287,9 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
 
 function MetaCell(props: { label: string; children: ReactNode; className?: string }): ReactElement {
   return (
-    <div className={cn('min-w-0', props.className)}>
-      <div className="text-xs font-bold capitalize">{props.label}</div>
-      <div className="mt-1">{props.children}</div>
+    <div className={cn(styles.metaCellDiv, props.className)}>
+      <div className={styles.metaCellDiv2}>{props.label}</div>
+      <div className={styles.metaCellDiv3}>{props.children}</div>
     </div>
   );
 }

@@ -20,6 +20,7 @@ import { focusRing } from '@/components/ui/primitives/shared-styles';
 import { Slider } from '@/components/ui/primitives/slider/slider';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import * as styles from './target-traces-filter.css';
 
 export function FilterLocalSearch(props: { value: string; onChange(value: string): void }) {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,17 +28,14 @@ export function FilterLocalSearch(props: { value: string; onChange(value: string
   }, []);
 
   return (
-    <div className="mt-4 flex w-full max-w-sm items-center space-x-2">
+    <div className={styles.filterLocalSearchDiv}>
       <Input type="text" placeholder="Search values" value={props.value} onChange={handleChange} />
     </div>
   );
 }
 
 /** A row in a filter group. */
-const filterRowClass = cn(
-  'hover:bg-surface-hover flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm transition-colors',
-  focusRing,
-);
+const filterRowClass = cn(styles.class2, focusRing);
 
 export const MultiInputFilter = memo(
   (props: {
@@ -76,7 +74,7 @@ export const MultiInputFilter = memo(
         onReset={() => props.onChange([])}
       >
         <form
-          className="mt-4 flex w-full max-w-sm items-center space-x-2"
+          className={styles.form}
           onSubmit={e => {
             e.preventDefault();
             addTraceId();
@@ -178,7 +176,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
         <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
       )}
       {filteredOptions.length === 0 ? (
-        <div className="text-center text-sm text-fg-subtle">No option available</div>
+        <div className={styles.multiSelectFilterDiv}>No option available</div>
       ) : (
         filteredOptions.map((option, index) => (
           <FilterOption
@@ -194,7 +192,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
             }}
           >
             {option.label === '' ? (
-              <span className="text-fg-secondary">{'<unknown>'}</span>
+              <span className={styles.multiSelectFilterSpan}>{'<unknown>'}</span>
             ) : (
               option.label
             )}
@@ -212,8 +210,12 @@ function FilterOption(props: {
   count?: number;
 }) {
   return (
-    <button type="button" onClick={props.onClick} className={cn(filterRowClass, 'justify-between')}>
-      <div className="flex items-center gap-2 overflow-hidden">
+    <button
+      type="button"
+      onClick={props.onClick}
+      className={cn(filterRowClass, styles.filterOptionButton)}
+    >
+      <div className={styles.filterOptionDiv}>
         <Checkbox visual checked={props.selected} size="sm" />
         {props.children}
       </div>
@@ -231,7 +233,7 @@ function FilterOption(props: {
 function Filter(props: { name: string; changes?: number; onReset(): void; children: ReactNode }) {
   return (
     <Fragment key={props.name}>
-      <div className="px-2">
+      <div className={styles.filterDiv}>
         <Collapsible
           trigger={props.name}
           actions={
@@ -239,19 +241,16 @@ function Filter(props: { name: string; changes?: number; onReset(): void; childr
               <button
                 type="button"
                 aria-label={`Reset ${props.name} filter`}
-                className={cn(
-                  'group ml-auto flex h-6 w-8 items-center justify-center rounded-md px-1 text-xs text-fg-secondary transition-colors hover:bg-surface-hover',
-                  focusRing,
-                )}
+                className={cn(styles.filterButton, 'group', focusRing)}
                 onClick={props.onReset}
               >
-                <CircleXIcon className="hidden size-3 group-hover:block" />
-                <span className="block group-hover:hidden">{props.changes}</span>
+                <CircleXIcon className={styles.filterCircleXIcon} />
+                <span className={styles.filterSpan}>{props.changes}</span>
               </button>
             ) : null
           }
         >
-          <div className="flex w-full min-w-0 flex-col gap-1 text-sm">{props.children}</div>
+          <div className={styles.filterDiv2}>{props.children}</div>
         </Collapsible>
       </div>
       <Separator />
@@ -316,28 +315,28 @@ export const DurationFilter = memo(
         changes={values[0] === minValue && values[1] === maxValue ? 0 : 1}
         onReset={() => props.onChange(defaultValues)}
       >
-        <div className="space-y-6 p-2">
-          <div className="space-y-2">
-            <div className="space-y-1">
-              <label className="font-mono text-xs text-fg-secondary">MIN</label>
+        <div className={styles.div}>
+          <div className={styles.div2}>
+            <div className={styles.div3}>
+              <label className={styles.label}>MIN</label>
               <Input
                 type="number"
                 value={values[0]}
                 onChange={handleMinInputChange}
                 size="compact"
                 mono
-                trailing={<span className="font-mono text-xs text-fg-secondary">ms</span>}
+                trailing={<span className={styles.span}>ms</span>}
               />
             </div>
-            <div className="space-y-1">
-              <label className="font-mono text-xs text-fg-secondary">MAX</label>
+            <div className={styles.div4}>
+              <label className={styles.label2}>MAX</label>
               <Input
                 type="number"
                 value={values[1]}
                 onChange={handleMaxInputChange}
                 size="compact"
                 mono
-                trailing={<span className="font-mono text-xs text-fg-secondary">ms</span>}
+                trailing={<span className={styles.span2}>ms</span>}
               />
             </div>
           </div>

@@ -28,6 +28,7 @@ import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
 import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
+import * as styles from './target-explorer-unused.css';
 
 const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
   fragment UnusedSchemaView_UnusedSchemaExplorerFragment on UnusedSchemaExplorer {
@@ -152,12 +153,12 @@ function InternalUnusedSchemaView(props: {
 
   if (types.length === 0) {
     return (
-      <div className="flex h-[250px] shrink-0 items-center justify-center rounded-md border border-dashed">
-        <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-          <PartyPopperIcon className="size-10 text-success" />
+      <div className={styles.internalUnusedSchemaViewDiv}>
+        <div className={styles.internalUnusedSchemaViewDiv2}>
+          <PartyPopperIcon className={styles.internalUnusedSchemaViewPartyPopperIcon} />
 
-          <h3 className="mt-4 text-lg font-semibold">No unused types</h3>
-          <p className="mt-2 mb-4 text-sm text-fg-secondary">
+          <h3 className={styles.internalUnusedSchemaViewH3}>No unused types</h3>
+          <p className={styles.internalUnusedSchemaViewP}>
             It looks like you are using all typea in your schema, congratulations!
           </p>
         </div>
@@ -181,10 +182,10 @@ function InternalUnusedSchemaView(props: {
     .join(' and ');
 
   return (
-    <div className="space-y-6">
+    <div className={styles.internalUnusedSchemaViewDiv3}>
       {unusedFieldsMessage.length ? (
         <div>
-          <p className="text-sm text-fg-secondary">
+          <p className={styles.internalUnusedSchemaViewP2}>
             You have a total of {unusedFieldsMessage} within {unused.types} different types in the
             selected time period
           </p>
@@ -200,11 +201,11 @@ function InternalUnusedSchemaView(props: {
                   type="button"
                   onClick={() => setSelectedLetter(letter)}
                   className={cn(
-                    'inline-flex h-9 items-center px-2 py-1 text-sm font-medium transition-colors',
+                    styles.internalUnusedSchemaViewButton,
                     focusRingQuiet,
                     letter === activeLetter
-                      ? 'bg-surface-selected text-accent'
-                      : 'text-fg-secondary hover:bg-surface-hover hover:text-accent',
+                      ? styles.internalUnusedSchemaViewButton2
+                      : styles.internalUnusedSchemaViewButton3,
                   )}
                 >
                   {letter}
@@ -215,7 +216,7 @@ function InternalUnusedSchemaView(props: {
           ))}
         </>
       </div>
-      <div className="flex flex-col gap-4">
+      <div className={styles.internalUnusedSchemaViewDiv4}>
         {(typesGroupedByFirstLetter.get(activeLetter) ?? []).map((type, i) => {
           return (
             <TypeRenderer
@@ -325,7 +326,7 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
       />
 
       {!hasCollectedOperations ? (
-        <div className="py-8">
+        <div className={styles.unusedSchemaExplorerDiv}>
           <EmptyList
             title="Hive is waiting for your first collected operation"
             description="You can collect usage of your GraphQL API with Hive Client"
@@ -337,15 +338,16 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
           {latestValidSchemaVersion?.unusedSchema && latestSchemaVersion ? (
             <>
               {latestSchemaVersion.id !== latestValidSchemaVersion.id && (
-                <Alert className="mb-3">
-                  <AlertCircleIcon className="size-4" />
+                <Alert className={styles.unusedSchemaExplorerAlert}>
+                  <AlertCircleIcon className={styles.unusedSchemaExplorerAlertCircleIcon} />
                   <AlertTitle>Outdated Schema</AlertTitle>
-                  <AlertDescription className="max-w-[600px]">
-                    The latest schema version is <span className="font-bold">not valid</span> , thus
-                    the explorer might not be accurate as it is showing the{' '}
-                    <span className="font-bold">latest valid</span> schema version. We recommend you
-                    to publish a new schema version that is composable before using this explorer
-                    for decision making.
+                  <AlertDescription className={styles.unusedSchemaExplorerAlertDescription}>
+                    The latest schema version is{' '}
+                    <span className={styles.unusedSchemaExplorerSpan}>not valid</span> , thus the
+                    explorer might not be accurate as it is showing the{' '}
+                    <span className={styles.unusedSchemaExplorerSpan2}>latest valid</span> schema
+                    version. We recommend you to publish a new schema version that is composable
+                    before using this explorer for decision making.
                     <br />
                     <br />
                     <Link
@@ -357,7 +359,10 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
                         versionId: latestSchemaVersion.id,
                       }}
                     >
-                      <span className="font-bold"> See the invalid schema version</span>
+                      <span className={styles.unusedSchemaExplorerSpan3}>
+                        {' '}
+                        See the invalid schema version
+                      </span>
                     </Link>
                   </AlertDescription>
                 </Alert>

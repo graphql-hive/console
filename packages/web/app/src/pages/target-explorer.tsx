@@ -20,6 +20,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi, Link } from '@tanstack/react-router';
+import * as styles from './target-explorer.css';
 
 const ExplorerPage_SchemaExplorerFragment = graphql(`
   fragment ExplorerPage_SchemaExplorerFragment on SchemaExplorer {
@@ -46,7 +47,7 @@ function SchemaView(props: {
   const { totalRequests } = props;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={styles.schemaViewDiv}>
       {query ? (
         <GraphQLObjectTypeComponent
           type={query}
@@ -186,15 +187,16 @@ function ExplorerPageContent() {
           {latestValidSchemaVersion?.explorer && latestSchemaVersion ? (
             <>
               {latestSchemaVersion.id !== latestValidSchemaVersion.id && (
-                <Alert className="mb-3">
-                  <AlertCircleIcon className="size-4" />
+                <Alert className={styles.explorerPageContentAlert}>
+                  <AlertCircleIcon className={styles.explorerPageContentAlertCircleIcon} />
                   <AlertTitle>Outdated Schema</AlertTitle>
                   <AlertDescription>
-                    The latest schema version is <span className="font-bold">not valid</span> , thus
-                    the explorer might not be accurate as it is showing the{' '}
-                    <span className="font-bold">latest valid</span> schema version. We recommend you
-                    to publish a new schema version that is composable before using this explorer
-                    for decision making.
+                    The latest schema version is{' '}
+                    <span className={styles.explorerPageContentSpan}>not valid</span> , thus the
+                    explorer might not be accurate as it is showing the{' '}
+                    <span className={styles.explorerPageContentSpan2}>latest valid</span> schema
+                    version. We recommend you to publish a new schema version that is composable
+                    before using this explorer for decision making.
                     <br />
                     <br />
                     <Link
@@ -206,7 +208,10 @@ function ExplorerPageContent() {
                         versionId: latestSchemaVersion.id,
                       }}
                     >
-                      <span className="font-bold"> See the invalid schema version</span>
+                      <span className={styles.explorerPageContentSpan3}>
+                        {' '}
+                        See the invalid schema version
+                      </span>
                     </Link>
                   </AlertDescription>
                 </Alert>

@@ -19,6 +19,7 @@ import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+import * as styles from './target-app-version.css';
 
 export const TargetAppsVersionQuery = graphql(`
   query TargetAppsVersionQuery(
@@ -192,7 +193,7 @@ function TargetAppVersionContent(props: {
             tone="muted"
             value={
               <Tooltip
-                trigger={<span className="cursor-help italic">anonymous</span>}
+                trigger={<span className={styles.targetAppVersionContentSpan}>anonymous</span>}
                 content="The operation within the document has no name."
               />
             }
@@ -276,7 +277,7 @@ function TargetAppVersionContent(props: {
   return (
     <>
       <Meta title={title} />
-      <div className="flex h-full flex-1 flex-col py-6">
+      <div className={styles.targetAppVersionContentDiv}>
         <div>
           <BackLink
             copy="Back to App Deployments"
@@ -289,7 +290,7 @@ function TargetAppVersionContent(props: {
               to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
             }}
           />
-          <div className="flex items-start justify-between gap-4">
+          <div className={styles.targetAppVersionContentDiv2}>
             <PageLead
               title={title}
               description="Group your GraphQL operations by app version for app version statistics and persisted operations."
@@ -298,18 +299,16 @@ function TargetAppVersionContent(props: {
                 text: 'Learn more about App Deployments',
               }}
             />
-            <div className="flex">
+            <div className={styles.targetAppVersionContentDiv3}>
               <AppFilter search={props.search} />
             </div>
           </div>
         </div>
         {coordinates ? (
-          <div className="mt-4 flex items-center justify-between rounded-md border border-warning-line bg-warning-tint px-4 py-2 text-sm">
+          <div className={styles.targetAppVersionContentDiv4}>
             <span>
               Showing operations affected by{' '}
-              <code className="rounded-sm bg-surface-code px-1 py-0.5 font-mono text-warning">
-                {coordinates}
-              </code>
+              <code className={styles.targetAppVersionContentCode}>{coordinates}</code>
             </span>
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
@@ -320,13 +319,13 @@ function TargetAppVersionContent(props: {
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
-              className="text-warning hover:underline"
+              className={styles.targetAppVersionContentLink}
             >
               Clear filter
             </Link>
           </div>
         ) : null}
-        <div className="mt-4" />
+        <div className={styles.targetAppVersionContentDiv5} />
         {!settled && !refreshing ? (
           <DataTable loading data={[]} columns={columns} getRowId={document => document.hash} />
         ) : settled && !documents?.edges.length ? (
@@ -347,15 +346,17 @@ function TargetAppVersionContent(props: {
           />
         ) : (
           <>
-            <div className="mb-3">
-              <div className="grid grid-flow-col grid-rows-2 items-center justify-between gap-4 rounded-md border border-line px-4 py-3 font-medium text-fg-secondary md:grid-rows-1">
-                <div className="min-w-0">
-                  <div className="text-xs">Status</div>
+            <div className={styles.targetAppVersionContentDiv6}>
+              <div className={styles.targetAppVersionContentDiv7}>
+                <div className={styles.targetAppVersionContentDiv8}>
+                  <div className={styles.targetAppVersionContentDiv9}>Status</div>
                   <div
                     className={cn(
-                      'truncate text-sm font-semibold text-fg',
-                      appDeployment?.status === AppDeploymentStatus.Retired && 'text-critical',
-                      appDeployment?.status === AppDeploymentStatus.Pending && 'text-fg-default',
+                      styles.targetAppVersionContentDiv10,
+                      appDeployment?.status === AppDeploymentStatus.Retired &&
+                        styles.targetAppVersionContentDiv11,
+                      appDeployment?.status === AppDeploymentStatus.Pending &&
+                        styles.targetAppVersionContentDiv12,
                     )}
                   >
                     {appDeployment?.status === AppDeploymentStatus.Retired &&
@@ -368,15 +369,15 @@ function TargetAppVersionContent(props: {
                     )}
                   </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs">Total Documents</div>
-                  <div className={cn('truncate text-center text-sm font-semibold text-fg')}>
+                <div className={styles.targetAppVersionContentDiv13}>
+                  <div className={styles.targetAppVersionContentDiv14}>Total Documents</div>
+                  <div className={cn(styles.targetAppVersionContentDiv15)}>
                     {appDeployment?.totalDocumentCount ?? '...'}
                   </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs">Created</div>
-                  <div className="text-sm font-semibold text-fg">
+                <div className={styles.targetAppVersionContentDiv16}>
+                  <div className={styles.targetAppVersionContentDiv17}>Created</div>
+                  <div className={styles.targetAppVersionContentDiv18}>
                     {appDeployment?.createdAt ? (
                       <DateWithTimeAgo
                         date={appDeployment.createdAt}
@@ -387,22 +388,22 @@ function TargetAppVersionContent(props: {
                     )}
                   </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs">Activated</div>
-                  <div className="text-sm font-semibold text-fg">
+                <div className={styles.targetAppVersionContentDiv19}>
+                  <div className={styles.targetAppVersionContentDiv20}>Activated</div>
+                  <div className={styles.targetAppVersionContentDiv21}>
                     {appDeployment?.activatedAt ? (
                       <DateWithTimeAgo
                         date={appDeployment.activatedAt}
                         dateFormatStr="MMM d, yyyy HH:mm:ss"
                       />
                     ) : (
-                      <span className="font-normal text-fg-secondary">—</span>
+                      <span className={styles.targetAppVersionContentSpan2}>—</span>
                     )}
                   </div>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs">Last Used</div>
-                  <div className="text-sm font-semibold text-fg">
+                <div className={styles.targetAppVersionContentDiv22}>
+                  <div className={styles.targetAppVersionContentDiv23}>Last Used</div>
+                  <div className={styles.targetAppVersionContentDiv24}>
                     {data.fetching ? (
                       '...'
                     ) : appDeployment?.lastUsed ? (
@@ -411,7 +412,7 @@ function TargetAppVersionContent(props: {
                         dateFormatStr="MMM d, yyyy HH:mm:ss"
                       />
                     ) : (
-                      <span className="font-normal text-fg-secondary">No Usage Data</span>
+                      <span className={styles.targetAppVersionContentSpan3}>No Usage Data</span>
                     )}
                   </div>
                 </div>
@@ -439,7 +440,7 @@ export function TargetAppVersionPage(props: {
 }) {
   return (
     <>
-      <LayoutContent className="min-h-(--min-h-content)">
+      <LayoutContent className={styles.targetAppVersionPageLayoutContent}>
         <TargetAppVersionContent {...props} />
       </LayoutContent>
     </>

@@ -1,15 +1,16 @@
 import { Card } from '@/components/ui/primitives/card/card';
+import * as styles from './auth.css';
 
 export function AuthCardStack(props: { children: React.ReactNode }) {
-  return <div className="grid gap-y-4">{props.children}</div>;
+  return <div className={styles.authCardStackDiv}>{props.children}</div>;
 }
 
 export function AuthOrSeparator() {
   return (
-    <div className="flex flex-row items-center justify-between gap-x-4">
-      <div className="h-px w-full bg-line-subtle" />
-      <div className="text-center text-fg-muted">or</div>
-      <div className="h-px w-full bg-line-subtle" />
+    <div className={styles.authOrSeparatorDiv}>
+      <div className={styles.authOrSeparatorDiv2} />
+      <div className={styles.authOrSeparatorDiv3}>or</div>
+      <div className={styles.authOrSeparatorDiv4} />
     </div>
   );
 }
@@ -24,7 +25,7 @@ export function AuthCard({
   content?: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto w-full md:max-w-md">
+    <div className={styles.authCardDiv}>
       <Card
         variants={{ onSurface: 'raised', titleSize: 'xlarge' }}
         title={title}

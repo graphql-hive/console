@@ -4,6 +4,7 @@ import { Meta } from '@/components/ui/meta';
 import { env } from '@/env/frontend';
 import { startAuthFlowForOIDCProvider } from '@/lib/supertokens/third-party-email-password-react-oidc-provider';
 import { useQuery } from '@tanstack/react-query';
+import * as styles from './auth-oidc.css';
 
 function AuthOIDC(props: { oidcId: string; redirectToPath: string }) {
   const auth = useQuery({
@@ -39,7 +40,7 @@ function MissingOIDCId() {
       title="Missing ID"
       description="You need to provide an OIDC ID to sign in."
       content={
-        <p className="text-fg-secondary">
+        <p className={styles.missingOIDCIdP}>
           <DocsLink
             href="/management/sso-oidc-provider#login-via-oidc"
             text="Learn how to login via OIDC"

@@ -17,6 +17,7 @@ import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
+import * as styles from './target-alerts-rules.css';
 
 export const TargetAlertsRulesPage_Query = graphql(`
   query TargetAlertsRulesPage_Query(
@@ -220,23 +221,21 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                 <button
                   type="button"
                   aria-label="Destinations"
-                  className="inline-flex text-fg-muted hover:text-fg-default"
+                  className={styles.button}
                   // The row opens the rule; a click on the icon only means the popover.
                   onClick={event => event.stopPropagation()}
                 >
-                  <Info className="size-3.5" />
+                  <Info className={styles.info} />
                 </button>
               }
               openOnHover
               width="auto"
               content={
-                <div className="space-y-1 text-xs">
+                <div className={styles.div}>
                   {channels.map(c => (
-                    <div key={c.id} className="flex items-center gap-2">
-                      <span className="text-fg-secondary">
-                        {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
-                      </span>
-                      <span className="font-mono text-fg">{c.detail ?? c.name}</span>
+                    <div key={c.id} className={styles.div2}>
+                      <span className={styles.span}>{CHANNEL_TYPE_LABEL[c.type] ?? c.type}</span>
+                      <span className={styles.span2}>{c.detail ?? c.name}</span>
                     </div>
                   ))}
                 </div>
@@ -275,10 +274,7 @@ function UsageChip({ used, limit }: { used: number; limit: number }) {
       ? 'Limit reached. Delete a rule to free a slot.'
       : `${used} of ${limit} configured rules used.`;
   return (
-    <span
-      title={title}
-      className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[11px] font-medium tabular-nums ${color}`}
-    >
+    <span title={title} className={`${styles.usageChipSpan} ${color}`}>
       {label}
     </span>
   );
@@ -337,7 +333,7 @@ export function TargetAlertsRulesPage() {
       />
 
       {result.error && !data ? (
-        <div className="flex justify-center py-12 text-sm text-critical">
+        <div className={styles.targetAlertsRulesPageDiv}>
           Failed to load alert rules: {result.error.message}
         </div>
       ) : (

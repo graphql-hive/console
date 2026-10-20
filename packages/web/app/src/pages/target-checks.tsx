@@ -22,6 +22,7 @@ import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import { getRouteApi, Link, Outlet, useParams, useRouter } from '@tanstack/react-router';
+import * as styles from './target-checks.css';
 
 const checksRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/checks',
@@ -109,7 +110,7 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
   const schemaChecks = query.data?.target?.schemaChecks;
   if (!schemaChecks) {
     return query.fetching ? (
-      <div className="mt-4 flex w-full grow flex-col items-center">
+      <div className={styles.schemaChecksListDiv}>
         <Spinner />
       </div>
     ) : null;
@@ -117,22 +118,22 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
 
   if (schemaChecks.edges.length === 0) {
     return (
-      <div className="my-4 cursor-default text-center text-sm text-fg-secondary">
+      <div className={styles.schemaChecksListDiv2}>
         No schema checks found with the current filters
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-0 w-[300px] grow flex-col rounded-md border border-line-subtle">
+    <div className={styles.schemaChecksListDiv3}>
       <ScrollArea fill>
-        <div className="flex flex-col gap-2.5 p-2.5">
+        <div className={styles.schemaChecksListDiv4}>
           {schemaChecks.edges.map(edge => (
             <div
               key={edge.node.id}
               className={cn(
-                'relative flex flex-col rounded-md p-2.5 hover:bg-surface-hover',
-                edge.node.id === props.schemaCheckId ? 'bg-surface-selected' : null,
+                styles.schemaChecksListDiv5,
+                edge.node.id === props.schemaCheckId ? styles.schemaChecksListDiv6 : null,
               )}
             >
               {/* A pointer moving down the list would run a loader per row it crossed. */}
@@ -143,22 +144,24 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
                 preload={false}
                 params={{ organizationSlug, projectSlug, targetSlug, schemaCheckId: edge.node.id }}
                 search={search}
-                className="after:absolute after:inset-0 after:content-['']"
+                className={styles.schemaChecksListLink}
               >
-                <h3 className="truncate text-sm font-semibold">
+                <h3 className={styles.schemaChecksListH3}>
                   {edge.node.meta?.commit ?? edge.node.id}
                 </h3>
                 {edge.node.meta?.author ? (
-                  <div className="truncate text-xs font-medium text-fg-secondary">
-                    <span className="truncate overflow-hidden">{edge.node.meta.author}</span>
+                  <div className={styles.schemaChecksListDiv7}>
+                    <span className={styles.schemaChecksListSpan}>{edge.node.meta.author}</span>
                   </div>
                 ) : null}
               </Link>
-              <div className="mt-2.5 mb-1.5 flex align-middle text-xs font-medium text-fg-secondary">
+              <div className={styles.schemaChecksListDiv8}>
                 <div
                   className={cn(
-                    edge.node.__typename === 'FailedSchemaCheck' ? 'text-critical' : null,
-                    'flex flex-row items-center gap-1',
+                    edge.node.__typename === 'FailedSchemaCheck'
+                      ? styles.schemaChecksListDiv9
+                      : null,
+                    styles.schemaChecksListDiv10,
                   )}
                 >
                   <StatusDot
@@ -171,18 +174,19 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
                 {edge.node.serviceName ? (
                   <ServiceFilterButton
                     serviceName={edge.node.serviceName}
-                    className="relative z-10 ml-auto w-1/2 text-right font-bold"
+                    className={styles.schemaChecksListServiceFilterButton}
                   />
                 ) : null}
               </div>
               {edge.node.githubRepository && edge.node.meta ? (
                 <a
-                  className="relative z-10 -ml-px text-xs font-medium text-fg-secondary hover:text-fg-secondary"
+                  className={styles.schemaChecksListA}
                   target="_blank"
                   rel="noreferrer"
                   href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}
                 >
-                  <ExternalLink className="inline size-4" /> associated with Git commit
+                  <ExternalLink className={styles.schemaChecksListExternalLink} /> associated with
+                  Git commit
                 </a>
               ) : null}
             </div>
@@ -278,8 +282,8 @@ function ChecksPageContent() {
 
   return (
     <>
-      <div className={cn(!hasSchemaChecks && 'w-full')}>
-        <div className="w-[300px] py-6">
+      <div className={cn(!hasSchemaChecks && styles.checksPageContentDiv)}>
+        <div className={styles.checksPageContentDiv2}>
           <Title>Schema Checks</Title>
           <Subtitle>Recently checked schemas.</Subtitle>
         </div>
@@ -297,14 +301,14 @@ function ChecksPageContent() {
           <NoSchemaChecks projectType={target?.project.type ?? null} />
         )}
         {renderLoading && (
-          <div className="mt-4 flex w-full grow flex-col items-center">
+          <div className={styles.checksPageContentDiv3}>
             <Spinner />
           </div>
         )}
       </div>
       {hasSchemaChecks && <Outlet />}
       {hasSchemaChecks && !hasActiveSchemaCheck && (
-        <div className="my-4 mt-6 w-full border-0 py-8">
+        <div className={styles.checksPageContentDiv4}>
           <EmptyList
             title="Select a schema check"
             description="A list of your schema checks is available on the left."
@@ -318,7 +322,7 @@ function ChecksPageContent() {
 function NoSchemaChecks(props: { projectType: ProjectType | null }) {
   return (
     <>
-      <div className="cursor-default text-sm">
+      <div className={styles.noSchemaChecksDiv}>
         <NoSchemaVersion projectType={props.projectType} recommendedAction="check" />
       </div>
       <DocsLink
@@ -366,10 +370,10 @@ function SchemaChecksSideNav(props: {
   return (
     // Pinned and capped to the viewport, so the list scrolls inside the column rather than
     // stretching the page when there are more checks than fit.
-    <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] flex-col gap-5 self-start">
+    <div className={styles.schemaChecksSideNavDiv}>
       <div>
         {props.serviceNames ? (
-          <div className="flex h-9 flex-row items-center justify-between">
+          <div className={styles.schemaChecksSideNavDiv2}>
             <Label variant="inline" htmlFor="filter-service" label="Service" />
             <Select
               id="filter-service"
@@ -384,7 +388,7 @@ function SchemaChecksSideNav(props: {
             />
           </div>
         ) : null}
-        <div className="flex h-9 flex-row items-center justify-between">
+        <div className={styles.schemaChecksSideNavDiv3}>
           <Label
             variant="inline"
             htmlFor="filter-toggle-has-changes"
@@ -396,7 +400,7 @@ function SchemaChecksSideNav(props: {
             id="filter-toggle-has-changes"
           />
         </div>
-        <div className="flex h-9 flex-row items-center justify-between">
+        <div className={styles.schemaChecksSideNavDiv4}>
           <Label
             variant="inline"
             htmlFor="filter-toggle-status-failed"
@@ -418,7 +422,7 @@ export function TargetChecksPage() {
   return (
     <>
       <Meta title="Schema Checks" />
-      <LayoutContent className="flex flex-row gap-x-6">
+      <LayoutContent className={styles.targetChecksPageLayoutContent}>
         <ChecksPageContent />
       </LayoutContent>
     </>

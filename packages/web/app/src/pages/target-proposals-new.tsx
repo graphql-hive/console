@@ -39,6 +39,7 @@ import { addTypeForExtensions } from '@/lib/proposals/utils';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+import * as styles from './target-proposals-new.css';
 
 const ProposeChangesMutation = graphql(`
   mutation ProposalsNew_ProposeChanges($input: CreateSchemaProposalInput!) {
@@ -107,7 +108,7 @@ export function TargetProposalsNewPage() {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className="flex h-(--content-height) min-h-[300px] flex-col pb-0">
+      <LayoutContent className={styles.targetProposalsNewPageLayoutContent}>
         <SaveProposalProvider>
           <ProposalsNewContent />
         </SaveProposalProvider>
@@ -119,14 +120,14 @@ export function TargetProposalsNewPage() {
 function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   return (
-    <div className="flex py-6">
-      <div className="flex-1">
+    <div className={styles.proposalsNewHeadingDiv}>
+      <div className={styles.proposalsNewHeadingDiv2}>
         <SubPageLayoutHeader
           sideContent={props.sideContent}
           subPageTitle={
-            <span className="flex items-center">
+            <span className={styles.proposalsNewHeadingSpan}>
               <Link
-                className="text-fg"
+                className={styles.proposalsNewHeadingLink}
                 to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                 params={{
                   organizationSlug,
@@ -136,7 +137,7 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
               >
                 Schema Proposals
               </Link>{' '}
-              <span className="inline-block px-2 text-fg-secondary italic">/</span> New
+              <span className={styles.proposalsNewHeadingSpan2}>/</span> New
             </span>
           }
           description="Collaborate on schema changes to reduce friction during development."
@@ -535,7 +536,7 @@ function ProposalsNewContent(props: { page?: string }) {
     return (
       <>
         <ProposalsNewHeading />
-        <Callout type="error" className="mx-auto w-2/3">
+        <Callout type="error" className={styles.proposalsNewContentCallout}>
           <b>Oops, something went wrong.</b>
           <br />
           {query.error.message}
@@ -581,7 +582,7 @@ function ProposalsNewContent(props: { page?: string }) {
                 setDescription={setDescription}
                 error={
                   overviewError.length > 0 && (
-                    <Callout type="error" className="mb-6 w-full text-sm">
+                    <Callout type="error" className={styles.proposalsNewContentCallout2}>
                       {overviewError}
                     </Callout>
                   )
@@ -603,7 +604,7 @@ function ProposalsNewContent(props: { page?: string }) {
                 selectFragment={query.data?.target ?? undefined}
                 error={
                   editorError.length > 0 && (
-                    <Callout type="error" className="mb-6 w-full text-sm">
+                    <Callout type="error" className={styles.proposalsNewContentCallout3}>
                       {editorError}
                     </Callout>
                   )
@@ -629,9 +630,9 @@ function ChangesTab(props: {
     <>
       {props.diffs === null && <Spinner />}
       {props.diffs?.length === 0 && (
-        <div className="mt-8 text-center">
-          <Title className="text-center">No changes</Title>
-          <Subtitle className="text-center">
+        <div className={styles.changesTabDiv}>
+          <Title className={styles.changesTabTitle}>No changes</Title>
+          <Subtitle className={styles.changesTabSubtitle}>
             Use the "Editor" to make modifications to your schema(s)
           </Subtitle>
         </div>
@@ -645,14 +646,16 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
   return (
     <div>
       <Title>{props.title}</Title>
-      <div className="mb-6">
+      <div className={styles.diffServiceDiv}>
         {props.error ? (
-          <div className="flex items-center text-critical">
-            <TriangleAlert className="mr-2 size-4" />
+          <div className={styles.diffServiceDiv2}>
+            <TriangleAlert className={styles.diffServiceTriangleAlert} />
             {props.error}
           </div>
         ) : (
-          props.changes.length === 0 && <div className="italic">No changes to schema yet.</div>
+          props.changes.length === 0 && (
+            <div className={styles.diffServiceDiv3}>No changes to schema yet.</div>
+          )
         )}
         {props.changes.map((c, changeIndex) => {
           return <ProposalChangeDetail change={c} key={`${c.type}-${c.path ?? changeIndex}`} />;
@@ -670,11 +673,11 @@ function OverviewTab(props: {
   error?: false | ReactElement;
 }) {
   return (
-    <div className="max-w-[600px]">
+    <div className={styles.overviewTabDiv}>
       {props.error}
-      <div className="pb-10">
+      <div className={styles.overviewTabDiv2}>
         <Label htmlFor="proposal-title" label="Title (required)" />
-        <div className="mt-2">
+        <div className={styles.overviewTabDiv3}>
           <Input
             aria-label="title"
             id="proposal-title"
@@ -685,9 +688,9 @@ function OverviewTab(props: {
           />
         </div>
       </div>
-      <div className="pb-10">
+      <div className={styles.overviewTabDiv4}>
         <Label htmlFor="proposal-description" label="Description" />
-        <div className="mt-2">
+        <div className={styles.overviewTabDiv5}>
           <Textarea
             aria-label="description"
             id="proposal-description"

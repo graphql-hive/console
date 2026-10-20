@@ -31,6 +31,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
+import * as styles from './target-traces.css';
 
 const tracesRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
@@ -178,11 +179,13 @@ const TracesList = memo(function TracesList(
                 <Tooltip
                   side="bottom"
                   trigger={
-                    <span className="uppercase">{formatDate(timestamp, 'MMM dd HH:mm:ss')}</span>
+                    <span className={styles.tracesListSpan}>
+                      {formatDate(timestamp, 'MMM dd HH:mm:ss')}
+                    </span>
                   }
                   content={
                     <div
-                      className="min-w-[150px] cursor-auto"
+                      className={styles.tracesListDiv}
                       onClick={e => {
                         // Prevent the click event from bubbling up to the row,
                         // which would trigger the sheet with trace details to open
@@ -242,17 +245,17 @@ const TracesList = memo(function TracesList(
                 disableHoverablePopup
                 maxWidth="md"
                 trigger={
-                  <span className="inline-flex items-center gap-2">
-                    <span className="inline-flex items-center rounded-sm bg-surface-card px-1 py-0.5 text-xs text-fg-secondary uppercase">
+                  <span className={styles.tracesListSpan2}>
+                    <span className={styles.tracesListSpan3}>
                       {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                     </span>
                     {row.original.operationName ?? (
-                      <span className="text-fg-secondary">{'<unknown>'}</span>
+                      <span className={styles.tracesListSpan4}>{'<unknown>'}</span>
                     )}
                   </span>
                 }
                 content={
-                  <div className="min-w-[150px]">
+                  <div className={styles.tracesListDiv2}>
                     <DescriptionList
                       rows={[
                         {
@@ -321,7 +324,7 @@ const TracesList = memo(function TracesList(
                   disableHoverablePopup
                   trigger={<span>{subgraphs.length}</span>}
                   content={
-                    <div className="min-w-[150px]">
+                    <div className={styles.tracesListDiv3}>
                       <DescriptionList
                         rows={[
                           {
@@ -391,8 +394,8 @@ const TracesList = memo(function TracesList(
 
 function LabelWithColor(props: { className: string; children: ReactNode }) {
   return (
-    <div className="flex items-center gap-x-2">
-      <div className={cn('h-[11px] w-[2px] rounded-xs', props.className)} />
+    <div className={styles.labelWithColorDiv}>
+      <div className={cn(styles.labelWithColorDiv2, props.className)} />
       <div>{props.children}</div>
     </div>
   );
@@ -517,11 +520,11 @@ function Filters(
 
   return (
     <>
-      <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-fg">
+      <div className={styles.filtersDiv}>
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
-            <XIcon className="size-4" />
+            <XIcon className={styles.filtersXIcon} />
           </Button>
         ) : null}
       </div>
@@ -538,7 +541,11 @@ function Filters(
         options={filterOptions['graphql.status'].map(option => ({
           ...option,
           label: (
-            <LabelWithColor className={option.value === 'ok' ? 'bg-success' : 'bg-critical'}>
+            <LabelWithColor
+              className={
+                option.value === 'ok' ? styles.filtersLabelWithColor : styles.filtersLabelWithColor2
+              }
+            >
               {option.label}
             </LabelWithColor>
           ),
@@ -552,7 +559,11 @@ function Filters(
         name="Error Code"
         options={filterOptions['graphql.errorCode'].map(option => ({
           ...option,
-          label: <LabelWithColor className="bg-critical">{option.label}</LabelWithColor>,
+          label: (
+            <LabelWithColor className={styles.filtersLabelWithColor3}>
+              {option.label}
+            </LabelWithColor>
+          ),
         }))}
         selectedValues={filterSelector('graphql.errorCode')}
         onChange={updateFilter('graphql.errorCode')}
@@ -677,13 +688,13 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
       title={
         trace ? (
           <>
-            {trace.operationName ?? <span className="text-fg-secondary">{'<unknown>'}</span>}
-            <span className="ml-2 font-mono font-normal text-fg-secondary">
-              {trace.id.substring(0, 4)}
-            </span>
+            {trace.operationName ?? (
+              <span className={styles.selectedTraceSheetSpan}>{'<unknown>'}</span>
+            )}
+            <span className={styles.selectedTraceSheetSpan2}>{trace.id.substring(0, 4)}</span>
           </>
         ) : (
-          <span className="inline-flex w-[260px] align-middle">
+          <span className={styles.selectedTraceSheetSpan3}>
             <Skeleton variants={{ size: 'lg', width: 'full' }} />
           </span>
         )
@@ -693,39 +704,41 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           Trace ID:{' '}
           {trace?.id ? (
             <>
-              <span className="font-mono"> {trace.id}</span>
+              <span className={styles.selectedTraceSheetSpan4}> {trace.id}</span>
               <CopyIconButton value={trace.id} label="Copy Trace ID" />
             </>
           ) : (
-            <span className="inline-flex w-[200px] align-middle">
+            <span className={styles.selectedTraceSheetSpan5}>
               <Skeleton variants={{ width: 'full' }} />
             </span>
           )}
         </>
       }
     >
-      <div className="flex items-center gap-3 border-b border-line px-6 pb-4 text-xs">
+      <div className={styles.selectedTraceSheetDiv}>
         {trace ? (
           <>
-            <div className="flex items-center gap-1">
-              <Clock className="size-3 text-fg-secondary" />
-              <span className="text-fg-default">{formatNanoseconds(BigInt(trace.duration))}</span>
+            <div className={styles.selectedTraceSheetDiv2}>
+              <Clock className={styles.selectedTraceSheetClock} />
+              <span className={styles.selectedTraceSheetSpan6}>
+                {formatNanoseconds(BigInt(trace.duration))}
+              </span>
             </div>
             <Badge
               content={trace.success ? 'Ok' : 'Error'}
               variants={{ variant: trace.success ? 'success' : 'critical' }}
             />
-            <span className="font-mono text-fg-default uppercase">
+            <span className={styles.selectedTraceSheetSpan7}>
               {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
             </span>
           </>
         ) : (
-          <span className="inline-flex w-[150px] align-middle">
+          <span className={styles.selectedTraceSheetSpan8}>
             <Skeleton variants={{ width: 'full' }} />
           </span>
         )}
         {props.traceId ? (
-          <div className="ml-auto">
+          <div className={styles.selectedTraceSheetDiv3}>
             <Button
               variant="outline"
               size="compact"
@@ -741,7 +754,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
                 />
               }
             >
-              <ExternalLinkIcon className="mr-1 size-3" />
+              <ExternalLinkIcon className={styles.selectedTraceSheetExternalLinkIcon} />
               Full Trace
             </Button>
           </div>
@@ -1044,12 +1057,12 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
   const isLoading = query.stale || query.fetching;
 
   return (
-    <div className="py-6">
+    <div className={styles.targetTracesPageContentDiv}>
       <SubPageLayoutHeader
         subPageTitle="Traces"
         description="Insights into the requests made to your GraphQL API."
         sideContent={
-          <div className="flex flex-1 justify-end gap-x-4">
+          <div className={styles.targetTracesPageContentDiv2}>
             <DateRangePicker
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
@@ -1063,14 +1076,14 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
           </div>
         }
       />
-      <div className="mt-4 flex min-h-svh w-full">
-        <aside className="sticky top-4 flex h-full w-64 flex-col text-fg-default">
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
+      <div className={styles.targetTracesPageContentDiv3}>
+        <aside className={styles.targetTracesPageContentAside}>
+          <div className={styles.targetTracesPageContentDiv4}>
             <Filters filter={props.filter} options={filterOptions} />
           </div>
         </aside>
-        <main className="relative flex min-h-svh flex-1 flex-col">
-          <div className="flex flex-1 flex-col gap-4 pt-0 pl-4">
+        <main className={styles.targetTracesPageContentMain}>
+          <div className={styles.targetTracesPageContentDiv5}>
             <div>
               <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
             </div>

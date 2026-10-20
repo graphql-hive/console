@@ -30,6 +30,7 @@ import { useRangeWithin } from '@/lib/hooks/use-range-within';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
+import * as styles from './target-insights-manage-filters.css';
 
 export const ManageFilters_SavedFiltersQuery = graphql(`
   query ManageFilters_SavedFiltersQuery(
@@ -219,7 +220,7 @@ function NameCell({
   if (!isRenaming) return <DataTableCell kind="text" value={filter.name} weight="medium" />;
 
   return (
-    <span className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+    <span className={styles.nameCellSpan} onClick={e => e.stopPropagation()}>
       <Input
         value={renameValue}
         onChange={e => setRenameValue(e.target.value)}
@@ -245,7 +246,7 @@ function NameCell({
 function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
   const shared = filter.visibility === SavedFilterVisibilityType.Shared;
   return (
-    <span className="inline-flex items-center gap-3">
+    <span className={styles.visibilityCellSpan}>
       <DataTableCell
         kind="status"
         label={shared ? 'Shared' : 'Private'}
@@ -569,8 +570,8 @@ function SavedFilterRowFilters({
   const loading = opsQuery.fetching;
 
   return (
-    <div className="px-10 py-4">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className={styles.savedFilterRowFiltersDiv}>
+      <div className={styles.savedFilterRowFiltersDiv2}>
         <DateRangePicker
           size="compact"
           selectedRange={dateRange}
@@ -614,13 +615,13 @@ function SavedFilterRowFilters({
         )}
         {loading && <Spinner />}
         {opsQuery.error && !loading && (
-          <span className="text-xs text-critical">
+          <span className={styles.savedFilterRowFiltersSpan}>
             {opsQuery.error.graphQLErrors[0]?.message ?? opsQuery.error.message}
           </span>
         )}
       </div>
       {filter.viewerCanUpdate && (
-        <div className="mt-3 flex gap-2">
+        <div className={styles.savedFilterRowFiltersDiv3}>
           <Button
             variant={hasChanges ? 'primary' : 'default'}
             onClick={handleSave}
@@ -748,7 +749,7 @@ function ManageFiltersContent() {
 
   if (!loading && filters.length === 0) {
     return (
-      <div className="py-8">
+      <div className={styles.manageFiltersContentDiv}>
         <EmptyList
           title="No saved filters"
           description="You haven't created any saved filters yet. Create filters from the Insights page to save and share them."
@@ -759,7 +760,7 @@ function ManageFiltersContent() {
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-4">
+      <div className={styles.manageFiltersContentDiv2}>
         <StatCard
           variants={{ tone: 'muted' }}
           title="Total Filters"
@@ -777,7 +778,7 @@ function ManageFiltersContent() {
         />
       </div>
 
-      <div className="mt-8">
+      <div className={styles.manageFiltersContentDiv3}>
         <DataTable
           loading={loading}
           data={filters}
@@ -799,7 +800,7 @@ function ManageFiltersContent() {
 // Sized to the stat's line box, so the card keeps its height while it loads.
 function StatSkeleton() {
   return (
-    <span className="flex h-8 items-center">
+    <span className={styles.statSkeletonSpan}>
       <Skeleton variants={{ size: 'xl', width: 'xs' }} />
     </span>
   );
@@ -811,7 +812,7 @@ export function TargetInsightsManageFiltersPage(): ReactElement {
     <>
       <Meta title="Manage saved filters" />
       <LayoutContent>
-        <div className="pt-6 pb-3">
+        <div className={styles.targetInsightsManageFiltersPageDiv}>
           <BackLink
             copy="Back to Insights"
             link={{

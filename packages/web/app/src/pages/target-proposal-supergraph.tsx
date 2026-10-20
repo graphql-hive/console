@@ -7,6 +7,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
+import * as styles from './target-proposal-supergraph.css';
 
 // @todo compose the changes subgraphs instead of modifying the supergraph...
 const ProposalSupergraphChangesQuery = graphql(/* GraphQL  */ `
@@ -76,7 +77,7 @@ export function TargetProposalSupergraphPage(props: { proposalId: string }) {
   });
 
   return (
-    <div className="w-full">
+    <div className={styles.targetProposalSupergraphPageDiv}>
       {query.fetching || (latestQuery.fetching && <Spinner />)}
       <SupergraphDiff
         baseSchemaSDL={latestQuery.data?.latestValidVersion?.supergraph ?? ''}
@@ -120,7 +121,7 @@ function SupergraphDiff(props: {
   } catch (e: unknown) {
     return (
       <>
-        <div className="text-lg">Invalid SDL</div>
+        <div className={styles.supergraphDiffDiv}>Invalid SDL</div>
         <div>{e instanceof Error ? e.message : String(e)}</div>
       </>
     );

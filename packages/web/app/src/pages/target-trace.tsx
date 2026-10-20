@@ -42,6 +42,7 @@ import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
+import * as styles from './target-trace.css';
 
 const rootTraceColor = 'rgb(244, 183, 64)';
 
@@ -62,37 +63,27 @@ function TraceView(props: {
   const timestamps = splitNanosecondsToMsIntervals(props.totalTraceDuration);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="sticky top-0 z-10 border-b border-line">
-        <div className="flex w-full items-center text-xs text-fg">
-          <div className="h-12 shrink-0 py-2" style={{ width }}>
-            <div className="pl-4">
-              <div className="font-medium">Timeline</div>
-              <div className="text-xs text-fg-secondary">Spans and details</div>
+    <div className={styles.traceViewDiv}>
+      <div className={styles.traceViewDiv2}>
+        <div className={styles.traceViewDiv3}>
+          <div className={styles.traceViewDiv4} style={{ width }}>
+            <div className={styles.traceViewDiv5}>
+              <div className={styles.traceViewDiv6}>Timeline</div>
+              <div className={styles.traceViewDiv7}>Spans and details</div>
             </div>
           </div>
-          <div className="h-12 grow pr-8">
-            <div className="relative size-full">
-              <div className="absolute top-6 left-0 -translate-x-1/2 text-center">
-                {formatMsTimestamp(timestamps[0])}
-              </div>
-              <div className="absolute bottom-0 left-0 h-2 w-px bg-line" />
-              <div className="absolute top-6 left-[25%] -translate-x-1/2 text-center">
-                {formatMsTimestamp(timestamps[1])}
-              </div>
-              <div className="absolute bottom-0 left-[25%] h-2 w-px -translate-x-1/2 bg-line" />
-              <div className="absolute top-6 left-[50%] -translate-x-1/2 text-center">
-                {formatMsTimestamp(timestamps[2])}
-              </div>
-              <div className="absolute bottom-0 left-[50%] h-2 w-px -translate-x-1/2 bg-line" />
-              <div className="absolute top-6 left-[75%] -translate-x-1/2 text-center">
-                {formatMsTimestamp(timestamps[3])}
-              </div>
-              <div className="absolute bottom-0 left-[75%] h-2 w-px -translate-x-1/2 bg-line" />
-              <div className="absolute top-6 right-0 translate-x-1/2 text-center">
-                {formatMsTimestamp(timestamps[4])}
-              </div>
-              <div className="absolute right-0 bottom-0 h-2 w-px -translate-x-1/2 bg-line" />
+          <div className={styles.traceViewDiv8}>
+            <div className={styles.traceViewDiv9}>
+              <div className={styles.traceViewDiv10}>{formatMsTimestamp(timestamps[0])}</div>
+              <div className={styles.traceViewDiv11} />
+              <div className={styles.traceViewDiv12}>{formatMsTimestamp(timestamps[1])}</div>
+              <div className={styles.traceViewDiv13} />
+              <div className={styles.traceViewDiv14}>{formatMsTimestamp(timestamps[2])}</div>
+              <div className={styles.traceViewDiv15} />
+              <div className={styles.traceViewDiv16}>{formatMsTimestamp(timestamps[3])}</div>
+              <div className={styles.traceViewDiv17} />
+              <div className={styles.traceViewDiv18}>{formatMsTimestamp(timestamps[4])}</div>
+              <div className={styles.traceViewDiv19} />
             </div>
           </div>
         </div>
@@ -109,17 +100,17 @@ function TraceView(props: {
         </div>
       </ScrollArea>
       {props.serviceNames && (
-        <div className="sticky bottom-0 z-10 px-2 py-4">
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-fg-secondary">
+        <div className={styles.traceViewDiv20}>
+          <div className={styles.traceViewDiv21}>
             {props.serviceNames.map(serviceName => (
               <div
                 key={serviceName}
-                className="flex cursor-pointer items-center gap-2 hover:text-fg"
+                className={styles.traceViewDiv22}
                 onMouseEnter={() => setHighlightedServiceName(serviceName)}
                 onMouseLeave={() => setHighlightedServiceName(null)}
               >
                 <div
-                  className="size-2"
+                  className={styles.traceViewDiv23}
                   style={{
                     backgroundColor: stringToHSL(serviceName),
                   }}
@@ -167,7 +158,7 @@ function TreeIcon(props: {
       width={width}
       height="100%"
       preserveAspectRatio="xMidYMid meet"
-      className="shrink"
+      className={styles.treeIconSvg}
       onClick={props.onClick}
     >
       {/* left-side line */}
@@ -311,7 +302,7 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
 
   return (
     <div
-      className="absolute inset-y-0 z-20 w-[5px] cursor-ew-resize"
+      className={styles.traceResizeDiv}
       style={{ left: width - 2 }} // Position 2px to the left of the center
       ref={handleRef}
       onPointerDown={handlePointerDown}
@@ -321,8 +312,8 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
       {/* Invisible wider hit area */}
       <div
         className={cn(
-          'absolute inset-y-0 left-[2px] w-px bg-line',
-          isDragging ? 'bg-fg-subtle' : 'hover:bg-surface-hover',
+          styles.traceResizeDiv2,
+          isDragging ? styles.traceResizeDiv3 : styles.traceResizeDiv4,
         )}
       />
     </div>
@@ -345,7 +336,7 @@ function TraceTree(props: {
   const durationNs = differenceInNanoseconds(rootSpan.endTime, rootSpan.startTime);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className={styles.traceTreeDiv} ref={containerRef}>
       <TraceResize minWidth={minWidth} maxWidth={maxWidth} />
       <SpanNode
         key={rootSpan.id}
@@ -396,7 +387,7 @@ type NodeElementProps = {
 function NodeElement(props: NodeElementProps) {
   return (
     <div
-      className={cn('relative z-20 block h-6 min-w-px rounded-sm select-none')}
+      className={cn(styles.nodeElementDiv)}
       style={{
         left: `min(${props.leftPositionPercentage}%, 100% - 1px)`,
         width: `${props.widthPercentage}%`,
@@ -404,7 +395,7 @@ function NodeElement(props: NodeElementProps) {
       }}
     >
       <div
-        className="absolute top-1/2 flex -translate-y-1/2 items-center px-[4px] font-mono leading-none whitespace-nowrap text-fg-default"
+        className={styles.nodeElementDiv2}
         style={{
           fontSize: '11px',
           ...(props.isNearRightEdge ? { right: '6px' } : { left: 'calc(100% + 6px)' }),
@@ -457,24 +448,14 @@ function SpanNode(props: SpanNodeProps) {
     <>
       <div
         className={cn(
-          'pr-8 odd:bg-surface-stripe hover:bg-surface-hover',
-          hasException && 'bg-critical-tint odd:bg-critical-tint hover:bg-critical-tint-strong',
-          highlightedEvent &&
-            highlightedEvent.spanId === span.id &&
-            'bg-critical-tint-strong odd:bg-critical-tint-strong',
+          styles.spanNodeDiv,
+          hasException && styles.spanNodeDiv2,
+          highlightedEvent && highlightedEvent.spanId === span.id && styles.spanNodeDiv3,
         )}
       >
-        <div className="relative flex h-8 w-full items-center overflow-hidden">
-          <div
-            className="relative flex h-8 shrink-0 items-center gap-x-2 overflow-hidden pl-1"
-            style={{ width: `${props.leftPanelWidth}px` }}
-          >
-            <div
-              className={cn(
-                'flex h-8 shrink-0 items-center truncate text-fg-secondary',
-                canBeCollapsed && 'cursor-pointer',
-              )}
-            >
+        <div className={styles.spanNodeDiv4}>
+          <div className={styles.spanNodeDiv5} style={{ width: `${props.leftPanelWidth}px` }}>
+            <div className={cn(styles.spanNodeDiv6, canBeCollapsed && styles.spanNodeDiv7)}>
               <TreeIcon
                 key={`tree-icon-${span.id}`}
                 isLeaf={props.span.children.length === 0}
@@ -489,13 +470,13 @@ function SpanNode(props: SpanNodeProps) {
             </div>
             <div
               className={cn(
-                'flex w-full items-center align-middle text-xs whitespace-nowrap',
-                isDimmed ? 'text-fg-secondary' : 'text-fg',
+                styles.spanNodeDiv8,
+                isDimmed ? styles.spanNodeDiv9 : styles.spanNodeDiv10,
               )}
             >
-              <span className="mr-1">{span.name}</span>
+              <span className={styles.spanNodeSpan}>{span.name}</span>
               {hasException && (
-                <span className="mr-1 ml-auto inline-flex">
+                <span className={styles.spanNodeSpan2}>
                   <Badge content="Error" variants={{ variant: 'critical', mono: true }} />
                 </span>
               )}
@@ -503,24 +484,21 @@ function SpanNode(props: SpanNodeProps) {
             {span.spanAttributes['hive.gateway.upstream.subgraph.name'] ? (
               <div
                 className={cn(
-                  'truncate text-xs',
-                  isDimmed ? 'text-fg-subtle' : 'text-fg-secondary',
+                  styles.spanNodeDiv11,
+                  isDimmed ? styles.spanNodeDiv12 : styles.spanNodeDiv13,
                 )}
               >
                 {span.spanAttributes['hive.gateway.upstream.subgraph.name'] as ReactNode}
               </div>
             ) : null}
           </div>
-          <div className="relative w-full">
+          <div className={styles.spanNodeDiv14}>
             <Tooltip
               disableHoverablePopup
               side="bottom"
               trigger={
                 <Link
-                  className={cn(
-                    'relative flex h-full grow cursor-pointer items-center overflow-hidden',
-                    isDimmed ? 'opacity-25' : '',
-                  )}
+                  className={cn(styles.spanNodeLink, isDimmed ? styles.spanNodeLink2 : '')}
                   to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
                     organizationSlug,
@@ -540,27 +518,27 @@ function SpanNode(props: SpanNodeProps) {
                 </Link>
               }
               content={
-                <div className="min-w-[200px] space-y-3">
-                  <div className="grid grid-cols-2 gap-y-2">
-                    <div className="text-fg-secondary">Duration</div>
-                    <div className="text-right font-mono">
+                <div className={styles.spanNodeDiv15}>
+                  <div className={styles.spanNodeDiv16}>
+                    <div className={styles.spanNodeDiv17}>Duration</div>
+                    <div className={styles.spanNodeDiv18}>
                       <span>{formatNanoseconds(props.span.durationNs)}</span>
                     </div>
 
-                    <div className="text-fg-secondary">Started At</div>
-                    <div className="text-right font-mono">
+                    <div className={styles.spanNodeDiv19}>Started At</div>
+                    <div className={styles.spanNodeDiv20}>
                       {formatNanoseconds(props.span.startNs)}
                     </div>
 
-                    <div className="text-fg-secondary">% of Total</div>
-                    <div className="text-right font-mono">{props.span.percentageOfTotal}%</div>
+                    <div className={styles.spanNodeDiv21}>% of Total</div>
+                    <div className={styles.spanNodeDiv22}>{props.span.percentageOfTotal}%</div>
 
-                    <div className="col-span-2">
+                    <div className={styles.spanNodeDiv23}>
                       {/* Timeline visualization */}
                       <div>
-                        <div className="h-[2px] w-full overflow-hidden bg-line">
+                        <div className={styles.spanNodeDiv24}>
                           <div
-                            className="h-full"
+                            className={styles.spanNodeDiv25}
                             style={{
                               width: `${props.span.percentageOfTotal}%`,
                               backgroundColor: rootTraceColor,
@@ -572,17 +550,17 @@ function SpanNode(props: SpanNodeProps) {
 
                     {props.span.percentageOfParentSpan === null ? null : (
                       <>
-                        <div className="text-fg-secondary">% of Parent</div>
-                        <div className="text-right font-mono">
+                        <div className={styles.spanNodeDiv26}>% of Parent</div>
+                        <div className={styles.spanNodeDiv27}>
                           {props.span.percentageOfParentSpan}%
                         </div>
 
-                        <div className="col-span-2">
+                        <div className={styles.spanNodeDiv28}>
                           {/* Timeline visualization */}
                           <div>
-                            <div className="h-[2px] w-full overflow-hidden bg-line">
+                            <div className={styles.spanNodeDiv29}>
                               <div
-                                className="h-full"
+                                className={styles.spanNodeDiv30}
                                 style={{
                                   width: `${props.span.percentageOfParentSpan}%`,
                                   backgroundColor: parentColor,
@@ -617,9 +595,7 @@ function SpanNode(props: SpanNodeProps) {
                   maxWidth="lg"
                   trigger={
                     <Link
-                      className={cn(
-                        'absolute inset-y-0 z-50 translate-x-[-50%] cursor-pointer px-1',
-                      )}
+                      className={cn(styles.spanNodeLink3)}
                       style={{ left: `${leftPercentage}%` }}
                       to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                       params={{
@@ -634,17 +610,17 @@ function SpanNode(props: SpanNodeProps) {
                         activeSpanTab: 'events',
                       })}
                     >
-                      <div className="relative h-full">
+                      <div className={styles.spanNodeDiv31}>
                         <div
                           className={cn(
-                            'absolute inset-y-0 w-0.5',
-                            isError ? 'bg-critical' : 'bg-warning',
+                            styles.spanNodeDiv32,
+                            isError ? styles.spanNodeDiv33 : styles.spanNodeDiv34,
                           )}
                         >
                           <div
                             className={cn(
-                              'absolute top-[-2px] left-[-3px] size-2',
-                              isError ? 'bg-critical' : 'bg-warning',
+                              styles.spanNodeDiv35,
+                              isError ? styles.spanNodeDiv36 : styles.spanNodeDiv37,
                             )}
                           />
                         </div>
@@ -652,7 +628,7 @@ function SpanNode(props: SpanNodeProps) {
                     </Link>
                   }
                   content={
-                    <div className="min-w-[200px]">
+                    <div className={styles.spanNodeDiv38}>
                       <ExceptionTeaser
                         type={String(event.attributes['exception.type'] ?? '')}
                         message={String(event.attributes['exception.message'] ?? '')}
@@ -775,7 +751,7 @@ export function TraceSheet(props: TraceSheetProps) {
   });
 
   return (
-    <div className="min-h-0 flex-1">
+    <div className={styles.traceSheetDiv}>
       <>
         <ResizablePanelGroup orientation="vertical">
           <ResizablePanel defaultSize="70%" minSize="20%" maxSize="80%">
@@ -794,8 +770,8 @@ export function TraceSheet(props: TraceSheetProps) {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize="30%" minSize="10%" maxSize="80%">
-            <div className="flex h-full flex-col">
-              <div className="sticky top-0 z-10">
+            <div className={styles.traceSheetDiv2}>
+              <div className={styles.traceSheetDiv3}>
                 <Tabs
                   size="sm"
                   value={activeView}
@@ -823,7 +799,7 @@ export function TraceSheet(props: TraceSheetProps) {
                 />
               </div>
               <ScrollArea fill>
-                <div className="h-full">
+                <div className={styles.traceSheetDiv4}>
                   {activeView === 'span-attributes' ? (
                     <div>
                       {spanAttributes.length > 0 ? (
@@ -835,11 +811,9 @@ export function TraceSheet(props: TraceSheetProps) {
                           />
                         ))
                       ) : (
-                        <div className="py-4 text-center">
-                          <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
-                          <p className="text-xs text-fg-secondary">
-                            No attributes found for this trace
-                          </p>
+                        <div className={styles.traceSheetDiv5}>
+                          <AlertTriangle className={styles.traceSheetAlertTriangle} />
+                          <p className={styles.traceSheetP}>No attributes found for this trace</p>
                         </div>
                       )}
                     </div>
@@ -855,9 +829,9 @@ export function TraceSheet(props: TraceSheetProps) {
                           />
                         ))
                       ) : (
-                        <div className="py-4 text-center">
-                          <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
-                          <p className="text-xs text-fg-secondary">
+                        <div className={styles.traceSheetDiv6}>
+                          <AlertTriangle className={styles.traceSheetAlertTriangle2} />
+                          <p className={styles.traceSheetP2}>
                             No resource attributes found for this trace
                           </p>
                         </div>
@@ -865,10 +839,10 @@ export function TraceSheet(props: TraceSheetProps) {
                     </div>
                   ) : null}
                   {activeView === 'events' ? (
-                    <div className="p-4">
-                      <div className="space-y-2">
+                    <div className={styles.traceSheetDiv7}>
+                      <div className={styles.traceSheetDiv8}>
                         {!events.length ? (
-                          <div className="text-sm text-fg-subtle">
+                          <div className={styles.traceSheetDiv9}>
                             No events occurred during this trace.
                           </div>
                         ) : (
@@ -895,7 +869,7 @@ export function TraceSheet(props: TraceSheetProps) {
                               onMouseLeave={() => {
                                 setHighlightedEvent(null);
                               }}
-                              className="mb-2 block"
+                              className={styles.traceSheetLink}
                               key={event.id}
                             >
                               <ExceptionTeaser
@@ -911,7 +885,7 @@ export function TraceSheet(props: TraceSheetProps) {
                     </div>
                   ) : null}
                   {activeView === 'operation' ? (
-                    <div className="absolute inset-y-0 w-full">
+                    <div className={styles.traceSheetDiv10}>
                       <GraphQLHighlight
                         height="100%"
                         options={{
@@ -1015,11 +989,11 @@ function TargetInsightsNewPageContent(props: {
   }
 
   return (
-    <div className="flex h-full flex-col space-y-4 pt-6">
+    <div className={styles.targetInsightsNewPageContentDiv}>
       <Meta title={`Trace ${props.traceId}`} />
       <SubPageLayoutHeader
         subPageTitle={
-          <span className="flex items-center">
+          <span className={styles.targetInsightsNewPageContentSpan}>
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/traces"
               params={{
@@ -1031,16 +1005,18 @@ function TargetInsightsNewPageContent(props: {
             >
               Traces
             </Link>{' '}
-            <span className="inline-block px-2 text-fg-secondary italic">/</span>{' '}
+            <span className={styles.targetInsightsNewPageContentSpan2}>/</span>{' '}
             {trace ? (
               <>
-                {trace.operationName ?? <span className="text-fg-secondary">{'<unknown>'}</span>}
-                <span className="ml-2 font-mono font-normal text-fg-secondary">
+                {trace.operationName ?? (
+                  <span className={styles.targetInsightsNewPageContentSpan3}>{'<unknown>'}</span>
+                )}
+                <span className={styles.targetInsightsNewPageContentSpan4}>
                   {trace.id.substring(0, 4)}
                 </span>
               </>
             ) : (
-              <span className="inline-flex w-[150px] align-middle">
+              <span className={styles.targetInsightsNewPageContentSpan5}>
                 <Skeleton variants={{ size: 'lg', width: 'full' }} />
               </span>
             )}
@@ -1052,20 +1028,20 @@ function TargetInsightsNewPageContent(props: {
               Trace ID:{' '}
               {trace?.id ? (
                 <>
-                  <span className="font-mono"> {trace.id}</span>
+                  <span className={styles.targetInsightsNewPageContentSpan6}> {trace.id}</span>
                   <CopyIconButton value={trace.id} label="Copy Trace ID" />
                 </>
               ) : (
-                <span className="inline-flex w-[200px] align-middle">
+                <span className={styles.targetInsightsNewPageContentSpan7}>
                   <Skeleton variants={{ width: 'full' }} />
                 </span>
               )}
             </p>
             {trace && (
-              <div className="mt-2 flex items-center gap-3 text-xs">
-                <div className="flex items-center gap-1">
-                  <Clock className="size-3 text-fg-secondary" />
-                  <span className="text-fg-default">
+              <div className={styles.targetInsightsNewPageContentDiv2}>
+                <div className={styles.targetInsightsNewPageContentDiv3}>
+                  <Clock className={styles.targetInsightsNewPageContentClock} />
+                  <span className={styles.targetInsightsNewPageContentSpan8}>
                     {formatNanoseconds(BigInt(trace.duration))}
                   </span>
                 </div>
@@ -1073,7 +1049,7 @@ function TargetInsightsNewPageContent(props: {
                   content={trace.success ? 'Ok' : 'Error'}
                   variants={{ variant: trace.success ? 'success' : 'critical' }}
                 />
-                <span className="font-mono text-fg-default uppercase">
+                <span className={styles.targetInsightsNewPageContentSpan9}>
                   {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
                 </span>
               </div>
@@ -1104,8 +1080,8 @@ export function TargetTracePage(props: {
   activeSpanTab: string | null;
 }) {
   return (
-    <LayoutContent className="flex h-(--content-height) flex-col">
-      <div className="flex min-h-0 flex-1 flex-col">
+    <LayoutContent className={styles.targetTracePageLayoutContent}>
+      <div className={styles.targetTracePageDiv}>
         <TargetInsightsNewPageContent {...props} />
       </div>
     </LayoutContent>
@@ -1417,15 +1393,13 @@ function SpanSheet(props: SpanSheetProps) {
       title={
         <>
           {!span.parentId && 'Root '}Span Details
-          <span className="ml-2 font-mono font-normal text-fg-secondary">
-            {span.id.substring(0, 4)}
-          </span>
-          <span className="ml-2 text-fg-secondary">{span.name}</span>
+          <span className={styles.spanSheetSpan}>{span.id.substring(0, 4)}</span>
+          <span className={styles.spanSheetSpan2}>{span.name}</span>
         </>
       }
       description={
         <>
-          Span ID: <span className="font-mono">{span.id}</span>
+          Span ID: <span className={styles.spanSheetSpan3}>{span.id}</span>
           <CopyIconButton value={span.id} label="Copy Span ID" />
         </>
       }
@@ -1451,23 +1425,23 @@ function SpanSheet(props: SpanSheetProps) {
                 />
               }
             >
-              <ArrowUp className="mr-2 size-4" /> Show Parent Span
+              <ArrowUp className={styles.spanSheetArrowUp} /> Show Parent Span
             </Button>
           )}
           <Button variant="ghost" size="compact" onClick={() => clipboard(window.location.href)}>
-            <LinkLucide className="mr-2 size-4" /> Share Link
+            <LinkLucide className={styles.spanSheetLinkLucide} /> Share Link
           </Button>
         </>
       }
     >
       {computedSpanMetrics && (
-        <div className="grid grid-cols-2 gap-4 px-6 pb-4 md:grid-cols-4">
+        <div className={styles.spanSheetDiv}>
           {/* Duration */}
-          <div className="flex items-center space-x-2">
-            <Clock className="size-4 text-info" />
+          <div className={styles.spanSheetDiv2}>
+            <Clock className={styles.spanSheetClock} />
             <div>
-              <p className="text-xs text-fg-secondary">Duration</p>
-              <p className="text-sm font-medium">
+              <p className={styles.spanSheetP}>Duration</p>
+              <p className={styles.spanSheetP2}>
                 {' '}
                 {formatNanoseconds(computedSpanMetrics.durationNs)}
               </p>
@@ -1476,11 +1450,11 @@ function SpanSheet(props: SpanSheetProps) {
 
           {/* Start Time */}
           {computedSpanMetrics.startNs !== 0n && (
-            <div className="flex items-center space-x-2">
-              <Play className="size-4 text-success" />
+            <div className={styles.spanSheetDiv3}>
+              <Play className={styles.spanSheetPlay} />
               <div>
-                <p className="text-xs text-fg-secondary">Start</p>
-                <p className="text-sm font-medium">
+                <p className={styles.spanSheetP3}>Start</p>
+                <p className={styles.spanSheetP4}>
                   {' '}
                   {formatNanoseconds(computedSpanMetrics.startNs)}
                 </p>
@@ -1490,32 +1464,29 @@ function SpanSheet(props: SpanSheetProps) {
 
           {/* Percentage of Total */}
           {computedSpanMetrics.percentageOfTotal && (
-            <div className="flex items-center space-x-2">
-              <PieChart className="size-4 text-accent" />
+            <div className={styles.spanSheetDiv4}>
+              <PieChart className={styles.spanSheetPieChart} />
               <div>
-                <p className="text-xs text-fg-secondary">% of Total</p>
-                <p className="text-sm font-medium"> {computedSpanMetrics.percentageOfTotal}%</p>
+                <p className={styles.spanSheetP5}>% of Total</p>
+                <p className={styles.spanSheetP6}> {computedSpanMetrics.percentageOfTotal}%</p>
               </div>
             </div>
           )}
 
           {/* Percentage of Parent */}
           {computedSpanMetrics.percentageOfParentSpan && (
-            <div className="flex items-center space-x-2">
-              <TreePine className="size-4 text-accent" />
+            <div className={styles.spanSheetDiv5}>
+              <TreePine className={styles.spanSheetTreePine} />
               <div>
-                <p className="text-xs text-fg-secondary">% of Parent</p>
-                <p className="text-sm font-medium">
-                  {' '}
-                  {computedSpanMetrics.percentageOfParentSpan}%
-                </p>
+                <p className={styles.spanSheetP7}>% of Parent</p>
+                <p className={styles.spanSheetP8}> {computedSpanMetrics.percentageOfParentSpan}%</p>
               </div>
             </div>
           )}
         </div>
       )}
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="border-t border-line">
+      <div className={styles.spanSheetDiv6}>
+        <div className={styles.spanSheetDiv7}>
           <Tabs
             size="sm"
             value={activeView}
@@ -1560,11 +1531,9 @@ function SpanSheet(props: SpanSheetProps) {
                   ))}
                 </div>
               ) : (
-                <div className="py-4 text-center">
-                  <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
-                  <p className="text-xs text-fg-secondary">
-                    No span attributes found for this span.
-                  </p>
+                <div className={styles.spanSheetDiv8}>
+                  <AlertTriangle className={styles.spanSheetAlertTriangle} />
+                  <p className={styles.spanSheetP9}>No span attributes found for this span.</p>
                 </div>
               )}
             </div>
@@ -1582,11 +1551,9 @@ function SpanSheet(props: SpanSheetProps) {
                   ))}
                 </div>
               ) : (
-                <div className="py-4 text-center">
-                  <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
-                  <p className="text-xs text-fg-secondary">
-                    No resource attributes found for this span.
-                  </p>
+                <div className={styles.spanSheetDiv9}>
+                  <AlertTriangle className={styles.spanSheetAlertTriangle2} />
+                  <p className={styles.spanSheetP10}>No resource attributes found for this span.</p>
                 </div>
               )}
             </div>
@@ -1594,10 +1561,13 @@ function SpanSheet(props: SpanSheetProps) {
           {activeView === 'events' && (
             <div>
               {span.events.length > 0 ? (
-                <div className="px-1 pt-2">
+                <div className={styles.spanSheetDiv10}>
                   {span.events.map((event, index) => {
                     return (
-                      <div className="mb-2" key={`${event.name}_${event.date}_${index}`}>
+                      <div
+                        className={styles.spanSheetDiv11}
+                        key={`${event.name}_${event.date}_${index}`}
+                      >
                         <ExceptionTeaser
                           type={(event.attributes['exception.type'] as string | undefined) ?? ''}
                           message={
@@ -1613,9 +1583,9 @@ function SpanSheet(props: SpanSheetProps) {
                   })}
                 </div>
               ) : (
-                <div className="py-4 text-center">
-                  <AlertTriangle className="mx-auto mb-2 size-6 text-fg-secondary" />
-                  <p className="text-xs text-fg-secondary">No events found for this span.</p>
+                <div className={styles.spanSheetDiv12}>
+                  <AlertTriangle className={styles.spanSheetAlertTriangle3} />
+                  <p className={styles.spanSheetP11}>No events found for this span.</p>
                 </div>
               )}
             </div>
@@ -1645,7 +1615,7 @@ function AttributeRow(props: AttributeRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const actionsNode = (
-    <span className="mr-0 ml-auto flex text-fg">
+    <span className={styles.attributeRowSpan}>
       <CopyIconButton value={props.value} label="Copy attribute value" />
       <Tooltip
         trigger={
@@ -1662,21 +1632,13 @@ function AttributeRow(props: AttributeRowProps) {
   return (
     <div
       key={props.attributeKey}
-      className={cn(
-        'flex items-center justify-between border-b border-line p-3 text-xs last:border-0',
-        isExpanded && 'flex-col text-left',
-      )}
+      className={cn(styles.attributeRowDiv, isExpanded && styles.attributeRowDiv2)}
     >
-      <div className={cn('flex flex-1 pr-2 text-fg-secondary', isExpanded && 'w-full pr-0')}>
+      <div className={cn(styles.attributeRowDiv3, isExpanded && styles.attributeRowDiv4)}>
         {props.attributeKey}
         {isExpanded && actionsNode}
       </div>
-      <div
-        className={cn(
-          'w-full flex-1 pt-2 font-mono text-2xs text-fg',
-          !isExpanded && 'overflow-hidden pt-0 text-nowrap text-ellipsis',
-        )}
-      >
+      <div className={cn(styles.attributeRowDiv5, !isExpanded && styles.attributeRowDiv6)}>
         {props.value}
       </div>
       {!isExpanded && actionsNode}
@@ -1691,19 +1653,17 @@ function ExceptionTeaser(props: {
   type: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-md border border-critical-line bg-critical-tint">
-      <div className="flex items-center justify-between bg-critical-tint-strong px-3 py-2">
-        <span className="font-mono text-xs font-medium text-critical">{props.type}</span>
+    <div className={styles.exceptionTeaserDiv}>
+      <div className={styles.exceptionTeaserDiv2}>
+        <span className={styles.exceptionTeaserSpan}>{props.type}</span>
         <Badge content={props.name} variants={{ variant: 'critical', size: 'sm', mono: true }} />
       </div>
-      <div className="p-3 text-xs">
-        <p className="text-fg-default">{props.message}</p>
+      <div className={styles.exceptionTeaserDiv3}>
+        <p className={styles.exceptionTeaserP}>{props.message}</p>
         {props.stacktrace && (
-          <div className="mt-2 rounded-sm bg-surface-inset">
+          <div className={styles.exceptionTeaserDiv4}>
             <ScrollArea axis="horizontal">
-              <pre className="p-2 font-mono text-2xs leading-tight text-fg-secondary">
-                {props.stacktrace}
-              </pre>
+              <pre className={styles.exceptionTeaserPre}>{props.stacktrace}</pre>
             </ScrollArea>
           </div>
         )}

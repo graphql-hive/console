@@ -11,6 +11,7 @@ import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
+import * as styles from './auth-sso.css';
 
 async function fetchOidcId(input: { slug: string }) {
   const response = await fetch(`${env.graphqlPublicOrigin}/auth-api/oidc-id-lookup`, {
@@ -133,12 +134,12 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
                 }
               />
             </AuthCardStack>
-            <div className="mt-4 text-center text-sm">
+            <div className={styles.authSSOPageDiv}>
               <Link
                 to="/auth/sign-in"
                 search={{ redirectToPath: props.redirectToPath }}
                 data-auth-link="sign-in"
-                className="underline"
+                className={styles.authSSOPageLink}
               >
                 Back to other sign-in options
               </Link>

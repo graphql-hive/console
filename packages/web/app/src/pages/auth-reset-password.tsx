@@ -21,6 +21,7 @@ import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate } from '@tanstack/react-router';
+import * as styles from './auth-reset-password.css';
 
 function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: string }) {
   const initialEmail = props.email ?? '';
@@ -116,12 +117,16 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
           <AuthCardStack>
             <p>
               A password reset email has been sent to{' '}
-              <span className="font-semibold">{form.getValues().email}</span>, if it exists in our
-              system.
+              <span className={styles.authResetPasswordEmailSpan}>{form.getValues().email}</span>,
+              if it exists in our system.
             </p>
-            <p className="text-sm text-fg-secondary">
+            <p className={styles.authResetPasswordEmailP}>
               If you don't receive an email, try to{' '}
-              <button type="button" className="underline" onClick={resetEmail.reset}>
+              <button
+                type="button"
+                className={styles.authResetPasswordEmailButton}
+                onClick={resetEmail.reset}
+              >
                 reset your password again
               </button>
               .
@@ -152,14 +157,14 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
             }
           />
 
-          <div className="mt-4 text-center text-sm">
+          <div className={styles.authResetPasswordEmailDiv}>
             <Link
               to="/auth/sign-in"
               search={{
                 redirectToPath: props.redirectToPath,
               }}
               data-auth-link="sign-up"
-              className="underline"
+              className={styles.authResetPasswordEmailLink}
             >
               Back to login
             </Link>
@@ -286,14 +291,14 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
             }
           />
 
-          <div className="mt-4 text-center text-sm">
+          <div className={styles.authPasswordNewDiv}>
             <Link
               to="/auth/sign-in"
               search={{
                 redirectToPath: props.redirectToPath,
               }}
               data-auth-link="sign-up"
-              className="underline"
+              className={styles.authPasswordNewLink}
             >
               Back to login
             </Link>

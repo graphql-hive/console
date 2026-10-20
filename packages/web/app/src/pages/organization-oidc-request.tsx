@@ -5,6 +5,7 @@ import { Meta } from '@/components/ui/meta';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Card } from '@/components/ui/primitives/card/card';
 import { useRouter } from '@tanstack/react-router';
+import * as styles from './organization-oidc-request.css';
 
 export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToPath: string }) {
   const router = useRouter();
@@ -13,13 +14,13 @@ export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToP
     <>
       <Meta title="Single sign-on" />
       <LayoutContent>
-        <div className="my-6">
+        <div className={styles.organizationOIDCRequestPageDiv}>
           <Card variants={{ onSurface: 'raised' }}>
-            <div className="flex min-h-140 flex-col items-center justify-center gap-y-6">
-              <Lock className="size-20 stroke-warning" />
-              <div className="flex flex-col gap-y-2 text-center">
+            <div className={styles.organizationOIDCRequestPageDiv2}>
+              <Lock className={styles.organizationOIDCRequestPageLock} />
+              <div className={styles.organizationOIDCRequestPageDiv3}>
                 <Heading>Single sign-on</Heading>
-                <span className="text-center text-sm font-medium text-fg-secondary">
+                <span className={styles.organizationOIDCRequestPageSpan}>
                   To access the organization's resources, authenticate your account with single
                   sign-on.
                 </span>

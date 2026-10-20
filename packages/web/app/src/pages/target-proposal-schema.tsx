@@ -4,6 +4,7 @@ import { ServiceHeading, ServiceHeadingType } from '@/components/target/proposal
 import { FragmentType } from '@/gql';
 import { cn } from '@/lib/utils';
 import { ServiceProposalDetails } from './target-proposal-types';
+import * as styles from './target-proposal-schema.css';
 
 export function TargetProposalSchemaPage(props: {
   proposalId: string; // @todo pass to proposal for commenting etc
@@ -12,7 +13,7 @@ export function TargetProposalSchemaPage(props: {
 }) {
   if (props.services.length) {
     return (
-      <div className="mb-10 w-full">
+      <div className={styles.targetProposalSchemaPageDiv}>
         {props.services.map(proposed => (
           <Fragment key={proposed.serviceName}>
             <Schema details={proposed} reviews={props.reviews} />
@@ -47,7 +48,11 @@ function Schema({
           setIsVisible(!isVisible);
         }}
       />
-      <Proposal {...details} reviews={reviews} className={cn(!isVisible && 'hidden')} />
+      <Proposal
+        {...details}
+        reviews={reviews}
+        className={cn(!isVisible && styles.schemaProposal)}
+      />
     </>
   );
 }

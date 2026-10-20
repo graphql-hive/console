@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
 import { Link, useRouter } from '@tanstack/react-router';
+import * as styles from './organization-join.css';
 
 export const JoinOrganizationPage_JoinOrganizationMutation = graphql(`
   mutation JoinOrganizationPage_JoinOrganizationMutation($code: String!) {
@@ -112,7 +113,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
   if (session.loading) {
     return (
-      <div className="mt-6 flex justify-center">
+      <div className={styles.joinOrganizationPageDiv}>
         <Spinner />
       </div>
     );
@@ -126,16 +127,16 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
     <SessionAuth>
       <HiveStripeWrapper>
         <Meta title={orgName ? `Invitation to ${orgName}` : 'Invitation'} />
-        <DottedBackground className="min-h-[100vh]">
-          <div className="absolute top-6 right-6">
+        <DottedBackground className={styles.joinOrganizationPageDottedBackground}>
+          <div className={styles.joinOrganizationPageDiv2}>
             <Button variant="outline" onClick={() => router.navigate({ to: '/logout' })}>
-              <LogOutIcon className="mr-2 size-4" /> Sign out
+              <LogOutIcon className={styles.joinOrganizationPageLogOutIcon} /> Sign out
             </Button>
           </div>
-          <Link to="/" className="absolute top-6 left-6">
-            <HiveLogo className="size-10" />
+          <Link to="/" className={styles.joinOrganizationPageLink}>
+            <HiveLogo className={styles.joinOrganizationPageHiveLogo} />
           </Link>
-          <div className="container md:w-3/5 lg:w-1/2">
+          <div className={styles.joinOrganizationPageDiv3}>
             <DataWrapper query={query} organizationSlug={null}>
               {({ data }) => {
                 if (data.organizationByInviteCode == null) {
@@ -145,13 +146,13 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
                 if (invitation.__typename === 'OrganizationInvitationError') {
                   return (
-                    <div className="bg-surface-inset">
+                    <div className={styles.joinOrganizationPageDiv4}>
                       <Card
                         variants={{ onSurface: 'raised', titleSize: 'large' }}
                         title="Invitation Error"
                       >
                         {invitation.message}
-                        <div className="mt-6 flex items-center">
+                        <div className={styles.joinOrganizationPageDiv5}>
                           <Button width="full" onSurface="raised" onClick={goBack}>
                             Back to Hive
                           </Button>
@@ -162,20 +163,20 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                 }
 
                 return (
-                  <div className="bg-surface-inset">
+                  <div className={styles.joinOrganizationPageDiv6}>
                     <Card
                       variants={{ onSurface: 'raised', titleSize: 'large' }}
                       title={`Join "${invitation.name}" organization`}
                     >
                       <p>
                         You've been invited to become a member of{' '}
-                        <span className="font-semibold">{invitation.name}</span>.
+                        <span className={styles.joinOrganizationPageSpan}>{invitation.name}</span>.
                       </p>
-                      <p className="mt-2 text-fg-secondary">
+                      <p className={styles.joinOrganizationPageP}>
                         By accepting the invitation, you will be able to collaborate with other
                         members of this organization.
                       </p>
-                      <div className="mt-6 flex flex-col gap-y-4 md:flex-row md:justify-evenly md:gap-x-4 md:gap-y-0">
+                      <div className={styles.joinOrganizationPageDiv7}>
                         <Button
                           variant="outline"
                           width="full"

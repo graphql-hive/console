@@ -22,6 +22,7 @@ import { Card } from '@/components/ui/primitives/card/card';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
+import * as styles from './project-alerts.css';
 
 function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[] }) {
   const [selected, setSelected] = useState<string[]>([]);
@@ -34,7 +35,7 @@ function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChan
       title="Channels"
       description={
         <>
-          <p className="pb-2">
+          <p className={styles.channelsP}>
             Alert Channels are a way to configure <strong>how</strong> you want to receive alerts
             and notifications from Hive.
           </p>
@@ -49,7 +50,7 @@ function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChan
           setSelected(isChecked ? [...selected, channelId] : selected.filter(k => k !== channelId));
         }}
       />
-      <div className="mt-4 flex items-center gap-x-2">
+      <div className={styles.channelsDiv}>
         <Button onClick={toggleModalOpen}>Add channel</Button>
         {channels.length > 0 && (
           <DeleteChannelsButton
@@ -90,7 +91,7 @@ function Alerts(props: {
         title="Alerts and Notifications"
         description={
           <>
-            <p className="pb-2">
+            <p className={styles.alertsP}>
               Alerts are a way to configure <strong>when</strong> you want to receive alerts and
               notifications from Hive.
             </p>
@@ -108,7 +109,7 @@ function Alerts(props: {
             setSelected(isChecked ? [...selected, alertId] : selected.filter(k => k !== alertId));
           }}
         />
-        <div className="mt-4 flex items-center gap-x-2">
+        <div className={styles.alertsDiv}>
           <Button onClick={toggleModalOpen}>Create alert</Button>
           <DeleteAlertsButton
             selected={selected}
@@ -186,12 +187,12 @@ function AlertsPageContent() {
 
   return (
     <div>
-      <div className="py-6">
+      <div className={styles.alertsPageContentDiv}>
         <Title>Alerts and Notifications</Title>
         <Subtitle>Configure alerts and notifications for your project.</Subtitle>
       </div>
       {currentProject ? (
-        <div className="flex flex-col gap-y-4">
+        <div className={styles.alertsPageContentDiv2}>
           <Channels channels={channels} />
           <Alerts alerts={alerts} channels={channels} targets={targets} />
         </div>
@@ -204,7 +205,7 @@ export function ProjectAlertsPage() {
   return (
     <>
       <Meta title="Alerts" />
-      <LayoutContent className="flex flex-col gap-y-10">
+      <LayoutContent className={styles.projectAlertsPageLayoutContent}>
         <AlertsPageContent />
       </LayoutContent>
     </>

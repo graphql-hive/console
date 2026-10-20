@@ -42,6 +42,7 @@ import {
 import { TargetProposalSchemaPage } from './target-proposal-schema';
 import { TargetProposalSupergraphPage } from './target-proposal-supergraph';
 import { ServiceProposalDetails } from './target-proposal-types';
+import * as styles from './target-proposal.css';
 
 enum Tab {
   SCHEMA = 'schema',
@@ -161,7 +162,7 @@ export function TargetProposalsSinglePage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className="flex h-(--content-height) min-h-[300px] flex-col pb-0">
+      <LayoutContent className={styles.targetProposalsSinglePageLayoutContent}>
         <ProposalsContent {...props} />
       </LayoutContent>
     </>
@@ -332,8 +333,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     if (changesQuery.error) {
       return (
         <>
-          <Title className="text-center">Unexpected Error</Title>
-          <Subtitle className="text-center">
+          <Title className={styles.proposalsContentTitle}>Unexpected Error</Title>
+          <Subtitle className={styles.proposalsContentSubtitle}>
             An unexpected error occurred when requesting the schema proposal.
             <br />
             We've been notified of this issue. Try again later.
@@ -345,8 +346,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     if (!services.length) {
       return (
         <>
-          <Title className="text-center">No changes found</Title>
-          <Subtitle className="text-center">
+          <Title className={styles.proposalsContentTitle2}>No changes found</Title>
+          <Subtitle className={styles.proposalsContentSubtitle2}>
             This proposed version would result in no changes to the latest schemas.
           </Subtitle>
         </>
@@ -355,8 +356,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     if (!proposal || !query.data?.target) {
       return (
         <>
-          <Title className="text-center">Error loading data</Title>
-          <Subtitle className="text-center">Proposal details could not be loaded.</Subtitle>
+          <Title className={styles.proposalsContentTitle3}>Error loading data</Title>
+          <Subtitle className={styles.proposalsContentSubtitle3}>
+            Proposal details could not be loaded.
+          </Subtitle>
         </>
       );
     }
@@ -385,13 +388,13 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
 
   return (
     <>
-      <div className="flex py-6">
-        <div className="flex-1">
+      <div className={styles.proposalsContentDiv}>
+        <div className={styles.proposalsContentDiv2}>
           <SubPageLayoutHeader
             subPageTitle={
-              <span className="flex items-center">
+              <span className={styles.proposalsContentSpan}>
                 <Link
-                  className="text-fg"
+                  className={styles.proposalsContentLink}
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                   params={{
                     organizationSlug,
@@ -401,12 +404,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 >
                   Schema Proposals
                 </Link>{' '}
-                <span className="inline-block px-2 text-fg-secondary italic">/</span>{' '}
+                <span className={styles.proposalsContentSpan2}>/</span>{' '}
                 {/* @todo use query data to show loading */}
                 {props.proposalId ? (
                   `${props.proposalId}`
                 ) : (
-                  <span className="inline-flex w-[150px] align-middle">
+                  <span className={styles.proposalsContentSpan3}>
                     <Skeleton variants={{ size: 'lg', width: 'full' }} />
                   </span>
                 )}
@@ -416,26 +419,26 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className="flex w-full grow flex-col rounded-sm bg-surface-inset p-4">
+      <div className={styles.proposalsContentDiv3}>
         {query.fetching ? (
           <Spinner />
         ) : (
           proposal && (
             <>
-              <div className="flex flex-col gap-2 sm:flex-row">
+              <div className={styles.proposalsContentDiv4}>
                 {/* <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} /> */}
-                <Title className="flex grow flex-row items-center gap-2 truncate">
-                  <div className="truncate">{proposal.title}</div>
+                <Title className={styles.proposalsContentTitle4}>
+                  <div className={styles.proposalsContentDiv5}>{proposal.title}</div>
                   <Tooltip
                     align="start"
                     maxWidth="lg"
                     trigger={
-                      <span className="inline-flex">
+                      <span className={styles.proposalsContentSpan4}>
                         {proposal?.compositionStatus === 'ERROR' ? (
-                          <XIcon className="text-critical" />
+                          <XIcon className={styles.proposalsContentXIcon} />
                         ) : null}
                         {proposal?.compositionStatus === 'SUCCESS' ? (
-                          <CheckIcon className="text-success" />
+                          <CheckIcon className={styles.proposalsContentCheckIcon} />
                         ) : null}
                       </span>
                     }
@@ -459,7 +462,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                     }
                   />
                 </Title>
-                <div className="flex-col justify-end">
+                <div className={styles.proposalsContentDiv6}>
                   <StageTransitionSelect
                     stage={proposal.stage}
                     onSelect={async stage => {
@@ -477,11 +480,11 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   />
                 </div>
               </div>
-              <div className="mt-2 mb-6">
+              <div className={styles.proposalsContentDiv7}>
                 {proposal.description ? (
-                  <div className="w-full border-l-2 p-4">{proposal.description}</div>
+                  <div className={styles.proposalsContentDiv8}>{proposal.description}</div>
                 ) : null}
-                <div className="mt-4 pr-2 text-right text-xs text-fg-secondary">
+                <div className={styles.proposalsContentDiv9}>
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
               </div>
@@ -551,11 +554,11 @@ function TabbedContent(props: {
   ];
 
   return (
-    <div className="w-full">
-      <div className="border-b border-line">
+    <div className={styles.tabbedContentDiv}>
+      <div className={styles.tabbedContentDiv2}>
         <Navigation aria-label="Proposal" items={sections} size="sm" />
       </div>
-      <div className="flex grow flex-row pt-4">
+      <div className={styles.tabbedContentDiv3}>
         {page === Tab.DETAILS && <TargetProposalDetailsPage {...props} />}
         {page === Tab.SCHEMA && <TargetProposalSchemaPage {...props} />}
         {page === Tab.SUPERGRAPH && <TargetProposalSupergraphPage {...props} />}

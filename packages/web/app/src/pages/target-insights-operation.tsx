@@ -18,6 +18,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
+import * as styles from './target-insights-operation.css';
 
 const operationRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
@@ -35,7 +36,12 @@ function GraphQLOperationBody(props: {
   const operation = useFragment(GraphQLOperationBody_OperationFragment, props.operation);
 
   if (operation?.body) {
-    return <GraphQLHighlight className="pt-6" code={operation.body} />;
+    return (
+      <GraphQLHighlight
+        className={styles.graphQLOperationBodyGraphQLHighlight}
+        code={operation.body}
+      />
+    );
   }
 
   return <div>Operation not found.</div>;
@@ -88,13 +94,13 @@ function OperationView({
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
+      <div className={styles.operationViewDiv}>
         <div>
           <Title>{operationName}</Title>
           <Subtitle>Insights of individual GraphQL operation</Subtitle>
         </div>
         {!result.fetching && isNotNoQueryOrMutation === false && (
-          <div className="flex justify-end gap-x-2">
+          <div className={styles.operationViewDiv2}>
             <DateRangePicker
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
@@ -121,7 +127,7 @@ function OperationView({
         />
       ) : (
         <Alert>
-          <AlertCircleIcon className="size-4" />
+          <AlertCircleIcon className={styles.operationViewAlertCircleIcon} />
           <AlertTitle>No Subscription insights available yet.</AlertTitle>
           <AlertDescription>
             Hive is currently only collecting usage data for this operation. We are currently
@@ -133,7 +139,7 @@ function OperationView({
           </AlertDescription>
         </Alert>
       )}
-      <div className="mt-12 w-full">
+      <div className={styles.operationViewDiv3}>
         <Card variants={{ onSurface: 'raised', titleSize: 'large' }} title="Operation body">
           {result.fetching ? (
             <div>Loading...</div>
@@ -196,7 +202,7 @@ function OperationInsightsContent(props: { operationHash: string; operationName:
 
   if (!query.data?.hasCollectedOperations) {
     return (
-      <div className="py-8">
+      <div className={styles.operationInsightsContentDiv}>
         <EmptyList
           title="Hive is waiting for your first collected operation"
           description="You can collect usage of your GraphQL API with Hive Client"

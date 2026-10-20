@@ -67,6 +67,7 @@ import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, Outlet, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+import * as styles from './target-settings.css';
 
 /**
  * We previously used a different character for token masking.
@@ -205,7 +206,7 @@ function RegistryAccessTokens() {
           </Button>
         }
       />
-      <div className="my-3.5 flex justify-end">
+      <div className={styles.registryAccessTokensDiv}>
         {checked.length === 0 ? null : (
           <Button
             data-cy="delete-button"
@@ -271,14 +272,16 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         onChange={value => setBaseSchema(value ?? '')}
       />
       {mutation.data?.updateBaseSchema.error && (
-        <div className="text-critical">{mutation.data.updateBaseSchema.error.message}</div>
+        <div className={styles.extendBaseSchemaDiv}>
+          {mutation.data.updateBaseSchema.error.message}
+        </div>
       )}
       {mutation.error && (
-        <div className="text-critical">
+        <div className={styles.extendBaseSchemaDiv2}>
           {mutation.error?.graphQLErrors[0]?.message ?? mutation.error.message}
         </div>
       )}
-      <div className="flex items-center gap-x-3">
+      <div className={styles.extendBaseSchemaDiv3}>
         <Button
           disabled={mutation.fetching}
           onClick={async () => {
@@ -312,7 +315,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         <Button variant="outline" onClick={() => setBaseSchema(props.baseSchema)}>
           Reset
         </Button>
-        {isUnsaved && <span className="text-sm text-success">Unsaved changes!</span>}
+        {isUnsaved && <span className={styles.extendBaseSchemaSpan}>Unsaved changes!</span>}
       </div>
     </SubPageLayout>
   );
@@ -421,7 +424,9 @@ function AppDeploymentExclusion(
 
   if (availableAppDeploymentNamesQuery.error) {
     return (
-      <div className="text-sm text-critical">Failed to load app deployments. Please try again.</div>
+      <div className={styles.appDeploymentExclusionDiv}>
+        Failed to load app deployments. Please try again.
+      </div>
     );
   }
 
@@ -741,7 +746,7 @@ export const BreakingChanges = () => {
         />
 
         {dangerousAsBreaking.error && (
-          <span className="ml-2 text-critical">
+          <span className={styles.breakingChangesSpan}>
             {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
               dangerousAsBreaking.error.message}
           </span>
@@ -928,9 +933,7 @@ export const AppDeploymentProtection = () => {
               </p>
               <p>
                 Use{' '}
-                <code className="rounded-sm bg-surface-code px-1 py-0.5 text-xs">
-                  hive app:retire --force
-                </code>{' '}
+                <code className={styles.appDeploymentProtectionCode}>hive app:retire --force</code>{' '}
                 to bypass protection.
               </p>
             </>
@@ -1045,7 +1048,8 @@ function TargetSlug() {
         description={
           <p>
             This is your target's URL namespace on Hive. Changing it{' '}
-            <span className="font-bold">will</span> invalidate any existing links to your target.
+            <span className={styles.targetSlugSpan}>will</span> invalidate any existing links to
+            your target.
           </p>
         }
         docsLink={{
@@ -1359,7 +1363,7 @@ export function TargetSettingsPage() {
               }))}
             />
             <PageLayoutContent>
-              <div className="space-y-12">
+              <div className={styles.targetSettingsPageDiv}>
                 <Outlet />
               </div>
             </PageLayoutContent>
@@ -1594,7 +1598,7 @@ export function DangerousChangeTypeForm({
 
 function JustSavedLabel() {
   return (
-    <div className="inline-flex flex-row items-center gap-1 text-success italic subpixel-antialiased">
+    <div className={styles.justSavedLabelDiv}>
       <JustSavedIndicator />
       <span>Saved just now</span>
     </div>
@@ -1602,12 +1606,12 @@ function JustSavedLabel() {
 }
 
 function JustSavedIndicator() {
-  return <Check className="size-5 text-success" />;
+  return <Check className={styles.justSavedIndicatorCheck} />;
 }
 
 function SavedLabel() {
   return (
-    <div className="inline-flex flex-row items-center gap-1 text-fg-secondary italic subpixel-antialiased">
+    <div className={styles.savedLabelDiv}>
       <SavedIndicator />
       <span>All changes saved</span>
     </div>
@@ -1615,12 +1619,12 @@ function SavedLabel() {
 }
 
 function SavedIndicator() {
-  return <Check className="size-5 text-fg-secondary" />;
+  return <Check className={styles.savedIndicatorCheck} />;
 }
 
 function UnsavedChangesLabel() {
   return (
-    <div className="inline-flex flex-row items-center gap-2 text-accent italic subpixel-antialiased">
+    <div className={styles.unsavedChangesLabelDiv}>
       <PendingIndicator />
       <span>Unsaved changes</span>
     </div>

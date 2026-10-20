@@ -4,6 +4,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
+import * as styles from './target-proposal-checks.css';
 
 export const ProposalOverview_ChecksFragment = graphql(/* GraphQL */ `
   fragment ProposalOverview_ChecksFragment on SchemaCheckConnection {
@@ -35,11 +36,11 @@ export function TargetProposalChecksPage(props: {
 }) {
   const checks = useFragment(ProposalOverview_ChecksFragment, props.checks);
   return (
-    <div className="grid w-full grid-cols-3 content-evenly sm:grid-cols-5">
+    <div className={styles.targetProposalChecksPageDiv}>
       {checks?.edges?.map(({ node }, index) => {
         return (
           <CheckItem
-            className={index % 2 === 1 ? 'bg-surface-stripe' : ''}
+            className={index % 2 === 1 ? styles.targetProposalChecksPageCheckItem : ''}
             key={node.id}
             {...props}
             {...node}
@@ -74,26 +75,23 @@ function CheckItem(props: {
         targetSlug,
         schemaCheckId: props.id,
       }}
-      className={cn(
-        'col-span-3 grid grid-cols-subgrid items-center gap-4 px-4 py-3 text-left text-base hover:bg-surface-hover sm:col-span-5',
-        props.className,
-      )}
+      className={cn(styles.checkItemLink, props.className)}
     >
-      <div className="row-span-2 sm:row-span-1">
+      <div className={styles.checkItemDiv}>
         <SchemaCheckIcon {...props} />
       </div>
-      <div className="min-w-[100px] truncate">
-        <div className="flex items-center text-base font-semibold">
-          <Box className="mr-1 size-3" />
-          <div className="truncate">{props.serviceName || 'single schema'}</div>
+      <div className={styles.checkItemDiv2}>
+        <div className={styles.checkItemDiv3}>
+          <Box className={styles.checkItemBox} />
+          <div className={styles.checkItemDiv4}>{props.serviceName || 'single schema'}</div>
         </div>
       </div>
-      <div className="truncate text-center text-fg-secondary">{props.commit}</div>
-      <div className="col-start-2 flex items-center sm:col-start-4 sm:justify-self-end">
-        <CalendarIcon className="h-3" />
+      <div className={styles.checkItemDiv5}>{props.commit}</div>
+      <div className={styles.checkItemDiv6}>
+        <CalendarIcon className={styles.checkItemCalendarIcon} />
         <TimeAgo date={props.createdAt} />
       </div>
-      <div className="truncate pr-4 text-right text-fg-secondary">{props.author ?? ''}</div>
+      <div className={styles.checkItemDiv7}>{props.author ?? ''}</div>
     </Link>
   );
 }
@@ -105,22 +103,22 @@ function SchemaCheckIcon(props: {
 }) {
   if (props.hasSchemaCompositionErrors || props.hasUnapprovedBreakingChanges) {
     return (
-      <div className="flex items-center text-critical">
-        <XIcon className="inline-block h-4" />{' '}
+      <div className={styles.schemaCheckIconDiv}>
+        <XIcon className={styles.schemaCheckIconXIcon} />{' '}
         {props.hasSchemaCompositionErrors ? 'ERROR' : 'FAILED'}
       </div>
     );
   }
   if (props.hasSchemaChanges) {
     return (
-      <div className="flex items-center text-success">
-        <CheckIcon className="inline-block h-4" /> PASS
+      <div className={styles.schemaCheckIconDiv2}>
+        <CheckIcon className={styles.schemaCheckIconCheckIcon} /> PASS
       </div>
     );
   }
   return (
-    <div className="flex items-center text-fg-secondary">
-      <Diamond className="mr-2 size-4" /> NO CHANGE
+    <div className={styles.schemaCheckIconDiv3}>
+      <Diamond className={styles.schemaCheckIconDiamond} /> NO CHANGE
     </div>
   );
 }

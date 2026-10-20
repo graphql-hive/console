@@ -15,6 +15,7 @@ import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import { Link, Outlet, useParams } from '@tanstack/react-router';
+import * as styles from './target-history.css';
 
 export const HistoryPage_VersionsPageQuery = graphql(`
   query HistoryPage_VersionsPageQuery(
@@ -111,9 +112,9 @@ function VersionsList(props: { versionId?: string }): ReactElement {
         <Link
           key={version.id}
           className={cn(
-            'flex items-stretch gap-3 rounded-lg py-3 pr-3 pl-2',
-            'hover:bg-surface-hover',
-            versionId === version.id && 'bg-surface-selected',
+            styles.versionsListLink,
+            styles.versionsListLink2,
+            versionId === version.id && styles.versionsListLink3,
           )}
           to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
           params={{
@@ -123,44 +124,38 @@ function VersionsList(props: { versionId?: string }): ReactElement {
             versionId: version.id,
           }}
         >
-          <div className="mt-0.5 flex">
+          <div className={styles.versionsListDiv}>
             <StatusDot
               color={version.isValid ? 'success' : 'critical'}
               label={version.isValid ? 'Composable' : 'Failed'}
             />
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="mb-1 flex flex-wrap items-center gap-3">
-              <div className="mr-1 truncate font-mono text-xs font-semibold">
+          <div className={styles.versionsListDiv2}>
+            <div className={styles.versionsListDiv3}>
+              <div className={styles.versionsListDiv4}>
                 {version.origin.__typename === 'SchemaVersionPublishOrigin' &&
                 version.origin.revision
                   ? version.origin.revision
                   : version.id.substring(0, 8)}
               </div>
               {version.origin.__typename === 'SchemaVersionPublishOrigin' && (
-                <span className="font-mono text-2xs tracking-wide text-success uppercase">
-                  Published
-                </span>
+                <span className={styles.versionsListSpan}>Published</span>
               )}
               {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
-                <span className="font-mono text-2xs tracking-wide text-critical uppercase">
-                  Removed
-                </span>
+                <span className={styles.versionsListSpan2}>Removed</span>
               )}
               {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-                <span className="font-mono text-2xs tracking-wide text-info uppercase">
-                  Promoted
-                </span>
+                <span className={styles.versionsListSpan3}>Promoted</span>
               )}
             </div>
 
             {version.origin.__typename === 'SchemaVersionPublishOrigin' &&
               version.origin.publishedSubgraphs && (
-                <div className="mb-1 flex flex-wrap gap-1">
+                <div className={styles.versionsListDiv5}>
                   {version.origin.publishedSubgraphs.map((service, idx) => (
-                    <span key={idx} className="text-xs">
-                      <PackageIcon className="mt-0.25 mr-1 inline size-3" />
-                      <span className="font-mono">
+                    <span key={idx} className={styles.versionsListSpan4}>
+                      <PackageIcon className={styles.versionsListPackageIcon} />
+                      <span className={styles.versionsListSpan5}>
                         {service.name}@{service.revision ?? service.versionId.substring(0, 8)}
                       </span>
                     </span>
@@ -168,11 +163,11 @@ function VersionsList(props: { versionId?: string }): ReactElement {
                 </div>
               )}
             {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
-              <div className="mb-1 flex flex-wrap gap-1">
+              <div className={styles.versionsListDiv6}>
                 {version.origin.removedSubgraphs.map((service, idx) => (
-                  <span key={idx} className="text-xs">
-                    <PackageIcon className="mt-0.25 mr-1 inline size-3" />
-                    <span className="font-mono">
+                  <span key={idx} className={styles.versionsListSpan6}>
+                    <PackageIcon className={styles.versionsListPackageIcon2} />
+                    <span className={styles.versionsListSpan7}>
                       {service.name}@{service.versionId.substring(0, 8)}
                     </span>
                   </span>
@@ -180,25 +175,28 @@ function VersionsList(props: { versionId?: string }): ReactElement {
               </div>
             )}
             {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-              <p className="flex content-center text-xs">
-                <FileSymlinkIcon className="mt-0.25 mr-1 inline size-3" />
-                <span className="font-mono">
+              <p className={styles.versionsListP}>
+                <FileSymlinkIcon className={styles.versionsListFileSymlinkIcon} />
+                <span className={styles.versionsListSpan8}>
                   {version.origin.targetSlug}@{version.origin.schemaVersionId.substring(0, 8)}
                 </span>
               </p>
             )}
           </div>
 
-          <div className="flex shrink-0 flex-col">
-            <div className="flex gap-3">
+          <div className={styles.versionsListDiv7}>
+            <div className={styles.versionsListDiv8}>
               {version.meta?.commit && (
-                <code className="hidden items-center font-mono text-xs md:flex">
-                  <GitCommitVerticalIcon size="14" className="inline" />
+                <code className={styles.versionsListCode}>
+                  <GitCommitVerticalIcon
+                    size="14"
+                    className={styles.versionsListGitCommitVerticalIcon}
+                  />
                   {version.meta.commit.slice(0, 7)}
                 </code>
               )}
             </div>
-            <div className="mt-auto mb-0 hidden text-right text-xs sm:block">
+            <div className={styles.versionsListDiv9}>
               <TimeAgo date={version.date} />
             </div>
           </div>
@@ -304,15 +302,15 @@ function HistoryPageContent() {
     return (
       <>
         {/* Pinned and capped to the viewport, so the list scrolls inside the column. */}
-        <div className="sticky top-6 flex max-h-[calc(100vh-3rem)] flex-col self-start">
-          <div className="py-6">
+        <div className={styles.historyPageContentDiv}>
+          <div className={styles.historyPageContentDiv2}>
             <Title>Versions</Title>
             <Subtitle>Recently published versions.</Subtitle>
           </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-5">
-            <div className="flex min-h-0 min-w-[420px] grow flex-col rounded-md border border-line-subtle bg-surface-inset">
+          <div className={styles.historyPageContentDiv3}>
+            <div className={styles.historyPageContentDiv4}>
               <ScrollArea fill>
-                <div className="flex flex-col gap-2.5 p-2.5">
+                <div className={styles.historyPageContentDiv5}>
                   <VersionsList versionId={versionId} />
                 </div>
               </ScrollArea>
@@ -325,8 +323,8 @@ function HistoryPageContent() {
   }
 
   return (
-    <div className="w-full">
-      <div className="py-6">
+    <div className={styles.historyPageContentDiv6}>
+      <div className={styles.historyPageContentDiv7}>
         <Title>Versions</Title>
         <Subtitle>Recently published versions.</Subtitle>
       </div>
@@ -344,7 +342,7 @@ export function TargetHistoryPage() {
   return (
     <>
       <Meta title="History" />
-      <LayoutContent className="flex flex-row gap-x-6">
+      <LayoutContent className={styles.targetHistoryPageLayoutContent}>
         <HistoryPageContent />
       </LayoutContent>
     </>

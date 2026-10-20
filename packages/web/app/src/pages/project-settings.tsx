@@ -27,6 +27,7 @@ import { getDocsUrl } from '@/lib/docs-url';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Outlet, useRouter } from '@tanstack/react-router';
+import * as styles from './project-settings.css';
 
 export const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
   query getGitHubIntegrationDetails($organizationSlug: String!) {
@@ -83,7 +84,8 @@ function GitHubIntegration(): ReactElement | null {
         description={
           <p>
             Prevents GitHub Check name collisions when running{' '}
-            <code className="text-xs">$ hive schema:check --github</code> for more than one project.
+            <code className={styles.gitHubIntegrationCode}>$ hive schema:check --github</code> for
+            more than one project.
           </p>
         }
         docsLink={{
@@ -92,31 +94,31 @@ function GitHubIntegration(): ReactElement | null {
         }}
       />
       <div>
-        <div className="text-sm text-fg-secondary">
+        <div className={styles.gitHubIntegrationDiv}>
           <div>Here's how it will look like in your CI pipeline.</div>
-          <div className="my-8 flex w-fit flex-col gap-y-1">
-            <div className="flex items-center gap-x-2 pl-1">
-              <CheckIcon className="size-4 text-success" />
-              <div className="flex size-6 items-center justify-center rounded-sm bg-surface-inverse">
-                <HiveLogo className="size-4/5" />
+          <div className={styles.gitHubIntegrationDiv2}>
+            <div className={styles.gitHubIntegrationDiv3}>
+              <CheckIcon className={styles.gitHubIntegrationCheckIcon} />
+              <div className={styles.gitHubIntegrationDiv4}>
+                <HiveLogo className={styles.gitHubIntegrationHiveLogo} />
               </div>
 
-              <div className="font-semibold text-fg-default">
+              <div className={styles.gitHubIntegrationDiv5}>
                 {organizationSlug} &gt; schema:check &gt; staging
               </div>
-              <div className="text-fg-secondary">— No changes</div>
+              <div className={styles.gitHubIntegrationDiv6}>— No changes</div>
             </div>
-            <ArrowBigDownDashIcon className="size-6 self-center" />
-            <div className="flex items-center gap-x-2 pl-1">
-              <CheckIcon className="size-4 text-success" />
-              <div className="flex size-6 items-center justify-center rounded-sm bg-surface-inverse">
-                <HiveLogo className="size-4/5" />
+            <ArrowBigDownDashIcon className={styles.gitHubIntegrationArrowBigDownDashIcon} />
+            <div className={styles.gitHubIntegrationDiv7}>
+              <CheckIcon className={styles.gitHubIntegrationCheckIcon2} />
+              <div className={styles.gitHubIntegrationDiv8}>
+                <HiveLogo className={styles.gitHubIntegrationHiveLogo2} />
               </div>
 
-              <div className="font-semibold text-fg-default">
+              <div className={styles.gitHubIntegrationDiv9}>
                 {organizationSlug} &gt; schema:check &gt; {projectSlug} &gt; staging
               </div>
-              <div className="text-fg-secondary">— No changes</div>
+              <div className={styles.gitHubIntegrationDiv10}>— No changes</div>
             </div>
           </div>
         </div>
@@ -231,7 +233,8 @@ function ProjectSettingsPage_SlugForm() {
         description={
           <p>
             This is your project's URL namespace on Hive. Changing it{' '}
-            <span className="font-bold">will invalidate</span> any existing links to your project.
+            <span className={styles.projectSettingsPageSlugFormSpan}>will invalidate</span> any
+            existing links to your project.
             <br />
           </p>
         }
@@ -380,8 +383,8 @@ function ProjectPolicySettings(props: {
           currentState={currentProject.schemaPolicy}
         />
       ) : (
-        <div className="pl-1 text-sm font-bold text-fg-secondary">
-          <p className="mr-4 inline-block text-fg-inverse">!</p>
+        <div className={styles.projectPolicySettingsDiv}>
+          <p className={styles.projectPolicySettingsP}>!</p>
           Organization settings does not allow projects to override policy. Please consult your
           organization administrator.
         </div>
@@ -515,7 +518,7 @@ export function ProjectSettingsPage() {
   return (
     <>
       <Meta title="Project settings" />
-      <LayoutContent className="flex flex-col gap-y-10">
+      <LayoutContent className={styles.projectSettingsPageLayoutContent}>
         {project ? (
           <PageLayout>
             <Navigation
@@ -529,7 +532,7 @@ export function ProjectSettingsPage() {
               }))}
             />
             <PageLayoutContent>
-              <div className="space-y-12">
+              <div className={styles.projectSettingsPageDiv}>
                 <Outlet />
               </div>
             </PageLayoutContent>

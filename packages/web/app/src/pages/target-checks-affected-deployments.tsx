@@ -12,6 +12,7 @@ import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+import * as styles from './target-checks-affected-deployments.css';
 
 export const AffectedDeploymentsQuery = graphql(`
   query AffectedDeploymentsQuery(
@@ -267,10 +268,10 @@ function TargetChecksAffectedDeploymentsContent(props: {
   return (
     <>
       <Meta title="Affected App Deployments" />
-      <div className="flex h-full flex-1 flex-col py-6">
+      <div className={styles.targetChecksAffectedDeploymentsContentDiv}>
         <SubPageLayoutHeader
           subPageTitle={
-            <span className="flex items-center">
+            <span className={styles.targetChecksAffectedDeploymentsContentSpan}>
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId"
                 params={{
@@ -279,11 +280,11 @@ function TargetChecksAffectedDeploymentsContent(props: {
                   targetSlug,
                   schemaCheckId: props.schemaCheckId,
                 }}
-                className="text-warning hover:underline"
+                className={styles.targetChecksAffectedDeploymentsContentLink}
               >
                 Schema Check
               </Link>
-              <span className="mx-2 text-fg-secondary">/</span>
+              <span className={styles.targetChecksAffectedDeploymentsContentSpan2}>/</span>
               <span>Affected App Deployments</span>
             </span>
           }
@@ -291,7 +292,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
             props.coordinate ? (
               <>
                 App deployments affected by breaking change to{' '}
-                <code className="rounded-sm bg-surface-code px-1 py-0.5 font-mono text-warning">
+                <code className={styles.targetChecksAffectedDeploymentsContentCode}>
                   {props.coordinate}
                 </code>
               </>
@@ -300,7 +301,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
             )
           }
         />
-        <div className="mt-4" />
+        <div className={styles.targetChecksAffectedDeploymentsContentDiv2} />
         {!loading && deployments.length === 0 ? (
           <EmptyList
             title="No affected app deployments"
@@ -345,7 +346,7 @@ export function TargetChecksAffectedDeploymentsPage(props: {
   coordinate?: string;
 }) {
   return (
-    <LayoutContent className="min-h-(--min-h-content)">
+    <LayoutContent className={styles.targetChecksAffectedDeploymentsPageLayoutContent}>
       <TargetChecksAffectedDeploymentsContent {...props} />
     </LayoutContent>
   );

@@ -18,6 +18,7 @@ import Stat from '@/components/ui/stat';
 import { graphql, useFragment } from '@/gql';
 import { formatNumber, useSlugs } from '@/lib/hooks';
 import { Link } from '@tanstack/react-router';
+import * as styles from './organization-subscription.css';
 
 const DateFormatter = Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -108,9 +109,9 @@ function SubscriptionPageContent() {
   const end = endOfMonth(today);
 
   return (
-    <LayoutContent className="flex flex-col gap-y-10">
-      <div className="grow">
-        <div className="flex flex-row items-center justify-between py-6">
+    <LayoutContent className={styles.subscriptionPageContentLayoutContent}>
+      <div className={styles.subscriptionPageContentDiv}>
+        <div className={styles.subscriptionPageContentDiv2}>
           <PageLead title="Your subscription" description="Explore your current plan and usage." />
           {organization.viewerCanModifyBilling && (
             <div>
@@ -149,20 +150,20 @@ function SubscriptionPageContent() {
               </BillingView>
             </div>
           </Card>
-          <div className="mt-8">
+          <div className={styles.subscriptionPageContentDiv3}>
             <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Current Usage">
-              <p className="text-sm text-fg-secondary">
+              <p className={styles.subscriptionPageContentP}>
                 {DateFormatter.format(start)} — {DateFormatter.format(end)}
               </p>
-              <div className="mt-4">
+              <div className={styles.subscriptionPageContentDiv4}>
                 <OrganizationUsageEstimationView organization={organization} />
               </div>
             </Card>
           </div>
           {monthlyUsagePoints.length ? (
-            <div className="mt-8">
+            <div className={styles.subscriptionPageContentDiv5}>
               <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Historical Usage">
-                <div className="mt-4">
+                <div className={styles.subscriptionPageContentDiv6}>
                   <TimeSeriesChart
                     kind="bar"
                     height={400}
@@ -174,10 +175,10 @@ function SubscriptionPageContent() {
             </div>
           ) : null}
           {organization.billingConfiguration?.invoices?.length ? (
-            <div className="mt-8">
+            <div className={styles.subscriptionPageContentDiv7}>
               <Card variants={{ onSurface: 'base' }}>
                 <Heading>Invoices</Heading>
-                <div className="mt-4">
+                <div className={styles.subscriptionPageContentDiv8}>
                   <InvoicesList organization={organization} />
                 </div>
               </Card>

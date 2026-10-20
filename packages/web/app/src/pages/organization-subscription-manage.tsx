@@ -22,6 +22,7 @@ import { BillingPlanType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { Link } from '@tanstack/react-router';
+import * as styles from './organization-subscription-manage.css';
 
 const ManageSubscriptionInner_OrganizationFragment = graphql(`
   fragment ManageSubscriptionInner_OrganizationFragment on Organization {
@@ -269,7 +270,7 @@ function Inner(props: {
 
     if (plan === 'ENTERPRISE') {
       return (
-        <div className="mt-2">
+        <div className={styles.renderActionsDiv}>
           <Button anchor={{ href: 'mailto:contact@graphql-hive.com' }}>Contact Us</Button>
         </div>
       );
@@ -278,12 +279,12 @@ function Inner(props: {
     if (plan === 'PRO') {
       return (
         <>
-          <div className="my-8 flex flex-row gap-6">
+          <div className={styles.renderActionsDiv2}>
             <BillingPaymentMethodForm onValidationChange={setPaymentDetailsValid} />
-            <div className="w-1/2">
+            <div className={styles.renderActionsDiv3}>
               {plan === BillingPlanType.Pro && plan !== organization.plan ? (
                 <div>
-                  <Heading className="mb-3">Discount</Heading>
+                  <Heading className={styles.renderActionsHeading}>Discount</Heading>
                   <Input
                     value={couponCode ?? ''}
                     disabled={isFetching}
@@ -303,7 +304,7 @@ function Inner(props: {
 
     if (plan === 'HOBBY') {
       return (
-        <div className="mt-4">
+        <div className={styles.renderActionsDiv4}>
           <Button type="button" onClick={downgrade} disabled={isFetching}>
             Downgrade to Hobby
           </Button>
@@ -329,8 +330,8 @@ function Inner(props: {
   const selectedPlan = billingPlans.find(v => v.planType === plan) ?? billingPlans[0];
 
   return (
-    <div className="flex w-full flex-col gap-5">
-      <div className="w-full">
+    <div className={styles.innerDiv}>
+      <div className={styles.innerDiv2}>
         <Card
           variants={{ onSurface: 'base', titleSize: 'large' }}
           title="Choose Your Plan"
@@ -349,10 +350,10 @@ function Inner(props: {
           />
         </Card>
       </div>
-      <div className="w-full self-start" ref={planSummaryRef}>
+      <div className={styles.innerDiv3} ref={planSummaryRef}>
         <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Plan Summary">
           <div>
-            <div className="flex flex-col">
+            <div className={styles.innerDiv4}>
               <div>
                 <PlanSummary plan={selectedPlan} operationsRateLimit={operationsRateLimit}>
                   {selectedPlan.planType === BillingPlanType.Pro && (
@@ -368,19 +369,17 @@ function Inner(props: {
               {plan === BillingPlanType.Pro &&
                 organization.billingConfiguration.canUpdateSubscription && (
                   <>
-                    <div className="my-8 w-1/2">
+                    <div className={styles.innerDiv5}>
                       <Heading>Define your reserved volume</Heading>
-                      <p className="text-sm text-fg-secondary">
+                      <p className={styles.innerP}>
                         Pro plan requires to defined quota of reported operations.
                       </p>
-                      <p className="text-sm text-fg-secondary">
+                      <p className={styles.innerP2}>
                         Pick a volume a little higher than you think you'll need to avoid being rate
                         limited.
                       </p>
-                      <p className="text-sm text-fg-secondary">
-                        Don't worry, you can always adjust it later.
-                      </p>
-                      <div className="mt-5 pl-2.5">
+                      <p className={styles.innerP3}>Don't worry, you can always adjust it later.</p>
+                      <div className={styles.innerDiv6}>
                         <SubscriptionSlider
                           isFetching={isFetching}
                           operationsRateLimit={operationsRateLimit}
@@ -465,7 +464,7 @@ function SubscriptionSlider({
   };
 
   return (
-    <div className="space-y-2">
+    <div className={styles.subscriptionSliderDiv}>
       <Slider
         min={min}
         max={max}
@@ -477,16 +476,16 @@ function SubscriptionSlider({
       />
 
       <span>{formatMillionOrBillion(operationsRateLimit)}</span>
-      <div className="flex justify-between">
+      <div className={styles.subscriptionSliderDiv2}>
         <span>1M</span>
         <span>500M</span>
         <span>1B</span>
         <span>Custom</span>
       </div>
 
-      <div className="ml-auto w-48">
+      <div className={styles.subscriptionSliderDiv3}>
         <Input ref={inputRef} value={inputValue} onChange={handleInputChange} onBlur={handleBlur} />
-        {inputError && <div className="mt-1 text-end text-sm text-critical">{inputError}</div>}
+        {inputError && <div className={styles.subscriptionSliderDiv4}>{inputError}</div>}
       </div>
     </div>
   );
@@ -548,9 +547,9 @@ function ManageSubscriptionPageContent() {
   }
 
   return (
-    <LayoutContent className="flex flex-col gap-y-10">
-      <div className="grow">
-        <div className="flex flex-row items-center justify-between py-6">
+    <LayoutContent className={styles.manageSubscriptionPageContentLayoutContent}>
+      <div className={styles.manageSubscriptionPageContentDiv}>
+        <div className={styles.manageSubscriptionPageContentDiv2}>
           <PageLead
             title="Manage subscription"
             description="Manage your current plan and invoices."

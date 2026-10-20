@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
+import * as styles from './auth-verify-email.css';
 
 const verifyEmailRoute = getRouteApi('/anonymous/auth/verify-email');
 
@@ -181,8 +182,8 @@ function AuthVerifyEmail() {
         description="This should only take a few seconds."
         content={
           <AuthCardStack>
-            <div className="flex justify-center">
-              <div className="size-8 animate-spin rounded-full border-2 border-t-fg-muted" />
+            <div className={styles.authVerifyEmailDiv}>
+              <div className={styles.authVerifyEmailDiv2} />
             </div>
           </AuthCardStack>
         }
@@ -196,8 +197,8 @@ function AuthVerifyEmail() {
       content={
         <AuthCardStack>
           <p>
-            <span className="font-semibold">Please click on the link</span> in the email we just
-            sent you to confirm your email address.
+            <span className={styles.authVerifyEmailSpan}>Please click on the link</span> in the
+            email we just sent you to confirm your email address.
           </p>
           <Button
             type="button"

@@ -15,6 +15,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
+import * as styles from './organization.css';
 
 const organizationIndexRoute = getRouteApi('/authenticated/with-header/$organizationSlug/');
 
@@ -178,17 +179,17 @@ function OrganizationPageContent(props: {} & RouteSearchProps) {
   }
 
   return (
-    <LayoutContent className="flex justify-between gap-12">
+    <LayoutContent className={styles.organizationPageContentLayoutContent}>
       <>
-        <div className="grow">
-          <div className="flex flex-row items-center justify-between py-6">
+        <div className={styles.organizationPageContentDiv}>
+          <div className={styles.organizationPageContentDiv2}>
             <div>
               <Title>Projects</Title>
               <Subtitle>A list of available project in your organization.</Subtitle>
             </div>
             <div>
-              <div className="flex flex-row items-center gap-x-4">
-                <div className="w-full md:w-[200px] lg:w-[336px]">
+              <div className={styles.organizationPageContentDiv3}>
+                <div className={styles.organizationPageContentDiv4}>
                   <Input
                     type="search"
                     placeholder="Search..."
@@ -234,7 +235,7 @@ function OrganizationPageContent(props: {} & RouteSearchProps) {
                 docsUrl="/schema-registry/management/projects#create-a-new-project"
               />
             ) : (
-              <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
+              <div className={styles.organizationPageContentDiv5}>
                 {projects.map(project => (
                   <ProjectCard
                     key={project.id}
@@ -249,7 +250,7 @@ function OrganizationPageContent(props: {} & RouteSearchProps) {
               </div>
             )
           ) : (
-            <div className="grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3">
+            <div className={styles.organizationPageContentDiv6}>
               {Array.from({ length: 4 }).map((_, index) => (
                 <ProjectCard
                   key={index}

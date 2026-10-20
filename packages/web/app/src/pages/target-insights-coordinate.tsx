@@ -30,6 +30,7 @@ import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn, stringToHiveColor } from '@/lib/utils';
 import { getRouteApi, Link } from '@tanstack/react-router';
+import * as styles from './target-insights-coordinate.css';
 
 const coordinateRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate',
@@ -199,10 +200,10 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between py-6">
+      <div className={styles.schemaCoordinateViewDiv}>
         <div>
-          <div className="flex flex-row items-center justify-between">
-            <Title className="pr-8">{title}</Title>
+          <div className={styles.schemaCoordinateViewDiv2}>
+            <Title className={styles.schemaCoordinateViewTitle}>{title}</Title>
             {supergraphMetadata ? (
               <SupergraphMetadataList
                 supergraphMetadata={supergraphMetadata}
@@ -212,7 +213,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
           </div>
           <Subtitle>Schema coordinate insights</Subtitle>
         </div>
-        <div className="flex justify-end gap-x-2">
+        <div className={styles.schemaCoordinateViewDiv3}>
           <DateRangePicker
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
@@ -229,9 +230,9 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
         </div>
       </div>
       {query.data?.target?.hasCollectedSubscriptionOperations && (
-        <div className="pb-8">
+        <div className={styles.schemaCoordinateViewDiv4}>
           <Alert>
-            <AlertCircleIcon className="size-4" />
+            <AlertCircleIcon className={styles.schemaCoordinateViewAlertCircleIcon} />
             <AlertTitle>No Subscription insights available yet.</AlertTitle>
             <AlertDescription>
               This page currently only shows the information for Query and Mutation operations. We
@@ -249,9 +250,9 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
         </div>
       )}
       {fieldLevelMetricsDisplayState === FieldLevelMetricsDisplayState.OnWithWarning ? (
-        <div className="pb-8">
-          <Alert className="border-info-line-subtle bg-info-tint-subtle text-info">
-            <AlertCircleIcon className="size-4" />
+        <div className={styles.schemaCoordinateViewDiv5}>
+          <Alert className={styles.schemaCoordinateViewAlert}>
+            <AlertCircleIcon className={styles.schemaCoordinateViewAlertCircleIcon2} />
             <AlertTitle>Coordinate resolutions were recently added.</AlertTitle>
             <AlertDescription>
               Your gateway was recently upgraded to add usage tracking for actual coordinate
@@ -261,10 +262,10 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
           </Alert>
         </div>
       ) : null}
-      <div className="space-y-4 pb-8">
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-8">
-          <div className="col-span-4">
-            <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-2">
+      <div className={styles.schemaCoordinateViewDiv6}>
+        <div className={styles.schemaCoordinateViewDiv7}>
+          <div className={styles.schemaCoordinateViewDiv8}>
+            <div className={styles.schemaCoordinateViewDiv9}>
               <StatCard
                 title="Total calls"
                 icon={GlobeIcon}
@@ -277,7 +278,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                   icon={GlobeIcon}
                   hint={
                     <>
-                      <p className="mb-2">
+                      <p className={styles.schemaCoordinateViewP}>
                         Resolution Count is the total number of times this specific field (schema
                         coordinate) was executed and returned.
                       </p>
@@ -292,7 +293,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                     <>
                       {isLoading ? '-' : formatNumber(totalResolutions)}
                       {totalFailures ? (
-                        <span className="ml-2 text-sm font-normal text-critical">
+                        <span className={styles.schemaCoordinateViewSpan}>
                           ({formatNumber(totalFailures)} errors)
                         </span>
                       ) : null}
@@ -328,7 +329,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
               />
             </div>
           </div>
-          <div className="col-span-4">
+          <div className={styles.schemaCoordinateViewDiv10}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Activity"
@@ -339,8 +340,13 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                 valueFormatter={formatNumber}
                 series={[{ name: 'Requests', data: requestsOverTime }]}
               />
-              <div className={cn('pt-5', showFieldLevelMetrics ? 'show' : 'hidden')}>
-                <p className="pb-4 text-control text-fg-secondary">
+              <div
+                className={cn(
+                  styles.schemaCoordinateViewDiv11,
+                  showFieldLevelMetrics ? 'show' : styles.schemaCoordinateViewDiv12,
+                )}
+              >
+                <p className={styles.schemaCoordinateViewP2}>
                   Number of times the coordinate {props.coordinate} has resolved over time
                 </p>
                 <TimeSeriesChart
@@ -359,8 +365,8 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
             </Card>
           </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <div className="col-span-4 grid">
+        <div className={styles.schemaCoordinateViewDiv13}>
+          <div className={styles.schemaCoordinateViewDiv14}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Operations"
@@ -379,7 +385,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                       ({ node: operation }) => (
                         <Link
                           key={operation.id}
-                          className="flex items-center rounded-md px-2 py-1 text-fg-default hover:bg-surface-hover hover:text-fg-default hover:underline hover:underline-offset-2"
+                          className={styles.schemaCoordinateViewLink}
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                           params={{
                             organizationSlug,
@@ -389,10 +395,10 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                             operationHash: operation.operationHash ?? '_',
                           }}
                         >
-                          <p className="truncate text-sm font-medium">{operation.name}</p>
-                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                          <p className={styles.schemaCoordinateViewP3}>{operation.name}</p>
+                          <div className={styles.schemaCoordinateViewDiv15}>
                             <div>{formatNumber(operation.count)}</div>{' '}
-                            <div className="min-w-[70px] text-right">
+                            <div className={styles.schemaCoordinateViewDiv16}>
                               {toDecimal((operation.count * 100) / totalRequests)}%
                             </div>
                           </div>
@@ -403,7 +409,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
             </Card>
           </div>
 
-          <div className="col-span-3 grid">
+          <div className={styles.schemaCoordinateViewDiv17}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Clients"
@@ -422,7 +428,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                       ({ node: client }) => (
                         <Link
                           key={client.name}
-                          className="flex items-center rounded-md px-2 py-1 text-fg-default hover:bg-surface-hover hover:text-fg-default hover:underline hover:underline-offset-2"
+                          className={styles.schemaCoordinateViewLink2}
                           to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                           params={{
                             organizationSlug,
@@ -431,10 +437,10 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                             name: client.name,
                           }}
                         >
-                          <p className="truncate text-sm font-medium">{client.name}</p>
-                          <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                          <p className={styles.schemaCoordinateViewP4}>{client.name}</p>
+                          <div className={styles.schemaCoordinateViewDiv18}>
                             <div>{formatNumber(client.count)}</div>
-                            <div className="min-w-[70px] text-right">
+                            <div className={styles.schemaCoordinateViewDiv19}>
                               {toDecimal((client.count * 100) / totalRequests)}%
                             </div>
                           </div>
@@ -447,7 +453,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
 
           {showFieldLevelMetrics ? (
             <>
-              <div className="col-span-3 grid">
+              <div className={styles.schemaCoordinateViewDiv20}>
                 <Card
                   variants={{ onSurface: 'raised', titleSize: 'large' }}
                   title="Errors"
@@ -460,16 +466,16 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                   }
                 >
                   <ScrollArea maxHeight="lg">
-                    <div className="space-y-2">
+                    <div className={styles.schemaCoordinateViewDiv21}>
                       {isLoading
                         ? null
                         : query.data?.target?.schemaCoordinateStats.errorCodes?.edges.map(
                             ({ node: error }) => (
-                              <div key={error.code} className="flex items-center">
-                                <p className="truncate text-sm font-medium">{error.code}</p>
-                                <div className="ml-auto flex min-w-[150px] flex-row items-center justify-end text-sm font-light">
+                              <div key={error.code} className={styles.schemaCoordinateViewDiv22}>
+                                <p className={styles.schemaCoordinateViewP5}>{error.code}</p>
+                                <div className={styles.schemaCoordinateViewDiv23}>
                                   <div>{formatNumber(error.count)}</div>
-                                  <div className="min-w-[70px] text-right">
+                                  <div className={styles.schemaCoordinateViewDiv24}>
                                     {toDecimal((error.count * 100) / totalRequests)}%
                                   </div>
                                 </div>
@@ -480,7 +486,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                   </ScrollArea>
                 </Card>
               </div>
-              <div className="col-span-4 grid">
+              <div className={styles.schemaCoordinateViewDiv25}>
                 <Card
                   variants={{ onSurface: 'raised', titleSize: 'large' }}
                   title="Error Activity"
@@ -555,7 +561,7 @@ function TargetSchemaCoordinatePageContent(props: { coordinate: string }) {
 
   if (query.data?.hasCollectedOperations === false) {
     return (
-      <div className="py-8">
+      <div className={styles.targetSchemaCoordinatePageContentDiv}>
         <EmptyList
           title="Hive is waiting for your first collected operation"
           description="You can collect usage of your GraphQL API with Hive Client"

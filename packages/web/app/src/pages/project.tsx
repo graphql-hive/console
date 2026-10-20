@@ -16,6 +16,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+import * as styles from './project.css';
 
 const projectIndexRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/');
 
@@ -46,7 +47,7 @@ const TargetCard = (props: {
       days={props.days}
       renderLink={children => (
         <Link
-          className="block pt-4 pb-5"
+          className={styles.targetCardLink}
           to="/$organizationSlug/$projectSlug/$targetSlug"
           disabled={organizationSlug == null || projectSlug == null || target?.slug == null}
           params={{
@@ -195,15 +196,15 @@ const ProjectsPageContent = (props: RouteSearchProps) => {
   }
 
   return (
-    <div className="grow">
-      <div className="flex flex-row items-center justify-between py-6">
+    <div className={styles.projectsPageContentDiv}>
+      <div className={styles.projectsPageContentDiv2}>
         <div>
           <Title>Targets</Title>
           <Subtitle>A list of available targets in your project.</Subtitle>
         </div>
         <div>
-          <div className="flex flex-row items-center gap-x-4">
-            <div className="w-full md:w-[200px] lg:w-[336px]">
+          <div className={styles.projectsPageContentDiv3}>
+            <div className={styles.projectsPageContentDiv4}>
               <Input
                 type="search"
                 placeholder="Search..."
@@ -243,10 +244,8 @@ const ProjectsPageContent = (props: RouteSearchProps) => {
       </div>
       <div
         className={cn(
-          'grow',
-          targetConnection?.edges.length === 0
-            ? ''
-            : 'grid grid-cols-2 items-stretch gap-5 xl:grid-cols-3',
+          styles.projectsPageContentDiv5,
+          targetConnection?.edges.length === 0 ? '' : styles.projectsPageContentDiv6,
         )}
       >
         {targetConnection ? (
@@ -316,7 +315,7 @@ export function ProjectPage(props: RouteSearchProps): ReactElement {
   return (
     <>
       <Meta title="Targets" />
-      <LayoutContent className="flex justify-between gap-12">
+      <LayoutContent className={styles.projectPageLayoutContent}>
         <ProjectsPageContent
           search={props.search}
           sortBy={props.sortBy}

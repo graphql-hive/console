@@ -16,6 +16,7 @@ import { SchemaProposalStage } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
+import * as styles from './target-proposals.css';
 
 const proposalsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/proposals',
@@ -29,7 +30,7 @@ export function TargetProposalsPage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className="flex min-h-[300px] flex-col">
+      <LayoutContent className={styles.targetProposalsPageLayoutContent}>
         <ProposalsContent {...props} />
       </LayoutContent>
     </>
@@ -51,14 +52,14 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
   };
   return (
     <>
-      <div className="flex py-6">
-        <div className="flex-1">
+      <div className={styles.proposalsContentDiv}>
+        <div className={styles.proposalsContentDiv2}>
           <SubPageLayoutHeader
-            subPageTitle={<span className="flex items-center">Schema Proposals</span>}
+            subPageTitle={<span className={styles.proposalsContentSpan}>Schema Proposals</span>}
             description="Collaborate on schema changes to reduce friction during development."
           />
         </div>
-        <div className="mr-0 ml-auto flex flex-col justify-center">
+        <div className={styles.proposalsContentDiv3}>
           <Button onClick={proposeChange}>Propose a change</Button>
         </div>
       </div>
@@ -118,7 +119,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
 
   return (
     <>
-      <div className="flex flex-col justify-start gap-2.5 pb-2.5 md:flex-row">
+      <div className={styles.targetProposalsListDiv}>
         <StageFilter selectedStages={props.filterStages ?? []} />
         {hasFilterSelection ? (
           <Button variant="outline" onClick={reset}>
@@ -127,7 +128,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className="min-h-full gap-2.5 rounded-md border border-line-subtle bg-surface-inset p-2.5">
+      <div className={styles.targetProposalsListDiv2}>
         <ProposalsList {...props} />
       </div>
     </>
@@ -161,10 +162,10 @@ const ProposalsList = (props: {
         />
       ) : null}
       {query.fetching && !query.data ? (
-        <div role="status" aria-label="Loading" className="flex flex-col">
-          <span className="sr-only">Loading</span>
+        <div role="status" aria-label="Loading" className={styles.proposalsListDiv}>
+          <span className={styles.proposalsListSpan}>Loading</span>
           {[0, 1, 2, 3].map(index => (
-            <div key={index} className="flex flex-col gap-2 p-2.5">
+            <div key={index} className={styles.proposalsListDiv2}>
               <Skeleton variants={{ size: 'lg', width: 'lg' }} />
               <Skeleton variants={{ size: 'sm', width: 'md' }} />
             </div>
@@ -172,8 +173,8 @@ const ProposalsList = (props: {
         </div>
       ) : null}
       {query.data?.schemaProposals?.edges?.length === 0 && (
-        <div className="my-8 flex min-h-48 items-center text-center">
-          <div className="w-full">
+        <div className={styles.proposalsListDiv3}>
+          <div className={styles.proposalsListDiv4}>
             <Title>
               No proposals {hasFilter ? 'match your search criteria' : 'have been created yet'}
             </Title>
@@ -186,8 +187,8 @@ const ProposalsList = (props: {
           <div
             key={proposal.id}
             className={cn(
-              'flex w-full flex-col rounded-md p-2.5 hover:bg-surface-hover',
-              props.selectedProposalId === proposal.id && 'bg-surface-selected',
+              styles.proposalsListDiv5,
+              props.selectedProposalId === proposal.id && styles.proposalsListDiv6,
             )}
           >
             <Link
@@ -205,22 +206,22 @@ const ProposalsList = (props: {
               }}
               variant="secondary"
             >
-              <div className="flex flex-row items-start">
-                <div className="flex min-w-0 grow flex-col">
-                  <div className="mr-6 flex min-w-0 flex-row gap-1 text-sm md:text-base">
-                    <span className="mr-6 truncate font-semibold text-fg-default">
-                      {proposal.title}
-                    </span>
-                    <span className="flex items-center text-fg-inverse">
+              <div className={styles.proposalsListDiv7}>
+                <div className={styles.proposalsListDiv8}>
+                  <div className={styles.proposalsListDiv9}>
+                    <span className={styles.proposalsListSpan2}>{proposal.title}</span>
+                    <span className={styles.proposalsListSpan3}>
                       <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
-                    <span className="text-fg-secondary">{proposal.stage}</span>
+                    <span className={styles.proposalsListSpan4}>{proposal.stage}</span>
                   </div>
-                  <div className="mt-2 mb-1.5 flex flex-col gap-x-1 align-middle text-xs font-medium text-fg-secondary md:flex-row">
-                    <div className="truncate">
+                  <div className={styles.proposalsListDiv10}>
+                    <div className={styles.proposalsListDiv11}>
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>
-                    {proposal.author ? <div className="truncate">by {proposal.author}</div> : null}
+                    {proposal.author ? (
+                      <div className={styles.proposalsListDiv12}>by {proposal.author}</div>
+                    ) : null}
                   </div>
                 </div>
                 {/* <div

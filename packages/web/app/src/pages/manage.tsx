@@ -4,6 +4,7 @@ import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-pic
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import * as styles from './manage.css';
 
 type FilterKey = keyof Filters;
 
@@ -43,10 +44,10 @@ export function ManagePage() {
   );
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold text-fg-inverse">Hive Stats</h2>
-      <div className="flex flex-col">
-        <div className="flex gap-4 pb-2">
+    <div className={styles.managePageDiv}>
+      <h2 className={styles.managePageH2}>Hive Stats</h2>
+      <div className={styles.managePageDiv2}>
+        <div className={styles.managePageDiv3}>
           <DateRangePicker
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
@@ -55,7 +56,7 @@ export function ManagePage() {
           />
           <>
             {CHECKBOXES.map(({ value, label, tooltip }) => (
-              <span className="flex items-center gap-2" key={value}>
+              <span className={styles.managePageSpan} key={value}>
                 <Checkbox
                   onCheckedChange={isChecked => {
                     const newFilters = {
@@ -75,14 +76,14 @@ export function ManagePage() {
                 {tooltip ? (
                   <Tooltip
                     trigger={
-                      <label htmlFor={value} className="cursor-pointer">
+                      <label htmlFor={value} className={styles.managePageLabel}>
                         {label}
                       </label>
                     }
                     content={tooltip}
                   />
                 ) : (
-                  <label htmlFor={value} className="cursor-pointer">
+                  <label htmlFor={value} className={styles.managePageLabel2}>
                     {label}
                   </label>
                 )}

@@ -15,6 +15,7 @@ import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { getRouteApi, Outlet } from '@tanstack/react-router';
+import * as styles from './organization-members.css';
 
 const membersListRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
 
@@ -112,7 +113,7 @@ export function OrganizationMembersPage() {
   return (
     <>
       <Meta title="Members" />
-      <LayoutContent className="flex flex-col gap-y-10">
+      <LayoutContent className={styles.organizationMembersPageLayoutContent}>
         {organization ? (
           <PageLayout>
             <Navigation
@@ -130,7 +131,7 @@ export function OrganizationMembersPage() {
             </PageLayoutContent>
           </PageLayout>
         ) : query.fetching ? (
-          <div className="flex justify-center py-12">
+          <div className={styles.organizationMembersPageDiv}>
             <Spinner variants={{ size: 'lg' }} />
           </div>
         ) : null}
