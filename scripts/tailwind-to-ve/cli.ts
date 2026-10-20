@@ -1,7 +1,7 @@
 /**
  * Tailwind → Vanilla Extract codemod for `packages/web/app`.
  *
- *   pnpm tsx scripts/tailwind-to-ve/cli.ts --scope components/ui [--scope pages] [--dry] [--force]
+ *   pnpm tsx scripts/tailwind-to-ve/cli.ts --scope components/ui [--scope pages] [--dry] [--force] [--append]
  *
  * 1. Scans every source file for class strings and compiles the union with Tailwind, once.
  * 2. Rewrites the files under each `--scope` (relative to `src`), writing a `.css.ts` beside each.
@@ -30,6 +30,7 @@ const scopes = values('--scope');
 const dry = flag('--dry');
 const force = flag('--force');
 const printCss = flag('--print');
+const append = flag('--append');
 
 if (!scopes.length) {
   console.error('Pass at least one --scope <dir relative to packages/web/app/src>');
@@ -96,15 +97,17 @@ async function main() {
   const reports: FileReport[] = [];
 
   for (const file of inScope) {
+    const cssPath = file.replace(/\.tsx?$/, '.css.ts');
+    const existingCss = append && existsSync(cssPath) ? readFileSync(cssPath, 'utf8') : undefined;
     const result = transformFile(file, texts.get(file)!, {
       srcDir,
       compiled,
       layer: layerFor(file),
+      existingCss,
     });
     if (!result) continue;
     reports.push(result.report);
-    const cssPath = file.replace(/\.tsx?$/, '.css.ts');
-    if (existsSync(cssPath) && !force) {
+    if (existsSync(cssPath) && !force && !append) {
       console.error(`Refusing to overwrite ${path.relative(repoRoot, cssPath)} (pass --force).`);
       process.exit(1);
     }

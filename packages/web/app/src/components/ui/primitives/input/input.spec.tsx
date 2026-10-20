@@ -48,10 +48,10 @@ describe('Input', () => {
     expect(input.getAttribute('data-cy')).toBe('email');
     // Regression: the merge used to drop the colour next to the theme's own font size.
     expect(input.className).toContain(styles.fieldClass);
-    expect(input.className).toContain('text-sm');
+    const { size, onSurface } = styles.inputVariants.classNames.variants;
+    expect(input.className).toContain(size.default);
     // Focus lifts the fill one step on every surface.
-    expect(input.className).toContain('focus:bg-neutral-1');
-    expect(input.className).toContain('dark:focus:bg-neutral-4');
+    expect(input.className).toContain(onSurface.base);
     // Without this a type="search" field takes WebKit's native searchfield corners.
     expect(input.className).toContain(styles.fieldClass2);
   });
@@ -93,16 +93,17 @@ describe('Input', () => {
     render(<Input placeholder="Name" onSurface="raised" />);
     const input = screen.getByPlaceholderText('Name');
     expect(input.className).toContain(shared.controlSurfaceRaised);
-    expect(input.className).toContain('dark:focus:bg-neutral-6');
-    expect(input.className.split(' ')).not.toContain('bg-surface-control');
+    const { onSurface } = styles.inputVariants.classNames.variants;
+    expect(input.className).toContain(onSurface.raised);
+    expect(input.className).not.toContain(onSurface.base);
   });
 
   it('applies size, width and mono as classes', () => {
     render(<Input placeholder="Page" size="compact" width="xs" mono />);
     const input = screen.getByPlaceholderText('Page');
     expect(input.className).toContain(shared.controlSizeCompact);
-    expect(input.className).toContain('w-16');
-    expect(input.className).toContain('font-mono');
+    expect(input.className).toContain(styles.inputVariants.classNames.variants.width.xs);
+    expect(input.className).toContain(styles.inputVariants.classNames.variants.mono.true);
   });
 
   it('renders the prefix text, leading icon and trailing slot around the field', () => {
@@ -122,14 +123,14 @@ describe('Input', () => {
     expect(input.className).toContain(styles.inputInput);
     expect(input.className).toContain(styles.inputInput2);
     // A fixed width is the field's own; the prefix adds to it rather than eating into it.
-    expect(input.className).toContain('w-48');
+    expect(input.className).toContain(styles.inputVariants.classNames.variants.width.sm);
     expect(input.parentElement?.className).not.toContain(styles.inputSpan2);
   });
 
   it('lets a fluid decorated field fill its container', () => {
     render(<Input placeholder="Search" leadingIcon={Search} />);
     const input = screen.getByPlaceholderText('Search');
-    expect(input.className).toContain('w-full');
+    expect(input.className).toContain(styles.inputVariants.classNames.variants.width.full);
     expect(input.parentElement?.className).toContain(styles.inputSpan2);
   });
 });

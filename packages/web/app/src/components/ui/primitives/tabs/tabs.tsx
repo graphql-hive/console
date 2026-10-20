@@ -1,10 +1,8 @@
 import { useEffect, useRef, type ComponentType, type ReactNode } from 'react';
-import { cva } from 'class-variance-authority';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import { Tooltip } from '../floating/tooltip/tooltip';
-import { focusRingQuiet } from '../shared-styles';
 import * as styles from './tabs.css';
 
 export type TabsVariant = 'underline' | 'header';
@@ -51,42 +49,7 @@ const scrollerVariants = lenient(styles.scrollerVariants);
 
 const listVariants = lenient(styles.listVariants);
 
-const tabVariants = cva(
-  cn(
-    'relative z-10 inline-flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap font-medium transition-colors',
-    'text-fg-secondary hover:text-fg data-[active]:text-accent',
-    'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-    'rounded-sm',
-    focusRingQuiet,
-  ),
-  {
-    variants: {
-      variant: {
-        underline: 'focus-visible:outline-offset-2',
-        // The band's frame clips outside its edge, so the ring sits inside the tab instead.
-        header: 'h-full focus-visible:-outline-offset-2',
-      },
-      // Padding and text size are set per variant and size pair below: cva concatenates, so an
-      // element must never carry two utilities for one property.
-      size: {
-        default: '',
-        sm: '',
-      },
-      orientation: {
-        horizontal: '',
-        vertical: 'justify-start',
-      },
-    },
-    compoundVariants: [
-      { variant: 'underline', size: 'default', class: 'px-3 py-2 text-sm' },
-      { variant: 'underline', size: 'sm', class: 'px-2.5 py-1.5 text-xs' },
-      { variant: 'header', size: 'default', class: 'px-2.5 py-0 text-xs' },
-      { variant: 'header', size: 'sm', class: 'px-2 py-0 text-xs' },
-      { variant: 'underline', orientation: 'horizontal', class: '-mb-px' },
-      { variant: 'underline', orientation: 'vertical', class: '-ml-px' },
-    ],
-  },
-);
+const tabVariants = lenient(styles.tabVariants);
 
 const indicatorVariants = lenient(styles.indicatorVariants);
 

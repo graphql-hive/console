@@ -1,22 +1,11 @@
 import { type ReactNode } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { lenient } from '@/lib/recipe';
 import { Toggle } from '@base-ui/react/toggle';
 import { ToggleGroup as BaseToggleGroup } from '@base-ui/react/toggle-group';
 import { Tooltip } from '../floating/tooltip/tooltip';
-import { controlSize, controlSurface } from '../shared-styles';
 import * as styles from './toggle-group.css';
 
-const groupVariants = cva('inline-flex rounded-sm border', {
-  variants: {
-    size: controlSize,
-    onSurface: controlSurface,
-  },
-  defaultVariants: {
-    size: 'compact',
-    onSurface: 'base',
-  },
-});
+const groupVariants = lenient(styles.groupVariants);
 
 const itemVariants = lenient(styles.itemVariants);
 
@@ -28,7 +17,7 @@ export type ToggleGroupOption = {
   disabled?: boolean;
 };
 
-type ToggleGroupProps = VariantProps<typeof groupVariants> & {
+type ToggleGroupProps = NonNullable<Parameters<typeof groupVariants>[0]> & {
   options: ToggleGroupOption[];
   /** `undefined` presses nothing, for a setting that has not been chosen yet. */
   value: string | undefined;

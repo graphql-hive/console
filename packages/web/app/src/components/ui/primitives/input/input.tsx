@@ -1,79 +1,20 @@
 import { forwardRef, type ReactNode } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
 import { type LucideIcon } from 'lucide-react';
+import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
-import {
-  controlSize,
-  controlSurface,
-  focusRing,
-  type ControlSize,
-  type OnSurface,
-} from '../shared-styles';
+import { controlSize, type ControlSize, type OnSurface } from '../shared-styles';
 import * as styles from './input.css';
 
-/** The field itself, shared with Textarea. Fill and border come from `fieldSurface`. */
-export const fieldClass = [
-  styles.fieldClass,
-  // appearance-none: WebKit draws type="search" as a native searchfield with its own corners.
-  styles.fieldClass2,
-  focusRing,
-  styles.fieldClass3,
-  // Error state comes from the attribute, so a FormControl and a hand-set `invalid` prop paint the
-  // same border.
-  styles.fieldClass4,
-];
-
-/**
- * Fill and border by surface, at rest and focused. A raised field rests on the same fill as a
- * raised button (`controlSurface`) so an Input and a Select trigger match inside a dialog. Light
- * has no step above neutral-1, so a focused raised field there changes only its border and ring.
- */
-export const fieldSurface = {
-  base: [
-    'bg-surface-control border-line-control focus:bg-neutral-1',
-    'dark:focus:bg-neutral-4',
-    'hover:border-line-strong focus:border-neutral-7',
-  ].join(' '),
-  raised: [
-    controlSurface.raised,
-    'dark:focus:bg-neutral-6',
-    'hover:border-line-strong dark:hover:border-neutral-7 focus:border-neutral-7',
-  ].join(' '),
-} as const satisfies Record<OnSurface, string>;
+/** The field itself, shared with Textarea. Fill and border come from the `onSurface` variant. */
+export const fieldClass = styles.field;
 
 // The block before a slug sits one step further from the page than the field it joins.
 const prefixSurface = {
-  base: 'border-line-control bg-neutral-3 dark:bg-neutral-4',
-  raised: 'border-line bg-neutral-3 dark:bg-neutral-6 dark:border-line-strong',
+  base: styles.prefixSurfaceBase,
+  raised: styles.prefixSurfaceRaised,
 } as const satisfies Record<OnSurface, string>;
 
-export const fieldWidth = {
-  full: 'w-full',
-  xs: 'w-16',
-  sm: 'w-48',
-  md: 'w-96',
-} as const;
-
-const inputVariants = cva(fieldClass, {
-  variants: {
-    size: {
-      compact: `${controlSize.compact} px-2.5 text-sm`,
-      default: `${controlSize.default} px-3 text-sm`,
-    },
-    onSurface: fieldSurface,
-    width: fieldWidth,
-    mono: {
-      true: 'font-mono text-xs',
-      false: '',
-    },
-  },
-  defaultVariants: {
-    size: 'default',
-    onSurface: 'base',
-    width: 'full',
-    mono: false,
-  },
-});
+const inputVariants = lenient(styles.inputVariants);
 
 type NativeInputProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -81,7 +22,7 @@ type NativeInputProps = Omit<
 >;
 
 type InputProps = NativeInputProps &
-  VariantProps<typeof inputVariants> & {
+  NonNullable<Parameters<typeof inputVariants>[0]> & {
     /** Error state for a field outside a Form; FormControl sets `aria-invalid` itself. */
     invalid?: boolean;
     /** An icon inside the leading edge, for a search field. */

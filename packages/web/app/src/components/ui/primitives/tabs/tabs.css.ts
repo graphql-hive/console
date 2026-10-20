@@ -1,5 +1,6 @@
 import { style } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
+import { focusRingQuiet } from '../shared-styles';
 import { components as layer } from '../../../../styles/layers.css';
 import * as utilities from '../../../../styles/utilities.css';
 
@@ -254,4 +255,167 @@ export const tabStripSpan = style({
       display: 'inline-flex',
     },
   },
+});
+
+export const tabVariants = recipe({
+  base: [
+    focusRingQuiet,
+    {
+      '@layer': {
+        [layer]: {
+          position: 'relative',
+          zIndex: '10',
+          display: 'inline-flex',
+          flexShrink: '0',
+          cursor: 'pointer',
+          alignItems: 'center',
+          gap: 'calc(var(--spacing) * 2)',
+          borderRadius: 'var(--radius-sm)',
+          fontWeight: 'var(--font-weight-medium)',
+          whiteSpace: 'nowrap',
+          color: 'var(--color-fg-secondary)',
+          transitionProperty:
+            'color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to',
+          transitionTimingFunction: 'var(--tw-ease, var(--default-transition-timing-function))',
+          transitionDuration: 'var(--tw-duration, var(--default-transition-duration))',
+          vars: {
+            '--tw-font-weight': 'var(--font-weight-medium)',
+          },
+          selectors: {
+            '&[data-active]': {
+              color: 'var(--color-accent)',
+            },
+            '&[data-disabled]': {
+              pointerEvents: 'none',
+              opacity: '50%',
+            },
+          },
+          '@media': {
+            '(hover: hover)': {
+              selectors: {
+                '&:hover': {
+                  color: 'var(--color-fg)',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ],
+  variants: {
+    variant: {
+      underline: {
+        '@layer': {
+          [layer]: {
+            selectors: {
+              '&:focus-visible': {
+                outlineOffset: '2px',
+              },
+            },
+          },
+        },
+      },
+      header: {
+        '@layer': {
+          [layer]: {
+            height: '100%',
+            selectors: {
+              '&:focus-visible': {
+                outlineOffset: 'calc(2px * -1)',
+              },
+            },
+          },
+        },
+      },
+    },
+    size: {
+      default: {},
+      sm: {},
+    },
+    orientation: {
+      horizontal: {},
+      vertical: {
+        '@layer': {
+          [layer]: {
+            justifyContent: 'flex-start',
+          },
+        },
+      },
+    },
+  },
+  compoundVariants: [
+    {
+      variants: { variant: 'underline', size: 'default' },
+      style: {
+        '@layer': {
+          [layer]: {
+            paddingInline: 'calc(var(--spacing) * 3)',
+            paddingBlock: 'calc(var(--spacing) * 2)',
+            fontSize: 'var(--text-sm)',
+            lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
+          },
+        },
+      },
+    },
+    {
+      variants: { variant: 'underline', size: 'sm' },
+      style: {
+        '@layer': {
+          [layer]: {
+            paddingInline: 'calc(var(--spacing) * 2.5)',
+            paddingBlock: 'calc(var(--spacing) * 1.5)',
+            fontSize: 'var(--text-xs)',
+            lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+          },
+        },
+      },
+    },
+    {
+      variants: { variant: 'header', size: 'default' },
+      style: {
+        '@layer': {
+          [layer]: {
+            paddingInline: 'calc(var(--spacing) * 2.5)',
+            paddingBlock: '0px',
+            fontSize: 'var(--text-xs)',
+            lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+          },
+        },
+      },
+    },
+    {
+      variants: { variant: 'header', size: 'sm' },
+      style: {
+        '@layer': {
+          [layer]: {
+            paddingInline: 'calc(var(--spacing) * 2)',
+            paddingBlock: '0px',
+            fontSize: 'var(--text-xs)',
+            lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+          },
+        },
+      },
+    },
+    {
+      variants: { variant: 'underline', orientation: 'horizontal' },
+      style: {
+        '@layer': {
+          [layer]: {
+            marginBottom: '-1px',
+          },
+        },
+      },
+    },
+    {
+      variants: { variant: 'underline', orientation: 'vertical' },
+      style: {
+        '@layer': {
+          [layer]: {
+            marginLeft: '-1px',
+          },
+        },
+      },
+    },
+  ],
 });

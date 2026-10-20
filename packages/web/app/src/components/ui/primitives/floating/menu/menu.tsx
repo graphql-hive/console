@@ -6,7 +6,6 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react';
-import { type VariantProps } from 'class-variance-authority';
 import { clsx } from 'clsx';
 import { ArrowRight, Check, ChevronRight } from 'lucide-react';
 import { type IconProps } from '@/components/ui/brand-icon';
@@ -17,7 +16,7 @@ import { floatingVariants, itemVariants, type FloatingProps } from '../shared-st
 import { Tooltip } from '../tooltip/tooltip';
 import * as styles from './menu.css';
 
-type ItemVariant = VariantProps<typeof itemVariants>['variant'];
+type ItemVariant = NonNullable<Parameters<typeof itemVariants>[0]>['variant'];
 
 /**
  * An icon as this app defines one, via `IconProps` in `ui/brand-icon.tsx`. Not `LucideIcon`:

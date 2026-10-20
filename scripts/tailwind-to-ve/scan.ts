@@ -9,7 +9,8 @@
 import ts from 'typescript';
 
 export const CLASS_FUNCTIONS = new Set(['cn', 'clsx', 'cx', 'twMerge', 'cva']);
-const CLASS_NAME_PATTERN = /(class|classes|className|classNames|style|styles|variant|variants)$/i;
+const CLASS_NAME_PATTERN =
+  /(class|classes|className|classNames|style|styles|variant|variants|surface|width)$/i;
 const STYLE_FILE_PATTERN = /(^|[-.])styles?\.tsx?$/;
 
 export type SiteKind =

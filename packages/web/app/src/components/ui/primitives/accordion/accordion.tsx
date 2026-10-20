@@ -1,10 +1,7 @@
 import { type ReactNode } from 'react';
-import { cva } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
-import { cn } from '@/lib/utils';
 import { Accordion as BaseAccordion } from '@base-ui/react/accordion';
-import { focusRingQuiet } from '../shared-styles';
 import * as styles from './accordion.css';
 
 export type AccordionItem = {
@@ -56,27 +53,7 @@ const itemVariants = lenient(styles.itemVariants);
 
 const headerRowVariants = lenient(styles.headerRowVariants);
 
-const triggerVariants = cva(
-  cn(
-    'group flex w-full items-center gap-2 text-left font-medium transition-colors',
-    'rounded-sm',
-    focusRingQuiet,
-    'focus-visible:-outline-offset-2',
-    'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-  ),
-  {
-    variants: {
-      size: {
-        default: 'py-3 text-sm',
-        sm: 'py-2 text-xs',
-      },
-      tone: {
-        default: 'text-fg hover:text-fg-default',
-        accent: 'text-accent hover:text-accent-muted',
-      },
-    },
-  },
-);
+const triggerVariants = lenient(styles.triggerVariants);
 
 const chevronVariants = lenient(styles.chevronVariants);
 

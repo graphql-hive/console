@@ -202,3 +202,105 @@ export const floatingEmptyState = style({
     },
   },
 });
+
+export const floatingVariants = recipe({
+  base: [floatingBaseClass],
+  variants: {
+    padding: {
+      none: {},
+      sm: {
+        '@layer': {
+          [layer]: {
+            paddingInline: 'var(--spacing)',
+            paddingBlock: 'var(--spacing)',
+          },
+        },
+      },
+      md: {
+        '@layer': {
+          [layer]: {
+            paddingInline: 'calc(var(--spacing) * 2)',
+            paddingBlock: 'calc(var(--spacing) * 2)',
+          },
+        },
+      },
+      menu: [menuPanelInset],
+    },
+    maxWidth: {
+      default: {
+        '@layer': {
+          [layer]: {
+            maxWidth: 'calc(var(--spacing) * 75)',
+          },
+        },
+      },
+      none: {
+        '@layer': {
+          [layer]: {
+            maxWidth: 'none',
+          },
+        },
+      },
+      sm: {
+        '@layer': {
+          [layer]: {
+            maxWidth: 'calc(var(--spacing) * 60)',
+          },
+        },
+      },
+      lg: {
+        '@layer': {
+          [layer]: {
+            maxWidth: '380px',
+          },
+        },
+      },
+    },
+    minWidth: {
+      default: {
+        '@layer': {
+          [layer]: {
+            minWidth: '12rem',
+          },
+        },
+      },
+      none: {
+        '@layer': {
+          [layer]: {
+            minWidth: '0px',
+          },
+        },
+      },
+      sm: {
+        '@layer': {
+          [layer]: {
+            minWidth: 'calc(var(--spacing) * 40)',
+          },
+        },
+      },
+      md: {
+        '@layer': {
+          [layer]: {
+            minWidth: 'calc(var(--spacing) * 60)',
+          },
+        },
+      },
+    },
+    width: {
+      none: {},
+      sm: {
+        '@layer': {
+          [layer]: {
+            width: 'calc(var(--spacing) * 40)',
+          },
+        },
+      },
+    },
+  },
+  defaultVariants: {
+    padding: 'sm',
+    maxWidth: 'none',
+    minWidth: 'none',
+    width: 'none',
+  },
+});

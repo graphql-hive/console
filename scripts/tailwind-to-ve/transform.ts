@@ -79,6 +79,8 @@ export type TransformOptions = {
   compiled: Compiled;
   /** Which cascade layer this file's styles belong to. */
   layer: 'components' | 'utilities';
+  /** The sibling `.css.ts` as it exists now, when adding to a file converted earlier. */
+  existingCss?: string;
 };
 
 type Resolved = {
@@ -199,11 +201,21 @@ export function transformFile(
   const css = new CssModule(layerExpr);
   const edits: Array<{ start: number; end: number; text: string }> = [];
   const names_ = identifiers(file);
-  const stylesId = names_.has('styles') ? 'veStyles' : 'styles';
+  const cssImportPath = `./${path.basename(absPath).replace(/\.tsx?$/, '')}.css`;
+  const existingNamespace = [...text.matchAll(/import \* as (\w+) from '([^']+)';/g)].find(
+    m => m[2] === cssImportPath,
+  )?.[1];
+  const stylesId = existingNamespace ?? (names_.has('styles') ? 'veStyles' : 'styles');
+  if (options.existingCss) {
+    for (const m of options.existingCss.matchAll(/^(?:export )?const (\w+) =/gm)) names.claim(m[1]);
+  }
   let needsCombinator = false;
 
   // Where each imported binding comes from, so a recipe can import the class values it composes.
-  const importOf = new Map<string, { module: string; named: boolean; typeOnly: boolean }>();
+  const importOf = new Map<
+    string,
+    { module: string; named: boolean; typeOnly: boolean; imported?: string }
+  >();
   for (const statement of file.statements) {
     if (!ts.isImportDeclaration(statement) || !statement.importClause) continue;
     const module = (statement.moduleSpecifier as ts.StringLiteral).text;
@@ -216,22 +228,49 @@ export function transformFile(
           module,
           named: true,
           typeOnly: clause.isTypeOnly || el.isTypeOnly,
+          imported: el.propertyName?.text,
         });
       }
     }
   }
-  const neededImports = new Map<string, Set<string>>(); // module → bindings
-  /** A reference a recipe part composes. Only imported bindings can be reached from the .css.ts. */
-  const resolveRefs = (parts: ClassParts): string[] | null => {
-    for (const ref of parts.refs) {
-      const root = ref.split('.')[0];
-      const imp = importOf.get(root);
-      if (!imp || imp.typeOnly || !imp.named) return null;
-      const set = neededImports.get(imp.module) ?? new Set<string>();
-      set.add(root);
-      neededImports.set(imp.module, set);
+  // `const menuPanelInset = styles.menuPanelInset`: a value the sibling .css.ts already exports,
+  // reachable from a recipe there under its own name. `styles.x` references resolve the same way.
+  const localAliases = new Map<string, string>();
+  for (const statement of file.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const decl of statement.declarationList.declarations) {
+      if (
+        ts.isIdentifier(decl.name) &&
+        decl.initializer &&
+        ts.isPropertyAccessExpression(decl.initializer) &&
+        ts.isIdentifier(decl.initializer.expression) &&
+        decl.initializer.expression.text === stylesId
+      ) {
+        localAliases.set(decl.name.text, decl.initializer.name.text);
+      }
     }
-    return parts.refs;
+  }
+  const neededImports = new Map<string, Set<string>>(); // module → bindings (local names)
+  /** A reference a recipe part composes. Only imported bindings can be reached from the .css.ts. */
+  const resolveRef = (ref: string): string | null => {
+    const [root, ...rest] = ref.split('.');
+    if (root === stylesId && rest.length) return rest.join('.');
+    if (localAliases.has(root)) return [localAliases.get(root)!, ...rest].join('.');
+    const imp = importOf.get(root);
+    if (!imp || imp.typeOnly || !imp.named) return null;
+    const set = neededImports.get(imp.module) ?? new Set<string>();
+    set.add(root);
+    neededImports.set(imp.module, set);
+    return ref;
+  };
+  const resolveRefs = (parts: ClassParts): string[] | null => {
+    const out: string[] = [];
+    for (const ref of parts.refs) {
+      const resolved = resolveRef(ref);
+      if (resolved === null) return null;
+      out.push(resolved);
+    }
+    return out;
   };
 
   // cva → recipe ------------------------------------------------------------------------------
@@ -244,7 +283,10 @@ export function transformFile(
     ];
     const unresolvable = allRefs
       .flatMap(p => p.refs)
-      .find(ref => !importOf.get(ref.split('.')[0])?.named);
+      .find(ref => {
+        const root = ref.split('.')[0];
+        return root !== stylesId && !localAliases.has(root) && !importOf.get(root)?.named;
+      });
     if (site.dynamic || unresolvable) {
       report.dynamicCva.push(
         `${site.name}: ${site.dynamic ?? `composes local value ${unresolvable}`}`,
@@ -465,10 +507,10 @@ export function transformFile(
   }
   const combinator = hasCn ? 'cn' : 'clsx';
   const extraImports: string[] = [];
-  if (cvaNames.size) extraImports.push(`import { lenient } from '@/lib/recipe';`);
+  if (cvaNames.size && !importOf.has('lenient'))
+    extraImports.push(`import { lenient } from '@/lib/recipe';`);
   if (needsCombinator && !hasCn && !hasClsx) extraImports.push(`import { clsx } from 'clsx';`);
-  const cssImportPath = `./${path.basename(absPath).replace(/\.tsx?$/, '')}.css`;
-  extraImports.push(`import * as ${stylesId} from '${cssImportPath}';`);
+  if (!existingNamespace) extraImports.push(`import * as ${stylesId} from '${cssImportPath}';`);
   edits.push({
     start: lastImportEnd,
     end: lastImportEnd,
@@ -507,7 +549,11 @@ export function transformFile(
     header.push(`import * as ${binding} from '${rel(module)}';`);
   }
   for (const [module, bindings] of [...neededImports].sort()) {
-    header.push(`import { ${[...bindings].sort().join(', ')} } from '${module}';`);
+    const specifiers = [...bindings].sort().map(local => {
+      const imported = importOf.get(local)?.imported;
+      return imported && imported !== local ? `${imported} as ${local}` : local;
+    });
+    header.push(`import { ${specifiers.join(', ')} } from '${module}';`);
   }
   header.push(
     '',
@@ -515,6 +561,17 @@ export function transformFile(
     '',
   );
 
+  if (options.existingCss) {
+    const existing = options.existingCss.trimEnd();
+    const newImports = header.filter(l => l.startsWith('import ') && !existing.includes(l));
+    return {
+      source,
+      css: [existing, '', ...newImports, ...(newImports.length ? [''] : []), ...css.lines].join(
+        '\n',
+      ),
+      report,
+    };
+  }
   return { source, css: [...header, ...css.lines].join('\n'), report };
 }
 

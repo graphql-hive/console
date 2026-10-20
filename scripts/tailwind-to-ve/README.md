@@ -12,6 +12,11 @@ pnpm codemod:tailwind-to-ve --scope components/ui [--scope pages] [--dry --print
 a `.css.ts` that already exists, which otherwise stops the run, since a hand-edited one would be
 lost.
 
+`--append` adds to an existing `.css.ts` instead of refusing, for a file converted earlier whose
+remaining class strings were restructured by hand into a static shape (a `cva` whose base was a
+`cn(...)`, say). A recipe added this way may compose values the same `.css.ts` already exports, by
+their source name.
+
 ## How it works
 
 1. **Scan** every source file for class strings: a `className` attribute, any string inside a call

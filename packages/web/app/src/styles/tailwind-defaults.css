@@ -7,12 +7,13 @@
   :root,
   :host {
     --spacing: 0.25rem;
-    --container-md: 28rem;
+    --text-xs: 0.75rem;
+    --text-xs--line-height: calc(1 / 0.75);
     --text-sm: 0.875rem;
     --text-sm--line-height: calc(1.25 / 0.875);
-    --text-xl: 1.25rem;
-    --text-xl--line-height: calc(1.75 / 1.25);
-    --font-weight-semibold: 600;
+    --font-weight-medium: 500;
+    --default-transition-duration: 150ms;
+    --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
   }
@@ -25,23 +26,23 @@
     ::before,
     ::after,
     ::backdrop {
+      --tw-border-style: solid;
       --tw-font-weight: initial;
       --tw-outline-style: solid;
-      --tw-border-style: solid;
       --tw-content: '';
     }
   }
+}
+@property --tw-border-style {
+  syntax: '*';
+  inherits: false;
+  initial-value: solid;
 }
 @property --tw-font-weight {
   syntax: '*';
   inherits: false;
 }
 @property --tw-outline-style {
-  syntax: '*';
-  inherits: false;
-  initial-value: solid;
-}
-@property --tw-border-style {
   syntax: '*';
   inherits: false;
   initial-value: solid;

@@ -5,7 +5,7 @@
  * components. Centralizing them ensures visual consistency and makes it easy
  * to update the design system in one place.
  */
-import { cva } from 'class-variance-authority';
+
 import { lenient } from '@/lib/recipe';
 import * as styles from './shared-styles.css';
 
@@ -24,43 +24,7 @@ export const floatingBaseClass =
   // element that outranks the positioner. It goes on the positioner instead.
   styles.floatingBaseClass;
 
-export const floatingVariants = cva(floatingBaseClass, {
-  variants: {
-    padding: {
-      none: '',
-      sm: 'px-1 py-1',
-      md: 'px-2 py-2',
-      menu: menuPanelInset,
-    },
-    maxWidth: {
-      default: 'max-w-75',
-      none: 'max-w-none',
-      sm: 'max-w-60',
-      lg: 'max-w-[380px]',
-    },
-    minWidth: {
-      default: 'min-w-[12rem]',
-      none: 'min-w-0',
-      sm: 'min-w-40',
-      md: 'min-w-60',
-    },
-    /**
-     * A fixed width, for panels that should not resize with their content. `minWidth`/`maxWidth`
-     * are the usual choice; reach for this only when every state of the panel wants one width,
-     * as the row-action menus in the settings tables do.
-     */
-    width: {
-      none: '',
-      sm: 'w-40',
-    },
-  },
-  defaultVariants: {
-    padding: 'sm',
-    maxWidth: 'none',
-    minWidth: 'none',
-    width: 'none',
-  },
-});
+export const floatingVariants = lenient(styles.floatingVariants);
 
 export const itemVariants = lenient(styles.itemVariants);
 

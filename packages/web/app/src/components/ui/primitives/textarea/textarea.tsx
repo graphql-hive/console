@@ -1,25 +1,8 @@
 import { forwardRef, type CSSProperties } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { fieldClass, fieldSurface } from '../input/input';
+import { lenient } from '@/lib/recipe';
+import * as styles from './textarea.css';
 
-const textareaVariants = cva([...fieldClass, 'w-full px-3 py-2 text-sm'], {
-  variants: {
-    onSurface: fieldSurface,
-    mono: {
-      true: 'font-mono',
-      false: '',
-    },
-    autoSize: {
-      true: 'resize-none',
-      false: 'min-h-20 resize-y',
-    },
-  },
-  defaultVariants: {
-    onSurface: 'base',
-    mono: false,
-    autoSize: false,
-  },
-});
+const textareaVariants = lenient(styles.textareaVariants);
 
 // `field-sizing` is not in React's CSSProperties yet. It makes the textarea grow with its text
 // natively where the browser supports it; elsewhere the field keeps its rows and scrolls.
@@ -31,7 +14,7 @@ type NativeTextareaProps = Omit<
 >;
 
 type TextareaProps = NativeTextareaProps &
-  VariantProps<typeof textareaVariants> & {
+  NonNullable<Parameters<typeof textareaVariants>[0]> & {
     /** Error state for a field outside a Form; FormControl sets `aria-invalid` itself. */
     invalid?: boolean;
     /** Grow with the text instead of scrolling inside a fixed height. */
