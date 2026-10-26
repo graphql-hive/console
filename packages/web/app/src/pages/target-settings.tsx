@@ -8,7 +8,6 @@ import {
   useState,
 } from 'react';
 import { formatISO } from 'date-fns';
-import { Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
@@ -27,7 +26,9 @@ import {
 import {
   DangerousChangesForm,
   DangerousChangesFormSchema,
-  PendingIndicator,
+  JustSavedLabel,
+  SavedLabel,
+  UnsavedChangesLabel,
   type DangerousChangesFormValues,
 } from '@/components/target/settings/dangerous-changes-form';
 import {
@@ -250,6 +251,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [mutation, mutate] = useMutation(Settings_UpdateBaseSchemaMutation);
   const [baseSchema, setBaseSchema] = useState(props.baseSchema);
+  const [syntaxError, setSyntaxError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const isUnsaved = baseSchema?.trim() !== props.baseSchema?.trim();
@@ -269,7 +271,9 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         value={baseSchema}
         height={300}
         onChange={value => setBaseSchema(value ?? '')}
+        onSyntaxErrors={markers => setSyntaxError(markers[0]?.message ?? null)}
       />
+      {syntaxError && <div className="text-critical">{syntaxError}</div>}
       {mutation.data?.updateBaseSchema.error && (
         <div className="text-critical">{mutation.data.updateBaseSchema.error.message}</div>
       )}
@@ -1589,41 +1593,6 @@ export function DangerousChangeTypeForm({
       }
       error={error}
     />
-  );
-}
-
-function JustSavedLabel() {
-  return (
-    <div className="inline-flex flex-row items-center gap-1 text-success italic subpixel-antialiased">
-      <JustSavedIndicator />
-      <span>Saved just now</span>
-    </div>
-  );
-}
-
-function JustSavedIndicator() {
-  return <Check className="size-5 text-success" />;
-}
-
-function SavedLabel() {
-  return (
-    <div className="inline-flex flex-row items-center gap-1 text-fg-secondary italic subpixel-antialiased">
-      <SavedIndicator />
-      <span>All changes saved</span>
-    </div>
-  );
-}
-
-function SavedIndicator() {
-  return <Check className="size-5 text-fg-secondary" />;
-}
-
-function UnsavedChangesLabel() {
-  return (
-    <div className="inline-flex flex-row items-center gap-2 text-accent italic subpixel-antialiased">
-      <PendingIndicator />
-      <span>Unsaved changes</span>
-    </div>
   );
 }
 

@@ -104,7 +104,7 @@ export default defineConfig({
     // coverage checklist to migrate through. Entries are deleted as their component lands.
     {
       label: 'Inventory',
-      children: [{ label: 'Presentational' }, { label: 'V2Leftovers' }],
+      children: [{ label: 'Presentational' }],
     },
     // Composites and app components, built from the primitives above. Each preview reproduces
     // real call sites so a primitive change can be judged against the compositions that ship.
@@ -113,10 +113,11 @@ export default defineConfig({
       children: [
         { label: 'BillingPlanPicker' },
         { label: 'Calendar' },
+        { label: 'ChangesBlock' },
         { label: 'CompositionErrors' },
+        { label: 'ContractFailures' },
         { label: 'DataTable' },
         { label: 'DateRangePicker' },
-        { label: 'FailureCard' },
         { label: 'Filters', children: [{ label: 'FilterDropdown' }, { label: 'FilterMenu' }] },
         { label: 'Navigation', children: [{ label: 'Component Examples' }] },
         { label: 'NotFound' },
@@ -124,6 +125,7 @@ export default defineConfig({
         { label: 'PagePending' },
         { label: 'RefreshButton' },
         { label: 'Resizable' },
+        { label: 'SchemaChangePaging' },
         { label: 'ScopeBar' },
         { label: 'StatCard' },
         { label: 'Stepper' },

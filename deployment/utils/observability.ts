@@ -18,6 +18,19 @@ const REVERSE_PROXY_METRICS = [
   'contour_httpproxy_invalid',
 ] as const;
 
+/**
+ * Hubble metrics exposed by the Cilium agents (Advanced Container Networking Services),
+ * used to monitor the egress policies (see `services/egress-policy.ts`).
+ * DNS metrics are only produced for pods selected by a policy with DNS rules.
+ * ACNS exposes them per node only (no source / destination workload, no DNS query names);
+ * the per-workload view comes from the egress flow logs in Loki.
+ */
+const HUBBLE_METRICS = [
+  'hubble_drop_total',
+  'hubble_dns_queries_total',
+  'hubble_dns_responses_total',
+] as const;
+
 export type ObservabilityConfig =
   | 'local'
   | {
@@ -96,14 +109,14 @@ export class Observability {
         ? {
             stdout: {
               type: 'console',
-              inputs: ['kubernetes_logs'],
+              inputs: ['kubernetes_logs', 'hubble_egress_logs'],
               encoding: { codec: 'json' },
             },
           }
         : {
             grafana_lab: {
               type: 'loki',
-              inputs: ['kubernetes_logs', 'envoy_error_logs'],
+              inputs: ['kubernetes_logs', 'envoy_error_logs', 'hubble_egress_logs'],
               endpoint: interpolate`https://${this.config.loki.endpoint}`,
               auth: {
                 strategy: 'basic',
@@ -403,6 +416,58 @@ export class Observability {
                     },
                   ],
                 },
+                // Clusters without Cilium + ACNS have no matching pods, so the job is a no-op there.
+                {
+                  job_name: 'hubble-metrics',
+                  scheme: 'http',
+                  honor_labels: true,
+                  kubernetes_sd_configs: [
+                    {
+                      role: 'pod',
+                      namespaces: {
+                        names: ['kube-system'],
+                      },
+                    },
+                  ],
+                  relabel_configs: [
+                    {
+                      source_labels: ['__meta_kubernetes_pod_label_k8s_app'],
+                      action: 'keep',
+                      regex: 'cilium',
+                    },
+                    // Hubble metrics are served on a dedicated port of the (host network) agent.
+                    {
+                      source_labels: ['__address__'],
+                      action: 'replace',
+                      regex: '([^:]+)(?::\\d+)?',
+                      replacement: '$$1:9965',
+                      target_label: '__address__',
+                    },
+                    {
+                      source_labels: ['__meta_kubernetes_pod_node_name'],
+                      action: 'replace',
+                      target_label: 'instance',
+                    },
+                  ],
+                  metric_relabel_configs: [
+                    {
+                      source_labels: ['__name__'],
+                      action: 'keep',
+                      regex: HUBBLE_METRICS.join('|'),
+                    },
+                    // IPv6 control packets (router solicitation, neighbor discovery) on IPv4-only
+                    // clusters, dropped by Cilium as it has no IPv6 datapath. Harmless noise.
+                    {
+                      source_labels: ['__name__', 'reason'],
+                      action: 'drop',
+                      regex: 'hubble_drop_total;UNSUPPORTED_L3_PROTOCOL',
+                    },
+                    {
+                      action: 'labeldrop',
+                      regex: 'ips_returned',
+                    },
+                  ],
+                },
               ],
             },
           },
@@ -470,6 +535,12 @@ export class Observability {
           envoy_logs: {
             type: 'kubernetes_logs',
             extra_field_selector: 'metadata.namespace=contour',
+          },
+          // Egress policy verdicts per connection (see `deployment/services/egress-policy.ts`)
+          hubble_egress_logs: {
+            type: 'kubernetes_logs',
+            extra_field_selector: 'metadata.namespace=kube-system',
+            extra_label_selector: 'app=hubble-egress-exporter',
           },
         },
         transforms: {

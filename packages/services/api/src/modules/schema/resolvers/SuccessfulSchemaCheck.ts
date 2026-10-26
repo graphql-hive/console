@@ -1,18 +1,33 @@
+import { areOnlyFieldsRequested, isFieldRequestedDeep } from '../lib/graphql-info-helper';
 import { parseCliAuthor } from '../lib/parse-cli-author';
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaCheckManager } from '../providers/schema-check-manager';
 import { SchemaManager } from '../providers/schema-manager';
-import type { SuccessfulSchemaCheckResolvers } from './../../../__generated__/types';
+import type { SchemaVersion, SuccessfulSchemaCheckResolvers } from './../../../__generated__/types';
+import { isSchemaVersionSDLRequested } from './Target';
 
 export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
-  schemaVersion: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getSchemaVersion(schemaCheck);
+  schemaVersion(schemaCheck, _, { injector }, info) {
+    if (!schemaCheck.schemaVersionId) {
+      return null;
+    }
+
+    const manager = injector.get(SchemaCheckManager);
+
+    if (areOnlyFieldsRequested(info, 'SchemaVersion', new Set(['id', '__typename']))) {
+      return { id: schemaCheck.schemaVersionId } satisfies Pick<SchemaVersion, 'id'> as never;
+    }
+
+    return manager.getGraphQLSchemaVersion(schemaCheck, {
+      withSDL: isSchemaVersionSDLRequested(info),
+      withChanges: isFieldRequestedDeep(info, [['SchemaVersion', 'supergraphChanges']]),
+    });
   },
   safeSchemaChanges: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getSafeSchemaChanges(schemaCheck);
   },
-  breakingSchemaChanges: (schemaCheck, _, { injector }) => {
-    return injector.get(SchemaCheckManager).getBreakingSchemaChanges(schemaCheck);
+  breakingSchemaChanges: (schemaCheck, args, { injector }) => {
+    return injector.get(SchemaCheckManager).getBreakingSchemaChangesPage(schemaCheck, args);
   },
   hasSchemaCompositionErrors: (schemaCheck, _, { injector }) => {
     return injector.get(SchemaCheckManager).getHasSchemaCompositionErrors(schemaCheck);
@@ -75,5 +90,15 @@ export const SuccessfulSchemaCheck: SuccessfulSchemaCheckResolvers = {
   },
   baseline: async (schemaCheck, _arg, { injector }) => {
     return injector.get(SchemaCheckManager).getGraphQLSchemaCheckBaseline(schemaCheck);
+  },
+  contractCheck: (schemaCheck, args, { injector }) => {
+    return injector.get(ContractsManager).getContractCheckForSchemaCheck(schemaCheck, args.id);
+  },
+  safeSchemaChangeGroups: (schemaCheck, args, { injector }) => {
+    return injector.get(SchemaCheckManager).getSafeSchemaChangeGroups(schemaCheck, args.kind);
+  },
+  // Matches hasUnapprovedBreakingChanges: a successful check has none left to approve.
+  unapprovedBreakingSchemaChangeCount: () => {
+    return 0;
   },
 };

@@ -1285,6 +1285,12 @@ const AffectedAppDeploymentsModel = z.array(AffectedAppDeploymentModel);
 
 export type AffectedAppDeployments = z.TypeOf<typeof AffectedAppDeploymentsModel>;
 
+const AffectedTargetsModel = z.array(
+  z.object({ id: z.string(), count: z.number(), operationCount: z.number().optional() }),
+);
+
+type AffectedTargets = z.TypeOf<typeof AffectedTargetsModel>;
+
 export const HiveSchemaChangeModel = z
   .intersection(
     SchemaChangeModel,
@@ -1303,6 +1309,8 @@ export const HiveSchemaChangeModel = z
               hash: z.string(),
               name: z.string(),
               count: z.number(),
+              /** Checks recorded before per-target counts were kept have none. */
+              affectedTargets: AffectedTargetsModel.optional(),
             }),
           ),
           topAffectedClients: z.array(
@@ -1311,6 +1319,9 @@ export const HiveSchemaChangeModel = z
               count: z.number(),
             }),
           ),
+          affectedTargets: AffectedTargetsModel.optional(),
+          /** The coordinate the per-target counts were taken on; it can differ from the change's path. */
+          schemaCoordinate: z.string().optional(),
         })
         .nullable()
         .optional()
@@ -1340,8 +1351,15 @@ export const HiveSchemaChangeModel = z
       readonly approvalMetadata: SchemaCheckApprovalMetadata | null;
       isSafeBasedOnUsage: boolean;
       usageStatistics: {
-        topAffectedOperations: { hash: string; name: string; count: number }[];
+        topAffectedOperations: {
+          hash: string;
+          name: string;
+          count: number;
+          affectedTargets?: AffectedTargets;
+        }[];
         topAffectedClients: { name: string; count: number }[];
+        affectedTargets?: AffectedTargets;
+        schemaCoordinate?: string;
       } | null;
       affectedAppDeployments:
         | {
@@ -1432,6 +1450,12 @@ const SchemaCheckSharedChangesFields = {
   breakingSchemaChanges: z.array(HiveSchemaChangeModel).nullable(),
 };
 
+/** Computed by `schemaCheckSQLFields`, so a list selecting only these loads no change JSON. */
+const SchemaCheckFlagsFields = {
+  hasSchemaChanges: z.boolean(),
+  hasUnapprovedBreakingChanges: z.boolean(),
+};
+
 const ManuallyApprovedSchemaCheckFields = {
   isManuallyApproved: z.literal(true),
   manualApprovalUserId: z.string().nullable(),
@@ -1472,6 +1496,8 @@ const SchemaCheckCommonFields = {
 
 const SchemaCheckSharedOutputFields = {
   ...SchemaCheckCommonFields,
+  /** A baseline was stored with the check; its SDLs are only loaded when asked for. */
+  hasBaselineSchemaSDL: z.boolean(),
   baselineSchemaSDL: z.string().nullable(),
   baselineSchemaHash: z.string().nullable(),
   baselinePublicSDL: z.string().nullable(),
@@ -1606,6 +1632,7 @@ export const SchemaCheckModel = z.union([
       isSuccess: z.literal(false),
       ...SchemaCheckSharedPolicyFields,
       ...SchemaCheckSharedChangesFields,
+      ...SchemaCheckFlagsFields,
       ...PersistedSchemaCheckFields,
       ...NotManuallyApprovedSchemaCheckFields,
       ...SchemaCheckSharedOutputFields,
@@ -1621,6 +1648,7 @@ export const SchemaCheckModel = z.union([
       isSuccess: z.literal(true),
       ...SchemaCheckSharedPolicyFields,
       ...SchemaCheckSharedChangesFields,
+      ...SchemaCheckFlagsFields,
       ...SuccessfulSchemaCompositionOutputFields,
       ...PersistedSchemaCheckFields,
       ...SchemaCheckSharedOutputFields,

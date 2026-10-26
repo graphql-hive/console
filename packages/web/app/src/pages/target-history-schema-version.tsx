@@ -18,6 +18,7 @@ import {
   GitCompare,
   GitCompareArrows,
   GitCompareIcon,
+  InfoIcon,
   Layers,
   ListIcon,
   ListTree,
@@ -25,17 +26,13 @@ import {
   Plus,
   ShieldAlertIcon,
   TriangleAlertIcon,
-  XCircleIcon,
 } from 'lucide-react';
 import { useQuery } from 'urql';
-import { CompositionErrorMessage } from '@/components/target/history/composition-error-message';
-import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
-import {
-  ChangesBlock,
-  CompositionErrorsSection_SchemaErrorConnection,
-} from '@/components/target/history/errors-and-changes';
-import { CodeScrollArea, File, MultiFileDiff } from '@/components/ui/diffs';
-import { FailureCard, formatCount } from '@/components/ui/failure-card/failure-card';
+import { ContractFailuresTable } from '@/components/target/checks/contract-failures-table';
+import { changeSafetyStats } from '@/components/target/history/change-safety-stats';
+import { CompositionErrorsCard } from '@/components/target/history/composition-errors-card';
+import { ChangesBlock } from '@/components/target/history/errors-and-changes';
+import { CodeScrollArea, File, FileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
 import { NotFound } from '@/components/ui/not-found/not-found';
 import { Button } from '@/components/ui/primitives/button/button';
@@ -47,13 +44,14 @@ import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { QueryError } from '@/components/ui/query-error';
 import { ScopeBar } from '@/components/ui/scope-bar/scope-bar';
+import { useSdlDiff } from '@/components/ui/sdl-diff';
 import { TabbedView } from '@/components/ui/tabbed-view/tabbed-view';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
-import { cn } from '@/lib/utils';
+import { cn, formatCount } from '@/lib/utils';
 
 /** A status icon inside a tab, explained on hover. */
 function StatusTooltip(props: { icon: React.ReactNode; label: string }) {
@@ -291,12 +289,12 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         {
           value: 'default',
           label: 'Default Graph',
-          trailing: versionStatusIcon(schemaVersion, DEFAULT_GRAPH_LABELS),
+          trailing: versionStatusTrailing(schemaVersion, DEFAULT_GRAPH_LABELS),
         },
         ...contractVersions.map(edge => ({
           value: edge.node.id,
           label: `${edge.node.contractName}@${edge.node.id.substring(0, 8)}`,
-          trailing: versionStatusIcon(edge.node, CONTRACT_LABELS),
+          trailing: versionStatusTrailing(edge.node, CONTRACT_LABELS),
         })),
       ]}
       size="compact"
@@ -325,7 +323,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
     ) : (
       <>
         {contractOrVersion.schemaCompositionErrors && (
-          <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+          <CompositionErrorsCard compositionErrors={contractOrVersion.schemaCompositionErrors} />
         )}
         <SchemaVersionSummary schemaVersion={schemaVersion} contractVersion={contractVersionNode} />
         {!schemaVersion.subgraphDiffs && (
@@ -348,7 +346,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
 
   const publicSchema = contractOrVersion.schemaCompositionErrors ? (
     <>
-      <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+      <CompositionErrorsCard compositionErrors={contractOrVersion.schemaCompositionErrors} />
       <p>No schema available as the composition did not succeed.</p>
     </>
   ) : (
@@ -369,7 +367,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
 
   const supergraph = contractOrVersion.schemaCompositionErrors ? (
     <>
-      <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+      <CompositionErrorsCard compositionErrors={contractOrVersion.schemaCompositionErrors} />
       <p>No supergraph available as the composition did not succeed.</p>
     </>
   ) : (
@@ -398,19 +396,14 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
         <div className="mt-3 flex flex-col gap-3">
           {failures.length ? (
             <div className="mb-3">
-              <FailureCard
+              <ContractFailuresTable
                 title={`${failures.length} of ${contractVersions.length} contracts failed`}
                 aside={`${contractVersions.length - failures.length} passed`}
                 items={failures}
               />
             </div>
           ) : null}
-          {contractPicker ? (
-            <ScopeBar
-              picker={contractPicker}
-              legend={contractVersions.length ? CONTRACT_STATUS_LEGEND : undefined}
-            />
-          ) : null}
+          {contractPicker ? <ScopeBar picker={contractPicker} /> : null}
           <TabbedView
             value={selectedView}
             onValueChange={setSelectedView}
@@ -459,20 +452,45 @@ type VersionStatusLabels = { changed: string; succeeded: string; failed: string 
 /** The glyph and the words for a version's outcome; the trigger takes the glyph, the list both. */
 function versionStatus(version: VersionStatusFlags, labels: VersionStatusLabels) {
   if (version.hasSchemaChanges) {
-    return { icon: <GitCompareIcon className="size-3.5" />, label: labels.changed };
+    return {
+      icon: <GitCompareIcon className="size-3.5" />,
+      label: labels.changed,
+      state: 'Schema changed',
+    };
   }
   if (version.isComposable) {
-    return { icon: <CheckIcon className="size-3.5 text-success" />, label: labels.succeeded };
+    return {
+      icon: <CheckIcon className="size-3.5 text-success" />,
+      label: labels.succeeded,
+      state: 'No changes',
+    };
   }
   return {
     icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
     label: labels.failed,
+    state: 'Failed',
   };
 }
 
 function versionStatusIcon(version: VersionStatusFlags, labels: VersionStatusLabels) {
   const status = versionStatus(version, labels);
   return <StatusTooltip icon={status.icon} label={status.label} />;
+}
+
+/** A picker row's status: glyph and state in words, the reason on hover. */
+function versionStatusTrailing(version: VersionStatusFlags, labels: VersionStatusLabels) {
+  const status = versionStatus(version, labels);
+  return (
+    <StatusTooltip
+      icon={
+        <span className="inline-flex items-center gap-1.5 text-xs text-fg-muted">
+          {status.icon}
+          {status.state}
+        </span>
+      }
+      label={status.label}
+    />
+  );
 }
 
 const DEFAULT_GRAPH_LABELS: VersionStatusLabels = {
@@ -486,12 +504,6 @@ const CONTRACT_LABELS: VersionStatusLabels = {
   succeeded: 'Contract composition succeeded.',
   failed: 'Contract composition failed.',
 };
-
-const CONTRACT_STATUS_LEGEND = [
-  { icon: <TriangleAlertIcon className="size-3.5 text-critical" />, label: 'Failed' },
-  { icon: <GitCompareIcon className="size-3.5" />, label: 'Schema changed' },
-  { icon: <CheckIcon className="size-3.5 text-success" />, label: 'Passed' },
-];
 
 function GraphQLSchemaView(props: {
   title: string;
@@ -535,14 +547,25 @@ function GraphQLSchemaView(props: {
         />
       )}
       {viewMode === 'diff' && (
-        <GenericGraphCard title={titleNode}>
-          {(props.previousSdl ?? '') === props.currentSdl ? (
-            <div className="px-5 py-3">
-              <NoGraphChanges />
-            </div>
-          ) : (
-            <SDLDiffView before={props.previousSdl ?? ''} after={props.currentSdl} />
-          )}
+        <GenericGraphCard
+          title={titleNode}
+          actions={<span className="text-xs text-fg-muted">Sorted by kind and name</span>}
+        >
+          {/* Fills the viewport below the tab strip and the two headers (11rem), as SdlPane does. */}
+          <div className="flex min-h-[var(--code-max-h)] flex-col [--code-max-h:calc(100vh-11rem)]">
+            {(props.previousSdl ?? '') === props.currentSdl ? (
+              <div className="px-5 py-3">
+                <NoGraphChanges />
+              </div>
+            ) : (
+              <SDLDiffView
+                before={props.previousSdl ?? ''}
+                after={props.currentSdl}
+                sorted
+                tooLargeMessage="Every change is listed under Changes. To browse the full schema, switch to View."
+              />
+            )}
+          </div>
         </GenericGraphCard>
       )}
       {viewMode === 'raw' && props.currentSdl && (
@@ -619,7 +642,7 @@ function FilterableSchemaChangeBlock(props: {
         <div className="px-5">
           {filteredChanges?.length ? (
             <div className="pt-2 pb-8">
-              <ChangesBlock changes={filteredChanges} />
+              <ChangesBlock explorerLinks="version" changes={filteredChanges} />
             </div>
           ) : selectedChangeType !== null ? (
             <div className="py-3 text-xs">No changes of this change type.</div>
@@ -882,7 +905,10 @@ function GraphVersionSubgraphChangesView(props: {
                 <div className="px-5">
                   {edges?.length ? (
                     <div className="mb-8 pt-2">
-                      <ChangesBlock changes={edges?.map(edge => edge.node) ?? []} />
+                      <ChangesBlock
+                        explorerLinks="version"
+                        changes={edges?.map(edge => edge.node) ?? []}
+                      />
                     </div>
                   ) : selectedChangeType === null ? (
                     <div className="py-5 text-xs">No changes available.</div>
@@ -936,24 +962,73 @@ function GraphVersionSubgraphChangesView(props: {
   );
 }
 
-export function SDLDiffView(props: { before: string; after: string }) {
+export function SDLDiffView(props: {
+  before: string;
+  after: string;
+  /** Compare sorted copies, for composed schemas whose definition order carries no meaning. */
+  sorted?: boolean;
+  /** What to read instead when the diff is too large to show: where the changes and the schema are. */
+  tooLargeMessage?: ReactNode;
+}) {
+  const result = useSdlDiff(props.before, props.after, props.sorted ?? false);
+
+  if (result === null) {
+    return (
+      <div className="flex items-center gap-2 px-5 py-3 text-xs text-fg-secondary">
+        <Spinner variants={{ size: 'sm' }} label="Preparing diff" />
+        Preparing diff…
+      </div>
+    );
+  }
+
+  switch (result.kind) {
+    case 'unchanged':
+      return <SDLView sdl={props.after} />;
+    case 'order-only':
+      return (
+        <>
+          <SDLDiffNotice
+            icon={<CircleCheckIcon className="size-4 text-success" />}
+            title="No changes apart from order"
+          >
+            Both schemas have the same definitions. Only their order or formatting differs.
+          </SDLDiffNotice>
+          <SDLView sdl={props.after} />
+        </>
+      );
+    case 'too-large':
+      return (
+        <SDLDiffNotice
+          icon={<InfoIcon className="size-4 text-fg-muted" />}
+          title="Diff too large to display"
+        >
+          {props.tooLargeMessage ?? 'The schemas differ in too many lines to compare here.'}
+        </SDLDiffNotice>
+      );
+    case 'diff':
+      return (
+        <CodeScrollArea>
+          <FileDiff
+            fileDiff={result.fileDiff}
+            options={{
+              disableFileHeader: true,
+              diffStyle: 'unified',
+            }}
+          />
+        </CodeScrollArea>
+      );
+  }
+}
+
+function SDLDiffNotice(props: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
-    <CodeScrollArea>
-      <MultiFileDiff
-        options={{
-          disableFileHeader: true,
-          diffStyle: 'unified',
-        }}
-        oldFile={{
-          name: 'schema.graphql',
-          contents: props.before,
-        }}
-        newFile={{
-          name: 'schema.graphql',
-          contents: props.after,
-        }}
-      />
-    </CodeScrollArea>
+    <div className="cursor-default border-b border-line-subtle px-5 py-3">
+      <div className="mb-1 flex items-center gap-3">
+        {props.icon}
+        <h2 className="text-sm font-medium text-fg">{props.title}</h2>
+      </div>
+      <p className="text-xs text-fg-secondary">{props.children}</p>
+    </div>
   );
 }
 
@@ -1291,55 +1366,6 @@ function ChangeTypeToggle(props: {
   );
 }
 
-const CompositionErrors = (props: {
-  compositionErrors: FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>;
-}) => {
-  const compositionErrors = useFragment(
-    CompositionErrorsSection_SchemaErrorConnection,
-    props.compositionErrors,
-  );
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-critical-line">
-      <div className="flex items-start gap-3 border-b border-critical-line bg-critical-tint-subtle px-5 py-4">
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-critical-line">
-          <XCircleIcon className="h-4 w-4 text-critical" />
-        </div>
-
-        <div className="min-w-0 text-fg">
-          <h3 className="text-sm font-semibold">Supergraph not composable</h3>
-          <p className="mt-0.5 text-[12.5px]">
-            Errors occurred while attempting to compose the supergraph from its subgraphs.
-          </p>
-        </div>
-
-        <span className="ml-auto inline-flex items-center rounded-full border border-critical-line bg-critical-tint px-2.5 py-0.5 text-2xs font-semibold text-critical transition-colors focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:outline-none">
-          <span className="mr-1 h-1.5 w-1.5 rounded-full bg-critical" />
-          {compositionErrors.edges.length} error
-          {compositionErrors.edges.length === 1 ? '' : 's'}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2 px-5 pt-4 pb-1 text-fg">
-        <span className="text-sm font-medium">Composition errors</span>
-        <CompositionErrorsPopover />
-      </div>
-
-      <ul className="divide-y divide-critical-line-subtle px-1 pb-2">
-        {compositionErrors.edges.map((err, idx) => (
-          <li key={idx} className="flex gap-3 px-4 py-3">
-            <span className="mt-0.5 w-6 shrink-0 font-mono text-xs text-critical select-none">
-              {String(idx + 1).padStart(2, '0')}
-            </span>
-
-            <CompositionErrorMessage message={err.node.message} />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
 const SchemaVersionSummary_SchemaVersionFragment = graphql(`
   fragment SchemaVersionSummary_SchemaVersionFragment on SchemaVersion {
     id
@@ -1388,6 +1414,7 @@ const SchemaVersionSummary_SchemaVersionFragment = graphql(`
         node {
           isSafeBasedOnUsage
           severityLevel
+          isUsageTracked
         }
       }
     }
@@ -1402,6 +1429,7 @@ const SchemaVersionSummary_ContractVersionFragment = graphql(`
         node {
           isSafeBasedOnUsage
           severityLevel
+          isUsageTracked
         }
       }
     }
@@ -1458,26 +1486,13 @@ export const SchemaVersionSummary = (props: {
     return data;
   }, [schemaVersion.subgraphDiffs]);
 
-  const publicChangeStats = useMemo(() => {
-    const data = {
-      totalChanges: (contractVersion ?? schemaVersion).sdlChanges?.edges.length ?? 0,
-      breakingChanges: 0,
-      notSafeChanges: 0,
-    };
-
-    for (const change of (contractVersion ?? schemaVersion).sdlChanges?.edges ?? []) {
-      if (change.node.severityLevel === SeverityLevelType.Breaking) {
-        data.breakingChanges++;
-
-        if (!change.node.isSafeBasedOnUsage) {
-          console.log(change.node);
-          data.notSafeChanges++;
-        }
-      }
-    }
-
-    return data;
-  }, [schemaVersion.sdlChanges, contractVersion?.sdlChanges]);
+  const publicChangeStats = useMemo(
+    () =>
+      changeSafetyStats(
+        (contractVersion ?? schemaVersion).sdlChanges?.edges.map(edge => edge.node) ?? [],
+      ),
+    [schemaVersion.sdlChanges, contractVersion?.sdlChanges],
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -1489,15 +1504,15 @@ export const SchemaVersionSummary = (props: {
           value={publicChangeStats.breakingChanges}
           additionalValue={
             publicChangeStats.breakingChanges && schemaVersion.isComposable ? (
-              publicChangeStats.notSafeChanges ? (
+              publicChangeStats.notSafe ? (
                 <Tooltip
                   trigger={
                     <span className="ml-2 flex items-center gap-0.5 text-xs text-critical lg:text-sm">
                       <ShieldAlertIcon size="14" className="inline" />
-                      {publicChangeStats.notSafeChanges} not safe
+                      {publicChangeStats.notSafe} not safe
                     </span>
                   }
-                  content="Some changes are not safe based on usage data."
+                  content="Some changes are in use, or usage isn't recorded for what they touch."
                 />
               ) : (
                 <Tooltip

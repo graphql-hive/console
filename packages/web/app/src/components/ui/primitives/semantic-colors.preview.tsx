@@ -12,7 +12,7 @@ import { ToggleGroup } from './toggle-group/toggle-group';
 
 export const nav: NavPath = 'Primitives/Foundations/SemanticColors';
 
-/** A tinted pill is `bg-<state>-tint text-<state>`, a dot is `bg-<state>`, a hover is `-muted`. */
+/** A tinted pill is `bg-<state>-tint text-<state>-text`, a dot is `bg-<state>`, a hover is `-muted`. */
 const STATES = [
   {
     name: 'success',
@@ -24,6 +24,7 @@ const STATES = [
       'bg-success-tint-subtle',
     ],
     text: 'text-success',
+    textOnTint: 'text-success-text',
     use: 'a check passed, a version is valid, a permission is allowed',
   },
   {
@@ -36,6 +37,7 @@ const STATES = [
       'bg-warning-tint-subtle',
     ],
     text: 'text-warning',
+    textOnTint: 'text-warning-text',
     use: 'allowed with a caveat, a warning-level alert',
   },
   {
@@ -48,6 +50,7 @@ const STATES = [
       'bg-critical-tint-subtle',
     ],
     text: 'text-critical',
+    textOnTint: 'text-critical-text',
     use: 'a failed check, a denied permission, an error',
   },
   {
@@ -55,6 +58,7 @@ const STATES = [
     solid: 'bg-info',
     steps: ['bg-info-muted', 'bg-info-tint-strong', 'bg-info-tint', 'bg-info-tint-subtle'],
     text: 'text-info',
+    textOnTint: 'text-info-text',
     use: 'an info-level alert, a neutral note',
   },
 ] as const;
@@ -78,6 +82,9 @@ export const Tokens = createPreview(() => (
             ))}
           </div>
           <span className={`${state.text} text-sm font-medium`}>Aa</span>
+          <span className={`${state.textOnTint} ${state.steps[2]} rounded-md px-2 py-0.5 text-xs`}>
+            -text on tint
+          </span>
           <span className="text-2xs text-fg-muted">{state.use}</span>
         </div>
       </div>
@@ -166,27 +173,6 @@ export const Roles = createPreview(() => {
     </div>
   );
 });
-
-export const SurfaceNesting = createPreview(() => (
-  <div className="flex w-[28rem] flex-col gap-4 bg-surface-page p-5 text-fg-default">
-    <div className="flex flex-col gap-3 rounded-md border border-line-subtle bg-surface-card p-4">
-      <span className="text-sm font-medium text-fg">surface-card</span>
-      <div className="rounded-sm border border-line-control bg-surface-control px-3 py-2 text-sm text-fg-subtle">
-        surface-control
-      </div>
-    </div>
-    <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface-overlay p-4 shadow-lg">
-      <span className="text-sm font-medium text-fg">surface-overlay</span>
-      <div className="rounded-sm border border-line-control bg-surface-control-raised px-3 py-2 text-sm text-fg-subtle">
-        surface-control-raised
-      </div>
-      <div className="flex flex-col rounded-md border border-line bg-surface-floating p-1 text-sm shadow-md">
-        <span className="rounded-sm px-2 py-1">surface-floating</span>
-        <span className="rounded-sm bg-surface-selected px-2 py-1 text-fg">surface-selected</span>
-      </div>
-    </div>
-  </div>
-));
 
 /** Every raised control on surface-overlay; all four should rest on the same fill and border. */
 export const RaisedControls = createPreview(() => {

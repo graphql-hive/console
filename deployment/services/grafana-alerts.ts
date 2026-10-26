@@ -178,5 +178,84 @@ export function deployGrafanaAlerts(envName: string) {
     ],
   });
 
-  return { folder, ruleGroup };
+  // Egress policies (see `services/egress-policy.ts`), based on the egress flow logs that the
+  // hubble-egress-exporter ships to Loki (the ACNS Hubble metrics have no workload context).
+  // Pairs with the Egress-Policies dashboard. Without Cilium + ACNS there's no data, so the
+  // rule stays OK.
+  const egressRuleGroup = new alerting.RuleGroup('egress-policies', {
+    folderUid: folder.uid,
+    name: 'egress-policies',
+    intervalSeconds: 60,
+    rules: [
+      {
+        name: 'EgressPolicyDrops',
+        // A single denied connection keeps the 5m count above 0 for 5 minutes, so this still fires.
+        for: '1m',
+        condition: 'C',
+        noDataState: 'OK',
+        execErrState: 'Alerting',
+        annotations: {
+          summary: 'Egress policy is denying connections for {{ $labels.workload }}',
+          description:
+            'The egress policy of {{ $labels.workload }} denied new connections to the internet in the last 5 minutes. Either a declaration is missing (allowExternal), or the workload tried to reach a blocked destination (e.g. an internal address from a user-provided URL). See the Egress-Policies dashboard for the hosts and ports.',
+          runbook_url:
+            'https://github.com/graphql-hive/console/blob/main/deployment/services/egress-policy.ts',
+        },
+        labels: { severity: 'warning', component: 'egress-policies' },
+        isPaused: false,
+        datas: [
+          {
+            refId: 'A',
+            queryType: '',
+            relativeTimeRange: { from: 600, to: 0 },
+            datasourceUid: 'grafanacloud-logs',
+            model: JSON.stringify({
+              refId: 'A',
+              expr: 'sum by (workload) (count_over_time({namespace="kube-system", container_name="hubble-egress-exporter"} | json verdict="flow.verdict" | verdict="DROPPED" | regexp `"k8s:app=(?P<workload>[^"]+)"` [5m]))',
+              queryType: 'range',
+              intervalMs: 30_000,
+              maxDataPoints: 43_200,
+            }),
+          },
+          {
+            // Reduce each series to its last point, so the threshold receives "reduced" data.
+            refId: 'B',
+            queryType: '',
+            relativeTimeRange: { from: 0, to: 0 },
+            datasourceUid: '__expr__',
+            model: JSON.stringify({
+              refId: 'B',
+              type: 'reduce',
+              reducer: 'last',
+              expression: 'A',
+              datasource: { type: '__expr__', uid: '__expr__' },
+            }),
+          },
+          {
+            refId: 'C',
+            queryType: '',
+            relativeTimeRange: { from: 0, to: 0 },
+            datasourceUid: '__expr__',
+            model: JSON.stringify({
+              refId: 'C',
+              type: 'threshold',
+              expression: 'B',
+              conditions: [
+                {
+                  type: 'query',
+                  evaluator: { type: 'gt', params: [0] },
+                  operator: { type: 'and' },
+                  query: { params: ['B'] },
+                  reducer: { type: 'last', params: [] },
+                },
+              ],
+              datasource: { type: '__expr__', uid: '__expr__' },
+            }),
+          },
+        ],
+      },
+    ],
+  });
+
+  return { folder, ruleGroup, egressRuleGroup };
 }

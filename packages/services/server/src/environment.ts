@@ -34,6 +34,17 @@ const TestUtilsModel = zod.object({
   EXPOSE_MEMORY_UTILS: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
 });
 
+const RequestBrokerModel = zod.union([
+  zod.object({
+    REQUEST_BROKER: emptyString(zod.literal('0').optional()),
+  }),
+  zod.object({
+    REQUEST_BROKER: zod.literal('1'),
+    REQUEST_BROKER_ENDPOINT: zod.string().min(1),
+    REQUEST_BROKER_SIGNATURE: zod.string().min(1),
+  }),
+]);
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
@@ -137,6 +148,30 @@ const GitHubModel = zod.union([
     INTEGRATION_GITHUB_APP_PRIVATE_KEY: zod.string(),
   }),
 ]);
+
+const IntegrationRoutesModel = zod.intersection(
+  zod.union([
+    zod.object({
+      INTEGRATION_GITHUB_APP_NAME: emptyString(zod.undefined()),
+    }),
+    zod.object({
+      INTEGRATION_GITHUB_APP_NAME: zod.string(),
+      // Used for verifying that the installing user has access to the installation.
+      INTEGRATION_GITHUB_APP_CLIENT_ID: zod.string(),
+      INTEGRATION_GITHUB_APP_CLIENT_SECRET: zod.string(),
+    }),
+  ]),
+  zod.union([
+    zod.object({
+      INTEGRATION_SLACK: emptyString(zod.literal('0').optional()),
+    }),
+    zod.object({
+      INTEGRATION_SLACK: zod.literal('1'),
+      INTEGRATION_SLACK_CLIENT_ID: zod.string(),
+      INTEGRATION_SLACK_CLIENT_SECRET: zod.string(),
+    }),
+  ]),
+);
 
 const CdnCFModel = zod.union([
   zod.object({
@@ -355,6 +390,7 @@ const processEnv = process.env;
 
 const configs = {
   testUtils: TestUtilsModel.safeParse(processEnv),
+  requestBroker: RequestBrokerModel.safeParse(processEnv),
   base: EnvironmentModel.safeParse(processEnv),
   commerce: CommerceModel.safeParse(processEnv),
   sentry: SentryModel.safeParse(processEnv),
@@ -365,6 +401,7 @@ const configs = {
   authOkta: AuthOktaConfigSchema.safeParse(processEnv),
   authOktaMultiTenant: AuthOktaMultiTenantSchema.safeParse(processEnv),
   github: GitHubModel.safeParse(processEnv),
+  integrationRoutes: IntegrationRoutesModel.safeParse(processEnv),
   cdnCf: CdnCFModel.safeParse(processEnv),
   cdnApi: CdnApiModel.safeParse(processEnv),
   prometheus: PrometheusModel.safeParse(processEnv),
@@ -524,6 +561,7 @@ const authGoogle = extractConfig(configs.authGoogle);
 const authOkta = extractConfig(configs.authOkta);
 const authOktaMultiTenant = extractConfig(configs.authOktaMultiTenant);
 const github = extractConfig(configs.github);
+const integrationRoutes = extractConfig(configs.integrationRoutes);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const cdnCf = extractConfig(configs.cdnCf);
@@ -537,6 +575,7 @@ const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
 const oidcWorkloadFederation = extractConfig(configs.oidcWorkloadFederation);
 const testUtils = extractConfig(configs.testUtils);
+const requestBroker = extractConfig(configs.requestBroker);
 
 const hiveUsageConfig =
   hive.HIVE_USAGE === '1'
@@ -563,6 +602,13 @@ export const env = {
   environment: base.ENVIRONMENT,
   exposeMemoryUtils: testUtils.EXPOSE_MEMORY_UTILS === '1',
   release: base.RELEASE ?? 'local',
+  requestBroker:
+    requestBroker.REQUEST_BROKER === '1'
+      ? {
+          endpoint: requestBroker.REQUEST_BROKER_ENDPOINT,
+          signature: requestBroker.REQUEST_BROKER_SIGNATURE,
+        }
+      : null,
   encryptionSecret: base.ENCRYPTION_SECRET,
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT || hive.HIVE_TRACING === '1',
@@ -594,6 +640,23 @@ export const env = {
         }
       : null,
     schema: { endpoint: base.SCHEMA_ENDPOINT },
+  },
+  integrationRoutes: {
+    github:
+      'INTEGRATION_GITHUB_APP_CLIENT_ID' in integrationRoutes
+        ? {
+            appName: integrationRoutes.INTEGRATION_GITHUB_APP_NAME,
+            clientId: integrationRoutes.INTEGRATION_GITHUB_APP_CLIENT_ID,
+            clientSecret: integrationRoutes.INTEGRATION_GITHUB_APP_CLIENT_SECRET,
+          }
+        : null,
+    slack:
+      integrationRoutes.INTEGRATION_SLACK === '1'
+        ? {
+            clientId: integrationRoutes.INTEGRATION_SLACK_CLIENT_ID,
+            clientSecret: integrationRoutes.INTEGRATION_SLACK_CLIENT_SECRET,
+          }
+        : null,
   },
   http: {
     port: base.PORT ?? 3001,

@@ -301,6 +301,32 @@ test.concurrent(
   },
 );
 
+test.concurrent('malformed check IDs do not raise an exception', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, organization } = await createOrg();
+  const { project, target } = await createProject(ProjectType.Single);
+
+  const result = await execute({
+    document: ApproveFailedSchemaCheckMutation,
+    variables: {
+      input: {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+        schemaCheckId: 'malformed-id',
+      },
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.approveFailedSchemaCheck).toEqual({
+    ok: null,
+    error: {
+      message: "Schema check doesn't exist.",
+    },
+  });
+});
+
 test.concurrent(
   'successful check with previously published schema is persisted',
   async ({ expect }) => {
@@ -3133,3 +3159,317 @@ test.concurrent('schema checks can be filtered by service name', async ({ expect
     { id: firstUsers, serviceName: 'users' },
   ]);
 });
+
+const SchemaCheckChangePagesQuery = graphql(/* GraphQL */ `
+  query SchemaCheckChangePagesQuery(
+    $selector: TargetSelectorInput!
+    $id: ID!
+    $first: Int
+    $offset: Int
+  ) {
+    target(reference: { bySelector: $selector }) {
+      schemaCheck(id: $id) {
+        __typename
+        unapprovedBreakingSchemaChangeCount
+        allBreaking: breakingSchemaChanges {
+          totalCount
+          edges {
+            node {
+              message
+            }
+          }
+        }
+        breakingPage: breakingSchemaChanges(first: $first, offset: $offset) {
+          totalCount
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+          }
+          edges {
+            node {
+              message
+              kind
+            }
+          }
+        }
+        safeSchemaChangeGroups {
+          kind
+          totalCount
+          changes(first: 2) {
+            totalCount
+            pageInfo {
+              hasNextPage
+            }
+            edges {
+              node {
+                message
+                kind
+              }
+            }
+          }
+        }
+        typeAdded: safeSchemaChangeGroups(kind: TYPE_ADDED) {
+          kind
+        }
+      }
+    }
+  }
+`);
+
+test.concurrent(
+  'breaking changes page by offset and safe changes group by kind',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+    const writeToken = await createTargetAccessToken({});
+
+    const removed = Array.from({ length: 60 }, (_, index) => `  f${index}: String`).join('\n');
+    const publishResult = await writeToken
+      .publishSchema({
+        sdl: `"""Old"""\ntype Query {\n  keep: String\n${removed}\n}`,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    // Drops 60 fields (breaking), rewrites one description and adds three types, each reachable
+    // through a new field: one TYPE_DESCRIPTION_CHANGED, three FIELD_ADDED and three TYPE_ADDED.
+    const checkResult = await writeToken
+      .checkSchema(
+        `"""New"""\ntype Query {\n  keep: String\n  a: A\n  b: B\n  c: C\n}\ntype A { id: ID }\ntype B { id: ID }\ntype C { id: ID }`,
+      )
+      .then(r => r.expectNoGraphQLErrors());
+    const check = checkResult.schemaCheck;
+    if (check.__typename !== 'SchemaCheckError') {
+      throw new Error(`Expected SchemaCheckError, got ${check.__typename}`);
+    }
+    const schemaCheckId = check.schemaCheck?.id;
+    if (schemaCheckId == null) {
+      throw new Error('Missing schema check id.');
+    }
+
+    const read = (variables: { first?: number; offset?: number }) =>
+      execute({
+        document: SchemaCheckChangePagesQuery,
+        variables: {
+          selector: {
+            organizationSlug: organization.slug,
+            projectSlug: project.slug,
+            targetSlug: target.slug,
+          },
+          id: schemaCheckId,
+          ...variables,
+        },
+        authToken: ownerToken,
+      })
+        .then(r => r.expectNoGraphQLErrors())
+        .then(r => r.target!.schemaCheck!);
+
+    const lastPage = await read({ first: 50, offset: 50 });
+    const allIds = lastPage.allBreaking!.edges.map(edge => edge.node.message);
+
+    expect(lastPage.__typename).toBe('FailedSchemaCheck');
+    expect(lastPage.unapprovedBreakingSchemaChangeCount).toBe(60);
+    // No paging arguments still returns every change.
+    expect(lastPage.allBreaking!.totalCount).toBe(60);
+    expect(allIds).toHaveLength(60);
+    expect(lastPage.breakingPage).toMatchObject({
+      totalCount: 60,
+      pageInfo: { hasNextPage: false, hasPreviousPage: true },
+    });
+    expect(lastPage.breakingPage!.edges.map(edge => edge.node.message)).toEqual(allIds.slice(50));
+
+    const firstPage = await read({ first: 50, offset: 0 });
+    expect(firstPage.breakingPage!.pageInfo).toEqual({
+      hasNextPage: true,
+      hasPreviousPage: false,
+    });
+    expect(firstPage.breakingPage!.edges.map(edge => edge.node.message)).toEqual(
+      allIds.slice(0, 50),
+    );
+
+    const pastTheEnd = await read({ first: 50, offset: 100 });
+    expect(pastTheEnd.breakingPage!.edges).toEqual([]);
+
+    expect(
+      firstPage.safeSchemaChangeGroups.map(group => ({
+        kind: group.kind,
+        totalCount: group.totalCount,
+        pageSize: group.changes.edges.length,
+        hasNextPage: group.changes.pageInfo.hasNextPage,
+      })),
+    ).toEqual([
+      { kind: 'TYPE_DESCRIPTION_CHANGED', totalCount: 1, pageSize: 1, hasNextPage: false },
+      { kind: 'FIELD_ADDED', totalCount: 3, pageSize: 2, hasNextPage: true },
+      { kind: 'TYPE_ADDED', totalCount: 3, pageSize: 2, hasNextPage: true },
+    ]);
+    expect(firstPage.typeAdded).toEqual([{ kind: 'TYPE_ADDED' }]);
+    // Each change names its own kind, the same value its group is keyed by.
+    expect(new Set(firstPage.breakingPage!.edges.map(edge => edge.node.kind))).toEqual(
+      new Set(['FIELD_REMOVED']),
+    );
+    for (const group of firstPage.safeSchemaChangeGroups) {
+      for (const edge of group.changes.edges) {
+        expect(edge.node.kind).toBe(group.kind);
+      }
+    }
+  },
+);
+
+const SchemaCheckFlagsQuery = graphql(/* GraphQL */ `
+  query SchemaCheckFlagsOnTargetQuery($selector: TargetSelectorInput!) {
+    target(reference: { bySelector: $selector }) {
+      schemaChecks(first: 10) {
+        edges {
+          node {
+            __typename
+            hasSchemaChanges
+            hasUnapprovedBreakingChanges
+          }
+        }
+      }
+    }
+  }
+`);
+
+test.concurrent(
+  'schema checks list whether they changed the schema and have unapproved breaking changes',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    await token
+      .publishSchema({ sdl: 'type Query { ping: String }', author: 'User', commit: 'initial' })
+      .then(r => r.expectNoGraphQLErrors());
+    for (const sdl of [
+      'type Query { ping: Float }',
+      'type Query { ping: String pong: String }',
+      'type Query { ping: String }',
+    ]) {
+      await token.checkSchema(sdl).then(r => r.expectNoGraphQLErrors());
+    }
+
+    const flags = execute({
+      document: SchemaCheckFlagsQuery,
+      variables: {
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      authToken: ownerToken,
+    })
+      .then(r => r.expectNoGraphQLErrors())
+      .then(r => r.target?.schemaChecks.edges.map(edge => edge.node));
+
+    await expect(flags).resolves.toEqual([
+      {
+        __typename: 'SuccessfulSchemaCheck',
+        hasSchemaChanges: false,
+        hasUnapprovedBreakingChanges: false,
+      },
+      {
+        __typename: 'SuccessfulSchemaCheck',
+        hasSchemaChanges: true,
+        hasUnapprovedBreakingChanges: false,
+      },
+      {
+        __typename: 'FailedSchemaCheck',
+        hasSchemaChanges: true,
+        hasUnapprovedBreakingChanges: true,
+      },
+    ]);
+  },
+);
+const SchemaCheckServiceNamesQuery = graphql(/* GraphQL */ `
+  query SchemaCheckServiceNamesQuery($selector: TargetSelectorInput!) {
+    target(reference: { bySelector: $selector }) {
+      schemaCheckServiceNames
+    }
+  }
+`);
+
+test.concurrent(
+  'schemaCheckServiceNames lists the checked services, deduplicated and sorted',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(
+      ProjectType.Federation,
+    );
+    const token = await createTargetAccessToken({});
+
+    // Published but never checked, so it must not be listed.
+    const publishResult = await token
+      .publishSchema({
+        service: 'inventory',
+        url: 'https://api.com/inventory',
+        sdl: 'type Query { stock: Int }',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+    expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    for (const [sdl, service] of [
+      ['type Query { users: [String!]! }', 'users'],
+      ['type Query { products: [String!]! }', 'Products'],
+      ['type Query { users: [String!]! me: String }', 'users'],
+      ['type Query { accounts: [String!]! }', 'accounts'],
+    ] as const) {
+      await token.checkSchema(sdl, service).then(r => r.expectNoGraphQLErrors());
+    }
+
+    // A new service whose first check fails composition is listed too.
+    const failedCheck = await token
+      .checkSchema('type Query { stock: String }', 'reviews')
+      .then(r => r.expectNoGraphQLErrors());
+    expect(failedCheck.schemaCheck.__typename).toBe('SchemaCheckError');
+
+    const result = await execute({
+      document: SchemaCheckServiceNamesQuery,
+      variables: {
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.target?.schemaCheckServiceNames).toEqual([
+      'accounts',
+      'products',
+      'reviews',
+      'users',
+    ]);
+  },
+);
+
+test.concurrent(
+  'schemaCheckServiceNames is null for a single-schema project',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    await token.checkSchema('type Query { ping: String }').then(r => r.expectNoGraphQLErrors());
+
+    const result = await execute({
+      document: SchemaCheckServiceNamesQuery,
+      variables: {
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.target?.schemaCheckServiceNames).toBeNull();
+  },
+);

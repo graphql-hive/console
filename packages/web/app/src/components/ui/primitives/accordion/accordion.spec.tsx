@@ -65,4 +65,55 @@ describe('Accordion', () => {
     fireEvent.click(locked);
     expect(screen.queryByText('Locked panel')).toBeNull();
   });
+
+  it('gives a boxed header a hover surface, clipped to the card, and none to the other variants', () => {
+    const { container, rerender } = render(<Accordion items={ITEMS} variant="boxed" />);
+    const header = () =>
+      screen.getByRole('button', { name: 'Breaking' }).closest('h3')!.parentElement!;
+    expect(header().className).toContain('hover]:bg-surface-hover');
+    expect((container.firstElementChild!.firstElementChild as HTMLElement).className).toContain(
+      'overflow-hidden',
+    );
+
+    rerender(<Accordion items={ITEMS} variant="list" />);
+    expect(header().className).not.toContain('bg-surface-hover');
+  });
+
+  it('renders an item without content as a static row: no button, no chevron, same heading', () => {
+    render(
+      <Accordion
+        items={[
+          ITEMS[0],
+          {
+            value: 'static',
+            label: 'Type removed',
+            trailing: <span>Not tracked</span>,
+            attrs: { 'data-cy': 'row-static' },
+          },
+        ]}
+      />,
+    );
+    const row = document.querySelector('[data-cy="row-static"]')!;
+    expect(row.querySelector('button')).toBeNull();
+    expect(row.querySelector('svg')).toBeNull();
+    expect(screen.getByRole('heading', { name: /Type removed/ }).textContent).toContain(
+      'Not tracked',
+    );
+
+    // Its neighbour still opens.
+    fireEvent.click(screen.getByRole('button', { name: 'Breaking' }));
+    expect(screen.getByText('Breaking panel')).toBeTruthy();
+  });
+
+  it('treats null content as no content, even on a disabled item', () => {
+    render(
+      <Accordion
+        items={[{ value: 'x', label: 'Nothing here', content: null, disabled: true }]}
+        variant="boxed"
+      />,
+    );
+    expect(screen.queryByRole('button')).toBeNull();
+    const heading = screen.getByRole('heading', { name: 'Nothing here' });
+    expect(heading.parentElement!.className).not.toContain('bg-surface-hover');
+  });
 });
