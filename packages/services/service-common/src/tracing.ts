@@ -236,7 +236,7 @@ const emptyString = <T extends zod.ZodType>(input: T) => {
 };
 
 export const OpenTelemetryConfigurationModel = zod.object({
-  OPENTELEMETRY_COLLECTOR_ENDPOINT: emptyString(zod.string().url().optional()),
+  OPENTELEMETRY_COLLECTOR_ENDPOINT: emptyString(zod.url().optional()),
   OPENTELEMETRY_CONSOLE_EXPORTER: emptyString(zod.string().optional()),
 });
 

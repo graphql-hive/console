@@ -71,7 +71,7 @@ const LogModel = zod.object({
 });
 
 const HiveServicesModel = zod.object({
-  WEB_APP_URL: emptyString(zod.string().url().optional()),
+  WEB_APP_URL: emptyString(zod.url().optional()),
 });
 
 const RateLimitModel = zod.object({
@@ -123,7 +123,7 @@ if (environmentErrors.length) {
   process.exit(1);
 }
 
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
   if (!config.success) {
     throw new Error('Something went wrong.');
   }

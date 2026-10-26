@@ -3642,7 +3642,7 @@ const OrganizationInvitationModel = z
   .object({
     organizationId: z.string(),
     code: z.string(),
-    email: z.string().email(),
+    email: z.email(),
     createdAt: z.string().transform(v => new Date(v).toISOString()),
     expiresAt: z.string().transform(v => new Date(v).toISOString()),
     roleId: z.string(),

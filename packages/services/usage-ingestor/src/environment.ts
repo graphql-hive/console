@@ -32,7 +32,7 @@ const EnvironmentModel = zod.object({
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
-  HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
+  HEARTBEAT_ENDPOINT: emptyString(zod.url().optional()),
   AWS_REGION: emptyString(zod.string().optional()),
 });
 
@@ -176,7 +176,7 @@ if (environmentErrors.length) {
   process.exit(1);
 }
 
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
   if (!config.success) {
     throw new Error('Something went wrong.');
   }

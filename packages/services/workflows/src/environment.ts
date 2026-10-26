@@ -35,13 +35,13 @@ const EnvironmentModel = zod.object({
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
-  HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
-  EMAIL_FROM: zod.string().email(),
-  SCHEMA_ENDPOINT: zod.string().url(),
+  HEARTBEAT_ENDPOINT: emptyString(zod.url().optional()),
+  EMAIL_FROM: zod.email(),
+  SCHEMA_ENDPOINT: zod.url(),
   // Base URL of the Hive Console, used to link alert notifications back to the
   // rule that fired. Optional so an existing self-hosted deployment keeps
   // booting after an upgrade; notifications omit the link when it isn't set.
-  WEB_APP_URL: emptyString(zod.string().url().optional()),
+  WEB_APP_URL: emptyString(zod.url().optional()),
   // Must match the value given to the API service, which is what encrypts
   // `organizations.slack_token`. Optional for the same reason as WEB_APP_URL above;
   // without it, Slack metric-alert notifications are skipped rather than the whole
@@ -190,7 +190,7 @@ if (environmentErrors.length) {
   process.exit(1);
 }
 
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
   if (!config.success) {
     throw new Error('Something went wrong.');
   }

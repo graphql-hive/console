@@ -1,5 +1,5 @@
 import { config as dotenv } from 'dotenv';
-import zod from 'zod';
+import zod, { type ZodSafeParseResult } from 'zod';
 import {
   parseClickHouseConfigFromEnvironment,
   parsePostgresConfigFromEnvironment,
@@ -81,7 +81,7 @@ if (environmentErrors.length) {
   process.exit(1);
 }
 
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
   if (!config.success) {
     throw new Error('Something went wrong.');
   }

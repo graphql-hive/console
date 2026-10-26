@@ -52,15 +52,15 @@ const EnvironmentModel = zod.object({
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   ENCRYPTION_SECRET: emptyString(zod.string()),
-  WEB_APP_URL: zod.string().url(),
+  WEB_APP_URL: zod.url(),
   GRAPHQL_PUBLIC_ORIGIN: zod
     .string({
       required_error:
         'GRAPHQL_PUBLIC_ORIGIN is required (see: https://github.com/graphql-hive/platform/pull/4288#issue-2195509699)',
     })
     .url(),
-  SCHEMA_POLICY_ENDPOINT: emptyString(zod.string().url().optional()),
-  SCHEMA_ENDPOINT: zod.string().url(),
+  SCHEMA_POLICY_ENDPOINT: emptyString(zod.url().optional()),
+  SCHEMA_ENDPOINT: zod.url(),
   AUTH_ORGANIZATION_OIDC: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_ORGANIZATION_SCIM: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -94,7 +94,7 @@ const EnvironmentModel = zod.object({
 });
 
 const CommerceModel = zod.object({
-  COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
+  COMMERCE_ENDPOINT: emptyString(zod.url().optional()),
   COMMERCE_BILLING: zod
     .union([zod.literal('1'), zod.literal('0')])
     .default('1')
@@ -180,7 +180,7 @@ const CdnCFModel = zod.union([
   zod.object({
     CDN_CF: zod.literal('1'),
     CDN_CF_BASE_URL: zod.string(),
-    CDN_CF_KV_BASE_URL: emptyString(zod.string().url().optional()),
+    CDN_CF_KV_BASE_URL: emptyString(zod.url().optional()),
   }),
 ]);
 
@@ -191,7 +191,7 @@ const CdnApiModel = zod.union([
   zod.object({
     CDN_API: zod.literal('1'),
     CDN_API_BASE_URL: zod.string(),
-    CDN_API_KV_BASE_URL: emptyString(zod.string().url().optional()),
+    CDN_API_KV_BASE_URL: emptyString(zod.url().optional()),
   }),
 ]);
 
@@ -200,7 +200,7 @@ const HiveModel = zod.intersection(
     zod.object({ HIVE_USAGE: emptyString(zod.literal('0').optional()) }),
     zod.object({
       HIVE_USAGE: zod.literal('1'),
-      HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
+      HIVE_USAGE_ENDPOINT: zod.url().optional(),
       HIVE_TARGET: zod.string(),
       HIVE_ACCESS_TOKEN: zod.string(),
       HIVE_FIELD_USAGE_ENABLED: emptyString(
@@ -229,7 +229,7 @@ const PrometheusModel = zod.object({
 });
 
 const S3Model = zod.object({
-  S3_ENDPOINT: zod.string().url(),
+  S3_ENDPOINT: zod.url(),
   S3_ACCESS_KEY_ID: emptyString(zod.string().optional()),
   S3_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
   S3_SESSION_TOKEN: emptyString(zod.string().optional()),
@@ -243,12 +243,12 @@ const S3MirrorModel = zod.union([
   }),
   zod.object({
     S3_MIRROR: zod.literal('1'),
-    S3_MIRROR_ENDPOINT: zod.string().url(),
+    S3_MIRROR_ENDPOINT: zod.url(),
     S3_MIRROR_ACCESS_KEY_ID: emptyString(zod.string().optional()),
     S3_MIRROR_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
     S3_MIRROR_SESSION_TOKEN: emptyString(zod.string().optional()),
     S3_MIRROR_BUCKET_NAME: zod.string(),
-    S3_MIRROR_PUBLIC_URL: emptyString(zod.string().url().optional()),
+    S3_MIRROR_PUBLIC_URL: emptyString(zod.url().optional()),
     S3_MIRROR_AWS_IAM_AUTH_ENABLED: emptyString(
       zod.union([zod.literal('0'), zod.literal('1')]).optional(),
     ),
@@ -261,12 +261,12 @@ const S3AuditLogModel = zod.union([
   }),
   zod.object({
     S3_AUDIT_LOG: zod.literal('1'),
-    S3_AUDIT_LOG_ENDPOINT: zod.string().url(),
+    S3_AUDIT_LOG_ENDPOINT: zod.url(),
     S3_AUDIT_LOG_ACCESS_KEY_ID: emptyString(zod.string().optional()),
     S3_AUDIT_LOG_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
     S3_AUDIT_LOG_SESSION_TOKEN: emptyString(zod.string().optional()),
     S3_AUDIT_LOG_BUCKET_NAME: zod.string(),
-    S3_AUDIT_LOG_PUBLIC_URL: emptyString(zod.string().url().optional()),
+    S3_AUDIT_LOG_PUBLIC_URL: emptyString(zod.url().optional()),
     S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED: emptyString(
       zod.union([zod.literal('0'), zod.literal('1')]).optional(),
     ),
@@ -302,7 +302,7 @@ const AuthOktaConfigSchema = zod.union([
   zod.object({
     AUTH_OKTA: zod.literal('1'),
     AUTH_OKTA_HIDDEN: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-    AUTH_OKTA_ENDPOINT: zod.string().url(),
+    AUTH_OKTA_ENDPOINT: zod.url(),
     AUTH_OKTA_CLIENT_ID: zod.string(),
     AUTH_OKTA_CLIENT_SECRET: zod.string(),
   }),
@@ -318,7 +318,7 @@ const HivePersistedDocumentsSchema = zod.union([
   }),
   zod.object({
     HIVE_PERSISTED_DOCUMENTS: zod.literal('1'),
-    HIVE_PERSISTED_DOCUMENTS_CDN_ENDPOINT: zod.string().url(),
+    HIVE_PERSISTED_DOCUMENTS_CDN_ENDPOINT: zod.url(),
     HIVE_PERSISTED_DOCUMENTS_CDN_ACCESS_KEY_ID: zod.string(),
   }),
 ]);
@@ -544,7 +544,7 @@ if (environmentErrors.length) {
   process.exit(1);
 }
 
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
   if (!config.success) {
     throw new Error('Something went wrong.');
   }

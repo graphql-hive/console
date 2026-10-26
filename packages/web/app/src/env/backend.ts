@@ -44,12 +44,12 @@ const BaseSchema = zod.object({
   PORT: emptyString(NumberFromString().optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  APP_BASE_URL: zod.string().url(),
-  GRAPHQL_PUBLIC_ENDPOINT: zod.string().url(),
-  GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.string().url(),
-  GRAPHQL_PUBLIC_ORIGIN: zod.string().url(),
+  APP_BASE_URL: zod.url(),
+  GRAPHQL_PUBLIC_ENDPOINT: zod.url(),
+  GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.url(),
+  GRAPHQL_PUBLIC_ORIGIN: zod.url(),
   GA_TRACKING_ID: emptyString(zod.string().optional()),
-  DOCS_URL: emptyString(zod.string().url().optional()),
+  DOCS_URL: emptyString(zod.url().optional()),
   STRIPE_PUBLIC_KEY: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -143,7 +143,7 @@ function buildConfig() {
     process.exit(1);
   }
 
-  function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+  function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
     if (!config.success) {
       throw new Error('Something went wrong.');
     }
