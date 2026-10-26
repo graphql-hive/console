@@ -142,8 +142,8 @@ catalogs:
       specifier: 2.1.0
       version: 2.1.0
     fastify:
-      specifier: 5.12.5
-      version: 5.12.5
+      specifier: 5.12.6
+      version: 5.12.6
     got:
       specifier: 16.1.0
       version: 16.1.0
@@ -299,7 +299,7 @@ overrides:
   js-yaml@<3.15.2: 3.15.2
   sigstore@<=4.1.0: '>=4.1.1'
   tar@<=7.5.18: 7.5.21
-  fast-uri@<4.0.0: 3.1.7
+  fast-uri@<4.0.0: 3.1.9
   '@opentelemetry/propagator-jaeger@<2.9.0': 2.9.0
   sharp@<0.35.4: ^0.35.4
   body-parser@1.x.x: 1.20.6
@@ -314,6 +314,7 @@ overrides:
   '@graphql-hive/core': 'workspace:'
   '@graphql-tools/url-loader@7.x.x>@graphql-tools/executor-legacy-ws': '-'
   graphql@16.x.x: 16.14.2
+  body-parser@<=1.20.9: 1.20.9
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -711,8 +712,8 @@ importers:
         specifier: 4.17.21
         version: 4.17.21
       body-parser:
-        specifier: 2.3.0
-        version: 2.3.0
+        specifier: 2.4.0
+        version: 2.4.0
       express:
         specifier: 4.21.2
         version: 4.21.2
@@ -898,7 +899,7 @@ importers:
         version: 0.28.1
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       graphql:
         specifier: 'catalog:'
         version: 16.14.2
@@ -1088,7 +1089,7 @@ importers:
         version: 0.52.2
       monaco-graphql:
         specifier: ^1.7.3
-        version: 1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2)
+        version: 1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1)
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -1532,7 +1533,7 @@ importers:
         version: 0.28.1
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       graphql:
         specifier: 'catalog:'
         version: 16.14.2
@@ -1583,7 +1584,7 @@ importers:
         version: 16.4.7
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       pino-pretty:
         specifier: 'catalog:'
         version: 11.3.0
@@ -1677,7 +1678,7 @@ importers:
         version: 1.5.0
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       graphql:
         specifier: 'catalog:'
         version: 16.14.2
@@ -1740,7 +1741,7 @@ importers:
         version: 2.1.0
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       fastq:
         specifier: 1.19.1
         version: 1.19.1
@@ -1857,7 +1858,7 @@ importers:
         version: 16.4.7
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       got:
         specifier: 'catalog:'
         version: 16.1.0(patch_hash=2f8be9ec1afd3619d2e771aa4b85b2c6b0762210ce683903f181fce7b36861df)
@@ -1969,7 +1970,7 @@ importers:
         version: 1.0.3
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       fastify-plugin:
         specifier: 6.0.0
         version: 6.0.0
@@ -2208,8 +2209,8 @@ importers:
         specifier: 4.14.0
         version: 4.14.0(encoding@0.1.13)
       nodemailer:
-        specifier: 10.0.11
-        version: 10.0.11
+        specifier: 10.1.4
+        version: 10.1.4
       p-limit:
         specifier: 'catalog:'
         version: 6.2.0
@@ -2236,7 +2237,7 @@ importers:
         version: 10.1.5
       '@fastify/vite':
         specifier: 9.2.0
-        version: 9.2.0(fastify@5.12.5)(vite@7.3.7(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
+        version: 9.2.0(fastify@5.12.6)(vite@7.3.7(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       '@graphiql/plugin-explorer':
         specifier: 4.0.0-alpha.2
         version: 4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.0.0)(@types/node@25.9.9)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@6.0.6(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2377,7 +2378,7 @@ importers:
         version: 6.1.0
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       graphiql:
         specifier: 4.0.0-alpha.5
         version: 4.0.0-alpha.5(patch_hash=87dedd0023d07eef741569477f4a97265c634e9c37040d4b435268abbd435b6d)(@codemirror/language@6.0.0)(@types/node@25.9.9)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@6.0.6(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2425,7 +2426,7 @@ importers:
         version: 0.52.2
       monaco-graphql:
         specifier: 1.9.0
-        version: 1.9.0(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2)
+        version: 1.9.0(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1)
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -10412,12 +10413,12 @@ packages:
     peerDependencies:
       typescript: 5.7.3
 
-  body-parser@1.20.6:
-    resolution: {integrity: sha512-p5tAzS57i5MV9fZFDj9LeIiTZEufbSe2eDozP+ElheSUq1m74CRq1jI4mYNDdVs9vQztXFLuk/Gd6BWTdwRJ5g==}
+  body-parser@1.20.9:
+    resolution: {integrity: sha512-FISIQxV5u91Y9gvuFq3q/tA/qTqLJn3AhRcEvyozyhJTh5OBFFtv827AdHU7Rbyct4r+Ba1/99oFa1Y3yuFsdw==}
     engines: {node: '>= 0.8', npm: 1.2.8000 || >= 1.4.16}
 
-  body-parser@2.3.0:
-    resolution: {integrity: sha512-2cGmJupaNgg+QUwVLAucDuWuoMZ6EX9iHDRswZ5lsNYEmwPaRknMPCLZz07yTzVq/83p4o/wzbDZbBrTvGGTIw==}
+  body-parser@2.4.0:
+    resolution: {integrity: sha512-Ifk1KcLrxaGt1occQagQNFNNOqRt1LFuehEnHHzB8Z6cRgIxRU1TBaiIsUiCdA+gy5PL7Y1IX31DNKkRmxtXjQ==}
     engines: {node: '>=18'}
 
   boolbase@1.0.0:
@@ -10870,8 +10871,8 @@ packages:
     resolution: {integrity: sha512-nTjqfcBFEipKdXCv4YDQWCfmcLZKm81ldF0pAopTvyrFGVbcR6P/VAAd5G7N+0tTr8QqiU0tFadD6FK4NtJwOA==}
     engines: {node: '>= 0.6'}
 
-  content-type@2.0.0:
-    resolution: {integrity: sha512-j/O/d7GcZCyNl7/hwZAb606rzqkyvaDctLmckbxLzHvFBzTJHuGEdodATcP3yIRoDrLHkIATJuvzbFlp/ki2cQ==}
+  content-type@2.1.0:
+    resolution: {integrity: sha512-mj7UPXE0jaqaOsukNZRUEfEi2AcL7C/vwmwcHV0O97eO1E1pxBZuyjlZrx5seTaNBg1U6+o35wpa35Qfcc+7ag==}
     engines: {node: '>=18'}
 
   convert-source-map@1.9.0:
@@ -11804,11 +11805,11 @@ packages:
   fast-string-width@3.0.2:
     resolution: {integrity: sha512-gX8LrtNEI5hq8DVUfRQMbr5lpaS4nMIWV+7XEbXk2b8kiQIizgnlr12B4dA3ZEx3308ze0O4Q1R+cHts8kyUJg==}
 
-  fast-uri@3.1.7:
-    resolution: {integrity: sha512-dOvZVzjdZdz7phd9v6jCbwxrBW3fK6n8Rc0CtdmM4bumzMnxywBYhuph6J819RRw/ku+rLbelwfMunktuzVVHg==}
+  fast-uri@3.1.9:
+    resolution: {integrity: sha512-hS/0Wt3Ya043oKXs0sIxrMpKQITXhMLIrVAKKXi4gozGC9v7YRWVnXIZzjNPTO02M9BdxLCWqK1yRXgNziVyJQ==}
 
-  fast-uri@4.2.1:
-    resolution: {integrity: sha512-TmHQgewjHtMq1E5QKA0tOE0yeYGQs25KZC/ziJpubRtWI15W92e6vPFydWOeZBVROSHBYw/QhD9d5OefdD6LDg==}
+  fast-uri@4.2.3:
+    resolution: {integrity: sha512-I1PXwP5eAhlNlcdpjt9CgB59op2ZvZfxw+BkqGFVIUOgNpCVTcTqp3HhTX7brxj5vsip+nSY4nTvff+eIA76hg==}
 
   fast-wrap-ansi@0.2.2:
     resolution: {integrity: sha512-7F2Fl+TjRSenLqlU3UjSH0iyqopqoZIu7eZVpEirP2g1GtWa2G/ecEmBdgz31+Mxr+ELclgg6sokpSFIQiZ02Q==}
@@ -11830,8 +11831,8 @@ packages:
   fastify-plugin@6.0.0:
     resolution: {integrity: sha512-fZOty7z3O7vOliF6d8bHE3wiEh1KcNnKEQensSgTk9C1DvN6nRLS++XVd86v33Hw/8u9Un8A1zDrQ8ujcQDHEg==}
 
-  fastify@5.12.5:
-    resolution: {integrity: sha512-OB2k1dlxs5/NAABqeKV2FUHkSD2BbENsCak8yULVcymn3fHIPDVa9TI3SDnJSWYSllZmSYuZXy2gTnsT+Sut1A==}
+  fastify@5.12.6:
+    resolution: {integrity: sha512-XeErl1DDsxdbhE9RPRJ05iNnfMhHRHHewVNNAJXaGTOaCY4wHb6rEizphhgzBq5YQe4JyqQWPpGd+hLh2PXXJA==}
 
   fastq@1.19.1:
     resolution: {integrity: sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ==}
@@ -12641,8 +12642,8 @@ packages:
     resolution: {integrity: sha512-HuEDBTI70aYdx1v6U97SbNx9F1+svQKBDo30o0b9fw055LMepzpOOd0Ccg9Q6tbqmBSJaMuY0fB7yw9/vjBYCA==}
     engines: {node: '>=12.22.0'}
 
-  ip-address@10.7.2:
-    resolution: {integrity: sha512-7H/2gFSIitxc0hG3nOI1glS8QLo/EHBFFLk8vEUjXY/xu0AdL8jZ9U1IzO2PUm0d2D/ofQcAifb0g6OBkt8U7w==}
+  ip-address@10.7.5:
+    resolution: {integrity: sha512-t2v0rkILYv9WXmSL7TpAaU3HXgaFYOPUcH3QHgwQ++gpJuH3bqyMy4Fvt/DJCTKwzH3Cf+bAp5W/mFL39KPLzA==}
     engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
@@ -14279,8 +14280,8 @@ packages:
   nodemailer-shared@1.1.0:
     resolution: {integrity: sha512-68xW5LSyPWv8R0GLm6veAvm7E+XFXkVgvE3FW0FGxNMMZqMkPFeGDVALfR1DPdSfcoO36PnW7q5AAOgFImEZGg==}
 
-  nodemailer@10.0.11:
-    resolution: {integrity: sha512-/c4P7U7aGpiNu2Rl08q525q2zECkUpSaf2zQPgIStCcAjHAkkQQKwD4sTyi3l91mGcLQrKzL1syXPHymo+Ogtw==}
+  nodemailer@10.1.4:
+    resolution: {integrity: sha512-EsMnOR2oRv4LGnWvHgcVYkkQ4O2j8KO4WTw6l+PHR4sOXo8SAgIraxtEnGDmotjbhv0hDsu3IuDIFZm8iXwO4A==}
     engines: {node: '>=20.0.0'}
 
   noms@0.0.0:
@@ -15208,8 +15209,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  qs@6.16.0:
-    resolution: {integrity: sha512-h6fhOIaRrID2CbEY2fqs+7t+UXZo+MLAnU5gRIq85uFtdiUPCdsApMlHhXogKVM4HM2DVbIjGNTTYH2OcmP1vA==}
+  qs@6.16.1:
+    resolution: {integrity: sha512-5Px6J7rfHBAGUhNQ3es4YzcOdBBw0SDcVtThJml4RdnKw4tKs2epA0kPZ+K8X+WiHktT93RHVcQ/3ym5aTCgtg==}
     engines: {node: '>=0.6'}
 
   quansync@0.2.11:
@@ -16656,8 +16657,8 @@ packages:
     resolution: {integrity: sha512-03KrMbjIFDWQR5RNPrSw3bd1r12JpyFQl9/yxjUbJtqkjmllqC5lFjZh6ujeuJCKr8EOQvRW872Oy/az+nLYxg==}
     engines: {node: '>=20.18.1'}
 
-  undici@8.11.2:
-    resolution: {integrity: sha512-u4UB2/IrKdU6lFxumHmmo1a3fCQO5tzQllRorfoRS63txhrB7xTpSn1PftwC4qEHkOaqP95fCWW4lJzwErwzhQ==}
+  undici@8.12.3:
+    resolution: {integrity: sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw==}
     engines: {node: '>=22.19.0'}
 
   unenv@2.0.0-rc.14:
@@ -17535,7 +17536,7 @@ snapshots:
       '@apollo/utils.withrequired': 3.0.0
       '@graphql-tools/schema': 10.1.3(graphql@16.14.2)
       async-retry: 1.3.3
-      body-parser: 2.3.0
+      body-parser: 2.4.0
       content-type: 1.0.5
       cors: 2.8.5
       finalhandler: 2.1.0
@@ -17562,7 +17563,7 @@ snapshots:
       '@apollo/utils.withrequired': 3.0.0
       '@graphql-tools/schema': 10.1.0(graphql@16.14.2)
       async-retry: 1.3.3
-      body-parser: 2.3.0
+      body-parser: 2.4.0
       content-type: 1.0.5
       cors: 2.8.5
       finalhandler: 2.1.0
@@ -19488,7 +19489,7 @@ snapshots:
     dependencies:
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
-      fast-uri: 3.1.7
+      fast-uri: 3.1.9
 
   '@fastify/busboy@3.2.2': {}
 
@@ -19561,12 +19562,12 @@ snapshots:
       fastq: 1.19.1
       glob: 13.0.6
 
-  '@fastify/vite@9.2.0(fastify@5.12.5)(vite@7.3.7(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))':
+  '@fastify/vite@9.2.0(fastify@5.12.6)(vite@7.3.7(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))':
     dependencies:
       '@fastify/deepmerge': 3.2.1
       '@fastify/middie': 9.3.2
       '@fastify/static': 9.3.0
-      fastify: 5.12.5
+      fastify: 5.12.6
       fastify-plugin: 5.1.0
       fs-extra: 11.4.0
       klaw: 4.1.0
@@ -27362,14 +27363,14 @@ snapshots:
   ajv@8.18.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.7
+      fast-uri: 3.1.9
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.7
+      fast-uri: 3.1.9
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -27683,7 +27684,7 @@ snapshots:
       yargs: 17.7.2
       zod: 3.25.76
 
-  body-parser@1.20.6:
+  body-parser@1.20.9:
     dependencies:
       bytes: 3.1.2
       content-type: 1.0.5
@@ -27693,22 +27694,22 @@ snapshots:
       http-errors: 2.0.1
       iconv-lite: 0.4.24
       on-finished: 2.4.1
-      qs: 6.16.0
+      qs: 6.16.1
       raw-body: 2.5.3
       type-is: 1.6.18
       unpipe: 1.0.0
     transitivePeerDependencies:
       - supports-color
 
-  body-parser@2.3.0:
+  body-parser@2.4.0:
     dependencies:
       bytes: 3.1.2
-      content-type: 2.0.0
+      content-type: 2.1.0
       debug: 4.4.3(supports-color@8.1.1)
       http-errors: 2.0.1
       iconv-lite: 0.7.3
       on-finished: 2.4.1
-      qs: 6.16.0
+      qs: 6.16.1
       raw-body: 3.0.2
       type-is: 2.1.0
     transitivePeerDependencies:
@@ -28230,7 +28231,7 @@ snapshots:
 
   content-type@1.0.5: {}
 
-  content-type@2.0.0: {}
+  content-type@2.1.0: {}
 
   convert-source-map@1.9.0: {}
 
@@ -29294,7 +29295,7 @@ snapshots:
     dependencies:
       accepts: 1.3.8
       array-flatten: 1.1.1
-      body-parser: 1.20.6
+      body-parser: 1.20.9
       content-disposition: 0.5.4
       content-type: 1.0.5
       cookie: 0.7.1
@@ -29313,7 +29314,7 @@ snapshots:
       parseurl: 1.3.3
       path-to-regexp: 0.1.13
       proxy-addr: 2.0.8
-      qs: 6.16.0
+      qs: 6.16.1
       range-parser: 1.2.1
       safe-buffer: 5.2.1
       send: 0.19.0
@@ -29355,7 +29356,7 @@ snapshots:
       '@fastify/merge-json-schemas': 0.2.1
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
-      fast-uri: 4.2.1
+      fast-uri: 4.2.3
       json-schema-ref-resolver: 3.0.0
       rfdc: 1.4.1
 
@@ -29381,9 +29382,9 @@ snapshots:
     dependencies:
       fast-string-truncated-width: 3.0.3
 
-  fast-uri@3.1.7: {}
+  fast-uri@3.1.9: {}
 
-  fast-uri@4.2.1: {}
+  fast-uri@4.2.3: {}
 
   fast-wrap-ansi@0.2.2:
     dependencies:
@@ -29407,7 +29408,7 @@ snapshots:
 
   fastify-plugin@6.0.0: {}
 
-  fastify@5.12.5:
+  fastify@5.12.6:
     dependencies:
       '@fastify/ajv-compiler': 4.0.5
       '@fastify/error': 4.2.0
@@ -30448,7 +30449,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ip-address@10.7.2: {}
+  ip-address@10.7.5: {}
 
   ipaddr.js@1.9.1: {}
 
@@ -30780,7 +30781,7 @@ snapshots:
       parse5: 8.0.1
       saxes: 6.0.0
       tough-cookie: 6.0.2
-      undici: 8.11.2
+      undici: 8.12.3
       w3c-xmlserializer: 6.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
@@ -32200,21 +32201,21 @@ snapshots:
 
   monaco-editor@0.52.2: {}
 
-  monaco-graphql@1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2):
+  monaco-graphql@1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1):
     dependencies:
       graphql: 16.14.2
       graphql-language-service: 5.5.0(graphql@16.14.2)
       monaco-editor: 0.52.2
       picomatch-browser: 2.2.6
-      prettier: 3.4.2
+      prettier: 3.8.1
 
-  monaco-graphql@1.9.0(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2):
+  monaco-graphql@1.9.0(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1):
     dependencies:
       graphql: 16.14.2
       graphql-language-service: 5.7.0(graphql@16.14.2)
       monaco-editor: 0.52.2
       picomatch-browser: 2.2.6
-      prettier: 3.4.2
+      prettier: 3.8.1
 
   moo@0.5.2: {}
 
@@ -32402,7 +32403,7 @@ snapshots:
     dependencies:
       nodemailer-fetch: 1.6.0
 
-  nodemailer@10.0.11: {}
+  nodemailer@10.1.4: {}
 
   noms@0.0.0:
     dependencies:
@@ -33340,7 +33341,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  qs@6.16.0:
+  qs@6.16.1:
     dependencies:
       es-define-property: 1.0.1
       side-channel: 1.1.1
@@ -34320,7 +34321,7 @@ snapshots:
 
   socks@2.8.7:
     dependencies:
-      ip-address: 10.7.2
+      ip-address: 10.7.5
       smart-buffer: 4.2.0
 
   sonic-boom@4.0.1:
@@ -34586,7 +34587,7 @@ snapshots:
   stripe@17.5.0:
     dependencies:
       '@types/node': 25.9.9
-      qs: 6.16.0
+      qs: 6.16.1
 
   strnum@2.2.3: {}
 
@@ -35002,7 +35003,7 @@ snapshots:
 
   type-is@2.1.0:
     dependencies:
-      content-type: 2.0.0
+      content-type: 2.1.0
       media-typer: 1.1.0
       mime-types: 3.0.1
 
@@ -35070,7 +35071,7 @@ snapshots:
 
   undici@7.30.1: {}
 
-  undici@8.11.2: {}
+  undici@8.12.3: {}
 
   unenv@2.0.0-rc.14:
     dependencies:
