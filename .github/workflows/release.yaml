@@ -82,6 +82,7 @@ jobs:
         with:
           fetch-depth: 2
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: setup environment
         uses: ./.github/actions/setup

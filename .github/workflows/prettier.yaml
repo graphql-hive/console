@@ -20,6 +20,7 @@ jobs:
           fetch-depth: 2
           ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: setup environment
         uses: ./.github/actions/setup
