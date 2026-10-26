@@ -1,3 +1,4 @@
+import * as aws from '@pulumi/aws';
 import * as pulumi from '@pulumi/pulumi';
 import { ServiceSecret } from '../utils/secrets';
 
@@ -23,12 +24,23 @@ export function deployS3() {
 
 export function deployS3Mirror() {
   const s3Config = new pulumi.Config('s3');
+  const accessKey = new aws.iam.AccessKey(
+    'aws-s3-access-key',
+    {
+      user: s3Config.require('iamUserName'),
+    },
+    {
+      additionalSecretOutputs: ['secret'],
+      replacementTrigger: s3Config.require('credentialDeploymentToken'),
+      retainOnDelete: true,
+    },
+  );
 
   const secret = new S3Secret('aws-s3', {
     endpoint: s3Config.require('endpoint'),
     bucket: s3Config.require('bucketName'),
-    accessKeyId: s3Config.requireSecret('accessKeyId'),
-    secretAccessKey: s3Config.requireSecret('secretAccessKey'),
+    accessKeyId: accessKey.id,
+    secretAccessKey: accessKey.secret,
   });
 
   return { secret };
