@@ -40,6 +40,11 @@ export function deployAWSArtifactsLambdaFunction(args: {
             Action: 's3:GetObject',
             Resource: pulumi.interpolate`arn:aws:s3:::${args.s3Mirror.secret.raw.bucket}/*`,
           },
+          {
+            Effect: 'Allow',
+            Action: 's3:ListBucket',
+            Resource: pulumi.interpolate`arn:aws:s3:::${args.s3Mirror.secret.raw.bucket}`,
+          },
         ],
       }),
     });
