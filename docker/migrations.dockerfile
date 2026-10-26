@@ -3,6 +3,16 @@ FROM node${NODE_VERSION_TAG}
 
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
+# Migrations execute Node.js directly and do not need package managers at runtime.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+		/usr/local/lib/node_modules/corepack \
+		/opt/yarn-v* \
+		/usr/local/bin/npm \
+		/usr/local/bin/npx \
+		/usr/local/bin/corepack \
+		/usr/local/bin/yarn \
+		/usr/local/bin/yarnpkg
+
 ARG INSTALL_RDS_CA_CERTS=0
 RUN if [ "$INSTALL_RDS_CA_CERTS" = "1" ]; then \
 			apt-get update && apt-get install -y wget && \
