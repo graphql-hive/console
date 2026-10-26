@@ -16,8 +16,7 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
-vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
-vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
+vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 
 const SCHEMA_PAGE = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 
