@@ -62,6 +62,23 @@ const serviceHeader = (name: string) => document.getElementById(`service-${name}
 const clearButton = () => screen.queryByRole('button', { name: 'Clear service' });
 
 describe('target schema page', () => {
+  // The SDL viewer virtualizes with observers jsdom does not have; nothing here scrolls.
+  beforeEach(() => {
+    class NoopObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
+    vi.stubGlobal('IntersectionObserver', NoopObserver);
+    vi.stubGlobal('ResizeObserver', NoopObserver);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('filters the services to the one picked, and clears back', { timeout: 30_000 }, async () => {
     const { router } = renderAtUrl(SCHEMA_PAGE, { client: client() });
     await waitFor(() => expect(serviceHeader('users')).toBeTruthy());
