@@ -142,8 +142,8 @@ catalogs:
       specifier: 2.1.0
       version: 2.1.0
     fastify:
-      specifier: 5.12.5
-      version: 5.12.5
+      specifier: 5.12.6
+      version: 5.12.6
     got:
       specifier: 16.1.0
       version: 16.1.0
@@ -898,7 +898,7 @@ importers:
         version: 0.28.1
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       graphql:
         specifier: 'catalog:'
         version: 16.14.2
@@ -1532,7 +1532,7 @@ importers:
         version: 0.28.1
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       graphql:
         specifier: 'catalog:'
         version: 16.14.2
@@ -1583,7 +1583,7 @@ importers:
         version: 16.4.7
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       pino-pretty:
         specifier: 'catalog:'
         version: 11.3.0
@@ -1677,7 +1677,7 @@ importers:
         version: 1.5.0
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       graphql:
         specifier: 'catalog:'
         version: 16.14.2
@@ -1740,7 +1740,7 @@ importers:
         version: 2.1.0
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       fastq:
         specifier: 1.19.1
         version: 1.19.1
@@ -1857,7 +1857,7 @@ importers:
         version: 16.4.7
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       got:
         specifier: 'catalog:'
         version: 16.1.0(patch_hash=2f8be9ec1afd3619d2e771aa4b85b2c6b0762210ce683903f181fce7b36861df)
@@ -1969,7 +1969,7 @@ importers:
         version: 1.0.3
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       fastify-plugin:
         specifier: 6.0.0
         version: 6.0.0
@@ -2236,7 +2236,7 @@ importers:
         version: 10.1.5
       '@fastify/vite':
         specifier: 9.2.0
-        version: 9.2.0(fastify@5.12.5)(vite@7.3.7(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
+        version: 9.2.0(fastify@5.12.6)(vite@7.3.7(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       '@graphiql/plugin-explorer':
         specifier: 4.0.0-alpha.2
         version: 4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.0.0)(@types/node@25.9.9)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@6.0.6(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2377,7 +2377,7 @@ importers:
         version: 6.1.0
       fastify:
         specifier: 'catalog:'
-        version: 5.12.5
+        version: 5.12.6
       graphiql:
         specifier: 4.0.0-alpha.5
         version: 4.0.0-alpha.5(patch_hash=87dedd0023d07eef741569477f4a97265c634e9c37040d4b435268abbd435b6d)(@codemirror/language@6.0.0)(@types/node@25.9.9)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@6.0.6(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -11830,8 +11830,8 @@ packages:
   fastify-plugin@6.0.0:
     resolution: {integrity: sha512-fZOty7z3O7vOliF6d8bHE3wiEh1KcNnKEQensSgTk9C1DvN6nRLS++XVd86v33Hw/8u9Un8A1zDrQ8ujcQDHEg==}
 
-  fastify@5.12.5:
-    resolution: {integrity: sha512-OB2k1dlxs5/NAABqeKV2FUHkSD2BbENsCak8yULVcymn3fHIPDVa9TI3SDnJSWYSllZmSYuZXy2gTnsT+Sut1A==}
+  fastify@5.12.6:
+    resolution: {integrity: sha512-XeErl1DDsxdbhE9RPRJ05iNnfMhHRHHewVNNAJXaGTOaCY4wHb6rEizphhgzBq5YQe4JyqQWPpGd+hLh2PXXJA==}
 
   fastq@1.19.1:
     resolution: {integrity: sha512-GwLTyxkCXjXbxqIhTsMI2Nui8huMPtnxg7krajPJAjnEG/iiOS7i+zCtWGZR9G0NBKbXKh6X9m9UIsYX/N6vvQ==}
@@ -19561,12 +19561,12 @@ snapshots:
       fastq: 1.19.1
       glob: 13.0.6
 
-  '@fastify/vite@9.2.0(fastify@5.12.5)(vite@7.3.7(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))':
+  '@fastify/vite@9.2.0(fastify@5.12.6)(vite@7.3.7(@types/node@25.9.9)(jiti@2.7.0)(less@4.2.0)(lightningcss@1.33.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))':
     dependencies:
       '@fastify/deepmerge': 3.2.1
       '@fastify/middie': 9.3.2
       '@fastify/static': 9.3.0
-      fastify: 5.12.5
+      fastify: 5.12.6
       fastify-plugin: 5.1.0
       fs-extra: 11.4.0
       klaw: 4.1.0
@@ -29407,7 +29407,7 @@ snapshots:
 
   fastify-plugin@6.0.0: {}
 
-  fastify@5.12.5:
+  fastify@5.12.6:
     dependencies:
       '@fastify/ajv-compiler': 4.0.5
       '@fastify/error': 4.2.0
