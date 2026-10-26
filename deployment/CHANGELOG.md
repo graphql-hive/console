@@ -1,5 +1,40 @@
 # hive
 
+## 15.0.0
+
+### Major Changes
+
+- [#8778](https://github.com/graphql-hive/console/pull/8778)
+  [`9d9ba1e`](https://github.com/graphql-hive/console/commit/9d9ba1e74b9fe074ca2c174c3528e793f99482e4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING CHANGE**: Use `RESP3` redis protocol.
+
+- [#8770](https://github.com/graphql-hive/console/pull/8770)
+  [`92ac8ce`](https://github.com/graphql-hive/console/commit/92ac8ce3478842a563e1bc3c74acf1bbc728a721)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING CHANGE**: Move GitHub and Slack
+  integration callbacks from the web app service to the server service and reject invalid
+  organization identifiers.
+
+  Self-hosted deployments must move `INTEGRATION_GITHUB_APP_NAME`, `INTEGRATION_SLACK`,
+  `INTEGRATION_SLACK_CLIENT_ID`, and `INTEGRATION_SLACK_CLIENT_SECRET` from the web app container to
+  the server container. The integration routes (`/api/github/*` and `/api/slack/*`) are now served
+  by the server service (`GRAPHQL_PUBLIC_ORIGIN`).
+
+  The GitHub integration now verifies that the user installing the GitHub App has access to the
+  installation. Self-hosted deployments using the GitHub integration must:
+
+  - enable **"Request user authorization (OAuth) during installation"** in the GitHub App settings
+  - set the GitHub App **Callback URL** to `<GRAPHQL_PUBLIC_ORIGIN>/api/github/callback`
+  - set `INTEGRATION_GITHUB_APP_CLIENT_ID` and `INTEGRATION_GITHUB_APP_CLIENT_SECRET` (from the
+    GitHub App settings) on the server container
+
+  The `/api/github/setup-callback` route has been removed, as GitHub no longer uses the Setup URL
+  once user authorization during installation is enabled. The Slack app redirect URL must be set to
+  `<GRAPHQL_PUBLIC_ORIGIN>/api/slack/callback`.
+
+  The `Mutation.addSlackIntegration` and `Mutation.addGitHubIntegration` and
+  `Query.organizationByGitHubInstallationId` fields have been removed from the GraphQL schema as
+  they are no longer needed for the process of adding either a Slack or GitHub integration.
+
 ## 14.1.2
 
 ### Patch Changes
