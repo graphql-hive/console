@@ -756,12 +756,12 @@ const CreateContractInputModel = z
       return true;
     },
     {
-      message: 'Provide at least one value for either included tags or excluded tags',
+      error: 'Provide at least one value for either included tags or excluded tags',
       path: ['includeTags', 'excludeTags'],
     },
   )
   .refine(args => hasIntersection(new Set(args.includeTags), new Set(args.excludeTags)) === false, {
-    message: 'Included and exclude tags must not intersect',
+    error: 'Included and exclude tags must not intersect',
     path: ['includeTags', 'excludeTags'],
   });
 

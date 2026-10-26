@@ -89,13 +89,7 @@ const SentryConfigSchema = zod.union([
 ]);
 
 const MigrationsSchema = zod.object({
-  MEMBER_ROLES_DEADLINE: emptyString(
-    zod
-      .date({
-        coerce: true,
-      })
-      .optional(),
-  ),
+  MEMBER_ROLES_DEADLINE: emptyString(zod.coerce.date().optional()),
 });
 
 const LogModel = zod.object({

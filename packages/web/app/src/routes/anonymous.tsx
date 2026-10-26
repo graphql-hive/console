@@ -87,7 +87,7 @@ export const authSSORoute = createRoute({
 const AuthOIDCRouteSearch = AuthSharedSearch.extend({
   id: z
     .string({
-      required_error: 'OIDC ID is required',
+      error: issue => (issue.input === undefined ? 'OIDC ID is required' : undefined),
     })
     .optional(),
 });

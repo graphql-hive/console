@@ -6,7 +6,9 @@ const messages = (result: z.SafeParseReturnType<unknown, unknown>) =>
 
 describe('numberInput', () => {
   it('reads a typed number, and a cleared input as required rather than as 0', () => {
-    const required = numberInput(z.number({ required_error: 'Required' }));
+    const required = numberInput(
+      z.number({ error: issue => (issue.input === undefined ? 'Required' : undefined) }),
+    );
     expect(required.parse('14')).toBe(14);
     expect(required.parse(14)).toBe(14);
     expect(messages(required.safeParse(''))).toEqual(['Required']);

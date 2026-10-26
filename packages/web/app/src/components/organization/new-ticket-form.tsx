@@ -33,13 +33,13 @@ const PRIORITY_ITEMS = [
 
 export const NewTicketFormSchema = z.object({
   subject: z.string().min(2, {
-    message: 'Subject must be at least 2 characters.',
+    error: 'Subject must be at least 2 characters.',
   }),
-  priority: z.nativeEnum(SupportTicketPriority, {
-    required_error: 'A priority is required.',
+  priority: z.enum(SupportTicketPriority, {
+    error: issue => (issue.input === undefined ? 'A priority is required.' : undefined),
   }),
   description: z.string().min(5, {
-    message: 'Description must be at least 5 characters.',
+    error: 'Description must be at least 5 characters.',
   }),
 });
 

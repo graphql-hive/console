@@ -20,7 +20,7 @@ const StateModel = z.string().regex(/^[a-f0-9]{64}$/);
 
 const GitHubCallbackQuery = z.object({
   installation_id: z
-    .string({ required_error: 'Invalid installation_id' })
+    .string({ error: issue => (issue.input === undefined ? 'Invalid installation_id' : undefined) })
     .regex(/^\d+$/, 'Invalid installation_id'),
   code: z.string().min(1).max(1000).optional(),
   state: StateModel.optional(),
@@ -31,7 +31,7 @@ const GitHubAccessTokenResponse = z.object({
 });
 
 const SlackCallbackQuery = z.object({
-  code: z.string({ required_error: 'Invalid code' }),
+  code: z.string({ error: issue => (issue.input === undefined ? 'Invalid code' : undefined) }),
   state: StateModel,
 });
 

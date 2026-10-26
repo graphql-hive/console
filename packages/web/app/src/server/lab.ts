@@ -17,22 +17,28 @@ const LabEndpoint_GetLab = graphql(/* GraphQL */ `
 
 const LabParams = z.object({
   organizationSlug: z.string({
-    required_error:
-      'Missing organizationSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)',
+    error: issue =>
+      issue.input === undefined
+        ? 'Missing organizationSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)'
+        : undefined,
   }),
   projectSlug: z.string({
-    required_error:
-      'Missing projectSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)',
+    error: issue =>
+      issue.input === undefined
+        ? 'Missing projectSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)'
+        : undefined,
   }),
   targetSlug: z.string({
-    required_error:
-      'Missing targetSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)',
+    error: issue =>
+      issue.input === undefined
+        ? 'Missing targetSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)'
+        : undefined,
   }),
 });
 
 const LabBody = z.object({
   query: z.string({
-    required_error: 'Missing query',
+    error: issue => (issue.input === undefined ? 'Missing query' : undefined),
   }),
   variables: z.record(z.unknown()).optional(),
   operationName: z.string().optional(),

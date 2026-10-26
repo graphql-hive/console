@@ -55,8 +55,10 @@ const EnvironmentModel = zod.object({
   WEB_APP_URL: zod.url(),
   GRAPHQL_PUBLIC_ORIGIN: zod
     .string({
-      required_error:
-        'GRAPHQL_PUBLIC_ORIGIN is required (see: https://github.com/graphql-hive/platform/pull/4288#issue-2195509699)',
+      error: issue =>
+        issue.input === undefined
+          ? 'GRAPHQL_PUBLIC_ORIGIN is required (see: https://github.com/graphql-hive/platform/pull/4288#issue-2195509699)'
+          : undefined,
     })
     .url(),
   SCHEMA_POLICY_ENDPOINT: emptyString(zod.url().optional()),

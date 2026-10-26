@@ -736,7 +736,7 @@ const AppDeploymentProtectionConfigurationModel = z.object({
 const TargetGraphQLEndpointUrlModel = zod
   .string()
   .max(300, {
-    message: 'Must be less than 300 characters.',
+    error: 'Must be less than 300 characters.',
   })
   .url()
   .nullable();

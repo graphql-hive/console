@@ -131,7 +131,7 @@ export async function registerSupertokensAtHome(
 
   const OIDCIdLookupSchema = z.object({
     slug: z.string({
-      required_error: 'Slug is required',
+      error: issue => (issue.input === undefined ? 'Slug is required' : undefined),
     }),
   });
 

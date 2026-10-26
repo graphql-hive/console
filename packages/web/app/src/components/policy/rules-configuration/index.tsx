@@ -16,7 +16,7 @@ export const PolicyFormSchema = z.object({
   rules: z.record(
     z.object({
       enabled: z.boolean(),
-      severity: z.nativeEnum(RuleInstanceSeverityLevel),
+      severity: z.enum(RuleInstanceSeverityLevel),
       config: z.unknown(),
     }),
   ),
