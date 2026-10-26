@@ -1,5 +1,108 @@
 # hive
 
+## 15.0.0
+
+### Major Changes
+
+- [#8778](https://github.com/graphql-hive/console/pull/8778)
+  [`9d9ba1e`](https://github.com/graphql-hive/console/commit/9d9ba1e74b9fe074ca2c174c3528e793f99482e4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING CHANGE**: Use `RESP3` redis protocol.
+
+- [#8770](https://github.com/graphql-hive/console/pull/8770)
+  [`92ac8ce`](https://github.com/graphql-hive/console/commit/92ac8ce3478842a563e1bc3c74acf1bbc728a721)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING CHANGE**: Move GitHub and Slack
+  integration callbacks from the web app service to the server service and reject invalid
+  organization identifiers.
+
+  Self-hosted deployments must move `INTEGRATION_GITHUB_APP_NAME`, `INTEGRATION_SLACK`,
+  `INTEGRATION_SLACK_CLIENT_ID`, and `INTEGRATION_SLACK_CLIENT_SECRET` from the web app container to
+  the server container. The integration routes (`/api/github/*` and `/api/slack/*`) are now served
+  by the server service (`GRAPHQL_PUBLIC_ORIGIN`).
+
+  The GitHub integration now verifies that the user installing the GitHub App has access to the
+  installation. Self-hosted deployments using the GitHub integration must:
+
+  - enable **"Request user authorization (OAuth) during installation"** in the GitHub App settings
+  - set the GitHub App **Callback URL** to `<GRAPHQL_PUBLIC_ORIGIN>/api/github/callback`
+  - set `INTEGRATION_GITHUB_APP_CLIENT_ID` and `INTEGRATION_GITHUB_APP_CLIENT_SECRET` (from the
+    GitHub App settings) on the server container
+
+  The `/api/github/setup-callback` route has been removed, as GitHub no longer uses the Setup URL
+  once user authorization during installation is enabled. The Slack app redirect URL must be set to
+  `<GRAPHQL_PUBLIC_ORIGIN>/api/slack/callback`.
+
+  The `Mutation.addSlackIntegration` and `Mutation.addGitHubIntegration` and
+  `Query.organizationByGitHubInstallationId` fields have been removed from the GraphQL schema as
+  they are no longer needed for the process of adding either a Slack or GitHub integration.
+
+## 14.1.2
+
+### Patch Changes
+
+- [#8768](https://github.com/graphql-hive/console/pull/8768)
+  [`e93f335`](https://github.com/graphql-hive/console/commit/e93f3359371464f54a454a1994eb563299c5009d)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support using AWS IAM credentials for S3 access
+  from the artifacts Lambda instead of static access keys.
+
+  To use the Lambda execution role, grant it `s3:GetObject` access to the artifact bucket and
+  configure the Lambda environment variables as follows:
+
+  ```sh
+  AWS_S3_IAM_AUTH_ENABLED=1
+  AWS_S3_ENDPOINT=https://s3.us-east-1.amazonaws.com
+  AWS_S3_BUCKET_NAME=my-artifacts-bucket
+  ```
+
+- [#8763](https://github.com/graphql-hive/console/pull/8763)
+  [`8b21b39`](https://github.com/graphql-hive/console/commit/8b21b39d968773ac87e26ad73562062db973e75b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Bump Node.js version from
+  [`24.22.0`](https://nodejs.org/en/blog/release/v24.22.0) to
+  [`24.22.1`](https://nodejs.org/en/blog/release/v24.22.1). Address
+  [disclosed vulnerabilities](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases).
+
+- [#8765](https://github.com/graphql-hive/console/pull/8765)
+  [`8b4c2ea`](https://github.com/graphql-hive/console/commit/8b4c2ea8936cf4d11b5b43ccdfc00827a83c72a3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Strip whitespace from oidc related urls and trim
+  them when updating/creating an integration to avoid broker request failures.
+
+- [#8763](https://github.com/graphql-hive/console/pull/8763)
+  [`8b21b39`](https://github.com/graphql-hive/console/commit/8b21b39d968773ac87e26ad73562062db973e75b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-q3jh-wrc6-jgq8](https://github.com/advisories/GHSA-q3jh-wrc6-jgq8),
+  [GHSA-8r9p-f939-6h3c](https://github.com/advisories/GHSA-8r9p-f939-6h3c), and
+  [GHSA-gfr2-rv44-r23c](https://github.com/advisories/GHSA-gfr2-rv44-r23c).
+
+- [#8775](https://github.com/graphql-hive/console/pull/8775)
+  [`ca1cb72`](https://github.com/graphql-hive/console/commit/ca1cb7261076dfe69659d1fa891064cf71e66c3f)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address
+  [GHSA-cg2g-xh64-v4q7](https://github.com/advisories/GHSA-cg2g-xh64-v4q7).
+
+- [#8790](https://github.com/graphql-hive/console/pull/8790)
+  [`ec28f55`](https://github.com/graphql-hive/console/commit/ec28f5546ea888c3036fb3bb0f5ebb3edd3bb2f0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-xhq7-xmqj-769h](https://github.com/advisories/GHSA-xhq7-xmqj-769h),
+  [GHSA-333x-w4r6-6crp](https://github.com/advisories/GHSA-333x-w4r6-6crp),
+  [GHSA-wjr9-j795-jxcr](https://github.com/advisories/GHSA-wjr9-j795-jxcr),
+  [GHSA-w74x-v6f9-j3xg](https://github.com/advisories/GHSA-w74x-v6f9-j3xg),
+  [GHSA-389g-gv7q-r4x8](https://github.com/advisories/GHSA-389g-gv7q-r4x8),
+  [GHSA-m943-m63m-w62w](https://github.com/advisories/GHSA-m943-m63m-w62w),
+  [GHSA-8c8m-p3m8-cjg8](https://github.com/advisories/GHSA-8c8m-p3m8-cjg8),
+  [GHSA-85x2-q946-cp5h](https://github.com/advisories/GHSA-85x2-q946-cp5h),
+  [GHSA-rxp7-6hxx-x8q5](https://github.com/advisories/GHSA-rxp7-6hxx-x8q5),
+  [GHSA-xjj6-f33q-929c](https://github.com/advisories/GHSA-xjj6-f33q-929c), and
+  [GHSA-4qv8-2p9j-2685](https://github.com/advisories/GHSA-4qv8-2p9j-2685).
+
+- [#8754](https://github.com/graphql-hive/console/pull/8754)
+  [`2fe05b9`](https://github.com/graphql-hive/console/commit/2fe05b9268dc9d906819afbc20c5d79b0f5552f2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Schema publish now returns a `SchemaPublishError`
+  instead of a generic error when the request has no schema source or both `sdl` and `schema`, when
+  the SDL cannot be parsed, or when the metadata is not valid JSON.
+
+- [#8766](https://github.com/graphql-hive/console/pull/8766)
+  [`2c6998b`](https://github.com/graphql-hive/console/commit/2c6998bca0a0c5514866720521fc2ae2f6134cd4)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use trace span names prefixed with `hive_console.`
+  instead of `hive.` to avoid confusion with gateway hive sdk span attributes.
+
 ## 14.1.1
 
 ### Patch Changes

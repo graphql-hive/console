@@ -89,10 +89,11 @@ function useWorkerPool(theme: PierreTheme) {
   return useContext(GetWorkerPoolContext)?.(theme);
 }
 
-// Has a height because the virtualizer only renders lines inside its own scroll region.
+// Has a height because the virtualizer only renders lines inside its own scroll region. A pane
+// that fills the viewport raises the cap through the variable.
 export function CodeScrollArea(props: { className?: string; children: ReactNode }) {
   return (
-    <Virtualizer className={cn('max-h-[70vh] overflow-auto', props.className)}>
+    <Virtualizer className={cn('max-h-[var(--code-max-h,70vh)] overflow-auto', props.className)}>
       {props.children}
     </Virtualizer>
   );
@@ -107,6 +108,10 @@ export function File<LAnnotation = undefined, Caret = undefined>(
     <WorkerPoolContext.Provider value={pool}>
       <FileImpl
         {...props}
+        // A file with no height yet is a "bottom" anchor at offset 0 to the Virtualizer's
+        // getScrollAnchor, so its first layout scrolls the block to the end. Any height makes it
+        // a "top" anchor. Remove once @pierre/diffs guards zero-height files.
+        style={{ minHeight: 1, ...props.style }}
         options={{
           theme: pierreTheme(resolvedTheme),
           themeType: resolvedTheme,

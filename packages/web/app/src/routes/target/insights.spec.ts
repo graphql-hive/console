@@ -21,8 +21,7 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
 }));
 // ECharts draws on a canvas, which jsdom does not implement.
 vi.mock('@/components/ui/primitives/chart/chart', () => ({ Chart: () => null }));
-vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
-vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
+vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 
 const TARGET = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 
@@ -168,6 +167,23 @@ describe('insights route', () => {
 });
 
 describe('operation route', () => {
+  // The operation body virtualizes with observers jsdom does not have; nothing here scrolls.
+  beforeEach(() => {
+    class NoopObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
+    vi.stubGlobal('IntersectionObserver', NoopObserver);
+    vi.stubGlobal('ResizeObserver', NoopObserver);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('receives the range the list row carries', { timeout: 30_000 }, async () => {
     const client = createTestClient(fixtures());
     renderAtUrl(INSIGHTS, { client });

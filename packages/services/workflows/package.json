@@ -32,11 +32,11 @@
     "bentocache": "catalog:",
     "dotenv": "catalog:",
     "got": "catalog:",
-    "graphile-worker": "0.16.6",
+    "graphile-worker": "0.18.0",
     "graphql": "catalog:",
     "graphql-yoga": "catalog:",
     "mjml": "4.14.0",
-    "nodemailer": "10.0.11",
+    "nodemailer": "10.1.4",
     "p-limit": "catalog:",
     "sendmail": "1.6.1",
     "zod": "3.25.76"
