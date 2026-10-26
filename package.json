@@ -197,7 +197,8 @@
       "@graphql-hive/yoga": "workspace:",
       "@graphql-hive/core": "workspace:",
       "@graphql-tools/url-loader@7.x.x>@graphql-tools/executor-legacy-ws": "-",
-      "graphql@16.x.x": "catalog:"
+      "graphql@16.x.x": "catalog:",
+      "body-parser@<=1.20.9": "1.20.9"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
