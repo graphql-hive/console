@@ -127,7 +127,7 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{env=\"prod\"} |= `$requestId` | json | __error__ != `JSONParserErr` | level > 30 | line_format `[{{.hostname}}] {{trim .msg}})`",
+          "expr": "{namespace=~\".+\"} |= `$requestId` | json | __error__ != `JSONParserErr` | level > 30 | line_format `[{{.hostname}}] {{trim .msg}})`",
           "hide": false,
           "key": "Q-4f74f5b0-5837-415a-b726-56138193c25e-0",
           "legendFormat": "",
@@ -172,7 +172,7 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{env=\"prod\"} |= `$requestId` | json | __error__ != `JSONParserErr` | line_format `[{{.hostname}}] {{trim .msg}})`",
+          "expr": "{namespace=~\".+\"} |= `$requestId` | json | __error__ != `JSONParserErr` | line_format `[{{.hostname}}] {{trim .msg}})`",
           "hide": false,
           "key": "Q-4f74f5b0-5837-415a-b726-56138193c25e-0",
           "queryType": "range",
