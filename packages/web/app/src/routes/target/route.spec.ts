@@ -16,8 +16,7 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
-vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
-vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
+vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 
 const SCHEMA_PAGE = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 
@@ -62,6 +61,23 @@ const serviceHeader = (name: string) => document.getElementById(`service-${name}
 const clearButton = () => screen.queryByRole('button', { name: 'Clear service' });
 
 describe('target schema page', () => {
+  // The SDL viewer virtualizes with observers jsdom does not have; nothing here scrolls.
+  beforeEach(() => {
+    class NoopObserver {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
+    vi.stubGlobal('IntersectionObserver', NoopObserver);
+    vi.stubGlobal('ResizeObserver', NoopObserver);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('filters the services to the one picked, and clears back', { timeout: 30_000 }, async () => {
     const { router } = renderAtUrl(SCHEMA_PAGE, { client: client() });
     await waitFor(() => expect(serviceHeader('users')).toBeTruthy());

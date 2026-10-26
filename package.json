@@ -206,8 +206,6 @@
       "@apollo/federation@0.38.1": "patches/@apollo__federation@0.38.1.patch",
       "got@16.1.0": "patches/got@16.1.0.patch",
       "oclif@4.22.65": "patches/oclif@4.22.65.patch",
-      "graphiql@4.0.0-alpha.5": "patches/graphiql@4.0.0-alpha.5.patch",
-      "@graphiql/react@1.0.0-alpha.4": "patches/@graphiql__react@1.0.0-alpha.4.patch",
       "@slonik/pg-driver@48.19.0": "patches/@slonik__pg-driver@48.19.0.patch"
     },
     "onlyBuiltDependencies": [
