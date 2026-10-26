@@ -1,6 +1,6 @@
 module github.com/graphql-hive/console/docker/configs/otel-collector/extension-hiveauth
 
-go 1.26.0
+go 1.26.10
 
 require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
