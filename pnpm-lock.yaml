@@ -2208,8 +2208,8 @@ importers:
         specifier: 4.14.0
         version: 4.14.0(encoding@0.1.13)
       nodemailer:
-        specifier: 10.0.11
-        version: 10.0.11
+        specifier: 10.1.4
+        version: 10.1.4
       p-limit:
         specifier: 'catalog:'
         version: 6.2.0
@@ -14279,8 +14279,8 @@ packages:
   nodemailer-shared@1.1.0:
     resolution: {integrity: sha512-68xW5LSyPWv8R0GLm6veAvm7E+XFXkVgvE3FW0FGxNMMZqMkPFeGDVALfR1DPdSfcoO36PnW7q5AAOgFImEZGg==}
 
-  nodemailer@10.0.11:
-    resolution: {integrity: sha512-/c4P7U7aGpiNu2Rl08q525q2zECkUpSaf2zQPgIStCcAjHAkkQQKwD4sTyi3l91mGcLQrKzL1syXPHymo+Ogtw==}
+  nodemailer@10.1.4:
+    resolution: {integrity: sha512-EsMnOR2oRv4LGnWvHgcVYkkQ4O2j8KO4WTw6l+PHR4sOXo8SAgIraxtEnGDmotjbhv0hDsu3IuDIFZm8iXwO4A==}
     engines: {node: '>=20.0.0'}
 
   noms@0.0.0:
@@ -32402,7 +32402,7 @@ snapshots:
     dependencies:
       nodemailer-fetch: 1.6.0
 
-  nodemailer@10.0.11: {}
+  nodemailer@10.1.4: {}
 
   noms@0.0.0:
     dependencies:
