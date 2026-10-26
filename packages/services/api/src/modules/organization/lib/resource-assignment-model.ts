@@ -40,7 +40,7 @@ type AssignedAppDeployments = z.TypeOf<typeof AssignedAppDeploymentsModel>;
 
 export const TargetAssignmentModel = z.object({
   type: z.literal('target'),
-  id: z.string().uuid(),
+  id: z.uuid(),
   services: AssignedServicesModel,
   appDeployments: AssignedAppDeploymentsModel,
 });
@@ -59,7 +59,7 @@ type AssignedTargets = z.TypeOf<typeof AssignedTargetsModel>;
 
 const ProjectAssignmentModel = z.object({
   type: z.literal('project'),
-  id: z.string().uuid(),
+  id: z.uuid(),
   targets: AssignedTargetsModel,
 });
 

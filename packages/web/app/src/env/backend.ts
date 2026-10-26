@@ -127,7 +127,7 @@ function buildConfig() {
 
   for (const config of Object.values(configs)) {
     if (config.success === false) {
-      environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+      environmentErrors.push(config.error.toString());
     }
   }
 

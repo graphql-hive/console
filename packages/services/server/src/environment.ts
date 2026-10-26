@@ -73,7 +73,7 @@ const EnvironmentModel = zod.object({
   // the access superadmins had before this was configurable.
   SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS: emptyString(zod.string().optional()),
   // Users provisioned (via SCIM) by this organization are treated as superadmins.
-  SUPERADMIN_ORGANIZATION_ID: emptyString(zod.string().uuid().optional()),
+  SUPERADMIN_ORGANIZATION_ID: emptyString(zod.uuid().optional()),
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
     zod
       .union([zod.literal('1'), zod.literal('0')])
@@ -422,7 +422,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+    environmentErrors.push(config.error.toString());
   }
 }
 

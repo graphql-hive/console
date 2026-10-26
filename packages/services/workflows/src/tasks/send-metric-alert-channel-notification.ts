@@ -18,8 +18,8 @@ const tracer = trace.getTracer('metric-alert-evaluator');
 export const SendMetricAlertChannelNotificationTask = defineTask({
   name: 'sendMetricAlertChannelNotification',
   schema: z.object({
-    stateLogId: z.string().uuid(),
-    channelId: z.string().uuid(),
+    stateLogId: z.uuid(),
+    channelId: z.uuid(),
   }),
 });
 

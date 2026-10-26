@@ -21,7 +21,8 @@ export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']
   if (!result.success) {
     return {
       error: {
-        message: result.error.formErrors.fieldErrors?.newBase?.[0] ?? 'Please check your input.',
+        message:
+          z.flattenError(result.error).fieldErrors?.newBase?.[0] ?? 'Please check your input.',
       },
     };
   }

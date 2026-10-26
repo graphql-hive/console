@@ -109,8 +109,8 @@ export class AuthManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            displayName: result.error.formErrors.fieldErrors.displayName?.[0],
-            fullName: result.error.formErrors.fieldErrors.fullName?.[0],
+            displayName: z.flattenError(result.error).fieldErrors.displayName?.[0],
+            fullName: z.flattenError(result.error).fieldErrors.fullName?.[0],
           },
         },
       };

@@ -49,7 +49,7 @@ export function parseClickHouseConfigFromEnvironment(
   if (!parseResult.success) {
     return {
       type: 'error',
-      errors: [JSON.stringify(parseResult.error.format(), null, 4)],
+      errors: [parseResult.error.toString()],
     };
   }
 

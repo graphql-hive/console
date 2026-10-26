@@ -65,7 +65,7 @@ function ensureData<
         rows: number;
         data: unknown[];
       },
->(parsed: z.SafeParseReturnType<unknown, T>, label: string): DataProp<T> {
+>(parsed: z.ZodSafeParseResult<T>, label: string): DataProp<T> {
   if (!parsed.success) {
     logError(parsed.error);
     throw new Error('Failed to parse response of ' + label);

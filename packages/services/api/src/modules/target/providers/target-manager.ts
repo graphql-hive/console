@@ -394,10 +394,10 @@ export class TargetManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            period: validationResult.error.formErrors.fieldErrors.period?.[0],
-            percentage: validationResult.error.formErrors.fieldErrors.percentage?.[0],
-            requestCount: validationResult.error.formErrors.fieldErrors.requestCount?.[0],
-            targetIds: validationResult.error.formErrors.fieldErrors.targetIds?.[0],
+            period: z.flattenError(validationResult.error).fieldErrors.period?.[0],
+            percentage: z.flattenError(validationResult.error).fieldErrors.percentage?.[0],
+            requestCount: z.flattenError(validationResult.error).fieldErrors.requestCount?.[0],
+            targetIds: z.flattenError(validationResult.error).fieldErrors.targetIds?.[0],
           },
         },
       };
@@ -471,7 +471,8 @@ export class TargetManager {
     if (!slugParseResult.success) {
       return {
         ok: false,
-        message: slugParseResult.error.formErrors.formErrors?.[0] ?? 'Please check your input.',
+        message:
+          z.flattenError(slugParseResult.error).formErrors?.[0] ?? 'Please check your input.',
       };
     }
 
@@ -680,12 +681,14 @@ export class TargetManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            minDaysInactive: validationResult.error.formErrors.fieldErrors.minDaysInactive?.[0],
-            minDaysSinceCreation:
-              validationResult.error.formErrors.fieldErrors.minDaysSinceCreation?.[0],
-            maxTrafficPercentage:
-              validationResult.error.formErrors.fieldErrors.maxTrafficPercentage?.[0],
-            trafficPeriodDays: validationResult.error.formErrors.fieldErrors.trafficPeriodDays?.[0],
+            minDaysInactive: z.flattenError(validationResult.error).fieldErrors
+              .minDaysInactive?.[0],
+            minDaysSinceCreation: z.flattenError(validationResult.error).fieldErrors
+              .minDaysSinceCreation?.[0],
+            maxTrafficPercentage: z.flattenError(validationResult.error).fieldErrors
+              .maxTrafficPercentage?.[0],
+            trafficPeriodDays: z.flattenError(validationResult.error).fieldErrors
+              .trafficPeriodDays?.[0],
           },
         },
       };
@@ -745,7 +748,7 @@ const BreakingChangeConfigurationModel = z.object({
   percentage: PercentageModel.nullable().optional(),
   requestCount: z.number().min(1, 'Request count must be at least 1.').nullable().optional(),
   targetIds: z
-    .array(z.string().uuid('Incorrect UUID provided.'))
+    .array(z.uuid({ error: 'Incorrect UUID provided.' }))
     .min(1, 'At least one target must be provided.')
     .nullable()
     .optional(),

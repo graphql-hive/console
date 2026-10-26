@@ -47,7 +47,7 @@ import {
 } from './schema-version-store';
 
 const ENABLE_EXTERNAL_COMPOSITION_SCHEMA = z.object({
-  endpoint: z.string().url().nonempty(),
+  endpoint: z.url().nonempty(),
   secret: z.string().nonempty(),
 });
 
@@ -689,8 +689,8 @@ export class SchemaManager {
               __typename: 'UpdateSchemaCompositionExternalError' as const,
               message: parseResult.error.message,
               inputErrors: {
-                endpoint: parseResult.error.formErrors.fieldErrors.endpoint?.[0],
-                secret: parseResult.error.formErrors.fieldErrors.secret?.[0],
+                endpoint: z.flattenError(parseResult.error).fieldErrors.endpoint?.[0],
+                secret: z.flattenError(parseResult.error).fieldErrors.secret?.[0],
               },
             },
           };

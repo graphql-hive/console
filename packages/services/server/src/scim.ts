@@ -46,7 +46,7 @@ export function getSCIMRequestMetricLabels(
 }
 
 const EmailSchemaModel = z.object({
-  value: z.string().email(),
+  value: z.email(),
   type: z.string().optional(),
   primary: z.boolean().optional(),
 });
@@ -120,10 +120,13 @@ const GetGroupQueryModel = z.object({
   excludedAttributes: z.literal('members').optional(),
 });
 
-const GetGroupsQueryModel = QuerySchemaModel.merge(GetGroupQueryModel);
+const GetGroupsQueryModel = z.object({
+  ...QuerySchemaModel.shape,
+  ...GetGroupQueryModel.shape,
+});
 
 const SharedUserRouteParams = z.object({
-  userId: z.string().uuid(),
+  userId: z.uuid(),
 });
 
 const SharedGroupRouteParams = z.object({
@@ -131,7 +134,7 @@ const SharedGroupRouteParams = z.object({
 });
 
 const GroupMemberSchema = z.object({
-  value: z.string().uuid(),
+  value: z.uuid(),
 });
 
 const PostGroupsBodyModel = z.object({
@@ -159,7 +162,7 @@ const RemoveOperationSchema = z.union([
           const [, userId] = path.match(/^members\[value eq "([^"]+)"\]$/)!;
           return userId;
         })
-        .pipe(z.string().uuid()),
+        .pipe(z.uuid()),
     })
     .transform(value => ({
       op: value.op,
@@ -790,7 +793,7 @@ export const createSCIMPlugin =
         )?.toLowerCase() ?? null;
 
       if (!rawEmail) {
-        if (z.string().email().safeParse(bodyParse.data.userName).success) {
+        if (z.email().safeParse(bodyParse.data.userName).success) {
           rawEmail = bodyParse.data.userName.toLowerCase();
         }
       }
@@ -1061,7 +1064,7 @@ export const createSCIMPlugin =
         }
 
         if (operation.path === 'emails[type eq "work"].value') {
-          const email = z.string().email().safeParse(operation.value);
+          const email = z.email().safeParse(operation.value);
           if (!email.success) {
             hasParseError = true;
             break;
@@ -1177,7 +1180,7 @@ export const createSCIMPlugin =
             break;
           }
           case 'id': {
-            if (!z.string().uuid().safeParse(value).success) {
+            if (!z.uuid().safeParse(value).success) {
               break;
             }
             user = await usersStore.findUserProvisionedByOrganizationIdAndId(
@@ -1297,7 +1300,7 @@ export const createSCIMPlugin =
             break;
           }
           case 'id': {
-            if (!z.string().uuid().safeParse(value).success) {
+            if (!z.uuid().safeParse(value).success) {
               break;
             }
             group = await groupStore.getGroupByOrganizationIdAndGroupId(

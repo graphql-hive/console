@@ -14,7 +14,7 @@ import { RedisRateLimiter } from '../../shared/providers/redis-rate-limiter';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 
 const EmailVerificationModelBase = zod.object({
-  id: zod.string().uuid(),
+  id: zod.uuid(),
   userIdentityId: zod.string(),
   email: zod.email(),
   createdAt: zod.number().transform(v => new Date(v)),

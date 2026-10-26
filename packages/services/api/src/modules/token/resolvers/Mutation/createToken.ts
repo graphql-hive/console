@@ -19,7 +19,7 @@ export const createToken: NonNullable<MutationResolvers['createToken']> = async 
   if (!result.success) {
     return {
       error: {
-        message: result.error.formErrors.fieldErrors.name?.[0] ?? 'Please check your input.',
+        message: z.flattenError(result.error).fieldErrors.name?.[0] ?? 'Please check your input.',
       },
     };
   }

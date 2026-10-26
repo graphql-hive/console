@@ -993,7 +993,7 @@ export async function createStorage(
           .then(
             z.object({
               roleId: z.string(),
-              assignedResources: z.record(z.any()).nullable(),
+              assignedResources: z.record(z.string(), z.any()).nullable(),
             }).parse,
           );
 
@@ -2612,7 +2612,7 @@ export async function createStorage(
         const withChanges = args[0].withChanges ?? true;
         const schemaCheckIds = args
           .map(arg => arg.schemaCheckId)
-          .filter(schemaCheckId => z.string().uuid().safeParse(schemaCheckId).success);
+          .filter(schemaCheckId => z.uuid().safeParse(schemaCheckId).success);
 
         if (schemaCheckIds.length === 0) {
           return args.map(() => null);
@@ -3465,7 +3465,7 @@ export const FeatureFlagsModel = z
   })
   .optional()
   .nullable()
-  .default({})
+  .prefault({})
   .transform(
     val =>
       val ?? {
@@ -3972,7 +3972,7 @@ const UserBase = z.object({
 
 export const UserModel = z.union([
   UserBase.extend({
-    provisionedByOrganizationId: z.string().uuid(),
+    provisionedByOrganizationId: z.uuid(),
     provisioningStatus: z.enum(['pendingConfirmation', 'active']),
     externalId: z.string(),
   }),

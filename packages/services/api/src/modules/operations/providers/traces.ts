@@ -618,7 +618,7 @@ const traceFields = sql`
 
 const TraceModel = z.object({
   traceId: z.string(),
-  targetId: z.string().uuid(),
+  targetId: z.uuid(),
   spanId: z.string(),
   timestamp: z.string(),
   httpStatusCode: z.string(),

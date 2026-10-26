@@ -61,7 +61,7 @@ export const ChannelFormSchema = z
     if (isWebhookLike(values.type)) {
       if (!values.endpoint) {
         ctx.addIssue({ code: 'custom', path: ['endpoint'], message: 'Must enter endpoint' });
-      } else if (!z.string().url().safeParse(values.endpoint).success) {
+      } else if (!z.url().safeParse(values.endpoint).success) {
         ctx.addIssue({ code: 'custom', path: ['endpoint'], message: 'Must be a valid URL' });
       }
     }

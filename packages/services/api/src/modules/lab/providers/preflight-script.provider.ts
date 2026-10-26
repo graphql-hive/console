@@ -109,7 +109,7 @@ export class PreflightScriptProvider {
     if (validationResult.error) {
       return {
         error: {
-          message: validationResult.error.errors[0].message,
+          message: validationResult.error.issues[0].message,
         },
       };
     }
@@ -151,7 +151,7 @@ export class PreflightScriptProvider {
     if (error) {
       return {
         error: {
-          message: error.errors[0].message,
+          message: error.issues[0].message,
         },
       };
     }

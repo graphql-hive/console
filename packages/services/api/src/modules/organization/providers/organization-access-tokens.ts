@@ -70,10 +70,10 @@ const DescriptionInputModel = z
 
 const OrganizationAccessTokenModel = z
   .object({
-    id: z.string().uuid(),
-    organizationId: z.string().uuid(),
-    projectId: z.string().uuid().nullable(),
-    userId: z.string().uuid().nullable(),
+    id: z.uuid(),
+    organizationId: z.uuid(),
+    projectId: z.uuid().nullable(),
+    userId: z.uuid().nullable(),
     createdAt: z.string(),
     title: z.string(),
     description: z.string().nullable(),

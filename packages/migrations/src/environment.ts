@@ -1,5 +1,5 @@
 import { config as dotenv } from 'dotenv';
-import zod, { type ZodSafeParseResult } from 'zod';
+import zod from 'zod';
 import {
   parseClickHouseConfigFromEnvironment,
   parsePostgresConfigFromEnvironment,
@@ -45,7 +45,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+    environmentErrors.push(config.error.toString());
   }
 }
 

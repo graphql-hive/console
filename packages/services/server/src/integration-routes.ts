@@ -74,7 +74,7 @@ export function registerIntegrationRoutes(
     withInjector(async (req, res, injector) => {
       const queryResult = GitHubCallbackQuery.safeParse(req.query);
       if (!queryResult.success) {
-        return res.status(400).send(queryResult.error.flatten().fieldErrors);
+        return res.status(400).send(z.flattenError(queryResult.error).fieldErrors);
       }
 
       const { installation_id: installationId, code, state } = queryResult.data;
@@ -144,7 +144,7 @@ export function registerIntegrationRoutes(
 
       const paramsResult = ConnectParams.safeParse(req.params);
       if (!paramsResult.success) {
-        return res.status(400).send(paramsResult.error.flatten().fieldErrors);
+        return res.status(400).send(z.flattenError(paramsResult.error).fieldErrors);
       }
 
       const { organizationSlug } = paramsResult.data;
@@ -179,7 +179,7 @@ export function registerIntegrationRoutes(
 
       const queryResult = SlackCallbackQuery.safeParse(req.query);
       if (!queryResult.success) {
-        return res.status(400).send(queryResult.error.flatten().fieldErrors);
+        return res.status(400).send(z.flattenError(queryResult.error).fieldErrors);
       }
 
       const { code, state } = queryResult.data;
@@ -235,7 +235,7 @@ export function registerIntegrationRoutes(
 
       const paramsResult = ConnectParams.safeParse(req.params);
       if (!paramsResult.success) {
-        return res.status(400).send(paramsResult.error.flatten().fieldErrors);
+        return res.status(400).send(z.flattenError(paramsResult.error).fieldErrors);
       }
 
       const { organizationSlug } = paramsResult.data;

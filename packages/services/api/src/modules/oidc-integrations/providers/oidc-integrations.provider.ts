@@ -580,7 +580,7 @@ export class OIDCIntegrationsProvider {
   }
 
   async registerDomain(args: { oidcIntegrationId: string; domain: string }) {
-    const parsedId = zod.string().uuid().safeParse(args.oidcIntegrationId);
+    const parsedId = zod.uuid().safeParse(args.oidcIntegrationId);
 
     if (parsedId.error) {
       this.session.raise('oidc:modify');
@@ -646,7 +646,7 @@ export class OIDCIntegrationsProvider {
   }
 
   async requestDomainChallenge(args: { domainId: string }) {
-    const parsedId = zod.string().uuid().safeParse(args.domainId);
+    const parsedId = zod.uuid().safeParse(args.domainId);
 
     if (parsedId.error) {
       this.logger.debug('the provided domain ID is invalid.');
@@ -713,7 +713,7 @@ export class OIDCIntegrationsProvider {
 
   async verifyDomainChallenge(args: { domainId: string }) {
     this.logger.debug('attempt to verify the domain challenge.');
-    const parsedId = zod.string().uuid().safeParse(args.domainId);
+    const parsedId = zod.uuid().safeParse(args.domainId);
 
     if (parsedId.error) {
       this.logger.debug('invalid it provided.');
@@ -836,7 +836,7 @@ export class OIDCIntegrationsProvider {
   }
 
   async deleteDomain(args: { domainId: string }) {
-    const parsedId = zod.string().uuid().safeParse(args.domainId);
+    const parsedId = zod.uuid().safeParse(args.domainId);
 
     if (parsedId.error) {
       return {

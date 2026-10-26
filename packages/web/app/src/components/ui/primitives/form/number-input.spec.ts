@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { numberInput } from './number-input';
 
-const messages = (result: z.SafeParseReturnType<unknown, unknown>) =>
+const messages = (result: z.ZodSafeParseResult<unknown>) =>
   result.success ? [] : result.error.issues.map(issue => issue.message);
 
 describe('numberInput', () => {

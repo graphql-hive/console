@@ -40,7 +40,7 @@ const LabBody = z.object({
   query: z.string({
     error: issue => (issue.input === undefined ? 'Missing query' : undefined),
   }),
-  variables: z.record(z.unknown()).optional(),
+  variables: z.record(z.string(), z.unknown()).optional(),
   operationName: z.string().optional(),
 });
 
@@ -51,7 +51,7 @@ export function connectLab(server: FastifyInstance) {
     const labParamsResult = LabParams.safeParse(req.params);
 
     if (!labParamsResult.success) {
-      void res.status(400).send(labParamsResult.error.flatten().fieldErrors);
+      void res.status(400).send(z.flattenError(labParamsResult.error).fieldErrors);
       return;
     }
 

@@ -583,7 +583,7 @@ export class SchemaPublisher {
           warnings: [],
           errors: [
             {
-              message: result.error.errors[0].message,
+              message: result.error.issues[0].message,
             },
           ],
         } as const;

@@ -582,7 +582,7 @@ export class OrganizationManager {
     });
 
     const InputModel = z.object({
-      email: z.string().email().max(128, 'Email must be at most 128 characters long'),
+      email: z.email().max(128, 'Email must be at most 128 characters long'),
     });
     const result = InputModel.safeParse(input);
 
@@ -591,7 +591,7 @@ export class OrganizationManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            email: result.error.formErrors.fieldErrors.email?.[0],
+            email: z.flattenError(result.error).fieldErrors.email?.[0],
           },
         },
       };
@@ -979,8 +979,8 @@ export class OrganizationManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            name: inputValidation.error.formErrors.fieldErrors.name?.[0],
-            description: inputValidation.error.formErrors.fieldErrors.description?.[0],
+            name: z.flattenError(inputValidation.error).fieldErrors.name?.[0],
+            description: z.flattenError(inputValidation.error).fieldErrors.description?.[0],
           },
         },
       };
@@ -1293,8 +1293,8 @@ export class OrganizationManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            name: inputValidation.error.formErrors.fieldErrors.name?.[0],
-            description: inputValidation.error.formErrors.fieldErrors.description?.[0],
+            name: z.flattenError(inputValidation.error).fieldErrors.name?.[0],
+            description: z.flattenError(inputValidation.error).fieldErrors.description?.[0],
           },
         },
       };

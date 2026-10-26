@@ -363,7 +363,7 @@ export class CollectionProvider {
     if (validationResult.error) {
       return {
         type: 'error' as const,
-        message: validationResult.error.errors[0].message,
+        message: validationResult.error.issues[0].message,
       };
     }
 
@@ -471,7 +471,7 @@ export class CollectionProvider {
     if (validationResult.error) {
       return {
         type: 'error' as const,
-        message: validationResult.error.errors[0].message,
+        message: validationResult.error.issues[0].message,
       };
     }
 

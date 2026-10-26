@@ -15,7 +15,7 @@ export const addAlertChannel: NonNullable<MutationResolvers['addAlertChannel']> 
 ) => {
   const AddAlertChannelModel = z.object({
     slack: MaybeModel(z.object({ channel: SlackChannelNameModel })),
-    webhook: MaybeModel(z.object({ endpoint: z.string().url().max(500) })),
+    webhook: MaybeModel(z.object({ endpoint: z.url().max(500) })),
     name: AlertChannelNameModel,
   });
 
@@ -26,9 +26,9 @@ export const addAlertChannel: NonNullable<MutationResolvers['addAlertChannel']> 
       error: {
         message: 'Please check your input.',
         inputErrors: {
-          slackChannel: result.error.formErrors.fieldErrors.slack?.[0],
-          webhookEndpoint: result.error.formErrors.fieldErrors.webhook?.[0],
-          name: result.error.formErrors.fieldErrors.name?.[0],
+          slackChannel: z.flattenError(result.error).fieldErrors.slack?.[0],
+          webhookEndpoint: z.flattenError(result.error).fieldErrors.webhook?.[0],
+          name: z.flattenError(result.error).fieldErrors.name?.[0],
         },
       },
     };

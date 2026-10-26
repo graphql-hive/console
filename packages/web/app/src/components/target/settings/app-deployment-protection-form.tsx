@@ -13,7 +13,7 @@ const wholeDays = (min: number, minMessage: string) =>
   numberInput(
     z
       .number({ error: issue => (issue.input === undefined ? 'Required' : undefined) })
-      .int('Must be a whole number')
+      .int({ error: 'Must be a whole number' })
       .min(min, minMessage),
   );
 

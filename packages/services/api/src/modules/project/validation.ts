@@ -12,6 +12,6 @@ export const ProjectSlugModel = z
   .refine(slug => slug !== 'view', {
     error: "Slug can't be 'view'",
   });
-export const URLModel = z.string().url().max(500);
+export const URLModel = z.url().max(500);
 export const MaybeModel = <T extends z.ZodType>(value: T) =>
   z.union([z.null(), z.undefined(), value]);

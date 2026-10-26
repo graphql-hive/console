@@ -184,7 +184,7 @@ export function ConnectProviderForm(props: {
 }
 
 export const OIDCMetadataUrlFormSchema = z.object({
-  url: z.string().url('Must be a valid URL'),
+  url: z.url({ error: 'Must be a valid URL' }),
 });
 
 export type OIDCMetadataUrlFormValues = z.infer<typeof OIDCMetadataUrlFormSchema>;

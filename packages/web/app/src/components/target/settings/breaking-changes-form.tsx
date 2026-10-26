@@ -20,7 +20,7 @@ export function breakingChangesFormSchema(maxPeriod: number) {
   return z
     .object({
       percentage: numberInput(z.number().optional()),
-      requestCount: numberInput(z.number().int('Must be a whole number').optional()),
+      requestCount: numberInput(z.number().int({ error: 'Must be a whole number' }).optional()),
       period: numberInput(
         z
           .number({ error: issue => (issue.input === undefined ? 'Required' : undefined) })

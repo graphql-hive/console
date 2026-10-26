@@ -187,7 +187,7 @@ export class SavedFiltersProvider {
     if (!validationResult.success) {
       return {
         type: 'error',
-        message: validationResult.error.errors[0].message,
+        message: validationResult.error.issues[0].message,
       };
     }
 
@@ -308,7 +308,7 @@ export class SavedFiltersProvider {
     if (!validationResult.success) {
       return {
         type: 'error',
-        message: validationResult.error.errors[0].message,
+        message: validationResult.error.issues[0].message,
       };
     }
 

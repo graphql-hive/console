@@ -18,7 +18,7 @@ type RestrictKeys<T, K> = {
 //
 function protectedObject<
   T extends {
-    [K in keyof T]: zod.ZodTypeAny;
+    [K in keyof T]: zod.ZodType;
   },
 >(shape: RestrictKeys<T, AllowedEnvironmentVariables>) {
   return zod.object(shape);
@@ -108,7 +108,7 @@ function buildConfig() {
 
   for (const config of Object.values(configs)) {
     if (config.success === false) {
-      environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+      environmentErrors.push(config.error.toString());
     }
   }
 

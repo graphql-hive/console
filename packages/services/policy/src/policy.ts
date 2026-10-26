@@ -1,6 +1,7 @@
 import Ajv from 'ajv';
-import { z, ZodType } from 'zod';
+import { z } from 'zod';
 import { lint } from './engine/linter';
+import type { RuleSeverity } from './engine/linter';
 import { rules } from './engine/rules';
 import type { GraphQLESLintRule } from './engine/types';
 import { RELEVANT_RULES } from './rules';
@@ -14,9 +15,11 @@ const ajv = new Ajv({
 });
 
 const RULE_LEVEL = z.union([z.number().min(0).max(2), z.enum(['off', 'warn', 'error'])]);
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type RuleConfiguration = [RuleSeverity, ...JsonValue[]];
 
 type RulemapValidationType = {
-  [_RuleKey in keyof typeof rules]: ZodType;
+  [_RuleKey in keyof typeof rules]: z.ZodType<RuleConfiguration>;
 };
 
 export function normalizeAjvSchema(
@@ -47,30 +50,27 @@ export function createInputValidationSchema() {
 
         return {
           ...acc,
-          [name]: z.union([
-            z.tuple([RULE_LEVEL]),
-            z.tuple(
-              validate
-                ? [
-                    RULE_LEVEL,
-                    z.custom(data => {
-                      const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
-                      const result = validate(asArray);
+          [name]: z.tuple(
+            validate
+              ? [
+                  RULE_LEVEL,
+                  z.custom(data => {
+                    const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
+                    const result = validate(asArray);
 
-                      if (result) {
-                        return true;
-                      }
+                    if (result) {
+                      return true;
+                    }
 
-                      throw new Error(
-                        `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
-                          validate.errors,
-                        )}`,
-                      );
-                    }),
-                  ]
-                : [RULE_LEVEL],
-            ),
-          ]),
+                    throw new Error(
+                      `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
+                        validate.errors,
+                      )}`,
+                    );
+                  }),
+                ]
+              : [RULE_LEVEL],
+          ) as z.ZodType<RuleConfiguration>,
         };
       }, {} as RulemapValidationType),
       {
