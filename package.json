@@ -106,7 +106,7 @@
     "eslint-plugin-hive": "file:rules",
     "graphql": "catalog:",
     "jest-snapshot-serializer-raw": "2.0.0",
-    "pg": "8.13.1",
+    "pg": "8.23.1",
     "prettier": "catalog:",
     "prettier-plugin-sql": "0.18.1",
     "prettier-plugin-tailwindcss": "0.6.9",
@@ -198,7 +198,8 @@
       "@graphql-hive/core": "workspace:",
       "@graphql-tools/url-loader@7.x.x>@graphql-tools/executor-legacy-ws": "-",
       "graphql@16.x.x": "catalog:",
-      "body-parser@<=1.20.9": "1.20.9"
+      "body-parser@<=1.20.9": "1.20.9",
+      "pg": "8.23.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
