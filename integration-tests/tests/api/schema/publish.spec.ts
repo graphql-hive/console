@@ -136,6 +136,24 @@ test.concurrent(
   },
 );
 
+test.concurrent('a base schema that does not parse is rejected', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken, updateBaseSchema } = await createProject(ProjectType.Single);
+  const readWriteToken = await createTargetAccessToken({});
+
+  const result = await updateBaseSchema('iliketurtles');
+  expect(result.error?.message).toMatch(/Syntax Error/);
+
+  const publishResult = await readWriteToken
+    .publishSchema({
+      commit: '1',
+      sdl: `type Query { ping: String }`,
+    })
+    .then(r => r.expectNoGraphQLErrors());
+  expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+});
+
 test.concurrent('directives should not be removed (federation)', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { createProject } = await createOrg();

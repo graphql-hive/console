@@ -1,4 +1,6 @@
+import { parse } from 'graphql';
 import { z } from 'zod';
+import { isGraphQLError } from '../../../../shared/errors';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
@@ -26,6 +28,17 @@ export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']
           z.flattenError(result.error).fieldErrors?.newBase?.[0] ?? 'Please check your input.',
       },
     };
+  }
+
+  if (input.newBase?.trim()) {
+    try {
+      parse(input.newBase);
+    } catch (error) {
+      if (!isGraphQLError(error)) {
+        throw error;
+      }
+      return { error: { message: error.message } };
+    }
   }
 
   const schemaManager = injector.get(SchemaManager);
