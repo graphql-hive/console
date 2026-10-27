@@ -66,7 +66,7 @@ export function createCompositionWorker(args: {
         if (message.data.type === 'federation') {
           const composeFederation = createComposeFederation({
             decrypt,
-            logger: baseLogger.child({ reqId: message.data.args.requestId }) as FastifyBaseLogger,
+            logger: logger as FastifyBaseLogger,
             requestTimeoutMs: args.env.timings.schemaExternalCompositionTimeout,
             transformToPublicSdl: args.env.transformExternalSupergraphToPublicSdl,
           });
@@ -129,11 +129,11 @@ export function createCompositionWorker(args: {
       }
       assertAllCasesExhausted(message.event);
     } catch (err: unknown) {
-      baseLogger.error(
-        'unexpected error while processing message in worker (messageId=%s)',
+      logger.error(
+        'unexpected error while processing message in worker (messageId=%s, error=%s)',
         message.id,
+        err instanceof Error ? (err.stack ?? err.message) : String(err),
       );
-      baseLogger.error(String(err));
       postResult({
         event: 'error',
         id: message.id,
