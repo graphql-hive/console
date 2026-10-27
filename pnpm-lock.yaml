@@ -1205,6 +1205,9 @@ importers:
       '@graphql-yoga-6/plugin-graphql-sse':
         specifier: npm:@graphql-yoga/plugin-graphql-sse@4.0.1
         version: '@graphql-yoga/plugin-graphql-sse@4.0.1(graphql-yoga@5.24.4(graphql@16.14.2))(graphql@16.14.2)'
+      '@graphql-yoga-6/plugin-persisted-operations':
+        specifier: npm:@graphql-yoga/plugin-persisted-operations@4.0.1
+        version: '@graphql-yoga/plugin-persisted-operations@4.0.1(graphql-yoga@5.24.4(graphql@16.14.2))(graphql@16.14.2)'
       '@graphql-yoga-6/plugin-response-cache':
         specifier: npm:@graphql-yoga/plugin-response-cache@4.0.1
         version: '@graphql-yoga/plugin-response-cache@4.0.1(@graphql-hive/logger@1.1.0(pino@10.3.0))(graphql-yoga@5.24.4(graphql@16.14.2))(graphql@16.14.2)'
@@ -4853,6 +4856,13 @@ packages:
     peerDependencies:
       graphql: 16.14.2
       graphql-yoga: ^5.24.4
+
+  '@graphql-yoga/plugin-persisted-operations@4.0.1':
+    resolution: {integrity: sha512-AGbFhpsWuWvw2xNWzy1Jbx3b803YwLG1s5it8k8j3/6Rw3Argmt+lR3w4dNOQkEKFxCEsfCGAEwdA5Nt5pLokQ==}
+    engines: {node: '>=22.15.0'}
+    peerDependencies:
+      graphql: 16.14.2
+      graphql-yoga: ^6.0.1
 
   '@graphql-yoga/plugin-prometheus@6.11.3':
     resolution: {integrity: sha512-EeMWisS3M43tI9K/jMMwiR2KWRdYfUBzcx3tg5vkoZQbVytCIDT1RB2s5HPFzi3X9D7Cs+m/9XMUOCrOCfHvug==}
@@ -21391,6 +21401,12 @@ snapshots:
   '@graphql-yoga/plugin-persisted-operations@3.24.4(graphql-yoga@5.24.4(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
       '@whatwg-node/promise-helpers': 1.3.2
+      graphql: 16.14.2
+      graphql-yoga: 5.24.4(graphql@16.14.2)
+
+  '@graphql-yoga/plugin-persisted-operations@4.0.1(graphql-yoga@5.24.4(graphql@16.14.2))(graphql@16.14.2)':
+    dependencies:
+      '@whatwg-node/promise-helpers': 2.0.0
       graphql: 16.14.2
       graphql-yoga: 5.24.4(graphql@16.14.2)
 
