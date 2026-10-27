@@ -738,8 +738,8 @@ const CreateContractInputModel = z
     targetId: z.uuid(),
     contractName: z
       .string()
-      .max(64)
-      .min(2)
+      .max(64, 'String must contain at most 64 character(s)')
+      .min(2, 'String must contain at least 2 character(s)')
       .toLowerCase()
       .regex(/^[a-zA-Z0-9_-]+$/, "Can only contain letters, numbers, '_', and '-'"),
     includeTags: z.array(z.string()).nullable(),

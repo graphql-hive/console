@@ -43,42 +43,47 @@ export function normalizeAjvSchema(
 
 export function createInputValidationSchema() {
   return z
-    .strictObject(
+    .object(
       RELEVANT_RULES.reduce((acc, [name, rule]) => {
         const schema = normalizeAjvSchema(rule.meta.schema);
         const validate = schema ? ajv.compile(schema) : null;
 
         return {
           ...acc,
-          [name]: z.tuple(
-            validate
-              ? [
-                  RULE_LEVEL,
-                  z.custom(data => {
-                    const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
-                    const result = validate(asArray);
+          [name]: z.union([
+            z.tuple([RULE_LEVEL]),
+            z.tuple(
+              validate
+                ? [
+                    RULE_LEVEL,
+                    z.custom(data => {
+                      const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
+                      const result = validate(asArray);
 
-                    if (result) {
-                      return true;
-                    }
+                      if (result) {
+                        return true;
+                      }
 
-                    throw new Error(
-                      `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
-                        validate.errors,
-                      )}`,
-                    );
-                  }),
-                ]
-              : [RULE_LEVEL],
-          ) as z.ZodType<RuleConfiguration>,
+                      throw new Error(
+                        `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
+                          validate.errors,
+                        )}`,
+                      );
+                    }),
+                  ]
+                : [RULE_LEVEL],
+            ),
+          ]) as z.ZodType<RuleConfiguration>,
         };
       }, {} as RulemapValidationType),
       {
-        error: 'Unknown rule name passed',
+        error: issue =>
+          issue.code === 'unrecognized_keys' ? 'Unknown rule name passed' : undefined,
       },
     )
     .required()
-    .partial();
+    .partial()
+    .strict();
 }
 
 export type PolicyConfigurationObject = z.infer<ReturnType<typeof createInputValidationSchema>>;

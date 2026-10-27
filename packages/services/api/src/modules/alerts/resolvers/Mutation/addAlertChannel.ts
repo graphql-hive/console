@@ -15,7 +15,7 @@ export const addAlertChannel: NonNullable<MutationResolvers['addAlertChannel']> 
 ) => {
   const AddAlertChannelModel = z.object({
     slack: MaybeModel(z.object({ channel: SlackChannelNameModel })),
-    webhook: MaybeModel(z.object({ endpoint: z.url().max(500) })),
+    webhook: MaybeModel(z.object({ endpoint: z.string().url().max(500) })),
     name: AlertChannelNameModel,
   });
 

@@ -18,7 +18,7 @@ const InsightsFilterConfigurationModel = zod.object({
   // Use nullish() + transform because the resolver may pass null instead of undefined
   operationHashes: zod
     .array(zod.string())
-    .max(100)
+    .max(100, 'Array must contain at most 100 element(s)')
     .nullish()
     .transform(v => v ?? []),
   clientFilters: zod
@@ -48,14 +48,21 @@ const visibilityEnum = zod
   .transform(v => v.toLowerCase() as 'private' | 'shared');
 
 const CreateSavedFilterInputModel = zod.object({
-  name: zod.string().min(1).max(100),
+  name: zod
+    .string()
+    .min(1, 'String must contain at least 1 character(s)')
+    .max(100, 'String must contain at most 100 character(s)'),
   description: zod.string().max(500).nullable().optional(),
   visibility: visibilityEnum,
   insightsFilter: InsightsFilterConfigurationModel.nullable().optional(),
 });
 
 const UpdateSavedFilterInputModel = zod.object({
-  name: zod.string().min(1).max(100).nullish(),
+  name: zod
+    .string()
+    .min(1, 'String must contain at least 1 character(s)')
+    .max(100, 'String must contain at most 100 character(s)')
+    .nullish(),
   description: zod.string().max(500).nullable().optional(),
   // nullish() because resolver passes null when visibility is not provided
   visibility: visibilityEnum.nullish(),
