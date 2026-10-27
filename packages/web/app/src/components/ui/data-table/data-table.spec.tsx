@@ -646,6 +646,22 @@ describe('DataTableCell', () => {
     expect(badges.every(badge => badge.className.includes('rounded-md'))).toBe(true);
   });
 
+  it('cuts by code point and drops a trailing space before the ellipsis', () => {
+    const items = [
+      { content: 'Platform Team X\u{1F680} Core' },
+      { content: 'Guild Members Of Hive' },
+    ];
+    const { container } = render(<DataTableCell kind="badge" items={items} maxLength={14} />);
+    const badges = [...container.querySelectorAll('span > span')];
+    expect(badges.map(badge => badge.textContent)).toEqual(['Platform Team…', 'Guild Members…']);
+  });
+
+  it('makes the +N badge a focus stop so its list is reachable by keyboard', () => {
+    const items = ['a', 'b', 'c'].map(content => ({ content }));
+    const { getByText } = render(<DataTableCell kind="badge" items={items} max={2} />);
+    expect(getByText('+1').getAttribute('tabindex')).toBe('0');
+  });
+
   it('leaves a label at exactly maxLength alone', () => {
     const { container } = render(
       <DataTableCell kind="badge" items={{ content: 'sixteen chars ok' }} maxLength={16} />,
