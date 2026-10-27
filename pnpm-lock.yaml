@@ -48,6 +48,9 @@ catalogs:
     '@graphql-typed-document-node/core':
       specifier: 3.2.0
       version: 3.2.0
+    '@graphql-yoga/plugin-csrf-prevention':
+      specifier: 3.16.2
+      version: 3.16.2
     '@graphql-yoga/plugin-response-cache':
       specifier: 3.26.4
       version: 3.26.4
@@ -1823,6 +1826,9 @@ importers:
       '@graphql-tools/merge':
         specifier: 'catalog:'
         version: 9.2.6(graphql@16.14.2)
+      '@graphql-yoga/plugin-csrf-prevention':
+        specifier: 'catalog:'
+        version: 3.16.2(graphql-yoga@5.24.4(graphql@16.14.2))
       '@graphql-yoga/plugin-response-cache':
         specifier: 'catalog:'
         version: 3.26.4(graphql-yoga@5.24.4(graphql@16.14.2))(graphql@16.14.2)
