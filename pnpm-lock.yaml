@@ -316,6 +316,7 @@ overrides:
   graphql@16.x.x: 16.14.2
   body-parser@<=1.20.9: 1.20.9
   pg: 8.23.1
+  '@whatwg-node/fetch': 0.12.1
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
@@ -327,6 +328,9 @@ patchedDependencies:
   '@slonik/pg-driver@48.19.0':
     hash: e12360d0c0740724e0317b8f5e2e4b4ab6cca28dd48bf04eef7ce550e8f08519
     path: patches/@slonik__pg-driver@48.19.0.patch
+  '@whatwg-node/fetch@0.12.1':
+    hash: a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826
+    path: patches/@whatwg-node__fetch@0.12.1.patch
   got@16.1.0:
     hash: 2f8be9ec1afd3619d2e771aa4b85b2c6b0762210ce683903f181fce7b36861df
     path: patches/got@16.1.0.patch
@@ -826,8 +830,8 @@ importers:
         specifier: ^12.0.3
         version: 12.0.3(graphql@16.14.2)
       '@whatwg-node/fetch':
-        specifier: ^0.10.13
-        version: 0.10.13
+        specifier: 0.12.1
+        version: 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       async-retry:
         specifier: ^1.3.3
         version: 1.3.3
@@ -1201,8 +1205,8 @@ importers:
         specifier: 'catalog:'
         version: 3.26.4(graphql-yoga@5.24.4(graphql@16.14.2))(graphql@16.14.2)
       '@whatwg-node/fetch':
-        specifier: 0.10.13
-        version: 0.10.13
+        specifier: 0.12.1
+        version: 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       graphql-ws:
         specifier: 'catalog:'
         version: 6.0.6(graphql@16.14.2)(ws@8.22.0)
@@ -1238,8 +1242,8 @@ importers:
         specifier: 'catalog:'
         version: 8.11.10
       '@whatwg-node/fetch':
-        specifier: 0.10.13
-        version: 0.10.13
+        specifier: 0.12.1
+        version: 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       bcryptjs:
         specifier: 'catalog:'
         version: 2.4.3
@@ -9953,17 +9957,9 @@ packages:
     resolution: {integrity: sha512-ApcWxkrs1WmEMS2CaLLFUEem/49erT3sxIVjpzU5f6zmVcnijtDSrhoK2zVobOIikZJdH63jdAXOrvjf6eOUNQ==}
     engines: {node: '>=18.0.0'}
 
-  '@whatwg-node/fetch@0.10.13':
-    resolution: {integrity: sha512-b4PhJ+zYj4357zwk4TTuF2nEe0vVtOrwdsrNo5hL+u1ojXNhh1FgJ6pg1jzDlwlT4oBdzfSwaBwMCtFCsIWg8Q==}
-    engines: {node: '>=18.0.0'}
-
   '@whatwg-node/fetch@0.12.1':
     resolution: {integrity: sha512-MjSXerFVxhWwPXZMNp4b4Q3WZMEIqzinHVWuH5tF2LNGy4hHypqPJCNpaR6bEZbaGdlH+r5dRAmQ8bxowcetjQ==}
     engines: {node: '>=22.15.0'}
-
-  '@whatwg-node/node-fetch@0.8.6':
-    resolution: {integrity: sha512-BDMdYFcerLQkwA2RTldxOqRCs6ZQD1S7UgP3pUdGUkcbgTrP/V5ko77ZkCww9DHmC4lpoYuwigGfQYj285gMvA==}
-    engines: {node: '>=18.0.0'}
 
   '@whatwg-node/node-fetch@0.9.1':
     resolution: {integrity: sha512-LX/1X2QEHupCz6YXRjefZRoOsycCGOIJdXtQPVVxhzPQ/CpWpWFaXl53ShqLystvLZSvtUDKLhCA/yLveHA/LA==}
@@ -19211,7 +19207,7 @@ snapshots:
     dependencies:
       '@envelop/core': 5.6.1
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       fast-json-stable-stringify: 2.1.0
       graphql: 16.14.2
@@ -19637,7 +19633,7 @@ snapshots:
       '@graphql-tools/url-loader': 9.1.12(@types/node@24.13.3)(graphql@16.14.2)
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@inquirer/prompts': 8.7.3(@types/node@24.13.3)
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       chalk: 5.6.2
       cosmiconfig: 9.0.0(typescript@5.7.3)
       debounce: 3.0.0
@@ -19845,7 +19841,7 @@ snapshots:
       '@theguild/federation-composition': 0.26.3(graphql@16.14.2)
       '@types/node': 25.9.9
       '@whatwg-node/disposablestack': 0.0.6
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       '@whatwg-node/server': 0.11.0
       '@whatwg-node/server-plugin-cookies': 1.0.7(@whatwg-node/server@0.11.0)
@@ -20446,7 +20442,7 @@ snapshots:
     dependencies:
       '@graphql-mesh/types': 0.107.1(graphql@16.14.2)(ioredis@6.0.0)
       '@graphql-mesh/utils': 0.107.1(graphql@16.14.2)(ioredis@6.0.0)
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
       http-cache-semantics: 4.3.0
@@ -20537,7 +20533,7 @@ snapshots:
       '@graphql-mesh/string-interpolation': 0.5.18(graphql@16.14.2)
       '@graphql-mesh/types': 0.107.1(graphql@16.14.2)(ioredis@6.0.0)
       '@graphql-mesh/utils': 0.107.1(graphql@16.14.2)(ioredis@6.0.0)
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       graphql: 16.14.2
       minimatch: 10.2.6
       tslib: 2.8.1
@@ -20585,7 +20581,7 @@ snapshots:
       '@graphql-tools/executor-common': 1.1.0(graphql@16.14.2)
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@repeaterjs/repeater': 3.1.0
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
       tslib: 2.8.1
@@ -20687,7 +20683,7 @@ snapshots:
       '@graphql-tools/utils': 11.2.2(graphql@16.14.2)
       '@graphql-tools/wrap': 11.2.1(graphql@16.14.2)
       '@whatwg-node/disposablestack': 0.0.6
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       dset: 3.1.4
       graphql: 16.14.2
@@ -20712,7 +20708,7 @@ snapshots:
       '@graphql-tools/utils': 11.2.2(graphql@16.14.2)
       '@graphql-tools/wrap': 11.2.1(graphql@16.14.2)
       '@whatwg-node/disposablestack': 0.0.6
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       dset: 3.1.4
       graphql: 16.14.2
@@ -20729,7 +20725,7 @@ snapshots:
   '@graphql-tools/apollo-engine-loader@8.0.38(graphql@16.14.2)':
     dependencies:
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
-      '@whatwg-node/fetch': 0.12.1
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       graphql: 16.14.2
       sync-fetch: 0.7.1
       tslib: 2.8.1
@@ -20810,7 +20806,7 @@ snapshots:
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@repeaterjs/repeater': 3.1.0
       '@whatwg-node/disposablestack': 0.0.6
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
       meros: 1.3.2(@types/node@24.13.3)
@@ -20825,7 +20821,7 @@ snapshots:
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@repeaterjs/repeater': 3.1.0
       '@whatwg-node/disposablestack': 0.0.6
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
       meros: 1.3.2(@types/node@25.9.9)
@@ -20878,7 +20874,7 @@ snapshots:
       '@graphql-yoga/typed-event-target': 3.0.3
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/events': 0.1.2
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
       tslib: 2.8.1
@@ -20898,7 +20894,7 @@ snapshots:
       '@graphql-yoga/typed-event-target': 3.0.3
       '@whatwg-node/disposablestack': 0.0.6
       '@whatwg-node/events': 0.1.2
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
       tslib: 2.8.1
@@ -20934,7 +20930,7 @@ snapshots:
       '@graphql-tools/executor-http': 3.4.1(@types/node@24.13.3)(graphql@16.14.2)
       '@graphql-tools/graphql-tag-pluck': 8.3.39(graphql@16.14.2)
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
-      '@whatwg-node/fetch': 0.12.1
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 2.0.0
       graphql: 16.14.2
       sync-fetch: 0.7.1
@@ -20948,7 +20944,7 @@ snapshots:
       '@graphql-tools/executor-http': 3.4.1(@types/node@24.13.3)(graphql@16.14.2)
       '@graphql-tools/graphql-tag-pluck': 8.3.39(graphql@16.14.2)
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       graphql: 16.14.2
       sync-fetch: 0.6.0
@@ -21082,7 +21078,7 @@ snapshots:
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@graphql-tools/wrap': 11.2.1(graphql@16.14.2)
       '@types/ws': 8.18.1
-      '@whatwg-node/fetch': 0.12.1
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 2.0.0
       graphql: 16.14.2
       isomorphic-ws: 5.0.0(ws@8.22.0)
@@ -21105,7 +21101,7 @@ snapshots:
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@graphql-tools/wrap': 11.2.1(graphql@16.14.2)
       '@types/ws': 8.18.1
-      '@whatwg-node/fetch': 0.12.1
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 2.0.0
       graphql: 16.14.2
       isomorphic-ws: 5.0.0(ws@8.22.0)
@@ -27156,22 +27152,10 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@whatwg-node/fetch@0.10.13':
-    dependencies:
-      '@whatwg-node/node-fetch': 0.8.6
-      urlpattern-polyfill: 10.0.0
-
-  '@whatwg-node/fetch@0.12.1':
+  '@whatwg-node/fetch@0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)':
     dependencies:
       '@whatwg-node/node-fetch': 0.9.1
       urlpattern-polyfill: 10.0.0
-
-  '@whatwg-node/node-fetch@0.8.6':
-    dependencies:
-      '@fastify/busboy': 3.2.2
-      '@whatwg-node/disposablestack': 0.0.6
-      '@whatwg-node/promise-helpers': 1.3.2
-      tslib: 2.8.1
 
   '@whatwg-node/node-fetch@0.9.1':
     dependencies:
@@ -27198,7 +27182,7 @@ snapshots:
     dependencies:
       '@envelop/instrumentation': 1.0.1
       '@whatwg-node/disposablestack': 0.0.6
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       tslib: 2.8.1
 
@@ -27206,7 +27190,7 @@ snapshots:
     dependencies:
       '@envelop/instrumentation': 1.0.1
       '@whatwg-node/disposablestack': 0.0.6
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       tslib: 2.8.1
 
@@ -29982,7 +29966,7 @@ snapshots:
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@graphql-yoga/logger': 2.0.2
       '@graphql-yoga/subscription': 5.1.1
-      '@whatwg-node/fetch': 0.10.13
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 1.3.2
       '@whatwg-node/server': 0.11.0
       graphql: 16.14.2

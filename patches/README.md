@@ -36,6 +36,20 @@ Kept on purpose. The hunk is one line and has needed one re-cut since the slonik
 The only way to retire it is rewriting those 60 migrations, which costs more than the patch ever
 will.
 
+## `@whatwg-node__fetch@0.12.1.patch`
+
+Re-adds the `crypto` export, as `globalThis.crypto`, to every entry point (node, global and ESM
+ponyfills, the `createFetch()` result, and the typings). 0.12.0 removed it, but the
+`@whatwg-node/fetch` override in `package.json` moves every consumer to 0.12.x, and several still
+read it: `@graphql-tools/executor-http`, `@envelop/response-cache`, `@graphql-hive/gateway-runtime`,
+`@graphql-mesh/transport-http-callback`, `@graphql-mesh/hmac-upstream-signature` (through
+`fetchAPI.crypto`), plus our own `@graphql-hive/core` and one migration. Without it, ESM consumers
+fail to load (`Named export 'crypto' not found`) and CJS consumers throw on first use.
+
+Retire once nothing in the tree reads `crypto` from `@whatwg-node/fetch` or from a `fetchAPI`.
+Check with `grep -rE "\bcrypto\b" node_modules/.pnpm/*/node_modules/<pkg>` for each package that
+depends on fetch.
+
 ## `got@14.4.7.patch`
 
 Copies `types` out of `exports` into a top-level `types` field. The services' tsconfig uses
