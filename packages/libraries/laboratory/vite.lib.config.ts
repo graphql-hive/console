@@ -45,14 +45,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   build: {
     copyPublicDir: false,
     cssCodeSplit: false,
     lib: {
-      entry: path.resolve(__dirname, './src/index.tsx'),
+      entry: path.resolve(import.meta.dirname, './src/index.tsx'),
       name: 'HiveLaboratory',
       formats: ['es', 'cjs'],
       fileName: format => `hive-laboratory.${format}.js`,
