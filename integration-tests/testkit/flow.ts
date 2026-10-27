@@ -1608,6 +1608,9 @@ export function updateBaseSchema(input: UpdateBaseSchemaInput, token: string) {
       mutation updateBaseSchema($input: UpdateBaseSchemaInput!) {
         updateBaseSchema(input: $input) {
           __typename
+          error {
+            message
+          }
         }
       }
     `),
