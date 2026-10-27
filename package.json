@@ -140,7 +140,7 @@
     "overrides.@graphql-hive/yoga": "Use the in-repository version.",
     "overrides.@graphql-hive/core": "Use the in-repository version.",
     "overrides.graphql-jit": "Bump graphql-jit to 0.8.10",
-    "overrides.@whatwg-node/fetch": "Move every consumer to 0.12.x. 0.12.0 stopped exporting crypto, which patches/@whatwg-node__fetch@0.12.1.patch re-adds (see patches/README.md)",
+    "overrides.@whatwg-node/fetch": "Move every consumer to 0.12.x to address vulnerabilities. 0.12.0 stopped exporting crypto, which patches/@whatwg-node__fetch@0.12.1.patch re-adds (see patches/README.md)",
     "overrides": {
       "graphql-jit@0.8.x": "0.8.10",
       "graphile-worker>@types/pg": "8.11.10",
