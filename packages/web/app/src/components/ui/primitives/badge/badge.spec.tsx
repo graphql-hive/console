@@ -27,4 +27,11 @@ describe('Badge', () => {
     expect(badge.textContent).toBe('2 clients');
     expect(container.children).toHaveLength(1);
   });
+
+  it('is a focus stop only when it carries a tooltip, so the hint is reachable by keyboard', () => {
+    const { container, rerender } = render(<Badge content="2 clients" tooltip="10 operations" />);
+    expect(container.firstElementChild!.getAttribute('tabindex')).toBe('0');
+    rerender(<Badge content="2 clients" />);
+    expect(container.firstElementChild!.hasAttribute('tabindex')).toBe(false);
+  });
 });
