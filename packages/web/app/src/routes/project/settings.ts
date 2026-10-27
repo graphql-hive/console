@@ -15,7 +15,6 @@ import {
   type ProjectSettingsSectionId,
 } from '@/pages/project-settings';
 import { createRoute, redirect } from '@tanstack/react-router';
-import { zodValidator } from '@tanstack/zod-adapter';
 import { legacySearch, legacySearchRedirect } from '../legacy';
 import { projectRoute } from './route';
 
@@ -64,9 +63,9 @@ export const projectSettingsRoute = createRoute({
 export const projectSettingsIndexRoute = createRoute({
   getParentRoute: () => projectSettingsRoute,
   path: '/',
-  validateSearch: zodValidator(
-    z.object({ page: legacySearch.projectSettings.values.optional().catch(undefined) }),
-  ),
+  validateSearch: z.object({
+    page: legacySearch.projectSettings.values.optional().catch(undefined),
+  }),
   beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.projectSettings, search),
   loader: loader => {
     const { organizationSlug } = loader.params;
