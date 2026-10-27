@@ -78,7 +78,17 @@ export function composeFederationV1(
     url: string | undefined;
   }>,
 ): ComposerMethodResult {
-  const result = composeAndValidate(subgraphs);
+  let result: ReturnType<typeof composeAndValidate>;
+  try {
+    result = composeAndValidate(subgraphs);
+  } catch (error) {
+    return {
+      type: 'failure',
+      result: { errors: [toValidationError(error, 'composition')], sdl: undefined },
+      includesNetworkError: false,
+      includesException: false,
+    };
+  }
 
   if (compositionHasErrors(result)) {
     return {

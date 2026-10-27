@@ -1,6 +1,6 @@
 import { parse } from 'graphql';
 import { composeAndValidate } from '@apollo/federation';
-import { composeFederationV2 } from '../src/lib/compose';
+import { composeFederationV1, composeFederationV2 } from '../src/lib/compose';
 
 test('patch', () => {
   const result = composeAndValidate([
@@ -135,3 +135,34 @@ test('native federation formats the composed supergraph', ({ expect }) => {
     }
   `);
 });
+
+test.each([
+  { fields: '...F', message: /fragment spreads/ },
+  { fields: '{ id }', message: /Syntax Error/ },
+])(
+  'federation v1 reports a composer exception for @key(fields: "$fields") as a composition error',
+  ({ fields, message }) => {
+    const result = composeFederationV1([
+      {
+        typeDefs: parse(/* GraphQL */ `
+          type Query {
+            a: A
+          }
+
+          type A @key(fields: "${fields}") {
+            id: ID!
+          }
+        `),
+        name: 'a',
+        url: undefined,
+      },
+    ]);
+
+    expect(result.type).toBe('failure');
+    assert(result.type === 'failure');
+    expect(result.includesException).toBe(false);
+    expect(result.result.errors).toEqual([
+      { source: 'composition', message: expect.stringMatching(message) },
+    ]);
+  },
+);
