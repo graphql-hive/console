@@ -17,7 +17,6 @@ import { Callout } from '@/components/ui/callout';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
 import { CopyChip } from '@/components/ui/primitives/copy-chip/copy-chip';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
@@ -36,18 +35,17 @@ import { MemberRolePicker } from './member-role-picker';
 
 const membersRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
 
-const MemberGroups_GroupFragment = graphql(`
+export const MemberGroups_GroupFragment = graphql(`
   fragment MemberGroups_GroupFragment on Group {
     id
     name
   }
 `);
 
-function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_GroupFragment>> }) {
+export function MemberGroups(props: {
+  groups: Array<FragmentType<typeof MemberGroups_GroupFragment>>;
+}) {
   const groups = useFragment(MemberGroups_GroupFragment, props.groups);
-  // Show first 2 groups, then +N more
-  const visibleGroups = groups.slice(0, 2);
-  const remainingCount = groups.length - 2;
 
   if (groups.length === 0) {
     return (
@@ -70,32 +68,12 @@ function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_Gr
         <span className="text-xs">Groups:</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        {visibleGroups.map(group => (
-          <Badge key={group.id} content={group.name} />
-        ))}
-        {remainingCount > 0 && (
-          <Popover
-            trigger={
-              <button type="button" aria-label="All groups">
-                <Badge variants={{ variant: 'outline' }} content={`+${remainingCount} more`} />
-              </button>
-            }
-            openOnHover
-            side="top"
-            width="auto"
-            content={
-              <ul className="space-y-1 text-left">
-                {groups.slice(2).map(group => (
-                  <li key={group.id}>
-                    <Badge content={group.name} />
-                  </li>
-                ))}
-              </ul>
-            }
-          />
-        )}
-      </div>
+      <DataTableCell
+        kind="badge"
+        items={groups.map(group => ({ content: group.name }))}
+        max={2}
+        maxLength={16}
+      />
     </div>
   );
 }
