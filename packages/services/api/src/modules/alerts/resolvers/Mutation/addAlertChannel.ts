@@ -6,7 +6,6 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 
 const AlertChannelNameModel = z.string().min(1).max(100);
 const SlackChannelNameModel = z.string().min(1).max(80);
-const MaybeModel = <T extends z.ZodType>(value: T) => z.union([z.null(), z.undefined(), value]);
 
 export const addAlertChannel: NonNullable<MutationResolvers['addAlertChannel']> = async (
   _,
@@ -14,21 +13,23 @@ export const addAlertChannel: NonNullable<MutationResolvers['addAlertChannel']> 
   { injector },
 ) => {
   const AddAlertChannelModel = z.object({
-    slack: MaybeModel(z.object({ channel: SlackChannelNameModel })),
-    webhook: MaybeModel(z.object({ endpoint: z.string().url().max(500) })),
+    slack: z.object({ channel: SlackChannelNameModel }).nullish(),
+    webhook: z.object({ endpoint: z.string().url().max(500) }).nullish(),
     name: AlertChannelNameModel,
   });
 
   const result = AddAlertChannelModel.safeParse(input);
 
   if (!result.success) {
+    const errors = z.flattenError(result.error).fieldErrors;
+
     return {
       error: {
         message: 'Please check your input.',
         inputErrors: {
-          slackChannel: z.flattenError(result.error).fieldErrors.slack?.[0],
-          webhookEndpoint: z.flattenError(result.error).fieldErrors.webhook?.[0],
-          name: z.flattenError(result.error).fieldErrors.name?.[0],
+          slackChannel: errors.slack?.[0],
+          webhookEndpoint: errors.webhook?.[0],
+          name: errors.name?.[0],
         },
       },
     };

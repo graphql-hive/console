@@ -43,7 +43,7 @@ export function normalizeAjvSchema(
 
 export function createInputValidationSchema() {
   return z
-    .object(
+    .strictObject(
       RELEVANT_RULES.reduce((acc, [name, rule]) => {
         const schema = normalizeAjvSchema(rule.meta.schema);
         const validate = schema ? ajv.compile(schema) : null;
@@ -76,14 +76,10 @@ export function createInputValidationSchema() {
           ]) as z.ZodType<RuleConfiguration>,
         };
       }, {} as RulemapValidationType),
-      {
-        error: issue =>
-          issue.code === 'unrecognized_keys' ? 'Unknown rule name passed' : undefined,
-      },
+      { error: 'Unknown rule name passed' },
     )
     .required()
-    .partial()
-    .strict();
+    .partial();
 }
 
 export type PolicyConfigurationObject = z.infer<ReturnType<typeof createInputValidationSchema>>;
