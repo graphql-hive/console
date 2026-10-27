@@ -258,9 +258,6 @@ catalogs:
     ws:
       specifier: 8.22.0
       version: 8.22.0
-    zod-validation-error:
-      specifier: 3.4.0
-      version: 3.4.0
 
 overrides:
   graphql-jit@0.8.x: 0.8.10
@@ -1483,9 +1480,6 @@ importers:
       zod:
         specifier: 4.6.6
         version: 4.6.6
-      zod-validation-error:
-        specifier: 'catalog:'
-        version: 3.4.0(zod@4.6.6)
 
   packages/services/broker-worker:
     devDependencies:
@@ -16900,12 +16894,6 @@ packages:
 
   yup@1.6.1:
     resolution: {integrity: sha512-JED8pB50qbA4FOkDol0bYF/p60qSEDQqBD0/qeIrUCG1KbPBIQ776fCUNb9ldbPcSTxA69g/47XTo4TqWiuXOA==}
-
-  zod-validation-error@3.4.0:
-    resolution: {integrity: sha512-ZOPR9SVY6Pb2qqO5XHt+MkkTRxGXb4EVtnjc9JpXUOtUB1T9Ru7mZOT361AN3MsetVe7R0a1KZshJDZdgp9miQ==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      zod: ^3.18.0
 
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
@@ -34934,10 +34922,6 @@ snapshots:
       toposort: 2.0.2
       type-fest: 2.19.0
     optional: true
-
-  zod-validation-error@3.4.0(zod@4.6.6):
-    dependencies:
-      zod: 4.6.6
 
   zod@3.22.3: {}
 
