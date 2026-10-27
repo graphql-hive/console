@@ -76,7 +76,10 @@ export function createInputValidationSchema() {
           ]) as z.ZodType<RuleConfiguration>,
         };
       }, {} as RulemapValidationType),
-      { error: 'Unknown rule name passed' },
+      {
+        error: issue =>
+          issue.code === 'unrecognized_keys' ? 'Unknown rule name passed' : undefined,
+      },
     )
     .required()
     .partial();

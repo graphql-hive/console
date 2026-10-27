@@ -852,8 +852,19 @@ const PrimaryContractVersionModel = z
     diffSchemaVersionId: z.uuid().nullable(),
     isComposable: z.boolean(),
   })
-  .transform(record => {
-    if (record.isComposable && record.schemaCompositionErrors === null && record.supergraphSdl) {
+  .transform((record, ctx) => {
+    if (record.isComposable) {
+      // A composable contract version must have no composition errors and a supergraph SDL.
+      // Fail loudly instead of silently treating an inconsistent row as non-composable.
+      if (record.schemaCompositionErrors !== null || record.supergraphSdl === null) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'Composable contract version must have no composition errors and a supergraph SDL.',
+        });
+        return z.NEVER;
+      }
+
       return {
         ...record,
         schemaCompositionErrors: null,

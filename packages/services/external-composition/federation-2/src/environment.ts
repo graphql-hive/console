@@ -1,12 +1,5 @@
 import zod from 'zod';
-import { resolveServerListenOptions } from '@hive/service-common';
-
-function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
-  if (!config.success) {
-    throw new Error('Something went wrong.');
-  }
-  return config.data;
-}
+import { extractConfig, resolveServerListenOptions } from '@hive/service-common';
 
 const BaseSchema = zod.object({
   NODE_ENV: zod.string().default('production'),
@@ -30,7 +23,7 @@ export function resolveEnv(env: Record<string, string | undefined>) {
 
   for (const config of Object.values(configs)) {
     if (config.success === false) {
-      environmentErrors.push(config.error.toString());
+      environmentErrors.push(zod.prettifyError(config.error));
     }
   }
 

@@ -108,7 +108,7 @@ function buildConfig() {
 
   for (const config of Object.values(configs)) {
     if (config.success === false) {
-      environmentErrors.push(config.error.toString());
+      environmentErrors.push(zod.prettifyError(config.error));
     }
   }
 

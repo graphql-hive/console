@@ -1,6 +1,6 @@
 import { config as dotenv } from 'dotenv';
 import zod from 'zod';
-import { parseClickHouseConfigFromEnvironment } from '@hive/service-common';
+import { extractConfig, parseClickHouseConfigFromEnvironment } from '@hive/service-common';
 
 dotenv({
   debug: true,
@@ -50,7 +50,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(config.error.toString());
+    environmentErrors.push(zod.prettifyError(config.error));
   }
 }
 
@@ -66,13 +66,6 @@ if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
   process.exit(1);
-}
-
-function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
-  if (!config.success) {
-    throw new Error('Something went wrong.');
-  }
-  return config.data;
 }
 
 const base = extractConfig(configs.base);

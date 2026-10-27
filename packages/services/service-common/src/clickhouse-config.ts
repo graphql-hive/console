@@ -49,7 +49,7 @@ export function parseClickHouseConfigFromEnvironment(
   if (!parseResult.success) {
     return {
       type: 'error',
-      errors: [parseResult.error.toString()],
+      errors: [z.prettifyError(parseResult.error)],
     };
   }
 
