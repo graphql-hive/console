@@ -1,9 +1,7 @@
 // @vitest-environment jsdom
 import { makeFragmentData } from '@/gql';
 import { render } from '@testing-library/react';
-import { MemberGroups, MemberGroups_GroupFragment } from './list';
-
-vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
+import { MemberGroups, MemberGroups_GroupFragment } from './member-groups';
 
 function groups(...names: string[]) {
   return names.map((name, index) =>
@@ -35,5 +33,17 @@ describe('MemberGroups', () => {
   it('cuts a long group name at sixteen characters', () => {
     const { container } = render(<MemberGroups groups={groups('Handcrafted Granite Chair')} />);
     expect(container.textContent).toBe('Groups:Handcrafted Gran…');
+  });
+
+  it('lays every group out in full for a dialog', () => {
+    const { container } = render(
+      <MemberGroups
+        layout="all"
+        groups={groups('Hive Console', 'Guild Members', 'Handcrafted Granite Chair', 'Support')}
+      />,
+    );
+    expect(container.textContent).toBe(
+      'Groups:Hive ConsoleGuild MembersHandcrafted Granite ChairSupport',
+    );
   });
 });

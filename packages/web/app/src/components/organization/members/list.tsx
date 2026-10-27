@@ -8,7 +8,6 @@ import {
   UserLock,
   UserRound,
   UserRoundX,
-  UsersIcon,
 } from 'lucide-react';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
@@ -31,52 +30,10 @@ import { cn } from '@/lib/utils';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { MemberInvitationButton } from './invitations';
+import { MemberGroups } from './member-groups';
 import { MemberRolePicker } from './member-role-picker';
 
 const membersRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
-
-export const MemberGroups_GroupFragment = graphql(`
-  fragment MemberGroups_GroupFragment on Group {
-    id
-    name
-  }
-`);
-
-export function MemberGroups(props: {
-  groups: Array<FragmentType<typeof MemberGroups_GroupFragment>>;
-}) {
-  const groups = useFragment(MemberGroups_GroupFragment, props.groups);
-
-  if (groups.length === 0) {
-    return (
-      <Tooltip
-        trigger={
-          <div className="flex w-fit items-center gap-1.5">
-            <UsersIcon className="h-3.5 w-3.5" />
-            <span className="text-xs">Groups: none</span>
-          </div>
-        }
-        content="Groups can be assigned via the SCIM provider."
-      />
-    );
-  }
-
-  return (
-    <div className="flex w-fit items-center gap-2">
-      <div className="flex items-center gap-1.5">
-        <UsersIcon className="h-3.5 w-3.5" />
-        <span className="text-xs">Groups:</span>
-      </div>
-
-      <DataTableCell
-        kind="badge"
-        items={groups.map(group => ({ content: group.name }))}
-        max={2}
-        maxLength={16}
-      />
-    </div>
-  );
-}
 
 export const authProviderToIconAndTextMap: Record<
   GraphQLSchema.AuthProviderType,
@@ -379,7 +336,7 @@ function MemberRoleCell(props: {
                   </span>
                 </div>
               </div>
-              <MemberGroups groups={member.groups ?? []} />
+              <MemberGroups groups={member.groups ?? []} layout="all" />
             </div>
           </AlertDialog>
         )}
