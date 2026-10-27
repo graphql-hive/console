@@ -40,10 +40,7 @@
   "typings": "dist/typings/index.d.ts",
   "scripts": {
     "build": "node ../../../scripts/generate-version.mjs && bob build",
-    "check:build": "bob check",
-    "test": "pnpm test:yoga-5 && pnpm test:yoga-6",
-    "test:yoga-5": "vitest run tests",
-    "test:yoga-6": "vitest run --config vitest.yoga-6.config.ts tests"
+    "check:build": "bob check"
   },
   "peerDependencies": {
     "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0",
@@ -59,6 +56,7 @@
     "@graphql-yoga-6/plugin-defer-stream": "npm:@graphql-yoga/plugin-defer-stream@4.0.1",
     "@graphql-yoga-6/plugin-disable-introspection": "npm:@graphql-yoga/plugin-disable-introspection@3.0.1",
     "@graphql-yoga-6/plugin-graphql-sse": "npm:@graphql-yoga/plugin-graphql-sse@4.0.1",
+    "@graphql-yoga-6/plugin-persisted-operations": "npm:@graphql-yoga/plugin-persisted-operations@4.0.1",
     "@graphql-yoga-6/plugin-response-cache": "npm:@graphql-yoga/plugin-response-cache@4.0.1",
     "@graphql-yoga/plugin-defer-stream": "3.24.4",
     "@graphql-yoga/plugin-disable-introspection": "2.25.4",
