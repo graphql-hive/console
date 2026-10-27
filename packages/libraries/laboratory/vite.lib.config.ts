@@ -51,16 +51,13 @@ export default defineConfig({
   build: {
     copyPublicDir: false,
     cssCodeSplit: false,
-    commonjsOptions: {
-      esmExternals: true,
-    },
     lib: {
       entry: path.resolve(__dirname, './src/index.tsx'),
       name: 'HiveLaboratory',
       formats: ['es', 'cjs'],
       fileName: format => `hive-laboratory.${format}.js`,
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: externals,
       output: {
         globals: {

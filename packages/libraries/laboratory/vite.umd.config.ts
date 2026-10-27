@@ -32,7 +32,7 @@ export default defineConfig({
     copyPublicDir: false,
     emptyOutDir: false,
     cssCodeSplit: false,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         // UMD consumers can execute this in plain browser contexts without Node globals.
         intro:
