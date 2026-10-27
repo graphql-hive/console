@@ -4754,12 +4754,6 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-tools/utils@13.2.0':
-    resolution: {integrity: sha512-s3+6E/Zve4Okj7+60HpMBoVDmMBzuskX1u9C1/kNi86V3Aez1Eh1LP0crh929kzhb1YcyZYyVWGuKyfztuF5qA==}
-    engines: {node: '>=22.18.0'}
-    peerDependencies:
-      graphql: 16.14.2
-
   '@graphql-tools/wrap@11.1.15':
     resolution: {integrity: sha512-GCMx6l0MPwHVaBMHf29oG8eIrsJ8PBXq9y5DNX9/r9oCpCBfqxfWzcejx4CpO4chA3+yylGOKcAyEbOUgxfI1Q==}
     engines: {node: '>=20.0.0'}
@@ -19329,8 +19323,8 @@ snapshots:
     dependencies:
       '@envelop/core': 6.0.0
       '@graphql-hive/logger': 1.1.0(pino@10.3.0)
-      '@graphql-tools/utils': 13.2.0(graphql@16.14.2)
-      '@whatwg-node/fetch': 0.12.1
+      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 2.0.0
       fast-json-stable-stringify: 2.1.0
       graphql: 16.14.2
@@ -21002,7 +20996,7 @@ snapshots:
 
   '@graphql-tools/executor@4.1.6(graphql@16.14.2)':
     dependencies:
-      '@graphql-tools/utils': 13.2.0(graphql@16.14.2)
+      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
       '@repeaterjs/repeater': 3.1.0
       '@whatwg-node/disposablestack': 0.1.0
@@ -21161,7 +21155,7 @@ snapshots:
 
   '@graphql-tools/merge@10.0.7(graphql@16.14.2)':
     dependencies:
-      '@graphql-tools/utils': 13.2.0(graphql@16.14.2)
+      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       graphql: 16.14.2
       tslib: 2.8.1
 
@@ -21208,7 +21202,7 @@ snapshots:
   '@graphql-tools/schema@11.0.7(graphql@16.14.2)':
     dependencies:
       '@graphql-tools/merge': 10.0.7(graphql@16.14.2)
-      '@graphql-tools/utils': 13.2.0(graphql@16.14.2)
+      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       graphql: 16.14.2
       tslib: 2.8.1
 
@@ -21286,13 +21280,6 @@ snapshots:
       graphql: 16.14.2
       tslib: 2.8.1
 
-  '@graphql-tools/utils@13.2.0(graphql@16.14.2)':
-    dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
-      '@whatwg-node/promise-helpers': 2.0.0
-      graphql: 16.14.2
-      tslib: 2.8.1
-
   '@graphql-tools/wrap@11.1.15(graphql@16.14.2)':
     dependencies:
       '@graphql-tools/delegate': 12.2.1(graphql@16.14.2)
@@ -21355,7 +21342,7 @@ snapshots:
 
   '@graphql-yoga/plugin-defer-stream@4.0.1(graphql-yoga@5.24.4(graphql@16.14.2))(graphql@16.14.2)':
     dependencies:
-      '@graphql-tools/utils': 13.2.0(graphql@16.14.2)
+      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       graphql: 16.14.2
       graphql-yoga: 5.24.4(graphql@16.14.2)
 
@@ -27398,7 +27385,7 @@ snapshots:
     dependencies:
       '@envelop/instrumentation': 2.0.0
       '@whatwg-node/disposablestack': 0.1.0
-      '@whatwg-node/fetch': 0.12.1
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 2.0.0
       tslib: 2.8.1
 
@@ -30188,9 +30175,9 @@ snapshots:
       '@graphql-hive/logger': 1.1.1(pino@10.3.0)
       '@graphql-tools/executor': 4.1.6(graphql@16.14.2)
       '@graphql-tools/schema': 11.0.7(graphql@16.14.2)
-      '@graphql-tools/utils': 13.2.0(graphql@16.14.2)
+      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       '@graphql-yoga/subscription': 6.0.0
-      '@whatwg-node/fetch': 0.12.1
+      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 2.0.0
       '@whatwg-node/server': 0.13.2
       graphql: 16.14.2
