@@ -36,6 +36,22 @@ Kept on purpose. The hunk is one line and has needed one re-cut since the slonik
 The only way to retire it is rewriting those 60 migrations, which costs more than the patch ever
 will.
 
+## `@graphql-tools__executor@1.5.0.patch`
+
+The `@graphql-tools/utils` override in `package.json` moves every consumer to utils 12. In 12.0.0,
+`collectFields` and `collectSubFields` take `variableValues` as `{ coerced, sources }` instead of the
+flat coerced map, and executor 1.x still passes the flat map. utils then evaluates
+`@include`/`@skip`/`@defer` conditions against no variables, so every operation that uses a variable
+in one of them fails with `... was not provided a runtime value`. The patch wraps the map as
+`{ coerced, sources: {} }` (the shape utils' own `visitResult` builds), memoized per variables object
+so `collectSubFields`' identity-keyed cache keeps hitting.
+
+Only `@graphql-hive/router-runtime` (integration tests) pulls executor 1.x in, and it calls just
+`getVariableValues` and `getFragmentsFromDocument`, which do not depend on the changed functions. The
+patch keeps `execute`/`subscribe` correct anyway, so a later caller does not break silently.
+
+Retire with the override, or once nothing depends on executor 1.x.
+
 ## `@whatwg-node__fetch@0.12.1.patch`
 
 Re-adds the `crypto` export, as `globalThis.crypto`, to every entry point (node, global and ESM
@@ -46,9 +62,9 @@ read it: `@graphql-tools/executor-http`, `@envelop/response-cache`, `@graphql-hi
 `fetchAPI.crypto`), plus our own `@graphql-hive/core` and one migration. Without it, ESM consumers
 fail to load (`Named export 'crypto' not found`) and CJS consumers throw on first use.
 
-Retire once nothing in the tree reads `crypto` from `@whatwg-node/fetch` or from a `fetchAPI`.
-Check with `grep -rE "\bcrypto\b" node_modules/.pnpm/*/node_modules/<pkg>` for each package that
-depends on fetch.
+Retire once nothing in the tree reads `crypto` from `@whatwg-node/fetch` or from a `fetchAPI`. Check
+with `grep -rE "\bcrypto\b" node_modules/.pnpm/*/node_modules/<pkg>` for each package that depends
+on fetch.
 
 ## `got@14.4.7.patch`
 
