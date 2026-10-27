@@ -83,7 +83,6 @@
     "redlock": "5.0.0-beta.2",
     "stripe": "catalog:",
     "vitest": "catalog:",
-    "zod": "4.6.6",
-    "zod-validation-error": "catalog:"
+    "zod": "4.6.6"
   }
 }

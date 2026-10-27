@@ -1712,9 +1712,6 @@ importers:
       zod:
         specifier: 4.6.6
         version: 4.6.6
-      zod-validation-error:
-        specifier: 'catalog:'
-        version: 3.4.0(zod@4.6.6)
 
   packages/services/schema:
     devDependencies:

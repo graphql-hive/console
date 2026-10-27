@@ -1,6 +1,5 @@
 import type { FastifyRequest } from 'fastify';
 import { z, ZodError } from 'zod';
-import { fromZodError } from 'zod-validation-error';
 import { handleTRPCError } from '@hive/service-common';
 import { inferRouterInputs, inferRouterOutputs, initTRPC } from '@trpc/server';
 import { policyCheckCounter, policyCheckDuration } from './metrics';
@@ -25,7 +24,7 @@ const t = initTRPC.context<Context>().create({
             : null,
         formatted:
           error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
-            ? fromZodError(error.cause).message
+            ? z.prettifyError(error.cause)
             : null,
       },
     };
