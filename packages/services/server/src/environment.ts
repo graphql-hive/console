@@ -154,7 +154,7 @@ const GitHubModel = zod.union([
 const IntegrationRoutesModel = zod.intersection(
   zod.union([
     zod.object({
-      INTEGRATION_GITHUB_APP_NAME: emptyString(zod.undefined()),
+      INTEGRATION_GITHUB_APP_NAME: emptyString(zod.never().optional()),
     }),
     zod.object({
       INTEGRATION_GITHUB_APP_NAME: zod.string(),
@@ -241,7 +241,7 @@ const S3Model = zod.object({
 
 const S3MirrorModel = zod.union([
   zod.object({
-    S3_MIRROR: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+    S3_MIRROR: zod.union([zod.literal('0'), zod.literal('')]).optional(),
   }),
   zod.object({
     S3_MIRROR: zod.literal('1'),
@@ -259,7 +259,7 @@ const S3MirrorModel = zod.union([
 
 const S3AuditLogModel = zod.union([
   zod.object({
-    S3_AUDIT_LOG: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+    S3_AUDIT_LOG: zod.union([zod.literal('0'), zod.literal('')]).optional(),
   }),
   zod.object({
     S3_AUDIT_LOG: zod.literal('1'),
@@ -277,7 +277,7 @@ const S3AuditLogModel = zod.union([
 
 const AuthGitHubConfigSchema = zod.union([
   zod.object({
-    AUTH_GITHUB: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+    AUTH_GITHUB: zod.union([zod.literal('0'), zod.literal('')]).optional(),
   }),
   zod.object({
     AUTH_GITHUB: zod.literal('1'),
@@ -288,7 +288,7 @@ const AuthGitHubConfigSchema = zod.union([
 
 const AuthGoogleConfigSchema = zod.union([
   zod.object({
-    AUTH_GOOGLE: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+    AUTH_GOOGLE: zod.union([zod.literal('0'), zod.literal('')]).optional(),
   }),
   zod.object({
     AUTH_GOOGLE: zod.literal('1'),
@@ -299,7 +299,7 @@ const AuthGoogleConfigSchema = zod.union([
 
 const AuthOktaConfigSchema = zod.union([
   zod.object({
-    AUTH_OKTA: zod.union([zod.void(), zod.literal('0')]),
+    AUTH_OKTA: zod.literal('0').optional(),
   }),
   zod.object({
     AUTH_OKTA: zod.literal('1'),
@@ -316,7 +316,7 @@ const AuthOktaMultiTenantSchema = zod.object({
 
 const HivePersistedDocumentsSchema = zod.union([
   zod.object({
-    HIVE_PERSISTED_DOCUMENTS: zod.union([zod.void(), zod.literal('0')]),
+    HIVE_PERSISTED_DOCUMENTS: zod.literal('0').optional(),
   }),
   zod.object({
     HIVE_PERSISTED_DOCUMENTS: zod.literal('1'),
@@ -346,11 +346,9 @@ const LogModel = zod.object({
 
 const OidcWorkloadFederationModel = zod.union([
   zod.object({
-    OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.union([
-      zod.void(),
-      zod.literal(''),
-      zod.literal('0'),
-    ]),
+    OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod
+      .union([zod.literal(''), zod.literal('0')])
+      .optional(),
   }),
   zod
     .object({

@@ -78,7 +78,7 @@ const AuthOktaMultiTenantSchema = protectedObject({
 
 const SentryConfigSchema = zod.union([
   protectedObject({
-    SENTRY: zod.union([zod.void(), zod.literal('0')]),
+    SENTRY: zod.literal('0').optional(),
   }),
   protectedObject({
     SENTRY: zod.literal('1'),

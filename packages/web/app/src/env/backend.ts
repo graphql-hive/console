@@ -80,7 +80,7 @@ const AuthOktaMultiTenantSchema = zod.object({
 
 const SentryConfigSchema = zod.union([
   zod.object({
-    SENTRY: zod.union([zod.void(), zod.literal('0')]),
+    SENTRY: zod.literal('0').optional(),
   }),
   zod.object({
     SENTRY: zod.literal('1'),
