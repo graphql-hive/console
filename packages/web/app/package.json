@@ -100,7 +100,6 @@
     "use-debounce": "10.1.1",
     "vite": "catalog:",
     "vite-plugin-monaco-editor": "catalog:",
-    "vite-tsconfig-paths": "catalog:",
     "wonka": "6.3.6",
     "zod": "3.25.76"
   },

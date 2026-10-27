@@ -1,7 +1,6 @@
 import { resolve } from 'node:path';
 import type { Plugin, UserConfig } from 'vite';
 import monacoEditor from 'vite-plugin-monaco-editor';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import viteFastify from '@fastify/vite/plugin';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
@@ -26,8 +25,8 @@ const reactScanPlugin: Plugin = {
 
 export default {
   root: __dirname,
+  resolve: { tsconfigPaths: true },
   plugins: [
-    tsconfigPaths(),
     viteFastify({ spa: true }),
     react(),
     tailwindcss(),
