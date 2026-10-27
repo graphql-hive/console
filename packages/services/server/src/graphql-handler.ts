@@ -281,7 +281,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
               // Enable JIT only for Hive App
               const name = args.contextValue.req.headers['graphql-client-name'] as string;
 
-              return name === 'hive-app';
+              return name === 'Hive App';
             }
 
             return false;
