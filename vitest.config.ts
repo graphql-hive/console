@@ -22,6 +22,6 @@ export default defineConfig({
       'packages/migrations/test',
       'docker/.hive-dev',
     ],
-    setupFiles: ['./scripts/serializer.ts'],
+    setupFiles: [new URL('./scripts/serializer.ts', import.meta.url).pathname],
   },
 });
