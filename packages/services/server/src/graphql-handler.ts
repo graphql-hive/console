@@ -17,6 +17,7 @@ import {
 } from '@graphql-hive/plugin-opentelemetry';
 import { trace } from '@graphql-hive/plugin-opentelemetry/api';
 import { useHive } from '@graphql-hive/yoga';
+import { useCSRFPrevention } from '@graphql-yoga/plugin-csrf-prevention';
 import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Registry, RegistryContext } from '@hive/api';
 import { SuperTokensCookieBasedSession } from '@hive/api/modules/auth/lib/supertokens-strategy';
@@ -202,6 +203,11 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
   const server = createYoga<Context>({
     logging: options.logger,
     plugins: [
+      // The session cookie is `SameSite=Lax`, so it is sent along with cross-site top-level GET navigations.
+      // Reject requests that did not go through a CORS preflight unless they carry a custom header.
+      useCSRFPrevention({
+        requestHeaders: ['graphql-client-name'],
+      }),
       useArmor(),
       useHiveErrorHandler(err => {
         options.logger.error(err, 'Unexpected error occurred while handling exception.');
@@ -275,7 +281,7 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
               // Enable JIT only for Hive App
               const name = args.contextValue.req.headers['graphql-client-name'] as string;
 
-              return name === 'Hive App';
+              return name === 'hive-app';
             }
 
             return false;

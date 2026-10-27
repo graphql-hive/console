@@ -25,6 +25,7 @@
     "@graphql-hive/plugin-opentelemetry": "catalog:",
     "@graphql-hive/yoga": "workspace:*",
     "@graphql-tools/merge": "catalog:",
+    "@graphql-yoga/plugin-csrf-prevention": "catalog:",
     "@graphql-yoga/plugin-response-cache": "catalog:",
     "@graphql-yoga/redis-event-target": "catalog:",
     "@hive/api": "workspace:*",
