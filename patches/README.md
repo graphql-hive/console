@@ -39,16 +39,16 @@ will.
 ## `@graphql-tools__executor@1.5.0.patch`
 
 The `@graphql-tools/utils` override in `package.json` moves every consumer to utils 12. In 12.0.0,
-`collectFields` and `collectSubFields` take `variableValues` as `{ coerced, sources }` instead of the
-flat coerced map, and executor 1.x still passes the flat map. utils then evaluates
+`collectFields` and `collectSubFields` take `variableValues` as `{ coerced, sources }` instead of
+the flat coerced map, and executor 1.x still passes the flat map. utils then evaluates
 `@include`/`@skip`/`@defer` conditions against no variables, so every operation that uses a variable
 in one of them fails with `... was not provided a runtime value`. The patch wraps the map as
-`{ coerced, sources: {} }` (the shape utils' own `visitResult` builds), memoized per variables object
-so `collectSubFields`' identity-keyed cache keeps hitting.
+`{ coerced, sources: {} }` (the shape utils' own `visitResult` builds), memoized per variables
+object so `collectSubFields`' identity-keyed cache keeps hitting.
 
 Only `@graphql-hive/router-runtime` (integration tests) pulls executor 1.x in, and it calls just
-`getVariableValues` and `getFragmentsFromDocument`, which do not depend on the changed functions. The
-patch keeps `execute`/`subscribe` correct anyway, so a later caller does not break silently.
+`getVariableValues` and `getFragmentsFromDocument`, which do not depend on the changed functions.
+The patch keeps `execute`/`subscribe` correct anyway, so a later caller does not break silently.
 
 Retire with the override, or once nothing depends on executor 1.x.
 
