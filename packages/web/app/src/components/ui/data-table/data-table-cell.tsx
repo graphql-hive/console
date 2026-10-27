@@ -113,6 +113,8 @@ export type DataTableCellProps<TTo extends string = '.'> =
       items: BadgeItem | BadgeItem[];
       /** How many badges show on the row; the rest collapse into a "+N" badge that lists them. */
       max?: number;
+      /** Cut each label at this many characters with an ellipsis; the full label sits in a tooltip. */
+      maxLength?: number;
     }
   /** A yes or no as a check or a cross, for a flag column. */
   | { kind: 'boolean'; value: boolean }
@@ -451,9 +453,20 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       const rest = items.slice(shown.length);
       return (
         <span className="inline-flex items-center gap-1">
-          {shown.map((item, index) => (
-            <Badge key={index} content={item.content} variants={{ variant: item.variant }} />
-          ))}
+          {shown.map((item, index) => {
+            const cut =
+              props.maxLength && item.content.length > props.maxLength
+                ? item.content.slice(0, props.maxLength) + '…'
+                : item.content;
+            return (
+              <Badge
+                key={index}
+                content={cut}
+                variants={{ variant: item.variant }}
+                tooltip={cut === item.content ? undefined : item.content}
+              />
+            );
+          })}
           {rest.length > 0 ? (
             <Tooltip
               trigger={
