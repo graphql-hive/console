@@ -6,6 +6,7 @@ import { init } from '@sentry/react';
 import { RouterProvider } from '@tanstack/react-router';
 import './index.css';
 import { clearChunkReloadFlag, isChunkLoadError, reloadOnChunkError } from './lib/chunk-error';
+import { sentryIgnoreErrors, tagMonacoErrors } from './lib/sentry';
 import { createAppRouter } from './router';
 
 // Register things for typesafety
@@ -24,28 +25,8 @@ if (env.sentry) {
     dist: 'webapp',
     release: env.release,
     environment: env.environment,
-    ignoreErrors: [
-      // Suppress specific monaco editor internal errors
-      "Failed to execute 'setStart' on 'Range'",
-      "Failed to execute 'setEnd' on 'Range'",
-      /TextModel got disposed/,
-      // Stale chunk errors after deployments — handled by auto-reload below
-      /Failed to fetch dynamically imported module/,
-      /Importing a module script failed/,
-    ],
-    beforeSend(event) {
-      const isMonacoError = event.exception?.values?.some(exception =>
-        exception.stacktrace?.frames?.some(frame => frame.filename?.includes('monaco-editor')),
-      );
-
-      if (isMonacoError) {
-        for (const exception of event.exception?.values ?? []) {
-          exception.value &&= `[Monaco] ${exception.value}`;
-        }
-      }
-
-      return event;
-    },
+    ignoreErrors: sentryIgnoreErrors,
+    beforeSend: tagMonacoErrors,
   });
 }
 
