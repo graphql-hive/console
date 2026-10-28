@@ -34,6 +34,8 @@ const SavedFilterModel = zod.object({
       .nullable(),
     excludeOperations: zod.boolean().optional().default(false),
     excludeClientFilters: zod.boolean().optional().default(false),
+    schemaCoordinates: zod.array(zod.string()).optional().default([]),
+    subgraphNames: zod.array(zod.string()).optional().default([]),
   }),
   visibility: zod.enum(['private', 'shared']),
   viewsCount: zod.number(),

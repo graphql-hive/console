@@ -10,9 +10,20 @@ import type {
 import { isUUID } from '../../../shared/is-uuid';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
+import {
+  describeSubgraphResolutionFailure,
+  SubgraphOwnership,
+} from '../../schema/providers/subgraph-ownership';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { SavedFiltersStorage } from './saved-filters-storage';
+
+// Usage reports coordinates as `Type.field`, `Type.field.arg` or `Enum.VALUE`; a bare type name
+// never appears in the coordinates tables, so it is rejected rather than silently matching nothing.
+const schemaCoordinatePattern = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*){1,2}$/;
+
+const uniqueStrings = (values: string[] | null | undefined) =>
+  values == null ? values : [...new Set(values)];
 
 const InsightsFilterConfigurationModel = zod.object({
   // Use nullish() + transform because the resolver may pass null instead of undefined
@@ -40,7 +51,29 @@ const InsightsFilterConfigurationModel = zod.object({
     .transform(v => v ?? null),
   excludeOperations: zod.boolean().optional().default(false),
   excludeClientFilters: zod.boolean().optional().default(false),
+  // Both stay nullish (no `?? []`) so an update can tell "not sent" from "cleared".
+  schemaCoordinates: zod
+    .array(
+      zod
+        .string()
+        .max(200)
+        .regex(schemaCoordinatePattern, { message: 'Invalid schema coordinate' }),
+    )
+    .max(100)
+    .nullish()
+    .transform(uniqueStrings),
+  subgraphNames: zod.array(zod.string().min(1).max(100)).max(50).nullish().transform(uniqueStrings),
 });
+
+type InsightsFilterInput = {
+  operationHashes?: string[] | null;
+  clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
+  dateRange?: { from: string; to: string } | null;
+  excludeOperations?: boolean;
+  excludeClientFilters?: boolean;
+  schemaCoordinates?: string[] | null;
+  subgraphNames?: string[] | null;
+};
 
 // Transform GraphQL uppercase enum values to lowercase for database storage
 const visibilityEnum = zod
@@ -75,6 +108,7 @@ export class SavedFiltersProvider {
     private session: Session,
     private idTranslator: IdTranslator,
     private auditLog: AuditLogRecorder,
+    private subgraphOwnership: SubgraphOwnership,
   ) {
     this.logger = logger.child({ source: 'SavedFiltersProvider' });
   }
@@ -153,13 +187,7 @@ export class SavedFiltersProvider {
       name: string;
       description: string | null;
       visibility: string;
-      insightsFilter?: {
-        operationHashes?: string[] | null;
-        clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
-        dateRange?: { from: string; to: string } | null;
-        excludeOperations?: boolean;
-        excludeClientFilters?: boolean;
-      } | null;
+      insightsFilter?: InsightsFilterInput | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
     this.logger.info(
@@ -205,6 +233,12 @@ export class SavedFiltersProvider {
       });
     }
 
+    const subgraphNames = data.insightsFilter?.subgraphNames ?? [];
+    const subgraphError = await this.validateSubgraphNames(resolved, subgraphNames);
+    if (subgraphError) {
+      return { type: 'error', message: subgraphError };
+    }
+
     const currentUser = await this.session.getViewer();
 
     const filters: InsightsFilterData = {
@@ -217,6 +251,8 @@ export class SavedFiltersProvider {
       dateRange: data.insightsFilter?.dateRange ?? null,
       excludeOperations: data.insightsFilter?.excludeOperations ?? false,
       excludeClientFilters: data.insightsFilter?.excludeClientFilters ?? false,
+      schemaCoordinates: data.insightsFilter?.schemaCoordinates ?? [],
+      subgraphNames,
     };
 
     const savedFilter = await this.savedFiltersStorage.createSavedFilter({
@@ -252,13 +288,7 @@ export class SavedFiltersProvider {
       name?: string | null;
       description?: string | null;
       visibility?: string | null;
-      insightsFilter?: {
-        operationHashes?: string[] | null;
-        clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
-        dateRange?: { from: string; to: string } | null;
-        excludeOperations?: boolean;
-        excludeClientFilters?: boolean;
-      } | null;
+      insightsFilter?: InsightsFilterInput | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
     this.logger.info('Updating saved filter (filterId=%s)', filterId);
@@ -338,8 +368,21 @@ export class SavedFiltersProvider {
           dateRange: data.insightsFilter.dateRange ?? null,
           excludeOperations: data.insightsFilter.excludeOperations ?? false,
           excludeClientFilters: data.insightsFilter.excludeClientFilters ?? false,
+          // The whole jsonb is replaced on update, so a client built before these keys existed
+          // would wipe them. Keys it did not send keep their stored value; an empty list clears.
+          schemaCoordinates:
+            data.insightsFilter.schemaCoordinates ?? existingFilter.filters.schemaCoordinates ?? [],
+          subgraphNames:
+            data.insightsFilter.subgraphNames ?? existingFilter.filters.subgraphNames ?? [],
         }
       : null;
+
+    if (filters) {
+      const subgraphError = await this.validateSubgraphNames(resolved, filters.subgraphNames ?? []);
+      if (subgraphError) {
+        return { type: 'error', message: subgraphError };
+      }
+    }
 
     const savedFilter = await this.savedFiltersStorage.updateSavedFilter({
       id: filterId,
@@ -540,6 +583,21 @@ export class SavedFiltersProvider {
       type: 'success',
       savedFilter,
     };
+  }
+
+  /** Rejects a subgraph filter the evaluator could not apply, so the user hears about it here. */
+  private async validateSubgraphNames(
+    selector: { organizationId: string; projectId: string; targetId: string },
+    subgraphNames: readonly string[],
+  ): Promise<string | null> {
+    if (subgraphNames.length === 0) {
+      return null;
+    }
+    const result = await this.subgraphOwnership.resolveFieldCoordinates({
+      ...selector,
+      subgraphNames,
+    });
+    return result.kind === 'ok' ? null : describeSubgraphResolutionFailure(result);
   }
 
   canUserModifyFilter(filter: SavedFilter, userId: string): boolean {

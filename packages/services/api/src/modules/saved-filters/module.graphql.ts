@@ -27,6 +27,15 @@ export const typeDefs = gql`
     dateRange: InsightsDateRange
     excludeOperations: Boolean
     excludeClientFilters: Boolean
+    """
+    Schema coordinates (e.g. "Query.me"). Scopes to operations whose document uses any of them.
+    """
+    schemaCoordinates: [String!]!
+    """
+    Federation subgraph names. Each resolves to the object fields the subgraph owns in the
+    latest valid schema version, so the filter follows the schema as it changes.
+    """
+    subgraphNames: [String!]!
   }
 
   type ClientFilter {
@@ -82,6 +91,11 @@ export const typeDefs = gql`
     dateRange: InsightsDateRangeInput
     excludeOperations: Boolean
     excludeClientFilters: Boolean
+    schemaCoordinates: [String!]
+    """
+    Only on Federation projects. Every name must exist in the latest valid schema version.
+    """
+    subgraphNames: [String!]
   }
 
   input InsightsDateRangeInput {
