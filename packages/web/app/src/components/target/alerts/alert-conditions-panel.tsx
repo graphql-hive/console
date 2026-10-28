@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { ExternalLink, Info } from 'lucide-react';
-import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
+import {
+  savedFilterToSearchParams,
+  type SavedFilterFilters,
+} from '@/components/target/insights/search-params';
 import { Avatar } from '@/components/ui/primitives/avatar/avatar';
 import { Button } from '@/components/ui/primitives/button/button';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
@@ -84,19 +87,7 @@ function formatTimeWindow(minutes: number): string {
 type Channel = { id: string; name: string; type: string };
 type User = { id: string; displayName: string } | null | undefined;
 
-type SavedFilter = {
-  id: string;
-  name: string;
-  filters: {
-    operationHashes: string[];
-    clientFilters: ReadonlyArray<{ name: string; versions?: string[] | null }>;
-    dateRange?: { from: string; to: string } | null;
-    excludeOperations?: boolean | null;
-    excludeClientFilters?: boolean | null;
-    schemaCoordinates?: readonly string[];
-    subgraphNames?: readonly string[];
-  };
-};
+type SavedFilter = { id: string; name: string; filters: SavedFilterFilters };
 
 export type AlertConditionsPanelProps = {
   rule: {
@@ -183,18 +174,7 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
     <Link
       to="/$organizationSlug/$projectSlug/$targetSlug/insights"
       params={{ organizationSlug, projectSlug, targetSlug }}
-      search={savedFilterToSearchParams({
-        id: rule.savedFilter.id,
-        filters: {
-          operationHashes: rule.savedFilter.filters.operationHashes,
-          clientFilters: rule.savedFilter.filters.clientFilters,
-          dateRange: rule.savedFilter.filters.dateRange,
-          excludeOperations: rule.savedFilter.filters.excludeOperations ?? undefined,
-          excludeClientFilters: rule.savedFilter.filters.excludeClientFilters ?? undefined,
-          schemaCoordinates: rule.savedFilter.filters.schemaCoordinates,
-          subgraphNames: rule.savedFilter.filters.subgraphNames,
-        },
-      })}
+      search={savedFilterToSearchParams(rule.savedFilter)}
       target="_blank"
       rel="noreferrer"
       className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"

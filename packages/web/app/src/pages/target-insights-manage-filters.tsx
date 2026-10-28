@@ -9,6 +9,8 @@ import { savedFilterToSearchParams } from '@/components/target/insights/search-p
 import {
   explorerTypesToFieldCoordinates,
   InsightsSchemaFilterOptions_Query,
+  nameSelections,
+  SCHEMA_UNAVAILABLE_NOTE,
   schemaFilterItems,
 } from '@/components/target/insights/use-insights-filter-dimensions';
 import { DataTable } from '@/components/ui/data-table/data-table';
@@ -296,14 +298,7 @@ function ActionsCell({
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/insights"
                 params={{ organizationSlug, projectSlug, targetSlug }}
-                search={savedFilterToSearchParams({
-                  ...filter,
-                  filters: {
-                    ...filter.filters,
-                    excludeOperations: filter.filters.excludeOperations ?? undefined,
-                    excludeClientFilters: filter.filters.excludeClientFilters ?? undefined,
-                  },
-                })}
+                search={savedFilterToSearchParams(filter)}
               />
             ),
           },
@@ -449,13 +444,11 @@ function SavedFilterRowFilters({
     [clientFilters],
   );
 
-  const toNameSelections = (names: readonly string[]): FilterSelection[] =>
-    names.map(name => ({ name, values: null }));
   const savedFieldSelections = useMemo(
-    () => toNameSelections(schemaCoordinates),
+    () => nameSelections(schemaCoordinates),
     [schemaCoordinates],
   );
-  const savedSubgraphSelections = useMemo(() => toNameSelections(subgraphNames), [subgraphNames]);
+  const savedSubgraphSelections = useMemo(() => nameSelections(subgraphNames), [subgraphNames]);
 
   const [operationSelections, setOperationSelections] =
     useState<FilterSelection[]>(savedOperationSelections);
@@ -692,7 +685,7 @@ function SavedFilterRowFilters({
               setFieldSelections([]);
             }}
             alwaysShowSearch
-            unavailableNote="not in the current schema"
+            unavailableNote={SCHEMA_UNAVAILABLE_NOTE}
           />
         )}
         {showSubgraphFilter && (
@@ -705,7 +698,7 @@ function SavedFilterRowFilters({
               setShowSubgraphFilter(false);
               setSubgraphSelections([]);
             }}
-            unavailableNote="not in the current schema"
+            unavailableNote={SCHEMA_UNAVAILABLE_NOTE}
           />
         )}
         {loading && <Spinner />}

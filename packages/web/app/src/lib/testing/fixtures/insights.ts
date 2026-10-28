@@ -142,6 +142,89 @@ export function operationBody() {
   };
 }
 
+export const SAVED_FILTER = {
+  id: 'filter-1',
+  name: 'Reviews subgraph',
+  schemaCoordinates: ['Query.me', 'Query.gone'],
+  subgraphNames: ['reviews'],
+} as const;
+
+/** One shared saved filter that uses the Fields and Subgraphs dimensions. */
+export function manageFiltersSavedFilters() {
+  return {
+    __typename: 'Query' as const,
+    organization: {
+      __typename: 'Organization' as const,
+      id: 'organization-1',
+      usageRetentionInDays: 30,
+    },
+    target: {
+      __typename: 'Target' as const,
+      id: TARGET_ID,
+      viewerCanCreateSavedFilter: true,
+      viewerCanShareSavedFilter: true,
+      savedFilters: {
+        __typename: 'SavedFilterConnection' as const,
+        edges: [
+          {
+            __typename: 'SavedFilterEdge' as const,
+            cursor: 'cursor-1',
+            node: {
+              __typename: 'SavedFilter' as const,
+              id: SAVED_FILTER.id,
+              name: SAVED_FILTER.name,
+              description: null,
+              visibility: 'SHARED',
+              viewsCount: 3,
+              createdAt: '2026-10-01T00:00:00.000Z',
+              updatedAt: '2026-10-01T00:00:00.000Z',
+              filters: {
+                __typename: 'InsightsFilterConfiguration' as const,
+                operationHashes: [],
+                clientFilters: [],
+                dateRange: null,
+                excludeOperations: false,
+                excludeClientFilters: false,
+                schemaCoordinates: [...SAVED_FILTER.schemaCoordinates],
+                subgraphNames: [...SAVED_FILTER.subgraphNames],
+              },
+              createdBy: { __typename: 'User' as const, id: 'user-1', displayName: 'User' },
+              viewerCanUpdate: true,
+              viewerCanDelete: true,
+              usedByAlertRulesCount: 0,
+            },
+          },
+        ],
+        pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false, endCursor: 'cursor-1' },
+      },
+    },
+  };
+}
+
+export function manageFiltersOperationStats() {
+  return {
+    __typename: 'Query' as const,
+    target: {
+      __typename: 'Target' as const,
+      id: TARGET_ID,
+      operationsStats: {
+        __typename: 'OperationsStats' as const,
+        operations: { __typename: 'OperationStatsValuesConnection' as const, edges: [] },
+        clients: { __typename: 'ClientStatsValuesConnection' as const, edges: [] },
+      },
+    },
+  };
+}
+
+/** The manage-filters page with one saved filter, plus the schema options its row editor reads. */
+export function manageFiltersFixtures() {
+  return new Map<string, unknown>([
+    ['ManageFilters_SavedFiltersQuery', manageFiltersSavedFilters()],
+    ['ManageFilters_OperationStats', manageFiltersOperationStats()],
+    ['InsightsSchemaFilterOptions', insightsSchemaFilterOptions()],
+  ]);
+}
+
 /** Every document the insights page and the operation page read, for a target without traffic. */
 export function insightsFixtures() {
   return new Map<string, unknown>([

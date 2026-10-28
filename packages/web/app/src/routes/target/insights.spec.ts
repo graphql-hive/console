@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 import { presetLast7Days } from '@/components/ui/date-range-picker';
-import { insightsFixtures, OPERATION } from '@/lib/testing/fixtures/insights';
+import {
+  insightsFixtures,
+  manageFiltersFixtures,
+  OPERATION,
+  SAVED_FILTER,
+} from '@/lib/testing/fixtures/insights';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient, operationName } from '@/lib/testing/urql';
@@ -348,6 +353,29 @@ describe('manage filters route', () => {
       selector: SLUGS,
     });
   });
+
+  it(
+    'opens a row to the Field and Subgraph editors when the filter uses them',
+    { timeout: 30_000 },
+    async () => {
+      const client = createTestClient(new Map([...layoutFixtures(), ...manageFiltersFixtures()]));
+      renderAtUrl(`${TARGET}/insights/manage-filters`, { client });
+      const row = await screen.findByText(SAVED_FILTER.name);
+
+      fireEvent.click(row);
+
+      const field = await screen.findByRole('group', { name: 'Field filter' });
+      const subgraph = await screen.findByRole('group', { name: 'Subgraph filter' });
+      // Nothing changed yet, so there is nothing to save.
+      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Save changes' }).disabled).toBe(
+        true,
+      );
+      // The editor reads its options from the same document the Insights page preloads.
+      expect(requests(client, 'InsightsSchemaFilterOptions')).toBe(1);
+      expect(field.textContent).toContain(`${SAVED_FILTER.schemaCoordinates.length} fields`);
+      expect(subgraph.textContent).toContain('1 subgraph');
+    },
+  );
 });
 
 describe('insights preloading', () => {
