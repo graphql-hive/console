@@ -9,16 +9,16 @@ concurrency:
   group: release-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-permissions:
-  id-token: write
-  pull-requests: write
-  contents: write
-  packages: write
+permissions: {}
 
 jobs:
   snapshot:
     if: github.event_name == 'pull_request'
     uses: the-guild-org/shared-config/.github/workflows/release-snapshot.yml@v1
+    permissions:
+      contents: read
+      # npm provenance
+      id-token: write
     with:
       npmTag:
         ${{ github.event.pull_request.title == 'Upcoming Release Changes' && 'rc' || 'alpha' }}
@@ -53,6 +53,10 @@ jobs:
     needs: snapshot-cli-version
     if: needs.snapshot-cli-version.outputs.published == 'true'
     uses: ./.github/workflows/dockerize-cli.yaml
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
     with:
       cliVersion: ${{ needs.snapshot-cli-version.outputs.version }}
       publishLatest: false
@@ -61,6 +65,10 @@ jobs:
   stable:
     if: github.event_name == 'push'
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      # npm trusted publishing and provenance
+      id-token: write
     env:
       HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
       # AWS_* are used by Oclif CLI
@@ -257,6 +265,8 @@ jobs:
     needs: stable
     if: needs.stable.outputs.hivePublish != 'true'
     uses: ./.github/workflows/changeset-version.yaml
+    permissions:
+      contents: read
 
   build:
     needs:
@@ -266,6 +276,12 @@ jobs:
       always() && needs.stable.result == 'success' && (needs.stable-changeset-version.result ==
       'success' || needs.stable-changeset-version.result == 'skipped')
     uses: ./.github/workflows/build-and-dockerize.yaml
+    # Must cover every job of the called workflow, including publish_cdn_release_artifacts, which
+    # only runs for hive@* tags.
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
     with:
       imageTag:
         # prettier-ignore
@@ -285,6 +301,10 @@ jobs:
     # such as packing the tarballs, fails.
     if: ${{ !cancelled() && needs.stable.outputs.cliPublish == 'true' }}
     uses: ./.github/workflows/dockerize-cli.yaml
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
     with:
       cliVersion: ${{ needs.stable.outputs.cliVersion }}
       publishLatest: true
