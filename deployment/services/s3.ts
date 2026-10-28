@@ -29,9 +29,11 @@ export function deployS3Mirror(env: string) {
   const s3Config = new pulumi.Config('s3');
   const bucket = s3Config.require('bucketName');
   const resourcePrefix = `hive-${env}-s3`;
+  const permissionsBoundary = pulumi.interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:policy/${resourcePrefix}-user-boundary`;
 
   const readWriteUser = new aws.iam.User(`${resourcePrefix}-read-write`, {
     name: `${resourcePrefix}-read-write`,
+    permissionsBoundary,
   });
 
   const readWritePolicy = new aws.iam.UserPolicy(`${resourcePrefix}-read-write`, {
@@ -53,6 +55,7 @@ export function deployS3Mirror(env: string) {
 
   const readOnlyUser = new aws.iam.User(`${resourcePrefix}-read-only`, {
     name: `${resourcePrefix}-read-only`,
+    permissionsBoundary,
   });
 
   const readOnlyPolicy = new aws.iam.UserPolicy(`${resourcePrefix}-read-only`, {

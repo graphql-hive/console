@@ -11,7 +11,12 @@ export function deployAWSArtifactsLambdaFunction(args: {
   s3Mirror: S3;
   awsIamAuthEnabled?: boolean;
 }) {
+  const envName = args.environment.envName;
+  const accountId = aws.getCallerIdentityOutput().accountId;
+
   const lambdaRole = new aws.iam.Role('awsLambdaArtifactsHandlerRole', {
+    namePrefix: `hive-artifacts-handler-${envName}-`,
+    permissionsBoundary: pulumi.interpolate`arn:aws:iam::${accountId}:policy/hive-artifacts-handler-${envName}-boundary`,
     assumeRolePolicy: {
       Version: '2012-10-17',
       Statement: [
