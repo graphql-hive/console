@@ -166,7 +166,7 @@ export const env = {
           labels: {
             instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'rate-limit',
           },
-          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
+          port: prometheus.PROMETHEUS_METRICS_PORT,
         }
       : null,
   hiveServices: {

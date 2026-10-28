@@ -381,11 +381,13 @@ export class TargetManager {
     const validationResult = BreakingChangeConfigurationModel.extend({
       period: z
         .number()
-        .min(1)
-        .max(org.monthlyRateLimit.retentionInDays)
+        .min(1, 'Period must be at least 1')
+        .max(
+          org.monthlyRateLimit.retentionInDays,
+          `Period must be less than ${org.monthlyRateLimit.retentionInDays}`,
+        )
         .int()
-        .nullable()
-        .optional(),
+        .nullish(),
     }).safeParse(args.configuration);
 
     if (validationResult.success === false) {

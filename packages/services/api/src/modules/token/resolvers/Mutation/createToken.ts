@@ -3,17 +3,17 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TokenManager } from '../../providers/token-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-const TokenNameModel = z.string().min(2).max(50);
+const TokenNameModel = z.string().min(2, 'Name must contain at least 2 characters').max(50);
+
+const CreateTokenInputModel = z.object({
+  name: TokenNameModel,
+});
 
 export const createToken: NonNullable<MutationResolvers['createToken']> = async (
   _parent,
   { input },
   { injector },
 ) => {
-  const CreateTokenInputModel = z.object({
-    name: TokenNameModel,
-  });
-
   const result = CreateTokenInputModel.safeParse(input);
 
   if (!result.success) {

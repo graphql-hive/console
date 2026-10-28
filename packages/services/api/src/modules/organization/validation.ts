@@ -2,7 +2,11 @@ import { z } from 'zod';
 import { NameModel } from '../../shared/entities';
 import { reservedOrganizationSlugs } from './providers/organization-config';
 
-export const OrganizationNameModel = NameModel.min(2).max(50);
+export const OrganizationNameModel = NameModel.min(
+  2,
+  'Name must contain at least 2 characters',
+).max(50, 'Name must contain less than 50 characters');
+
 export const OrganizationSlugModel = z
   .string({
     error: issue => (issue.input === undefined ? 'Organization slug is required' : undefined),
@@ -13,6 +17,7 @@ export const OrganizationSlugModel = z
   .refine(slug => !reservedOrganizationSlugs.includes(slug), {
     error: "Slug can't be one of the reserved names",
   });
+
 export const CreateOrUpdateMemberRoleModel = z.object({
   name: z
     .string({
@@ -33,4 +38,8 @@ export const CreateOrUpdateMemberRoleModel = z.object({
     .trim()
     .min(2, 'Role description must be at least 2 characters long')
     .max(256, 'Role description must be at most 256 characters long'),
+});
+
+export const InviteByEmailInputModel = z.object({
+  email: z.email().max(128, 'Email must be at most 128 characters long'),
 });

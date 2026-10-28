@@ -238,7 +238,7 @@ export const env = {
   environment: base.ENVIRONMENT,
   release: base.RELEASE ?? 'local',
   http: {
-    port: base.PORT ?? 6260,
+    port: base.PORT,
     ...resolveServerListenOptions({
       serverHost: base.SERVER_HOST,
       serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
@@ -268,9 +268,9 @@ export const env = {
     prometheus.PROMETHEUS_METRICS === '1'
       ? {
           labels: {
-            instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'workflows',
+            instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE,
           },
-          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
+          port: prometheus.PROMETHEUS_METRICS_PORT,
         }
       : null,
   postgres:

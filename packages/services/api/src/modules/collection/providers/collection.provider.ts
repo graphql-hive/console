@@ -622,16 +622,26 @@ const inputObjectSchema = zod
     }
   });
 
+const OperationNameModel = zod
+  .string()
+  .min(1, 'Name must be at least 1 character')
+  .max(100, 'Name must be less than 100 characters');
+
+const OperationQueryModel = zod
+  .string()
+  .min(1, 'Query must have at least 1 character')
+  .max(MAX_INPUT_LENGTH, `Query must be less than ${MAX_INPUT_LENGTH} characters`);
+
 const OperationCreateModel = zod.object({
-  name: zod.string().min(1).max(100),
-  query: zod.string().min(1).max(MAX_INPUT_LENGTH),
+  name: OperationNameModel,
+  query: OperationQueryModel,
   variables: inputObjectSchema.nullable(),
   headers: inputObjectSchema.nullable(),
 });
 
 const OperationUpdateModel = zod.object({
-  name: zod.string().min(1).max(100).nullable(),
-  query: zod.string().min(1).max(MAX_INPUT_LENGTH).nullable(),
+  name: OperationNameModel.nullable(),
+  query: OperationQueryModel.nullable(),
   variables: inputObjectSchema.nullable(),
   headers: inputObjectSchema.nullable(),
 });

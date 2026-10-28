@@ -19,7 +19,7 @@ import type { OrganizationSelector } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 import { TokenStorage } from '../../token/providers/token-storage';
-import { CreateOrUpdateMemberRoleModel } from '../validation';
+import { CreateOrUpdateMemberRoleModel, InviteByEmailInputModel } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
@@ -581,10 +581,7 @@ export class OrganizationManager {
       },
     });
 
-    const InputModel = z.object({
-      email: z.email().max(128, 'Email must be at most 128 characters long'),
-    });
-    const result = InputModel.safeParse(input);
+    const result = InviteByEmailInputModel.safeParse(input);
 
     if (!result.success) {
       return {

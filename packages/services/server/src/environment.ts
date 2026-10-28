@@ -98,10 +98,7 @@ const EnvironmentModel = zod.object({
 
 const CommerceModel = zod.object({
   COMMERCE_ENDPOINT: emptyString(zod.url().optional()),
-  COMMERCE_BILLING: zod
-    .union([zod.literal('1'), zod.literal('0')])
-    .default('1')
-    .optional(),
+  COMMERCE_BILLING: zod.union([zod.literal('1'), zod.literal('0')]).default('1'),
 });
 
 const SentryModel = zod.union([
@@ -799,7 +796,7 @@ export const env = {
           labels: {
             instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'server',
           },
-          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
+          port: prometheus.PROMETHEUS_METRICS_PORT,
         }
       : null,
   hive: hiveUsageConfig,

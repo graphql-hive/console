@@ -12,11 +12,14 @@ import { authenticateRequest } from './authenticate-request';
 
 const OrganizationSlug = z
   .string()
-  .min(1)
-  .max(50)
-  .regex(/^[a-z0-9-]+$/);
+  .min(1, ':organizationSlug must have at least 1 character')
+  .max(50, ':organizationSlug must be less than 50 characters')
+  .regex(
+    /^[a-z0-9-]+$/,
+    ':organizationSlug can only contain alphanumeric characters and dashes (-)',
+  );
 
-const StateModel = z.string().regex(/^[a-f0-9]{64}$/);
+const StateModel = z.string().regex(/^[a-f0-9]{64}$/, 'Invalid state provided');
 
 const GitHubCallbackQuery = z.object({
   installation_id: z

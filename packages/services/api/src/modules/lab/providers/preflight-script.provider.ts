@@ -9,7 +9,7 @@ import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
 
-const SourceCodeModel = z.string().max(5_000);
+const SourceCodeModel = z.string().max(5_000, 'Source code must be less than 5000 characters');
 
 const UpdatePreflightScriptModel = z.strictObject({
   // Use validation only on insertion
