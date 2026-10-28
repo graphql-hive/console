@@ -33,52 +33,23 @@ const t = initTRPC.context<Context>().create({
 const procedure = t.procedure.use(handleTRPCError);
 
 /**
- * Formats a ZodError like `zod-validation-error`'s `fromZodError` did,
- * so the message surfaced to API clients stays the same.
+ * Formats the ZodError of an invalid policy config, which is shown to users saving a policy.
+ * Only unknown rule names and rule tuple mismatches (union of tuples) surface as zod issues;
+ * invalid rule options are reported by ajv as a plain error.
  */
 function formatValidationError(error: ZodError): string {
-  const message = error.issues.map(formatIssue).join('; ');
-  return message.length > 0 ? `Validation error: ${message}` : 'Validation error';
+  const messages = error.issues.flatMap(issue => collectMessages(issue, []));
+  return [...new Set(messages)].join('; ');
 }
 
-function formatIssue(issue: z.core.$ZodIssue): string {
-  if (issue.code === 'invalid_union') {
-    // zod 4 reports the path of union member issues relative to the union itself
-    return issue.errors
-      .map(issues =>
-        issues
-          .map(nested => formatIssue({ ...nested, path: [...issue.path, ...nested.path] }))
-          .join('; '),
-      )
-      .filter((message, index, all) => all.indexOf(message) === index)
-      .join(', or ');
+function collectMessages(issue: z.core.$ZodIssue, parentPath: PropertyKey[]): string[] {
+  // zod 4 reports the path of union member issues relative to the union itself
+  const path = [...parentPath, ...issue.path];
+  if (issue.code === 'invalid_union' && issue.errors.length > 0) {
+    return issue.errors.flat().flatMap(nested => collectMessages(nested, path));
   }
-  if (issue.path.length === 1 && typeof issue.path[0] === 'number') {
-    return `${issue.message} at index ${issue.path[0]}`;
-  }
-  if (issue.path.length > 0) {
-    return `${issue.message} at "${joinPath(issue.path)}"`;
-  }
-  return issue.message;
-}
 
-function joinPath(path: PropertyKey[]): string {
-  if (path.length === 1) {
-    return String(path[0]);
-  }
-  return path.reduce<string>((acc, item) => {
-    if (typeof item === 'number') {
-      return `${acc}[${item}]`;
-    }
-    const key = String(item);
-    if (key.includes('"')) {
-      return `${acc}["${key.replace(/"/g, '\\"')}"]`;
-    }
-    if (!/[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*/u.test(key)) {
-      return `${acc}["${key}"]`;
-    }
-    return acc.length === 0 ? key : `${acc}.${key}`;
-  }, '');
+  return [path.length > 0 ? `${issue.message} at "${path.join('.')}"` : issue.message];
 }
 
 const CONFIG_VALIDATION_SCHEMA = createInputValidationSchema();
