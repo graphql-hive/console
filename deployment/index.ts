@@ -96,7 +96,7 @@ const cdn = deployCFCDN({
 });
 
 const lambdaFunction = deployAWSArtifactsLambdaFunction({
-  s3Mirror,
+  s3Mirror: { secret: s3Mirror.readWriteSecret },
   environment,
   awsIamAuthEnabled: true,
 });
@@ -349,3 +349,5 @@ export const appId = app.deployment.id;
 export const otelCollectorId = otelCollector.deployment.id;
 export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
 export const awsLambdaArtifactsFunctionUrl = lambdaFunction;
+export const s3ReadWriteAccessKeyId = s3Mirror.accessKeys.readWriteId;
+export const s3ReadOnlyAccessKeyId = s3Mirror.accessKeys.readOnlyId;
