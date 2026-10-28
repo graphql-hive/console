@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
+import { alertRuleConfig, alertRulesPage, BLOCKED_RULE } from '@/lib/testing/fixtures/alerts';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
@@ -7,7 +8,7 @@ import { presetLast1Hour } from '@/pages/target-alerts-activity';
 import { createAppRouter } from '@/router';
 import { UTCDate } from '@date-fns/utc';
 import { createMemoryHistory } from '@tanstack/react-router';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -183,6 +184,49 @@ describe('alerts rules and detail routes', () => {
       expect(detail.client.seen).not.toContain('TargetAlertsDetailPage_StateLogQuery');
     },
   );
+
+  it('flags a rule the evaluator cannot apply, and says why on its page', async () => {
+    const blockedList = createTestClient(
+      new Map<string, unknown>([
+        ...layoutFixtures(),
+        ['TargetAlertsRulesPage_Query', alertRulesPage({ blocked: true })],
+      ]),
+    );
+    renderAtUrl(`${ALERTS}/rules`, { client: blockedList });
+    await screen.findByText(BLOCKED_RULE.name);
+    expect(screen.getByText('Not evaluated')).toBeTruthy();
+
+    const detail = createTestClient(
+      new Map<string, unknown>([
+        ...layoutFixtures(),
+        ['TargetAlertsDetailPage_RuleConfigQuery', alertRuleConfig({ blocked: true })],
+      ]),
+    );
+    const page = renderAtUrl(`${ALERTS}/${BLOCKED_RULE.id}`, { client: detail });
+    const panel = within(page.container);
+    await panel.findByText('Alert conditions');
+    await panel.findByText('Not evaluated');
+    // The explanation lives in the tooltip; focus is the keyboard way in.
+    fireEvent.focus(panel.getByRole('button', { name: 'Why this rule is not evaluated' }));
+    await screen.findByText(BLOCKED_RULE.message);
+  });
+
+  it('shows nothing about evaluation for a rule that evaluates normally', async () => {
+    const client = createTestClient(
+      new Map<string, unknown>([
+        ...layoutFixtures(),
+        ['TargetAlertsRulesPage_Query', alertRulesPage()],
+        ['TargetAlertsDetailPage_RuleConfigQuery', alertRuleConfig()],
+      ]),
+    );
+    renderAtUrl(`${ALERTS}/rules`, { client });
+    await screen.findByText(BLOCKED_RULE.name);
+    expect(screen.queryByText('Not evaluated')).toBeNull();
+
+    renderAtUrl(`${ALERTS}/${BLOCKED_RULE.id}`, { client });
+    await screen.findByText('Alert conditions');
+    expect(screen.queryByText('Not evaluated')).toBeNull();
+  });
 });
 
 describe('alerts create route', () => {

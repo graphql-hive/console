@@ -330,6 +330,7 @@ describe('updateMetricAlertRule through the cache', () => {
       thresholdValue: 100,
       direction: 'ABOVE',
       confirmationMinutes: 0,
+      evaluationBlocked: null,
       channels: [],
       savedFilter: null,
       createdAt: '2026-09-27T10:00:00.000Z',
