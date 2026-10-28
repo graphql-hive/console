@@ -2209,6 +2209,9 @@ importers:
       '@slack/web-api':
         specifier: 'catalog:'
         version: 7.10.0
+      '@theguild/federation-composition':
+        specifier: 'catalog:'
+        version: 0.27.0(graphql@16.14.2)
       '@trpc/client':
         specifier: 'catalog:'
         version: 10.45.3(@trpc/server@10.45.3)

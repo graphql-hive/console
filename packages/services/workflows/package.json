@@ -26,6 +26,7 @@
     "@hive/supergraph": "workspace:*",
     "@sentry/node": "catalog:",
     "@slack/web-api": "catalog:",
+    "@theguild/federation-composition": "catalog:",
     "@trpc/client": "catalog:",
     "@types/mjml": "4.7.1",
     "@types/nodemailer": "8.0.2",

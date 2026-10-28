@@ -1,18 +1,27 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
-import type { SqlValue } from '@hive/clickhouse';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask } from '../kit.js';
 import {
-  buildSavedFilterConditions,
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
+  isFilteredFilter,
   isRuleDue,
+  parseSavedFilter,
   queryClickHouseWindows,
+  resolveSavedFilter,
+  SAVED_FILTER_SKIP_REASONS,
+  type ParsedSavedFilter,
+  type SavedFilterSkipReason,
 } from '../lib/metric-alert-evaluator.js';
-import { metricAlertEnabledRules, metricAlertRuleGroups } from '../metrics.js';
+import { createSupergraphOwnershipLoader } from '../lib/supergraph-ownership.js';
+import {
+  metricAlertEnabledRules,
+  metricAlertGroupsSkipped,
+  metricAlertRuleGroups,
+} from '../metrics.js';
 
 // How many groups to evaluate in parallel. Each group = 1 ClickHouse round-trip
 // plus a per-rule state-machine evaluation that holds a Postgres connection for
@@ -21,6 +30,10 @@ import { metricAlertEnabledRules, metricAlertRuleGroups } from '../metrics.js';
 const GROUP_CONCURRENCY = 5;
 
 const tracer = trace.getTracer('metric-alert-evaluator');
+
+// A skipped group is retried every tick, so warn when its reason appears or changes,
+// not on every one of them. The span attribute carries the per-tick signal.
+const lastSkipReasonByGroup = new Map<string, SavedFilterSkipReason>();
 
 export const EvaluateMetricAlertRulesTask = defineTask({
   name: 'evaluateMetricAlertRules',
@@ -64,18 +77,19 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
 
   // Parse each group's saved filter once, reused by the gauges below and by
   // processGroup, so a filtered group isn't re-parsed within the same tick.
-  const groupFilters = [...groups.values()].map(group => ({
+  const groupFilters = [...groups.entries()].map(([key, group]) => ({
+    key,
     group,
-    filterConditions: buildSavedFilterConditions(group[0].savedFilterFilters, logger),
+    filter: parseSavedFilter(group[0].savedFilterFilters, logger),
   }));
 
   // Population gauges for the expensive with-filter rules. "Filtered" means the
-  // filter yields query conditions (the legacy-table path), not just that a
+  // filter narrows the query (the legacy-table path), not just that a
   // saved_filter_id is set. Both labels set each tick (incl. 0) to avoid staleness.
   let filteredGroups = 0;
   let filteredRules = 0;
-  for (const { group, filterConditions } of groupFilters) {
-    if (filterConditions.length > 0) {
+  for (const { group, filter } of groupFilters) {
+    if (isFilteredFilter(filter)) {
       filteredGroups += 1;
       filteredRules += group.length;
     }
@@ -86,11 +100,17 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   metricAlertEnabledRules.set({ filtered: 'false' }, rules.length - filteredRules);
 
   if (rules.length === 0) {
+    for (const reason of SAVED_FILTER_SKIP_REASONS) {
+      metricAlertGroupsSkipped.set({ reason }, 0);
+    }
     logger.debug('No enabled metric alert rules found');
     return;
   }
 
   logger.info({ count: rules.length }, 'Evaluating metric alert rules');
+
+  // One loader per tick: concurrent groups on the same target share one version lookup.
+  const ownership = createSupergraphOwnershipLoader(context.pg, logger);
 
   // Evaluate only groups with at least one due member. Members of a group share
   // a window (so one cadence), and the batched UPDATE below keeps their
@@ -108,10 +128,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   }
 
   async function processGroup(
+    groupKey: string,
     groupRules: (typeof rules)[number][],
-    filterConditions: SqlValue[],
+    parsedFilter: ParsedSavedFilter,
   ): Promise<{
     failed: boolean;
+    skipped: SavedFilterSkipReason | null;
     evaluatedIds: string[];
   }> {
     const representative = groupRules[0];
@@ -146,20 +168,49 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           // true only when the filter yields the heavier legacy-table query.
           'metric.types': [...new Set(groupRules.map(r => r.type))],
           'threshold.types': [...new Set(groupRules.map(r => r.thresholdType))],
-          'filter.applied': filterConditions.length > 0,
+          'filter.applied': isFilteredFilter(parsedFilter),
           'window.needs_previous': needsPreviousWindow,
           'metric.needs_percentiles': needsPercentiles,
         },
       },
       async span => {
         try {
+          // Resolve subgraph names against the latest composable version before touching
+          // ClickHouse. A filter that cannot be resolved skips the whole group: its rules keep
+          // their state and `last_evaluated_at` stays put, so a FIRING rule stays FIRING with
+          // no resolution and a PENDING one never fires until the filter is fixed. The gauge
+          // and span attribute below are what make that visible.
+          const resolution = await resolveSavedFilter(parsedFilter, {
+            targetId: representative.targetId,
+            ownership,
+          });
+          if (resolution.kind === 'skip') {
+            span.setAttribute('filter.skipped_reason', resolution.reason);
+            span.setStatus({ code: SpanStatusCode.ERROR, message: 'saved filter unresolvable' });
+            if (lastSkipReasonByGroup.get(groupKey) !== resolution.reason) {
+              lastSkipReasonByGroup.set(groupKey, resolution.reason);
+              logger.warn(
+                {
+                  targetId: representative.targetId,
+                  savedFilterId: representative.savedFilterId,
+                  ruleIds: groupRules.map(r => r.id),
+                  reason: resolution.reason,
+                  details: resolution.details,
+                },
+                'Skipping metric alert group: its saved filter cannot be resolved',
+              );
+            }
+            return { failed: false, skipped: resolution.reason, evaluatedIds: [] };
+          }
+          lastSkipReasonByGroup.delete(groupKey);
+
           let windows;
           try {
             windows = await queryClickHouseWindows(
               clickhouse,
               representative.targetId,
               representative.timeWindowMinutes,
-              filterConditions,
+              resolution.filter,
               evaluationTime,
               needsPreviousWindow,
               needsAverage,
@@ -173,7 +224,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
             );
             span.setStatus({ code: SpanStatusCode.ERROR, message: 'clickhouse query failed' });
             span.setAttribute('error.type', error instanceof Error ? error.name : 'unknown');
-            return { failed: true, evaluatedIds: [] };
+            return { failed: true, skipped: null, evaluatedIds: [] };
           }
 
           // Treat a missing window as a zero-value window. Skipping evaluation
@@ -219,7 +270,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
             });
             evaluatedIds.push(rule.id);
           }
-          return { failed: false, evaluatedIds };
+          return { failed: false, skipped: null, evaluatedIds };
         } finally {
           span.end();
         }
@@ -252,10 +303,13 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         // not via graphile-worker retries that would re-run already-committed work.
         const limit = pLimit(GROUP_CONCURRENCY);
         let groupsFailed = 0;
+        const skippedByReason = new Map<SavedFilterSkipReason, number>(
+          SAVED_FILTER_SKIP_REASONS.map(reason => [reason, 0]),
+        );
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
-          dueGroupList.map(({ group, filterConditions }) =>
-            limit(() => processGroup(group, filterConditions)),
+          dueGroupList.map(({ key, group, filter }) =>
+            limit(() => processGroup(key, group, filter)),
           ),
         );
         for (const r of results) {
@@ -264,9 +318,17 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
             logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
           } else if (r.value.failed) {
             groupsFailed++;
+          } else if (r.value.skipped) {
+            skippedByReason.set(r.value.skipped, (skippedByReason.get(r.value.skipped) ?? 0) + 1);
           } else {
             evaluatedRuleIds.push(...r.value.evaluatedIds);
           }
+        }
+        // Every reason is set each tick (incl. 0) so a fixed filter clears the gauge.
+        let groupsSkipped = 0;
+        for (const [reason, count] of skippedByReason) {
+          metricAlertGroupsSkipped.set({ reason }, count);
+          groupsSkipped += count;
         }
 
         // One batched UPDATE for all successfully-evaluated rules'
@@ -284,6 +346,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
 
         span.setAttributes({
           'groups.failed': groupsFailed,
+          'groups.skipped': groupsSkipped,
           'rules.evaluated': evaluatedRuleIds.length,
         });
         if (groupsFailed > 0) {
@@ -297,6 +360,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           {
             groupsAttempted: dueGroupList.length,
             groupsFailed,
+            groupsSkipped,
             rulesEvaluated: evaluatedRuleIds.length,
           },
           'Metric alert evaluation complete',
