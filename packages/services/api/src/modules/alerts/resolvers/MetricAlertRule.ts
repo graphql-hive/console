@@ -1,6 +1,7 @@
 import { Session } from '../../auth/lib/authz';
 import { SavedFiltersStorage } from '../../saved-filters/providers/saved-filters-storage';
 import { Storage } from '../../shared/providers/storage';
+import { evaluationBlockOf } from '../lib/evaluation-block';
 import { MetricAlertRulesStorage } from '../providers/metric-alert-rules-storage';
 import type { MetricAlertRuleResolvers } from './../../../__generated__/types';
 
@@ -78,4 +79,5 @@ export const MetricAlertRule: MetricAlertRuleResolvers = {
       timestamp: new Date(timestamp),
     });
   },
+  evaluationBlocked: rule => evaluationBlockOf(rule),
 };

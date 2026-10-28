@@ -71,6 +71,9 @@ const MetricAlertRuleModel = zod
     stateChangedAt: zod.string().nullable(),
     confirmationMinutes: zod.number(),
     savedFilterId: zod.string().nullable(),
+    evaluationBlockedReason: zod.string().nullable(),
+    evaluationBlockedSince: zod.string().nullable(),
+    evaluationBlockedDetails: zod.array(zod.string()).nullable(),
   })
   .refine(data => (data.type === 'LATENCY') === (data.metric !== null), {
     error: 'metric must be set for LATENCY type and null for other types',
@@ -123,6 +126,9 @@ const METRIC_ALERT_RULE_SELECT = psql`
   , to_json("state_changed_at") as "stateChangedAt"
   , "confirmation_minutes" as "confirmationMinutes"
   , "saved_filter_id" as "savedFilterId"
+  , "evaluation_blocked_reason" as "evaluationBlockedReason"
+  , to_json("evaluation_blocked_since") as "evaluationBlockedSince"
+  , "evaluation_blocked_details" as "evaluationBlockedDetails"
 `;
 
 const METRIC_ALERT_INCIDENT_SELECT = psql`
