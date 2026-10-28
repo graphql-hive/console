@@ -4,6 +4,7 @@ import {
   InsightsFilterSearch,
 } from '@/components/target/insights/search-schemas';
 import { Stats_GeneralOperationsStatsQuery } from '@/components/target/insights/stats';
+import { InsightsSchemaFilterOptions_Query } from '@/components/target/insights/use-insights-filter-dimensions';
 import { presetLast1Day, presetLast7Days, type Preset } from '@/components/ui/date-range-picker';
 import { DiffsWorkerPoolProvider } from '@/components/ui/diffs';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
@@ -79,6 +80,7 @@ export const targetInsightsRoute = createRoute({
     const filter = buildGraphQLFilter(loader.deps);
     void loadQuery(loader, TargetOperationsPageQuery, selector);
     void loadQuery(loader, InsightsFilterPicker_Query, { selector, period });
+    void loadQuery(loader, InsightsSchemaFilterOptions_Query, { selector });
     void loadQuery(
       loader,
       Stats_GeneralOperationsStatsQuery,

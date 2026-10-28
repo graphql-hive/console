@@ -7,7 +7,11 @@ import { SaveFilterButton } from '@/components/target/insights/save-filter-butto
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { InsightsFilterState } from '@/components/target/insights/search-schemas';
 import { OperationsStats } from '@/components/target/insights/stats';
-import { useInsightsFilterDimensions } from '@/components/target/insights/use-insights-filter-dimensions';
+import {
+  explorerTypesToFieldCoordinates,
+  InsightsSchemaFilterOptions_Query,
+  useInsightsFilterDimensions,
+} from '@/components/target/insights/use-insights-filter-dimensions';
 import {
   useInsightsFilterExtraSections,
   type SavedFilterView,
@@ -21,7 +25,7 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { graphql } from '@/gql';
-import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
+import { OperationStatsFilterInput, ProjectType, SavedFilterVisibilityType } from '@/gql/graphql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
@@ -41,6 +45,8 @@ export function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFi
       : undefined,
     excludeOperations: state.excludeOperations ?? undefined,
     excludeClientVersionFilters: state.excludeClients ?? undefined,
+    schemaCoordinates: state.fields?.length ? state.fields : undefined,
+    subgraphNames: state.subgraphs?.length ? state.subgraphs : undefined,
   };
 }
 
@@ -90,6 +96,8 @@ export const InsightsFilterPicker_Query = graphql(`
               }
               excludeOperations
               excludeClientFilters
+              schemaCoordinates
+              subgraphNames
             }
           }
         }
@@ -128,6 +136,22 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
       period,
     },
   });
+
+  const [schemaOptionsQuery] = useQuery({
+    query: InsightsSchemaFilterOptions_Query,
+    variables: { selector: { organizationSlug, projectSlug, targetSlug } },
+    requestPolicy: 'cache-first',
+  });
+  const schemaOptions = schemaOptionsQuery.data?.target;
+  const fieldCoordinates = useMemo(
+    () =>
+      explorerTypesToFieldCoordinates(
+        schemaOptions?.latestValidSchemaVersion?.explorer?.types ?? [],
+      ),
+    [schemaOptions?.latestValidSchemaVersion?.explorer?.types],
+  );
+  const subgraphNames = schemaOptions?.latestValidSchemaVersion?.explorer?.subgraphNames ?? [];
+  const showSubgraphs = schemaOptions?.project?.type === ProjectType.Federation;
 
   const operationFilterItems: FilterItem[] = useMemo(() => {
     const edges = pickerQuery.data?.target?.operationsStats?.operations?.edges ?? [];
@@ -179,6 +203,8 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
           dateRange: node.filters.dateRange ?? null,
           excludeOperations: node.filters.excludeOperations ?? false,
           excludeClientFilters: node.filters.excludeClientFilters ?? false,
+          schemaCoordinates: [...node.filters.schemaCoordinates],
+          subgraphNames: [...node.filters.subgraphNames],
         },
       };
 
@@ -229,6 +255,9 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     operationFilterItems,
     clientFilterItems,
     hashToNameMap,
+    fieldCoordinates,
+    subgraphNames,
+    showSubgraphs,
   });
 
   const handleClearActiveView = useCallback(() => {
@@ -240,6 +269,8 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
         clients: undefined,
         excludeOperations: undefined,
         excludeClients: undefined,
+        fields: undefined,
+        subgraphs: undefined,
         from: presetLast7Days.range.from,
         to: presetLast7Days.range.to,
       }),
@@ -264,9 +295,11 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     () =>
       (search.operations && search.operations.length > 0) ||
       (search.clients && search.clients.length > 0) ||
+      (search.fields && search.fields.length > 0) ||
+      (search.subgraphs && search.subgraphs.length > 0) ||
       (search.from !== undefined && search.from !== presetLast7Days.range.from) ||
       (search.to !== undefined && search.to !== presetLast7Days.range.to),
-    [search.operations, search.clients, search.from, search.to],
+    [search.operations, search.clients, search.fields, search.subgraphs, search.from, search.to],
   );
 
   const filter = useMemo(() => buildGraphQLFilter(search), [search]);
@@ -317,6 +350,8 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
                     },
                     excludeOperations: search.excludeOperations ?? false,
                     excludeClientFilters: search.excludeClients ?? false,
+                    schemaCoordinates: search.fields ?? [],
+                    subgraphNames: search.subgraphs ?? [],
                   }}
                   onSaved={viewId => {
                     void navigate({

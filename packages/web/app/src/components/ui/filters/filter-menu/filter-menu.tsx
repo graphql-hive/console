@@ -67,6 +67,7 @@ export function FilterMenu({
         valuesLabel={d.valuesLabel}
         singleSelect={d.singleSelect}
         alwaysShowSearch={d.alwaysShowSearch}
+        unavailableNote={d.unavailableNote}
       />
     ),
   }));

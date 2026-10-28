@@ -56,6 +56,45 @@ export function insightsFilterPicker() {
   };
 }
 
+export const SUBGRAPHS = ['users', 'reviews'] as const;
+export const FIELD_COORDINATES = ['Query.me', 'User.id', 'User.name'] as const;
+
+/** A federation target whose latest version has two subgraphs and three object fields. */
+export function insightsSchemaFilterOptions(projectType: 'FEDERATION' | 'SINGLE' = 'FEDERATION') {
+  return {
+    __typename: 'Query' as const,
+    target: {
+      __typename: 'Target' as const,
+      id: TARGET_ID,
+      project: { __typename: 'Project' as const, id: 'project-1', type: projectType },
+      latestValidSchemaVersion: {
+        __typename: 'SchemaVersion' as const,
+        id: 'version-1',
+        explorer: {
+          __typename: 'SchemaExplorer' as const,
+          subgraphNames: [...SUBGRAPHS],
+          types: [
+            {
+              __typename: 'GraphQLObjectType' as const,
+              name: 'Query',
+              fields: [{ __typename: 'GraphQLField' as const, name: 'me' }],
+            },
+            {
+              __typename: 'GraphQLObjectType' as const,
+              name: 'User',
+              fields: [
+                { __typename: 'GraphQLField' as const, name: 'id' },
+                { __typename: 'GraphQLField' as const, name: 'name' },
+              ],
+            },
+            { __typename: 'GraphQLEnumType' as const },
+          ],
+        },
+      },
+    },
+  };
+}
+
 export function generalOperationsStats() {
   return {
     __typename: 'Query' as const,
@@ -108,6 +147,7 @@ export function insightsFixtures() {
   return new Map<string, unknown>([
     ['TargetOperationsPageQuery', insightsGate()],
     ['InsightsFilterPicker', insightsFilterPicker()],
+    ['InsightsSchemaFilterOptions', insightsSchemaFilterOptions()],
     ['Stats_GeneralOperationsStats', generalOperationsStats()],
     ['OperationsList_OperationsStats', operationsList()],
     ['OperationInsightsPageQuery', operationInsightsPage()],

@@ -40,6 +40,8 @@ export type FilterDropdownProps = {
   singleSelect?: boolean;
   /** Show the search box regardless of how many items there are. */
   alwaysShowSearch?: boolean;
+  /** Completes "Struck-through items are ..." for unavailable items. */
+  unavailableNote?: string;
 };
 
 /** Outer shell shared by every filter chip. */
@@ -62,6 +64,7 @@ export function FilterDropdown({
   onExcludeModeChange,
   singleSelect,
   alwaysShowSearch,
+  unavailableNote,
 }: FilterDropdownProps) {
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -136,6 +139,7 @@ export function FilterDropdown({
               valuesLabel={valuesLabel}
               singleSelect={singleSelect}
               alwaysShowSearch={alwaysShowSearch}
+              unavailableNote={unavailableNote}
             />
           }
         />

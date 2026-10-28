@@ -77,6 +77,8 @@ type SavedFilter = {
     dateRange?: { from: string; to: string } | null;
     excludeOperations?: boolean | null;
     excludeClientFilters?: boolean | null;
+    schemaCoordinates?: readonly string[];
+    subgraphNames?: readonly string[];
   };
 };
 
@@ -255,6 +257,8 @@ export function AlertEventDetail({
           dateRange: rule.savedFilter.filters.dateRange,
           excludeOperations: rule.savedFilter.filters.excludeOperations ?? undefined,
           excludeClientFilters: rule.savedFilter.filters.excludeClientFilters ?? undefined,
+          schemaCoordinates: rule.savedFilter.filters.schemaCoordinates,
+          subgraphNames: rule.savedFilter.filters.subgraphNames,
         },
       })}
       target="_blank"

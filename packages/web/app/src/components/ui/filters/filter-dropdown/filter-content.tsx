@@ -42,7 +42,15 @@ export type FilterContentProps = {
   singleSelect?: boolean;
   /** Show the search box regardless of how many items there are. */
   alwaysShowSearch?: boolean;
+  /** Completes "Struck-through items are ..." for unavailable items. */
+  unavailableNote?: string;
 };
+
+/**
+ * Above this many items the width sizer measures only the longest name. Joining every name into
+ * one span is cheap for a few hundred clients, not for a schema's worth of field coordinates.
+ */
+const LONGEST_NAME_SIZER_THRESHOLD = 500;
 
 export function FilterContent({
   label,
@@ -52,6 +60,7 @@ export function FilterContent({
   valuesLabel = 'values',
   singleSelect,
   alwaysShowSearch,
+  unavailableNote = 'not found in the selected date range',
 }: FilterContentProps) {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -123,7 +132,16 @@ export function FilterContent({
 
   const showSearch = alwaysShowSearch || items.length >= SEARCH_VISIBILITY_THRESHOLD;
 
-  const allNames = useMemo(() => items.map(item => item.name).join('\n'), [items]);
+  const allNames = useMemo(() => {
+    if (items.length <= LONGEST_NAME_SIZER_THRESHOLD) {
+      return items.map(item => item.name).join('\n');
+    }
+    let longest = '';
+    for (const item of items) {
+      if (item.name.length > longest.length) longest = item.name;
+    }
+    return longest;
+  }, [items]);
   const hasSubmenus = items.some(item => item.values.length > 0);
 
   return (
@@ -145,8 +163,7 @@ export function FilterContent({
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (
         <div className="mt-2 px-4 py-1 text-xs text-fg-default">
-          <span className="line-through">Struck-through</span> items are not found in the selected
-          date range.
+          <span className="line-through">Struck-through</span> items are {unavailableNote}.
         </div>
       )}
 

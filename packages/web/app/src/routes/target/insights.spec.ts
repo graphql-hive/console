@@ -41,6 +41,7 @@ const OPERATION_PAGE = `${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?$
 const PAGE_DOCUMENTS = [
   'TargetOperationsPageQuery',
   'InsightsFilterPicker',
+  'InsightsSchemaFilterOptions',
   'Stats_GeneralOperationsStats',
   'OperationsList_OperationsStats',
 ];
@@ -93,6 +94,7 @@ describe('insights route', () => {
         expect.arrayContaining([
           ['TargetOperationsPageQuery', 'cache-first'],
           ['InsightsFilterPicker', 'cache-first'],
+          ['InsightsSchemaFilterOptions', 'cache-first'],
           ['Stats_GeneralOperationsStats', 'cache-and-network'],
           ['OperationsList_OperationsStats', 'cache-and-network'],
         ]),
@@ -101,6 +103,8 @@ describe('insights route', () => {
       expect(variablesOf(client, 'TargetOperationsPageQuery')).toEqual(SLUGS);
       expect(variablesOf(client, 'InsightsFilterPicker')).toMatchObject({ selector: SLUGS });
       expectPeriod(variablesOf(client, 'InsightsFilterPicker'));
+      // Schema options do not depend on the period, so a range change never refetches them.
+      expect(variablesOf(client, 'InsightsSchemaFilterOptions')).toEqual({ selector: SLUGS });
       expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toMatchObject({
         targetSelector: SLUGS,
         filter,
@@ -111,6 +115,27 @@ describe('insights route', () => {
         filter,
       });
       expectPeriod(variablesOf(client, 'OperationsList_OperationsStats'));
+    },
+  );
+
+  it(
+    'carries fields and subgraphs from the URL into both stats documents',
+    { timeout: 30_000 },
+    async () => {
+      const client = createTestClient(layoutFixtures());
+      const fields = encodeURIComponent(JSON.stringify(['Query.me', 'User.name']));
+      const subgraphs = encodeURIComponent(JSON.stringify(['reviews']));
+      const router = createAppRouter({
+        history: createMemoryHistory({
+          initialEntries: [`${TARGET}/insights?${RANGE}&fields=${fields}&subgraphs=${subgraphs}`],
+        }),
+        urqlClient: client,
+      });
+      await router.load();
+
+      const filter = { schemaCoordinates: ['Query.me', 'User.name'], subgraphNames: ['reviews'] };
+      expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toMatchObject({ filter });
+      expect(variablesOf(client, 'OperationsList_OperationsStats')).toMatchObject({ filter });
     },
   );
 
@@ -156,6 +181,7 @@ describe('insights route', () => {
       for (const name of [
         'TargetOperationsPageQuery',
         'InsightsFilterPicker',
+        'InsightsSchemaFilterOptions',
         'TargetLayoutQuery',
         'ViewerQuery',
       ]) {

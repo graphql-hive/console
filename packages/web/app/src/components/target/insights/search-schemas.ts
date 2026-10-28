@@ -10,6 +10,8 @@ export const InsightsFilterSearch = z.object({
   clients: z.array(InsightsClientFilter).optional().catch(undefined),
   excludeOperations: z.boolean().optional().catch(undefined),
   excludeClients: z.boolean().optional().catch(undefined),
+  fields: z.array(z.string()).optional().catch(undefined),
+  subgraphs: z.array(z.string()).optional().catch(undefined),
   from: z.string().optional().catch(undefined),
   to: z.string().optional().catch(undefined),
   viewId: z.string().optional().catch(undefined),
