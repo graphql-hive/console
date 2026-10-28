@@ -703,7 +703,7 @@ describe('Saved Filters', () => {
         },
       });
 
-      expect(result.error?.message).toContain('Array must contain at most 100 element');
+      expect(result.error?.message).toBe('At most 100 schema coordinates can be selected');
     });
 
     test.concurrent('rejects subgraph names on a non-Federation project', async ({ expect }) => {

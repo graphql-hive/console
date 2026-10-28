@@ -69,13 +69,22 @@ const InsightsFilterConfigurationModel = zod.object({
     .array(
       zod
         .string()
-        .max(200)
-        .regex(schemaCoordinatePattern, { message: 'Invalid schema coordinate' }),
+        .max(200, 'Schema coordinate must be at most 200 characters long')
+        .regex(schemaCoordinatePattern, 'Invalid schema coordinate'),
     )
-    .max(100)
+    .max(100, 'At most 100 schema coordinates can be selected')
     .nullish()
     .transform(uniqueStrings),
-  subgraphNames: zod.array(zod.string().min(1).max(100)).max(50).nullish().transform(uniqueStrings),
+  subgraphNames: zod
+    .array(
+      zod
+        .string()
+        .min(1, 'Subgraph name is required')
+        .max(100, 'Subgraph name must be at most 100 characters long'),
+    )
+    .max(50, 'At most 50 subgraphs can be selected')
+    .nullish()
+    .transform(uniqueStrings),
 });
 
 type InsightsFilterInput = {
