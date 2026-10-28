@@ -381,11 +381,11 @@ export class TargetManager {
     const validationResult = BreakingChangeConfigurationModel.extend({
       period: z
         .number()
-        .int('Period must be a whole number of days.')
-        .min(1, 'Period must be at least 1 day.')
+        .int('Period must be a whole number of days')
+        .min(1, 'Period must be at least 1 day')
         .max(
           org.monthlyRateLimit.retentionInDays,
-          `Period must be at most ${org.monthlyRateLimit.retentionInDays} days, the data retention period of your organization.`,
+          `Period must be at most ${org.monthlyRateLimit.retentionInDays} days, the data retention period of your organization`,
         )
         .nullish(),
     }).safeParse(args.configuration);
@@ -717,38 +717,38 @@ export class TargetManager {
 const AppDeploymentProtectionConfigurationModel = z.object({
   minDaysInactive: z
     .number()
-    .min(0, 'Minimum days inactive must be at least 0.')
+    .min(0, 'Minimum days inactive must be at least 0')
     .nullable()
     .optional(),
   minDaysSinceCreation: z
     .number()
-    .min(0, 'Minimum days since creation must be at least 0.')
+    .min(0, 'Minimum days since creation must be at least 0')
     .nullable()
     .optional(),
   maxTrafficPercentage: z
     .number()
-    .min(0, 'Maximum traffic percentage must be at least 0.')
-    .max(100, 'Maximum traffic percentage must be at most 100.')
+    .min(0, 'Maximum traffic percentage must be at least 0')
+    .max(100, 'Maximum traffic percentage must be at most 100')
     .nullable()
     .optional(),
   trafficPeriodDays: z
     .number()
-    .min(1, 'Traffic period days must be at least 1.')
+    .min(1, 'Traffic period days must be at least 1')
     .nullable()
     .optional(),
 });
 
 const TargetGraphQLEndpointUrlModel = zod
   .url('Must be a valid URL, e.g. https://api.example.com/graphql')
-  .max(300, 'Must be at most 300 characters long.')
+  .max(300, 'Must be at most 300 characters long')
   .nullable();
 
 const BreakingChangeConfigurationModel = z.object({
   percentage: PercentageModel.nullable().optional(),
-  requestCount: z.number().min(1, 'Request count must be at least 1.').nullable().optional(),
+  requestCount: z.number().min(1, 'Request count must be at least 1').nullable().optional(),
   targetIds: z
-    .array(z.uuid({ error: 'Incorrect UUID provided.' }))
-    .min(1, 'At least one target must be provided.')
+    .array(z.uuid({ error: 'Incorrect UUID provided' }))
+    .min(1, 'At least one target must be provided')
     .nullable()
     .optional(),
 });

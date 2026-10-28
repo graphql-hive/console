@@ -151,7 +151,7 @@ describe('Policy CRUD', () => {
         expect(upsertResult.ok).toBeNull();
         expect(upsertResult.error).toBeDefined();
         expect(upsertResult.error?.message).toBe(
-          'Too big: expected array to have <=1 items at "config.require-nullable-result-in-root"',
+          'This rule does not accept any configuration at "config.require-nullable-result-in-root"',
         );
       },
     );

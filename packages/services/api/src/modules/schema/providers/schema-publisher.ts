@@ -4085,10 +4085,10 @@ const millisecondsPerDay = 60 * 60 * 24 * 1000;
 const SchemaCheckContextIdModel = z
   .string()
   .min(1, {
-    error: 'Context ID must be at least 1 character long.',
+    error: 'Context ID must be at least 1 character long',
   })
   .max(200, {
-    error: 'Context ID cannot exceed length of 200 characters.',
+    error: 'Context ID cannot exceed length of 200 characters',
   });
 
 export function isValidServiceName(service: string): boolean {

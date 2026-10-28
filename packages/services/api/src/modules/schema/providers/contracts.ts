@@ -735,7 +735,7 @@ export class Contracts {
 
 const CreateContractInputModel = z
   .object({
-    targetId: z.uuid('Invalid target ID provided.'),
+    targetId: z.uuid('Invalid target ID provided'),
     contractName: z
       .string()
       .max(64, 'Contract name must be at most 64 characters long')

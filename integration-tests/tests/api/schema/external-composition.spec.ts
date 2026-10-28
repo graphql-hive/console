@@ -412,3 +412,29 @@ test.concurrent('a timeout error should be visible to the user', async ({ expect
   const versions = await fetchVersions(20);
   expect(versions.length).toEqual(1);
 });
+
+test.concurrent(
+  'Mutation.updateSchemaComposition: invalid external composition',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { project } = await createProject(ProjectType.Federation);
+    const result = await updateSchemaComposition(
+      {
+        project: { byId: project.id },
+        method: { external: { endpoint: 'not-a-url', secret: '' } },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.updateSchemaComposition.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          endpoint: Must be a valid URL, e.g. https://example.com/compose,
+          secret: Secret is required,
+        },
+        message: Please check your input.,
+      }
+    `);
+  },
+);

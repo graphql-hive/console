@@ -1885,7 +1885,7 @@ test.concurrent(
       errors: {
         nodes: [
           {
-            message: 'Context ID must be at least 1 character long.',
+            message: 'Context ID must be at least 1 character long',
           },
         ],
       },
@@ -1942,7 +1942,7 @@ test.concurrent('contextId that has fewer than 1 characters is not allowed', asy
     errors: {
       nodes: [
         {
-          message: 'Context ID cannot exceed length of 200 characters.',
+          message: 'Context ID cannot exceed length of 200 characters',
         },
       ],
     },

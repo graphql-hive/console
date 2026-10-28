@@ -1,5 +1,5 @@
 import { ProjectType, ResourceAssignmentModeType } from 'testkit/gql/graphql';
-import { readProjectInfo, updateProjectSlug } from '../../../testkit/flow';
+import { createProject, readProjectInfo, updateProjectSlug } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -321,4 +321,64 @@ test.concurrent('restrict access to single project with assigned resources on me
   projects = await getProjects(memberToken);
   expect(projects).toHaveLength(1);
   expect(projects.at(0)?.id).toEqual(firstProject.id);
+});
+
+test.concurrent('Mutation.createProject: slug with invalid characters', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+  const result = await createProject(
+    {
+      organization: { byId: organization.id },
+      slug: 'Invalid Slug!',
+      type: ProjectType.Single,
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createProject.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        slug: Slug can only contain lowercase letters, numbers and dashes,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.createProject: slug too long', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+  const result = await createProject(
+    {
+      organization: { byId: organization.id },
+      slug: 'a'.repeat(51),
+      type: ProjectType.Single,
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createProject.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        slug: Slug must be at most 50 characters long,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.updateProjectSlug: slug with invalid characters', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { project } = await createProject(ProjectType.Single);
+  const result = await updateProjectSlug(
+    { project: { byId: project.id }, slug: 'Invalid Slug!' },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.updateProjectSlug.error).toMatchInlineSnapshot(`
+    {
+      message: Slug can only contain lowercase letters, numbers and dashes,
+    }
+  `);
 });

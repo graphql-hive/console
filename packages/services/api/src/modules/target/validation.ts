@@ -15,6 +15,6 @@ export const TargetSlugModel = z
 
 export const PercentageModel = z
   .number()
-  .min(0, 'Percentage must be at least 0.')
-  .max(100, 'Percentage must be at most 100.')
-  .multipleOf(0.01, 'Percentage can have at most 2 decimal places, e.g. 0.25.');
+  .min(0, 'Percentage must be at least 0')
+  .max(100, 'Percentage must be at most 100')
+  .multipleOf(0.01, 'Percentage can have at most 2 decimal places, e.g. 0.25');

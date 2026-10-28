@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import { createCdnAccess } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { ApolloGateway } from '@apollo/gateway';
 import { ApolloServer } from '@apollo/server';
@@ -1474,5 +1475,30 @@ describe('CDN token', () => {
         }),
       ]),
     );
+  });
+
+  test.concurrent.each([
+    { label: 'alias too short', alias: 'a', message: 'Must be at least 3 characters long' },
+    {
+      label: 'alias too long',
+      alias: 'a'.repeat(101),
+      message: 'Can not be longer than 100 characters',
+    },
+  ])('Mutation.createCdnAccessToken: $label', async ({ alias, message }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { organization, createProject } = await createOrg();
+    const { project, target } = await createProject(ProjectType.Single);
+
+    const result = await createCdnAccess(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        targetSlug: target.slug,
+      },
+      ownerToken,
+      alias,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.createCdnAccessToken.error?.message).toBe(message);
   });
 });
