@@ -185,10 +185,9 @@ export const schemaBuilderApiRouter = t.router({
           } satisfies CompositionResponse;
         }
 
-        ctx.req.log.error('Composition timed out. (error=%o)');
-
         // Treat timeouts caused by external composition as "expected errors"
         if (ctx.cache.isTimeoutError(error)) {
+          ctx.req.log.error('Composition timed out. (error=%s)', error);
           return {
             errors: [
               {
@@ -207,6 +206,7 @@ export const schemaBuilderApiRouter = t.router({
           } satisfies CompositionResponse;
         }
 
+        ctx.req.log.error({ err: error }, 'Unexpected composition error.');
         throw error;
       }
 
