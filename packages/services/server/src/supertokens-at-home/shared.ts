@@ -20,17 +20,17 @@ export type SuperTokensSessionPayload = z.TypeOf<typeof SuperTokensSessionPayloa
 
 const PasswordModel = z
   .string()
-  .min(10, { message: 'Password must be at least 10 characters long.' })
+  .min(10, { error: 'Password must be at least 10 characters long.' })
   // Check 2: At least one uppercase letter
-  .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter.' })
+  .regex(/[A-Z]/, { error: 'Password must contain at least one uppercase letter.' })
   // Check 3: At least one special character
   .regex(/[!@#$%^&*(),.?":{}|<>]/, {
-    message: 'Password must contain at least one special character.',
+    error: 'Password must contain at least one special character.',
   })
   // Check 4: At least one digit
-  .regex(/[0-9]/, { message: 'Password must contain at least one digit.' })
+  .regex(/[0-9]/, { error: 'Password must contain at least one digit.' })
   // Check 5: At least one lowercase letter
-  .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter.' });
+  .regex(/[a-z]/, { error: 'Password must contain at least one lowercase letter.' });
 
 export function validatePassword(password: string):
   | {

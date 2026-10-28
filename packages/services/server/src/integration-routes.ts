@@ -12,15 +12,18 @@ import { authenticateRequest } from './authenticate-request';
 
 const OrganizationSlug = z
   .string()
-  .min(1)
-  .max(50)
-  .regex(/^[a-z0-9-]+$/);
+  .min(1, ':organizationSlug must have at least 1 character')
+  .max(50, ':organizationSlug must be at most 50 characters long')
+  .regex(
+    /^[a-z0-9-]+$/,
+    ':organizationSlug can only contain alphanumeric characters and dashes (-)',
+  );
 
-const StateModel = z.string().regex(/^[a-f0-9]{64}$/);
+const StateModel = z.string().regex(/^[a-f0-9]{64}$/, 'Invalid state provided');
 
 const GitHubCallbackQuery = z.object({
   installation_id: z
-    .string({ required_error: 'Invalid installation_id' })
+    .string({ error: issue => (issue.input === undefined ? 'Invalid installation_id' : undefined) })
     .regex(/^\d+$/, 'Invalid installation_id'),
   code: z.string().min(1).max(1000).optional(),
   state: StateModel.optional(),
@@ -31,7 +34,7 @@ const GitHubAccessTokenResponse = z.object({
 });
 
 const SlackCallbackQuery = z.object({
-  code: z.string({ required_error: 'Invalid code' }),
+  code: z.string({ error: issue => (issue.input === undefined ? 'Invalid code' : undefined) }),
   state: StateModel,
 });
 
@@ -74,7 +77,7 @@ export function registerIntegrationRoutes(
     withInjector(async (req, res, injector) => {
       const queryResult = GitHubCallbackQuery.safeParse(req.query);
       if (!queryResult.success) {
-        return res.status(400).send(queryResult.error.flatten().fieldErrors);
+        return res.status(400).send(z.flattenError(queryResult.error).fieldErrors);
       }
 
       const { installation_id: installationId, code, state } = queryResult.data;
@@ -144,7 +147,7 @@ export function registerIntegrationRoutes(
 
       const paramsResult = ConnectParams.safeParse(req.params);
       if (!paramsResult.success) {
-        return res.status(400).send(paramsResult.error.flatten().fieldErrors);
+        return res.status(400).send(z.flattenError(paramsResult.error).fieldErrors);
       }
 
       const { organizationSlug } = paramsResult.data;
@@ -179,7 +182,7 @@ export function registerIntegrationRoutes(
 
       const queryResult = SlackCallbackQuery.safeParse(req.query);
       if (!queryResult.success) {
-        return res.status(400).send(queryResult.error.flatten().fieldErrors);
+        return res.status(400).send(z.flattenError(queryResult.error).fieldErrors);
       }
 
       const { code, state } = queryResult.data;
@@ -235,7 +238,7 @@ export function registerIntegrationRoutes(
 
       const paramsResult = ConnectParams.safeParse(req.params);
       if (!paramsResult.success) {
-        return res.status(400).send(paramsResult.error.flatten().fieldErrors);
+        return res.status(400).send(z.flattenError(paramsResult.error).fieldErrors);
       }
 
       const { organizationSlug } = paramsResult.data;

@@ -15,16 +15,16 @@ import type { DocumentCollectionOperation } from '@/lib/hooks/laboratory/use-col
 export const OperationFormSchema = z.object({
   name: z
     .string({
-      required_error: 'Operation name is required',
+      error: issue => (issue.input === undefined ? 'Operation name is required' : undefined),
     })
     .min(3, {
-      message: 'Operation name must be at least 3 characters long',
+      error: 'Operation name must be at least 3 characters long',
     })
     .max(50, {
-      message: 'Operation name must be less than 50 characters long',
+      error: 'Operation name must be less than 50 characters long',
     }),
   collectionId: z.string({
-    required_error: 'Collection is required',
+    error: issue => (issue.input === undefined ? 'Collection is required' : undefined),
   }),
 });
 

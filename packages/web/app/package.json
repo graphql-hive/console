@@ -41,7 +41,6 @@
     "@tanstack/react-router-devtools": "1.167.2",
     "@tanstack/react-table": "8.20.6",
     "@tanstack/react-virtual": "3.14.13",
-    "@tanstack/zod-adapter": "1.167.0",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@types/crypto-js": "4.2.2",
@@ -101,7 +100,7 @@
     "vite": "catalog:",
     "vite-plugin-monaco-editor": "catalog:",
     "wonka": "6.3.6",
-    "zod": "3.25.76"
+    "zod": "4.6.6"
   },
   "buildOptions": {
     "external": [

@@ -38,7 +38,7 @@ const WEBHOOK_SETUP_GUIDES: Partial<Record<AlertChannelType, { href: string; lab
 export const ChannelFormSchema = z
   .object({
     name: z.string().min(1, 'Must enter name'),
-    type: z.nativeEnum(AlertChannelType, { errorMap: () => ({ message: 'Must select type' }) }),
+    type: z.enum(AlertChannelType, { error: 'Must select type' }),
     slackChannel: z.string(),
     endpoint: z.string(),
   })
@@ -61,7 +61,7 @@ export const ChannelFormSchema = z
     if (isWebhookLike(values.type)) {
       if (!values.endpoint) {
         ctx.addIssue({ code: 'custom', path: ['endpoint'], message: 'Must enter endpoint' });
-      } else if (!z.string().url().safeParse(values.endpoint).success) {
+      } else if (!z.url().safeParse(values.endpoint).success) {
         ctx.addIssue({ code: 'custom', path: ['endpoint'], message: 'Must be a valid URL' });
       }
     }

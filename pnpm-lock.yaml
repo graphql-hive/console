@@ -258,9 +258,9 @@ catalogs:
     ws:
       specifier: 8.22.0
       version: 8.22.0
-    zod-validation-error:
-      specifier: 3.4.0
-      version: 3.4.0
+    zod:
+      specifier: 4.6.6
+      version: 4.6.6
 
 overrides:
   graphql-jit@0.8.x: 0.8.10
@@ -672,8 +672,8 @@ importers:
         specifier: 'catalog:'
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@25.9.9)(happy-dom@21.0.4)(jsdom@30.1.3(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.9.9)(typescript@5.7.3))(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 'catalog:'
+        version: 4.6.6
 
   load-tests/otel-traces:
     devDependencies:
@@ -698,8 +698,8 @@ importers:
         specifier: 48.19.0
         version: 48.19.0(slonik@48.19.0)
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 'catalog:'
+        version: 4.6.6
     devDependencies:
       '@hive/service-common':
         specifier: workspace:*
@@ -812,8 +812,8 @@ importers:
         specifier: ^2.8.1
         version: 2.8.1
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.6.6
+        version: 4.6.6
     devDependencies:
       '@types/env-ci':
         specifier: 3.1.4
@@ -1151,7 +1151,7 @@ importers:
         specifier: 'catalog:'
         version: 8.22.0
       zod:
-        specifier: 4.6.6
+        specifier: 'catalog:'
         version: 4.6.6
 
   packages/libraries/pubsub:
@@ -1294,8 +1294,8 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 'catalog:'
+        version: 4.6.6
 
   packages/services/api:
     dependencies:
@@ -1481,11 +1481,8 @@ importers:
         specifier: 'catalog:'
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@25.9.9)(happy-dom@21.0.4)(jsdom@30.1.3(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.9.9)(typescript@5.7.3))(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
-      zod-validation-error:
         specifier: 'catalog:'
-        version: 3.4.0(zod@3.25.76)
+        version: 4.6.6
 
   packages/services/broker-worker:
     devDependencies:
@@ -1520,8 +1517,8 @@ importers:
         specifier: 0.1.15
         version: 0.1.15
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/cdn-worker:
     devDependencies:
@@ -1568,8 +1565,8 @@ importers:
         specifier: 'catalog:'
         version: 7.30.1
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/commerce:
     devDependencies:
@@ -1613,8 +1610,8 @@ importers:
         specifier: 'catalog:'
         version: 17.5.0
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/demo/federation:
     dependencies:
@@ -1662,8 +1659,8 @@ importers:
         specifier: 'catalog:'
         version: 11.5.2
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/policy:
     devDependencies:
@@ -1710,11 +1707,8 @@ importers:
         specifier: 'catalog:'
         version: 11.3.0
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
-      zod-validation-error:
-        specifier: 'catalog:'
-        version: 3.4.0(zod@3.25.76)
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/schema:
     devDependencies:
@@ -1782,8 +1776,8 @@ importers:
         specifier: 'catalog:'
         version: 0.2.2
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/server:
     devDependencies:
@@ -1902,8 +1896,8 @@ importers:
         specifier: 'catalog:'
         version: 0.2.2
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/service-common:
     dependencies:
@@ -2011,8 +2005,8 @@ importers:
         specifier: 'catalog:'
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@25.9.9)(happy-dom@21.0.4)(jsdom@30.1.3(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.9.9)(typescript@5.7.3))(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/storage:
     devDependencies:
@@ -2053,8 +2047,8 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/usage:
     devDependencies:
@@ -2113,8 +2107,8 @@ importers:
         specifier: 'catalog:'
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@25.9.9)(happy-dom@21.0.4)(jsdom@30.1.3(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.9.9)(typescript@5.7.3))(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/usage-common:
     devDependencies:
@@ -2158,8 +2152,8 @@ importers:
         specifier: 11.4.7
         version: 11.4.7
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/services/workflows:
     devDependencies:
@@ -2239,8 +2233,8 @@ importers:
         specifier: 1.6.1
         version: 1.6.1
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   packages/web/app:
     devDependencies:
@@ -2288,7 +2282,7 @@ importers:
         version: link:../../services/service-common
       '@hookform/resolvers':
         specifier: 5.9.1
-        version: 5.9.1(@sinclair/typebox@0.34.41)(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.89.0(@types/react@18.3.18)(react@18.3.1))(valibot@1.2.0(typescript@5.7.3))(yup@1.6.1)(zod@3.25.76)
+        version: 5.9.1(@sinclair/typebox@0.34.41)(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.89.0(@types/react@18.3.18)(react@18.3.1))(valibot@1.2.0(typescript@5.7.3))(yup@1.6.1)(zod@4.6.6)
       '@monaco-editor/react':
         specifier: 'catalog:'
         version: 4.8.0-rc.2(monaco-editor@0.52.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2334,9 +2328,6 @@ importers:
       '@tanstack/react-virtual':
         specifier: 3.14.13
         version: 3.14.13(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@tanstack/zod-adapter':
-        specifier: 1.167.0
-        version: 1.167.0(@tanstack/react-router@1.170.41(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)
       '@testing-library/dom':
         specifier: 10.4.2
         version: 10.4.2
@@ -2515,8 +2506,8 @@ importers:
         specifier: 6.3.6
         version: 6.3.6
       zod:
-        specifier: 3.25.76
-        version: 3.25.76
+        specifier: 4.6.6
+        version: 4.6.6
 
   rules:
     devDependencies:
@@ -9108,13 +9099,6 @@ packages:
 
   '@tanstack/virtual-core@3.17.11':
     resolution: {integrity: sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g==}
-
-  '@tanstack/zod-adapter@1.167.0':
-    resolution: {integrity: sha512-5Wlm5teSu+pz3KKhfa1ESsiOJXbvV6ITr1vKOQKi9yEdtozp6VefEzxzafLLida97mnL2tmauva/njokQrG5CA==}
-    engines: {node: '>=20.19'}
-    peerDependencies:
-      '@tanstack/react-router': '>=1.43.2'
-      zod: ^3.23.8
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -16913,12 +16897,6 @@ packages:
   yup@1.6.1:
     resolution: {integrity: sha512-JED8pB50qbA4FOkDol0bYF/p60qSEDQqBD0/qeIrUCG1KbPBIQ776fCUNb9ldbPcSTxA69g/47XTo4TqWiuXOA==}
 
-  zod-validation-error@3.4.0:
-    resolution: {integrity: sha512-ZOPR9SVY6Pb2qqO5XHt+MkkTRxGXb4EVtnjc9JpXUOtUB1T9Ru7mZOT361AN3MsetVe7R0a1KZshJDZdgp9miQ==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      zod: ^3.18.0
-
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
 
@@ -20927,7 +20905,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  '@hookform/resolvers@5.9.1(@sinclair/typebox@0.34.41)(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.89.0(@types/react@18.3.18)(react@18.3.1))(valibot@1.2.0(typescript@5.7.3))(yup@1.6.1)(zod@3.25.76)':
+  '@hookform/resolvers@5.9.1(@sinclair/typebox@0.34.41)(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.89.0(@types/react@18.3.18)(react@18.3.1))(valibot@1.2.0(typescript@5.7.3))(yup@1.6.1)(zod@4.6.6)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.89.0(@types/react@18.3.18)(react@18.3.1)
@@ -20937,7 +20915,7 @@ snapshots:
       ajv: 8.20.0
       valibot: 1.2.0(typescript@5.7.3)
       yup: 1.6.1
-      zod: 3.25.76
+      zod: 4.6.6
 
   '@humanwhocodes/config-array@0.13.0':
     dependencies:
@@ -25882,11 +25860,6 @@ snapshots:
   '@tanstack/table-core@8.20.5': {}
 
   '@tanstack/virtual-core@3.17.11': {}
-
-  '@tanstack/zod-adapter@1.167.0(@tanstack/react-router@1.170.41(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(zod@3.25.76)':
-    dependencies:
-      '@tanstack/react-router': 1.170.41(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      zod: 3.25.76
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -34946,10 +34919,6 @@ snapshots:
       toposort: 2.0.2
       type-fest: 2.19.0
     optional: true
-
-  zod-validation-error@3.4.0(zod@3.25.76):
-    dependencies:
-      zod: 3.25.76
 
   zod@3.22.3: {}
 

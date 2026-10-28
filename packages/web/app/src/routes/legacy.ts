@@ -67,7 +67,7 @@ export const legacyPaths: LegacyPath[] = [
 export type LegacySearch<Value extends string> = {
   param: string;
   /** The old values; the owning route's `validateSearch` accepts them and nothing else. */
-  values: z.ZodEnum<[Value, ...Value[]]>;
+  values: z.ZodType<Value>;
   /** `search` is the rest of the old URL's params, for an entry that carries some of them over. */
   redirect: (value: Value, search: Record<string, unknown>) => ReturnType<typeof redirect>;
   examples: Array<{ from: string; to: string }>;

@@ -2,7 +2,7 @@ import zod from 'zod';
 import { type ArtifactStorageReader } from './artifact-storage-reader';
 
 const AppDeploymentIsEnabledKeyModel = zod.tuple([
-  zod.string().uuid(),
+  zod.uuid(),
   zod.string().min(1),
   zod.string().min(1),
 ]);

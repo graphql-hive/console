@@ -24,9 +24,9 @@ const REVISION_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 export const SchemaRevisionNameModel = z
   .string()
   .trim()
-  .min(1, 'Revision must be at least 1 character long.')
-  .max(64, 'Revision must be at most 64 characters long.')
-  .regex(/^[a-zA-Z0-9._-]+$/, "Revision can only contain letters, numbers, '.', '_', and '-'.");
+  .min(1, 'Revision must be at least 1 character long')
+  .max(64, 'Revision must be at most 64 characters long')
+  .regex(/^[a-zA-Z0-9._-]+$/, "Revision can only contain letters, numbers, '.', '_', and '-'");
 
 @Injectable({ scope: Scope.Operation })
 export class SchemaPusher {

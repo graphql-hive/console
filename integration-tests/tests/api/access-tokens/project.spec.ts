@@ -96,7 +96,7 @@ test.concurrent('create: failure invalid title', async ({ expect }) => {
     {
       details: {
         description: null,
-        title: Can only contain letters, numbers, " ", "_", and "-".,
+        title: Can only contain letters, numbers, " ", "_", and "-",
       },
       message: Invalid input provided.,
     }
@@ -127,7 +127,7 @@ test.concurrent('create: failure invalid description', async ({ expect }) => {
   expect(result.createProjectAccessToken.error).toMatchInlineSnapshot(`
     {
       details: {
-        description: Maximum length is 248 characters.,
+        description: Maximum length is 248 characters,
         title: null,
       },
       message: Invalid input provided.,

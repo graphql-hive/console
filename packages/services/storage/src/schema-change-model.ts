@@ -256,7 +256,7 @@ const DirectiveUsageArgumentAddedLiteral = z.literal("DIRECTIVE_USAGE_ARGUMENT_A
 const DirectiveUsageArgumentRemovedLiteral = z.literal("DIRECTIVE_USAGE_ARGUMENT_REMOVED" satisfies `${typeof ChangeType.DirectiveUsageArgumentRemoved}`)
 
 type Implements<Model> = {
-  [K in keyof Model]-?: z.ZodTypeAny & { _output: Model[K] };
+  [K in keyof Model]-?: z.ZodType<Model[K]>;
 };
 
 export function implement<Model = never>() {
@@ -1254,7 +1254,7 @@ function createSchemaChangeId(change: { type: string; meta: Record<string, unkno
 }
 
 const ApprovalMetadataModel = z.object({
-  userId: z.string().uuid().nullable(),
+  userId: z.uuid().nullable(),
   schemaCheckId: z.string(),
   date: z.string(),
   author: z.string().optional(),
@@ -1533,7 +1533,7 @@ const SchemaCheckSharedInputFields = {
 const ContractCheckInput = z.object({
   contractId: z.string(),
   contractName: z.string(),
-  comparedContractVersionId: z.string().uuid().nullable(),
+  comparedContractVersionId: z.uuid().nullable(),
   isSuccess: z.boolean(),
   compositeSchemaSdl: z.string().nullable(),
   supergraphSchemaSdl: z.string().nullable(),

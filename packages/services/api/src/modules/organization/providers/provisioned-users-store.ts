@@ -409,7 +409,7 @@ const ProvisionedUserModel = z.object({
   email: z.string(),
   displayName: z.string(),
   fullName: z.string(),
-  provisionedByOrganizationId: z.string().uuid(),
+  provisionedByOrganizationId: z.uuid(),
   externalId: z.string(),
   deactivatedAt: z.string().nullable(),
   provisioningStatus: z.enum(['pendingConfirmation', 'active']),

@@ -65,13 +65,13 @@ describe('access token form', () => {
   it('applies the server-side name and description rules as you type', async () => {
     render(<Harness onSubmit={() => {}} />);
     await type(nameInput(), 'a');
-    expect(screen.getByText('Minimum length is 2 characters.')).toBeTruthy();
+    expect(screen.getByText('Minimum length is 2 characters')).toBeTruthy();
     await type(nameInput(), 'my token!');
-    expect(screen.getByText('Can only contain letters, numbers, " ", "_", and "-".')).toBeTruthy();
+    expect(screen.getByText('Can only contain letters, numbers, " ", "_", and "-"')).toBeTruthy();
     await type(nameInput(), 'a'.repeat(101));
-    expect(screen.getByText('Maximum length is 100 characters.')).toBeTruthy();
+    expect(screen.getByText('Maximum length is 100 characters')).toBeTruthy();
     await type(descriptionInput(), 'a'.repeat(249));
-    expect(screen.getByText('Maximum length is 248 characters.')).toBeTruthy();
+    expect(screen.getByText('Maximum length is 248 characters')).toBeTruthy();
   });
 
   it('asks for at least one permission and clears the message once one is granted', async () => {

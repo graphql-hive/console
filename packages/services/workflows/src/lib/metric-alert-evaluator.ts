@@ -274,21 +274,19 @@ export function isRuleDue(
 // `dateRange` is deliberately NOT read (an alert defines its own rolling window,
 // so the filter's saved date range is meaningless here). `.passthrough()` tolerates
 // extra fields (e.g. `dateRange`) without failing.
-const SavedFilterConditionsSchema = z
-  .object({
-    operationHashes: z.array(z.string()).optional(),
-    clientFilters: z
-      .array(
-        z.object({
-          name: z.string(),
-          versions: z.array(z.string()).nullable().optional(),
-        }),
-      )
-      .optional(),
-    excludeOperations: z.boolean().optional(),
-    excludeClientFilters: z.boolean().optional(),
-  })
-  .passthrough();
+const SavedFilterConditionsSchema = z.looseObject({
+  operationHashes: z.array(z.string()).optional(),
+  clientFilters: z
+    .array(
+      z.object({
+        name: z.string(),
+        versions: z.array(z.string()).nullable().optional(),
+      }),
+    )
+    .optional(),
+  excludeOperations: z.boolean().optional(),
+  excludeClientFilters: z.boolean().optional(),
+});
 
 /**
  * Turns a saved filter's raw `filters` jsonb into ClickHouse conditions for the

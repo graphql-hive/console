@@ -11,7 +11,7 @@ import {
   PersistedOperationsMalformedError,
 } from './errors';
 
-const ManifestModel = z.record(z.string());
+const ManifestModel = z.record(z.string(), z.string());
 
 const ApolloManifestModel = z.object({
   format: z.literal('apollo-persisted-query-manifest'),

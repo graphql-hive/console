@@ -4,8 +4,9 @@ import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-const MaybeModel = <T extends z.ZodType>(value: T) => z.union([z.null(), z.undefined(), value]);
-const GraphQLSchemaStringModel = z.string().max(5_000_000).min(0);
+const GraphQLSchemaStringModel = z
+  .string()
+  .max(5_000_000, 'Base schema must be at most 5,000,000 characters long');
 
 export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']> = async (
   _,
@@ -13,7 +14,7 @@ export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']
   { injector },
 ) => {
   const UpdateBaseSchemaModel = z.object({
-    newBase: MaybeModel(GraphQLSchemaStringModel),
+    newBase: GraphQLSchemaStringModel.nullish(),
   });
 
   const result = UpdateBaseSchemaModel.safeParse(input);
@@ -21,7 +22,8 @@ export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']
   if (!result.success) {
     return {
       error: {
-        message: result.error.formErrors.fieldErrors?.newBase?.[0] ?? 'Please check your input.',
+        message:
+          z.flattenError(result.error).fieldErrors?.newBase?.[0] ?? 'Please check your input.',
       },
     };
   }

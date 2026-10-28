@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 export const DangerousChangesFormSchema = z
   .object({
     failAllDangerousChanges: z.boolean(),
-    failingChangeTypes: z.array(z.nativeEnum(DangerousChangeType)),
+    failingChangeTypes: z.array(z.enum(DangerousChangeType)),
   })
   .superRefine((values, ctx) => {
     if (!values.failAllDangerousChanges && values.failingChangeTypes.length < 1) {

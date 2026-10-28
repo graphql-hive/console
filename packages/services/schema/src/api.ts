@@ -30,7 +30,7 @@ const procedure = t.procedure.use(handleTRPCError);
 
 const ExternalValidationModel = z
   .object({
-    endpoint: z.string().url().min(1),
+    endpoint: z.url().min(1),
     encryptedSecret: z.string().min(1),
   })
   .nullable();

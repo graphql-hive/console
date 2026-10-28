@@ -3,7 +3,7 @@ import { z } from 'zod';
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace ZodHelpers {
   export const isDefaultType = (zodType: z.ZodType): zodType is z.ZodDefault<z.ZodType> => {
-    return 'defaultValue' in zodType._def;
+    return zodType instanceof z.ZodDefault;
   };
 
   export const createTypeGuard =

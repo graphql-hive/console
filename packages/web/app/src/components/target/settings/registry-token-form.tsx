@@ -15,13 +15,13 @@ import { Input } from '@/components/ui/primitives/input/input';
 export const RegistryTokenFormSchema = z.object({
   tokenDescription: z
     .string({
-      required_error: 'Token description is required',
+      error: issue => (issue.input === undefined ? 'Token description is required' : undefined),
     })
     .min(2, {
-      message: 'Token description must be at least 2 characters long',
+      error: 'Token description must be at least 2 characters long',
     })
     .max(50, {
-      message: 'Token description must be at most 50 characters long',
+      error: 'Token description must be at most 50 characters long',
     })
     .regex(
       /^([a-z]|[0-9]|\s|\.|,|_|-|\/|&)+$/i,
