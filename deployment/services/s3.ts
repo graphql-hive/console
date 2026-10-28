@@ -25,13 +25,17 @@ export function deployS3() {
   return { secret };
 }
 
-export function deployS3Mirror() {
+export function deployS3Mirror(env: string) {
   const s3Config = new pulumi.Config('s3');
   const bucket = s3Config.require('bucketName');
+  const resourcePrefix = `hive-${env}-s3`;
 
-  const readWriteUser = new aws.iam.User('aws-s3-read-write');
+  const readWriteUser = new aws.iam.User(`${resourcePrefix}-read-write`, {
+    name: `${resourcePrefix}-read-write`,
+  });
 
-  const readWritePolicy = new aws.iam.UserPolicy('aws-s3-read-write', {
+  const readWritePolicy = new aws.iam.UserPolicy(`${resourcePrefix}-read-write`, {
+    name: `${resourcePrefix}-read-write`,
     user: readWriteUser.name,
     policy: createBucketPolicy(bucket, [
       's3:DeleteObject',
@@ -42,20 +46,23 @@ export function deployS3Mirror() {
   });
 
   const readWriteAccessKey = new aws.iam.AccessKey(
-    `aws-s3-read-write-${S3_ACCESS_KEY_VERSION}`,
+    `${resourcePrefix}-read-write-${S3_ACCESS_KEY_VERSION}`,
     { user: readWriteUser.name },
     { dependsOn: readWritePolicy, retainOnDelete: true },
   );
 
-  const readOnlyUser = new aws.iam.User('aws-s3-read-only');
+  const readOnlyUser = new aws.iam.User(`${resourcePrefix}-read-only`, {
+    name: `${resourcePrefix}-read-only`,
+  });
 
-  const readOnlyPolicy = new aws.iam.UserPolicy('aws-s3-read-only', {
+  const readOnlyPolicy = new aws.iam.UserPolicy(`${resourcePrefix}-read-only`, {
+    name: `${resourcePrefix}-read-only`,
     user: readOnlyUser.name,
     policy: createBucketPolicy(bucket, ['s3:GetObject', 's3:ListBucket']),
   });
 
   const readOnlyAccessKey = new aws.iam.AccessKey(
-    `aws-s3-read-only-${S3_ACCESS_KEY_VERSION}`,
+    `${resourcePrefix}-read-only-${S3_ACCESS_KEY_VERSION}`,
     { user: readOnlyUser.name },
     { dependsOn: readOnlyPolicy, retainOnDelete: true },
   );

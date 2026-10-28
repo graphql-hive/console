@@ -85,7 +85,7 @@ const postgres = deployPostgres();
 const redis = deployRedis({ environment });
 const kafka = deployKafka();
 const s3 = deployS3();
-const s3Mirror = deployS3Mirror();
+const s3Mirror = deployS3Mirror(envName);
 const s3AuditLog = deployS3AuditLog();
 
 const cdn = deployCFCDN({
