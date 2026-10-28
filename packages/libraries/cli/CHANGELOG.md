@@ -1,5 +1,15 @@
 # @graphql-hive/cli
 
+## 0.68.2
+
+### Patch Changes
+
+- [#8661](https://github.com/graphql-hive/console/pull/8661)
+  [`fa47253`](https://github.com/graphql-hive/console/commit/fa4725362777cbb5b2fc588987fdfcadac27eb4e)
+  Thanks [@klippx](https://github.com/klippx)! - Publish SHA-256 checksums, standalone archives, and
+  stable-version metadata with CLI releases, and provide a safe one-time checksum backfill for
+  retained historical archives.
+
 ## 0.68.1
 
 ### Patch Changes
