@@ -31,6 +31,8 @@ const {
   publishSchema,
 } = await import('../../integration-tests/testkit/flow');
 const { collect } = await import('../../integration-tests/testkit/usage');
+const { execute } = await import('../../integration-tests/testkit/graphql');
+const { CreateSavedFilterMutation } = await import('../../integration-tests/testkit/saved-filters');
 const { getServiceHost } = await import('../../integration-tests/testkit/utils');
 type KnownServices = Parameters<typeof getServiceHost>[0];
 const {
@@ -41,6 +43,7 @@ const {
   MetricAlertRuleThresholdType,
   MetricAlertRuleType,
   ProjectType,
+  SavedFilterVisibilityType,
   TargetAccessScope,
 } = await import('../../integration-tests/testkit/gql/graphql');
 
@@ -144,6 +147,7 @@ type Ctx = {
         errorRateFixed: string;
         avgLatency: string;
         trafficHigh: string;
+        ordersTraffic: string;
       }
     | undefined;
 };
@@ -186,7 +190,7 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
   const projectResult = await createProject(
     {
       organization: { bySelector: { organizationSlug: organization.slug } },
-      type: ProjectType.Single,
+      type: ProjectType.Federation,
       slug: 'demo',
     },
     ownerToken,
@@ -210,17 +214,51 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
   ).then(r => r.expectNoGraphQLErrors());
   const writeSecret = tokenResult.createToken.ok!.secret;
 
-  // The usage service rejects operations against a target with no schema.
-  // One tiny schema is enough for the demo's synthetic operations.
-  await publishSchema(
-    {
-      author: 'live-alerts-demo',
-      commit: `demo-${timestamp}`,
-      sdl: `type Query { products: [String!]! orders: [String!]! status: String! ping: String }`,
+  // The usage service rejects operations against a target with no schema. Two tiny
+  // subgraphs, one per synthetic operation, so a saved filter on the `orders` subgraph
+  // sees exactly half of the loop's traffic (rule 8 below).
+  for (const [service, sdl] of [
+    ['products', `type Query { products: [String!]! status: String! }`],
+    ['orders', `type Query { orders: [String!]! ping: String }`],
+  ] as const) {
+    await publishSchema(
+      {
+        author: 'live-alerts-demo',
+        commit: `demo-${timestamp}-${service}`,
+        service,
+        url: `https://${service}.example.com/graphql`,
+        sdl,
+      },
+      writeSecret,
+    ).then(r => r.expectNoGraphQLErrors());
+  }
+  console.log('   ✓ Schema published (subgraphs: products, orders)');
+
+  const targetSelector = {
+    organizationSlug: organization.slug,
+    projectSlug: project.slug,
+    targetSlug: target.slug,
+  };
+  const savedFilterResult = await execute({
+    document: CreateSavedFilterMutation,
+    variables: {
+      input: {
+        target: { bySelector: targetSelector },
+        name: 'Orders subgraph',
+        description: 'Traffic that touches the orders subgraph',
+        visibility: SavedFilterVisibilityType.Shared,
+        insightsFilter: { subgraphNames: ['orders'] },
+      },
     },
-    writeSecret,
-  ).then(r => r.expectNoGraphQLErrors());
-  console.log('   ✓ Schema published');
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+  const ordersFilterId = savedFilterResult.createSavedFilter.ok?.savedFilter.id;
+  if (!ordersFilterId) {
+    throw new Error(
+      `Saved filter creation failed: ${savedFilterResult.createSavedFilter.error?.message}`,
+    );
+  }
+  console.log('   ✓ Saved filter "Orders subgraph" created');
 
   // One webhook channel pointing at our local receiver.
   const channelResult = await addAlertChannel(
@@ -387,6 +425,26 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
       ).then(r => r.expectNoGraphQLErrors())
     ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
 
+    // Scoped to the orders subgraph through the saved filter. Every other op in a BREACH
+    // report is `orders`, so this reads about half of rule 1's value each tick; that is
+    // the live check of the evaluator's coordinates subquery.
+    const ruleOrdersTraffic = (
+      await addMetricAlertRule(
+        {
+          ...baseRuleInput,
+          name: 'Orders subgraph traffic (> 20 req/min, on saved filter)',
+          type: MetricAlertRuleType.Traffic,
+          direction: MetricAlertRuleDirection.Above,
+          thresholdType: MetricAlertRuleThresholdType.FixedValue,
+          thresholdValue: 20,
+          severity: MetricAlertRuleSeverity.Info,
+          confirmationMinutes: 0,
+          savedFilterId: ordersFilterId,
+        },
+        ownerToken,
+      ).then(r => r.expectNoGraphQLErrors())
+    ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
+
     ruleIds = {
       traffic: ruleTraffic,
       errorRate: ruleErrorRate,
@@ -395,8 +453,9 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
       errorRateFixed: ruleErrorRateFixed,
       avgLatency: ruleAvgLatency,
       trafficHigh: ruleTrafficHigh,
+      ordersTraffic: ruleOrdersTraffic,
     };
-    console.log('   ✓ 7 rules created');
+    console.log('   ✓ 8 rules created');
   }
 
   // Pre-seed ~60s of backdated breach data so the very first cron tick after
@@ -445,7 +504,7 @@ function printSummary(ctx: Ctx) {
     console.log('│');
     console.log('│ The alerts pages auto-poll every 15s. The cron evaluator');
     console.log('│ runs every minute. Expect the first NORMAL → PENDING →');
-    console.log('│ FIRING transition within ~2 minutes (rules 1, 5, 6, 7),');
+    console.log('│ FIRING transition within ~2 minutes (rules 1, 5, 6, 7, 8),');
     console.log('│ a transient PENDING for rule 2 (PERCENTAGE_CHANGE), and');
     console.log('│ rule 3 (with confirmationMinutes=1) within ~2 minutes.');
   } else {
@@ -557,8 +616,8 @@ async function runMainLoop(ctx: Ctx, abortSignal: AbortSignal) {
       const minutes = Math.round(PHASE_DURATION_MS / 60_000);
       const expected =
         injecting === 'BREACH'
-          ? 'rules 1,5,6,7 → FIRING within ~2 ticks; rule 2 transient PENDING then NORMAL (PERCENTAGE_CHANGE settles to 0); rule 3 → PENDING then FIRING (confirm 1m); rule 4 → recovers'
-          : 'rules 1,5,6,7 → RECOVERING then NORMAL; rule 4 → FIRING (zero traffic falls below its 10/min floor); rule 3 → RECOVERING then NORMAL';
+          ? 'rules 1,5,6,7,8 → FIRING within ~2 ticks (rule 8 reads only orders traffic, about half of rule 1); rule 2 transient PENDING then NORMAL (PERCENTAGE_CHANGE settles to 0); rule 3 → PENDING then FIRING (confirm 1m); rule 4 → recovers'
+          : 'rules 1,5,6,7,8 → RECOVERING then NORMAL; rule 4 → FIRING (zero traffic falls below its 10/min floor); rule 3 → RECOVERING then NORMAL';
       console.log(`\n[${stamp}] ═══ injecting=${injecting} for ~${minutes}min ${'═'.repeat(40)}`);
       console.log(`           expect: ${expected}`);
     }
