@@ -163,7 +163,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
         'Using built-in Federation v1 composition service (schemas=%s)',
         args.schemas.length,
       );
-      compose = subgraphs => Promise.resolve(composeFederationV1(subgraphs));
+      compose = subgraphs => Promise.resolve(composeFederationV1(subgraphs, deps.logger));
     }
     let result: CompositionResult;
 

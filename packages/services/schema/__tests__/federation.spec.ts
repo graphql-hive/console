@@ -139,6 +139,7 @@ test('native federation formats the composed supergraph', ({ expect }) => {
 test.each([
   { fields: '...F', message: /fragment spreads/ },
   { fields: '{ id }', message: /Syntax Error/ },
+  { fields: 'id } query { x', message: /FieldSets may not contain operations/ },
 ])(
   'federation v1 reports a composer exception for @key(fields: "$fields") as a composition error',
   ({ fields, message }) => {
@@ -166,3 +167,30 @@ test.each([
     ]);
   },
 );
+
+test('federation v1 reports an internal composer exception as an unexpected composition error', ({
+  expect,
+}) => {
+  const result = composeFederationV1([
+    {
+      typeDefs: parse(/* GraphQL */ `
+        type Query {
+          a: A
+        }
+
+        type A @key {
+          id: ID!
+        }
+      `),
+      name: 'a',
+      url: undefined,
+    },
+  ]);
+
+  expect(result.type).toBe('failure');
+  assert(result.type === 'failure');
+  expect(result.includesException).toBe(true);
+  expect(result.result.errors).toEqual([
+    { source: 'composition', message: 'Unexpected composition error.' },
+  ]);
+});
