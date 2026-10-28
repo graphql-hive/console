@@ -8,14 +8,16 @@ import {
   groupRulesByQuery,
   isFilteredFilter,
   isRuleDue,
+  markRulesEvaluationBlocked,
   parseSavedFilter,
   previousValueForRule,
   queryClickHouseWindows,
   resolutionFor,
   resolveSavedFilter,
+  rulesNeedingBlockWrite,
   type ParsedSavedFilter,
 } from './metric-alert-evaluator.js';
-import { makeLogger, makeRule } from './metric-alert-test-utils.js';
+import { makeLogger, makePg, makeRule } from './metric-alert-test-utils.js';
 import type { SupergraphOwnershipLoader } from './supergraph-ownership.js';
 
 const render = (conds: SqlValue[]) => conds.map(c => printWithValues(c));
@@ -611,6 +613,78 @@ describe('queryClickHouseWindows', () => {
     expect(sql).toContain('avgMerge(duration_avg) as average');
     expect(sql).toContain('NULL as percentiles');
     expect(sql).not.toContain('duration_quantiles');
+  });
+});
+
+describe('rulesNeedingBlockWrite', () => {
+  const skip = { reason: 'unknown-subgraph' as const, details: ['orders'] };
+
+  test('every rule of a group that was not blocked', () => {
+    expect(rulesNeedingBlockWrite([makeRule({ id: 'a' }), makeRule({ id: 'b' })], skip)).toEqual([
+      'a',
+      'b',
+    ]);
+  });
+
+  test('nothing when the row already holds this reason and details', () => {
+    const blocked = makeRule({
+      id: 'a',
+      evaluationBlockedReason: 'unknown-subgraph',
+      evaluationBlockedDetails: ['orders'],
+    });
+    expect(rulesNeedingBlockWrite([blocked], skip)).toEqual([]);
+  });
+
+  test('a changed reason or changed details is written again', () => {
+    const otherReason = makeRule({ id: 'a', evaluationBlockedReason: 'no-supergraph-sdl' });
+    const otherDetails = makeRule({
+      id: 'b',
+      evaluationBlockedReason: 'unknown-subgraph',
+      evaluationBlockedDetails: ['inventory'],
+    });
+    expect(rulesNeedingBlockWrite([otherReason, otherDetails], skip)).toEqual(['a', 'b']);
+  });
+
+  test('a reason without details matches a row with an empty details array', () => {
+    const blocked = makeRule({
+      id: 'a',
+      evaluationBlockedReason: 'no-composable-version',
+      evaluationBlockedDetails: [],
+    });
+    expect(rulesNeedingBlockWrite([blocked], { reason: 'no-composable-version' })).toEqual([]);
+  });
+});
+
+describe('markRulesEvaluationBlocked', () => {
+  test('writes reason, since and details for the given rules in one statement', async () => {
+    const { pg, calls } = makePg();
+    const since = new Date('2026-10-29T10:00:00.000Z');
+    await markRulesEvaluationBlocked(pg, {
+      ruleIds: ['a', 'b'],
+      reason: 'unknown-subgraph',
+      details: ['orders'],
+      since,
+    });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].sql).toContain('UPDATE "metric_alert_rules"');
+    expect(calls[0].sql).toContain('"evaluation_blocked_reason" = $slonik_1');
+    expect(calls[0].sql).toContain('"evaluation_blocked_details" = $slonik_3::"text"[]');
+    expect(calls[0].values).toEqual([
+      'unknown-subgraph',
+      since.toISOString(),
+      ['orders'],
+      ['a', 'b'],
+    ]);
+  });
+
+  test('no rules, no statement', async () => {
+    const { pg, calls } = makePg();
+    await markRulesEvaluationBlocked(pg, {
+      ruleIds: [],
+      reason: 'scope-too-large',
+      since: new Date(),
+    });
+    expect(calls).toEqual([]);
   });
 });
 

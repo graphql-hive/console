@@ -43,6 +43,9 @@ const MetricAlertRuleRowSchema = z.object({
   savedFilterFilters: z.unknown().nullable(),
   /** Plan name of the rule's organization. Drives state-log retention. */
   organizationPlanName: z.string().nullable(),
+  /** What the last skipped tick wrote, so a repeat skip does not write (or warn) again. */
+  evaluationBlockedReason: z.string().nullable(),
+  evaluationBlockedDetails: z.array(z.string()).nullable(),
 });
 
 export type MetricAlertRuleRow = z.infer<typeof MetricAlertRuleRowSchema>;
@@ -223,6 +226,8 @@ export async function fetchEnabledRules(pg: PostgresDatabasePool): Promise<Metri
       , r."saved_filter_id" as "savedFilterId"
       , sf."filters" as "savedFilterFilters"
       , o."plan_name" as "organizationPlanName"
+      , r."evaluation_blocked_reason" as "evaluationBlockedReason"
+      , r."evaluation_blocked_details" as "evaluationBlockedDetails"
     FROM "metric_alert_rules" r
     INNER JOIN "organizations" o ON o."id" = r."organization_id"
     LEFT JOIN "saved_filters" sf ON sf."id" = r."saved_filter_id"
@@ -376,6 +381,50 @@ export const SAVED_FILTER_SKIP_REASONS: readonly SavedFilterSkipReason[] = [
 export type SavedFilterResolution =
   | { kind: 'ok'; filter: ResolvedSavedFilter }
   | { kind: 'skip'; reason: SavedFilterSkipReason; details?: string[] };
+
+/**
+ * The rules of a skipped group whose stored block differs from this tick's reason, so the
+ * block is written once per change rather than every tick. The row is the source of truth,
+ * which also survives a worker restart.
+ */
+export function rulesNeedingBlockWrite(
+  rules: ReadonlyArray<
+    Pick<MetricAlertRuleRow, 'id' | 'evaluationBlockedReason' | 'evaluationBlockedDetails'>
+  >,
+  skip: { reason: SavedFilterSkipReason; details?: string[] },
+): string[] {
+  const details = skip.details ?? [];
+  return rules
+    .filter(
+      rule =>
+        rule.evaluationBlockedReason !== skip.reason ||
+        JSON.stringify(rule.evaluationBlockedDetails ?? []) !== JSON.stringify(details),
+    )
+    .map(rule => rule.id);
+}
+
+/** Records why the evaluator is skipping these rules; read by the API's `evaluationBlocked`. */
+export async function markRulesEvaluationBlocked(
+  pg: Pick<CommonQueryMethods, 'query'>,
+  args: {
+    ruleIds: readonly string[];
+    reason: SavedFilterSkipReason;
+    details?: string[];
+    since: Date;
+  },
+): Promise<void> {
+  if (args.ruleIds.length === 0) {
+    return;
+  }
+  await pg.query(psql`
+    UPDATE "metric_alert_rules"
+    SET
+      "evaluation_blocked_reason" = ${args.reason}
+      , "evaluation_blocked_since" = ${args.since.toISOString()}
+      , "evaluation_blocked_details" = ${psql.array(args.details ?? [], 'text')}
+    WHERE "id" = ANY(${psql.array([...args.ruleIds], 'uuid')})
+  `);
+}
 
 /**
  * Turns subgraph names into the field coordinates they own in the target's latest
