@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import * as cf from '@pulumi/cloudflare';
 import * as pulumi from '@pulumi/pulumi';
-import { S3 } from '../services/s3';
+import { S3, S3Mirror } from '../services/s3';
 
 export class CloudflareCDN {
   constructor(
@@ -13,7 +13,7 @@ export class CloudflareCDN {
       sentryDsn: string | pulumi.Output<string>;
       release: string;
       s3: S3;
-      s3Mirror: S3;
+      s3Mirror: S3Mirror;
     },
   ) {}
 
@@ -95,19 +95,19 @@ export class CloudflareCDN {
         },
         {
           name: 'S3_MIRROR_ENDPOINT',
-          text: this.config.s3Mirror.secret.raw.endpoint,
+          text: this.config.s3Mirror.readOnlySecret.raw.endpoint,
         },
         {
           name: 'S3_MIRROR_ACCESS_KEY_ID',
-          text: this.config.s3Mirror.secret.raw.accessKeyId,
+          text: this.config.s3Mirror.readOnlySecret.raw.accessKeyId,
         },
         {
           name: 'S3_MIRROR_SECRET_ACCESS_KEY',
-          text: this.config.s3Mirror.secret.raw.secretAccessKey,
+          text: this.config.s3Mirror.readOnlySecret.raw.secretAccessKey,
         },
         {
           name: 'S3_MIRROR_BUCKET_NAME',
-          text: this.config.s3Mirror.secret.raw.bucket,
+          text: this.config.s3Mirror.readOnlySecret.raw.bucket,
         },
       ],
     });
