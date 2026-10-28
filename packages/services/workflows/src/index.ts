@@ -103,9 +103,13 @@ const crontabLines: string[] = [
   '0 11 * * 0 purgeExpiredSchemaRevisions',
 ];
 if (env.clickhouse) {
+  // One named queue so two pods never evaluate at once (a tick that overruns the minute, or a
+  // retried job, would otherwise race the next cron job into double transitions and duplicate
+  // incidents). max=1 because a retry is pointless for a per-minute task: the next cron job does
+  // the same work, and a backlog of retries is exactly what fuels that race.
   crontabLines.push(
     '# Evaluate metric alert rules every minute',
-    '* * * * * evaluateMetricAlertRules',
+    '* * * * * evaluateMetricAlertRules ?queue=metric-alerts&max=1',
   );
 } else {
   logger.warn(
