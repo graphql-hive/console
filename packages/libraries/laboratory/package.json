@@ -111,7 +111,7 @@
     "vite": "catalog:",
     "vite-plugin-monaco-editor": "catalog:",
     "ws": "catalog:",
-    "zod": "4.6.6"
+    "zod": "catalog:"
   },
   "publishConfig": {
     "access": "public"

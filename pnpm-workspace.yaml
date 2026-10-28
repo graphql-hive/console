@@ -103,6 +103,7 @@ catalog:
   graphql-ws: 6.0.6
   graphql-sse: 2.6.0
   graphql: 16.14.2
+  zod: 4.6.6
 
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
