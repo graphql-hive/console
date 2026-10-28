@@ -16,6 +16,7 @@ import { collectSchemaCoordinates } from '../../../../packages/libraries/core/sr
 import { clickHouseQuery } from '../../../testkit/clickhouse';
 import {
   createTarget,
+  readOperationsStats,
   updateTargetValidationSettings,
   waitFor,
   waitForExpectations,
@@ -4227,4 +4228,216 @@ describe('exclude filters', () => {
       expect(excludedClientNames).toEqual(['mobile', 'web']);
     },
   );
+});
+
+describe('schema coordinate and subgraph filters', () => {
+  const op = (
+    operation: string,
+    operationName: string,
+    fields: string[],
+    client = 'web',
+  ): CollectedOperation => ({
+    timestamp: Date.now(),
+    operation,
+    operationName,
+    fields,
+    execution: { ok: true, duration: 100_000_000, errorsTotal: 0 },
+    metadata: { client: { name: client, version: '1.0' } },
+  });
+
+  const names = (stats: { operations: { edges: Array<{ node: { name: string } }> } }) =>
+    stats.operations.edges.map(e => e.node.name.replace(/^.*_/, '')).sort();
+
+  test.concurrent(
+    'schemaCoordinates keeps operations whose document uses any of them',
+    { timeout: 30_000 },
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, readOperationsStats, waitForOperationsCollected } =
+        await createProject(ProjectType.Single);
+      const token = await createTargetAccessToken({});
+
+      const collectResult = await token.collectLegacyOperations([
+        op('query ping { ping }', 'ping', ['Query', 'Query.ping']),
+        op('query me { me { id } }', 'me', ['Query', 'Query.me', 'User', 'User.id'], 'mobile'),
+        op(
+          'query both { ping me { id } }',
+          'both',
+          ['Query', 'Query.ping', 'Query.me', 'User', 'User.id'],
+          'mobile',
+        ),
+      ]);
+      expect(collectResult.status).toEqual(200);
+      await waitForOperationsCollected(3);
+
+      const from = formatISO(subHours(Date.now(), 6));
+      const to = formatISO(Date.now());
+
+      const ping = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['Query.ping'],
+      });
+      expect(names(ping)).toEqual(['both', 'ping']);
+      expect(ping.totalOperations).toBe(2);
+
+      const userId = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['User.id'],
+      });
+      expect(names(userId)).toEqual(['both', 'me']);
+
+      // Any of the coordinates, not all of them.
+      const either = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['Query.ping', 'User.id'],
+      });
+      expect(either.totalOperations).toBe(3);
+
+      // ANDed with the client dimension.
+      const pingFromWeb = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['Query.ping'],
+        clientVersionFilters: [{ clientName: 'web', versions: null }],
+      });
+      expect(names(pingFromWeb)).toEqual(['ping']);
+
+      const unused = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['Query.nothing'],
+      });
+      expect(unused.totalOperations).toBe(0);
+      expect(unused.operations.edges).toEqual([]);
+    },
+  );
+
+  test.concurrent(
+    'subgraphNames resolves to the object fields each subgraph owns',
+    { timeout: 30_000 },
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, readOperationsStats, waitForOperationsCollected } =
+        await createProject(ProjectType.Federation);
+      const token = await createTargetAccessToken({});
+
+      await token
+        .publishSchema({
+          service: 'users',
+          url: 'https://api.com/users',
+          sdl: /* GraphQL */ `
+            type Query {
+              me: User
+            }
+            type User @key(fields: "id") {
+              id: ID!
+              name: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+      await token
+        .publishSchema({
+          service: 'reviews',
+          url: 'https://api.com/reviews',
+          sdl: /* GraphQL */ `
+            type Query {
+              reviews: [Review!]!
+            }
+            type Review {
+              id: ID!
+              body: String
+            }
+            type User @key(fields: "id") {
+              id: ID!
+              reviews: [Review!]!
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const collectResult = await token.collectLegacyOperations([
+        // Selects no key field, so only the users subgraph is involved.
+        op('query me { me { name } }', 'me', ['Query', 'Query.me', 'User', 'User.name']),
+        op('query reviews { reviews { id body } }', 'reviews', [
+          'Query',
+          'Query.reviews',
+          'Review',
+          'Review.id',
+          'Review.body',
+        ]),
+        op('query userReviews { me { id reviews { id } } }', 'userReviews', [
+          'Query',
+          'Query.me',
+          'User',
+          'User.id',
+          'User.reviews',
+          'Review',
+          'Review.id',
+        ]),
+      ]);
+      expect(collectResult.status).toEqual(200);
+      await waitForOperationsCollected(3);
+
+      const from = formatISO(subHours(Date.now(), 6));
+      const to = formatISO(Date.now());
+
+      const reviews = await readOperationsStats(from, to, undefined, {
+        subgraphNames: ['reviews'],
+      });
+      expect(names(reviews)).toEqual(['reviews', 'userReviews']);
+
+      const users = await readOperationsStats(from, to, undefined, {
+        subgraphNames: ['users'],
+      });
+      expect(names(users)).toEqual(['me', 'userReviews']);
+
+      const both = await readOperationsStats(from, to, undefined, {
+        subgraphNames: ['users', 'reviews'],
+      });
+      expect(both.totalOperations).toBe(3);
+
+      // Subgraphs and fields are separate dimensions, ANDed.
+      const reviewsViaMe = await readOperationsStats(from, to, undefined, {
+        subgraphNames: ['reviews'],
+        schemaCoordinates: ['Query.me'],
+      });
+      expect(names(reviewsViaMe)).toEqual(['userReviews']);
+
+      // A subgraph the schema does not know matches nothing rather than failing the page.
+      const unknown = await readOperationsStats(from, to, undefined, {
+        subgraphNames: ['inventory'],
+      });
+      expect(unknown.totalOperations).toBe(0);
+    },
+  );
+
+  test.concurrent('subgraphNames is rejected on a non-Federation project', async ({ expect }) => {
+    const { ownerToken, createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+
+    const from = formatISO(subHours(Date.now(), 6));
+    const to = formatISO(Date.now());
+    const errors = await readOperationsStats(
+      { byId: target.id },
+      { from, to },
+      { subgraphNames: ['users'] },
+      ownerToken,
+    ).then(r => r.expectGraphQLErrors());
+
+    expect(errors[0].message).toContain('only available on Federation projects');
+  });
+
+  test.concurrent('caps the number of schema coordinates', async ({ expect }) => {
+    const { ownerToken, createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+
+    const from = formatISO(subHours(Date.now(), 6));
+    const to = formatISO(Date.now());
+    const errors = await readOperationsStats(
+      { byId: target.id },
+      { from, to },
+      { schemaCoordinates: Array.from({ length: 101 }, (_, i) => `Query.f${i}`) },
+      ownerToken,
+    ).then(r => r.expectGraphQLErrors());
+
+    expect(errors[0].message).toContain('must contain at most 100 elements');
+  });
 });

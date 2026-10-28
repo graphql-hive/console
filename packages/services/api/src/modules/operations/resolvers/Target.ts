@@ -1,11 +1,17 @@
 import { GraphQLError } from 'graphql';
 import { parseDateRangeInput } from '../../../shared/helpers';
+import {
+  describeSubgraphResolutionFailure,
+  SubgraphOwnership,
+} from '../../schema/providers/subgraph-ownership';
 import { OperationsManager } from '../providers/operations-manager';
 import { Traces } from '../providers/traces';
 import type { TargetResolvers } from './../../../__generated__/types';
 
 const MAX_CLIENT_VERSION_FILTERS = 50;
 const MAX_VERSIONS_PER_FILTER = 100;
+const MAX_SCHEMA_COORDINATES = 100;
+const MAX_SUBGRAPH_NAMES = 50;
 
 export const Target: Pick<
   TargetResolvers,
@@ -80,15 +86,57 @@ export const Target: Pick<
       }
     }
 
+    const schemaCoordinates = args.filter?.schemaCoordinates ?? [];
+    if (schemaCoordinates.length > MAX_SCHEMA_COORDINATES) {
+      throw new GraphQLError(
+        `'OperationStatsFilterInput.schemaCoordinates' must contain at most ${MAX_SCHEMA_COORDINATES} elements`,
+      );
+    }
+    const subgraphNames = args.filter?.subgraphNames ?? [];
+    if (subgraphNames.length > MAX_SUBGRAPH_NAMES) {
+      throw new GraphQLError(
+        `'OperationStatsFilterInput.subgraphNames' must contain at most ${MAX_SUBGRAPH_NAMES} elements`,
+      );
+    }
+
     const period = parseDateRangeInput(args.period);
     await injector
       .get(OperationsManager)
       .assertPeriodWithinRetention({ organizationId: target.orgId, period });
+
+    const coordinateScopes: Array<readonly string[]> = [];
+    if (schemaCoordinates.length > 0) {
+      coordinateScopes.push(schemaCoordinates);
+    }
+    if (subgraphNames.length > 0) {
+      const resolved = await injector.get(SubgraphOwnership).resolveFieldCoordinates({
+        organizationId: target.orgId,
+        projectId: target.projectId,
+        targetId: target.id,
+        subgraphNames,
+      });
+      switch (resolved.kind) {
+        case 'ok':
+          coordinateScopes.push(resolved.coordinates);
+          break;
+        // A subgraph that is gone, or a target with nothing composable yet, matches no traffic.
+        // The UI marks the selection unavailable instead of erroring the whole page.
+        case 'no-supergraph':
+        case 'unknown-subgraphs':
+          coordinateScopes.push([]);
+          break;
+        case 'not-federation':
+        case 'too-many-coordinates':
+          throw new GraphQLError(describeSubgraphResolutionFailure(resolved));
+      }
+    }
+
     return {
       period,
       organization: target.orgId,
       project: target.projectId,
       target: target.id,
+      coordinateScopes,
       operations: args.filter?.operationIds ?? [],
       clients:
         // TODO: figure out if the mapping should actually happen here :thinking:
