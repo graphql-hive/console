@@ -1,5 +1,43 @@
 # hive
 
+## 15.0.1
+
+### Patch Changes
+
+- [#8753](https://github.com/graphql-hive/console/pull/8753)
+  [`4312bcc`](https://github.com/graphql-hive/console/commit/4312bccc32a9108008a5e918337a3b0f7e9c8885)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - The password reset and email
+  verification emails now say how long their link stays valid (15 and 30 minutes respectively).
+
+- [#8816](https://github.com/graphql-hive/console/pull/8816)
+  [`037e68f`](https://github.com/graphql-hive/console/commit/037e68f59dc621a80091225303125f574a500e5e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - The private GraphQL API (`/graphql`) now rejects
+  requests that did not go through a CORS preflight (e.g. `GET` requests or forms with a simple
+  content type) unless they include the `graphql-client-name` header.
+
+  This prevents cross-site request forgery using the session cookie.
+
+- [#8753](https://github.com/graphql-hive/console/pull/8753)
+  [`4312bcc`](https://github.com/graphql-hive/console/commit/4312bccc32a9108008a5e918337a3b0f7e9c8885)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Password reset links now stop
+  working 15 minutes after they are requested. Previously a link stayed valid until it was used or a
+  newer one was requested for the same account.
+
+- [#8815](https://github.com/graphql-hive/console/pull/8815)
+  [`02da63b`](https://github.com/graphql-hive/console/commit/02da63bd6b1d1125fe86cfc3a939cc5675667f4b)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [AIKIDO-2026-423483](https://intel.aikido.dev/cve/AIKIDO-2026-423483),
+  [AIKIDO-2026-564744](https://intel.aikido.dev/cve/AIKIDO-2026-564744),
+  [CVE-2026-104852](https://intel.aikido.dev/cve/CVE-2026-104852), and
+  [CVE-2026-114604](https://intel.aikido.dev/cve/CVE-2026-114604).
+
+- [#8818](https://github.com/graphql-hive/console/pull/8818)
+  [`166e3a9`](https://github.com/graphql-hive/console/commit/166e3a900678f4c71a79ec7d586c41da2efc5930)
+  Thanks [@jdolle](https://github.com/jdolle)! - The schema service now logs unexpected composition
+  errors with the request id, the composition task id and the error stack. Previously such errors
+  were logged as "Composition timed out" without the error, and the worker's log line carried no
+  request id.
+
 ## 15.0.0
 
 ### Major Changes
