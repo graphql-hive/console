@@ -18,23 +18,36 @@ const InsightsFilterConfigurationModel = zod.object({
   // Use nullish() + transform because the resolver may pass null instead of undefined
   operationHashes: zod
     .array(zod.string())
-    .max(100, 'Array must contain at most 100 element(s)')
+    .max(100, 'At most 100 operations can be selected')
     .nullish()
     .transform(v => v ?? []),
   clientFilters: zod
     .array(
       zod.object({
-        name: zod.string().min(1).max(100),
-        versions: zod.array(zod.string()).max(100).nullable().optional(),
+        name: zod
+          .string()
+          .min(1, 'Client name is required')
+          .max(100, 'Client name must be at most 100 characters long'),
+        versions: zod
+          .array(zod.string())
+          .max(100, 'At most 100 client versions can be selected')
+          .nullable()
+          .optional(),
       }),
     )
-    .max(50)
+    .max(50, 'At most 50 clients can be selected')
     .nullish()
     .transform(v => v ?? []),
   dateRange: zod
     .object({
-      from: zod.string().min(1).max(100),
-      to: zod.string().min(1).max(100),
+      from: zod
+        .string()
+        .min(1, 'Date range start is required')
+        .max(100, 'Date range start must be at most 100 characters long'),
+      to: zod
+        .string()
+        .min(1, 'Date range end is required')
+        .max(100, 'Date range end must be at most 100 characters long'),
     })
     .nullish()
     .transform(v => v ?? null),
@@ -47,12 +60,14 @@ const visibilityEnum = zod
   .enum(['PRIVATE', 'SHARED'])
   .transform(v => v.toLowerCase() as 'private' | 'shared');
 
+const DescriptionModel = zod.string().max(500, 'Description must be at most 500 characters long');
+
 const CreateSavedFilterInputModel = zod.object({
   name: zod
     .string()
-    .min(1, 'String must contain at least 1 character(s)')
-    .max(100, 'String must contain at most 100 character(s)'),
-  description: zod.string().max(500).nullable().optional(),
+    .min(1, 'Name is required')
+    .max(100, 'Name must be at most 100 characters long'),
+  description: DescriptionModel.nullable().optional(),
   visibility: visibilityEnum,
   insightsFilter: InsightsFilterConfigurationModel.nullable().optional(),
 });
@@ -60,10 +75,10 @@ const CreateSavedFilterInputModel = zod.object({
 const UpdateSavedFilterInputModel = zod.object({
   name: zod
     .string()
-    .min(1, 'String must contain at least 1 character(s)')
-    .max(100, 'String must contain at most 100 character(s)')
+    .min(1, 'Name is required')
+    .max(100, 'Name must be at most 100 characters long')
     .nullish(),
-  description: zod.string().max(500).nullable().optional(),
+  description: DescriptionModel.nullable().optional(),
   // nullish() because resolver passes null when visibility is not provided
   visibility: visibilityEnum.nullish(),
   insightsFilter: InsightsFilterConfigurationModel.nullable().optional(),

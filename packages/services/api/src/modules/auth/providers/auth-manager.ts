@@ -97,9 +97,24 @@ export class AuthManager {
     const InputModel = z.object({
       displayName: z
         .string()
-        .min(displayNameLengthBoundaries.min)
-        .max(displayNameLengthBoundaries.max),
-      fullName: z.string().min(fullNameLengthBoundaries.min).max(fullNameLengthBoundaries.max),
+        .min(
+          displayNameLengthBoundaries.min,
+          `Display name must be at least ${displayNameLengthBoundaries.min} characters long`,
+        )
+        .max(
+          displayNameLengthBoundaries.max,
+          `Display name must be at most ${displayNameLengthBoundaries.max} characters long`,
+        ),
+      fullName: z
+        .string()
+        .min(
+          fullNameLengthBoundaries.min,
+          `Full name must be at least ${fullNameLengthBoundaries.min} characters long`,
+        )
+        .max(
+          fullNameLengthBoundaries.max,
+          `Full name must be at most ${fullNameLengthBoundaries.max} characters long`,
+        ),
     });
     const result = InputModel.safeParse(input);
 

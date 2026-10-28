@@ -4,7 +4,9 @@ import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-const GraphQLSchemaStringModel = z.string().max(5_000_000).min(0);
+const GraphQLSchemaStringModel = z
+  .string()
+  .max(5_000_000, 'Base schema must be at most 5,000,000 characters long');
 
 export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']> = async (
   _,

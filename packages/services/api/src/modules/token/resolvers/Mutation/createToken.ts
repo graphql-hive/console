@@ -3,7 +3,10 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TokenManager } from '../../providers/token-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-const TokenNameModel = z.string().min(2, 'Name must contain at least 2 characters').max(50);
+const TokenNameModel = z
+  .string()
+  .min(2, 'Name must contain at least 2 characters')
+  .max(50, 'Name must contain at most 50 characters');
 
 const CreateTokenInputModel = z.object({
   name: TokenNameModel,

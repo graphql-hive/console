@@ -47,8 +47,8 @@ import {
 } from './schema-version-store';
 
 const ENABLE_EXTERNAL_COMPOSITION_SCHEMA = z.object({
-  endpoint: z.url().nonempty(),
-  secret: z.string().nonempty(),
+  endpoint: z.url('Must be a valid URL, e.g. https://example.com/compose'),
+  secret: z.string().min(1, 'Secret is required'),
 });
 
 const externalSchemaCompositionTestSdl = /* GraphQL */ `
@@ -687,7 +687,7 @@ export class SchemaManager {
           return {
             error: {
               __typename: 'UpdateSchemaCompositionExternalError' as const,
-              message: parseResult.error.message,
+              message: 'Please check your input.',
               inputErrors: {
                 endpoint: z.flattenError(parseResult.error).fieldErrors.endpoint?.[0],
                 secret: z.flattenError(parseResult.error).fieldErrors.secret?.[0],

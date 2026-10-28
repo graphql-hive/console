@@ -48,31 +48,39 @@ export function createInputValidationSchema() {
         const schema = normalizeAjvSchema(rule.meta.schema);
         const validate = schema ? ajv.compile(schema) : null;
 
+        if (!validate) {
+          return {
+            ...acc,
+            [name]: z.tuple([RULE_LEVEL], {
+              error: issue =>
+                issue.code === 'too_big'
+                  ? 'This rule does not accept any configuration'
+                  : undefined,
+            }) as z.ZodType<RuleConfiguration>,
+          };
+        }
+
         return {
           ...acc,
           [name]: z.union([
             z.tuple([RULE_LEVEL]),
-            z.tuple(
-              validate
-                ? [
-                    RULE_LEVEL,
-                    z.custom(data => {
-                      const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
-                      const result = validate(asArray);
+            z.tuple([
+              RULE_LEVEL,
+              z.custom(data => {
+                const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
+                const result = validate(asArray);
 
-                      if (result) {
-                        return true;
-                      }
+                if (result) {
+                  return true;
+                }
 
-                      throw new Error(
-                        `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
-                          validate.errors,
-                        )}`,
-                      );
-                    }),
-                  ]
-                : [RULE_LEVEL],
-            ),
+                throw new Error(
+                  `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
+                    validate.errors,
+                  )}`,
+                );
+              }),
+            ]),
           ]) as z.ZodType<RuleConfiguration>,
         };
       }, {} as RulemapValidationType),

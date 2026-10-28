@@ -18,7 +18,7 @@ export const CreateOrganizationFormSchema = z.object({
       error: issue => (issue.input === undefined ? 'Organization slug is required' : undefined),
     })
     .min(1, 'Organization slug is required')
-    .max(50, 'Slug must be less than 50 characters')
+    .max(50, 'Slug must be at most 50 characters long')
     .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers and dashes'),
 });
 

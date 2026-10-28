@@ -13,7 +13,7 @@ import { authenticateRequest } from './authenticate-request';
 const OrganizationSlug = z
   .string()
   .min(1, ':organizationSlug must have at least 1 character')
-  .max(50, ':organizationSlug must be less than 50 characters')
+  .max(50, ':organizationSlug must be at most 50 characters long')
   .regex(
     /^[a-z0-9-]+$/,
     ':organizationSlug can only contain alphanumeric characters and dashes (-)',

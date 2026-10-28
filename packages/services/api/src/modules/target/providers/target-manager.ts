@@ -381,12 +381,12 @@ export class TargetManager {
     const validationResult = BreakingChangeConfigurationModel.extend({
       period: z
         .number()
-        .min(1, 'Period must be at least 1')
+        .int('Period must be a whole number of days.')
+        .min(1, 'Period must be at least 1 day.')
         .max(
           org.monthlyRateLimit.retentionInDays,
-          `Period must be less than ${org.monthlyRateLimit.retentionInDays}`,
+          `Period must be at most ${org.monthlyRateLimit.retentionInDays} days, the data retention period of your organization.`,
         )
-        .int()
         .nullish(),
     }).safeParse(args.configuration);
 
@@ -543,7 +543,7 @@ export class TargetManager {
     if (graphqlEndpointUrl.success === false) {
       return {
         type: 'error',
-        reason: graphqlEndpointUrl.error.message,
+        reason: graphqlEndpointUrl.error.issues[0].message,
       } as const;
     }
 
@@ -739,11 +739,8 @@ const AppDeploymentProtectionConfigurationModel = z.object({
 });
 
 const TargetGraphQLEndpointUrlModel = zod
-  .string()
-  .max(300, {
-    error: 'Must be less than 300 characters.',
-  })
-  .url()
+  .url('Must be a valid URL, e.g. https://api.example.com/graphql')
+  .max(300, 'Must be at most 300 characters long.')
   .nullable();
 
 const BreakingChangeConfigurationModel = z.object({

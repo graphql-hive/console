@@ -735,11 +735,11 @@ export class Contracts {
 
 const CreateContractInputModel = z
   .object({
-    targetId: z.uuid(),
+    targetId: z.uuid('Invalid target ID provided.'),
     contractName: z
       .string()
-      .max(64, 'String must contain at most 64 character(s)')
-      .min(2, 'String must contain at least 2 character(s)')
+      .max(64, 'Contract name must be at most 64 characters long')
+      .min(2, 'Contract name must be at least 2 characters long')
       .toLowerCase()
       .regex(/^[a-zA-Z0-9_-]+$/, "Can only contain letters, numbers, '_', and '-'"),
     includeTags: z.array(z.string()).nullable(),

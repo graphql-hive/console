@@ -606,42 +606,46 @@ export class CollectionProvider {
 const MAX_INPUT_LENGTH = 10_000;
 
 // The following validates the length and the validity of the JSON object incoming as string.
-const inputObjectSchema = zod
-  .string()
-  .max(MAX_INPUT_LENGTH)
-  .refine(v => {
-    if (!v) {
-      return true;
-    }
+const createJSONInputModel = (label: string) =>
+  zod
+    .string()
+    .max(MAX_INPUT_LENGTH, `${label} must be at most ${MAX_INPUT_LENGTH} characters long`)
+    .refine(v => {
+      if (!v) {
+        return true;
+      }
 
-    try {
-      JSON.parse(v);
-      return true;
-    } catch {
-      return false;
-    }
-  });
+      try {
+        JSON.parse(v);
+        return true;
+      } catch {
+        return false;
+      }
+    }, `${label} must be valid JSON, e.g. {"key": "value"}`);
+
+const VariablesInputModel = createJSONInputModel('Variables');
+const HeadersInputModel = createJSONInputModel('Headers');
 
 const OperationNameModel = zod
   .string()
-  .min(1, 'Name must be at least 1 character')
-  .max(100, 'Name must be less than 100 characters');
+  .min(1, 'Name is required')
+  .max(100, 'Name must be at most 100 characters long');
 
 const OperationQueryModel = zod
   .string()
-  .min(1, 'Query must have at least 1 character')
-  .max(MAX_INPUT_LENGTH, `Query must be less than ${MAX_INPUT_LENGTH} characters`);
+  .min(1, 'Query is required')
+  .max(MAX_INPUT_LENGTH, `Query must be at most ${MAX_INPUT_LENGTH} characters long`);
 
 const OperationCreateModel = zod.object({
   name: OperationNameModel,
   query: OperationQueryModel,
-  variables: inputObjectSchema.nullable(),
-  headers: inputObjectSchema.nullable(),
+  variables: VariablesInputModel.nullable(),
+  headers: HeadersInputModel.nullable(),
 });
 
 const OperationUpdateModel = zod.object({
   name: OperationNameModel.nullable(),
   query: OperationQueryModel.nullable(),
-  variables: inputObjectSchema.nullable(),
-  headers: inputObjectSchema.nullable(),
+  variables: VariablesInputModel.nullable(),
+  headers: HeadersInputModel.nullable(),
 });
