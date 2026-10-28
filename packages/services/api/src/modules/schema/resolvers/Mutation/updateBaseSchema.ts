@@ -4,7 +4,6 @@ import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-const MaybeModel = <T extends z.ZodType>(value: T) => z.union([z.null(), z.undefined(), value]);
 const GraphQLSchemaStringModel = z.string().max(5_000_000).min(0);
 
 export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']> = async (
@@ -13,7 +12,7 @@ export const updateBaseSchema: NonNullable<MutationResolvers['updateBaseSchema']
   { injector },
 ) => {
   const UpdateBaseSchemaModel = z.object({
-    newBase: MaybeModel(GraphQLSchemaStringModel),
+    newBase: GraphQLSchemaStringModel.nullish(),
   });
 
   const result = UpdateBaseSchemaModel.safeParse(input);

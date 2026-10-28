@@ -10,7 +10,8 @@ import { z } from 'zod';
  */
 export function numberInput<T extends z.ZodType<unknown, number | undefined>>(schema: T) {
   return z
-    .union([z.string(), z.number(), z.undefined()])
+    .union([z.string(), z.number()])
+    .optional()
     .transform(value => (value === '' || value === undefined ? undefined : Number(value)))
     .pipe(schema) as unknown as z.ZodType<z.output<T>, z.output<T>>;
 }
