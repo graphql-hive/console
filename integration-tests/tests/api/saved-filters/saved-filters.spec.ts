@@ -402,7 +402,7 @@ describe('Saved Filters', () => {
       });
 
       expect(result.error).not.toBeNull();
-      expect(result.error?.message).toContain('String must contain at least 1 character');
+      expect(result.error?.message).toBe('Name is required');
     });
 
     test.concurrent('create: failure with name exceeding 100 characters', async ({ expect }) => {
@@ -418,7 +418,7 @@ describe('Saved Filters', () => {
       });
 
       expect(result.error).not.toBeNull();
-      expect(result.error?.message).toContain('String must contain at most 100 character');
+      expect(result.error?.message).toBe('Name must be at most 100 characters long');
     });
 
     test.concurrent('create: failure with too many operations', async ({ expect }) => {
@@ -436,8 +436,26 @@ describe('Saved Filters', () => {
       });
 
       expect(result.error).not.toBeNull();
-      expect(result.error?.message).toContain('Array must contain at most 100 element');
+      expect(result.error?.message).toBe('At most 100 operations can be selected');
     });
+  });
+
+  test.concurrent('Mutation.createSavedFilter: description too long', async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createSavedFilter } = await createProject(ProjectType.Single);
+
+    const result = await createSavedFilter({
+      name: 'filter',
+      description: 'a'.repeat(501),
+      visibility: SavedFilterVisibilityType.Private,
+    });
+
+    expect(result.error).toMatchInlineSnapshot(`
+      {
+        message: Description must be at most 500 characters long,
+      }
+    `);
   });
 
   describe('Exclude filters', () => {

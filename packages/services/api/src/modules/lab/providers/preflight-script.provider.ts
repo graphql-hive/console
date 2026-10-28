@@ -9,7 +9,7 @@ import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
 
-const SourceCodeModel = z.string().max(5_000);
+const SourceCodeModel = z.string().max(5_000, 'Source code must be less than 5000 characters');
 
 const UpdatePreflightScriptModel = z.strictObject({
   // Use validation only on insertion
@@ -109,7 +109,7 @@ export class PreflightScriptProvider {
     if (validationResult.error) {
       return {
         error: {
-          message: validationResult.error.errors[0].message,
+          message: validationResult.error.issues[0].message,
         },
       };
     }
@@ -151,7 +151,7 @@ export class PreflightScriptProvider {
     if (error) {
       return {
         error: {
-          message: error.errors[0].message,
+          message: error.issues[0].message,
         },
       };
     }

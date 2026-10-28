@@ -5,7 +5,8 @@ import * as pulumi from '@pulumi/pulumi';
 import { ClickhouseConnectionSecret } from '../services/clickhouse';
 import { ServiceDeployment } from './service-deployment';
 
-const dockerImage = 'ghcr.io/graphql-hive/cli:0.49.0';
+const dockerImage =
+  'ghcr.io/graphql-hive/cli:0.68.2@sha256:ca7da22cf61ba98383f3f34e0d8ee6e1b2b4ce30982a18c3d17fb9706b3cf5a5';
 
 /** Publish API GraphQL schema to Hive schema registry. */
 export function publishAppDeployment(args: {

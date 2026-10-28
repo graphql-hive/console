@@ -18,16 +18,16 @@ import { cn } from '@/lib/utils';
 export const CreateProjectFormSchema = z.object({
   projectSlug: z
     .string({
-      required_error: 'Project slug is required',
+      error: issue => (issue.input === undefined ? 'Project slug is required' : undefined),
     })
     .min(2, {
-      message: 'Project slug must be at least 2 characters long',
+      error: 'Project slug must be at least 2 characters long',
     })
     .max(50, {
-      message: 'Project slug must be at most 50 characters long',
+      error: 'Project slug must be at most 50 characters long',
     }),
-  projectType: z.nativeEnum(ProjectType, {
-    required_error: 'Project type is required',
+  projectType: z.enum(ProjectType, {
+    error: issue => (issue.input === undefined ? 'Project type is required' : undefined),
   }),
 });
 

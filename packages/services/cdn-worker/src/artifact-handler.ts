@@ -54,7 +54,7 @@ const ParamsModel = zod.object({
 
 const VersionedParamsModel = zod.object({
   targetId: zod.string(),
-  versionId: zod.string().uuid(),
+  versionId: zod.uuid(),
   artifactType: zod.union([
     zod.literal('metadata'),
     zod.literal('sdl'),

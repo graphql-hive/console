@@ -20,15 +20,15 @@ export function breakingChangesFormSchema(maxPeriod: number) {
   return z
     .object({
       percentage: numberInput(z.number().optional()),
-      requestCount: numberInput(z.number().int('Must be a whole number').optional()),
+      requestCount: numberInput(z.number().int({ error: 'Must be a whole number' }).optional()),
       period: numberInput(
         z
-          .number({ required_error: 'Required' })
+          .number({ error: issue => (issue.input === undefined ? 'Required' : undefined) })
           .min(1, 'Must be at least 1 day')
           .max(maxPeriod, `Must be at most ${maxPeriod} days`)
           .refine(value => Number(value.toFixed(2)) === value, 'Invalid precision'),
       ),
-      breakingChangeFormula: z.nativeEnum(BreakingChangeFormulaType),
+      breakingChangeFormula: z.enum(BreakingChangeFormulaType),
       targetIds: z.array(z.string()).min(1, 'Pick at least 1 target'),
       excludedClients: z.array(z.string()),
       excludedAppDeployments: z.array(z.string()),

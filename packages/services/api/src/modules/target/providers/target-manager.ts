@@ -381,11 +381,13 @@ export class TargetManager {
     const validationResult = BreakingChangeConfigurationModel.extend({
       period: z
         .number()
-        .min(1)
-        .max(org.monthlyRateLimit.retentionInDays)
-        .int()
-        .nullable()
-        .optional(),
+        .int('Period must be a whole number of days')
+        .min(1, 'Period must be at least 1 day')
+        .max(
+          org.monthlyRateLimit.retentionInDays,
+          `Period must be at most ${org.monthlyRateLimit.retentionInDays} days, the data retention period of your organization`,
+        )
+        .nullish(),
     }).safeParse(args.configuration);
 
     if (validationResult.success === false) {
@@ -394,10 +396,10 @@ export class TargetManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            period: validationResult.error.formErrors.fieldErrors.period?.[0],
-            percentage: validationResult.error.formErrors.fieldErrors.percentage?.[0],
-            requestCount: validationResult.error.formErrors.fieldErrors.requestCount?.[0],
-            targetIds: validationResult.error.formErrors.fieldErrors.targetIds?.[0],
+            period: z.flattenError(validationResult.error).fieldErrors.period?.[0],
+            percentage: z.flattenError(validationResult.error).fieldErrors.percentage?.[0],
+            requestCount: z.flattenError(validationResult.error).fieldErrors.requestCount?.[0],
+            targetIds: z.flattenError(validationResult.error).fieldErrors.targetIds?.[0],
           },
         },
       };
@@ -471,7 +473,8 @@ export class TargetManager {
     if (!slugParseResult.success) {
       return {
         ok: false,
-        message: slugParseResult.error.formErrors.formErrors?.[0] ?? 'Please check your input.',
+        message:
+          z.flattenError(slugParseResult.error).formErrors?.[0] ?? 'Please check your input.',
       };
     }
 
@@ -540,7 +543,7 @@ export class TargetManager {
     if (graphqlEndpointUrl.success === false) {
       return {
         type: 'error',
-        reason: graphqlEndpointUrl.error.message,
+        reason: graphqlEndpointUrl.error.issues[0].message,
       } as const;
     }
 
@@ -680,12 +683,14 @@ export class TargetManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            minDaysInactive: validationResult.error.formErrors.fieldErrors.minDaysInactive?.[0],
-            minDaysSinceCreation:
-              validationResult.error.formErrors.fieldErrors.minDaysSinceCreation?.[0],
-            maxTrafficPercentage:
-              validationResult.error.formErrors.fieldErrors.maxTrafficPercentage?.[0],
-            trafficPeriodDays: validationResult.error.formErrors.fieldErrors.trafficPeriodDays?.[0],
+            minDaysInactive: z.flattenError(validationResult.error).fieldErrors
+              .minDaysInactive?.[0],
+            minDaysSinceCreation: z.flattenError(validationResult.error).fieldErrors
+              .minDaysSinceCreation?.[0],
+            maxTrafficPercentage: z.flattenError(validationResult.error).fieldErrors
+              .maxTrafficPercentage?.[0],
+            trafficPeriodDays: z.flattenError(validationResult.error).fieldErrors
+              .trafficPeriodDays?.[0],
           },
         },
       };
@@ -712,41 +717,38 @@ export class TargetManager {
 const AppDeploymentProtectionConfigurationModel = z.object({
   minDaysInactive: z
     .number()
-    .min(0, 'Minimum days inactive must be at least 0.')
+    .min(0, 'Minimum days inactive must be at least 0')
     .nullable()
     .optional(),
   minDaysSinceCreation: z
     .number()
-    .min(0, 'Minimum days since creation must be at least 0.')
+    .min(0, 'Minimum days since creation must be at least 0')
     .nullable()
     .optional(),
   maxTrafficPercentage: z
     .number()
-    .min(0, 'Maximum traffic percentage must be at least 0.')
-    .max(100, 'Maximum traffic percentage must be at most 100.')
+    .min(0, 'Maximum traffic percentage must be at least 0')
+    .max(100, 'Maximum traffic percentage must be at most 100')
     .nullable()
     .optional(),
   trafficPeriodDays: z
     .number()
-    .min(1, 'Traffic period days must be at least 1.')
+    .min(1, 'Traffic period days must be at least 1')
     .nullable()
     .optional(),
 });
 
 const TargetGraphQLEndpointUrlModel = zod
-  .string()
-  .max(300, {
-    message: 'Must be less than 300 characters.',
-  })
-  .url()
+  .url('Must be a valid URL, e.g. https://api.example.com/graphql')
+  .max(300, 'Must be at most 300 characters long')
   .nullable();
 
 const BreakingChangeConfigurationModel = z.object({
   percentage: PercentageModel.nullable().optional(),
-  requestCount: z.number().min(1, 'Request count must be at least 1.').nullable().optional(),
+  requestCount: z.number().min(1, 'Request count must be at least 1').nullable().optional(),
   targetIds: z
-    .array(z.string().uuid('Incorrect UUID provided.'))
-    .min(1, 'At least one target must be provided.')
+    .array(z.uuid({ error: 'Incorrect UUID provided' }))
+    .min(1, 'At least one target must be provided')
     .nullable()
     .optional(),
 });

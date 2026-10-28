@@ -21,7 +21,6 @@ import {
   type SettingsSectionId,
 } from '@/pages/target-settings';
 import { createRoute, redirect } from '@tanstack/react-router';
-import { zodValidator } from '@tanstack/zod-adapter';
 import { legacySearch, legacySearchRedirect } from '../legacy';
 import { targetRoute } from './route';
 
@@ -82,9 +81,9 @@ export const targetSettingsRoute = createRoute({
 export const targetSettingsIndexRoute = createRoute({
   getParentRoute: () => targetSettingsRoute,
   path: '/',
-  validateSearch: zodValidator(
-    z.object({ page: legacySearch.targetSettings.values.optional().catch(undefined) }),
-  ),
+  validateSearch: z.object({
+    page: legacySearch.targetSettings.values.optional().catch(undefined),
+  }),
   beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.targetSettings, search),
   loader: loader => loadSection(loader, 'general'),
   component: TargetSettingsGeneralSection,
@@ -94,12 +93,10 @@ export const targetSettingsCdnRoute = createRoute({
   getParentRoute: () => targetSettingsRoute,
   path: 'cdn',
   // The create and delete modals are driven from the URL.
-  validateSearch: zodValidator(
-    z.object({
-      cdn: z.enum(['create', 'delete']).optional(),
-      id: z.string().optional(),
-    }),
-  ),
+  validateSearch: z.object({
+    cdn: z.enum(['create', 'delete']).optional(),
+    id: z.string().optional(),
+  }),
   loader: loader => {
     void loadQuery(loader, CDNAccessTokensQuery, {
       selector: selectorOf(loader),

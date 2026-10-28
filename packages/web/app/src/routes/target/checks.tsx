@@ -13,17 +13,14 @@ import {
 } from '@/pages/target-checks-affected-deployments';
 import { ActiveSchemaCheckQuery, TargetChecksSinglePage } from '@/pages/target-checks-single';
 import { createRoute } from '@tanstack/react-router';
-import { zodValidator } from '@tanstack/zod-adapter';
 import { targetRoute } from './route';
 
 export const targetChecksRoute = createRoute({
-  validateSearch: zodValidator(
-    z.object({
-      filter_changed: z.boolean().optional().catch(undefined),
-      filter_failed: z.boolean().optional().catch(undefined),
-      filter_service: z.string().optional().catch(undefined),
-    }),
-  ),
+  validateSearch: z.object({
+    filter_changed: z.boolean().optional().catch(undefined),
+    filter_failed: z.boolean().optional().catch(undefined),
+    filter_service: z.string().optional().catch(undefined),
+  }),
   getParentRoute: () => targetRoute,
   path: 'checks',
   loaderDeps: ({ search }) => ({
@@ -70,7 +67,7 @@ export const targetChecksSingleRoute = createRoute({
 export const targetChecksAffectedDeploymentsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'checks/$schemaCheckId/affected-deployments',
-  validateSearch: zodValidator(z.object({ coordinate: z.string().optional() })),
+  validateSearch: z.object({ coordinate: z.string().optional() }),
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug, schemaCheckId } = loader.params;
     void loadQuery(

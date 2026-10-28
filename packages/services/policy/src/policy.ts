@@ -1,6 +1,7 @@
 import Ajv from 'ajv';
-import { z, ZodType } from 'zod';
+import { z } from 'zod';
 import { lint } from './engine/linter';
+import type { RuleSeverity } from './engine/linter';
 import { rules } from './engine/rules';
 import type { GraphQLESLintRule } from './engine/types';
 import { RELEVANT_RULES } from './rules';
@@ -14,9 +15,11 @@ const ajv = new Ajv({
 });
 
 const RULE_LEVEL = z.union([z.number().min(0).max(2), z.enum(['off', 'warn', 'error'])]);
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type RuleConfiguration = [RuleSeverity, ...JsonValue[]];
 
 type RulemapValidationType = {
-  [_RuleKey in keyof typeof rules]: ZodType;
+  [_RuleKey in keyof typeof rules]: z.ZodType<RuleConfiguration>;
 };
 
 export function normalizeAjvSchema(
@@ -40,43 +43,54 @@ export function normalizeAjvSchema(
 
 export function createInputValidationSchema() {
   return z
-    .object(
+    .strictObject(
       RELEVANT_RULES.reduce((acc, [name, rule]) => {
         const schema = normalizeAjvSchema(rule.meta.schema);
         const validate = schema ? ajv.compile(schema) : null;
+
+        if (!validate) {
+          return {
+            ...acc,
+            [name]: z.tuple([RULE_LEVEL], {
+              error: issue =>
+                issue.code === 'too_big'
+                  ? 'This rule does not accept any configuration'
+                  : undefined,
+            }) as z.ZodType<RuleConfiguration>,
+          };
+        }
 
         return {
           ...acc,
           [name]: z.union([
             z.tuple([RULE_LEVEL]),
-            z.tuple(
-              validate
-                ? [
-                    RULE_LEVEL,
-                    z.custom(data => {
-                      const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
-                      const result = validate(asArray);
+            z.tuple([
+              RULE_LEVEL,
+              z.custom(data => {
+                const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
+                const result = validate(asArray);
 
-                      if (result) {
-                        return true;
-                      }
+                if (result) {
+                  return true;
+                }
 
-                      throw new Error(
-                        `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
-                          validate.errors,
-                        )}`,
-                      );
-                    }),
-                  ]
-                : [RULE_LEVEL],
-            ),
-          ]),
+                throw new Error(
+                  `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
+                    validate.errors,
+                  )}`,
+                );
+              }),
+            ]),
+          ]) as z.ZodType<RuleConfiguration>,
         };
       }, {} as RulemapValidationType),
+      {
+        error: issue =>
+          issue.code === 'unrecognized_keys' ? 'Unknown rule name passed' : undefined,
+      },
     )
     .required()
-    .partial()
-    .strict('Unknown rule name passed');
+    .partial();
 }
 
 export type PolicyConfigurationObject = z.infer<ReturnType<typeof createInputValidationSchema>>;

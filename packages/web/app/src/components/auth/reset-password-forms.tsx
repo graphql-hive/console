@@ -15,7 +15,7 @@ import { PasswordStringModel } from './sign-up-form';
 export const ResetPasswordFormSchema = z.object({
   email: z
     .string({
-      required_error: 'Email is required',
+      error: issue => (issue.input === undefined ? 'Email is required' : undefined),
     })
     .email('Invalid email address'),
 });

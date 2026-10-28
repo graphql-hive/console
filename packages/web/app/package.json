@@ -41,7 +41,6 @@
     "@tanstack/react-router-devtools": "1.167.2",
     "@tanstack/react-table": "8.20.6",
     "@tanstack/react-virtual": "3.14.13",
-    "@tanstack/zod-adapter": "1.167.0",
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.3",
     "@types/crypto-js": "4.2.2",
@@ -52,7 +51,7 @@
     "@urql/core": "6.0.3",
     "@urql/exchange-auth": "3.0.0",
     "@urql/exchange-graphcache": "9.0.2",
-    "@vitejs/plugin-react": "5.1.2",
+    "@vitejs/plugin-react": "catalog:",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "crypto-js": "catalog:",
@@ -62,6 +61,7 @@
     "dompurify": "catalog:",
     "dotenv": "catalog:",
     "echarts": "6.1.0",
+    "esbuild": "catalog:",
     "fastify": "catalog:",
     "graphiql": "4.0.0-alpha.5",
     "graphql": "catalog:",
@@ -97,11 +97,10 @@
     "tsx": "catalog:",
     "urql": "5.0.4",
     "use-debounce": "10.1.1",
-    "vite": "7.3.7",
-    "vite-plugin-monaco-editor": "1.1.0",
-    "vite-tsconfig-paths": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-monaco-editor": "catalog:",
     "wonka": "6.3.6",
-    "zod": "3.25.76"
+    "zod": "4.6.6"
   },
   "buildOptions": {
     "external": [

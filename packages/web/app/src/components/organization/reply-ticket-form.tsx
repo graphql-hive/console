@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 
 export const ReplyTicketFormSchema = z.object({
   body: z.string().min(2, {
-    message: 'Comment must be at least 2 characters.',
+    error: 'Comment must be at least 2 characters.',
   }),
 });
 

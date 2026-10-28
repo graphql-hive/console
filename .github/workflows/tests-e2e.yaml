@@ -10,6 +10,12 @@ on:
       imageTag:
         required: true
         type: string
+      loadImagesFromArtifact:
+        description:
+          Load the images from the "docker-images" workflow artifact instead of pulling them from
+          the registry.
+        default: false
+        type: boolean
 
 jobs:
   e2e:
@@ -25,6 +31,21 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           persist-credentials: false
+
+      - name: download docker images artifact
+        if: ${{ inputs.loadImagesFromArtifact }}
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
+        with:
+          name: docker-images
+          path: ${{ runner.temp }}/docker-images
+
+      - name: load docker images
+        if: ${{ inputs.loadImagesFromArtifact }}
+        env:
+          IMAGES_DIR: ${{ runner.temp }}/docker-images
+        run: |
+          docker load -i "$IMAGES_DIR/docker-images.tar.gz"
+          rm -rf "$IMAGES_DIR"
 
       - name: setup environment
         uses: ./.github/actions/setup

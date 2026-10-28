@@ -131,7 +131,7 @@ export async function registerSupertokensAtHome(
 
   const OIDCIdLookupSchema = z.object({
     slug: z.string({
-      required_error: 'Slug is required',
+      error: issue => (issue.input === undefined ? 'Slug is required' : undefined),
     }),
   });
 
@@ -218,7 +218,7 @@ export async function registerSupertokensAtHome(
       const password =
         parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
 
-      const emailResult = z.string().email().toLowerCase().safeParse(rawEmail);
+      const emailResult = z.email().toLowerCase().safeParse(rawEmail);
 
       // Verify email
       if (!emailResult.success) {
@@ -845,7 +845,7 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        if (!z.string().uuid().safeParse(query.data.oidc_id).success) {
+        if (!z.uuid().safeParse(query.data.oidc_id).success) {
           return rep.status(200).send({
             status: 'GENERAL_ERROR',
             message: 'Something went wrong. Please try again',
@@ -1546,7 +1546,7 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const userInfoBody = z.record(z.unknown()).safeParse(userInfoBodyJSON.data);
+        const userInfoBody = z.record(z.string(), z.unknown()).safeParse(userInfoBodyJSON.data);
 
         if (!userInfoBody.success) {
           req.log.debug('received invalid JSON body from user info endpoint');

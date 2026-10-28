@@ -277,23 +277,21 @@ export function isRuleDue(
 // `dateRange` is deliberately NOT read (an alert defines its own rolling window,
 // so the filter's saved date range is meaningless here). `.passthrough()` tolerates
 // extra fields (e.g. `dateRange`) without failing.
-const SavedFilterConditionsSchema = z
-  .object({
-    operationHashes: z.array(z.string()).optional(),
-    clientFilters: z
-      .array(
-        z.object({
-          name: z.string(),
-          versions: z.array(z.string()).nullable().optional(),
-        }),
-      )
-      .optional(),
-    excludeOperations: z.boolean().optional(),
-    excludeClientFilters: z.boolean().optional(),
-    schemaCoordinates: z.array(z.string()).optional(),
-    subgraphNames: z.array(z.string()).optional(),
-  })
-  .passthrough();
+const SavedFilterConditionsSchema = z.looseObject({
+  operationHashes: z.array(z.string()).optional(),
+  clientFilters: z
+    .array(
+      z.object({
+        name: z.string(),
+        versions: z.array(z.string()).nullable().optional(),
+      }),
+    )
+    .optional(),
+  excludeOperations: z.boolean().optional(),
+  excludeClientFilters: z.boolean().optional(),
+  schemaCoordinates: z.array(z.string()).optional(),
+  subgraphNames: z.array(z.string()).optional(),
+});
 
 /** A saved filter read from its jsonb: the sync conditions plus the parts that resolve later. */
 export type ParsedSavedFilter = {

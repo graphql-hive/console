@@ -4441,3 +4441,97 @@ describe('schema coordinate and subgraph filters', () => {
     expect(errors[0].message).toContain('must contain at most 100 elements');
   });
 });
+test.concurrent(
+  'Mutation.updateTargetConditionalBreakingChangeConfiguration: values below minimum',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+    const result = await updateTargetValidationSettings(
+      {
+        target: { byId: target.id },
+        conditionalBreakingChangeConfiguration: {
+          period: 0,
+          percentage: -1,
+          requestCount: 0,
+          targetIds: [],
+        },
+      },
+      { authToken: ownerToken },
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.updateTargetConditionalBreakingChangeConfiguration.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          percentage: Percentage must be at least 0,
+          period: Period must be at least 1 day,
+          requestCount: Request count must be at least 1,
+          targetIds: At least one target must be provided,
+        },
+        message: Please check your input.,
+      }
+    `);
+  },
+);
+
+test.concurrent(
+  'Mutation.updateTargetConditionalBreakingChangeConfiguration: values above maximum',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+    const result = await updateTargetValidationSettings(
+      {
+        target: { byId: target.id },
+        conditionalBreakingChangeConfiguration: {
+          period: 1000,
+          percentage: 101,
+          targetIds: ['not-a-uuid'],
+        },
+      },
+      { authToken: ownerToken },
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.updateTargetConditionalBreakingChangeConfiguration.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          percentage: Percentage must be at most 100,
+          period: Period must be at most 7 days, the data retention period of your organization,
+          requestCount: null,
+          targetIds: Incorrect UUID provided,
+        },
+        message: Please check your input.,
+      }
+    `);
+  },
+);
+
+test.concurrent(
+  'Mutation.updateTargetConditionalBreakingChangeConfiguration: percentage with too many decimals',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+    const result = await updateTargetValidationSettings(
+      {
+        target: { byId: target.id },
+        conditionalBreakingChangeConfiguration: {
+          percentage: 1.234,
+        },
+      },
+      { authToken: ownerToken },
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.updateTargetConditionalBreakingChangeConfiguration.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          percentage: Percentage can have at most 2 decimal places, e.g. 0.25,
+          period: null,
+          requestCount: null,
+          targetIds: null,
+        },
+        message: Please check your input.,
+      }
+    `);
+  },
+);

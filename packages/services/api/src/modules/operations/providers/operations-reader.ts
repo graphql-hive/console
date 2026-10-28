@@ -47,7 +47,7 @@ export interface DurationMetrics {
 }
 
 const ReadOperationModel = z.object({
-  target: z.string().uuid(),
+  target: z.uuid(),
   hash: z.string(),
   body: z.string(),
   name: z.string(),

@@ -19,7 +19,7 @@ import type { OrganizationSelector } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 import { TokenStorage } from '../../token/providers/token-storage';
-import { CreateOrUpdateMemberRoleModel } from '../validation';
+import { CreateOrUpdateMemberRoleModel, InviteByEmailInputModel } from '../validation';
 import { reservedOrganizationSlugs } from './organization-config';
 import { OrganizationMemberRoles, type OrganizationMemberRole } from './organization-member-roles';
 import { OrganizationMembers } from './organization-members';
@@ -581,17 +581,14 @@ export class OrganizationManager {
       },
     });
 
-    const InputModel = z.object({
-      email: z.string().email().max(128, 'Email must be at most 128 characters long'),
-    });
-    const result = InputModel.safeParse(input);
+    const result = InviteByEmailInputModel.safeParse(input);
 
     if (!result.success) {
       return {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            email: result.error.formErrors.fieldErrors.email?.[0],
+            email: z.flattenError(result.error).fieldErrors.email?.[0],
           },
         },
       };
@@ -979,8 +976,8 @@ export class OrganizationManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            name: inputValidation.error.formErrors.fieldErrors.name?.[0],
-            description: inputValidation.error.formErrors.fieldErrors.description?.[0],
+            name: z.flattenError(inputValidation.error).fieldErrors.name?.[0],
+            description: z.flattenError(inputValidation.error).fieldErrors.description?.[0],
           },
         },
       };
@@ -1293,8 +1290,8 @@ export class OrganizationManager {
         error: {
           message: 'Please check your input.',
           inputErrors: {
-            name: inputValidation.error.formErrors.fieldErrors.name?.[0],
-            description: inputValidation.error.formErrors.fieldErrors.description?.[0],
+            name: z.flattenError(inputValidation.error).fieldErrors.name?.[0],
+            description: z.flattenError(inputValidation.error).fieldErrors.description?.[0],
           },
         },
       };

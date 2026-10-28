@@ -1,8 +1,7 @@
-import tsconfigPaths from 'vite-tsconfig-paths';
 import { defaultExclude, defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [tsconfigPaths()],
+  resolve: { tsconfigPaths: true },
   test: {
     alias: {
       '@graphql-hive/core': new URL('./packages/libraries/core/src/index.ts', import.meta.url)

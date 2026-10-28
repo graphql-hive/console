@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import asyncRetry from 'async-retry';
+import { addAlertChannel } from 'testkit/flow';
 import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
 import { generateMockEndpoint, getRecordedRequests } from 'testkit/mock-server';
 import { initSeed } from '../../../testkit/seed';
@@ -103,5 +104,98 @@ test.concurrent(
         maxTimeout: 2000,
       },
     );
+  },
+);
+
+test.concurrent(
+  'Mutation.addAlertChannel: invalid name, slack channel and webhook',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { organization, createProject } = await createOrg();
+    const { project } = await createProject(ProjectType.Single);
+
+    const emptySlack = await addAlertChannel(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        name: '',
+        type: AlertChannelType.Slack,
+        slack: { channel: '' },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(emptySlack.addAlertChannel.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          name: Name is required,
+          slackChannel: Slack channel is required, e.g. #alerts,
+          webhookEndpoint: null,
+        },
+        message: Please check your input.,
+      }
+    `);
+
+    const longSlack = await addAlertChannel(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        name: 'a'.repeat(101),
+        type: AlertChannelType.Slack,
+        slack: { channel: 'b'.repeat(81) },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(longSlack.addAlertChannel.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          name: Name must be at most 100 characters long,
+          slackChannel: Slack channel must be at most 80 characters long,
+          webhookEndpoint: null,
+        },
+        message: Please check your input.,
+      }
+    `);
+
+    const invalidWebhook = await addAlertChannel(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        name: 'webhook',
+        type: AlertChannelType.Webhook,
+        webhook: { endpoint: 'not-a-url' },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(invalidWebhook.addAlertChannel.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          name: null,
+          slackChannel: null,
+          webhookEndpoint: Must be a valid URL, e.g. https://example.com/webhook,
+        },
+        message: Please check your input.,
+      }
+    `);
+
+    const longWebhook = await addAlertChannel(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        name: 'webhook',
+        type: AlertChannelType.Webhook,
+        webhook: { endpoint: `https://example.com/${'a'.repeat(500)}` },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(longWebhook.addAlertChannel.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          name: null,
+          slackChannel: null,
+          webhookEndpoint: URL must be at most 500 characters long,
+        },
+        message: Please check your input.,
+      }
+    `);
   },
 );

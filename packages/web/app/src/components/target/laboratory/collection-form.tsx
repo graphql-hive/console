@@ -17,13 +17,13 @@ export const COLLECTION_FORM_ID = 'create-collection-form';
 export const CollectionFormSchema = z.object({
   name: z
     .string({
-      required_error: 'Collection name is required',
+      error: issue => (issue.input === undefined ? 'Collection name is required' : undefined),
     })
     .min(2, {
-      message: 'Collection name must be at least 2 characters long',
+      error: 'Collection name must be at least 2 characters long',
     })
     .max(50, {
-      message: 'Collection name must be at most 50 characters long',
+      error: 'Collection name must be at most 50 characters long',
     }),
   description: z.string().optional(),
 });

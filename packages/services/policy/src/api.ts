@@ -1,6 +1,5 @@
 import type { FastifyRequest } from 'fastify';
 import { z, ZodError } from 'zod';
-import { fromZodError } from 'zod-validation-error';
 import { handleTRPCError } from '@hive/service-common';
 import { inferRouterInputs, inferRouterOutputs, initTRPC } from '@trpc/server';
 import { policyCheckCounter, policyCheckDuration } from './metrics';
@@ -21,17 +20,37 @@ const t = initTRPC.context<Context>().create({
         ...shape.data,
         zodError:
           error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
-            ? error.cause.flatten()
+            ? z.flattenError(error.cause)
             : null,
         formatted:
           error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
-            ? fromZodError(error.cause).message
+            ? formatValidationError(error.cause)
             : null,
       },
     };
   },
 });
 const procedure = t.procedure.use(handleTRPCError);
+
+/**
+ * Formats the ZodError of an invalid policy config, which is shown to users saving a policy.
+ * Only unknown rule names and rule tuple mismatches (union of tuples) surface as zod issues;
+ * invalid rule options are reported by ajv as a plain error.
+ */
+function formatValidationError(error: ZodError): string {
+  const messages = error.issues.flatMap(issue => collectMessages(issue, []));
+  return [...new Set(messages)].join('; ');
+}
+
+function collectMessages(issue: z.core.$ZodIssue, parentPath: PropertyKey[]): string[] {
+  // zod 4 reports the path of union member issues relative to the union itself
+  const path = [...parentPath, ...issue.path];
+  if (issue.code === 'invalid_union' && issue.errors.length > 0) {
+    return issue.errors.flat().flatMap(nested => collectMessages(nested, path));
+  }
+
+  return [path.length > 0 ? `${issue.message} at "${path.join('.')}"` : issue.message];
+}
 
 const CONFIG_VALIDATION_SCHEMA = createInputValidationSchema();
 const CONFIG_CHECK_INPUT_VALIDATION = z

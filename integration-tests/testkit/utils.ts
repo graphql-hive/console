@@ -15,7 +15,7 @@ function getDockerConnection() {
 const LOCAL_SERVICES = {
   server: 3001,
   clickhouse: 8123,
-  emails: 6260,
+  emails: 3014,
   composition_federation_2: 3069,
   usage: 4001,
   schema: 6500,

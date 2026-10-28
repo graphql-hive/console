@@ -53,7 +53,7 @@ export class Contracts {
         args.contract.contractName,
       );
 
-      const allErrors = validatedContract.error.flatten().fieldErrors;
+      const allErrors = z.flattenError(validatedContract.error).fieldErrors;
       return {
         type: 'error' as const,
         message: 'Something went wrong.',
@@ -735,11 +735,11 @@ export class Contracts {
 
 const CreateContractInputModel = z
   .object({
-    targetId: z.string().uuid(),
+    targetId: z.uuid('Invalid target ID provided'),
     contractName: z
       .string()
-      .max(64)
-      .min(2)
+      .max(64, 'Contract name must be at most 64 characters long')
+      .min(2, 'Contract name must be at least 2 characters long')
       .toLowerCase()
       .regex(/^[a-zA-Z0-9_-]+$/, "Can only contain letters, numbers, '_', and '-'"),
     includeTags: z.array(z.string()).nullable(),
@@ -756,12 +756,12 @@ const CreateContractInputModel = z
       return true;
     },
     {
-      message: 'Provide at least one value for either included tags or excluded tags',
+      error: 'Provide at least one value for either included tags or excluded tags',
       path: ['includeTags', 'excludeTags'],
     },
   )
   .refine(args => hasIntersection(new Set(args.includeTags), new Set(args.excludeTags)) === false, {
-    message: 'Included and exclude tags must not intersect',
+    error: 'Included and exclude tags must not intersect',
     path: ['includeTags', 'excludeTags'],
   });
 
@@ -793,39 +793,11 @@ const legacyContractVersionFields = psql`
   , NULL::uuid as "diffSchemaVersionId"
 `;
 
-const ContractVersionBaseModel = z.object({
-  id: z.string().uuid(),
-  schemaVersionId: z.string().uuid(),
-  contractId: z.string().uuid().nullable(),
-  contractName: z.string(),
-  compositeSchemaSdl: z.string().nullable(),
-  createdAt: z.string(),
-  previousSchemaVersionId: z.string().uuid().nullable(),
-  diffSchemaVersionId: z.string().uuid().nullable(),
-});
-
-const ValidContractVersionFieldsModel = ContractVersionBaseModel.extend({
-  schemaCompositionErrors: z.null(),
-  supergraphSdl: z.string(),
-  isComposable: z.literal(true),
-});
-
-const InvalidContractVersionFieldsModel = ContractVersionBaseModel.extend({
-  schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
-  supergraphSdl: z.string().nullable(),
-  isComposable: z.literal(false),
-});
-
-const ContractVersionFieldsModel = z.discriminatedUnion('isComposable', [
-  ValidContractVersionFieldsModel,
-  InvalidContractVersionFieldsModel,
-]);
-
-const LegacyContractVersionRawModel = z
+const LegacyContractVersionModel = z
   .object({
-    id: z.string().uuid(),
-    schemaVersionId: z.string().uuid(),
-    contractId: z.string().uuid().nullable(),
+    id: z.uuid(),
+    schemaVersionId: z.uuid(),
+    contractId: z.uuid().nullable(),
     contractName: z.string(),
     schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
     compositeSchemaSdl: z.string().nullable(),
@@ -834,15 +806,23 @@ const LegacyContractVersionRawModel = z
     previousSchemaVersionId: z.null(),
     diffSchemaVersionId: z.null(),
   })
-  .transform(record => ({
-    ...record,
-    source: 'contract_versions' as const,
-    isComposable: record.schemaCompositionErrors === null && record.supergraphSdl !== null,
-  }));
+  .transform(record => {
+    if (record.schemaCompositionErrors === null && record.supergraphSdl !== null) {
+      return {
+        ...record,
+        schemaCompositionErrors: null,
+        supergraphSdl: record.supergraphSdl,
+        source: 'contract_versions' as const,
+        isComposable: true as const,
+      };
+    }
 
-const LegacyContractVersionModel = LegacyContractVersionRawModel.pipe(
-  ContractVersionFieldsModel.and(z.object({ source: z.literal('contract_versions') })),
-);
+    return {
+      ...record,
+      source: 'contract_versions' as const,
+      isComposable: false as const,
+    };
+  });
 
 const primaryContractVersionFields = psql`
   "id"
@@ -860,23 +840,46 @@ const primaryContractVersionFields = psql`
 
 const PrimaryContractVersionModel = z
   .object({
-    id: z.string().uuid(),
-    schemaVersionId: z.string().uuid(),
-    contractId: z.string().uuid(),
+    id: z.uuid(),
+    schemaVersionId: z.uuid(),
+    contractId: z.uuid(),
     contractName: z.string(),
     schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
     compositeSchemaSdl: z.string().nullable(),
     supergraphSdl: z.string().nullable(),
     createdAt: z.string(),
-    previousSchemaVersionId: z.string().uuid().nullable(),
-    diffSchemaVersionId: z.string().uuid().nullable(),
+    previousSchemaVersionId: z.uuid().nullable(),
+    diffSchemaVersionId: z.uuid().nullable(),
     isComposable: z.boolean(),
   })
-  .transform(record => ({
-    ...record,
-    source: 'schema_versions' as const,
-  }))
-  .pipe(ContractVersionFieldsModel.and(z.object({ source: z.literal('schema_versions') })));
+  .transform((record, ctx) => {
+    if (record.isComposable) {
+      // A composable contract version must have no composition errors and a supergraph SDL.
+      // Fail loudly instead of silently treating an inconsistent row as non-composable.
+      if (record.schemaCompositionErrors !== null || record.supergraphSdl === null) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'Composable contract version must have no composition errors and a supergraph SDL.',
+        });
+        return z.NEVER;
+      }
+
+      return {
+        ...record,
+        schemaCompositionErrors: null,
+        supergraphSdl: record.supergraphSdl,
+        source: 'schema_versions' as const,
+        isComposable: true as const,
+      };
+    }
+
+    return {
+      ...record,
+      source: 'schema_versions' as const,
+      isComposable: false as const,
+    };
+  });
 
 const ContractVersionModel = z.union([PrimaryContractVersionModel, LegacyContractVersionModel]);
 
@@ -908,13 +911,13 @@ export type GetPaginatedContractsByTargetId = {
 };
 
 const ContractCheckModel = z.object({
-  id: z.string().uuid(),
-  schemaCheckId: z.string().uuid(),
+  id: z.uuid(),
+  schemaCheckId: z.uuid(),
   /** The contract version against this check was performed */
-  comparedContractVersionId: z.string().uuid().nullable(),
+  comparedContractVersionId: z.uuid().nullable(),
 
   isSuccess: z.boolean(),
-  contractId: z.string().uuid(),
+  contractId: z.uuid(),
   contractName: z.string(),
 
   schemaCompositionErrors: z.array(SchemaCompositionErrorModel).nullable(),
@@ -929,7 +932,7 @@ const ContractCheckModel = z.object({
 });
 
 const SchemaChangeApprovalsForContractModel = z.object({
-  contractId: z.string().uuid(),
+  contractId: z.uuid(),
   schemaChange: HiveSchemaChangeModel,
 });
 

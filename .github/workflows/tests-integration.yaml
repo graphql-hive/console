@@ -18,6 +18,12 @@ on:
       configureEnv:
         default: ''
         type: string
+      loadImagesFromArtifact:
+        description:
+          Load the images from the "docker-images" workflow artifact instead of pulling them from
+          the registry.
+        default: false
+        type: boolean
 
 jobs:
   integration:
@@ -45,6 +51,21 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 2
+
+      - name: download docker images artifact
+        if: ${{ inputs.loadImagesFromArtifact }}
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
+        with:
+          name: docker-images
+          path: ${{ runner.temp }}/docker-images
+
+      - name: load docker images
+        if: ${{ inputs.loadImagesFromArtifact }}
+        env:
+          IMAGES_DIR: ${{ runner.temp }}/docker-images
+        run: |
+          docker load -i "$IMAGES_DIR/docker-images.tar.gz"
+          rm -rf "$IMAGES_DIR"
 
       - name: configure env vars
         if: ${{ inputs.configureEnv != '' }}
@@ -109,7 +130,7 @@ jobs:
         run: |
           pnpm test:integration --shard=${{ matrix.shardIndex }}/3
         env:
-          VITEST_MAX_THREADS: ${{ steps.cpu-cores.outputs.count }}
+          VITEST_MAX_WORKERS: ${{ steps.cpu-cores.outputs.count }}
 
       - name: run mem leaks integration tests
         timeout-minutes: 30
@@ -117,7 +138,7 @@ jobs:
         run: |
           pnpm test:integration
         env:
-          VITEST_MAX_THREADS: 1
+          VITEST_MAX_WORKERS: 1
           RUN_MEMORY_LEAKS_TESTS: '1'
 
       - name: log dump

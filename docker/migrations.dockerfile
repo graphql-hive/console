@@ -41,4 +41,7 @@ LABEL org.opencontainers.image.vendor="Kamil Kisiela"
 LABEL org.opencontainers.image.url="https://github.com/graphql-hive/platform"
 LABEL org.opencontainers.image.source="https://github.com/graphql-hive/platform"
 
+# Numeric UID of the `node` user from the base image
+USER 1000
+
 ENTRYPOINT ["/entrypoint.sh"]
