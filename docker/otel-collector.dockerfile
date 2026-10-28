@@ -29,8 +29,13 @@ WORKDIR /app
 COPY --from=builder /build/otelcol-custom .
 COPY config.yaml /etc/otel-config.yaml
 
-# Create directory for queue storage
-RUN mkdir -p /var/lib/otelcol/file_storage
+# Run as an unprivileged user that owns the queue storage (same UID our k8s pods enforce)
+RUN addgroup -S -g 1000 otelcol \
+  && adduser -S -D -H -u 1000 -G otelcol otelcol \
+  && mkdir -p /var/lib/otelcol/file_storage \
+  && chown -R 1000:1000 /var/lib/otelcol
+
+USER 1000
 
 # Expose necessary ports
 EXPOSE 4317/tcp 4318/tcp 13133/tcp 1777/tcp 8081/tcp 55679/tcp
