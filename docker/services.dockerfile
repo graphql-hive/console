@@ -26,6 +26,9 @@ WORKDIR /usr/src/app/$SERVICE_DIR_NAME
 COPY --from=dist . /usr/src/app/$SERVICE_DIR_NAME/
 COPY --from=shared . /
 
+# The working directory is writable, because `--heapsnapshot-signal` writes heap snapshots there.
+RUN chown 1000:1000 /usr/src/app/$SERVICE_DIR_NAME
+
 ARG RELEASE
 ARG IMAGE_TITLE
 ARG IMAGE_DESCRIPTION
@@ -53,5 +56,8 @@ HEALTHCHECK --interval=5s \
   --start-period=30s \
   --retries=12 \
   CMD [ -n "$HEALTHCHECK_CMD" ] && timeout 4 sh -c "$HEALTHCHECK_CMD"
+
+# Numeric UID of the `node` user from the base image
+USER 1000
 
 ENTRYPOINT ["/entrypoint.sh"]
