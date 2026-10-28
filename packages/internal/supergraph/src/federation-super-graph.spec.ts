@@ -238,245 +238,241 @@ const federation1SDL = parse(/* GraphQL */ `
 describe('extractSuperGraphInformation', () => {
   test('extracts definitions (Federation 2)', () => {
     const result = extractSuperGraphInformation(federation2SDL);
-    expect(result).toMatchInlineSnapshot(`
-      {
-        schemaCoordinateServicesMappings: Map {
-          DeliveryEstimates.estimatedDelivery => [
-            inventory,
-          ],
-          DeliveryEstimates.fastestDelivery => [
-            inventory,
-          ],
-          DeliveryEstimates => [
-            inventory,
-          ],
-          Panda.name => [
-            pandas,
-          ],
-          Panda.favoriteFood => [
-            pandas,
-          ],
-          Panda => [
-            pandas,
-          ],
-          Product.id => [
-            inventory,
-            products,
-            reviews,
-          ],
-          Product.dimensions => [
-            products,
-          ],
-          Product.delivery => [
-            inventory,
-          ],
-          Product.sku => [
-            products,
-          ],
-          Product.name => [
-            products,
-          ],
-          Product.package => [
-            products,
-          ],
-          Product.variation => [
-            products,
-          ],
-          Product.createdBy => [
-            products,
-          ],
-          Product.hidden => [
-            products,
-          ],
-          Product.reviewsScore => [
-            reviews,
-          ],
-          Product.oldField => [
-            products,
-          ],
-          Product.reviewsCount => [
-            reviews,
-          ],
-          Product.reviews => [
-            reviews,
-          ],
-          Product => [
-            inventory,
-            products,
-            reviews,
-          ],
-          ProductDimension.size => [
-            inventory,
-            products,
-          ],
-          ProductDimension.weight => [
-            inventory,
-            products,
-          ],
-          ProductDimension => [
-            inventory,
-            products,
-          ],
-          ProductItf.id => [
-            inventory,
-            products,
-            reviews,
-          ],
-          ProductItf.dimensions => [
-            inventory,
-          ],
-          ProductItf.delivery => [
-            inventory,
-          ],
-          ProductItf.sku => [
-            products,
-          ],
-          ProductItf.name => [
-            products,
-          ],
-          ProductItf.package => [
-            products,
-          ],
-          ProductItf.variation => [
-            products,
-          ],
-          ProductItf.createdBy => [
-            products,
-          ],
-          ProductItf.hidden => [
-            products,
-          ],
-          ProductItf.oldField => [
-            products,
-          ],
-          ProductItf.reviewsCount => [
-            reviews,
-          ],
-          ProductItf.reviewsScore => [
-            reviews,
-          ],
-          ProductItf.reviews => [
-            reviews,
-          ],
-          ProductItf => [
-            inventory,
-            products,
-            reviews,
-          ],
-          ProductVariation.id => [
-            products,
-          ],
-          ProductVariation.name => [
-            products,
-          ],
-          ProductVariation => [
-            products,
-          ],
-          Query.allPandas => [
-            pandas,
-          ],
-          Query.panda => [
-            pandas,
-          ],
-          Query.allProducts => [
-            products,
-          ],
-          Query.product => [
-            products,
-          ],
-          Query.review => [
-            reviews,
-          ],
-          Query => [
-            inventory,
-            pandas,
-            products,
-            reviews,
-            users,
-          ],
-          Review.id => [
-            reviews,
-          ],
-          Review.body => [
-            reviews,
-          ],
-          Review => [
-            reviews,
-          ],
-          ShippingClass => [
-            inventory,
-            products,
-          ],
-          ShippingClass.STANDARD => [
-            inventory,
-            products,
-          ],
-          ShippingClass.EXPRESS => [
-            inventory,
-            products,
-          ],
-          ShippingClass.OVERNIGHT => [
-            inventory,
-          ],
-          SkuItf.sku => [
-            products,
-          ],
-          SkuItf => [
-            products,
-          ],
-          User.email => [
-            products,
-            users,
-          ],
-          User.totalProductsCreated => [
-            products,
-            users,
-          ],
-          User.name => [
-            users,
-          ],
-          User => [
-            products,
-            users,
-          ],
-          PandaOrUser => [
-            products,
-            pandas,
-          ],
-          UserInput => [
-            products,
-            pandas,
-          ],
-          UserInput.name => [
-            products,
-            pandas,
-          ],
-        },
+    expect(result.schemaCoordinateServicesMappings).toMatchInlineSnapshot(`
+      Map {
+        DeliveryEstimates.estimatedDelivery => [
+          inventory,
+        ],
+        DeliveryEstimates.fastestDelivery => [
+          inventory,
+        ],
+        DeliveryEstimates => [
+          inventory,
+        ],
+        Panda.name => [
+          pandas,
+        ],
+        Panda.favoriteFood => [
+          pandas,
+        ],
+        Panda => [
+          pandas,
+        ],
+        Product.id => [
+          inventory,
+          products,
+          reviews,
+        ],
+        Product.dimensions => [
+          products,
+        ],
+        Product.delivery => [
+          inventory,
+        ],
+        Product.sku => [
+          products,
+        ],
+        Product.name => [
+          products,
+        ],
+        Product.package => [
+          products,
+        ],
+        Product.variation => [
+          products,
+        ],
+        Product.createdBy => [
+          products,
+        ],
+        Product.hidden => [
+          products,
+        ],
+        Product.reviewsScore => [
+          reviews,
+        ],
+        Product.oldField => [
+          products,
+        ],
+        Product.reviewsCount => [
+          reviews,
+        ],
+        Product.reviews => [
+          reviews,
+        ],
+        Product => [
+          inventory,
+          products,
+          reviews,
+        ],
+        ProductDimension.size => [
+          inventory,
+          products,
+        ],
+        ProductDimension.weight => [
+          inventory,
+          products,
+        ],
+        ProductDimension => [
+          inventory,
+          products,
+        ],
+        ProductItf.id => [
+          inventory,
+          products,
+          reviews,
+        ],
+        ProductItf.dimensions => [
+          inventory,
+        ],
+        ProductItf.delivery => [
+          inventory,
+        ],
+        ProductItf.sku => [
+          products,
+        ],
+        ProductItf.name => [
+          products,
+        ],
+        ProductItf.package => [
+          products,
+        ],
+        ProductItf.variation => [
+          products,
+        ],
+        ProductItf.createdBy => [
+          products,
+        ],
+        ProductItf.hidden => [
+          products,
+        ],
+        ProductItf.oldField => [
+          products,
+        ],
+        ProductItf.reviewsCount => [
+          reviews,
+        ],
+        ProductItf.reviewsScore => [
+          reviews,
+        ],
+        ProductItf.reviews => [
+          reviews,
+        ],
+        ProductItf => [
+          inventory,
+          products,
+          reviews,
+        ],
+        ProductVariation.id => [
+          products,
+        ],
+        ProductVariation.name => [
+          products,
+        ],
+        ProductVariation => [
+          products,
+        ],
+        Query.allPandas => [
+          pandas,
+        ],
+        Query.panda => [
+          pandas,
+        ],
+        Query.allProducts => [
+          products,
+        ],
+        Query.product => [
+          products,
+        ],
+        Query.review => [
+          reviews,
+        ],
+        Query => [
+          inventory,
+          pandas,
+          products,
+          reviews,
+          users,
+        ],
+        Review.id => [
+          reviews,
+        ],
+        Review.body => [
+          reviews,
+        ],
+        Review => [
+          reviews,
+        ],
+        ShippingClass => [
+          inventory,
+          products,
+        ],
+        ShippingClass.STANDARD => [
+          inventory,
+          products,
+        ],
+        ShippingClass.EXPRESS => [
+          inventory,
+          products,
+        ],
+        ShippingClass.OVERNIGHT => [
+          inventory,
+        ],
+        SkuItf.sku => [
+          products,
+        ],
+        SkuItf => [
+          products,
+        ],
+        User.email => [
+          products,
+          users,
+        ],
+        User.totalProductsCreated => [
+          products,
+          users,
+        ],
+        User.name => [
+          users,
+        ],
+        User => [
+          products,
+          users,
+        ],
+        PandaOrUser => [
+          products,
+          pandas,
+        ],
+        UserInput => [
+          products,
+          pandas,
+        ],
+        UserInput.name => [
+          products,
+          pandas,
+        ],
       }
     `);
   });
 
   test('extracts definitions (Federation 1)', () => {
     const result = extractSuperGraphInformation(federation1SDL);
-    expect(result).toMatchInlineSnapshot(`
-      {
-        schemaCoordinateServicesMappings: Map {
-          Query.field => [
-            foo,
-          ],
-          Query.nested => [
-            foo,
-          ],
-          Query => [
-            foo,
-          ],
-          NestedQuery => [
-            foo,
-          ],
-          NestedQuery.test => [
-            foo,
-          ],
-        },
+    expect(result.schemaCoordinateServicesMappings).toMatchInlineSnapshot(`
+      Map {
+        Query.field => [
+          foo,
+        ],
+        Query.nested => [
+          foo,
+        ],
+        Query => [
+          foo,
+        ],
+        NestedQuery => [
+          foo,
+        ],
+        NestedQuery.test => [
+          foo,
+        ],
       }
     `);
   });
