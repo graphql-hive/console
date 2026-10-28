@@ -34,6 +34,9 @@ jobs:
     needs: changeset-version
     with:
       dockerize: ${{ !github.event.pull_request.head.repo.fork }}
+      # Dependabot PRs get a read-only GITHUB_TOKEN and must not be able to write to the registry.
+      # The images are passed to the test jobs as a workflow artifact instead.
+      pushImages: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
       imageTag: ${{ github.event.pull_request.head.sha }}
       publishLatest: false
       targets: 'build'
@@ -61,6 +64,7 @@ jobs:
       stripeTestSecretKey: ${{ secrets.TEST_STRIPE_SECRET_KEY }}
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
+      loadImagesFromArtifact: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
 
   # e2e tests using Playwright, runs Hive from pre-built Docker images.
   e2e:
@@ -69,6 +73,7 @@ jobs:
     uses: ./.github/workflows/tests-e2e.yaml
     with:
       imageTag: ${{ github.event.pull_request.head.sha }}
+      loadImagesFromArtifact: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
 
   # Changeset Validation
   # Validates that changesets reference valid packages that exist in the monorepo
