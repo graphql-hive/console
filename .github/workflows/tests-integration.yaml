@@ -109,7 +109,7 @@ jobs:
         run: |
           pnpm test:integration --shard=${{ matrix.shardIndex }}/3
         env:
-          VITEST_MAX_THREADS: ${{ steps.cpu-cores.outputs.count }}
+          VITEST_MAX_WORKERS: ${{ steps.cpu-cores.outputs.count }}
 
       - name: run mem leaks integration tests
         timeout-minutes: 30
@@ -117,7 +117,7 @@ jobs:
         run: |
           pnpm test:integration
         env:
-          VITEST_MAX_THREADS: 1
+          VITEST_MAX_WORKERS: 1
           RUN_MEMORY_LEAKS_TESTS: '1'
 
       - name: log dump

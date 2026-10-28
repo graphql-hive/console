@@ -116,7 +116,7 @@
     "tsx": "catalog:",
     "turbo": "2.9.14",
     "typescript": "catalog:",
-    "vite-tsconfig-paths": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "pnpm": {
