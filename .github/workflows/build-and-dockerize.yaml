@@ -148,7 +148,7 @@ jobs:
           ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
           && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
           'linux/amd64' }}
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: hive-cdn-release-artifacts
           path: |
@@ -286,7 +286,7 @@ jobs:
 
       - name: upload docker images artifact
         if: ${{ inputs.dockerize && !inputs.pushImages && matrix.platform == 'linux/amd64' }}
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: docker-images
           path: docker-images.tar.gz
