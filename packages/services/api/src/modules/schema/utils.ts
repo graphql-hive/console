@@ -13,11 +13,11 @@ import {
 } from './module.graphql.mappers';
 import stringify from 'fast-json-stable-stringify';
 import { ConstDirectiveNode, DEFAULT_DEPRECATION_REASON, DocumentNode, Kind, print } from 'graphql';
+import { SuperGraphInformation } from '@hive/supergraph';
 import type { DateRange } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import { OperationsManager } from '../operations/providers/operations-manager';
 import { TargetSelector } from '../shared/providers/storage';
-import { SuperGraphInformation } from './lib/federation-super-graph';
 
 export function withUsedByClients<
   T extends {

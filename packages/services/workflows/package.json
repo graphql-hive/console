@@ -23,6 +23,7 @@
     "@hive/pubsub": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
+    "@hive/supergraph": "workspace:*",
     "@sentry/node": "catalog:",
     "@slack/web-api": "catalog:",
     "@trpc/client": "catalog:",

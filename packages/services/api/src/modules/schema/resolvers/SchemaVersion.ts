@@ -1,8 +1,8 @@
+import { extractSuperGraphInformation } from '@hive/supergraph';
 import { buildASTSchema } from '../../../shared/schema';
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { Logger } from '../../shared/providers/logger';
 import { onlyDeprecatedDocumentNode } from '../lib/deprecated-graphql';
-import { extractSuperGraphInformation } from '../lib/federation-super-graph';
 import { isFieldRequestedDeep } from '../lib/graphql-info-helper';
 import { stripUsedSchemaCoordinatesFromDocumentNode } from '../lib/unused-graphql';
 import { Contracts } from '../providers/contracts';

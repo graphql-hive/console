@@ -699,6 +699,22 @@ importers:
         specifier: 'catalog:'
         version: 4.1.12(@opentelemetry/api@1.9.1)(@types/node@25.9.9)(happy-dom@20.10.6)(jsdom@30.1.2(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.9.9)(typescript@5.7.3))(vite@8.1.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
 
+  packages/internal/supergraph:
+    dependencies:
+      '@hive/service-common':
+        specifier: workspace:*
+        version: link:../../services/service-common
+      '@theguild/federation-composition':
+        specifier: 'catalog:'
+        version: 0.27.0(graphql@16.14.2)
+      graphql:
+        specifier: 'catalog:'
+        version: 16.14.2
+    devDependencies:
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.12(@opentelemetry/api@1.9.1)(@types/node@25.9.9)(happy-dom@20.10.6)(jsdom@30.1.2(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.9.9)(typescript@5.7.3))(vite@8.1.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
+
   packages/libraries/apollo:
     dependencies:
       '@graphql-hive/core':
@@ -1342,6 +1358,9 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../storage
+      '@hive/supergraph':
+        specifier: workspace:*
+        version: link:../../internal/supergraph
       '@hive/usage-common':
         specifier: workspace:*
         version: link:../usage-common
@@ -2181,6 +2200,9 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../storage
+      '@hive/supergraph':
+        specifier: workspace:*
+        version: link:../../internal/supergraph
       '@sentry/node':
         specifier: 'catalog:'
         version: 7.120.2

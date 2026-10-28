@@ -1,6 +1,6 @@
 import { parse } from 'graphql';
 import { composeServices } from '@theguild/federation-composition';
-import { extractSuperGraphInformation } from '../federation-super-graph.js';
+import { extractSuperGraphInformation } from './federation-super-graph';
 
 const federation2SDL = parse(/* GraphQL */ `
   schema
