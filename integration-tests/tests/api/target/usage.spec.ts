@@ -451,6 +451,91 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
   expect(usedCheckResult.schemaCheck.valid).toEqual(true);
 });
 
+test.concurrent(
+  'cannot use a target from another organization for conditional breaking change detection',
+  async ({ expect }) => {
+    // Victim organization with usage data for Query.ping
+    const victim = await initSeed().createOwner();
+    const victimOrg = await victim.createOrg();
+    const {
+      target: victimTarget,
+      createTargetAccessToken: createVictimTargetAccessToken,
+      waitForRequestsCollected: waitForVictimRequestsCollected,
+    } = await victimOrg.createProject(ProjectType.Single);
+    const victimToken = await createVictimTargetAccessToken({});
+
+    const collectResult = await victimToken.collectLegacyOperations([
+      {
+        timestamp: Date.now(),
+        operation: 'query ping { ping }',
+        operationName: 'ping',
+        fields: ['Query', 'Query.ping'],
+        execution: {
+          ok: true,
+          duration: 200_000_000,
+          errorsTotal: 0,
+        },
+      },
+    ]);
+    expect(collectResult.status).toEqual(200);
+    await waitForVictimRequestsCollected(1);
+
+    // Attacker organization
+    const attacker = await initSeed().createOwner();
+    const attackerOrg = await attacker.createOrg();
+    const {
+      project: attackerProject,
+      target: attackerTarget,
+      createTargetAccessToken: createAttackerTargetAccessToken,
+      toggleTargetValidation,
+    } = await attackerOrg.createProject(ProjectType.Single);
+    const attackerToken = await createAttackerTargetAccessToken({});
+
+    await attackerToken
+      .publishSchema({
+        author: 'attacker',
+        commit: 'init',
+        sdl: `type Query { ping: String me: String }`,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const targetValidationResult = await toggleTargetValidation(true);
+    expect(targetValidationResult.isEnabled).toEqual(true);
+
+    const updateResult = await updateTargetValidationSettings(
+      {
+        target: {
+          bySelector: {
+            organizationSlug: attackerOrg.organization.slug,
+            projectSlug: attackerProject.slug,
+            targetSlug: attackerTarget.slug,
+          },
+        },
+        conditionalBreakingChangeConfiguration: {
+          percentage: 0,
+          period: 2,
+          targetIds: [attackerTarget.id, victimTarget.id],
+        },
+      },
+      {
+        authToken: attacker.ownerToken,
+      },
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(updateResult.updateTargetConditionalBreakingChangeConfiguration.ok).toBeNull();
+    expect(
+      updateResult.updateTargetConditionalBreakingChangeConfiguration.error?.inputErrors.targetIds,
+    ).toBeDefined();
+
+    // Query.ping has no usage on the attacker target, so removing it must be safe.
+    // If the victim target were used, the victim's usage would make this check fail.
+    const checkResult = await attackerToken
+      .checkSchema(`type Query { me: String }`)
+      .then(r => r.expectNoGraphQLErrors());
+    expect(checkResult.schemaCheck.__typename).toEqual('SchemaCheckSuccess');
+  },
+);
+
 const BreakingChangeAffectedTargetsQuery = graphql(`
   query BreakingChangeAffectedTargets($target: TargetReferenceInput!, $id: ID!) {
     target(reference: $target) {
