@@ -4,7 +4,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 
-const AlertRuleEnabledToggle_Mutation = graphql(`
+export const AlertRuleEnabledToggle_Mutation = graphql(`
   mutation AlertRuleEnabledToggle_Mutation($input: UpdateMetricAlertRuleInput!) {
     updateMetricAlertRule(input: $input) {
       ok {
@@ -12,6 +12,10 @@ const AlertRuleEnabledToggle_Mutation = graphql(`
           id
           enabled
           updatedAt
+          evaluationBlocked {
+            since
+            message
+          }
         }
       }
       error {

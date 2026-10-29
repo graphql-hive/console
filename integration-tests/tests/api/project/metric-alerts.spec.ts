@@ -898,3 +898,96 @@ test.concurrent(
     expect(await readBlock()).toBeNull();
   },
 );
+
+test.concurrent(
+  'an update that changes the filter or enabled clears the block; a rename does not',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization, setFeatureFlag } = await createOrg();
+    await setFeatureFlag('metricAlertRules', true);
+    const {
+      project,
+      target,
+      addMetricAlertRule,
+      updateMetricAlertRule,
+      createSavedFilter,
+      setMetricAlertRuleEvaluationBlocked,
+    } = await createProject(ProjectType.Federation);
+
+    const selector = {
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      targetSlug: target.slug,
+    };
+    const rule = (
+      await addMetricAlertRule({
+        target: { bySelector: selector },
+        name: 'Orders traffic',
+        type: MetricAlertRuleType.Traffic,
+        timeWindowMinutes: 5,
+        thresholdType: MetricAlertRuleThresholdType.FixedValue,
+        thresholdValue: 10,
+        direction: MetricAlertRuleDirection.Above,
+        severity: MetricAlertRuleSeverity.Info,
+        channelIds: [],
+      })
+    ).ok!.addedMetricAlertRule;
+    const filter = (
+      await createSavedFilter({
+        name: 'Everything',
+        visibility: SavedFilterVisibilityType.Shared,
+        insightsFilter: { operationHashes: [], clientFilters: [] },
+      })
+    ).ok!.savedFilter;
+    const byProject = {
+      project: { bySelector: { organizationSlug: organization.slug, projectSlug: project.slug } },
+      ruleId: rule.id,
+    };
+    // A disabled rule is never evaluated, so an evaluator running against this database
+    // cannot clear the block under the test.
+    await updateMetricAlertRule({ ...byProject, enabled: false });
+    const block = () =>
+      setMetricAlertRuleEvaluationBlocked({
+        ruleId: rule.id,
+        reason: 'unknown-subgraph',
+        details: ['orders'],
+      });
+    const blockOf = async () => {
+      const result = await execute({
+        document: graphql(`
+          query MetricAlertRuleEvaluationBlockAfterUpdate(
+            $selector: TargetSelectorInput!
+            $ruleId: ID!
+          ) {
+            target(reference: { bySelector: $selector }) {
+              metricAlertRule(id: $ruleId) {
+                id
+                evaluationBlocked {
+                  reason
+                }
+              }
+            }
+          }
+        `),
+        variables: { selector, ruleId: rule.id },
+        authToken: ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+      return result.target?.metricAlertRule?.evaluationBlocked?.reason ?? null;
+    };
+
+    await block();
+    expect(
+      (await updateMetricAlertRule({ ...byProject, name: 'Orders, renamed' })).ok,
+    ).toBeTruthy();
+    expect(await blockOf()).toBe('UNKNOWN_SUBGRAPH');
+
+    expect(
+      (await updateMetricAlertRule({ ...byProject, savedFilterId: filter.id })).ok,
+    ).toBeTruthy();
+    expect(await blockOf()).toBeNull();
+
+    await block();
+    expect((await updateMetricAlertRule({ ...byProject, enabled: true })).ok).toBeTruthy();
+    expect(await blockOf()).toBeNull();
+  },
+);
