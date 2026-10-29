@@ -148,7 +148,7 @@ jobs:
           ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
           && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
           'linux/amd64' }}
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: hive-cdn-release-artifacts
           path: |
@@ -188,7 +188,7 @@ jobs:
 
       - name: configure docker buildx
         if: ${{ inputs.dockerize }}
-        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: login to docker registry
         if: ${{ inputs.dockerize && inputs.pushImages }}
@@ -286,7 +286,7 @@ jobs:
 
       - name: upload docker images artifact
         if: ${{ inputs.dockerize && !inputs.pushImages && matrix.platform == 'linux/amd64' }}
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: docker-images
           path: docker-images.tar.gz
@@ -363,7 +363,7 @@ jobs:
         run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
 
       - name: configure docker buildx
-        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: login to docker registry
         if: ${{ inputs.dockerize }}
