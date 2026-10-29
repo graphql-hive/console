@@ -716,3 +716,65 @@ test('otel-collector populates otel_traces_normalized for GraphQL spans', async 
   expect(normalizedResult.data[0].http_status_code).toBe('200');
   expect(normalizedResult.data[0].http_method).toBe('POST');
 });
+
+test('otel-collector does not allow a client-supplied hive.target_id to override the authenticated target', async () => {
+  // Victim: a different organization/target the attacker has no access to
+  const { createOrg: createVictimOrg } = await initSeed().createOwner();
+  const { createProject: createVictimProject } = await createVictimOrg();
+  const { target: victimTarget } = await createVictimProject();
+
+  // Attacker: legitimately allowed to report traces to their own target
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject, createOrganizationAccessToken, setFeatureFlag } = await createOrg();
+  const { target: attackerTarget } = await createProject();
+
+  await setFeatureFlag('otelTracing', true);
+
+  const otelCollectorAddress = await getServiceHost('otel-collector', 4318);
+
+  const { privateAccessKey: accessToken } = await createOrganizationAccessToken({
+    permissions: ['traces:report'],
+    resources: {
+      mode: ResourceAssignmentModeType.All,
+    },
+  });
+
+  const traceId = generateTraceId();
+
+  const response = await sendTrace({
+    otelCollectorAddress,
+    accessToken,
+    targetRef: attackerTarget.id,
+    traceId,
+    spanId: generateSpanId(),
+    spanName: 'POST /graphql',
+    attributes: {
+      'hive.target_id': { stringValue: victimTarget.id },
+      'hive.graphql': { stringValue: 'true' },
+      'graphql.operation.name': { stringValue: 'InjectedOperation' },
+      'graphql.operation.type': { stringValue: 'query' },
+      'http.status_code': { stringValue: '200' },
+      'http.method': { stringValue: 'POST' },
+    },
+  });
+
+  expect(response.status).toBe(200);
+
+  await expect(waitForTraceInClickHouse(traceId)).resolves.toBe(true);
+
+  const traceResult = await clickHouseQuery<{ SpanAttributes: Record<string, string> }>(
+    `SELECT SpanAttributes FROM otel_traces WHERE TraceId = '${traceId}'`,
+  );
+
+  expect(traceResult.rows).toBe(1);
+  // The authenticated target must always win over the client-supplied attribute
+  expect(traceResult.data[0].SpanAttributes['hive.target_id']).toBe(attackerTarget.id);
+
+  await expect(waitForTraceInNormalized(traceId)).resolves.toBe(true);
+
+  const normalizedResult = await clickHouseQuery<{ target_id: string }>(
+    `SELECT target_id FROM otel_traces_normalized WHERE trace_id = '${traceId}'`,
+  );
+
+  expect(normalizedResult.data.map(row => row.target_id)).toEqual([attackerTarget.id]);
+});

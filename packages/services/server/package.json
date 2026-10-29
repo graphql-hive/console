@@ -39,7 +39,6 @@
     "@sentry/node": "catalog:",
     "@swc/core": "catalog:",
     "@theguild/federation-composition": "catalog:",
-    "@trpc/server": "catalog:",
     "@whatwg-node/server": "catalog:",
     "dotenv": "catalog:",
     "fastify": "catalog:",
