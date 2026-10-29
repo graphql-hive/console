@@ -51,8 +51,6 @@ export function deployWorkflows({
   egressManager: EgressPolicyManager;
   broker: Broker;
 }) {
-  // Webhooks (user-provided URLs) go through the request broker when enabled.
-  // Also controls the egress rules below.
   const requestBrokerEnabled = true;
 
   const { deployment, service } = new ServiceDeployment(
