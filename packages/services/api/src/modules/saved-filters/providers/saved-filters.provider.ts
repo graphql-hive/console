@@ -619,7 +619,11 @@ export class SavedFiltersProvider {
     };
   }
 
-  /** Rejects a subgraph filter the evaluator could not apply, so the user hears about it here. */
+  /**
+   * Rejects a subgraph filter the evaluator could not apply, so the user hears about it here.
+   * Checked against the referenced target only; on the project's other targets an alert rule
+   * reports the mismatch through its evaluation block instead.
+   */
   private async validateSubgraphNames(
     selector: { organizationId: string; projectId: string; targetId: string },
     subgraphNames: readonly string[],

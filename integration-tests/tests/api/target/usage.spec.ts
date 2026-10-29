@@ -4403,12 +4403,43 @@ describe('schema coordinate and subgraph filters', () => {
         schemaCoordinates: ['Query.me'],
       });
       expect(names(reviewsViaMe)).toEqual(['userReviews']);
+    },
+  );
 
-      // A subgraph the schema does not know matches nothing rather than failing the page.
-      const unknown = await readOperationsStats(from, to, undefined, {
-        subgraphNames: ['inventory'],
-      });
-      expect(unknown.totalOperations).toBe(0);
+  test.concurrent(
+    'subgraphNames is rejected when the latest valid version lacks one',
+    async ({ expect }) => {
+      const { ownerToken, createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+      const token = await createTargetAccessToken({});
+      await token
+        .publishSchema({
+          service: 'users',
+          url: 'https://api.com/users',
+          sdl: /* GraphQL */ `
+            type Query {
+              me: User
+            }
+            type User @key(fields: "id") {
+              id: ID!
+              name: String
+            }
+          `,
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const from = formatISO(subHours(Date.now(), 6));
+      const to = formatISO(Date.now());
+      for (const subgraphNames of [['inventory'], ['users', 'inventory']]) {
+        const errors = await readOperationsStats(
+          { byId: target.id },
+          { from, to },
+          { subgraphNames },
+          ownerToken,
+        ).then(r => r.expectGraphQLErrors());
+        expect(errors[0].message).toBe('Unknown subgraph: inventory.');
+      }
     },
   );
 

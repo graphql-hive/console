@@ -119,13 +119,13 @@ export const Target: Pick<
         case 'ok':
           coordinateScopes.push(resolved.coordinates);
           break;
-        // A subgraph that is gone, or a target with nothing composable yet, matches no traffic.
-        // The UI marks the selection unavailable instead of erroring the whole page.
+        // Nothing composable yet means no traffic to attribute; a name the schema does not
+        // have is an error, so a typo does not read as zero traffic.
         case 'no-supergraph':
-        case 'unknown-subgraphs':
           coordinateScopes.push([]);
           break;
         case 'not-federation':
+        case 'unknown-subgraphs':
         case 'too-many-coordinates':
           throw new GraphQLError(describeSubgraphResolutionFailure(resolved));
       }
