@@ -16,7 +16,6 @@
       "@hive/api": ["./packages/services/api/src/index.ts"],
       "@hive/api/*": ["./packages/services/api/src/*"],
       "@hive/postgres": ["./packages/internal/postgres/src/index.ts"],
-      "@hive/server": ["./packages/services/server/src/api.ts"],
       "@hive/server/*": ["./packages/services/server/src/*"],
       "@hive/service-common": ["./packages/services/service-common/src/index.ts"],
       "testkit/*": ["./integration-tests/testkit/*"]
