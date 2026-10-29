@@ -59,6 +59,7 @@ type Event =
       type: 'r2' | 's3';
       action:
         | 'GET artifact'
+        | 'HEAD artifact'
         | 'GET cdn-legacy-keys'
         | 'GET cdn-access-token'
         | 'GET persistedOperation'
