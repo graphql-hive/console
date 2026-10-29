@@ -140,7 +140,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     },
   });
 
-  const [schemaOptionsQuery] = useQuery({
+  const [schemaOptionsQuery, reexecuteSchemaOptionsQuery] = useQuery({
     query: InsightsSchemaFilterOptions_Query,
     variables: { selector: { organizationSlug, projectSlug, targetSlug } },
     requestPolicy: 'cache-first',
@@ -375,7 +375,12 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
           <div className="flex items-center gap-x-2">
             <RefreshButton
               size="compact"
-              onClick={() => dateRangeController.refreshResolvedRange()}
+              onClick={() => {
+                dateRangeController.refreshResolvedRange();
+                // Period-independent and cache-first, so a schema published since the page
+                // loaded only shows up here.
+                reexecuteSchemaOptionsQuery({ requestPolicy: 'network-only' });
+              }}
             />
           </div>
         </div>

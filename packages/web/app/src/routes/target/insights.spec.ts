@@ -191,7 +191,7 @@ describe('insights route', () => {
   });
 
   it(
-    'Refresh reloads the route: the stats again, nothing else, no remount',
+    'Refresh reloads the route: the stats and the schema options again, nothing else, no remount',
     { timeout: 30_000 },
     async () => {
       const client = createTestClient(fixtures());
@@ -203,11 +203,12 @@ describe('insights route', () => {
       await waitFor(() => {
         expect(requests(client, 'Stats_GeneralOperationsStats')).toBe(2);
         expect(requests(client, 'OperationsList_OperationsStats')).toBe(2);
+        // Cache-first otherwise, so this is where a newly published subgraph or field appears.
+        expect(requests(client, 'InsightsSchemaFilterOptions')).toBe(2);
       });
       for (const name of [
         'TargetOperationsPageQuery',
         'InsightsFilterPicker',
-        'InsightsSchemaFilterOptions',
         'TargetLayoutQuery',
         'ViewerQuery',
       ]) {
