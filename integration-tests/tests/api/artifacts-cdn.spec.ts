@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { createCdnAccess } from 'testkit/flow';
+import { createCdnAccess, deleteContract } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
+import z from 'zod';
 import { ApolloGateway } from '@apollo/gateway';
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
@@ -12,6 +13,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { createSupergraphManager } from '@graphql-hive/apollo';
+import { invariant } from '@hive/service-common';
 import { graphql } from '../../testkit/gql';
 import { execute } from '../../testkit/graphql';
 import { initSeed } from '../../testkit/seed';
@@ -103,6 +105,36 @@ const CreateContractMutation = graphql(`
     }
   }
 `);
+
+const LatestContractVersionsQuery = graphql(`
+  query LatestContractVersions($target: TargetReferenceInput!) {
+    target(reference: $target) {
+      latestSchemaVersion {
+        contractVersions {
+          edges {
+            node {
+              id
+              contractName
+            }
+          }
+        }
+      }
+    }
+  }
+`);
+
+const GraphManifestModel = z.object({
+  graphs: z.record(
+    z.string(),
+    z.object({
+      id: z.string(),
+      currentVersion: z.object({
+        id: z.string(),
+        artifactPath: z.string(),
+      }),
+    }),
+  ),
+});
 
 function generateLegacyToken(targetId: string) {
   const encoder = new TextEncoder();
@@ -1114,6 +1146,326 @@ function runArtifactsCDNTests(
       expect(metadataResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
     });
 
+    test.concurrent('schema publish publishes a graph manifest', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Federation,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+      const fetchManifest = () =>
+        fetch(`${endpointBaseUrl}${target.id}/manifest.json`, {
+          headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+        });
+
+      expect((await fetchManifest()).status).toBe(404);
+
+      const publishSchema = (sdl: string) =>
+        writeToken
+          .publishSchema({ sdl, service: 'hello', url: 'http://hello.com' })
+          .then(r => r.expectNoGraphQLErrors())
+          .then(r => expect(r.schemaPublish.__typename).toBe('SchemaPublishSuccess'));
+
+      await publishSchema(/* GraphQL */ `
+        type Query {
+          hello: String
+        }
+      `);
+
+      const firstVersion = await writeToken.fetchLatestValidSchema();
+      const firstVersionId = firstVersion.latestValidVersion?.id;
+      invariant(firstVersionId, 'version must exist');
+
+      let manifestResponse = await fetchManifest();
+      expect(manifestResponse.status).toBe(200);
+      expect(manifestResponse.headers.get('content-type')).toContain('application/json');
+      const firstManifest = GraphManifestModel.parse(await manifestResponse.json());
+      expect(firstManifest).toEqual({
+        graphs: {
+          default: {
+            id: expect.any(String),
+            currentVersion: {
+              id: firstVersionId,
+              artifactPath: `/artifacts/v1/${target.id}/version/${firstVersionId}`,
+            },
+          },
+        },
+      });
+
+      await publishSchema(/* GraphQL */ `
+        type Query {
+          hello: String
+          goodbye: String
+        }
+      `);
+
+      const secondVersion = await writeToken.fetchLatestValidSchema();
+      const secondVersionId = secondVersion.latestValidVersion?.id;
+      invariant(secondVersionId, 'version must exist');
+      expect(secondVersionId).not.toBe(firstVersionId);
+
+      // The manifest points to the latest version of the same graph
+      manifestResponse = await fetchManifest();
+      expect(manifestResponse.status).toBe(200);
+      expect(GraphManifestModel.parse(await manifestResponse.json())).toEqual({
+        graphs: {
+          default: {
+            id: firstManifest.graphs.default.id,
+            currentVersion: {
+              id: secondVersionId,
+              artifactPath: `/artifacts/v1/${target.id}/version/${secondVersionId}`,
+            },
+          },
+        },
+      });
+    });
+
+    test.concurrent('publishes a graph manifest with valid artifact paths', async ({ expect }) => {
+      const { createOrg, ownerToken } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+        ProjectType.Federation,
+      );
+      const writeToken = await createTargetAccessToken({});
+
+      await writeToken
+        .publishSchema({
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+            type Query {
+              hello: String
+              internal: String @tag(name: "internal")
+            }
+          `,
+          service: 'hello',
+          url: 'http://hello.com',
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const createContractResult = await execute({
+        document: CreateContractMutation,
+        variables: {
+          input: {
+            target: { byId: target.id },
+            contractName: 'my-contract',
+            removeUnreachableTypesFromPublicApiSchema: true,
+            includeTags: ['internal'],
+          },
+        },
+        authToken: ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+      expect(createContractResult.createContract.error).toBeNull();
+
+      await writeToken
+        .publishSchema({
+          sdl: /* GraphQL */ `
+            extend schema
+              @link(url: "https://specs.apollo.dev/link/v1.0")
+              @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+            type Query {
+              hello: String
+              internal: String @tag(name: "internal")
+              goodbye: String
+            }
+          `,
+          service: 'hello',
+          url: 'http://hello.com',
+        })
+        .then(r => r.expectNoGraphQLErrors());
+
+      const cdnAccessResult = await createCdnAccess();
+      const endpointBaseUrl = await getBaseEndpoint();
+      const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
+      const manifestResponse = await fetch(`${endpointBaseUrl}${target.id}/manifest.json`, {
+        headers,
+      });
+
+      expect(manifestResponse.status).toBe(200);
+      expect(manifestResponse.headers.get('content-type')).toContain('application/json');
+      const manifest = GraphManifestModel.parse(await manifestResponse.json());
+
+      expect(Object.keys(manifest.graphs)).toEqual(
+        expect.arrayContaining(['default', 'default/my-contract']),
+      );
+
+      for (const graph of Object.values(manifest.graphs)) {
+        expect(graph.id).toBeTruthy();
+        expect(graph.currentVersion.id).toBeTruthy();
+        expect(graph.currentVersion.artifactPath).toMatch(/^\/artifacts\/v1\//);
+
+        for (const artifactType of ['sdl', 'supergraph']) {
+          const artifactResponse = await fetch(
+            new URL(`${graph.currentVersion.artifactPath}/${artifactType}`, endpointBaseUrl),
+            { headers },
+          );
+          expect(
+            artifactResponse.status,
+            `${graph.currentVersion.artifactPath}/${artifactType}`,
+          ).toBe(200);
+
+          expect(artifactResponse.headers.get('x-hive-schema-version-id')).toBe(
+            graph.currentVersion.id,
+          );
+          expect(artifactResponse.headers.get('x-hive-graph-version-id')).toBe(
+            graph.currentVersion.id,
+          );
+          expect(artifactResponse.headers.get('x-hive-graph-id')).toBe(graph.id);
+        }
+      }
+    });
+
+    test.concurrent(
+      'does not publish a graph manifest if the initial contract composition fails',
+      async ({ expect }) => {
+        const { createOrg, ownerToken } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        const createContractResult = await execute({
+          document: CreateContractMutation,
+          variables: {
+            input: {
+              target: { byId: target.id },
+              contractName: 'my-contract',
+              removeUnreachableTypesFromPublicApiSchema: true,
+              excludeTags: ['toyota'],
+            },
+          },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
+        expect(createContractResult.createContract.error).toBeNull();
+
+        // All fields are excluded from the contract, so the contract composition fails
+        const publishResult = await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String @tag(name: "toyota")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+        expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+        const manifestResponse = await fetch(`${endpointBaseUrl}${target.id}/manifest.json`, {
+          headers: { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken },
+        });
+
+        expect(manifestResponse.status).toBe(404);
+      },
+    );
+
+    test.concurrent(
+      'does not update the graph manifest if a contract composition fails',
+      async ({ expect }) => {
+        const { createOrg, ownerToken } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        const createContractResult = await execute({
+          document: CreateContractMutation,
+          variables: {
+            input: {
+              target: { byId: target.id },
+              contractName: 'my-contract',
+              removeUnreachableTypesFromPublicApiSchema: true,
+              excludeTags: ['toyota'],
+            },
+          },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
+        expect(createContractResult.createContract.error).toBeNull();
+
+        let publishResult = await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String @tag(name: "toyota")
+                helloHidden: String
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+        expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+        const firstVersion = await writeToken.fetchLatestValidSchema();
+        const firstVersionId = firstVersion.latestValidVersion?.id;
+        invariant(firstVersionId, 'version must exist');
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+        const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
+        const fetchManifest = async () => {
+          const response = await fetch(`${endpointBaseUrl}${target.id}/manifest.json`, {
+            headers,
+          });
+          expect(response.status).toBe(200);
+          return GraphManifestModel.parse(await response.json());
+        };
+
+        const initialManifest = await fetchManifest();
+        expect(Object.keys(initialManifest.graphs)).toEqual(
+          expect.arrayContaining(['default', 'default/my-contract']),
+        );
+        expect(initialManifest.graphs['default'].currentVersion.id).toBe(firstVersionId);
+
+        // All fields are excluded from the contract, so the contract composition fails
+        publishResult = await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String @tag(name: "toyota")
+                helloHidden: String @tag(name: "toyota")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+        expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+        const secondVersion = await writeToken.fetchLatestValidSchema();
+        const secondVersionId = secondVersion.latestValidVersion?.id;
+        invariant(secondVersionId, 'version must exist');
+        expect(secondVersionId).not.toBe(firstVersionId);
+
+        // The manifest still points to the previous versions
+        const manifestAfterFailedContract = await fetchManifest();
+        expect(manifestAfterFailedContract).toEqual(initialManifest);
+      },
+    );
+
     test.concurrent(
       'access versioned contract artifact with valid credentials',
       async ({ expect }) => {
@@ -1158,6 +1510,7 @@ function runArtifactsCDNTests(
         }).then(r => r.expectNoGraphQLErrors());
 
         expect(createContractResult.createContract.error).toBeNull();
+        invariant(createContractResult.createContract.ok, 'Contract must be created');
 
         // Publish schema again to generate contract artifacts
         await writeToken
@@ -1180,7 +1533,18 @@ function runArtifactsCDNTests(
         // Fetch the latest valid version to get the version ID
         const latestVersion = await writeToken.fetchLatestValidSchema();
         const versionId = latestVersion.latestValidVersion?.id;
-        expect(versionId).toBeDefined();
+        invariant(versionId, 'version must exist');
+
+        const contractVersionsResult = await execute({
+          document: LatestContractVersionsQuery,
+          variables: { target: { byId: target.id } },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
+        const contractVersion =
+          contractVersionsResult.target?.latestSchemaVersion?.contractVersions?.edges.find(
+            edge => edge.node.contractName === 'my-contract',
+          )?.node;
+        invariant(contractVersion, 'Contract version must exist');
 
         const cdnAccessResult = await createCdnAccess();
         const endpointBaseUrl = await getBaseEndpoint();
@@ -1189,7 +1553,7 @@ function runArtifactsCDNTests(
         const versionedContractSdlUrl = buildVersionedContractEndpointUrl(
           endpointBaseUrl,
           target.id,
-          versionId!,
+          versionId,
           'my-contract',
           'sdl',
         );
@@ -1206,13 +1570,19 @@ function runArtifactsCDNTests(
         expect(contractSdlResponse.headers.get('cache-control')).toBe(
           'public, max-age=31536000, immutable',
         );
-        expect(contractSdlResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+        expect(contractSdlResponse.headers.get('x-hive-graph-id')).toBe(
+          createContractResult.createContract.ok.createdContract.id,
+        );
+        expect(contractSdlResponse.headers.get('x-hive-schema-version-id')).toBe(
+          contractVersion.id,
+        );
+        expect(contractSdlResponse.headers.get('x-hive-graph-version-id')).toBe(contractVersion.id);
 
         // Test versioned contract supergraph endpoint
         const versionedContractSupergraphUrl = buildVersionedContractEndpointUrl(
           endpointBaseUrl,
           target.id,
-          versionId!,
+          versionId,
           'my-contract',
           'supergraph',
         );
@@ -1227,7 +1597,118 @@ function runArtifactsCDNTests(
         expect(contractSupergraphResponse.headers.get('cache-control')).toBe(
           'public, max-age=31536000, immutable',
         );
-        expect(contractSupergraphResponse.headers.get('x-hive-schema-version-id')).toBe(versionId);
+        expect(contractSupergraphResponse.headers.get('x-hive-graph-id')).toBe(
+          createContractResult.createContract.ok.createdContract.id,
+        );
+        expect(contractSupergraphResponse.headers.get('x-hive-schema-version-id')).toBe(
+          contractVersion.id,
+        );
+        expect(contractSupergraphResponse.headers.get('x-hive-graph-version-id')).toBe(
+          contractVersion.id,
+        );
+      },
+    );
+
+    test.concurrent(
+      'if-none-match returns 304 with the latest graph id and graph version id if only the metadata changed',
+      async ({ expect }) => {
+        const { createOrg, ownerToken } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        const publish = (extraField: string) =>
+          writeToken
+            .publishSchema({
+              sdl: `
+                extend schema
+                  @link(url: "https://specs.apollo.dev/link/v1.0")
+                  @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+                type Query {
+                  hello: String
+                  helloHidden: String @tag(name: "internal")
+                  ${extraField}: String
+                }
+              `,
+              service: 'hello',
+              url: 'http://hello.com',
+            })
+            .then(r => r.expectNoGraphQLErrors());
+
+        const createContract = async () => {
+          const result = await execute({
+            document: CreateContractMutation,
+            variables: {
+              input: {
+                target: { byId: target.id },
+                contractName: 'my-contract',
+                removeUnreachableTypesFromPublicApiSchema: true,
+                includeTags: ['internal'],
+              },
+            },
+            authToken: ownerToken,
+          }).then(r => r.expectNoGraphQLErrors());
+          invariant(result.createContract.ok, 'Contract must be created');
+          return result.createContract.ok.createdContract.id;
+        };
+
+        await publish('a');
+        const firstContractId = await createContract();
+        // Publish again to write the contract artifacts
+        await publish('b');
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+        const contractSdlUrl = `${endpointBaseUrl}${target.id}/contracts/my-contract/sdl`;
+        const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
+
+        const firstResponse = await fetch(contractSdlUrl, { headers });
+        expect(firstResponse.status).toBe(200);
+        expect(firstResponse.headers.get('x-hive-graph-id')).toBe(firstContractId);
+        const firstBody = await firstResponse.text();
+        const firstETag = firstResponse.headers.get('etag');
+        invariant(firstETag, 'etag must exist');
+        const firstGraphVersionId = firstResponse.headers.get('x-hive-graph-version-id');
+        invariant(firstGraphVersionId, 'graph version id must exist');
+
+        // Re-create the contract with the same name and filter, which results in a new graph id
+        const deleteResult = await deleteContract(
+          { contract: { byId: firstContractId } },
+          ownerToken,
+        ).then(r => r.expectNoGraphQLErrors());
+        expect(deleteResult.deleteContract.ok?.deletedContractId).toBe(firstContractId);
+        const secondContractId = await createContract();
+        expect(secondContractId).not.toBe(firstContractId);
+        // The new field is not tagged, so the contract SDL stays the same
+        await publish('c');
+
+        // Sanity check: the artifact content is unchanged, only the metadata changed
+        const freshResponse = await fetch(contractSdlUrl, { headers });
+        expect(freshResponse.status).toBe(200);
+        expect(await freshResponse.text()).toBe(firstBody);
+        expect(freshResponse.headers.get('etag')).toBe(firstETag);
+        expect(freshResponse.headers.get('x-hive-graph-id')).toBe(secondContractId);
+        const secondGraphVersionId = freshResponse.headers.get('x-hive-graph-version-id');
+        invariant(secondGraphVersionId, 'graph version id must exist');
+        expect(secondGraphVersionId).not.toBe(firstGraphVersionId);
+
+        // A client that cached the previous response does not need to download the artifact again,
+        // but must receive the latest metadata, otherwise it would keep reporting the old graph id
+        const conditionalResponse = await fetch(contractSdlUrl, {
+          headers: { ...headers, 'if-none-match': firstETag },
+        });
+        expect(conditionalResponse.status).toBe(304);
+        expect(conditionalResponse.headers.get('etag')).toBe(firstETag);
+        expect(conditionalResponse.headers.get('x-hive-graph-id')).toBe(secondContractId);
+        expect(conditionalResponse.headers.get('x-hive-graph-version-id')).toBe(
+          secondGraphVersionId,
+        );
+        expect(conditionalResponse.headers.get('x-hive-schema-version-id')).toBe(
+          secondGraphVersionId,
+        );
       },
     );
   });
