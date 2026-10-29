@@ -2,6 +2,7 @@ import { printWithValues, type SqlValue } from '@hive/clickhouse';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
+  countSkippedByReason,
   DAILY_THRESHOLD_MINUTES,
   EMPTY_RESOLVED_FILTER,
   evaluateRule,
@@ -12,10 +13,12 @@ import {
   isRuleDue,
   parseSavedFilter,
   previousValueForRule,
+  pruneSkipState,
   queryClickHouseWindows,
   resolutionFor,
   resolveSavedFilter,
   type ParsedSavedFilter,
+  type SavedFilterSkipReason,
 } from './metric-alert-evaluator.js';
 import { makeLogger, makeRule } from './metric-alert-test-utils.js';
 import type { SupergraphOwnershipLoader } from './supergraph-ownership.js';
@@ -766,5 +769,31 @@ describe('evaluateRule incident queries', () => {
     expect(resolve?.sql).toContain('ORDER BY "started_at" DESC LIMIT 1');
     const logged = calls.find(c => c.sql.includes('INSERT INTO "metric_alert_state_log"'));
     expect(logged?.values).toContain('incident-new');
+  });
+});
+
+describe('skip state for the gauge', () => {
+  test('pruneSkipState drops only groups that no longer exist', () => {
+    const state = new Map<string, SavedFilterSkipReason>([
+      ['live', 'unknown-subgraph'],
+      ['gone', 'scope-too-large'],
+    ]);
+    pruneSkipState(state, new Set(['live', 'other']));
+    expect([...state.keys()]).toEqual(['live']);
+  });
+
+  test('countSkippedByReason seeds every reason with 0 and tallies the rest', () => {
+    const counts = countSkippedByReason([
+      'unknown-subgraph',
+      'unknown-subgraph',
+      'no-supergraph-sdl',
+    ]);
+    expect([...counts.entries()]).toEqual([
+      ['no-composable-version', 0],
+      ['no-supergraph-sdl', 1],
+      ['supergraph-parse-failed', 0],
+      ['unknown-subgraph', 2],
+      ['scope-too-large', 0],
+    ]);
   });
 });

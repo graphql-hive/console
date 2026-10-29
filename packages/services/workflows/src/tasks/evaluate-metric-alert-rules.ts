@@ -4,15 +4,16 @@ import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask } from '../kit.js';
 import {
+  countSkippedByReason,
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
   isFilteredFilter,
   isRuleDue,
   parseSavedFilter,
+  pruneSkipState,
   queryClickHouseWindows,
   resolveSavedFilter,
-  SAVED_FILTER_SKIP_REASONS,
   type ParsedSavedFilter,
   type SavedFilterSkipReason,
 } from '../lib/metric-alert-evaluator.js';
@@ -31,9 +32,16 @@ const GROUP_CONCURRENCY = 5;
 
 const tracer = trace.getTracer('metric-alert-evaluator');
 
-// A skipped group is retried every tick, so warn when its reason appears or changes,
-// not on every one of them. The span attribute carries the per-tick signal.
+// Why each group was skipped at its latest evaluation. Backs the gauge, which must hold
+// between a group's due ticks, and dedupes the warning so it fires when a reason appears
+// or changes rather than every tick. Pruned each tick to the groups that still exist.
 const lastSkipReasonByGroup = new Map<string, SavedFilterSkipReason>();
+
+function setSkippedGauge() {
+  for (const [reason, count] of countSkippedByReason(lastSkipReasonByGroup.values())) {
+    metricAlertGroupsSkipped.set({ reason }, count);
+  }
+}
 
 export const EvaluateMetricAlertRulesTask = defineTask({
   name: 'evaluateMetricAlertRules',
@@ -75,6 +83,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   // the API, not evaluation here; the per-rule `enabled` column is the gate.
   const rules = await fetchEnabledRules(context.pg);
   const groups = groupRulesByQuery(rules);
+  pruneSkipState(lastSkipReasonByGroup, groups);
 
   // Parse each group's saved filter once, reused by the gauges below and by
   // processGroup, so a filtered group isn't re-parsed within the same tick.
@@ -101,9 +110,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   metricAlertEnabledRules.set({ filtered: 'false' }, rules.length - filteredRules);
 
   if (rules.length === 0) {
-    for (const reason of SAVED_FILTER_SKIP_REASONS) {
-      metricAlertGroupsSkipped.set({ reason }, 0);
-    }
+    setSkippedGauge();
     logger.debug('No enabled metric alert rules found');
     return;
   }
@@ -121,6 +128,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   );
 
   if (dueGroupList.length === 0) {
+    setSkippedGauge();
     logger.debug(
       { evaluationTime: evaluationTime.toISOString(), groups: groups.size, rules: rules.length },
       'No metric alert rule groups are due this tick',
@@ -304,9 +312,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         // not via graphile-worker retries that would re-run already-committed work.
         const limit = pLimit(GROUP_CONCURRENCY);
         let groupsFailed = 0;
-        const skippedByReason = new Map<SavedFilterSkipReason, number>(
-          SAVED_FILTER_SKIP_REASONS.map(reason => [reason, 0]),
-        );
+        let groupsSkipped = 0;
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
           dueGroupList.map(({ key, group, filter }) =>
@@ -320,17 +326,12 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
           } else if (r.value.failed) {
             groupsFailed++;
           } else if (r.value.skipped) {
-            skippedByReason.set(r.value.skipped, (skippedByReason.get(r.value.skipped) ?? 0) + 1);
+            groupsSkipped++;
           } else {
             evaluatedRuleIds.push(...r.value.evaluatedIds);
           }
         }
-        // Every reason is set each tick (incl. 0) so a fixed filter clears the gauge.
-        let groupsSkipped = 0;
-        for (const [reason, count] of skippedByReason) {
-          metricAlertGroupsSkipped.set({ reason }, count);
-          groupsSkipped += count;
-        }
+        setSkippedGauge();
 
         // One batched UPDATE for all successfully-evaluated rules'
         // last_evaluated_at, replacing what used to be N per-rule UPDATEs

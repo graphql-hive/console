@@ -25,6 +25,9 @@ const schemaCoordinatePattern = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]
 const uniqueStrings = (values: string[] | null | undefined) =>
   values == null ? values : [...new Set(values)];
 
+const uniqueSubgraphNames = (values: string[] | null | undefined) =>
+  uniqueStrings(values?.map(name => name.toLowerCase()));
+
 const InsightsFilterConfigurationModel = zod.object({
   // Use nullish() + transform because the resolver may pass null instead of undefined
   operationHashes: zod
@@ -84,7 +87,7 @@ const InsightsFilterConfigurationModel = zod.object({
     )
     .max(50, 'At most 50 subgraphs can be selected')
     .nullish()
-    .transform(uniqueStrings),
+    .transform(uniqueSubgraphNames),
 });
 
 type InsightsFilterInput = {
@@ -408,8 +411,11 @@ export class SavedFiltersProvider {
         }
       : null;
 
-    if (filters) {
-      const subgraphError = await this.validateSubgraphNames(resolved, filters.subgraphNames ?? []);
+    // Only names in this request are checked; a kept list may have gone stale since it was
+    // saved, and an edit to another key should not fail on it.
+    const sentSubgraphNames = data.insightsFilter?.subgraphNames;
+    if (sentSubgraphNames) {
+      const subgraphError = await this.validateSubgraphNames(resolved, sentSubgraphNames);
       if (subgraphError) {
         return { type: 'error', message: subgraphError };
       }
@@ -616,7 +622,11 @@ export class SavedFiltersProvider {
     };
   }
 
-  /** Rejects a subgraph filter the evaluator could not apply, so the user hears about it here. */
+  /**
+   * Rejects a subgraph filter the evaluator could not apply, so the user hears about it here.
+   * Checked against the referenced target only; on the project's other targets an alert rule
+   * reports the mismatch through its evaluation block instead.
+   */
   private async validateSubgraphNames(
     selector: { organizationId: string; projectId: string; targetId: string },
     subgraphNames: readonly string[],
