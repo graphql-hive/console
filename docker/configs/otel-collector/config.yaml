@@ -51,6 +51,11 @@ receivers:
 processors:
   attributes:
     actions:
+      # hive.target_id must only ever come from the authenticated context. Drop any
+      # client-supplied value first, otherwise `insert` keeps it and a client could
+      # write spans into another tenant's target.
+      - key: hive.target_id
+        action: delete
       - key: hive.target_id
         from_context: auth.targetId
         action: insert
