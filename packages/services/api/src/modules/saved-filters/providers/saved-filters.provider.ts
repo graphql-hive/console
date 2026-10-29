@@ -411,8 +411,11 @@ export class SavedFiltersProvider {
         }
       : null;
 
-    if (filters) {
-      const subgraphError = await this.validateSubgraphNames(resolved, filters.subgraphNames ?? []);
+    // Only names in this request are checked; a kept list may have gone stale since it was
+    // saved, and an edit to another key should not fail on it.
+    const sentSubgraphNames = data.insightsFilter?.subgraphNames;
+    if (sentSubgraphNames) {
+      const subgraphError = await this.validateSubgraphNames(resolved, sentSubgraphNames);
       if (subgraphError) {
         return { type: 'error', message: subgraphError };
       }
