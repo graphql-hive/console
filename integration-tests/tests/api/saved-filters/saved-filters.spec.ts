@@ -609,7 +609,7 @@ describe('Saved Filters', () => {
         visibility: SavedFilterVisibilityType.Shared,
         insightsFilter: {
           schemaCoordinates: ['User.name', 'Query.me', 'User.name'],
-          subgraphNames: ['reviews'],
+          subgraphNames: ['Reviews', 'reviews'],
         },
       });
 

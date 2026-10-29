@@ -25,6 +25,9 @@ const schemaCoordinatePattern = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]
 const uniqueStrings = (values: string[] | null | undefined) =>
   values == null ? values : [...new Set(values)];
 
+const uniqueSubgraphNames = (values: string[] | null | undefined) =>
+  uniqueStrings(values?.map(name => name.toLowerCase()));
+
 const InsightsFilterConfigurationModel = zod.object({
   // Use nullish() + transform because the resolver may pass null instead of undefined
   operationHashes: zod
@@ -84,7 +87,7 @@ const InsightsFilterConfigurationModel = zod.object({
     )
     .max(50, 'At most 50 subgraphs can be selected')
     .nullish()
-    .transform(uniqueStrings),
+    .transform(uniqueSubgraphNames),
 });
 
 type InsightsFilterInput = {

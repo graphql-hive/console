@@ -4387,6 +4387,11 @@ describe('schema coordinate and subgraph filters', () => {
       });
       expect(names(users)).toEqual(['me', 'userReviews']);
 
+      const usersAnyCase = await readOperationsStats(from, to, undefined, {
+        subgraphNames: ['Users'],
+      });
+      expect(names(usersAnyCase)).toEqual(['me', 'userReviews']);
+
       const both = await readOperationsStats(from, to, undefined, {
         subgraphNames: ['users', 'reviews'],
       });

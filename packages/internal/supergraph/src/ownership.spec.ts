@@ -91,6 +91,15 @@ describe('fieldCoordinatesOwnedBy', () => {
     expect(unknownSubgraphs).toEqual(['inventory']);
   });
 
+  test('matches names case-insensitively and reports unknown ones as spelled', () => {
+    const { coordinates, unknownSubgraphs } = fieldCoordinatesOwnedBy(ownership(), [
+      'REVIEWS',
+      'Inventory',
+    ]);
+    expect(coordinates).toEqual(['Product.id', 'Product.reviews', 'Query.search']);
+    expect(unknownSubgraphs).toEqual(['Inventory']);
+  });
+
   test('empty input resolves to nothing', () => {
     expect(fieldCoordinatesOwnedBy(ownership(), [])).toEqual({
       coordinates: [],
