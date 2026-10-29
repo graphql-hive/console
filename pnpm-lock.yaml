@@ -1862,9 +1862,6 @@ importers:
       '@theguild/federation-composition':
         specifier: 'catalog:'
         version: 0.27.0(graphql@16.14.2)
-      '@trpc/server':
-        specifier: 'catalog:'
-        version: 10.45.3
       '@whatwg-node/server':
         specifier: 'catalog:'
         version: 0.10.17

@@ -332,7 +332,6 @@ deployCloudFlareSecurityTransform({
     '/usage',
     '/graphql',
     '/registry',
-    '/server',
     '/api/github',
     '/api/slack',
   ],
