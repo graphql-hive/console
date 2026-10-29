@@ -157,6 +157,7 @@ export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
             onExcludeModeChange={d.onExcludeModeChange}
             singleSelect={d.singleSelect}
             alwaysShowSearch={d.alwaysShowSearch}
+            unavailableNote={d.unavailableNote}
           />
         ) : null;
       })}
