@@ -423,7 +423,11 @@ export function rulesNeedingBlockWrite(
     .map(rule => rule.id);
 }
 
-/** Records why the evaluator is skipping these rules; read by the API's `evaluationBlocked`. */
+/**
+ * Records why the evaluator is skipping these rules; read by the API's `evaluationBlocked`.
+ * `since` only moves when the reason changes: a rewrite for new details (one more unknown
+ * subgraph, say) keeps the date the block began.
+ */
 export async function markRulesEvaluationBlocked(
   pg: Pick<CommonQueryMethods, 'query'>,
   args: {
@@ -440,7 +444,10 @@ export async function markRulesEvaluationBlocked(
     UPDATE "metric_alert_rules"
     SET
       "evaluation_blocked_reason" = ${args.reason}
-      , "evaluation_blocked_since" = ${args.since.toISOString()}
+      , "evaluation_blocked_since" = CASE
+          WHEN "evaluation_blocked_reason" = ${args.reason} THEN "evaluation_blocked_since"
+          ELSE ${args.since.toISOString()}
+        END
       , "evaluation_blocked_details" = ${psql.array(args.details ?? [], 'text')}
     WHERE "id" = ANY(${psql.array([...args.ruleIds], 'uuid')})
   `);

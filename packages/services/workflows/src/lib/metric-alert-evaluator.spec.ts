@@ -673,13 +673,28 @@ describe('markRulesEvaluationBlocked', () => {
     expect(calls).toHaveLength(1);
     expect(calls[0].sql).toContain('UPDATE "metric_alert_rules"');
     expect(calls[0].sql).toContain('"evaluation_blocked_reason" = $slonik_1');
-    expect(calls[0].sql).toContain('"evaluation_blocked_details" = $slonik_3::"text"[]');
+    expect(calls[0].sql).toContain('"evaluation_blocked_details" = $slonik_4::"text"[]');
     expect(calls[0].values).toEqual([
+      'unknown-subgraph',
       'unknown-subgraph',
       since.toISOString(),
       ['orders'],
       ['a', 'b'],
     ]);
+  });
+
+  test('keeps since when the row already holds this reason', async () => {
+    const { pg, calls } = makePg();
+    await markRulesEvaluationBlocked(pg, {
+      ruleIds: ['a'],
+      reason: 'unknown-subgraph',
+      details: ['orders', 'inventory'],
+      since: new Date(),
+    });
+    // SET expressions read the old row, so the comparison sees the stored reason.
+    expect(calls[0].sql.replace(/\s+/g, ' ')).toContain(
+      '"evaluation_blocked_since" = CASE WHEN "evaluation_blocked_reason" = $slonik_2 THEN "evaluation_blocked_since" ELSE $slonik_3 END',
+    );
   });
 
   test('no rules, no statement', async () => {
