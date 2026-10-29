@@ -1,7 +1,6 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
-import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask, type TaskImplementation } from '../kit.js';
 import {
@@ -9,12 +8,15 @@ import {
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
+  groupSkipReasons,
   isFilteredFilter,
   isRuleDue,
+  markRulesEvaluated,
+  markRulesEvaluationBlocked,
   parseSavedFilter,
-  pruneSkipState,
   queryClickHouseWindows,
   resolveSavedFilter,
+  rulesNeedingBlockWrite,
   type ParsedSavedFilter,
   type SavedFilterSkipReason,
 } from '../lib/metric-alert-evaluator.js';
@@ -33,13 +35,9 @@ const GROUP_CONCURRENCY = 5;
 
 const tracer = trace.getTracer('metric-alert-evaluator');
 
-// Why each group was skipped at its latest evaluation. Backs the gauge, which must hold
-// between a group's due ticks, and dedupes the warning so it fires when a reason appears
-// or changes rather than every tick. Pruned each tick to the groups that still exist.
-const lastSkipReasonByGroup = new Map<string, SavedFilterSkipReason>();
-
-function setSkippedGauge() {
-  for (const [reason, count] of countSkippedByReason(lastSkipReasonByGroup.values())) {
+// Every reason is set each tick, including 0, so a fixed filter clears its series.
+function setSkippedGauge(reasons: Iterable<SavedFilterSkipReason>) {
+  for (const [reason, count] of countSkippedByReason(reasons)) {
     metricAlertGroupsSkipped.set({ reason }, count);
   }
 }
@@ -109,12 +107,10 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   // the API, not evaluation here; the per-rule `enabled` column is the gate.
   const rules = await fetchEnabledRules(context.pg);
   const groups = groupRulesByQuery(rules);
-  pruneSkipState(lastSkipReasonByGroup, groups);
 
   // Parse each group's saved filter once, reused by the gauges below and by
   // processGroup, so a filtered group isn't re-parsed within the same tick.
-  const groupFilters = [...groups.entries()].map(([key, group]) => ({
-    key,
+  const groupFilters = [...groups.values()].map(group => ({
     group,
     filter: parseSavedFilter(group[0].savedFilterFilters, logger),
   }));
@@ -136,7 +132,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   metricAlertEnabledRules.set({ filtered: 'false' }, rules.length - filteredRules);
 
   if (rules.length === 0) {
-    setSkippedGauge();
+    setSkippedGauge([]);
     logger.debug('No enabled metric alert rules found');
     return;
   }
@@ -154,7 +150,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   );
 
   if (dueGroupList.length === 0) {
-    setSkippedGauge();
+    setSkippedGauge(groupSkipReasons(groupFilters));
     logger.debug(
       { evaluationTime: evaluationTime.toISOString(), groups: groups.size, rules: rules.length },
       'No metric alert rule groups are due this tick',
@@ -163,7 +159,6 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   }
 
   async function processGroup(
-    groupKey: string,
     groupRules: (typeof rules)[number][],
     parsedFilter: ParsedSavedFilter,
   ): Promise<{
@@ -213,8 +208,11 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
           // Resolve subgraph names against the latest composable version before touching
           // ClickHouse. A filter that cannot be resolved skips the whole group: its rules keep
           // their state and `last_evaluated_at` stays put, so a FIRING rule stays FIRING with
-          // no resolution and a PENDING one never fires until the filter is fixed. The gauge
-          // and span attribute below are what make that visible.
+          // no resolution and a PENDING one never fires until the filter is fixed. The rows'
+          // evaluation_blocked_* columns tell the detail page why; the gauge and span attribute
+          // tell operators. A skipped group is retried every tick, so the write and the warning
+          // happen only when the reason changes, and the batched UPDATE below clears the block
+          // once the group evaluates again.
           const resolution = await resolveSavedFilter(parsedFilter, {
             targetId: representative.targetId,
             ownership,
@@ -222,13 +220,19 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
           if (resolution.kind === 'skip') {
             span.setAttribute('filter.skipped_reason', resolution.reason);
             span.setStatus({ code: SpanStatusCode.ERROR, message: 'saved filter unresolvable' });
-            if (lastSkipReasonByGroup.get(groupKey) !== resolution.reason) {
-              lastSkipReasonByGroup.set(groupKey, resolution.reason);
+            const changed = rulesNeedingBlockWrite(groupRules, resolution);
+            if (changed.length > 0) {
+              await markRulesEvaluationBlocked(context.pg, {
+                ruleIds: changed,
+                reason: resolution.reason,
+                details: resolution.details,
+                since: evaluationTime,
+              });
               logger.warn(
                 {
                   targetId: representative.targetId,
                   savedFilterId: representative.savedFilterId,
-                  ruleIds: groupRules.map(r => r.id),
+                  ruleIds: changed,
                   reason: resolution.reason,
                   details: resolution.details,
                 },
@@ -237,7 +241,6 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
             }
             return { failed: false, skipped: resolution.reason, evaluatedIds: [] };
           }
-          lastSkipReasonByGroup.delete(groupKey);
 
           let windows;
           try {
@@ -341,9 +344,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
         let groupsSkipped = 0;
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
-          dueGroupList.map(({ key, group, filter }) =>
-            limit(() => processGroup(key, group, filter)),
-          ),
+          dueGroupList.map(({ group, filter }) => limit(() => processGroup(group, filter))),
         );
         for (const r of results) {
           if (r.status === 'rejected') {
@@ -357,20 +358,25 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
             evaluatedRuleIds.push(...r.value.evaluatedIds);
           }
         }
-        setSkippedGauge();
+        // A group that threw reports nothing, so its rows speak for it.
+        const outcomes = new Map(
+          dueGroupList.map(({ group }, index) => {
+            const r = results[index];
+            return [group, r.status === 'fulfilled' ? r.value.skipped : undefined] as const;
+          }),
+        );
+        setSkippedGauge(
+          groupSkipReasons(
+            groupFilters.map(({ group }) => ({ group, result: outcomes.get(group) })),
+          ),
+        );
 
         // One batched UPDATE for all successfully-evaluated rules'
         // last_evaluated_at, replacing what used to be N per-rule UPDATEs
         // inside evaluateRule. All rules evaluated in this tick share the
         // same scheduled evaluationTime, which is more correct than NOW()
         // (which would drift across the tick).
-        if (evaluatedRuleIds.length > 0) {
-          await context.pg.query(psql`
-            UPDATE "metric_alert_rules"
-            SET "last_evaluated_at" = ${evaluationTime.toISOString()}
-            WHERE "id" = ANY(${psql.array(evaluatedRuleIds, 'uuid')})
-          `);
-        }
+        await markRulesEvaluated(context.pg, { ruleIds: evaluatedRuleIds, evaluationTime });
 
         span.setAttributes({
           'groups.failed': groupsFailed,

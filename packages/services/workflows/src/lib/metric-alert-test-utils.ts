@@ -36,22 +36,27 @@ export function makeRule(overrides: Partial<MetricAlertRuleRow> = {}): MetricAle
     savedFilterId: null,
     savedFilterFilters: null,
     organizationPlanName: 'PRO',
+    evaluationBlockedReason: null,
+    evaluationBlockedDetails: null,
     ...overrides,
   };
 }
 
 /**
- * Stub of the one Postgres method the supergraph ownership loader uses. `answer` receives
- * the query's SQL text and bound values and returns the first column of the first row.
- * Every call is recorded so specs can assert how often each query ran.
+ * Stub of the Postgres methods the evaluator's lib uses. `answer` receives a read query's SQL
+ * text and bound values and returns the first column of the first row; writes are recorded
+ * only. Every call is recorded so specs can assert how often each query ran.
  */
-export function makePg(answer: (sql: string, values: readonly unknown[]) => unknown) {
+export function makePg(answer: (sql: string, values: readonly unknown[]) => unknown = () => null) {
   const calls: Array<{ sql: string; values: readonly unknown[] }> = [];
   const pg = {
     maybeOneFirst: async (query: { sql: string; values: readonly unknown[] }) => {
       calls.push({ sql: query.sql, values: query.values });
       return answer(query.sql, query.values);
     },
-  } as unknown as Pick<CommonQueryMethods, 'maybeOneFirst'>;
+    query: async (query: { sql: string; values: readonly unknown[] }) => {
+      calls.push({ sql: query.sql, values: query.values });
+    },
+  } as unknown as Pick<CommonQueryMethods, 'maybeOneFirst' | 'query'>;
   return { pg, calls };
 }

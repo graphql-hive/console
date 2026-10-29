@@ -471,6 +471,10 @@ export interface MetricAlertRule {
   stateChangedAt: string | null;
   confirmationMinutes: number;
   savedFilterId: string | null;
+  /** Why the evaluator is skipping this rule, or null when it evaluates normally. */
+  evaluationBlockedReason: string | null;
+  evaluationBlockedSince: string | null;
+  evaluationBlockedDetails: string[] | null;
 }
 
 export interface MetricAlertIncident {

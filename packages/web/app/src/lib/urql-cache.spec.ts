@@ -330,6 +330,7 @@ describe('updateMetricAlertRule through the cache', () => {
       thresholdValue: 100,
       direction: 'ABOVE',
       confirmationMinutes: 0,
+      evaluationBlocked: null,
       channels: [],
       savedFilter: null,
       createdAt: '2026-09-27T10:00:00.000Z',
@@ -396,4 +397,87 @@ describe('updateMetricAlertRule through the cache', () => {
     expect(requests()).toBe(1);
     page.unsubscribe();
   });
+
+  it(
+    'drops the "Not evaluated" note once the API clears the block',
+    { timeout: 30_000 },
+    async () => {
+      const { pipe, subscribe } = await import('wonka');
+      const { createTestClient } = await import('@/lib/testing/urql');
+      const { alertRuleConfig, alertRulesPage } = await import('@/lib/testing/fixtures/alerts');
+      const { AlertForm_UpdateMetricAlertRuleMutation } = await import(
+        '@/components/target/alerts/alert-form'
+      );
+      const { AlertRuleEnabledToggle_Mutation } = await import(
+        '@/components/target/alerts/alert-rule-enabled-toggle'
+      );
+      const { TargetAlertsDetailPage_RuleConfigQuery } = await import(
+        '@/pages/target-alerts-detail'
+      );
+      const { TargetAlertsRulesPage_Query } = await import('@/pages/target-alerts-rules');
+      const slugs = { organizationSlug: 'acme', projectSlug: 'shop', targetSlug: 'staging' };
+      const cleared = alertRuleConfig().target.metricAlertRule;
+      const updated = (name: string) => ({
+        __typename: 'Mutation',
+        updateMetricAlertRule: {
+          __typename: 'UpdateMetricAlertRuleResult',
+          error: null,
+          ok: { __typename: name, updatedMetricAlertRule: cleared },
+        },
+      });
+      const client = createTestClient(
+        new Map<string, unknown>([
+          ['TargetAlertsDetailPage_RuleConfigQuery', alertRuleConfig({ blocked: true })],
+          ['TargetAlertsRulesPage_Query', alertRulesPage({ blocked: true })],
+          ['AlertForm_UpdateMetricAlertRule', updated('UpdateMetricAlertRuleOk')],
+          ['AlertRuleEnabledToggle_Mutation', updated('UpdateMetricAlertRuleOk')],
+        ]),
+      );
+      const input = {
+        project: {
+          bySelector: { organizationSlug: slugs.organizationSlug, projectSlug: slugs.projectSlug },
+        },
+        ruleId: cleared.id,
+      };
+
+      let detail:
+        | { target?: { metricAlertRule?: { evaluationBlocked: unknown } | null } | null }
+        | undefined;
+      let list:
+        | { target?: { metricAlertRules: Array<{ evaluationBlocked: unknown }> } | null }
+        | undefined;
+      const detailPage = pipe(
+        client.query(TargetAlertsDetailPage_RuleConfigQuery, { ...slugs, ruleId: cleared.id }),
+        subscribe(result => {
+          detail = result.data;
+        }),
+      );
+      const listPage = pipe(
+        client.query(TargetAlertsRulesPage_Query, slugs),
+        subscribe(result => {
+          list = result.data;
+        }),
+      );
+      expect(detail?.target?.metricAlertRule?.evaluationBlocked).not.toBeNull();
+      expect(list?.target?.metricAlertRules[0]?.evaluationBlocked).not.toBeNull();
+
+      // The edit sheet saves a new filter; the detail page reads the cleared block from the result.
+      await client
+        .mutation(AlertForm_UpdateMetricAlertRuleMutation, {
+          input: { ...input, savedFilterId: 'filter-2' },
+        })
+        .toPromise();
+      expect(detail?.target?.metricAlertRule?.evaluationBlocked).toBeNull();
+
+      // The list's toggle result carries it too, so the row's note goes without a refetch.
+      await client
+        .mutation(AlertRuleEnabledToggle_Mutation, { input: { ...input, enabled: false } })
+        .toPromise();
+      expect(list?.target?.metricAlertRules[0]?.evaluationBlocked).toBeNull();
+      expect(client.seen.filter(name => name === 'TargetAlertsRulesPage_Query')).toHaveLength(1);
+
+      detailPage.unsubscribe();
+      listPage.unsubscribe();
+    },
+  );
 });
