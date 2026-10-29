@@ -19,8 +19,9 @@ export type SubgraphFieldCoordinates =
   | { kind: 'unknown-subgraphs'; subgraphNames: string[] }
   | { kind: 'too-many-coordinates'; count: number };
 
-// Keyed by schema version id, so a version is parsed once per process rather than once per
-// request. The Insights page runs two operationsStats documents per interaction.
+// Process-wide on purpose: a version id is immutable and unique across organizations, so
+// one parse per process is safe, and the cache is bounded. The Insights page sends two
+// operationsStats documents per interaction, which an operation-scoped cache would parse twice.
 const ownershipCache = createOwnershipCache();
 
 /**
