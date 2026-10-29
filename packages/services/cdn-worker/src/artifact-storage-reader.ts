@@ -261,18 +261,9 @@ export class ArtifactStorageReader {
 
     this.breadcrumb(`Reading artifact from S3 key: ${key}`);
 
-    const headers: HeadersInit = {};
-
-    if (etagValue) {
-      this.breadcrumb('if-none-match detected');
-      headers['if-none-match'] = etagValue;
-    }
-
-    const response = await this.request({
-      key,
-      method: 'GET',
-      headers,
-      onAttempt: args => {
+    const onAttempt =
+      (action: 'GET artifact' | 'HEAD artifact') =>
+      (args: Parameters<Parameters<typeof this.request>[0]['onAttempt']>[0]) => {
         if (args.result.type === 'error') {
           this.breadcrumb(
             `Fetch attempt failed (source=${args.isMirror ? 'mirror' : 'primary'}, attempt=${args.attempt} duration=${args.duration}, result=${args.result.type}, key=${key}, message=${args.result.error.message})`,
@@ -290,24 +281,53 @@ export class ArtifactStorageReader {
               args.result.type === 'error'
                 ? String(args.result.error.name ?? 'unknown')
                 : args.result.response.status,
-            action: 'GET artifact',
+            action,
             duration: args.duration,
           },
           targetId,
         );
-      },
+      };
+
+    if (etagValue) {
+      // We can not forward the if-none-match header to S3, as the S3 ETag is solely based on the object body.
+      // A 304 response from S3 does not include the object metadata (e.g. graph id or graph version id),
+      // which might have changed even though the body did not.
+      // Instead, we perform a HEAD request for retrieving the ETag and metadata and do the comparison ourselves.
+      this.breadcrumb('if-none-match detected');
+
+      const headResponse = await this.request({
+        key,
+        method: 'HEAD',
+        onAttempt: onAttempt('HEAD artifact'),
+      });
+
+      this.breadcrumb(`HEAD response status: ${headResponse.status}`);
+
+      if (headResponse.status === 404) {
+        return { type: 'notFound' } as const;
+      }
+
+      if (
+        headResponse.status === 200 &&
+        isETagMatch(etagValue, headResponse.headers.get('etag'))
+      ) {
+        return {
+          type: 'notModified',
+          headers: headResponse.headers,
+        } as const;
+      }
+    }
+
+    const response = await this.request({
+      key,
+      method: 'GET',
+      onAttempt: onAttempt('GET artifact'),
     });
 
     this.breadcrumb(`Response status: ${response.status}`);
 
     if (response.status === 404) {
       return { type: 'notFound' } as const;
-    }
-
-    if (response.status === 304) {
-      return {
-        type: 'notModified',
-      } as const;
     }
 
     if (response.status === 200) {
@@ -558,4 +578,21 @@ function stringifyError(error: unknown) {
   }
 
   return String(error);
+}
+
+/**
+ * Weak comparison of an If-None-Match header value against an ETag (RFC 9110, section 13.1.2).
+ * Intermediaries (e.g. Cloudflare when compressing a response) might turn a strong ETag into a weak one.
+ */
+function isETagMatch(ifNoneMatch: string, etag: string | null) {
+  if (!etag) {
+    return false;
+  }
+
+  const normalize = (value: string) => value.trim().replace(/^W\//, '');
+  const normalizedETag = normalize(etag);
+
+  return ifNoneMatch
+    .split(',')
+    .some(value => value.trim() === '*' || normalize(value) === normalizedETag);
 }
