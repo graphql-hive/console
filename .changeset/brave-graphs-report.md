@@ -19,3 +19,7 @@ const graph =
 // incoming request -> determine graph -> execute
 const collect = hive.collectUsage({ graph })
 ```
+
+**Self-hosting**: The usage service accepts the `graph` operation metadata starting with Hive `15.1.0`. Older versions
+reject usage reports containing it, so upgrade your self-hosted Hive instance before passing the `graph` option to the
+SDK.
