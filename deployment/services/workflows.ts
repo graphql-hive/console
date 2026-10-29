@@ -22,6 +22,7 @@ export class PostmarkSecret extends ServiceSecret<{
 export function deployWorkflows({
   environment,
   heartbeat,
+  metricAlertsHeartbeat,
   image,
   docker,
   sentry,
@@ -40,6 +41,7 @@ export function deployWorkflows({
   image: string;
   docker: Docker;
   heartbeat?: string;
+  metricAlertsHeartbeat?: string;
   sentry: Sentry;
   postmarkSecret: PostmarkSecret;
   schema: Schema;
@@ -57,6 +59,7 @@ export function deployWorkflows({
         SENTRY: sentry.enabled ? '1' : '0',
         EMAIL_PROVIDER: 'postmark',
         HEARTBEAT_ENDPOINT: heartbeat ?? '',
+        METRIC_ALERTS_HEARTBEAT_ENDPOINT: metricAlertsHeartbeat ?? '',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled && observability.tracingEndpoint
             ? observability.tracingEndpoint
@@ -120,6 +123,7 @@ export function deployWorkflows({
     // Slack metric-alert notifications
     .allowExternal(deployment, 'https://slack.com')
     .allowExternal(deployment, heartbeat)
+    .allowExternal(deployment, metricAlertsHeartbeat)
     .allowInCluster(deployment, redis.deployment)
     .allowInCluster(deployment, schema.deployment)
     // Calls user-provided URLs (webhooks).
