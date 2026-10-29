@@ -307,10 +307,7 @@ export class ArtifactStorageReader {
         return { type: 'notFound' } as const;
       }
 
-      if (
-        headResponse.status === 200 &&
-        isETagMatch(etagValue, headResponse.headers.get('etag'))
-      ) {
+      if (headResponse.status === 200 && isETagMatch(etagValue, headResponse.headers.get('etag'))) {
         return {
           type: 'notModified',
           headers: headResponse.headers,
