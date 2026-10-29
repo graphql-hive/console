@@ -36,14 +36,17 @@ export function deployCloudFlareSecurityTransform(options: {
   const contentSecurityPolicy = `
   default-src 'self';
   frame-src ${stripeHost} https://game.crisp.chat https://{DYNAMIC_HOST_PLACEHOLDER};
-  style-src 'self' 'unsafe-inline' ${crispHost} fonts.googleapis.com rsms.me;
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' {DYNAMIC_HOST_PLACEHOLDER} ${cspHosts};
+  style-src 'self' 'unsafe-inline' ${crispHost};
+  script-src 'self' 'unsafe-eval' {DYNAMIC_HOST_PLACEHOLDER} ${cspHosts};
   connect-src 'self' * {DYNAMIC_HOST_PLACEHOLDER} ${cspHosts};
   media-src ${crispHost};
-  style-src-elem 'self' 'unsafe-inline' fonts.googleapis.com rsms.me ${crispHost};
-  font-src 'self' data: fonts.gstatic.com rsms.me ${crispHost};
+  style-src-elem 'self' 'unsafe-inline' ${crispHost};
+  font-src 'self' data: ${crispHost};
   img-src * 'self' data: https: https://image.crisp.chat https://storage.crisp.chat ${gtmHost} ${crispHost};
   worker-src 'self' blob:;
+  frame-ancestors 'self';
+  form-action 'self';
+  base-uri 'self';
 `;
 
   const mergedCsp = contentSecurityPolicy.replace(/\s{2,}/g, ' ').trim();

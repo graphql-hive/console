@@ -2253,6 +2253,9 @@ importers:
       '@fastify/vite':
         specifier: 9.2.0
         version: 9.2.0(fastify@5.12.6)(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
+      '@fontsource-variable/instrument-sans':
+        specifier: 5.3.0
+        version: 5.3.0
       '@graphiql/plugin-explorer':
         specifier: 4.0.0-alpha.2
         version: 4.0.0-alpha.2(@graphiql/react@1.0.0-alpha.4(patch_hash=1018befc9149cbc43bc2bf8982d52090a580e68df34b46674234f4e58eb6d0a0)(@codemirror/language@6.0.0)(@types/node@25.9.9)(@types/react-dom@18.3.5(@types/react@18.3.18))(@types/react@18.3.18)(graphql-ws@6.0.6(graphql@16.14.2)(ws@8.22.0))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(graphql@16.14.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3927,6 +3930,9 @@ packages:
 
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
+
+  '@fontsource-variable/instrument-sans@5.3.0':
+    resolution: {integrity: sha512-u4gKbDBTNFGkg997tfQn3eHOhHuquWUFTRT/rwzuKtrxX5P2ekfs2x+LgBPP4P32+cC+vUwF1Cr+IdRoPQbrGw==}
 
   '@gar/promise-retry@1.0.3':
     resolution: {integrity: sha512-GmzA9ckNokPypTg10pgpeHNQe7ph+iIKKmhKu3Ob9ANkswreCx7R3cKmY781K8QK3AqVL3xVh9A42JvIAbkkSA==}
@@ -19102,6 +19108,8 @@ snapshots:
   '@floating-ui/utils@0.2.10': {}
 
   '@floating-ui/utils@0.2.12': {}
+
+  '@fontsource-variable/instrument-sans@5.3.0': {}
 
   '@gar/promise-retry@1.0.3': {}
 
