@@ -6,6 +6,13 @@ import { LayoutContent } from '@/components/layouts/layout-content';
 import { BackLink } from '@/components/navigation/back-link';
 import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
+import {
+  explorerTypesToFieldCoordinates,
+  InsightsSchemaFilterOptions_Query,
+  nameSelections,
+  SCHEMA_UNAVAILABLE_NOTE,
+  schemaFilterItems,
+} from '@/components/target/insights/use-insights-filter-dimensions';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
@@ -65,6 +72,8 @@ export const ManageFilters_SavedFiltersQuery = graphql(`
               }
               excludeOperations
               excludeClientFilters
+              schemaCoordinates
+              subgraphNames
             }
             createdBy {
               id
@@ -121,6 +130,8 @@ const ManageFilters_UpdateSavedFilterMutation = graphql(`
             }
             excludeOperations
             excludeClientFilters
+            schemaCoordinates
+            subgraphNames
           }
         }
       }
@@ -287,14 +298,7 @@ function ActionsCell({
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/insights"
                 params={{ organizationSlug, projectSlug, targetSlug }}
-                search={savedFilterToSearchParams({
-                  ...filter,
-                  filters: {
-                    ...filter.filters,
-                    excludeOperations: filter.filters.excludeOperations ?? undefined,
-                    excludeClientFilters: filter.filters.excludeClientFilters ?? undefined,
-                  },
-                })}
+                search={savedFilterToSearchParams(filter)}
               />
             ),
           },
@@ -327,7 +331,7 @@ function SavedFilterRowFilters({
   dataRetentionInDays: number;
 }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
-  const { operationHashes, clientFilters } = filter.filters;
+  const { operationHashes, clientFilters, schemaCoordinates, subgraphNames } = filter.filters;
 
   const startDate = useMemo(() => retentionBoundary(dataRetentionInDays), [dataRetentionInDays]);
   // A range saved before a downgrade, or before retention was enforced, shows the default instead.
@@ -398,6 +402,28 @@ function SavedFilterRowFilters({
     return items;
   }, [opsQuery.data, clientFilters]);
 
+  // Same document the Insights page preloads, so this is usually a cache hit shared by every row.
+  const [schemaOptionsQuery] = useQuery({
+    query: InsightsSchemaFilterOptions_Query,
+    variables: { selector: { organizationSlug, projectSlug, targetSlug } },
+    requestPolicy: 'cache-first',
+  });
+  const explorer = schemaOptionsQuery.data?.target?.latestValidSchemaVersion?.explorer;
+  const schemaOptionsReady = !schemaOptionsQuery.fetching && !schemaOptionsQuery.error;
+  const fieldItems = useMemo<FilterItem[]>(
+    () =>
+      schemaFilterItems(
+        explorerTypesToFieldCoordinates(explorer?.types ?? []),
+        schemaCoordinates,
+        schemaOptionsReady,
+      ),
+    [explorer?.types, schemaCoordinates, schemaOptionsReady],
+  );
+  const subgraphItems = useMemo<FilterItem[]>(
+    () => schemaFilterItems(explorer?.subgraphNames ?? [], subgraphNames, schemaOptionsReady),
+    [explorer?.subgraphNames, subgraphNames, schemaOptionsReady],
+  );
+
   const operationItems = opsQuery.fetching
     ? operationHashes.map(hash => ({ id: hash, name: hash, values: [] as string[] }))
     : allOperationItems;
@@ -423,12 +449,23 @@ function SavedFilterRowFilters({
     [clientFilters],
   );
 
+  const savedFieldSelections = useMemo(
+    () => nameSelections(schemaCoordinates),
+    [schemaCoordinates],
+  );
+  const savedSubgraphSelections = useMemo(() => nameSelections(subgraphNames), [subgraphNames]);
+
   const [operationSelections, setOperationSelections] =
     useState<FilterSelection[]>(savedOperationSelections);
   const [clientSelections, setClientSelections] =
     useState<FilterSelection[]>(savedClientSelections);
+  const [fieldSelections, setFieldSelections] = useState<FilterSelection[]>(savedFieldSelections);
+  const [subgraphSelections, setSubgraphSelections] =
+    useState<FilterSelection[]>(savedSubgraphSelections);
   const [showOperationFilter, setShowOperationFilter] = useState(operationHashes.length > 0);
   const [showClientFilter, setShowClientFilter] = useState(clientFilters.length > 0);
+  const [showFieldFilter, setShowFieldFilter] = useState(schemaCoordinates.length > 0);
+  const [showSubgraphFilter, setShowSubgraphFilter] = useState(subgraphNames.length > 0);
   const [excludeOperations, setExcludeOperations] = useState(
     filter.filters.excludeOperations ?? false,
   );
@@ -440,8 +477,12 @@ function SavedFilterRowFilters({
   useEffect(() => {
     setOperationSelections(savedOperationSelections);
     setClientSelections(savedClientSelections);
+    setFieldSelections(savedFieldSelections);
+    setSubgraphSelections(savedSubgraphSelections);
     setShowOperationFilter(operationHashes.length > 0);
     setShowClientFilter(clientFilters.length > 0);
+    setShowFieldFilter(schemaCoordinates.length > 0);
+    setShowSubgraphFilter(subgraphNames.length > 0);
     setDateRange(savedDateRange);
     setExcludeOperations(filter.filters.excludeOperations ?? false);
     setExcludeClientFilters(filter.filters.excludeClientFilters ?? false);
@@ -450,6 +491,8 @@ function SavedFilterRowFilters({
   const hasChanges = useMemo(() => {
     if (showOperationFilter !== operationHashes.length > 0) return true;
     if (showClientFilter !== clientFilters.length > 0) return true;
+    if (showFieldFilter !== schemaCoordinates.length > 0) return true;
+    if (showSubgraphFilter !== subgraphNames.length > 0) return true;
     if (dateRange.from !== savedDateRange.from || dateRange.to !== savedDateRange.to) return true;
 
     const normalizeOps = (sels: FilterSelection[]) =>
@@ -458,6 +501,8 @@ function SavedFilterRowFilters({
         .sort()
         .join('\0');
     if (normalizeOps(operationSelections) !== normalizeOps(savedOperationSelections)) return true;
+    if (normalizeOps(fieldSelections) !== normalizeOps(savedFieldSelections)) return true;
+    if (normalizeOps(subgraphSelections) !== normalizeOps(savedSubgraphSelections)) return true;
 
     const normalizeClients = (sels: FilterSelection[]) =>
       JSON.stringify(
@@ -474,13 +519,21 @@ function SavedFilterRowFilters({
   }, [
     operationSelections,
     clientSelections,
+    fieldSelections,
+    subgraphSelections,
     showOperationFilter,
     showClientFilter,
+    showFieldFilter,
+    showSubgraphFilter,
     dateRange,
     savedOperationSelections,
     savedClientSelections,
+    savedFieldSelections,
+    savedSubgraphSelections,
     operationHashes,
     clientFilters,
+    schemaCoordinates,
+    subgraphNames,
     savedDateRange,
     excludeOperations,
     excludeClientFilters,
@@ -491,16 +544,24 @@ function SavedFilterRowFilters({
   const handleCancel = useCallback(() => {
     setOperationSelections(savedOperationSelections);
     setClientSelections(savedClientSelections);
+    setFieldSelections(savedFieldSelections);
+    setSubgraphSelections(savedSubgraphSelections);
     setShowOperationFilter(operationHashes.length > 0);
     setShowClientFilter(clientFilters.length > 0);
+    setShowFieldFilter(schemaCoordinates.length > 0);
+    setShowSubgraphFilter(subgraphNames.length > 0);
     setDateRange(savedDateRange);
     setExcludeOperations(filter.filters.excludeOperations ?? false);
     setExcludeClientFilters(filter.filters.excludeClientFilters ?? false);
   }, [
     savedOperationSelections,
     savedClientSelections,
+    savedFieldSelections,
+    savedSubgraphSelections,
     operationHashes,
     clientFilters,
+    schemaCoordinates,
+    subgraphNames,
     savedDateRange,
     filter.filters.excludeOperations,
     filter.filters.excludeClientFilters,
@@ -532,6 +593,8 @@ function SavedFilterRowFilters({
           dateRange: { from: dateRange.from, to: dateRange.to },
           excludeOperations,
           excludeClientFilters,
+          schemaCoordinates: showFieldFilter ? fieldSelections.map(s => s.name) : [],
+          subgraphNames: showSubgraphFilter ? subgraphSelections.map(s => s.name) : [],
         },
       },
     }).then(result => {
@@ -552,8 +615,12 @@ function SavedFilterRowFilters({
   }, [
     showOperationFilter,
     showClientFilter,
+    showFieldFilter,
+    showSubgraphFilter,
     operationSelections,
     clientSelections,
+    fieldSelections,
+    subgraphSelections,
     clientItems,
     dateRange,
     excludeOperations,
@@ -566,7 +633,8 @@ function SavedFilterRowFilters({
     toast,
   ]);
 
-  const loading = opsQuery.fetching;
+  const loading = opsQuery.fetching || schemaOptionsQuery.fetching;
+  const queryError = opsQuery.error ?? schemaOptionsQuery.error;
 
   return (
     <div className="px-10 py-4">
@@ -612,10 +680,37 @@ function SavedFilterRowFilters({
             onExcludeModeChange={setExcludeClientFilters}
           />
         )}
+        {showFieldFilter && (
+          <FilterDropdown
+            label="Field"
+            items={fieldItems}
+            selectedItems={fieldSelections}
+            onChange={setFieldSelections}
+            onRemove={() => {
+              setShowFieldFilter(false);
+              setFieldSelections([]);
+            }}
+            alwaysShowSearch
+            unavailableNote={SCHEMA_UNAVAILABLE_NOTE}
+          />
+        )}
+        {showSubgraphFilter && (
+          <FilterDropdown
+            label="Subgraph"
+            items={subgraphItems}
+            selectedItems={subgraphSelections}
+            onChange={setSubgraphSelections}
+            onRemove={() => {
+              setShowSubgraphFilter(false);
+              setSubgraphSelections([]);
+            }}
+            unavailableNote={SCHEMA_UNAVAILABLE_NOTE}
+          />
+        )}
         {loading && <Spinner />}
-        {opsQuery.error && !loading && (
+        {queryError && !loading && (
           <span className="text-xs text-critical">
-            {opsQuery.error.graphQLErrors[0]?.message ?? opsQuery.error.message}
+            {queryError.graphQLErrors[0]?.message ?? queryError.message}
           </span>
         )}
       </div>
