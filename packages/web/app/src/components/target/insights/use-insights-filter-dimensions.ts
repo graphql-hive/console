@@ -80,11 +80,18 @@ export function explorerTypesToFieldCoordinates(types: ReadonlyArray<ExplorerTyp
   return coordinates.sort((a, b) => a.localeCompare(b));
 }
 
-/** Items for a dimension whose options come from the schema; selected names not in it stay visible. */
+/**
+ * Items for a dimension whose options come from the schema; selected names not in it stay visible.
+ * Until the schema has answered, the selections stand in as plain items, so none reads as missing.
+ */
 export function schemaFilterItems(
   names: readonly string[],
   selected: readonly string[],
+  ready = true,
 ): FilterItem[] {
+  if (!ready) {
+    return selected.map(name => ({ name, values: [] }));
+  }
   const known = new Set(names);
   return [
     ...names.map(name => ({ name, values: [] })),
@@ -97,6 +104,10 @@ export function schemaFilterItems(
 /** Selections for a dimension keyed by name alone (no ids, no sub-values). */
 export const nameSelections = (names: unknown): FilterSelection[] =>
   Array.isArray(names) ? (names as string[]).map(name => ({ name, values: null })) : [];
+
+// Subgraph names are lowercase in the schema; a hand-typed URL may not be.
+const lowercaseNames = (names: unknown): string[] =>
+  Array.isArray(names) ? (names as string[]).map(name => name.toLowerCase()) : [];
 
 /** The `unavailableNote` for dimensions whose options come from the schema. */
 export const SCHEMA_UNAVAILABLE_NOTE = 'not in the current schema';
@@ -120,7 +131,12 @@ export type InsightsFilterDimensionsInput = {
   fieldCoordinates: readonly string[];
   /** Subgraph names of the latest valid version. */
   subgraphNames: readonly string[];
-  /** False on non-federation projects, which have no subgraphs to filter by. */
+  /** False while the schema options are loading or failed: nothing is struck through yet. */
+  schemaOptionsReady: boolean;
+  /**
+   * False on non-federation projects, which have no subgraphs to filter by. A URL that already
+   * carries subgraphs still gets the dimension so the filter can be seen and removed.
+   */
   showSubgraphs: boolean;
 };
 
@@ -133,6 +149,7 @@ export function insightsFilterDimensions({
   hashToNameMap,
   fieldCoordinates,
   subgraphNames,
+  schemaOptionsReady,
   showSubgraphs,
 }: InsightsFilterDimensionsInput): FilterDimension[] {
   const operationsDim = urlFilterDimension({
@@ -172,38 +189,37 @@ export function insightsFilterDimensions({
     },
   });
 
-  // A schema has far more fields than anyone scans; people arrive knowing the name.
-  const fieldsDim = {
-    ...urlFilterDimension({
-      navigate,
-      search,
-      searchKey: 'fields',
-      key: 'field',
-      label: 'Field',
-      items: schemaFilterItems(fieldCoordinates, search.fields ?? []),
-      encode: encodeIdSelections,
-      decode: nameSelections,
-    }),
+  const fieldsDim = urlFilterDimension({
+    navigate,
+    search,
+    searchKey: 'fields',
+    key: 'field',
+    label: 'Field',
+    items: schemaFilterItems(fieldCoordinates, search.fields ?? [], schemaOptionsReady),
+    encode: encodeIdSelections,
+    decode: nameSelections,
+    // A schema has far more fields than anyone scans; people arrive knowing the name.
     alwaysShowSearch: true,
     unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
-  };
+  });
 
   const dimensions: FilterDimension[] = [operationsDim, clientsDim, fieldsDim];
 
-  if (showSubgraphs) {
-    dimensions.push({
-      ...urlFilterDimension({
+  const selectedSubgraphs = lowercaseNames(search.subgraphs);
+  if (showSubgraphs || selectedSubgraphs.length > 0) {
+    dimensions.push(
+      urlFilterDimension({
         navigate,
         search,
         searchKey: 'subgraphs',
         key: 'subgraph',
         label: 'Subgraph',
-        items: schemaFilterItems(subgraphNames, search.subgraphs ?? []),
+        items: schemaFilterItems(subgraphNames, selectedSubgraphs, schemaOptionsReady),
         encode: encodeIdSelections,
-        decode: nameSelections,
+        decode: value => nameSelections(lowercaseNames(value)),
+        unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
       }),
-      unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
-    });
+    );
   }
 
   return dimensions;
@@ -226,6 +242,7 @@ export function useInsightsFilterDimensions(
     hashToNameMap,
     fieldCoordinates,
     subgraphNames,
+    schemaOptionsReady,
     showSubgraphs,
   } = input;
   return useMemo<FilterDimension[]>(
@@ -238,6 +255,7 @@ export function useInsightsFilterDimensions(
         hashToNameMap,
         fieldCoordinates,
         subgraphNames,
+        schemaOptionsReady,
         showSubgraphs,
       }),
     [
@@ -253,6 +271,7 @@ export function useInsightsFilterDimensions(
       hashToNameMap,
       fieldCoordinates,
       subgraphNames,
+      schemaOptionsReady,
       showSubgraphs,
     ],
   );

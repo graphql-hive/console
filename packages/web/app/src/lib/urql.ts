@@ -11,6 +11,7 @@ import { attemptRefreshingSession, signOut } from '@/lib/auth/session';
 import { authExchange } from '@urql/exchange-auth';
 import { cacheExchange } from '@urql/exchange-graphcache';
 import { cacheOptions } from './urql-cache';
+import { erroredNullsExchange } from './urql-exchanges/errored-nulls';
 import { networkStatusExchange } from './urql-exchanges/state';
 
 const isSome = <T>(value: T | null | undefined): value is T => value != null;
@@ -69,6 +70,7 @@ export const urqlClient = createClient({
   },
   exchanges: [
     cacheExchange(cacheOptions),
+    erroredNullsExchange,
     networkStatusExchange,
     // Before the auth exchange, so it also sees the answers of operations re-sent after a refresh.
     mapExchange({ onError: redirectOnAuthError }),

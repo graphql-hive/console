@@ -46,6 +46,7 @@ describe('insightsFilterDimensions', () => {
     hashToNameMap: new Map(),
     fieldCoordinates: ['Query.me', 'User.name'],
     subgraphNames: ['users', 'reviews'],
+    schemaOptionsReady: true,
     showSubgraphs: true,
   };
   const byKey = (dims: ReturnType<typeof insightsFilterDimensions>, key: string) =>
@@ -58,11 +59,36 @@ describe('insightsFilterDimensions', () => {
       'field',
       'subgraph',
     ]);
-    expect(insightsFilterDimensions({ ...input, showSubgraphs: false }).map(d => d.key)).toEqual([
-      'operation',
-      'client',
-      'field',
+    expect(
+      insightsFilterDimensions({ ...input, showSubgraphs: false, search: {} }).map(d => d.key),
+    ).toEqual(['operation', 'client', 'field']);
+  });
+
+  it('keeps the Subgraph dimension for a URL that carries subgraphs on any project', () => {
+    const dims = insightsFilterDimensions({
+      ...input,
+      showSubgraphs: false,
+      subgraphNames: [],
+      search: { subgraphs: ['Reviews'] },
+    });
+    const subgraph = byKey(dims, 'subgraph')!;
+    expect(subgraph.items).toEqual([{ name: 'reviews', values: [], unavailable: true }]);
+    expect(subgraph.selectedItems).toEqual([{ name: 'reviews', values: null }]);
+    expect(subgraph.unavailableNote).toBe('not in the current schema');
+  });
+
+  it('strikes nothing through until the schema options have answered', () => {
+    const dims = insightsFilterDimensions({
+      ...input,
+      schemaOptionsReady: false,
+      fieldCoordinates: [],
+      subgraphNames: [],
+    });
+    expect(byKey(dims, 'field')!.items).toEqual([
+      { name: 'Query.me', values: [] },
+      { name: 'Query.gone', values: [] },
     ]);
+    expect(byKey(dims, 'subgraph')!.items).toEqual([{ name: 'reviews', values: [] }]);
   });
 
   it('decodes URL names into selections without ids, matching the items by name', () => {

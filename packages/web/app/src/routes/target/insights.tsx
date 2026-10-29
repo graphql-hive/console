@@ -105,10 +105,10 @@ export const targetInsightsManageFiltersRoute = createRoute({
   path: 'insights/manage-filters',
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
-    void loadQuery(loader, ManageFilters_SavedFiltersQuery, {
-      organizationSlug,
-      selector: { organizationSlug, projectSlug, targetSlug },
-    });
+    const selector = { organizationSlug, projectSlug, targetSlug };
+    void loadQuery(loader, ManageFilters_SavedFiltersQuery, { organizationSlug, selector });
+    // Every opened row reads the schema options; one warm cache serves them all.
+    void loadQuery(loader, InsightsSchemaFilterOptions_Query, { selector });
   },
   component: TargetInsightsManageFiltersPage,
 });

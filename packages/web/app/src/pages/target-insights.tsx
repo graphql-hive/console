@@ -30,6 +30,9 @@ import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
 
+// Stable while the schema document is pending, so the dimensions memo does not rebuild each render.
+const NO_SUBGRAPH_NAMES: readonly string[] = [];
+
 const insightsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights',
 );
@@ -137,7 +140,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     },
   });
 
-  const [schemaOptionsQuery] = useQuery({
+  const [schemaOptionsQuery, reexecuteSchemaOptionsQuery] = useQuery({
     query: InsightsSchemaFilterOptions_Query,
     variables: { selector: { organizationSlug, projectSlug, targetSlug } },
     requestPolicy: 'cache-first',
@@ -150,8 +153,10 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
       ),
     [schemaOptions?.latestValidSchemaVersion?.explorer?.types],
   );
-  const subgraphNames = schemaOptions?.latestValidSchemaVersion?.explorer?.subgraphNames ?? [];
+  const subgraphNames =
+    schemaOptions?.latestValidSchemaVersion?.explorer?.subgraphNames ?? NO_SUBGRAPH_NAMES;
   const showSubgraphs = schemaOptions?.project?.type === ProjectType.Federation;
+  const schemaOptionsReady = !schemaOptionsQuery.fetching && !schemaOptionsQuery.error;
 
   const operationFilterItems: FilterItem[] = useMemo(() => {
     const edges = pickerQuery.data?.target?.operationsStats?.operations?.edges ?? [];
@@ -257,6 +262,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     hashToNameMap,
     fieldCoordinates,
     subgraphNames,
+    schemaOptionsReady,
     showSubgraphs,
   });
 
@@ -369,7 +375,12 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
           <div className="flex items-center gap-x-2">
             <RefreshButton
               size="compact"
-              onClick={() => dateRangeController.refreshResolvedRange()}
+              onClick={() => {
+                dateRangeController.refreshResolvedRange();
+                // Period-independent and cache-first, so a schema published since the page
+                // loaded only shows up here.
+                reexecuteSchemaOptionsQuery({ requestPolicy: 'network-only' });
+              }}
             />
           </div>
         </div>

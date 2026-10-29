@@ -598,7 +598,7 @@ describe('Saved Filters', () => {
       const token = await project.createTargetAccessToken({});
       await token.publishSchema(usersSubgraph).then(r => r.expectNoGraphQLErrors());
       await token.publishSchema(reviewsSubgraph).then(r => r.expectNoGraphQLErrors());
-      return project;
+      return { ...project, token };
     }
 
     test.concurrent('round-trips schema coordinates and subgraph names', async ({ expect }) => {
@@ -609,7 +609,7 @@ describe('Saved Filters', () => {
         visibility: SavedFilterVisibilityType.Shared,
         insightsFilter: {
           schemaCoordinates: ['User.name', 'Query.me', 'User.name'],
-          subgraphNames: ['reviews'],
+          subgraphNames: ['Reviews', 'reviews'],
         },
       });
 
@@ -742,6 +742,35 @@ describe('Saved Filters', () => {
           insightsFilter: { subgraphNames: ['inventory'] },
         });
         expect(updated.error?.message).toBe('Unknown subgraph: inventory.');
+      },
+    );
+
+    test.concurrent(
+      'update checks only the subgraph names the client sends',
+      async ({ expect }) => {
+        const { createSavedFilter, updateSavedFilter, token } = await federatedProject();
+
+        const created = await createSavedFilter({
+          name: 'Reviews',
+          visibility: SavedFilterVisibilityType.Private,
+          insightsFilter: { subgraphNames: ['reviews'] },
+        });
+        const filterId = created.ok?.savedFilter.id!;
+
+        await token.deleteSchema('reviews').then(r => r.expectNoGraphQLErrors());
+
+        const kept = await updateSavedFilter({
+          filterId,
+          insightsFilter: { operationHashes: ['op1'] },
+        });
+        expect(kept.error).toBeNull();
+        expect(kept.ok?.savedFilter.filters.subgraphNames).toEqual(['reviews']);
+
+        const resent = await updateSavedFilter({
+          filterId,
+          insightsFilter: { subgraphNames: ['reviews'] },
+        });
+        expect(resent.error?.message).toBe('Unknown subgraph: reviews.');
       },
     );
 

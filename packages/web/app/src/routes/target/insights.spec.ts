@@ -2,13 +2,14 @@
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import {
   insightsFixtures,
+  insightsSchemaFilterOptions,
   manageFiltersFixtures,
   OPERATION,
   SAVED_FILTER,
 } from '@/lib/testing/fixtures/insights';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
-import { createTestClient, operationName } from '@/lib/testing/urql';
+import { createTestClient, GraphQLResponse, operationName } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory } from '@tanstack/react-router';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
@@ -144,6 +145,26 @@ describe('insights route', () => {
     },
   );
 
+  it('shows the error for a subgraph the schema does not have', { timeout: 30_000 }, async () => {
+    // The API answers with the error and a null target, which must not read as empty stats.
+    const rejected = new GraphQLResponse({ __typename: 'Query', target: null }, [
+      { message: 'Unknown subgraph: gone.', path: ['target', 'operationsStats'] },
+    ]);
+    const client = createTestClient(
+      new Map([
+        ...fixtures(),
+        ['Stats_GeneralOperationsStats', rejected],
+        ['OperationsList_OperationsStats', rejected],
+      ]),
+    );
+    const subgraphs = encodeURIComponent(JSON.stringify(['gone']));
+    renderAtUrl(`${TARGET}/insights?${RANGE}&subgraphs=${subgraphs}`, { client });
+
+    await screen.findByRole('button', { name: 'Refresh' });
+    expect((await screen.findAllByText(/Unknown subgraph: gone/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText('No stats available yet.')).toBeNull();
+  });
+
   it('sends a bare URL to the default range and loads once', { timeout: 30_000 }, async () => {
     const client = createTestClient(layoutFixtures());
     const router = createAppRouter({
@@ -170,7 +191,7 @@ describe('insights route', () => {
   });
 
   it(
-    'Refresh reloads the route: the stats again, nothing else, no remount',
+    'Refresh reloads the route: the stats and the schema options again, nothing else, no remount',
     { timeout: 30_000 },
     async () => {
       const client = createTestClient(fixtures());
@@ -182,11 +203,12 @@ describe('insights route', () => {
       await waitFor(() => {
         expect(requests(client, 'Stats_GeneralOperationsStats')).toBe(2);
         expect(requests(client, 'OperationsList_OperationsStats')).toBe(2);
+        // Cache-first otherwise, so this is where a newly published subgraph or field appears.
+        expect(requests(client, 'InsightsSchemaFilterOptions')).toBe(2);
       });
       for (const name of [
         'TargetOperationsPageQuery',
         'InsightsFilterPicker',
-        'InsightsSchemaFilterOptions',
         'TargetLayoutQuery',
         'ViewerQuery',
       ]) {
@@ -352,6 +374,28 @@ describe('manage filters route', () => {
       organizationSlug: SLUGS.organizationSlug,
       selector: SLUGS,
     });
+    expect(variablesOf(client, 'InsightsSchemaFilterOptions')).toEqual({ selector: SLUGS });
+  });
+
+  it('strikes a missing field through once the schema answers, not before', async () => {
+    let answer: (data: unknown) => void = () => {};
+    const schemaOptions = new Promise(resolve => (answer = resolve));
+    const client = createTestClient(
+      new Map([
+        ...layoutFixtures(),
+        ...manageFiltersFixtures(),
+        ['InsightsSchemaFilterOptions', schemaOptions],
+      ]),
+    );
+    renderAtUrl(`${TARGET}/insights/manage-filters`, { client });
+    fireEvent.click(await screen.findByText(SAVED_FILTER.name));
+    fireEvent.click(await screen.findByRole('button', { name: '2 fields' }));
+    expect(screen.queryByText(/Struck-through/)).toBeNull();
+
+    answer(insightsSchemaFilterOptions());
+
+    // The fixture's schema has Query.me but not Query.gone.
+    await screen.findByText(/not in the current schema/);
   });
 
   it(

@@ -14,21 +14,23 @@ export const MAX_RESOLVED_SUBGRAPH_COORDINATES = 3000;
  * Only field coordinates are returned: type-level, enum-value and input-field ownership
  * is shared by every subgraph that declares the type, so matching on it would attribute
  * an operation to subgraphs the router never calls. Shared key fields are still owned by
- * every subgraph that declares the key.
+ * every subgraph that declares the key. Names match case-insensitively, as Hive lowercases
+ * service names at publish.
  */
 export function fieldCoordinatesOwnedBy(
   info: SuperGraphOwnership,
   subgraphNames: readonly string[],
 ): { coordinates: string[]; unknownSubgraphs: string[] } {
-  const wanted = new Set(subgraphNames);
+  const wanted = new Set(subgraphNames.map(name => name.toLowerCase()));
   const known = new Set<string>();
   const coordinates: string[] = [];
 
   for (const [coordinate, services] of info.schemaCoordinateServicesMappings) {
     let owned = false;
     for (const service of services) {
-      if (wanted.has(service)) {
-        known.add(service);
+      const normalized = service.toLowerCase();
+      if (wanted.has(normalized)) {
+        known.add(normalized);
         owned = true;
       }
     }
@@ -39,7 +41,7 @@ export function fieldCoordinatesOwnedBy(
 
   return {
     coordinates: coordinates.sort((a, b) => a.localeCompare(b)),
-    unknownSubgraphs: subgraphNames.filter(name => !known.has(name)),
+    unknownSubgraphs: subgraphNames.filter(name => !known.has(name.toLowerCase())),
   };
 }
 

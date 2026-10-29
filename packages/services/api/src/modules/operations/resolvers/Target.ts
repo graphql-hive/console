@@ -11,7 +11,9 @@ import type { TargetResolvers } from './../../../__generated__/types';
 const MAX_CLIENT_VERSION_FILTERS = 50;
 const MAX_VERSIONS_PER_FILTER = 100;
 const MAX_SCHEMA_COORDINATES = 100;
+const MAX_SCHEMA_COORDINATE_LENGTH = 200;
 const MAX_SUBGRAPH_NAMES = 50;
+const MAX_SUBGRAPH_NAME_LENGTH = 100;
 
 export const Target: Pick<
   TargetResolvers,
@@ -86,16 +88,27 @@ export const Target: Pick<
       }
     }
 
+    // Same bounds as a saved filter; the values are bound as ClickHouse URL parameters.
     const schemaCoordinates = args.filter?.schemaCoordinates ?? [];
     if (schemaCoordinates.length > MAX_SCHEMA_COORDINATES) {
       throw new GraphQLError(
         `'OperationStatsFilterInput.schemaCoordinates' must contain at most ${MAX_SCHEMA_COORDINATES} elements`,
       );
     }
+    if (schemaCoordinates.some(c => c.length > MAX_SCHEMA_COORDINATE_LENGTH)) {
+      throw new GraphQLError(
+        `'OperationStatsFilterInput.schemaCoordinates' elements must be at most ${MAX_SCHEMA_COORDINATE_LENGTH} characters long`,
+      );
+    }
     const subgraphNames = args.filter?.subgraphNames ?? [];
     if (subgraphNames.length > MAX_SUBGRAPH_NAMES) {
       throw new GraphQLError(
         `'OperationStatsFilterInput.subgraphNames' must contain at most ${MAX_SUBGRAPH_NAMES} elements`,
+      );
+    }
+    if (subgraphNames.some(n => n.length > MAX_SUBGRAPH_NAME_LENGTH)) {
+      throw new GraphQLError(
+        `'OperationStatsFilterInput.subgraphNames' elements must be at most ${MAX_SUBGRAPH_NAME_LENGTH} characters long`,
       );
     }
 
@@ -119,13 +132,13 @@ export const Target: Pick<
         case 'ok':
           coordinateScopes.push(resolved.coordinates);
           break;
-        // A subgraph that is gone, or a target with nothing composable yet, matches no traffic.
-        // The UI marks the selection unavailable instead of erroring the whole page.
+        // Nothing composable yet means no traffic to attribute; a name the schema does not
+        // have is an error, so a typo does not read as zero traffic.
         case 'no-supergraph':
-        case 'unknown-subgraphs':
           coordinateScopes.push([]);
           break;
         case 'not-federation':
+        case 'unknown-subgraphs':
         case 'too-many-coordinates':
           throw new GraphQLError(describeSubgraphResolutionFailure(resolved));
       }

@@ -363,20 +363,40 @@ export type ResolvedSavedFilter = {
 
 export const EMPTY_RESOLVED_FILTER: ResolvedSavedFilter = { conditions: [], coordinateScopes: [] };
 
-export type SavedFilterSkipReason =
-  | 'no-composable-version'
-  | 'no-supergraph-sdl'
-  | 'supergraph-parse-failed'
-  | 'unknown-subgraph'
-  | 'scope-too-large';
-
-export const SAVED_FILTER_SKIP_REASONS: readonly SavedFilterSkipReason[] = [
+export const SAVED_FILTER_SKIP_REASONS = [
   'no-composable-version',
   'no-supergraph-sdl',
   'supergraph-parse-failed',
   'unknown-subgraph',
   'scope-too-large',
-];
+] as const;
+
+export type SavedFilterSkipReason = (typeof SAVED_FILTER_SKIP_REASONS)[number];
+
+/** Drops skip state for groups that no longer exist (rules deleted or disabled while skipped). */
+export function pruneSkipState(
+  state: Map<string, SavedFilterSkipReason>,
+  live: { has(key: string): boolean },
+): void {
+  for (const key of state.keys()) {
+    if (!live.has(key)) {
+      state.delete(key);
+    }
+  }
+}
+
+/** Every reason is present (0 when absent) so a fixed filter clears its gauge series. */
+export function countSkippedByReason(
+  reasons: Iterable<SavedFilterSkipReason>,
+): Map<SavedFilterSkipReason, number> {
+  const counts = new Map<SavedFilterSkipReason, number>(
+    SAVED_FILTER_SKIP_REASONS.map(reason => [reason, 0]),
+  );
+  for (const reason of reasons) {
+    counts.set(reason, (counts.get(reason) ?? 0) + 1);
+  }
+  return counts;
+}
 
 export type SavedFilterResolution =
   | { kind: 'ok'; filter: ResolvedSavedFilter }
