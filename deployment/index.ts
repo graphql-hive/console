@@ -197,6 +197,7 @@ deployWorkflows({
   clickhouse,
   dbMigrations,
   egressManager,
+  broker,
 });
 
 const zendesk = configureZendesk({ environment });

@@ -2,6 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import { serviceLocalEndpoint } from '../utils/local-endpoint';
 import { ServiceSecret } from '../utils/secrets';
 import { ServiceDeployment } from '../utils/service-deployment';
+import type { Broker } from './cf-broker';
 import { Clickhouse } from './clickhouse';
 import { DbMigrations } from './db-migrations';
 import { Docker } from './docker';
@@ -33,6 +34,7 @@ export function deployWorkflows({
   clickhouse,
   dbMigrations,
   egressManager,
+  broker,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -47,7 +49,12 @@ export function deployWorkflows({
   clickhouse: Clickhouse;
   dbMigrations: DbMigrations;
   egressManager: EgressPolicyManager;
+  broker: Broker;
 }) {
+  // Webhooks (user-provided URLs) go through the request broker when enabled.
+  // Also controls the egress rules below.
+  const requestBrokerEnabled = true;
+
   const { deployment, service } = new ServiceDeployment(
     'workflow-service',
     {
@@ -55,6 +62,7 @@ export function deployWorkflows({
       env: {
         ...environment.envVars,
         SENTRY: sentry.enabled ? '1' : '0',
+        REQUEST_BROKER: requestBrokerEnabled ? '1' : '0',
         EMAIL_PROVIDER: 'postmark',
         HEARTBEAT_ENDPOINT: heartbeat ?? '',
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
@@ -94,6 +102,8 @@ export function deployWorkflows({
     .withSecret('EMAIL_PROVIDER_POSTMARK_TOKEN', postmarkSecret, 'token')
     .withSecret('EMAIL_PROVIDER_POSTMARK_MESSAGE_STREAM', postmarkSecret, 'messageStream')
     .withConditionalSecret(sentry.enabled, 'SENTRY_DSN', sentry.secret, 'dsn')
+    .withSecret('REQUEST_BROKER_ENDPOINT', broker.secret, 'baseUrl')
+    .withSecret('REQUEST_BROKER_SIGNATURE', broker.secret, 'secretSignature')
     // Redis
     .withSecret('REDIS_HOST', redis.secret, 'host')
     .withSecret('REDIS_PORT', redis.secret, 'port')
@@ -122,10 +132,15 @@ export function deployWorkflows({
     .allowExternal(deployment, heartbeat)
     .allowInCluster(deployment, redis.deployment)
     .allowInCluster(deployment, schema.deployment)
-    // Calls user-provided URLs (webhooks).
-    .allowAnyExternal(deployment)
     .allowExternal(deployment, sentry.secret?.raw.dsn)
     .allowInCluster(deployment, observability.observability?.otlpCollectorService);
+
+  if (requestBrokerEnabled) {
+    egressManager?.allowExternal(deployment, broker.secret.raw.baseUrl);
+  } else {
+    // Calls user-provided URLs (webhooks) directly
+    egressManager?.allowAnyExternal(deployment);
+  }
 
   return { deployment, service };
 }
