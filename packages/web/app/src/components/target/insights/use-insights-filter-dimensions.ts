@@ -80,11 +80,18 @@ export function explorerTypesToFieldCoordinates(types: ReadonlyArray<ExplorerTyp
   return coordinates.sort((a, b) => a.localeCompare(b));
 }
 
-/** Items for a dimension whose options come from the schema; selected names not in it stay visible. */
+/**
+ * Items for a dimension whose options come from the schema; selected names not in it stay visible.
+ * Until the schema has answered, the selections stand in as plain items, so none reads as missing.
+ */
 export function schemaFilterItems(
   names: readonly string[],
   selected: readonly string[],
+  ready = true,
 ): FilterItem[] {
+  if (!ready) {
+    return selected.map(name => ({ name, values: [] }));
+  }
   const known = new Set(names);
   return [
     ...names.map(name => ({ name, values: [] })),
@@ -124,6 +131,8 @@ export type InsightsFilterDimensionsInput = {
   fieldCoordinates: readonly string[];
   /** Subgraph names of the latest valid version. */
   subgraphNames: readonly string[];
+  /** False while the schema options are loading or failed: nothing is struck through yet. */
+  schemaOptionsReady: boolean;
   /**
    * False on non-federation projects, which have no subgraphs to filter by. A URL that already
    * carries subgraphs still gets the dimension so the filter can be seen and removed.
@@ -140,6 +149,7 @@ export function insightsFilterDimensions({
   hashToNameMap,
   fieldCoordinates,
   subgraphNames,
+  schemaOptionsReady,
   showSubgraphs,
 }: InsightsFilterDimensionsInput): FilterDimension[] {
   const operationsDim = urlFilterDimension({
@@ -187,7 +197,7 @@ export function insightsFilterDimensions({
       searchKey: 'fields',
       key: 'field',
       label: 'Field',
-      items: schemaFilterItems(fieldCoordinates, search.fields ?? []),
+      items: schemaFilterItems(fieldCoordinates, search.fields ?? [], schemaOptionsReady),
       encode: encodeIdSelections,
       decode: nameSelections,
     }),
@@ -206,7 +216,7 @@ export function insightsFilterDimensions({
         searchKey: 'subgraphs',
         key: 'subgraph',
         label: 'Subgraph',
-        items: schemaFilterItems(subgraphNames, selectedSubgraphs),
+        items: schemaFilterItems(subgraphNames, selectedSubgraphs, schemaOptionsReady),
         encode: encodeIdSelections,
         decode: value => nameSelections(lowercaseNames(value)),
       }),
@@ -234,6 +244,7 @@ export function useInsightsFilterDimensions(
     hashToNameMap,
     fieldCoordinates,
     subgraphNames,
+    schemaOptionsReady,
     showSubgraphs,
   } = input;
   return useMemo<FilterDimension[]>(
@@ -246,6 +257,7 @@ export function useInsightsFilterDimensions(
         hashToNameMap,
         fieldCoordinates,
         subgraphNames,
+        schemaOptionsReady,
         showSubgraphs,
       }),
     [
@@ -261,6 +273,7 @@ export function useInsightsFilterDimensions(
       hashToNameMap,
       fieldCoordinates,
       subgraphNames,
+      schemaOptionsReady,
       showSubgraphs,
     ],
   );

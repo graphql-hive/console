@@ -409,14 +409,19 @@ function SavedFilterRowFilters({
     requestPolicy: 'cache-first',
   });
   const explorer = schemaOptionsQuery.data?.target?.latestValidSchemaVersion?.explorer;
+  const schemaOptionsReady = !schemaOptionsQuery.fetching && !schemaOptionsQuery.error;
   const fieldItems = useMemo<FilterItem[]>(
     () =>
-      schemaFilterItems(explorerTypesToFieldCoordinates(explorer?.types ?? []), schemaCoordinates),
-    [explorer?.types, schemaCoordinates],
+      schemaFilterItems(
+        explorerTypesToFieldCoordinates(explorer?.types ?? []),
+        schemaCoordinates,
+        schemaOptionsReady,
+      ),
+    [explorer?.types, schemaCoordinates, schemaOptionsReady],
   );
   const subgraphItems = useMemo<FilterItem[]>(
-    () => schemaFilterItems(explorer?.subgraphNames ?? [], subgraphNames),
-    [explorer?.subgraphNames, subgraphNames],
+    () => schemaFilterItems(explorer?.subgraphNames ?? [], subgraphNames, schemaOptionsReady),
+    [explorer?.subgraphNames, subgraphNames, schemaOptionsReady],
   );
 
   const operationItems = opsQuery.fetching
@@ -628,7 +633,8 @@ function SavedFilterRowFilters({
     toast,
   ]);
 
-  const loading = opsQuery.fetching;
+  const loading = opsQuery.fetching || schemaOptionsQuery.fetching;
+  const queryError = opsQuery.error ?? schemaOptionsQuery.error;
 
   return (
     <div className="px-10 py-4">
@@ -702,9 +708,9 @@ function SavedFilterRowFilters({
           />
         )}
         {loading && <Spinner />}
-        {opsQuery.error && !loading && (
+        {queryError && !loading && (
           <span className="text-xs text-critical">
-            {opsQuery.error.graphQLErrors[0]?.message ?? opsQuery.error.message}
+            {queryError.graphQLErrors[0]?.message ?? queryError.message}
           </span>
         )}
       </div>

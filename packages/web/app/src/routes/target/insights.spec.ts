@@ -2,6 +2,7 @@
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import {
   insightsFixtures,
+  insightsSchemaFilterOptions,
   manageFiltersFixtures,
   OPERATION,
   SAVED_FILTER,
@@ -372,6 +373,28 @@ describe('manage filters route', () => {
       organizationSlug: SLUGS.organizationSlug,
       selector: SLUGS,
     });
+    expect(variablesOf(client, 'InsightsSchemaFilterOptions')).toEqual({ selector: SLUGS });
+  });
+
+  it('strikes a missing field through once the schema answers, not before', async () => {
+    let answer: (data: unknown) => void = () => {};
+    const schemaOptions = new Promise(resolve => (answer = resolve));
+    const client = createTestClient(
+      new Map([
+        ...layoutFixtures(),
+        ...manageFiltersFixtures(),
+        ['InsightsSchemaFilterOptions', schemaOptions],
+      ]),
+    );
+    renderAtUrl(`${TARGET}/insights/manage-filters`, { client });
+    fireEvent.click(await screen.findByText(SAVED_FILTER.name));
+    fireEvent.click(await screen.findByRole('button', { name: '2 fields' }));
+    expect(screen.queryByText(/Struck-through/)).toBeNull();
+
+    answer(insightsSchemaFilterOptions());
+
+    // The fixture's schema has Query.me but not Query.gone.
+    await screen.findByText(/not in the current schema/);
   });
 
   it(

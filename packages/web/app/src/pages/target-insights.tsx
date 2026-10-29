@@ -156,6 +156,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
   const subgraphNames =
     schemaOptions?.latestValidSchemaVersion?.explorer?.subgraphNames ?? NO_SUBGRAPH_NAMES;
   const showSubgraphs = schemaOptions?.project?.type === ProjectType.Federation;
+  const schemaOptionsReady = !schemaOptionsQuery.fetching && !schemaOptionsQuery.error;
 
   const operationFilterItems: FilterItem[] = useMemo(() => {
     const edges = pickerQuery.data?.target?.operationsStats?.operations?.edges ?? [];
@@ -261,6 +262,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     hashToNameMap,
     fieldCoordinates,
     subgraphNames,
+    schemaOptionsReady,
     showSubgraphs,
   });
 
