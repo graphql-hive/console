@@ -345,12 +345,10 @@ export class TargetStore {
             `);
             await trx.query(psql`/* insertTargetValidation */
               INSERT INTO target_validation (target_id, destination_target_id)
-              VALUES (${psql.join(
-                args.targets.map(destination =>
-                  psql.join([args.targetId, destination], psql.fragment`, `),
-                ),
-                psql.fragment`), (`,
-              )})
+              SELECT ${args.targetId}, id
+              FROM targets
+              WHERE id IN (${psql.join(args.targets, psql.fragment`, `)})
+                AND project_id = ${args.projectId}
               ON CONFLICT (target_id, destination_target_id) DO NOTHING
             `);
           } else if (
