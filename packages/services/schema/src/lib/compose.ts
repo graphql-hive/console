@@ -269,21 +269,9 @@ export async function composeExternalFederation(args: {
       'External composition failure: invalid shape of data: %o',
       parseResult.error,
     );
-    return {
-      type: 'failure',
-      result: {
-        supergraph: null,
-        sdl: null,
-        errors: [
-          {
-            message: 'External composition failure: invalid shape of data returned from service',
-            source: 'composition',
-          },
-        ],
-      },
-      includesNetworkError: false,
-      includesException: true,
-    };
+    return externalCompositionFailure(
+      'External composition failure: invalid shape of data returned from service',
+    );
   }
 
   if (parseResult.data.type === 'success') {
@@ -293,29 +281,40 @@ export async function composeExternalFederation(args: {
 
     const supergraph = parseResult.data.result.supergraph;
     let sdl = parseResult.data.result.sdl;
-    const supergraphDocumentNode = parse(supergraph);
+    try {
+      const supergraphDocumentNode = parse(supergraph);
 
-    let sdlDocumentNode: ASTNode;
-    if (args.transformToPublicSdl) {
-      /**
-       * Ensure the externally composed schema doesn't include supergraph SDL
-       * This is done for us in the native composition library
-       * https://github.com/graphql-hive/federation-composition/blob/77d6b4ece2abacf94164beafb4e7f5961f726755/src/compose.ts#L228
-       */
-      sdlDocumentNode = transformSupergraphToPublicSchema(supergraphDocumentNode);
-      sdl = print(sdlDocumentNode);
-    } else {
-      sdlDocumentNode = parse(sdl);
+      let sdlDocumentNode: ASTNode;
+      if (args.transformToPublicSdl) {
+        /**
+         * Ensure the externally composed schema doesn't include supergraph SDL
+         * This is done for us in the native composition library
+         * https://github.com/graphql-hive/federation-composition/blob/77d6b4ece2abacf94164beafb4e7f5961f726755/src/compose.ts#L228
+         */
+        sdlDocumentNode = transformSupergraphToPublicSchema(supergraphDocumentNode);
+        sdl = print(sdlDocumentNode);
+      } else {
+        sdlDocumentNode = parse(sdl);
+      }
+      return {
+        type: 'success',
+        result: {
+          supergraph,
+          supergraphDocumentNode,
+          sdl,
+          sdlDocumentNode,
+        },
+      };
+    } catch (error) {
+      args.logger?.error(
+        'External composition returned SDL that cannot be processed. (error=%s)',
+        error,
+      );
+      const message = error instanceof Error ? error.message : String(error);
+      return externalCompositionFailure(
+        `External composition failure: invalid SDL returned from service: ${message}`,
+      );
     }
-    return {
-      type: 'success',
-      result: {
-        supergraph,
-        supergraphDocumentNode,
-        sdl,
-        sdlDocumentNode,
-      },
-    };
   }
 
   return {
@@ -363,6 +362,19 @@ function isCompositionOrValidationError(error: unknown) {
       (error.message.startsWith('Invalid FieldSet provided:') ||
         error.message.startsWith('Field sets may not contain fragment spreads')))
   );
+}
+
+function externalCompositionFailure(message: string): ComposerMethodResultError {
+  return {
+    type: 'failure',
+    result: {
+      supergraph: null,
+      sdl: null,
+      errors: [{ message, source: 'composition' }],
+    },
+    includesNetworkError: false,
+    includesException: true,
+  };
 }
 
 function errorWithPossibleCode(error: unknown) {
@@ -495,7 +507,14 @@ async function callExternalService(
     span.setAttribute('http.response.status_code', response.statusCode);
     span.end();
 
-    return { type: 'success', data: JSON.parse(response.body) as unknown };
+    let data: unknown;
+    try {
+      data = JSON.parse(response.body);
+    } catch {
+      data = response.body;
+    }
+
+    return { type: 'success', data };
   } catch (error) {
     if (error instanceof RequestError) {
       if (controller.signal.aborted) {
