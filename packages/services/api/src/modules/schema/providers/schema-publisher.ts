@@ -3654,8 +3654,15 @@ export class SchemaPublisher {
 
     for (const schemaVersion of [args.schemaVersion, ...(args.contractSchemaVersions ?? [])]) {
       invariant(schemaVersion.graphMetadata, 'Schema version must have graph metadata.');
+
       if (!schemaVersion.isComposable) {
-        continue;
+        this.logger.debug(
+          'Schema version is not composable. Abort writing the graph manifest (schemaVersionId=%s, parentSchemaVersionId=%s)',
+          schemaVersion.id,
+          args.schemaVersion.id,
+        );
+
+        return;
       }
 
       manifest.graphs[schemaVersion.graphMetadata.name] = {
@@ -3677,6 +3684,8 @@ export class SchemaPublisher {
       contractName: null,
       referenceDate: args.referenceDate,
     });
+
+    this.logger.debug('Successfully updated graph manifest.');
   }
 
   @traceFn('SchemaPublisher.publishToCDN')
