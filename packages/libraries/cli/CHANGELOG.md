@@ -1,5 +1,18 @@
 # @graphql-hive/cli
 
+## 0.68.3
+
+### Patch Changes
+
+- [#8806](https://github.com/graphql-hive/console/pull/8806)
+  [`f79adf8`](https://github.com/graphql-hive/console/commit/f79adf86449dea0d827a704722b6ef11fd99eea8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [AIKIDO-2026-143019](https://intel.aikido.dev/cve/AIKIDO-2026-143019),
+  [AIKIDO-2026-10707](https://intel.aikido.dev/cve/AIKIDO-2026-10707),
+  [AIKIDO-2026-10706](https://intel.aikido.dev/cve/AIKIDO-2026-10706),
+  [AIKIDO-2026-970919](https://intel.aikido.dev/cve/AIKIDO-2026-970919), and
+  [AIKIDO-2026-161437](https://intel.aikido.dev/cve/AIKIDO-2026-161437).
+
 ## 0.68.2
 
 ### Patch Changes
