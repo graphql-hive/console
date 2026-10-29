@@ -4,7 +4,8 @@ import { defineTask, implementTask } from '../kit.js';
 
 export const PurgeExpiredDedupeKeysTask = defineTask({
   name: 'purgeExpiredDedupeKeys',
-  schema: z.unknown(),
+  // A cron job's payload carries no `input`; under zod v4 an `unknown` key is still required.
+  schema: z.unknown().optional(),
 });
 
 export const task = implementTask(PurgeExpiredDedupeKeysTask, async args => {
