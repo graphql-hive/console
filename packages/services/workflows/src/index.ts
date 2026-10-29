@@ -178,6 +178,7 @@ const context: Context = {
   pubSub,
   webAppUrl: env.webAppUrl,
   crypto: encryptor,
+  metricAlertsHeartbeatEndpoint: env.metricAlertsHeartbeat?.endpoint ?? null,
 };
 
 server.route({

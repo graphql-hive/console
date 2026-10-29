@@ -192,6 +192,7 @@ deployWorkflows({
   observability,
   sentry,
   heartbeat: heartbeatsConfig.get('webhooks'),
+  metricAlertsHeartbeat: heartbeatsConfig.get('metricAlertsEvaluator'),
   schema,
   redis,
   clickhouse,

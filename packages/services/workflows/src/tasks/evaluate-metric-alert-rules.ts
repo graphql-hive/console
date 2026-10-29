@@ -1,9 +1,10 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
+import type { Logger } from '@graphql-hive/logger';
 import type { SqlValue } from '@hive/clickhouse';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
-import { defineTask, implementTask } from '../kit.js';
+import { defineTask, implementTask, type TaskImplementation } from '../kit.js';
 import {
   buildSavedFilterConditions,
   evaluateRule,
@@ -29,6 +30,31 @@ export const EvaluateMetricAlertRulesTask = defineTask({
 });
 
 export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
+  await evaluateMetricAlertRules(args);
+  // Only reached when the tick completed without throwing, so a missing
+  // heartbeat means the evaluator is not running (or failing) every minute.
+  await reportHeartbeat(args.context.metricAlertsHeartbeatEndpoint, args.logger);
+});
+
+async function reportHeartbeat(endpoint: string | null, logger: Logger) {
+  if (!endpoint) {
+    return;
+  }
+  try {
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) {
+      logger.error({ status: response.status }, 'Metric alert evaluator heartbeat failed.');
+    }
+  } catch (error) {
+    // Never fail the tick over the heartbeat; the monitor alerts on the missing ping.
+    logger.error({ error }, 'Metric alert evaluator heartbeat failed.');
+  }
+}
+
+async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unknown>>[0]) {
   const { context, logger, helpers } = args;
 
   // Defensive — the cron line for this task is only registered when
@@ -307,4 +333,4 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
       }
     },
   );
-});
+}
