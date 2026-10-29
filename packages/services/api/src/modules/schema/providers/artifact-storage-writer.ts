@@ -253,6 +253,6 @@ const GraphManifestGraph = z.object({
   }),
 });
 
-const GraphManifestGraphs = z.record(GraphManifestGraph);
+const GraphManifestGraphs = z.record(z.string(), GraphManifestGraph);
 
 export const GraphManifestModel = z.object({ graphs: GraphManifestGraphs });
