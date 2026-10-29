@@ -50,19 +50,17 @@ export function useActivityFilterDimensions({
 
   return useMemo<FilterDimension[]>(() => {
     const dimensions: FilterDimension[] = [
-      {
-        ...urlFilterDimension({
-          navigate,
-          search,
-          searchKey: 'severities',
-          key: 'severity',
-          label: 'Severity',
-          items: SEVERITY_ITEMS,
-          encode: encodeIdSelections,
-          decode: v => decodeIdSelections(v, SEVERITY_ITEMS),
-        }),
+      urlFilterDimension({
+        navigate,
+        search,
+        searchKey: 'severities',
+        key: 'severity',
+        label: 'Severity',
         labelPlural: 'severities',
-      },
+        items: SEVERITY_ITEMS,
+        encode: encodeIdSelections,
+        decode: v => decodeIdSelections(v, SEVERITY_ITEMS),
+      }),
       urlFilterDimension({
         navigate,
         search,

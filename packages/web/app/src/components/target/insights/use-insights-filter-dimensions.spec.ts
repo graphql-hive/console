@@ -74,6 +74,7 @@ describe('insightsFilterDimensions', () => {
     const subgraph = byKey(dims, 'subgraph')!;
     expect(subgraph.items).toEqual([{ name: 'reviews', values: [], unavailable: true }]);
     expect(subgraph.selectedItems).toEqual([{ name: 'reviews', values: null }]);
+    expect(subgraph.unavailableNote).toBe('not in the current schema');
   });
 
   it('strikes nothing through until the schema options have answered', () => {

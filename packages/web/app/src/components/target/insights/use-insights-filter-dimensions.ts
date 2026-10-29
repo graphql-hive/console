@@ -189,28 +189,26 @@ export function insightsFilterDimensions({
     },
   });
 
-  // A schema has far more fields than anyone scans; people arrive knowing the name.
-  const fieldsDim = {
-    ...urlFilterDimension({
-      navigate,
-      search,
-      searchKey: 'fields',
-      key: 'field',
-      label: 'Field',
-      items: schemaFilterItems(fieldCoordinates, search.fields ?? [], schemaOptionsReady),
-      encode: encodeIdSelections,
-      decode: nameSelections,
-    }),
+  const fieldsDim = urlFilterDimension({
+    navigate,
+    search,
+    searchKey: 'fields',
+    key: 'field',
+    label: 'Field',
+    items: schemaFilterItems(fieldCoordinates, search.fields ?? [], schemaOptionsReady),
+    encode: encodeIdSelections,
+    decode: nameSelections,
+    // A schema has far more fields than anyone scans; people arrive knowing the name.
     alwaysShowSearch: true,
     unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
-  };
+  });
 
   const dimensions: FilterDimension[] = [operationsDim, clientsDim, fieldsDim];
 
   const selectedSubgraphs = lowercaseNames(search.subgraphs);
   if (showSubgraphs || selectedSubgraphs.length > 0) {
-    dimensions.push({
-      ...urlFilterDimension({
+    dimensions.push(
+      urlFilterDimension({
         navigate,
         search,
         searchKey: 'subgraphs',
@@ -219,9 +217,9 @@ export function insightsFilterDimensions({
         items: schemaFilterItems(subgraphNames, selectedSubgraphs, schemaOptionsReady),
         encode: encodeIdSelections,
         decode: value => nameSelections(lowercaseNames(value)),
+        unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
       }),
-      unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
-    });
+    );
   }
 
   return dimensions;
