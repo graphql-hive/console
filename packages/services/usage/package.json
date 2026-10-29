@@ -27,6 +27,6 @@
     "pino-pretty": "catalog:",
     "reflect-metadata": "catalog:",
     "vitest": "catalog:",
-    "zod": "4.6.6"
+    "zod": "4.6.7"
   }
 }
