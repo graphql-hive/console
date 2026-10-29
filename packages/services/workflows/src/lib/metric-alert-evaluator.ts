@@ -370,16 +370,32 @@ export const EMPTY_RESOLVED_FILTER: ResolvedSavedFilter = { conditions: [], coor
 
 export { SAVED_FILTER_SKIP_REASONS, type SavedFilterSkipReason };
 
-/** Drops skip state for groups that no longer exist (rules deleted or disabled while skipped). */
-export function pruneSkipState(
-  state: Map<string, SavedFilterSkipReason>,
-  live: { has(key: string): boolean },
-): void {
-  for (const key of state.keys()) {
-    if (!live.has(key)) {
-      state.delete(key);
+const isSkipReason = (value: string | null): value is SavedFilterSkipReason =>
+  value !== null && (SAVED_FILTER_SKIP_REASONS as readonly string[]).includes(value);
+
+/**
+ * Why each group stands skipped after this tick. A group evaluated this tick reports its
+ * outcome; any other keeps the block its rows store, which the rows also lose when the rule is
+ * edited. Groups that are not skipped contribute nothing.
+ */
+export function groupSkipReasons(
+  groups: Iterable<{
+    group: ReadonlyArray<Pick<MetricAlertRuleRow, 'evaluationBlockedReason'>>;
+    /** This tick's outcome for a due group; `undefined` when the group was not evaluated. */
+    result?: SavedFilterSkipReason | null;
+  }>,
+): SavedFilterSkipReason[] {
+  const reasons: SavedFilterSkipReason[] = [];
+  for (const { group, result } of groups) {
+    const reason =
+      result !== undefined
+        ? result
+        : (group.map(rule => rule.evaluationBlockedReason).find(isSkipReason) ?? null);
+    if (reason !== null) {
+      reasons.push(reason);
     }
   }
+  return reasons;
 }
 
 /** Every reason is present (0 when absent) so a fixed filter clears its gauge series. */

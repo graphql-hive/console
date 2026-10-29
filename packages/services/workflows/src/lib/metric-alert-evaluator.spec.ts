@@ -9,19 +9,18 @@ import {
   evaluationIntervalMinutes,
   extractMetricValue,
   groupRulesByQuery,
+  groupSkipReasons,
   isFilteredFilter,
   isRuleDue,
   markRulesEvaluated,
   markRulesEvaluationBlocked,
   parseSavedFilter,
   previousValueForRule,
-  pruneSkipState,
   queryClickHouseWindows,
   resolutionFor,
   resolveSavedFilter,
   rulesNeedingBlockWrite,
   type ParsedSavedFilter,
-  type SavedFilterSkipReason,
 } from './metric-alert-evaluator.js';
 import { makeLogger, makePg, makeRule } from './metric-alert-test-utils.js';
 import type { SupergraphOwnershipLoader } from './supergraph-ownership.js';
@@ -885,13 +884,23 @@ describe('evaluateRule incident queries', () => {
 });
 
 describe('skip state for the gauge', () => {
-  test('pruneSkipState drops only groups that no longer exist', () => {
-    const state = new Map<string, SavedFilterSkipReason>([
-      ['live', 'unknown-subgraph'],
-      ['gone', 'scope-too-large'],
-    ]);
-    pruneSkipState(state, new Set(['live', 'other']));
-    expect([...state.keys()]).toEqual(['live']);
+  test("groupSkipReasons takes the tick's outcome for a due group and the rows for the rest", () => {
+    const blocked = makeRule({ id: 'a', evaluationBlockedReason: 'unknown-subgraph' });
+    expect(
+      groupSkipReasons([
+        // Due and skipped again, with a reason the rows have not caught up to.
+        { group: [blocked], result: 'scope-too-large' },
+        // Due and evaluated: the stored block is on its way out.
+        { group: [blocked], result: null },
+        // Not due: the rows hold.
+        { group: [makeRule({ id: 'b' }), blocked] },
+        // Not due and never blocked, or blocked for a reason this build does not know.
+        { group: [makeRule({ id: 'c' })] },
+        { group: [makeRule({ id: 'd', evaluationBlockedReason: 'something-new' })] },
+        // Threw this tick: the rows speak.
+        { group: [blocked], result: undefined },
+      ]),
+    ).toEqual(['scope-too-large', 'unknown-subgraph', 'unknown-subgraph']);
   });
 
   test('countSkippedByReason seeds every reason with 0 and tallies the rest', () => {

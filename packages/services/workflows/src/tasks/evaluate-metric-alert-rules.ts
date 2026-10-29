@@ -7,12 +7,12 @@ import {
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
+  groupSkipReasons,
   isFilteredFilter,
   isRuleDue,
   markRulesEvaluated,
   markRulesEvaluationBlocked,
   parseSavedFilter,
-  pruneSkipState,
   queryClickHouseWindows,
   resolveSavedFilter,
   rulesNeedingBlockWrite,
@@ -34,13 +34,9 @@ const GROUP_CONCURRENCY = 5;
 
 const tracer = trace.getTracer('metric-alert-evaluator');
 
-// Why each group was skipped at its latest evaluation. Backs the gauge, which must hold
-// between a group's due ticks, and dedupes the warning so it fires when a reason appears
-// or changes rather than every tick. Pruned each tick to the groups that still exist.
-const lastSkipReasonByGroup = new Map<string, SavedFilterSkipReason>();
-
-function setSkippedGauge() {
-  for (const [reason, count] of countSkippedByReason(lastSkipReasonByGroup.values())) {
+// Every reason is set each tick, including 0, so a fixed filter clears its series.
+function setSkippedGauge(reasons: Iterable<SavedFilterSkipReason>) {
+  for (const [reason, count] of countSkippedByReason(reasons)) {
     metricAlertGroupsSkipped.set({ reason }, count);
   }
 }
@@ -85,7 +81,6 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   // the API, not evaluation here; the per-rule `enabled` column is the gate.
   const rules = await fetchEnabledRules(context.pg);
   const groups = groupRulesByQuery(rules);
-  pruneSkipState(lastSkipReasonByGroup, groups);
 
   // Parse each group's saved filter once, reused by the gauges below and by
   // processGroup, so a filtered group isn't re-parsed within the same tick.
@@ -111,7 +106,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   metricAlertEnabledRules.set({ filtered: 'false' }, rules.length - filteredRules);
 
   if (rules.length === 0) {
-    setSkippedGauge();
+    setSkippedGauge([]);
     logger.debug('No enabled metric alert rules found');
     return;
   }
@@ -129,7 +124,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   );
 
   if (dueGroupList.length === 0) {
-    setSkippedGauge();
+    setSkippedGauge(groupSkipReasons(groupFilters));
     logger.debug(
       { evaluationTime: evaluationTime.toISOString(), groups: groups.size, rules: rules.length },
       'No metric alert rule groups are due this tick',
@@ -337,7 +332,18 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
             evaluatedRuleIds.push(...r.value.evaluatedIds);
           }
         }
-        setSkippedGauge();
+        // A group that threw reports nothing, so its rows speak for it.
+        const outcomes = new Map(
+          dueGroupList.map(({ group }, index) => {
+            const r = results[index];
+            return [group, r.status === 'fulfilled' ? r.value.skipped : undefined] as const;
+          }),
+        );
+        setSkippedGauge(
+          groupSkipReasons(
+            groupFilters.map(({ group }) => ({ group, result: outcomes.get(group) })),
+          ),
+        );
 
         // One batched UPDATE for all successfully-evaluated rules'
         // last_evaluated_at, replacing what used to be N per-rule UPDATEs
