@@ -11,6 +11,7 @@ import {
   groupRulesByQuery,
   isFilteredFilter,
   isRuleDue,
+  markRulesEvaluated,
   markRulesEvaluationBlocked,
   parseSavedFilter,
   previousValueForRule,
@@ -704,6 +705,28 @@ describe('markRulesEvaluationBlocked', () => {
       reason: 'scope-too-large',
       since: new Date(),
     });
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('markRulesEvaluated', () => {
+  test('stamps the time and clears the block for the given rules in one statement', async () => {
+    const { pg, calls } = makePg();
+    const evaluationTime = new Date('2026-10-29T10:00:00.000Z');
+    await markRulesEvaluated(pg, { ruleIds: ['a', 'b'], evaluationTime });
+    expect(calls).toHaveLength(1);
+    const sql = calls[0].sql.replace(/\s+/g, ' ');
+    expect(sql).toContain('UPDATE "metric_alert_rules"');
+    expect(sql).toContain('"last_evaluated_at" = $slonik_1');
+    expect(sql).toContain('"evaluation_blocked_reason" = NULL');
+    expect(sql).toContain('"evaluation_blocked_since" = NULL');
+    expect(sql).toContain('"evaluation_blocked_details" = NULL');
+    expect(calls[0].values).toEqual([evaluationTime.toISOString(), ['a', 'b']]);
+  });
+
+  test('no rules, no statement', async () => {
+    const { pg, calls } = makePg();
+    await markRulesEvaluated(pg, { ruleIds: [], evaluationTime: new Date() });
     expect(calls).toEqual([]);
   });
 });

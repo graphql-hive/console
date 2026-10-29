@@ -454,6 +454,28 @@ export async function markRulesEvaluationBlocked(
 }
 
 /**
+ * Stamps the tick's time on the rules it evaluated. An evaluated rule is by definition not
+ * blocked any more, so the same statement clears its block.
+ */
+export async function markRulesEvaluated(
+  pg: Pick<CommonQueryMethods, 'query'>,
+  args: { ruleIds: readonly string[]; evaluationTime: Date },
+): Promise<void> {
+  if (args.ruleIds.length === 0) {
+    return;
+  }
+  await pg.query(psql`
+    UPDATE "metric_alert_rules"
+    SET
+      "last_evaluated_at" = ${args.evaluationTime.toISOString()}
+      , "evaluation_blocked_reason" = NULL
+      , "evaluation_blocked_since" = NULL
+      , "evaluation_blocked_details" = NULL
+    WHERE "id" = ANY(${psql.array([...args.ruleIds], 'uuid')})
+  `);
+}
+
+/**
  * Turns subgraph names into the field coordinates they own in the target's latest
  * composable version. Short-circuits without touching Postgres when there are none.
  *

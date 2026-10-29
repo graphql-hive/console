@@ -1,6 +1,5 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
-import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask } from '../kit.js';
 import {
@@ -10,6 +9,7 @@ import {
   groupRulesByQuery,
   isFilteredFilter,
   isRuleDue,
+  markRulesEvaluated,
   markRulesEvaluationBlocked,
   parseSavedFilter,
   pruneSkipState,
@@ -343,19 +343,8 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
         // last_evaluated_at, replacing what used to be N per-rule UPDATEs
         // inside evaluateRule. All rules evaluated in this tick share the
         // same scheduled evaluationTime, which is more correct than NOW()
-        // (which would drift across the tick). An evaluated rule is by definition
-        // not blocked any more, so the same statement clears its block.
-        if (evaluatedRuleIds.length > 0) {
-          await context.pg.query(psql`
-            UPDATE "metric_alert_rules"
-            SET
-              "last_evaluated_at" = ${evaluationTime.toISOString()}
-              , "evaluation_blocked_reason" = NULL
-              , "evaluation_blocked_since" = NULL
-              , "evaluation_blocked_details" = NULL
-            WHERE "id" = ANY(${psql.array(evaluatedRuleIds, 'uuid')})
-          `);
-        }
+        // (which would drift across the tick).
+        await markRulesEvaluated(context.pg, { ruleIds: evaluatedRuleIds, evaluationTime });
 
         span.setAttributes({
           'groups.failed': groupsFailed,
