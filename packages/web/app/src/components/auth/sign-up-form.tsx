@@ -13,28 +13,26 @@ import { Input } from '@/components/ui/primitives/input/input';
 
 export const PasswordStringModel = z
   .string({
-    required_error: 'Password is required',
+    error: issue => (issue.input === undefined ? 'Password is required' : undefined),
   })
-  .min(10, { message: 'Password must be at least 10 characters long.' })
-  .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter.' })
+  .min(10, { error: 'Password must be at least 10 characters long.' })
+  .regex(/[A-Z]/, { error: 'Password must contain at least one uppercase letter.' })
   .regex(/[!@#$%^&*(),.?":{}|<>]/, {
-    message: 'Password must contain at least one special character.',
+    error: 'Password must contain at least one special character.',
   })
-  .regex(/[0-9]/, { message: 'Password must contain at least one digit.' })
-  .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter.' });
+  .regex(/[0-9]/, { error: 'Password must contain at least one digit.' })
+  .regex(/[a-z]/, { error: 'Password must contain at least one lowercase letter.' });
 
 export const SignUpFormSchema = z.object({
   firstName: z.string({
-    required_error: 'First name is required',
+    error: issue => (issue.input === undefined ? 'First name is required' : undefined),
   }),
   lastName: z.string({
-    required_error: 'Last name is required',
+    error: issue => (issue.input === undefined ? 'Last name is required' : undefined),
   }),
-  email: z
-    .string({
-      required_error: 'Email is required',
-    })
-    .email('Invalid email address'),
+  email: z.email({
+    error: issue => (issue.input === undefined ? 'Email is required' : 'Invalid email address'),
+  }),
   password: PasswordStringModel,
 });
 

@@ -10,6 +10,12 @@ on:
       imageTag:
         required: true
         type: string
+      loadImagesFromArtifact:
+        description:
+          Load the images from the "docker-images" workflow artifact instead of pulling them from
+          the registry.
+        default: false
+        type: boolean
 
 jobs:
   e2e:
@@ -23,12 +29,32 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          persist-credentials: false
+
+      - name: download docker images artifact
+        if: ${{ inputs.loadImagesFromArtifact }}
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
+        with:
+          name: docker-images
+          path: ${{ runner.temp }}/docker-images
+
+      - name: load docker images
+        if: ${{ inputs.loadImagesFromArtifact }}
+        env:
+          IMAGES_DIR: ${{ runner.temp }}/docker-images
+        run: |
+          docker load -i "$IMAGES_DIR/docker-images.tar.gz"
+          rm -rf "$IMAGES_DIR"
 
       - name: setup environment
         uses: ./.github/actions/setup
         with:
           codegen: true
           actor: test-e2e
+
+      - name: build workspace dependencies
+        run: pnpm turbo build --filter=@graphql-hive/core --filter=@graphql-hive/yoga
 
       - name: install playwright browsers
         timeout-minutes: 15
@@ -65,7 +91,7 @@ jobs:
             -f docker/docker-compose.end2end.yml \
             logs
 
-      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() }}
         with:
           name: playwright

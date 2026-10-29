@@ -187,7 +187,9 @@ const UpdateTargetAppDeploymentProtectionConfiguration = graphql(`
         message
         inputErrors {
           minDaysInactive
+          minDaysSinceCreation
           maxTrafficPercentage
+          trafficPeriodDays
         }
       }
     }
@@ -5699,3 +5701,65 @@ test('retire app deployment with --force bypasses protection', async () => {
     },
   });
 });
+
+test.concurrent(
+  'Mutation.updateTargetAppDeploymentProtectionConfiguration: values out of range',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject();
+
+    const belowMinimum = await execute({
+      document: UpdateTargetAppDeploymentProtectionConfiguration,
+      variables: {
+        input: {
+          target: { byId: target.id },
+          appDeploymentProtectionConfiguration: {
+            minDaysInactive: -1,
+            minDaysSinceCreation: -1,
+            maxTrafficPercentage: -1,
+            trafficPeriodDays: 0,
+          },
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(belowMinimum.updateTargetAppDeploymentProtectionConfiguration.error)
+      .toMatchInlineSnapshot(`
+        {
+          inputErrors: {
+            maxTrafficPercentage: Maximum traffic percentage must be at least 0,
+            minDaysInactive: Minimum days inactive must be at least 0,
+            minDaysSinceCreation: Minimum days since creation must be at least 0,
+            trafficPeriodDays: Traffic period days must be at least 1,
+          },
+          message: Please check your input.,
+        }
+      `);
+
+    const aboveMaximum = await execute({
+      document: UpdateTargetAppDeploymentProtectionConfiguration,
+      variables: {
+        input: {
+          target: { byId: target.id },
+          appDeploymentProtectionConfiguration: {
+            maxTrafficPercentage: 101,
+          },
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(aboveMaximum.updateTargetAppDeploymentProtectionConfiguration.error)
+      .toMatchInlineSnapshot(`
+        {
+          inputErrors: {
+            maxTrafficPercentage: Maximum traffic percentage must be at most 100,
+            minDaysInactive: null,
+            minDaysSinceCreation: null,
+            trafficPeriodDays: null,
+          },
+          message: Please check your input.,
+        }
+      `);
+  },
+);

@@ -5,6 +5,12 @@ import type {
 import { Injectable, Scope } from 'graphql-modules';
 import type * as GraphQLSchema from '../../../__generated__/types';
 import { formatNumber } from '../lib/number-formatting';
+import {
+  countUnapprovedBreakingChanges,
+  groupSchemaChangesByKind,
+  pageSchemaChanges,
+} from '../lib/schema-change-pages';
+import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { SchemaManager } from './schema-manager';
 import { SchemaVersionStore } from './schema-version-store';
 
@@ -18,22 +24,33 @@ export class SchemaCheckManager {
   constructor(
     private schemaManager: SchemaManager,
     private schemaVersions: SchemaVersionStore,
+    private breakingSchemaChangeUsageHelper: BreakingSchemaChangeUsageHelper,
   ) {}
+
+  // Usage reads names and totals from the check's metadata.
+  private withUsageMetadata(schemaCheck: SchemaCheck) {
+    const metadata = schemaCheck.conditionalBreakingChangeMetadata;
+    if (metadata) {
+      for (const change of schemaCheck.breakingSchemaChanges ?? []) {
+        this.breakingSchemaChangeUsageHelper.registerMetadataForBreakingSchemaChange(
+          change,
+          metadata,
+        );
+      }
+    }
+    return schemaCheck.breakingSchemaChanges;
+  }
 
   getHasSchemaCompositionErrors(schemaCheck: SchemaCheck) {
     return schemaCheck.schemaCompositionErrors !== null;
   }
 
   getHasUnapprovedBreakingChanges(schemaCheck: SchemaCheck) {
-    return (
-      schemaCheck.breakingSchemaChanges?.some(
-        change => change.approvalMetadata === null && !change.isSafeBasedOnUsage,
-      ) ?? false
-    );
+    return schemaCheck.hasUnapprovedBreakingChanges;
   }
 
   getHasSchemaChanges(schemaCheck: SchemaCheck) {
-    return !!(schemaCheck.breakingSchemaChanges?.length || schemaCheck.safeSchemaChanges?.length);
+    return schemaCheck.hasSchemaChanges;
   }
 
   getSafeSchemaChanges(schemaCheck: SchemaCheck) {
@@ -49,7 +66,10 @@ export class SchemaCheckManager {
       return null;
     }
 
-    return [...(schemaCheck.breakingSchemaChanges ?? []), ...(schemaCheck.safeSchemaChanges ?? [])];
+    return [
+      ...(this.withUsageMetadata(schemaCheck) ?? []),
+      ...(schemaCheck.safeSchemaChanges ?? []),
+    ];
   }
 
   getBreakingSchemaChanges(schemaCheck: SchemaCheck) {
@@ -57,7 +77,27 @@ export class SchemaCheckManager {
       return null;
     }
 
-    return schemaCheck.breakingSchemaChanges;
+    return this.withUsageMetadata(schemaCheck);
+  }
+
+  getBreakingSchemaChangesPage(
+    schemaCheck: SchemaCheck,
+    args: { first?: number | null; offset?: number | null },
+  ) {
+    const changes = this.getBreakingSchemaChanges(schemaCheck);
+    if (changes == null || (args.first == null && args.offset == null)) {
+      return changes;
+    }
+    return pageSchemaChanges(changes, args);
+  }
+
+  getSafeSchemaChangeGroups(schemaCheck: SchemaCheck, kind: string | null | undefined) {
+    const groups = groupSchemaChangesByKind(schemaCheck.safeSchemaChanges ?? []);
+    return kind == null ? groups : groups.filter(group => group.kind === kind);
+  }
+
+  getUnapprovedBreakingSchemaChangeCount(schemaCheck: SchemaCheck) {
+    return countUnapprovedBreakingChanges(schemaCheck.breakingSchemaChanges);
   }
 
   getSchemaVersion(schemaCheck: SchemaCheck) {
@@ -70,6 +110,30 @@ export class SchemaCheckManager {
       targetId: schemaCheck.targetId,
       versionId: schemaCheck.schemaVersionId,
     });
+  }
+
+  async getGraphQLSchemaVersion(
+    schemaCheck: SchemaCheck,
+    options: { withSDL: boolean; withChanges: boolean },
+  ) {
+    if (schemaCheck.schemaVersionId === null) {
+      return null;
+    }
+
+    const schemaVersion = await this.schemaVersions.getSchemaVersionByIdWithProjection({
+      schemaVersionId: schemaCheck.schemaVersionId,
+      ...options,
+    });
+
+    if (schemaVersion?.targetId !== schemaCheck.targetId) {
+      return null;
+    }
+
+    return {
+      ...schemaVersion,
+      organizationId: schemaCheck.selector.organizationId,
+      projectId: schemaCheck.selector.projectId,
+    };
   }
 
   async getPreviousSchemaSDL(schemaCheck: SchemaCheck) {
@@ -104,6 +168,11 @@ export class SchemaCheckManager {
         retentionInDays: schemaCheck.conditionalBreakingChangeMetadata.settings.retentionInDays,
         excludedClientNames:
           schemaCheck.conditionalBreakingChangeMetadata.settings.excludedClientNames,
+        excludedAppDeploymentNames:
+          schemaCheck.conditionalBreakingChangeMetadata.settings.excludedAppDeploymentNames,
+        breakingChangeFormula:
+          schemaCheck.conditionalBreakingChangeMetadata.settings.breakingChangeFormula,
+        requestCount: schemaCheck.conditionalBreakingChangeMetadata.settings.requestCount,
         targets: schemaCheck.conditionalBreakingChangeMetadata.settings.targets,
       },
       usage: {
@@ -120,7 +189,7 @@ export class SchemaCheckManager {
   ): Promise<GraphQLSchema.SchemaCheckBaseline | null> {
     const schemaVersion = await this.getSchemaVersion(schemaCheck);
 
-    if (schemaCheck.baselineSchemaSDL) {
+    if (schemaCheck.hasBaselineSchemaSDL) {
       return {
         __typename: 'SchemaCheckBaseline',
         meta: {

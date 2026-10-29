@@ -390,6 +390,61 @@ describe('DataTable', () => {
     expect(screen.queryByRole('navigation')).toBeNull();
   });
 
+  it('renders a title bar above the column headers, with its far end', () => {
+    const { container } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        title={{ label: 'Used in 2 targets', aside: <button type="button">9 more</button> }}
+      />,
+    );
+    const wrapper = container.firstElementChild as HTMLElement;
+    const bar = wrapper.firstElementChild as HTMLElement;
+    expect(bar.textContent).toContain('Used in 2 targets');
+    expect(screen.getByRole('button', { name: '9 more' })).toBeTruthy();
+    expect(bar.compareDocumentPosition(container.querySelector('table')!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('tints the chrome by tone, and only when bordered', () => {
+    const { container, rerender } = render(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        variants={{ tone: 'critical' }}
+      />,
+    );
+    const wrapper = () => container.firstElementChild as HTMLElement;
+    expect(wrapper().className).toContain('border-critical-line');
+    expect(container.querySelector('th')?.className).toContain('bg-critical-tint');
+    expect(container.querySelector('tbody tr')?.className).toContain('border-critical-line-subtle');
+
+    rerender(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        variants={{ tone: 'critical', bordered: false }}
+      />,
+    );
+    expect(wrapper().className).not.toContain('critical');
+    expect(container.querySelector('th')?.className).not.toContain('critical');
+
+    rerender(
+      <DataTable
+        data={ROWS}
+        columns={COLUMNS}
+        getRowId={row => row.id}
+        variants={{ tone: 'critical' }}
+        footer={{ label: 'Total', value: 6 }}
+      />,
+    );
+    expect(container.querySelector('tfoot tr')?.className).toContain('border-critical-line');
+  });
+
   it('renders the footer, the loading row and the empty message', () => {
     const { container, rerender } = render(
       <DataTable
@@ -581,6 +636,37 @@ describe('DataTableCell', () => {
     const items = ['a', 'b', 'c', 'd', 'e'].map(content => ({ content }));
     const { container } = render(<DataTableCell kind="badge" items={items} max={2} />);
     expect(container.textContent).toBe('ab+3');
+  });
+
+  it('cuts a badge label past maxLength and keeps the badge as the outermost element', () => {
+    const items = [{ content: 'Guild Members' }, { content: 'Handcrafted Granite Chair' }];
+    const { container } = render(<DataTableCell kind="badge" items={items} maxLength={16} />);
+    const badges = [...container.querySelectorAll('span > span')];
+    expect(badges.map(badge => badge.textContent)).toEqual(['Guild Members', 'Handcrafted Gran…']);
+    expect(badges.every(badge => badge.className.includes('rounded-md'))).toBe(true);
+  });
+
+  it('cuts by code point and drops a trailing space before the ellipsis', () => {
+    const items = [
+      { content: 'Platform Team X\u{1F680} Core' },
+      { content: 'Guild Members Of Hive' },
+    ];
+    const { container } = render(<DataTableCell kind="badge" items={items} maxLength={14} />);
+    const badges = [...container.querySelectorAll('span > span')];
+    expect(badges.map(badge => badge.textContent)).toEqual(['Platform Team…', 'Guild Members…']);
+  });
+
+  it('makes the +N badge a focus stop so its list is reachable by keyboard', () => {
+    const items = ['a', 'b', 'c'].map(content => ({ content }));
+    const { getByText } = render(<DataTableCell kind="badge" items={items} max={2} />);
+    expect(getByText('+1').getAttribute('tabindex')).toBe('0');
+  });
+
+  it('leaves a label at exactly maxLength alone', () => {
+    const { container } = render(
+      <DataTableCell kind="badge" items={{ content: 'sixteen chars ok' }} maxLength={16} />,
+    );
+    expect(container.textContent).toBe('sixteen chars ok');
   });
 
   it('lights at least one bar segment for any share above zero', () => {

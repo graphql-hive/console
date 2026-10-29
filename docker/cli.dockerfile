@@ -7,7 +7,15 @@ ARG CLI_VERSION
 
 WORKDIR /usr/src/app
 
-RUN npm install --global @graphql-hive/cli@${CLI_VERSION}
+RUN npm install --global @graphql-hive/cli@${CLI_VERSION} \
+  && rm -rf /usr/local/lib/node_modules/npm \
+    /usr/local/lib/node_modules/corepack \
+    /opt/yarn-v* \
+    /usr/local/bin/npm \
+    /usr/local/bin/npx \
+    /usr/local/bin/corepack \
+    /usr/local/bin/yarn \
+    /usr/local/bin/yarnpkg
 
 LABEL org.opencontainers.image.licenses=MIT
 LABEL org.opencontainers.image.title=$IMAGE_TITLE

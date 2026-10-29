@@ -20,7 +20,7 @@ import {
   encodeCreatedAtAndUUIDIdBasedCursor,
   encodeHashBasedCursor,
 } from '@hive/storage';
-import type { Target } from '../../../shared/entities';
+import { type Graph } from '../../graph/providers/graph-store';
 import { ClickHouse, sql as cSql } from '../../operations/providers/clickhouse-client';
 import { SchemaVersionHelper } from '../../schema/providers/schema-version-helper';
 import { SchemaVersionStore } from '../../schema/providers/schema-version-store';
@@ -29,6 +29,10 @@ import { S3Writer } from '../../shared/providers/s3-writer';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
 import { APP_DEPLOYMENTS_ENABLED } from './app-deployments-enabled-token';
+import {
+  PersistedDocumentIngester,
+  type PreprocessedDocument,
+} from './persisted-document-ingester';
 import { PersistedDocumentScheduler } from './persisted-document-scheduler';
 
 export const AppDeploymentNameModel = z
@@ -63,6 +67,7 @@ export class AppDeployments {
     private targetStore: TargetStore,
     private schemaVersionHelper: SchemaVersionHelper,
     private persistedDocumentScheduler: PersistedDocumentScheduler,
+    private persistedDocumentIngester: PersistedDocumentIngester,
     private schemaVersions: SchemaVersionStore,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
   ) {
@@ -257,20 +262,23 @@ export class AppDeployments {
     }
   }
 
-  async addDocumentsToAppDeployment(args: {
-    target: Target;
-    appDeployment: {
-      name: string;
-      version: string;
-    };
-    operations: ReadonlyArray<{
-      hash: string;
-      body: string;
-    }>;
-  }) {
+  async addDocumentsToAppDeployment(
+    args: {
+      graph: Graph;
+      appDeployment: {
+        name: string;
+        version: string;
+      };
+      operations: ReadonlyArray<{
+        hash: string;
+        body: string;
+      }>;
+    },
+    signal: AbortSignal,
+  ) {
     if (this.appDeploymentsEnabled === false) {
       const organization = await this.storage.getOrganization({
-        organizationId: args.target.orgId,
+        organizationId: args.graph.organizationId,
       });
       if (organization.featureFlags.appDeployments === false) {
         this.logger.debug(
@@ -290,7 +298,7 @@ export class AppDeployments {
     // todo: validate input
 
     const appDeployment = await this.findAppDeployment({
-      targetId: args.target.id,
+      targetId: args.graph.targetId,
       name: args.appDeployment.name,
       version: args.appDeployment.version,
     });
@@ -316,9 +324,8 @@ export class AppDeployments {
     }
 
     if (args.operations.length !== 0) {
-      const latestSchemaVersion = await this.schemaVersions.getMaybeLatestValidSchemaVersion(
-        args.target,
-      );
+      const latestSchemaVersion =
+        await this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(args.graph);
 
       if (latestSchemaVersion === null) {
         return {
@@ -333,10 +340,11 @@ export class AppDeployments {
 
       const compositeSchemaSdl = await this.schemaVersionHelper.getCompositeSchemaSdl({
         ...latestSchemaVersion,
-        organizationId: args.target.orgId,
-        projectId: args.target.projectId,
-        targetId: args.target.id,
+        organizationId: args.graph.organizationId,
+        projectId: args.graph.projectId,
+        targetId: args.graph.targetId,
       });
+
       if (compositeSchemaSdl === null) {
         // No valid schema found.
         return {
@@ -348,16 +356,19 @@ export class AppDeployments {
         };
       }
 
-      const result = await this.persistedDocumentScheduler.processBatch({
-        schemaSdl: compositeSchemaSdl,
-        targetId: args.target.id,
-        appDeployment: {
-          id: appDeployment.id,
-          name: args.appDeployment.name,
-          version: args.appDeployment.version,
+      const result = await this.persistedDocumentScheduler.processBatch(
+        {
+          schemaSdl: compositeSchemaSdl,
+          targetId: args.graph.targetId,
+          appDeployment: {
+            id: appDeployment.id,
+            name: args.appDeployment.name,
+            version: args.appDeployment.version,
+          },
+          documents: args.operations,
         },
-        documents: args.operations,
-      });
+        signal,
+      );
 
       if (result.type === 'error') {
         return {
@@ -371,6 +382,72 @@ export class AppDeployments {
       type: 'success' as const,
       appDeployment,
     };
+  }
+
+  async addPreprocessedDocumentsToAppDeployment(
+    args: {
+      graph: Graph;
+      appDeployment: {
+        name: string;
+        version: string;
+      };
+      documents: ReadonlyArray<PreprocessedDocument>;
+    },
+    signal: AbortSignal,
+  ) {
+    if (this.appDeploymentsEnabled === false) {
+      const organization = await this.storage.getOrganization({
+        organizationId: args.graph.organizationId,
+      });
+      if (organization.featureFlags.appDeployments === false) {
+        return {
+          type: 'error' as const,
+          error: { message: noAccessToAppDeploymentsMessage, details: null },
+        };
+      }
+    }
+
+    const appDeployment = await this.findAppDeployment({
+      targetId: args.graph.targetId,
+      name: args.appDeployment.name,
+      version: args.appDeployment.version,
+    });
+
+    if (appDeployment === null) {
+      return {
+        type: 'error' as const,
+        error: { message: 'App deployment not found', details: null },
+      };
+    }
+
+    if (appDeployment.activatedAt !== null) {
+      return {
+        type: 'error' as const,
+        error: {
+          message: 'App deployment has already been activated and is locked for modifications',
+          details: null,
+        },
+      };
+    }
+
+    const result = await this.persistedDocumentIngester.processPreprocessedBatch(
+      {
+        targetId: args.graph.targetId,
+        appDeployment: {
+          id: appDeployment.id,
+          name: args.appDeployment.name,
+          version: args.appDeployment.version,
+        },
+        documents: args.documents,
+      },
+      signal,
+    );
+
+    if (result.type === 'error') {
+      return result;
+    }
+
+    return { type: 'success' as const, appDeployment };
   }
 
   private async _getAllDocumentHashesForAppDeployment(
@@ -1439,7 +1516,7 @@ export class AppDeployments {
         z
           .array(
             z.object({
-              id: z.string().uuid(),
+              id: z.uuid(),
               name: z.string(),
               version: z.string(),
               createdAt: z.string(),
@@ -1568,7 +1645,7 @@ export class AppDeployments {
       .array(
         z.object({
           coordinate: z.string(),
-          appDeploymentId: z.string().uuid(),
+          appDeploymentId: z.uuid(),
           affectedDocumentCount: z.coerce.number(),
         }),
       )

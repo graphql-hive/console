@@ -1,9 +1,9 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { isFieldRequestedDeep } from '../lib/is-field-requested';
+import { isFieldRequestedDeep } from '../lib/graphql-info-helper';
 import { ContractsManager } from '../providers/contracts-manager';
 import { SchemaManager } from '../providers/schema-manager';
-import { SchemaVersionStore } from '../providers/schema-version-store';
 import { toGraphQLSchemaCheck, toGraphQLSchemaCheckCurry } from '../to-graphql-schema-check';
 import type { TargetResolvers } from './../../../__generated__/types';
 
@@ -17,39 +17,46 @@ export const Target: Pick<
   | 'latestSchemaVersion'
   | 'latestValidSchemaVersion'
   | 'schemaCheck'
+  | 'schemaCheckServiceNames'
   | 'schemaChecks'
   | 'schemaVersion'
   | 'schemaVersions'
   | 'schemaVersionsCount'
 > = {
-  schemaVersions: async (target, args, { injector }) => {
-    return injector.get(SchemaManager).getPaginatedSchemaVersionsForTargetId(target, {
+  schemaVersions: async (target, args, { injector }, info) => {
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
+    return injector.get(SchemaManager).getPaginatedSchemaVersionsForGraph(graph, {
       cursor: args.after ?? null,
       first: args.first ?? null,
+      withSDL: isSchemaVersionSDLRequested(info),
+      withChanges: isFieldRequestedDeep(info, [['SchemaVersion', 'supergraphChanges']]),
     });
   },
-  schemaVersion: async (target, args, { injector }) => {
-    return await injector.get(SchemaManager).getSchemaVersionBySelector({
-      organizationId: target.orgId,
-      projectId: target.projectId,
-      targetId: target.id,
-      versionId: args.id,
-    });
+  async schemaVersion(target, args, { injector }) {
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
+    return await injector.get(SchemaManager).getSchemaVersionForGraphById(graph, args.id);
   },
-  latestSchemaVersion: (target, _, { injector }) => {
-    return injector.get(SchemaManager).getMaybeLatestVersion(target);
+  async latestSchemaVersion(target, _, { injector }) {
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
+    return injector.get(SchemaManager).getMaybeLatestVersionForGraph(graph);
   },
-  latestValidSchemaVersion: async (target, __, { injector }) => {
-    return injector.get(SchemaManager).getMaybeLatestValidVersion(target);
+  async latestValidSchemaVersion(target, __, { injector }) {
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
+    return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph);
   },
   baseSchema: (target, _, { injector }) => {
     return injector.get(SchemaManager).getBaseSchemaForTarget(target);
   },
   hasSchema: (target, _, { injector }) => {
-    return injector.get(SchemaVersionStore).anyVersionExistsForTarget(target);
+    return injector.get(SchemaManager).hasPublishedSchemaVersionInDefaultGraph(target);
   },
-  schemaCheck: async (target, args, { injector }) => {
-    const schemaCheck = await injector.get(SchemaManager).findSchemaCheckForTarget(target, args.id);
+  schemaCheck: async (target, args, { injector }, info) => {
+    const schemaCheck = await injector
+      .get(SchemaManager)
+      .findSchemaCheckForTarget(target, args.id, {
+        withSDL: isSDLRequested(info),
+        withChanges: areSchemaCheckChangesRequested(info),
+      });
 
     if (schemaCheck == null) {
       return null;
@@ -64,24 +71,9 @@ export const Target: Pick<
     );
   },
   schemaChecks: async (target, args, { injector }, info) => {
-    const operationSelectsSDL = isFieldRequestedDeep(info, [
-      ['SchemaCheck', 'baseline'],
-      ['SuccessfulSchemaCheck', 'baseline'],
-      ['FailedSchemaCheck', 'baseline'],
-      ['SuccessfulSchemaCheck', 'schemaSDL'],
-      ['SuccessfulSchemaCheck', 'compositeSchemaSDL'],
-      ['SuccessfulSchemaCheck', 'supergraphSDL'],
-      ['FailedSchemaCheck', 'compositeSchemaSDL'],
-      ['FailedSchemaCheck', 'supergraphSDL'],
-      ['FailedSchemaCheck', 'schemaSDL'],
-    ]);
+    const operationSelectsSDL = isSDLRequested(info);
 
-    const isSchemaChangesSelected = isFieldRequestedDeep(info, [
-      ['SuccessfulSchemaCheck', 'safeSchemaChanges'],
-      ['SuccessfulSchemaCheck', 'breakingSchemaChanges'],
-      ['FailedSchemaCheck', 'safeSchemaChanges'],
-      ['FailedSchemaCheck', 'breakingSchemaChanges'],
-    ]);
+    const isSchemaChangesSelected = areSchemaCheckChangesRequested(info);
 
     const result = await injector.get(SchemaManager).getPaginatedSchemaChecksForTarget(target, {
       first: args.first ?? null,
@@ -100,14 +92,16 @@ export const Target: Pick<
       pageInfo: result.pageInfo,
     };
   },
-  schemaVersionsCount: (target, { period }, { injector }) => {
+  async schemaVersionsCount(target, { period }, { injector }) {
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
     return injector
       .get(SchemaManager)
-      .countSchemaVersionsOfTarget(target, period ? parseDateRangeInput(period) : null);
+      .countSchemaVersionsOfGraph(graph, period ? parseDateRangeInput(period) : null);
   },
   contracts: async (target, args, { injector }) => {
-    return await injector.get(ContractsManager).getPaginatedContractsForTarget({
-      target,
+    const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
+
+    return await injector.get(ContractsManager).getPaginatedContractGraphsForGraph(graph, {
       cursor: args.after ?? null,
       first: args.first ?? null,
     });
@@ -125,4 +119,46 @@ export const Target: Pick<
       targetId: target.id,
     });
   },
+  schemaCheckServiceNames: (target, _, { injector }) => {
+    return injector.get(SchemaManager).getSchemaCheckServiceNamesForTarget(target);
+  },
 };
+
+/** Whether the operation reads a check's SDLs, its own or its baseline's. */
+export function isSDLRequested(info: Parameters<typeof isFieldRequestedDeep>[0]) {
+  return isFieldRequestedDeep(info, [
+    ...['SchemaCheck', 'SuccessfulSchemaCheck', 'FailedSchemaCheck'].flatMap(typeName =>
+      ['schemaSDL', 'previousSchemaSDL', 'compositeSchemaSDL', 'supergraphSDL'].map(
+        fieldName => [typeName, fieldName] as const,
+      ),
+    ),
+    ...['sdl', 'publicSdl', 'supergraphSdl'].map(
+      fieldName => ['SchemaCheckBaseline', fieldName] as const,
+    ),
+  ]);
+}
+
+export function isSchemaVersionSDLRequested(info: Parameters<typeof isFieldRequestedDeep>[0]) {
+  return isFieldRequestedDeep(
+    info,
+    ['sdl', 'supergraph', 'explorer', 'unusedSchema', 'deprecatedSchema'].map(
+      fieldName => ['SchemaVersion', fieldName] as const,
+    ),
+  );
+}
+
+export function areSchemaCheckChangesRequested(info: Parameters<typeof isFieldRequestedDeep>[0]) {
+  return isFieldRequestedDeep(
+    info,
+    ['SchemaCheck', 'SuccessfulSchemaCheck', 'FailedSchemaCheck'].flatMap(typeName =>
+      [
+        'schemaChanges',
+        'safeSchemaChanges',
+        'breakingSchemaChanges',
+        'safeSchemaChangeGroups',
+        'unapprovedBreakingSchemaChangeCount',
+        'cliApprovalMetadata',
+      ].map(fieldName => [typeName, fieldName] as const),
+    ),
+  );
+}

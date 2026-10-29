@@ -42,7 +42,7 @@ export const internalApiRouter = t.router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      if (z.string().uuid().safeParse(input.oidcIntegrationId).success === false) {
+      if (z.uuid().safeParse(input.oidcIntegrationId).success === false) {
         return null;
       }
 

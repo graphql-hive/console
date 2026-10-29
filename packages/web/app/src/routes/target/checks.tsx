@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DiffsWorkerPoolProvider } from '@/components/ui/diffs';
 import { loadQuery } from '@/lib/route-utils';
 import {
   ChecksPageQuery,
@@ -12,21 +13,20 @@ import {
 } from '@/pages/target-checks-affected-deployments';
 import { ActiveSchemaCheckQuery, TargetChecksSinglePage } from '@/pages/target-checks-single';
 import { createRoute } from '@tanstack/react-router';
-import { zodValidator } from '@tanstack/zod-adapter';
 import { targetRoute } from './route';
 
 export const targetChecksRoute = createRoute({
-  validateSearch: zodValidator(
-    z.object({
-      filter_changed: z.boolean().optional().catch(undefined),
-      filter_failed: z.boolean().optional().catch(undefined),
-    }),
-  ),
+  validateSearch: z.object({
+    filter_changed: z.boolean().optional().catch(undefined),
+    filter_failed: z.boolean().optional().catch(undefined),
+    filter_service: z.string().optional().catch(undefined),
+  }),
   getParentRoute: () => targetRoute,
   path: 'checks',
   loaderDeps: ({ search }) => ({
     changed: search.filter_changed ?? false,
     failed: search.filter_failed ?? false,
+    serviceName: search.filter_service ?? null,
   }),
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
@@ -56,14 +56,18 @@ export const targetChecksSingleRoute = createRoute({
   },
   component: function TargetChecksSingleRoute() {
     const { schemaCheckId } = targetChecksSingleRoute.useParams();
-    return <TargetChecksSinglePage schemaCheckId={schemaCheckId} />;
+    return (
+      <DiffsWorkerPoolProvider>
+        <TargetChecksSinglePage schemaCheckId={schemaCheckId} />
+      </DiffsWorkerPoolProvider>
+    );
   },
 });
 
 export const targetChecksAffectedDeploymentsRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'checks/$schemaCheckId/affected-deployments',
-  validateSearch: zodValidator(z.object({ coordinate: z.string().optional() })),
+  validateSearch: z.object({ coordinate: z.string().optional() }),
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug, schemaCheckId } = loader.params;
     void loadQuery(

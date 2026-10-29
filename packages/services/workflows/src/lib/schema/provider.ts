@@ -17,7 +17,7 @@ type SchemaProviderConfig = {
 };
 
 const SchemaModel = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   sdl: z.string(),
   serviceName: z.string().nullable(),
   serviceUrl: z.string().nullable(),
@@ -25,7 +25,7 @@ const SchemaModel = z.object({
 });
 
 const SchemaProposalChangesModel = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   serviceName: z.string().nullable(),
   serviceUrl: z.string().nullable(),
   schemaProposalChanges: z.array(HiveSchemaChangeModel).default([]),
@@ -112,6 +112,8 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
       httpLink({
         url: `${providerConfig.schemaServiceUrl}/trpc`,
         fetch,
+        headers: ({ op }) =>
+          typeof op.context.requestId === 'string' ? { 'x-request-id': op.context.requestId } : {},
       }),
     ],
   });
@@ -134,6 +136,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
         /** Specified contracts (only Federation) */
         contracts: ContractsInputType | null;
       },
+      opts?: { requestId?: string },
     ) {
       const compositionType = convertProjectType(projectType);
       providerConfig.logger.debug(
@@ -176,6 +179,7 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           {
             // Limit the maximum time allowed for composition requests to 60 seconds to avoid a dead-lock
             signal: timeoutAbortSignal,
+            context: { requestId: opts?.requestId },
           },
         );
         return result;
@@ -231,8 +235,19 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
           psql`/* findLatestComposableSchemaVersion */
         SELECT sv.id
         FROM schema_versions as sv
-        WHERE sv.target_id = ${args.targetId} AND sv.is_composable IS TRUE
-        ORDER BY sv.created_at DESC
+        WHERE
+          sv.target_id = ${args.targetId}
+          AND sv.is_composable IS TRUE
+          AND (
+            /* Legacy records */
+            sv.graph_metadata IS NULL
+            OR (
+              /* Default graph records, contract versions of the target are excluded */
+              sv.graph_metadata->>'name' = 'default'
+              AND sv.graph_metadata->>'type' = 'default'
+            )
+          )
+        ORDER BY sv.created_at DESC, sv.id DESC
         LIMIT 1
       `,
         )

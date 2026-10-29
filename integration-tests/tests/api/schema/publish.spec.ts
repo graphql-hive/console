@@ -594,9 +594,10 @@ describe('schema publishing changes are persisted', () => {
 
       const serviceUrl = { url: 'http://localhost:4000' };
 
-      const { createOrg } = await initSeed().createOwner();
-      const { createProject, organization } = await createOrg();
-      const { createTargetAccessToken, target, project } = await createProject(
+      const seed = initSeed();
+      const { createOrg } = await seed.createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, target } = await createProject(
         args.type ?? ProjectType.Single,
       );
       const readWriteToken = await createTargetAccessToken({});
@@ -629,8 +630,10 @@ describe('schema publishing changes are persisted', () => {
       }
 
       const schemaVersions = new SchemaVersionStore(storage.pool);
-
-      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+      const graphStore = await seed.getGraphStore();
+      const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+      assertNonNull(graph);
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
       assertNonNull(latestVersion);
 
       const changes = await schemaVersions.getSchemaSchangesForSchemaVersion(latestVersion);
@@ -3263,7 +3266,9 @@ const SchemaCompareToPreviousVersionQuery = graphql(`
 `);
 
 test('Target.schemaVersion: result is read from the database', async () => {
+  const seed = initSeed();
   const storage = await createStorage(connectionString(), 1);
+  const graphStore = await seed.getGraphStore();
   const schemaVersions = new SchemaVersionStore(storage.pool);
 
   try {
@@ -3273,7 +3278,7 @@ test('Target.schemaVersion: result is read from the database', async () => {
 
     const serviceUrl = { url: 'http://localhost:4000' };
 
-    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await seed.createOwner();
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, target, project } = await createProject(
       ProjectType.Federation,
@@ -3307,7 +3312,9 @@ test('Target.schemaVersion: result is read from the database', async () => {
       return;
     }
 
-    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNull(graph);
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3343,7 +3350,9 @@ test('Target.schemaVersion: result is read from the database', async () => {
 });
 
 test('Composition Error (Federation 2) can be served from the database', async () => {
+  const seed = initSeed();
   const storage = await createStorage(connectionString(), 1);
+  const graphStore = await seed.getGraphStore();
   const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
@@ -3388,7 +3397,7 @@ test('Composition Error (Federation 2) can be served from the database', async (
 
     const serviceUrl = { url: 'http://localhost:4000' };
 
-    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await seed.createOwner();
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, target, project, setNativeFederation } = await createProject(
       ProjectType.Federation,
@@ -3442,8 +3451,9 @@ test('Composition Error (Federation 2) can be served from the database', async (
       expect(publishResult2.schemaPublish.__typename).toBe('SchemaPublishSuccess');
       return;
     }
-
-    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNull(graph);
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3470,7 +3480,9 @@ test('Composition Error (Federation 2) can be served from the database', async (
 });
 
 test('Composition Network Failure (Federation 2)', async () => {
+  const seed = initSeed();
   const storage = await createStorage(connectionString(), 1);
+  const graphStore = await seed.getGraphStore();
   const schemaVersions = new SchemaVersionStore(storage.pool);
   const serviceAddress = await getServiceHost('composition_federation_2', 3069, false);
 
@@ -3514,7 +3526,7 @@ test('Composition Network Failure (Federation 2)', async () => {
 
     const serviceUrl = { url: 'http://localhost:4000' };
 
-    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await seed.createOwner();
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, target, project, setNativeFederation } = await createProject(
       ProjectType.Federation,
@@ -3605,8 +3617,9 @@ test('Composition Network Failure (Federation 2)', async () => {
       expect(publishResult3.schemaPublish.__typename).toBe('SchemaPublishError');
       return;
     }
-
-    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNull(graph);
+    const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
     assertNonNull(latestVersion);
 
     const result = await execute({
@@ -3913,6 +3926,12 @@ test.concurrent(
         serviceUrl: 'https://api.com/products',
       });
 
+      await pool.query(psql`
+        UPDATE "graphs"
+        SET "is_backfilled" = TRUE
+        WHERE "target_id" = ${target.id}
+      `);
+
       const publishProductsResult = await writeToken
         .publishSchema({
           url: 'https://api.com/nah',
@@ -3983,6 +4002,12 @@ test.concurrent(
         sdl,
         serviceUrl: 'https://api.com/nah',
       });
+
+      await pool.query(psql`
+        UPDATE "graphs"
+        SET "is_backfilled" = TRUE
+        WHERE "target_id" = ${target.id}
+      `);
 
       const newVersionId = (await writeToken.fetchLatestValidSchema())?.latestValidVersion?.id;
 
@@ -4589,7 +4614,8 @@ test.concurrent(
 test.concurrent(
   'publishing a valid schema onto a broken schema succeeds (prior schema has deprecated non-nullable input)',
   async () => {
-    const { createOrg } = await initSeed().createOwner();
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
     const token = await createTargetAccessToken({});
@@ -4611,6 +4637,9 @@ test.concurrent(
     const conn = connectionString();
     const storage = await createStorage(conn, 2);
     const schemaVersions = new SchemaVersionStore(storage.pool);
+    const graphStore = await seed.getGraphStore();
+    const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+    assertNonNull(graph);
     await schemaVersions.createPublishSchemaVersion({
       schema: brokenSdl,
       author: 'Jochen',
@@ -4641,7 +4670,7 @@ test.concurrent(
       previousSchemaLogId: null,
       serviceChanges: null,
       supergraphChanges: null,
-      graph: null,
+      graph,
     });
     await storage.destroy();
 
@@ -4669,6 +4698,119 @@ test.concurrent(
       linkToWebsite: expect.any(String),
       message: '',
       valid: true,
+    });
+  },
+);
+
+test.concurrent(
+  'publishing without a schema source returns SchemaPublishError',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    const result = await token.publishSchema({}).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.schemaPublish).toMatchObject({
+      __typename: 'SchemaPublishError',
+      valid: false,
+      errors: {
+        nodes: [
+          {
+            message:
+              "Provide exactly one schema source: 'PublishInput.sdl' or 'PublishInput.schema'.",
+          },
+        ],
+      },
+    });
+  },
+);
+
+test.concurrent(
+  'publishing with both sdl and schema returns SchemaPublishError',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    const result = await token
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+          }
+        `,
+        revision: 'some-revision',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(result.schemaPublish).toMatchObject({
+      __typename: 'SchemaPublishError',
+      valid: false,
+      errors: {
+        nodes: [
+          {
+            message:
+              "Provide exactly one schema source: 'PublishInput.sdl' or 'PublishInput.schema'.",
+          },
+        ],
+      },
+    });
+  },
+);
+
+test.concurrent('publishing an unparsable SDL returns SchemaPublishError', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const token = await createTargetAccessToken({});
+
+  const result = await token
+    .publishSchema({
+      sdl: `
+        type Query {
+          ping: String
+      `,
+    })
+    .then(r => r.expectNoGraphQLErrors());
+
+  expect(result.schemaPublish).toMatchObject({
+    __typename: 'SchemaPublishError',
+    valid: false,
+    errors: {
+      nodes: [{ message: expect.stringContaining('The provided SDL is not valid') }],
+    },
+  });
+});
+
+test.concurrent(
+  'republishing with metadata that is not valid JSON returns SchemaPublishError',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+    const sdl = /* GraphQL */ `
+      type Query {
+        ping: String
+      }
+    `;
+
+    const first = await token.publishSchema({ sdl }).then(r => r.expectNoGraphQLErrors());
+    expect(first.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+    const second = await token
+      .publishSchema({ sdl, metadata: '{ not json' })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(second.schemaPublish).toMatchObject({
+      __typename: 'SchemaPublishError',
+      valid: false,
+      errors: {
+        nodes: [{ message: 'Failed to parse metadata' }],
+      },
     });
   },
 );

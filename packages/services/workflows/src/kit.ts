@@ -7,13 +7,14 @@ import { PostgresDatabasePool, psql } from '@hive/postgres';
 import { bridgeGraphileLogger } from '@hive/pubsub';
 import type { Context } from './context';
 
-export type TaskDefinition<TName extends string, TModel> = {
+export type TaskDefinition<TName extends string, TSchema extends z.ZodType> = {
   name: TName;
-  schema: z.ZodTypeAny & { _output: TModel };
+  schema: TSchema;
 };
 
 type TaskImplementationArgs<TPayload> = {
   input: TPayload;
+  requestId?: string;
   context: Context;
   logger: Logger;
   helpers: JobHelpers;
@@ -26,31 +27,32 @@ export type TaskImplementation<TPayload> = (
 /**
  * Define a task
  */
-export function defineTask<TName extends string, TModel>(
-  workflow: TaskDefinition<TName, TModel>,
-): TaskDefinition<TName, TModel> {
+export function defineTask<TName extends string, TSchema extends z.ZodType>(
+  workflow: TaskDefinition<TName, TSchema>,
+): TaskDefinition<TName, TSchema> {
   return workflow;
 }
 
 /**
  * Implement a task.
  */
-export function implementTask<TPayload>(
-  taskDefinition: TaskDefinition<string, TPayload>,
-  implementation: TaskImplementation<TPayload>,
+export function implementTask<TSchema extends z.ZodType>(
+  taskDefinition: TaskDefinition<string, TSchema>,
+  implementation: TaskImplementation<z.output<TSchema>>,
 ): (context: Context) => [string, Task] {
-  const schema = z.object({
-    requestId: z.string().optional(),
-    input: taskDefinition.schema,
-  });
-
   return function (context) {
     return [
       taskDefinition.name,
       function (unsafePayload, helpers) {
-        const payload = schema.parse(unsafePayload);
+        const payload = z
+          .object({
+            requestId: z.string().optional(),
+            input: taskDefinition.schema,
+          })
+          .parse(unsafePayload) as { requestId?: string; input: z.output<TSchema> };
         return implementation({
           input: payload.input,
+          requestId: payload.requestId,
           context,
           helpers,
           logger: context.logger.child({
@@ -96,15 +98,15 @@ export class TaskScheduler {
     });
   }
 
-  async scheduleTask<TPayload>(
-    taskDefinition: TaskDefinition<string, TPayload>,
-    payload: TPayload,
+  async scheduleTask<TSchema extends z.ZodType>(
+    taskDefinition: TaskDefinition<string, TSchema>,
+    payload: z.input<TSchema>,
     opts?: {
       requestId?: string;
       /** Ensures the task is scheduled only once. */
       dedupe?: {
         /** dedupe key for this task */
-        key: string | ((payload: TPayload) => string);
+        key: string | ((payload: z.input<TSchema>) => string);
         /** how long should the task be de-duped in milliseconds */
         ttl: number;
       };

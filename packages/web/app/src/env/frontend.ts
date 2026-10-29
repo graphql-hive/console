@@ -18,7 +18,7 @@ type RestrictKeys<T, K> = {
 //
 function protectedObject<
   T extends {
-    [K in keyof T]: zod.ZodTypeAny;
+    [K in keyof T]: zod.ZodType;
   },
 >(shape: RestrictKeys<T, AllowedEnvironmentVariables>) {
   return zod.object(shape);
@@ -39,11 +39,11 @@ const enabledOrDisabled = emptyString(zod.union([zod.literal('1'), zod.literal('
 const BaseSchema = protectedObject({
   NODE_ENV: zod.string().default('development'),
   ENVIRONMENT: zod.string(),
-  APP_BASE_URL: zod.string().url(),
-  GRAPHQL_PUBLIC_ENDPOINT: zod.string().url(),
-  GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.string().url(),
-  GRAPHQL_PUBLIC_ORIGIN: zod.string().url(),
-  DOCS_URL: emptyString(zod.string().url().optional()),
+  APP_BASE_URL: zod.url(),
+  GRAPHQL_PUBLIC_ENDPOINT: zod.url(),
+  GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.url(),
+  GRAPHQL_PUBLIC_ORIGIN: zod.url(),
+  DOCS_URL: emptyString(zod.url().optional()),
   STRIPE_PUBLIC_KEY: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -78,7 +78,7 @@ const AuthOktaMultiTenantSchema = protectedObject({
 
 const SentryConfigSchema = zod.union([
   protectedObject({
-    SENTRY: zod.union([zod.void(), zod.literal('0')]),
+    SENTRY: zod.literal('0').optional(),
   }),
   protectedObject({
     SENTRY: zod.literal('1'),
@@ -87,13 +87,7 @@ const SentryConfigSchema = zod.union([
 ]);
 
 const MigrationsSchema = protectedObject({
-  MEMBER_ROLES_DEADLINE: emptyString(
-    zod
-      .date({
-        coerce: true,
-      })
-      .optional(),
-  ),
+  MEMBER_ROLES_DEADLINE: emptyString(zod.coerce.date().optional()),
 });
 
 const envValues = getAllEnv();
@@ -114,7 +108,7 @@ function buildConfig() {
 
   for (const config of Object.values(configs)) {
     if (config.success === false) {
-      environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+      environmentErrors.push(zod.prettifyError(config.error));
     }
   }
 
@@ -124,7 +118,7 @@ function buildConfig() {
     throw new Error('Invalid environment variables.');
   }
 
-  function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+  function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
     if (!config.success) {
       throw new Error('Something went wrong.');
     }

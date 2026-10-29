@@ -2,7 +2,7 @@ import * as pulumi from '@pulumi/pulumi';
 import { CloudflareCDN } from '../utils/cloudflare';
 import { ServiceSecret } from '../utils/secrets';
 import { Environment } from './environment';
-import { S3 } from './s3';
+import { S3, S3Mirror } from './s3';
 import { Sentry } from './sentry';
 
 export type CDN = ReturnType<typeof deployCFCDN>;
@@ -20,7 +20,7 @@ export function deployCFCDN({
 }: {
   environment: Environment;
   s3: S3;
-  s3Mirror: S3;
+  s3Mirror: S3Mirror;
   sentry: Sentry;
 }) {
   const cfConfig = new pulumi.Config('cloudflareCustom');

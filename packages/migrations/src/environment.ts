@@ -1,8 +1,10 @@
 import { config as dotenv } from 'dotenv';
 import zod from 'zod';
 import {
+  extractConfig,
   parseClickHouseConfigFromEnvironment,
   parsePostgresConfigFromEnvironment,
+  parseRedisConfigFromEnvironment,
 } from '@hive/service-common';
 
 if (!process.env.RELEASE) {
@@ -44,7 +46,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+    environmentErrors.push(zod.prettifyError(config.error));
   }
 }
 
@@ -53,29 +55,31 @@ const postgresConfigResult = parsePostgresConfigFromEnvironment(
   configs.base.success ? configs.base.data.AWS_REGION : undefined,
 );
 
-if (postgresConfigResult.type === 'error') {
-  environmentErrors.push(...postgresConfigResult.errors);
-}
+const redisConfigResult = parseRedisConfigFromEnvironment(
+  process.env,
+  configs.base.success ? configs.base.data.AWS_REGION : undefined,
+);
 
 const clickhouseConfigResult = process.env.CLICKHOUSE_PROTOCOL
   ? parseClickHouseConfigFromEnvironment(process.env)
   : null;
 
+if (postgresConfigResult.type === 'error') {
+  environmentErrors.push(...postgresConfigResult.errors);
+}
+
 if (clickhouseConfigResult?.type === 'error') {
   environmentErrors.push(...clickhouseConfigResult.errors);
+}
+
+if (redisConfigResult.type === 'error') {
+  environmentErrors.push(...redisConfigResult.errors);
 }
 
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
   process.exit(1);
-}
-
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
-  if (!config.success) {
-    throw new Error('Something went wrong.');
-  }
-  return config.data;
 }
 
 const base = extractConfig(configs.base);
@@ -88,6 +92,10 @@ export const env = {
       ? postgresConfigResult.config
       : raiseInvariant('Unreachable: postgres config errors are caught above via process.exit(1)'),
   clickhouse: clickhouseConfigResult?.type === 'ok' ? clickhouseConfigResult.config : null,
+  redis:
+    redisConfigResult.type === 'ok'
+      ? redisConfigResult.config
+      : raiseInvariant('Unreachable: redis config errors are caught above via process.exit(1)'),
   isMigrator: base.MIGRATOR === 'up',
   isClickHouseMigrator: base.CLICKHOUSE_MIGRATOR === 'up',
   isHiveCloud: base.CLICKHOUSE_MIGRATOR_GRAPHQL_HIVE_CLOUD === '1',

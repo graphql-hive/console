@@ -25,14 +25,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   build: {
     copyPublicDir: false,
     emptyOutDir: false,
     cssCodeSplit: false,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
         // UMD consumers can execute this in plain browser contexts without Node globals.
         intro:
@@ -40,7 +40,7 @@ export default defineConfig({
       },
     },
     lib: {
-      entry: path.resolve(__dirname, './src/index.tsx'),
+      entry: path.resolve(import.meta.dirname, './src/index.tsx'),
       name: 'HiveLaboratory',
       formats: ['umd'],
       fileName: () => 'hive-laboratory.umd.js',

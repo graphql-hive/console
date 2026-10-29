@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import zod from 'zod';
 import { isUUID } from '@hive/api/shared/is-uuid';
 import {
+  extractConfig,
   OpenTelemetryConfigurationModel,
   parseClickHouseConfigFromEnvironment,
   parsePostgresConfigFromEnvironment,
@@ -34,6 +35,17 @@ const TestUtilsModel = zod.object({
   EXPOSE_MEMORY_UTILS: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
 });
 
+const RequestBrokerModel = zod.union([
+  zod.object({
+    REQUEST_BROKER: emptyString(zod.literal('0').optional()),
+  }),
+  zod.object({
+    REQUEST_BROKER: zod.literal('1'),
+    REQUEST_BROKER_ENDPOINT: zod.string().min(1),
+    REQUEST_BROKER_SIGNATURE: zod.string().min(1),
+  }),
+]);
+
 const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
@@ -41,15 +53,17 @@ const EnvironmentModel = zod.object({
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   ENCRYPTION_SECRET: emptyString(zod.string()),
-  WEB_APP_URL: zod.string().url(),
+  WEB_APP_URL: zod.url(),
   GRAPHQL_PUBLIC_ORIGIN: zod
     .string({
-      required_error:
-        'GRAPHQL_PUBLIC_ORIGIN is required (see: https://github.com/graphql-hive/platform/pull/4288#issue-2195509699)',
+      error: issue =>
+        issue.input === undefined
+          ? 'GRAPHQL_PUBLIC_ORIGIN is required (see: https://github.com/graphql-hive/platform/pull/4288#issue-2195509699)'
+          : undefined,
     })
     .url(),
-  SCHEMA_POLICY_ENDPOINT: emptyString(zod.string().url().optional()),
-  SCHEMA_ENDPOINT: zod.string().url(),
+  SCHEMA_POLICY_ENDPOINT: emptyString(zod.url().optional()),
+  SCHEMA_ENDPOINT: zod.url(),
   AUTH_ORGANIZATION_OIDC: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_ORGANIZATION_SCIM: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -60,7 +74,7 @@ const EnvironmentModel = zod.object({
   // the access superadmins had before this was configurable.
   SUPERADMIN_FOREIGN_ORGANIZATION_ACTIONS: emptyString(zod.string().optional()),
   // Users provisioned (via SCIM) by this organization are treated as superadmins.
-  SUPERADMIN_ORGANIZATION_ID: emptyString(zod.string().uuid().optional()),
+  SUPERADMIN_ORGANIZATION_ID: emptyString(zod.uuid().optional()),
   FEATURE_FLAGS_APP_DEPLOYMENTS_ENABLED: emptyString(
     zod
       .union([zod.literal('1'), zod.literal('0')])
@@ -83,11 +97,8 @@ const EnvironmentModel = zod.object({
 });
 
 const CommerceModel = zod.object({
-  COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
-  COMMERCE_BILLING: zod
-    .union([zod.literal('1'), zod.literal('0')])
-    .default('1')
-    .optional(),
+  COMMERCE_ENDPOINT: emptyString(zod.url().optional()),
+  COMMERCE_BILLING: zod.union([zod.literal('1'), zod.literal('0')]).default('1'),
 });
 
 const SentryModel = zod.union([
@@ -138,6 +149,30 @@ const GitHubModel = zod.union([
   }),
 ]);
 
+const IntegrationRoutesModel = zod.intersection(
+  zod.union([
+    zod.object({
+      INTEGRATION_GITHUB_APP_NAME: emptyString(zod.never().optional()),
+    }),
+    zod.object({
+      INTEGRATION_GITHUB_APP_NAME: zod.string(),
+      // Used for verifying that the installing user has access to the installation.
+      INTEGRATION_GITHUB_APP_CLIENT_ID: zod.string(),
+      INTEGRATION_GITHUB_APP_CLIENT_SECRET: zod.string(),
+    }),
+  ]),
+  zod.union([
+    zod.object({
+      INTEGRATION_SLACK: emptyString(zod.literal('0').optional()),
+    }),
+    zod.object({
+      INTEGRATION_SLACK: zod.literal('1'),
+      INTEGRATION_SLACK_CLIENT_ID: zod.string(),
+      INTEGRATION_SLACK_CLIENT_SECRET: zod.string(),
+    }),
+  ]),
+);
+
 const CdnCFModel = zod.union([
   zod.object({
     CDN_CF: emptyString(zod.literal('0').optional()),
@@ -145,7 +180,7 @@ const CdnCFModel = zod.union([
   zod.object({
     CDN_CF: zod.literal('1'),
     CDN_CF_BASE_URL: zod.string(),
-    CDN_CF_KV_BASE_URL: emptyString(zod.string().url().optional()),
+    CDN_CF_KV_BASE_URL: emptyString(zod.url().optional()),
   }),
 ]);
 
@@ -156,7 +191,7 @@ const CdnApiModel = zod.union([
   zod.object({
     CDN_API: zod.literal('1'),
     CDN_API_BASE_URL: zod.string(),
-    CDN_API_KV_BASE_URL: emptyString(zod.string().url().optional()),
+    CDN_API_KV_BASE_URL: emptyString(zod.url().optional()),
   }),
 ]);
 
@@ -165,7 +200,7 @@ const HiveModel = zod.intersection(
     zod.object({ HIVE_USAGE: emptyString(zod.literal('0').optional()) }),
     zod.object({
       HIVE_USAGE: zod.literal('1'),
-      HIVE_USAGE_ENDPOINT: zod.string().url().optional(),
+      HIVE_USAGE_ENDPOINT: zod.url().optional(),
       HIVE_TARGET: zod.string(),
       HIVE_ACCESS_TOKEN: zod.string(),
       HIVE_FIELD_USAGE_ENABLED: emptyString(
@@ -194,7 +229,7 @@ const PrometheusModel = zod.object({
 });
 
 const S3Model = zod.object({
-  S3_ENDPOINT: zod.string().url(),
+  S3_ENDPOINT: zod.url(),
   S3_ACCESS_KEY_ID: emptyString(zod.string().optional()),
   S3_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
   S3_SESSION_TOKEN: emptyString(zod.string().optional()),
@@ -204,16 +239,16 @@ const S3Model = zod.object({
 
 const S3MirrorModel = zod.union([
   zod.object({
-    S3_MIRROR: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+    S3_MIRROR: zod.union([zod.literal('0'), zod.literal('')]).optional(),
   }),
   zod.object({
     S3_MIRROR: zod.literal('1'),
-    S3_MIRROR_ENDPOINT: zod.string().url(),
+    S3_MIRROR_ENDPOINT: zod.url(),
     S3_MIRROR_ACCESS_KEY_ID: emptyString(zod.string().optional()),
     S3_MIRROR_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
     S3_MIRROR_SESSION_TOKEN: emptyString(zod.string().optional()),
     S3_MIRROR_BUCKET_NAME: zod.string(),
-    S3_MIRROR_PUBLIC_URL: emptyString(zod.string().url().optional()),
+    S3_MIRROR_PUBLIC_URL: emptyString(zod.url().optional()),
     S3_MIRROR_AWS_IAM_AUTH_ENABLED: emptyString(
       zod.union([zod.literal('0'), zod.literal('1')]).optional(),
     ),
@@ -222,16 +257,16 @@ const S3MirrorModel = zod.union([
 
 const S3AuditLogModel = zod.union([
   zod.object({
-    S3_AUDIT_LOG: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+    S3_AUDIT_LOG: zod.union([zod.literal('0'), zod.literal('')]).optional(),
   }),
   zod.object({
     S3_AUDIT_LOG: zod.literal('1'),
-    S3_AUDIT_LOG_ENDPOINT: zod.string().url(),
+    S3_AUDIT_LOG_ENDPOINT: zod.url(),
     S3_AUDIT_LOG_ACCESS_KEY_ID: emptyString(zod.string().optional()),
     S3_AUDIT_LOG_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
     S3_AUDIT_LOG_SESSION_TOKEN: emptyString(zod.string().optional()),
     S3_AUDIT_LOG_BUCKET_NAME: zod.string(),
-    S3_AUDIT_LOG_PUBLIC_URL: emptyString(zod.string().url().optional()),
+    S3_AUDIT_LOG_PUBLIC_URL: emptyString(zod.url().optional()),
     S3_AUDIT_LOG_AWS_IAM_AUTH_ENABLED: emptyString(
       zod.union([zod.literal('0'), zod.literal('1')]).optional(),
     ),
@@ -240,7 +275,7 @@ const S3AuditLogModel = zod.union([
 
 const AuthGitHubConfigSchema = zod.union([
   zod.object({
-    AUTH_GITHUB: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+    AUTH_GITHUB: zod.union([zod.literal('0'), zod.literal('')]).optional(),
   }),
   zod.object({
     AUTH_GITHUB: zod.literal('1'),
@@ -251,7 +286,7 @@ const AuthGitHubConfigSchema = zod.union([
 
 const AuthGoogleConfigSchema = zod.union([
   zod.object({
-    AUTH_GOOGLE: zod.union([zod.void(), zod.literal('0'), zod.literal('')]),
+    AUTH_GOOGLE: zod.union([zod.literal('0'), zod.literal('')]).optional(),
   }),
   zod.object({
     AUTH_GOOGLE: zod.literal('1'),
@@ -262,12 +297,12 @@ const AuthGoogleConfigSchema = zod.union([
 
 const AuthOktaConfigSchema = zod.union([
   zod.object({
-    AUTH_OKTA: zod.union([zod.void(), zod.literal('0')]),
+    AUTH_OKTA: zod.literal('0').optional(),
   }),
   zod.object({
     AUTH_OKTA: zod.literal('1'),
     AUTH_OKTA_HIDDEN: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-    AUTH_OKTA_ENDPOINT: zod.string().url(),
+    AUTH_OKTA_ENDPOINT: zod.url(),
     AUTH_OKTA_CLIENT_ID: zod.string(),
     AUTH_OKTA_CLIENT_SECRET: zod.string(),
   }),
@@ -279,11 +314,11 @@ const AuthOktaMultiTenantSchema = zod.object({
 
 const HivePersistedDocumentsSchema = zod.union([
   zod.object({
-    HIVE_PERSISTED_DOCUMENTS: zod.union([zod.void(), zod.literal('0')]),
+    HIVE_PERSISTED_DOCUMENTS: zod.literal('0').optional(),
   }),
   zod.object({
     HIVE_PERSISTED_DOCUMENTS: zod.literal('1'),
-    HIVE_PERSISTED_DOCUMENTS_CDN_ENDPOINT: zod.string().url(),
+    HIVE_PERSISTED_DOCUMENTS_CDN_ENDPOINT: zod.url(),
     HIVE_PERSISTED_DOCUMENTS_CDN_ACCESS_KEY_ID: zod.string(),
   }),
 ]);
@@ -309,11 +344,9 @@ const LogModel = zod.object({
 
 const OidcWorkloadFederationModel = zod.union([
   zod.object({
-    OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod.union([
-      zod.void(),
-      zod.literal(''),
-      zod.literal('0'),
-    ]),
+    OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER: zod
+      .union([zod.literal(''), zod.literal('0')])
+      .optional(),
   }),
   zod
     .object({
@@ -355,6 +388,7 @@ const processEnv = process.env;
 
 const configs = {
   testUtils: TestUtilsModel.safeParse(processEnv),
+  requestBroker: RequestBrokerModel.safeParse(processEnv),
   base: EnvironmentModel.safeParse(processEnv),
   commerce: CommerceModel.safeParse(processEnv),
   sentry: SentryModel.safeParse(processEnv),
@@ -365,6 +399,7 @@ const configs = {
   authOkta: AuthOktaConfigSchema.safeParse(processEnv),
   authOktaMultiTenant: AuthOktaMultiTenantSchema.safeParse(processEnv),
   github: GitHubModel.safeParse(processEnv),
+  integrationRoutes: IntegrationRoutesModel.safeParse(processEnv),
   cdnCf: CdnCFModel.safeParse(processEnv),
   cdnApi: CdnApiModel.safeParse(processEnv),
   prometheus: PrometheusModel.safeParse(processEnv),
@@ -383,7 +418,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+    environmentErrors.push(zod.prettifyError(config.error));
   }
 }
 
@@ -507,13 +542,6 @@ if (environmentErrors.length) {
   process.exit(1);
 }
 
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
-  if (!config.success) {
-    throw new Error('Something went wrong.');
-  }
-  return config.data;
-}
-
 const base = extractConfig(configs.base);
 const commerce = extractConfig(configs.commerce);
 const sentry = extractConfig(configs.sentry);
@@ -524,6 +552,7 @@ const authGoogle = extractConfig(configs.authGoogle);
 const authOkta = extractConfig(configs.authOkta);
 const authOktaMultiTenant = extractConfig(configs.authOktaMultiTenant);
 const github = extractConfig(configs.github);
+const integrationRoutes = extractConfig(configs.integrationRoutes);
 const prometheus = extractConfig(configs.prometheus);
 const log = extractConfig(configs.log);
 const cdnCf = extractConfig(configs.cdnCf);
@@ -537,6 +566,7 @@ const tracing = extractConfig(configs.tracing);
 const hivePersistedDocuments = extractConfig(configs.hivePersistedDocuments);
 const oidcWorkloadFederation = extractConfig(configs.oidcWorkloadFederation);
 const testUtils = extractConfig(configs.testUtils);
+const requestBroker = extractConfig(configs.requestBroker);
 
 const hiveUsageConfig =
   hive.HIVE_USAGE === '1'
@@ -563,6 +593,13 @@ export const env = {
   environment: base.ENVIRONMENT,
   exposeMemoryUtils: testUtils.EXPOSE_MEMORY_UTILS === '1',
   release: base.RELEASE ?? 'local',
+  requestBroker:
+    requestBroker.REQUEST_BROKER === '1'
+      ? {
+          endpoint: requestBroker.REQUEST_BROKER_ENDPOINT,
+          signature: requestBroker.REQUEST_BROKER_SIGNATURE,
+        }
+      : null,
   encryptionSecret: base.ENCRYPTION_SECRET,
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT || hive.HIVE_TRACING === '1',
@@ -594,6 +631,23 @@ export const env = {
         }
       : null,
     schema: { endpoint: base.SCHEMA_ENDPOINT },
+  },
+  integrationRoutes: {
+    github:
+      'INTEGRATION_GITHUB_APP_CLIENT_ID' in integrationRoutes
+        ? {
+            appName: integrationRoutes.INTEGRATION_GITHUB_APP_NAME,
+            clientId: integrationRoutes.INTEGRATION_GITHUB_APP_CLIENT_ID,
+            clientSecret: integrationRoutes.INTEGRATION_GITHUB_APP_CLIENT_SECRET,
+          }
+        : null,
+    slack:
+      integrationRoutes.INTEGRATION_SLACK === '1'
+        ? {
+            clientId: integrationRoutes.INTEGRATION_SLACK_CLIENT_ID,
+            clientSecret: integrationRoutes.INTEGRATION_SLACK_CLIENT_SECRET,
+          }
+        : null,
   },
   http: {
     port: base.PORT ?? 3001,
@@ -742,7 +796,7 @@ export const env = {
           labels: {
             instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'server',
           },
-          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
+          port: prometheus.PROMETHEUS_METRICS_PORT,
         }
       : null,
   hive: hiveUsageConfig,

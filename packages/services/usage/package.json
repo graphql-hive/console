@@ -20,13 +20,13 @@
     "@trpc/client": "catalog:",
     "ajv": "catalog:",
     "dotenv": "catalog:",
-    "graphql": "16.9.0",
+    "graphql": "catalog:",
     "kafkajs": "catalog:",
     "lru-cache": "catalog:",
     "p-limit": "catalog:",
     "pino-pretty": "catalog:",
     "reflect-metadata": "catalog:",
     "vitest": "catalog:",
-    "zod": "3.25.76"
+    "zod": "4.6.6"
   }
 }

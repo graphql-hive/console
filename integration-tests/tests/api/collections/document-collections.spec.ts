@@ -209,4 +209,47 @@ describe('Document Collections', () => {
       });
     });
   });
+
+  describe('Validation', () => {
+    const query = 'query { __typename }';
+
+    test.concurrent.each([
+      { label: 'empty name', input: { name: '', query }, message: 'Name is required' },
+      {
+        label: 'name too long',
+        input: { name: 'a'.repeat(101), query },
+        message: 'Name must be at most 100 characters long',
+      },
+      { label: 'empty query', input: { name: 'op', query: '' }, message: 'Query is required' },
+      {
+        label: 'query too long',
+        input: { name: 'op', query: 'a'.repeat(10_001) },
+        message: 'Query must be at most 10000 characters long',
+      },
+      {
+        label: 'variables not JSON',
+        input: { name: 'op', query, variables: '{ invalid' },
+        message: 'Variables must be valid JSON, e.g. {"key": "value"}',
+      },
+      {
+        label: 'headers too long',
+        input: { name: 'op', query, headers: 'a'.repeat(10_001) },
+        message: 'Headers must be at most 10000 characters long',
+      },
+    ])('Mutation.createOperationInDocumentCollection: $label', async ({ input, message }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createDocumentCollection, createOperationInCollection } = await createProject(
+        ProjectType.Single,
+      );
+      const collection = await createDocumentCollection({ name: 'c', description: 'd' });
+
+      const result = await createOperationInCollection({
+        collectionId: collection.ok!.collection.id,
+        ...input,
+      });
+
+      expect(result.error?.message).toBe(message);
+    });
+  });
 });

@@ -1,5 +1,86 @@
 # @graphql-hive/cli
 
+## 0.68.2
+
+### Patch Changes
+
+- [#8661](https://github.com/graphql-hive/console/pull/8661)
+  [`fa47253`](https://github.com/graphql-hive/console/commit/fa4725362777cbb5b2fc588987fdfcadac27eb4e)
+  Thanks [@klippx](https://github.com/klippx)! - Publish SHA-256 checksums, standalone archives, and
+  stable-version metadata with CLI releases, and provide a safe one-time checksum backfill for
+  retained historical archives.
+
+## 0.68.1
+
+### Patch Changes
+
+- [#8756](https://github.com/graphql-hive/console/pull/8756)
+  [`2f51407`](https://github.com/graphql-hive/console/commit/2f51407d2c819103d8c238c424834262ee144738)
+  Thanks [@jdolle](https://github.com/jdolle)! - `app:create` retries a failed document upload batch
+  at most twice (three attempts in total) instead of five times.
+
+## 0.68.0
+
+### Minor Changes
+
+- [#8734](https://github.com/graphql-hive/console/pull/8734)
+  [`a6eaf2e`](https://github.com/graphql-hive/console/commit/a6eaf2e857ccb2a1d6f9293d3cd26b2d4e3bf79e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Validate and preprocess app deployment documents in
+  the CLI before uploading them, reducing server-side processing and rejecting invalid operations
+  earlier.
+
+### Patch Changes
+
+- [#8726](https://github.com/graphql-hive/console/pull/8726)
+  [`e085b8e`](https://github.com/graphql-hive/console/commit/e085b8e1ef7a9197d285b2f3b4264fb47bf1a963)
+  Thanks [@jdolle](https://github.com/jdolle)! - Surface the registry's request id on HTTP errors.
+  `HTTPResponseError` thrown by the core HTTP client now carries the `x-request-id` the server
+  returned, and the CLI prints it as `Request ID` on HTTP error responses (for example a request
+  rejected because its body is too large), the same way it already does for GraphQL errors.
+  Previously only the client-generated id was visible, which does not match anything on the server.
+
+- Updated dependencies
+  [[`e085b8e`](https://github.com/graphql-hive/console/commit/e085b8e1ef7a9197d285b2f3b4264fb47bf1a963)]:
+  - @graphql-hive/core@0.23.2
+
+## 0.67.1
+
+### Patch Changes
+
+- [#8711](https://github.com/graphql-hive/console/pull/8711)
+  [`b5839de`](https://github.com/graphql-hive/console/commit/b5839dec170ce82afc839cb5d81c55cf6f2a6606)
+  Thanks [@jdolle](https://github.com/jdolle)! - `hive app:create` now waits up to 55 seconds for
+  each document upload request (previously 20 seconds), the same as the schema commands. Slow
+  uploads completed on the server but the CLI gave up, retried the whole batch, and finally failed
+  with a network error.
+
+## 0.67.0
+
+### Minor Changes
+
+- [#8678](https://github.com/graphql-hive/console/pull/8678)
+  [`5124f15`](https://github.com/graphql-hive/console/commit/5124f154e100819f19fbe2c4b94540f8e04ac560)
+  Thanks [@jdolle](https://github.com/jdolle)! - `hive schema:publish --github` now exits with code
+  1 (error `[300]`) when the publish is rejected, for example by breaking changes or
+  `--fail-on-composition-error`. Previously it exited with 0 whenever the GitHub check-run was
+  updated. `--force` still reports a forced success, as without `--github`.
+
+  **Note for self-hosted Hive:** `hive schema:publish --github` relies on a new field added to the
+  Hive GraphQL API (`GitHubSchemaPublishSuccess`). If you self-host Hive and the CLI reports error
+  `[125]` (unsupported Hive server version), deploy the latest Hive backend before upgrading the
+  CLI.
+
+### Patch Changes
+
+- [#8670](https://github.com/graphql-hive/console/pull/8670)
+  [`e2edb6b`](https://github.com/graphql-hive/console/commit/e2edb6ba53215786d17da7e16840f3562eac0e37)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-7mx3-vvmw-hjmv](https://github.com/advisories/GHSA-7mx3-vvmw-hjmv).
+
+- Updated dependencies
+  [[`e2edb6b`](https://github.com/graphql-hive/console/commit/e2edb6ba53215786d17da7e16840f3562eac0e37)]:
+  - @graphql-hive/core@0.23.1
+
 ## 0.66.0
 
 ### Minor Changes

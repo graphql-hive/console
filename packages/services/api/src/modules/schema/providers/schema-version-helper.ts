@@ -105,7 +105,21 @@ export class SchemaVersionHelper {
     return composition.errors?.length ? composition.errors : null;
   }
 
-  async getCompositeSchemaSdl(schemaVersion: SchemaVersion) {
+  @cache<SchemaVersion>(version => version.id)
+  async getCompositeSchemaSdl(schemaVersion: SchemaVersion): Promise<string | null> {
+    if (!schemaVersion.hasLoadedSDL) {
+      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
+      if (!fullSchemaVersion) {
+        return null;
+      }
+      schemaVersion = {
+        ...schemaVersion,
+        hasLoadedSDL: true,
+        compositeSchemaSDL: fullSchemaVersion.compositeSchemaSDL,
+        supergraphSDL: fullSchemaVersion.supergraphSDL,
+      };
+    }
+
     if (schemaVersion.hasPersistedSchemaChanges) {
       if (!schemaVersion.supergraphSDL) {
         return schemaVersion.compositeSchemaSDL;
@@ -125,7 +139,13 @@ export class SchemaVersionHelper {
     return composition.sdl ?? null;
   }
 
-  async getSupergraphSdl(schemaVersion: SchemaVersion) {
+  @cache<SchemaVersion>(version => version.id)
+  async getSupergraphSdl(schemaVersion: SchemaVersion): Promise<string | null> {
+    if (!schemaVersion.hasLoadedSDL) {
+      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
+      return fullSchemaVersion?.supergraphSDL ?? null;
+    }
+
     if (schemaVersion.hasPersistedSchemaChanges) {
       return schemaVersion.supergraphSDL;
     }
@@ -272,18 +292,6 @@ export class SchemaVersionHelper {
   async getPreviousDiffableSchemaVersion(
     schemaVersion: SchemaVersion,
   ): Promise<SchemaVersion | null> {
-    if (schemaVersion.recordVersion === '2024-01-10') {
-      if (schemaVersion.diffSchemaVersionId) {
-        return await this.schemaManager.getSchemaVersionBySelector({
-          organizationId: schemaVersion.organizationId,
-          projectId: schemaVersion.projectId,
-          targetId: schemaVersion.targetId,
-          versionId: schemaVersion.diffSchemaVersionId,
-        });
-      }
-      return null;
-    }
-
     return await this.schemaManager.getComposableVersionBeforeVersionId(schemaVersion);
   }
 

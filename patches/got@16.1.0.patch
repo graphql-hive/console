@@ -1,0 +1,14 @@
+diff --git a/package.json b/package.json
+index 4305dc2fd8a889358df251cb40da7139ea06253c..1029e1aaba311539d34bc69f57d86c962fd7032f 100644
+--- a/package.json
++++ b/package.json
+@@ -6,8 +6,8 @@
+ 	"repository": "sindresorhus/got",
+ 	"funding": "https://github.com/sindresorhus/got?sponsor=1",
+ 	"type": "module",
++	"types": "./dist/source/index.d.ts",
+ 	"exports": {
+-		"types": "./dist/source/index.d.ts",
+ 		"default": "./dist/source/index.js"
+ 	},
+ 	"sideEffects": false,

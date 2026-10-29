@@ -1,9 +1,13 @@
 import { ContractsManager } from '../providers/contracts-manager';
+import { formatContractName } from '../providers/schema-publisher';
 import type { ContractCheckResolvers } from './../../../__generated__/types';
 
 export const ContractCheck: ContractCheckResolvers = {
   contractVersion: (contractCheck, _, context) => {
     return context.injector.get(ContractsManager).getContractVersionForContractCheck(contractCheck);
+  },
+  contractName(contractCheck) {
+    return formatContractName(contractCheck.contractName);
   },
   compositeSchemaSDL: contractCheck => contractCheck.compositeSchemaSdl,
   supergraphSDL: contractCheck => contractCheck.supergraphSdl,
@@ -32,5 +36,20 @@ export const ContractCheck: ContractCheckResolvers = {
   },
   async baseline(contractCheck, _arg, { injector }) {
     return injector.get(ContractsManager).getContractBaselineForContractCheck(contractCheck);
+  },
+  safeSchemaChangeGroups: (contractCheck, args, { injector }) => {
+    return injector
+      .get(ContractsManager)
+      .getSafeSchemaChangeGroupsForContractCheck(contractCheck, args.kind);
+  },
+  unapprovedBreakingSchemaChangeCount: (contractCheck, _, { injector }) => {
+    return injector
+      .get(ContractsManager)
+      .getUnapprovedBreakingSchemaChangeCountForContractCheck(contractCheck);
+  },
+  breakingSchemaChanges: (contractCheck, args, { injector }) => {
+    return injector
+      .get(ContractsManager)
+      .getBreakingSchemaChangesPageForContractCheck(contractCheck, args);
   },
 };

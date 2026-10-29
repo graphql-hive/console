@@ -26,20 +26,6 @@ the `onModifyHeaders` hook in the same patches is unused.
 
 Retire together with the old laboratory.
 
-## `@graphql-eslint__eslint-plugin@3.20.1.patch`
-
-The policy service lints customer schemas with this plugin at runtime, and `scripts/runify.ts`
-bundles the service with esbuild. Three independent changes:
-
-1. `no-unreachable-types` also visits `extensionASTNodes`, so schemas with `extend type` are not
-   flagged (#7978, #8059).
-2. `relay-edge-types` no longer caches edge types across schemas; the cache leaked one customer's
-   types into the next lint run (#7936).
-3. Removes `createRequire`, graphql-config loading and the testkit export so esbuild can bundle it.
-
-Retire with the eslint 9/10 migration of the policy service. Upstream 4.x still lacks 1 and 2;
-upstream them to `graphql-hive/graphql-eslint` first so only the bundling hunk needs re-cutting.
-
 ## `@slonik__pg-driver@48.19.0.patch`
 
 Returns the last result instead of throwing when one query string holds several statements. Roughly
@@ -50,12 +36,35 @@ Kept on purpose. The hunk is one line and has needed one re-cut since the slonik
 The only way to retire it is rewriting those 60 migrations, which costs more than the patch ever
 will.
 
-## `eslint@8.57.1.patch`
+## `@graphql-tools__executor@1.5.0.patch`
 
-Same bundling reason as the graphql-eslint patch: `require("esquery").default` interop and no
-`require.resolve("espree")` inside the policy service bundle. The root lint run does not need it.
+The `@graphql-tools/utils` override in `package.json` moves every consumer to utils 12. In 12.0.0,
+`collectFields` and `collectSubFields` take `variableValues` as `{ coerced, sources }` instead of
+the flat coerced map, and executor 1.x still passes the flat map. utils then evaluates
+`@include`/`@skip`/`@defer` conditions against no variables, so every operation that uses a variable
+in one of them fails with `... was not provided a runtime value`. The patch wraps the map as
+`{ coerced, sources: {} }` (the shape utils' own `visitResult` builds), memoized per variables
+object so `collectSubFields`' identity-keyed cache keeps hitting.
 
-Retire with the eslint 9/10 migration; re-test the policy service bundle at that point.
+Only `@graphql-hive/router-runtime` (integration tests) pulls executor 1.x in, and it calls just
+`getVariableValues` and `getFragmentsFromDocument`, which do not depend on the changed functions.
+The patch keeps `execute`/`subscribe` correct anyway, so a later caller does not break silently.
+
+Retire with the override, or once nothing depends on executor 1.x.
+
+## `@whatwg-node__fetch@0.12.1.patch`
+
+Re-adds the `crypto` export, as `globalThis.crypto`, to every entry point (node, global and ESM
+ponyfills, the `createFetch()` result, and the typings). 0.12.0 removed it, but the
+`@whatwg-node/fetch` override in `package.json` moves every consumer to 0.12.x, and several still
+read it: `@graphql-tools/executor-http`, `@envelop/response-cache`, `@graphql-hive/gateway-runtime`,
+`@graphql-mesh/transport-http-callback`, `@graphql-mesh/hmac-upstream-signature` (through
+`fetchAPI.crypto`), plus our own `@graphql-hive/core` and one migration. Without it, ESM consumers
+fail to load (`Named export 'crypto' not found`) and CJS consumers throw on first use.
+
+Retire once nothing in the tree reads `crypto` from `@whatwg-node/fetch` or from a `fetchAPI`. Check
+with `grep -rE "\bcrypto\b" node_modules/.pnpm/*/node_modules/<pkg>` for each package that depends
+on fetch.
 
 ## `got@14.4.7.patch`
 

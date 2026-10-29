@@ -9,8 +9,14 @@ export function deployAWSArtifactsLambdaFunction(args: {
   environment: Environment;
   /** Note: We run this mirror only on the AWS S3 Bucket on purpose. */
   s3Mirror: S3;
+  awsIamAuthEnabled?: boolean;
 }) {
+  const envName = args.environment.envName;
+  const accountId = aws.getCallerIdentityOutput().accountId;
+
   const lambdaRole = new aws.iam.Role('awsLambdaArtifactsHandlerRole', {
+    namePrefix: `hive-artifacts-handler-${envName}-`,
+    permissionsBoundary: pulumi.interpolate`arn:aws:iam::${accountId}:policy/hive-artifacts-handler-${envName}-boundary`,
     assumeRolePolicy: {
       Version: '2012-10-17',
       Statement: [
@@ -27,6 +33,27 @@ export function deployAWSArtifactsLambdaFunction(args: {
     role: lambdaRole.name,
     policyArn: aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole,
   });
+
+  if (args.awsIamAuthEnabled) {
+    new aws.iam.RolePolicy('awsLambdaArtifactsS3Access', {
+      role: lambdaRole.id,
+      policy: pulumi.jsonStringify({
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Action: 's3:GetObject',
+            Resource: pulumi.interpolate`arn:aws:s3:::${args.s3Mirror.secret.raw.bucket}/*`,
+          },
+          {
+            Effect: 'Allow',
+            Action: 's3:ListBucket',
+            Resource: pulumi.interpolate`arn:aws:s3:::${args.s3Mirror.secret.raw.bucket}`,
+          },
+        ],
+      }),
+    });
+  }
 
   const awsLambdaArtifactsHandler = new aws.lambda.Function('awsLambdaArtifactsHandler', {
     name: `hive-artifacts-handler-${args.environment.envName}`,
@@ -47,12 +74,15 @@ export function deployAWSArtifactsLambdaFunction(args: {
     region: 'us-east-2',
     environment: {
       variables: {
-        // This could be done better with secrets manager etc.
-        // But it adds a lot of complexity and overhead and runtime logic
         AWS_S3_ENDPOINT: args.s3Mirror.secret.raw.endpoint,
         AWS_S3_BUCKET_NAME: args.s3Mirror.secret.raw.bucket,
-        AWS_S3_ACCESS_KEY_ID: args.s3Mirror.secret.raw.accessKeyId,
-        AWS_S3_ACCESSS_KEY_SECRET: args.s3Mirror.secret.raw.secretAccessKey,
+        AWS_S3_IAM_AUTH_ENABLED: args.awsIamAuthEnabled ? '1' : '0',
+        ...(args.awsIamAuthEnabled === false
+          ? {
+              AWS_S3_ACCESS_KEY_ID: args.s3Mirror.secret.raw.accessKeyId,
+              AWS_S3_ACCESSS_KEY_SECRET: args.s3Mirror.secret.raw.secretAccessKey,
+            }
+          : {}),
       },
     },
     // 448mb

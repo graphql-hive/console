@@ -8,12 +8,16 @@ jobs:
       - name: checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
+          persist-credentials: false
           fetch-depth: 2
 
       - name: setup environment
         uses: ./.github/actions/setup
         with:
           actor: test-unit
+
+      - name: build workspace dependencies
+        run: pnpm turbo build --filter=@graphql-hive/core --filter=@graphql-hive/yoga
 
       - name: unit tests
         run: pnpm test

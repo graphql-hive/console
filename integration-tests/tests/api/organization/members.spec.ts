@@ -1,4 +1,4 @@
-import { pollFor } from 'testkit/flow';
+import { createMemberRole, inviteToOrganization, pollFor, updateMemberRole } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -147,6 +147,9 @@ test.concurrent('can not invite with role not existing in organization', async (
   expect(result).toEqual({
     error: {
       message: 'The provided member role does not exist.',
+      inputErrors: {
+        email: null,
+      },
     },
     ok: null,
   });
@@ -271,3 +274,148 @@ test.concurrent(
     expect(result.organization!.invitations).not.toEqual(null);
   },
 );
+
+test.concurrent('Mutation.inviteToOrganizationByEmail: invalid email', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+  const result = await inviteToOrganization(
+    { organization: { byId: organization.id }, email: 'not-an-email' },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.inviteToOrganizationByEmail.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        email: Must be a valid email address, e.g. jane@example.com,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.inviteToOrganizationByEmail: email too long', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+  const result = await inviteToOrganization(
+    {
+      organization: { byId: organization.id },
+      email: `${'a'.repeat(120)}@example.com`,
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.inviteToOrganizationByEmail.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        email: Email must be at most 128 characters long,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.createMemberRole: name and description too short', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+  const result = await createMemberRole(
+    {
+      organization: { byId: organization.id },
+      name: 'a',
+      description: 'b',
+      selectedPermissions: [],
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createMemberRole.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        description: Role description must be at least 2 characters long,
+        name: Role name must be at least 2 characters long,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.createMemberRole: name and description too long', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+  const result = await createMemberRole(
+    {
+      organization: { byId: organization.id },
+      name: 'a'.repeat(65),
+      description: 'b'.repeat(257),
+      selectedPermissions: [],
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createMemberRole.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        description: Role description must be at most 256 characters long,
+        name: Role name must be at most 64 characters long,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent.each([
+  { label: 'reserved name', name: 'Admin', message: 'Viewer and Admin are reserved' },
+  { label: 'lowercase name', name: 'lowercase', message: 'Must start with a capital letter' },
+])('Mutation.createMemberRole: $label', async ({ name, message }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+
+  const result = await createMemberRole(
+    {
+      organization: { byId: organization.id },
+      name,
+      description: 'A description',
+      selectedPermissions: [],
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createMemberRole.error?.inputErrors?.name).toBe(message);
+});
+
+test.concurrent('Mutation.updateMemberRole: name and description too short', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+  const created = await createMemberRole(
+    {
+      organization: { byId: organization.id },
+      name: 'Some Role',
+      description: 'A description',
+      selectedPermissions: [],
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+  const role = created.createMemberRole.ok?.updatedOrganization.memberRoles?.edges.find(
+    edge => edge.node.name === 'Some Role',
+  )?.node;
+  expect(role).toBeDefined();
+
+  const result = await updateMemberRole(
+    {
+      memberRole: { byId: role!.id },
+      name: 'a',
+      description: 'b',
+      selectedPermissions: [],
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.updateMemberRole.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        description: Role description must be at least 2 characters long,
+        name: Role name must be at least 2 characters long,
+      },
+      message: Please check your input.,
+    }
+  `);
+});

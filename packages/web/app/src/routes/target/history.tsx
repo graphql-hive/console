@@ -1,5 +1,5 @@
 import { SectionPending } from '@/components/layouts/page-pending';
-import { DiffsWorkerPoolProvider } from '@/components/theme/diffs-worker-pool-provider';
+import { DiffsWorkerPoolProvider } from '@/components/ui/diffs';
 import { loadQuery, revalidate } from '@/lib/route-utils';
 import {
   HistoryPage_VersionsPageQuery,

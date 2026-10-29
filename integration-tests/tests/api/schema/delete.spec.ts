@@ -6,6 +6,7 @@ import { initSeed } from 'testkit/seed';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { SchemaVersionStore } from '@hive/api/modules/schema/providers/schema-version-store';
+import { invariant } from '@hive/service-common';
 import { createStorage } from '@hive/storage';
 import { sortSDL } from '@theguild/federation-composition';
 
@@ -129,16 +130,16 @@ test.concurrent(
 test.concurrent(
   'the changes and schema sdl is persisted in the database when the super schema schema is composable',
   async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
     let storage: Awaited<ReturnType<typeof createStorage>> | undefined = undefined;
 
     try {
       storage = await createStorage(connectionString(), 1);
       const schemaVersions = new SchemaVersionStore(storage.pool);
-      const { createOrg } = await initSeed().createOwner();
-      const { createProject, organization } = await createOrg();
-      const { createTargetAccessToken, project, target } = await createProject(
-        ProjectType.Federation,
-      );
+      const graphStore = await seed.getGraphStore();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
 
       const readToken = await createTargetAccessToken({});
 
@@ -173,7 +174,9 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+      const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+      invariant(graph, 'Graph must exist.');
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
       assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toMatchInlineSnapshot(`
@@ -221,12 +224,14 @@ test.concurrent(
 test.concurrent(
   'composition error is persisted in the database when the supergraph is not composable',
   async ({ expect }) => {
+    const seed = initSeed();
     let storage: Awaited<ReturnType<typeof createStorage>> | undefined = undefined;
 
     try {
       storage = await createStorage(connectionString(), 1);
+      const graphStore = await seed.getGraphStore();
       const schemaVersions = new SchemaVersionStore(storage.pool);
-      const { createOrg, ownerToken } = await initSeed().createOwner();
+      const { createOrg, ownerToken } = await seed.createOwner();
       const { createProject, organization } = await createOrg();
       const { createTargetAccessToken, project, target, setNativeFederation } = await createProject(
         ProjectType.Federation,
@@ -308,7 +313,9 @@ test.concurrent(
         .then(r => r.expectNoGraphQLErrors());
       expect(deleteServiceResult.schemaDelete.__typename).toBe('SchemaDeleteSuccess');
 
-      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForTargetId(target.id);
+      const graph = await graphStore.findGraphForTargetIdByName(target.id, 'default');
+      invariant(graph, 'Graph must exist.');
+      const latestVersion = await schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
       assertNonNull(latestVersion);
 
       expect(latestVersion.compositeSchemaSDL).toEqual(null);

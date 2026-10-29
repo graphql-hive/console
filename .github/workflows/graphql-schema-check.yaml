@@ -23,6 +23,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
+          persist-credentials: false
           fetch-depth: 2
 
       - name: setup environment
@@ -38,7 +39,15 @@ jobs:
       - name: schema check
         env:
           HIVE_TOKEN: ${{ secrets.hiveToken }}
+          HIVE_CLI_VERSION: 0.68.2
+          HIVE_CLI_SHA512: 643c02e88d2041f26ec12260dd39ebe8f934992e5e7ca3ccba974514532389ce6fa7bf06c0481a0064be546521ebf383e52b2cac47e73739a1c498245ba460fc
         run: |
-          curl -sSL https://graphql-hive.com/install.sh | sh
-          hive schema:check "schema.graphql" ${{steps.pr-label-check.outputs.safeFlag }} \
+          set -euo pipefail
+          archive="hive-v${HIVE_CLI_VERSION}-linux-x64.tar.gz"
+          curl --fail --location --silent --show-error \
+            "https://github.com/graphql-hive/console/releases/download/%40graphql-hive%2Fcli%40${HIVE_CLI_VERSION}/${archive}" \
+            --output "$archive"
+          printf '%s  %s\n' "$HIVE_CLI_SHA512" "$archive" | sha512sum -c -
+          tar -xzf "$archive"
+          node ./hive/bin/run schema:check "schema.graphql" ${{steps.pr-label-check.outputs.safeFlag }} \
             --service "graphql"

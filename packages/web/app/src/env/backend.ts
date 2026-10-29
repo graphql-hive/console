@@ -44,13 +44,12 @@ const BaseSchema = zod.object({
   PORT: emptyString(NumberFromString().optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  APP_BASE_URL: zod.string().url(),
-  GRAPHQL_PUBLIC_ENDPOINT: zod.string().url(),
-  GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.string().url(),
-  GRAPHQL_PUBLIC_ORIGIN: zod.string().url(),
-  INTEGRATION_GITHUB_APP_NAME: emptyString(zod.string().optional()),
+  APP_BASE_URL: zod.url(),
+  GRAPHQL_PUBLIC_ENDPOINT: zod.url(),
+  GRAPHQL_PUBLIC_SUBSCRIPTION_ENDPOINT: zod.url(),
+  GRAPHQL_PUBLIC_ORIGIN: zod.url(),
   GA_TRACKING_ID: emptyString(zod.string().optional()),
-  DOCS_URL: emptyString(zod.string().url().optional()),
+  DOCS_URL: emptyString(zod.url().optional()),
   STRIPE_PUBLIC_KEY: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   AUTH_REQUIRE_EMAIL_VERIFICATION: emptyString(
@@ -61,17 +60,6 @@ const BaseSchema = zod.object({
   ),
   ZENDESK_SUPPORT: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
 });
-
-const IntegrationSlackSchema = zod.union([
-  zod.object({
-    INTEGRATION_SLACK: emptyString(zod.literal('0').optional()),
-  }),
-  zod.object({
-    INTEGRATION_SLACK: zod.literal('1'),
-    INTEGRATION_SLACK_CLIENT_ID: zod.string(),
-    INTEGRATION_SLACK_CLIENT_SECRET: zod.string(),
-  }),
-]);
 
 const AuthGitHubConfigSchema = zod.object({
   AUTH_GITHUB: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
@@ -92,7 +80,7 @@ const AuthOktaMultiTenantSchema = zod.object({
 
 const SentryConfigSchema = zod.union([
   zod.object({
-    SENTRY: zod.union([zod.void(), zod.literal('0')]),
+    SENTRY: zod.literal('0').optional(),
   }),
   zod.object({
     SENTRY: zod.literal('1'),
@@ -101,13 +89,7 @@ const SentryConfigSchema = zod.union([
 ]);
 
 const MigrationsSchema = zod.object({
-  MEMBER_ROLES_DEADLINE: emptyString(
-    zod
-      .date({
-        coerce: true,
-      })
-      .optional(),
-  ),
+  MEMBER_ROLES_DEADLINE: emptyString(zod.coerce.date().optional()),
 });
 
 const LogModel = zod.object({
@@ -132,7 +114,6 @@ const processEnv = process.env;
 function buildConfig() {
   const configs = {
     base: BaseSchema.safeParse(processEnv),
-    integrationSlack: IntegrationSlackSchema.safeParse(processEnv),
     sentry: SentryConfigSchema.safeParse(processEnv),
     authGithub: AuthGitHubConfigSchema.safeParse(processEnv),
     authGoogle: AuthGoogleConfigSchema.safeParse(processEnv),
@@ -146,7 +127,7 @@ function buildConfig() {
 
   for (const config of Object.values(configs)) {
     if (config.success === false) {
-      environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+      environmentErrors.push(zod.prettifyError(config.error));
     }
   }
 
@@ -156,7 +137,7 @@ function buildConfig() {
     process.exit(1);
   }
 
-  function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
+  function extractConfig<Output>(config: zod.ZodSafeParseResult<Output>): Output {
     if (!config.success) {
       throw new Error('Something went wrong.');
     }
@@ -164,7 +145,6 @@ function buildConfig() {
   }
 
   const base = extractConfig(configs.base);
-  const integrationSlack = extractConfig(configs.integrationSlack);
   const sentry = extractConfig(configs.sentry);
   const authGithub = extractConfig(configs.authGithub);
   const authGoogle = extractConfig(configs.authGoogle);
@@ -188,14 +168,6 @@ function buildConfig() {
     log: {
       level: log.LOG_LEVEL ?? 'info',
     },
-    slack:
-      integrationSlack.INTEGRATION_SLACK === '1'
-        ? {
-            clientId: integrationSlack.INTEGRATION_SLACK_CLIENT_ID,
-            clientSecret: integrationSlack.INTEGRATION_SLACK_CLIENT_SECRET,
-          }
-        : null,
-    github: base.INTEGRATION_GITHUB_APP_NAME ? { appName: base.INTEGRATION_GITHUB_APP_NAME } : null,
     analytics: {
       googleAnalyticsTrackingId: base.GA_TRACKING_ID,
     },

@@ -4,6 +4,13 @@ on:
       dockerize:
         default: true
         type: boolean
+      pushImages:
+        description:
+          Push the images to the registry. When false, the images are built without registry
+          credentials and the linux/amd64 images are uploaded as the "docker-images" workflow
+          artifact instead (e.g. for Dependabot PRs, which must not get registry write access).
+        default: true
+        type: boolean
       uploadJavaScriptArtifacts:
         type: boolean
         default: false
@@ -62,6 +69,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
+          persist-credentials: false
           fetch-depth: 2
 
       - name: setup environment
@@ -140,7 +148,7 @@ jobs:
           ${{ inputs.uploadJavaScriptArtifacts && inputs.publishLatest && github.ref_type == 'tag'
           && github.ref_name == format('hive@{0}', inputs.latestVersion) && matrix.platform ==
           'linux/amd64' }}
-        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: hive-cdn-release-artifacts
           path: |
@@ -180,10 +188,10 @@ jobs:
 
       - name: configure docker buildx
         if: ${{ inputs.dockerize }}
-        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: login to docker registry
-        if: ${{ inputs.dockerize }}
+        if: ${{ inputs.dockerize && inputs.pushImages }}
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3
         with:
           registry: ${{ inputs.registry }}
@@ -241,12 +249,14 @@ jobs:
           PWD: ${{ github.workspace }}
           BUILD_STABLE: ${{ inputs.publishLatest && '1' || '' }}
           BUILD_PLATFORM: ${{ matrix.platform }}
-          IMAGE_SUFFIX: ${{ matrix.suffix }}
+          # local images are tagged without the arch suffix, as there is no multiarch manifest
+          IMAGE_SUFFIX: ${{ inputs.pushImages && matrix.suffix || '' }}
           NODE_VERSION_TAG: ${{ steps.node-version-tag.outputs.value }}
         with:
           # See https://github.com/docker/buildx/issues/1533
           provenance: false
-          push: true
+          push: ${{ inputs.pushImages }}
+          load: ${{ !inputs.pushImages }}
           files: docker/docker.hcl
           targets: ${{ inputs.targets }}
           source: .
@@ -255,10 +265,40 @@ jobs:
             *.cache-from=type=gha,ignore-error=true,scope=refs_heads_main-${{ inputs.targets }}-${{ matrix.platform == 'linux/amd64' && 'linux_amd64' || 'linux_arm64' }}
             *.cache-to=type=gha,mode=max,ignore-error=true,scope=${{ steps.docker_cache_key.outputs.replaced }}
 
+      - name: save docker images
+        if: ${{ inputs.dockerize && !inputs.pushImages && matrix.platform == 'linux/amd64' }}
+        env:
+          TARGETS: ${{ inputs.targets }}
+          REGISTRY: ${{ inputs.registry }}
+          IMAGE_NAME: ${{ inputs.imageName }}
+          IMAGE_TAG: ${{ inputs.imageTag }}
+        run: |
+          targets=$(docker buildx bake -f docker/docker.hcl --print "$TARGETS" | jq -r '.group."'"$TARGETS"'".targets[]')
+
+          images=()
+          for target in $targets
+          do
+              images+=("$REGISTRY/$IMAGE_NAME/$target:$IMAGE_TAG")
+          done
+
+          docker save "${images[@]}" | gzip -1 > docker-images.tar.gz
+          ls -lh docker-images.tar.gz
+
+      - name: upload docker images artifact
+        if: ${{ inputs.dockerize && !inputs.pushImages && matrix.platform == 'linux/amd64' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: docker-images
+          path: docker-images.tar.gz
+          retention-days: 1
+          # already gzipped
+          compression-level: 0
+
       - name: docker details pr comment
         uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2
         if:
-          ${{ inputs.dockerize && github.event_name == 'pull_request' && inputs.publishPrComment }}
+          ${{ inputs.dockerize && inputs.pushImages && github.event_name == 'pull_request' &&
+          inputs.publishPrComment }}
         with:
           header: ${{ github.workflow }}
           message: |
@@ -306,12 +346,16 @@ jobs:
   publish_docker_manifest:
     needs: build-and-dockerize
     runs-on: ubuntu-22.04
-    if: ${{ inputs.dockerize }}
+    if: ${{ inputs.dockerize && inputs.pushImages }}
     name: publish multiarch manifest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
+          persist-credentials: false
           fetch-depth: 2
 
       - name: configure Docker Node.js image tag
@@ -319,7 +363,7 @@ jobs:
         run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
 
       - name: configure docker buildx
-        uses: docker/setup-buildx-action@6524bf65af31da8d45b59e8c27de4bd072b392f5 # v3.8.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: login to docker registry
         if: ${{ inputs.dockerize }}

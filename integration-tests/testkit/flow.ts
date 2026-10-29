@@ -247,6 +247,9 @@ export function inviteToOrganization(input: InviteToOrganizationByEmailInput, au
           }
           error {
             message
+            inputErrors {
+              email
+            }
           }
         }
       }
@@ -491,6 +494,12 @@ export function createProject(input: CreateProjectInput, authToken: string) {
               name
             }
           }
+          error {
+            message
+            inputErrors {
+              slug
+            }
+          }
         }
       }
     `),
@@ -539,6 +548,9 @@ export function createTarget(input: CreateTargetInput, authToken: string) {
           }
           error {
             message
+            inputErrors {
+              slug
+            }
           }
         }
       }
@@ -590,6 +602,9 @@ export function createToken(input: CreateTokenInput, authToken: string) {
             createdToken {
               id
             }
+          }
+          error {
+            message
           }
         }
       }
@@ -1240,6 +1255,13 @@ export function getSchemaVersionWithAllDetails(
                   previousContractVersion {
                     id
                   }
+                  breakingSchemaChanges {
+                    edges {
+                      node {
+                        message
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -1495,6 +1517,8 @@ export function updateTargetValidationSettings(
             inputErrors {
               percentage
               period
+              requestCount
+              targetIds
             }
           }
         }
@@ -2111,7 +2135,11 @@ export function compareToPreviousVersion(
   });
 }
 
-export function createCdnAccess(selector: TargetSelectorInput, token: string) {
+export function createCdnAccess(
+  selector: TargetSelectorInput,
+  token: string,
+  alias = 'CDN Access Token',
+) {
   return execute({
     document: graphql(`
       mutation createCdnAccessToken($input: CreateCdnAccessTokenInput!) {
@@ -2128,7 +2156,7 @@ export function createCdnAccess(selector: TargetSelectorInput, token: string) {
     `),
     token,
     variables: {
-      input: { target: { bySelector: selector }, alias: 'CDN Access Token' },
+      input: { target: { bySelector: selector }, alias },
     },
   });
 }
@@ -2230,6 +2258,63 @@ export async function updateSchemaComposition(input: UpdateSchemaCompositionInpu
       input,
     },
     token,
+  });
+}
+
+export function updateTargetGraphQLEndpointUrl(
+  input: GraphQLSchema.UpdateTargetGraphQlEndpointUrlInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation updateTargetGraphQLEndpointUrl($input: UpdateTargetGraphQLEndpointUrlInput!) {
+        updateTargetGraphQLEndpointUrl(input: $input) {
+          ok {
+            target {
+              id
+              graphqlEndpointUrl
+            }
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
+  });
+}
+
+export function createSchemaProposal(
+  input: GraphQLSchema.CreateSchemaProposalInput,
+  authToken: string,
+) {
+  return execute({
+    document: graphql(`
+      mutation createSchemaProposal($input: CreateSchemaProposalInput!) {
+        createSchemaProposal(input: $input) {
+          ok {
+            schemaProposal {
+              id
+            }
+          }
+          error {
+            message
+            details {
+              title
+              description
+            }
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
   });
 }
 
@@ -2652,6 +2737,10 @@ export function updateMe(input: GraphQLSchema.UpdateMeInput, authToken: string) 
         updateMe(input: $input) {
           error {
             message
+            inputErrors {
+              displayName
+              fullName
+            }
           }
           ok {
             updatedUser {

@@ -4,9 +4,17 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import { AlertsManager } from '../../providers/alerts-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-const AlertChannelNameModel = z.string().min(1).max(100);
-const SlackChannelNameModel = z.string().min(1).max(80);
-const MaybeModel = <T extends z.ZodType>(value: T) => z.union([z.null(), z.undefined(), value]);
+const AlertChannelNameModel = z
+  .string()
+  .min(1, 'Name is required')
+  .max(100, 'Name must be at most 100 characters long');
+const SlackChannelNameModel = z
+  .string()
+  .min(1, 'Slack channel is required, e.g. #alerts')
+  .max(80, 'Slack channel must be at most 80 characters long');
+const WebhookEndpointModel = z
+  .url('Must be a valid URL, e.g. https://example.com/webhook')
+  .max(500, 'URL must be at most 500 characters long');
 
 export const addAlertChannel: NonNullable<MutationResolvers['addAlertChannel']> = async (
   _,
@@ -14,21 +22,23 @@ export const addAlertChannel: NonNullable<MutationResolvers['addAlertChannel']> 
   { injector },
 ) => {
   const AddAlertChannelModel = z.object({
-    slack: MaybeModel(z.object({ channel: SlackChannelNameModel })),
-    webhook: MaybeModel(z.object({ endpoint: z.string().url().max(500) })),
+    slack: z.object({ channel: SlackChannelNameModel }).nullish(),
+    webhook: z.object({ endpoint: WebhookEndpointModel }).nullish(),
     name: AlertChannelNameModel,
   });
 
   const result = AddAlertChannelModel.safeParse(input);
 
   if (!result.success) {
+    const errors = z.flattenError(result.error).fieldErrors;
+
     return {
       error: {
         message: 'Please check your input.',
         inputErrors: {
-          slackChannel: result.error.formErrors.fieldErrors.slack?.[0],
-          webhookEndpoint: result.error.formErrors.fieldErrors.webhook?.[0],
-          name: result.error.formErrors.fieldErrors.name?.[0],
+          slackChannel: errors.slack?.[0],
+          webhookEndpoint: errors.webhook?.[0],
+          name: errors.name?.[0],
         },
       },
     };

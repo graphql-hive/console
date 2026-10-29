@@ -8,7 +8,6 @@ import {
   UserLock,
   UserRound,
   UserRoundX,
-  UsersIcon,
 } from 'lucide-react';
 import { useMutation, type UseQueryExecute } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
@@ -17,7 +16,6 @@ import { Callout } from '@/components/ui/callout';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
-import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
 import { CopyChip } from '@/components/ui/primitives/copy-chip/copy-chip';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
@@ -32,73 +30,10 @@ import { cn } from '@/lib/utils';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { MemberInvitationButton } from './invitations';
+import { MemberGroups } from './member-groups';
 import { MemberRolePicker } from './member-role-picker';
 
 const membersRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
-
-const MemberGroups_GroupFragment = graphql(`
-  fragment MemberGroups_GroupFragment on Group {
-    id
-    name
-  }
-`);
-
-function MemberGroups(props: { groups: Array<FragmentType<typeof MemberGroups_GroupFragment>> }) {
-  const groups = useFragment(MemberGroups_GroupFragment, props.groups);
-  // Show first 2 groups, then +N more
-  const visibleGroups = groups.slice(0, 2);
-  const remainingCount = groups.length - 2;
-
-  if (groups.length === 0) {
-    return (
-      <Tooltip
-        trigger={
-          <div className="flex w-fit items-center gap-1.5">
-            <UsersIcon className="h-3.5 w-3.5" />
-            <span className="text-xs">Groups: none</span>
-          </div>
-        }
-        content="Groups can be assigned via the SCIM provider."
-      />
-    );
-  }
-
-  return (
-    <div className="flex w-fit items-center gap-2">
-      <div className="flex items-center gap-1.5">
-        <UsersIcon className="h-3.5 w-3.5" />
-        <span className="text-xs">Groups:</span>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-1.5">
-        {visibleGroups.map(group => (
-          <Badge key={group.id} content={group.name} />
-        ))}
-        {remainingCount > 0 && (
-          <Popover
-            trigger={
-              <button type="button" aria-label="All groups">
-                <Badge variants={{ variant: 'outline' }} content={`+${remainingCount} more`} />
-              </button>
-            }
-            openOnHover
-            side="top"
-            width="auto"
-            content={
-              <ul className="space-y-1 text-left">
-                {groups.slice(2).map(group => (
-                  <li key={group.id}>
-                    <Badge content={group.name} />
-                  </li>
-                ))}
-              </ul>
-            }
-          />
-        )}
-      </div>
-    </div>
-  );
-}
 
 export const authProviderToIconAndTextMap: Record<
   GraphQLSchema.AuthProviderType,
@@ -401,7 +336,7 @@ function MemberRoleCell(props: {
                   </span>
                 </div>
               </div>
-              <MemberGroups groups={member.groups ?? []} />
+              <MemberGroups groups={member.groups ?? []} layout="all" />
             </div>
           </AlertDialog>
         )}

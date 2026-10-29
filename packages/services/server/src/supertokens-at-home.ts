@@ -25,12 +25,18 @@ import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-
 import type { OIDCIntegration } from '@hive/api/shared/entities';
 import { Encryptor } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
-import { PasswordResetTask } from '@hive/workflows/tasks/password-reset';
+import {
+  PASSWORD_RESET_LINK_VALID_MINUTES,
+  PasswordResetTask,
+} from '@hive/workflows/tasks/password-reset';
 import { env } from './environment';
-import { createNewSession, createOIDCState, validatePassword } from './supertokens-at-home/shared';
+import { createBrokerFetch } from './oauth-fetch';
+import { createNewSession, validatePassword } from './supertokens-at-home/shared';
 import type { WorkloadIdentityFederationProvider } from './workload-identity-federation';
 
 type BroadcastOIDCIntegrationLog = (oidcOrganizationId: string, message: string) => void;
+
+const oauthFetch = createBrokerFetch(fetch, env.requestBroker);
 
 /**
  * Registers the routes of the Supertokens at Home implementation to a fastify instance.
@@ -125,7 +131,7 @@ export async function registerSupertokensAtHome(
 
   const OIDCIdLookupSchema = z.object({
     slug: z.string({
-      required_error: 'Slug is required',
+      error: issue => (issue.input === undefined ? 'Slug is required' : undefined),
     }),
   });
 
@@ -212,7 +218,7 @@ export async function registerSupertokensAtHome(
       const password =
         parsedBody.data.formFields.find(field => field.id === 'password')?.value ?? '';
 
-      const emailResult = z.string().email().toLowerCase().safeParse(rawEmail);
+      const emailResult = z.email().toLowerCase().safeParse(rawEmail);
 
       // Verify email
       if (!emailResult.success) {
@@ -499,7 +505,7 @@ export async function registerSupertokensAtHome(
       await supertokensStore.createEmailPasswordResetToken({
         user,
         token: sha256(token),
-        expiresAt: Date.now() + 15 * 60 * 1000,
+        expiresAt: Date.now() + PASSWORD_RESET_LINK_VALID_MINUTES * 60 * 1000,
       });
 
       const passwordResetLink = new URL(env.hiveServices.webApp.url);
@@ -726,7 +732,6 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const state = oidClient.randomState();
         const pkceVerifier = oidClient.randomPKCECodeVerifier();
         const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
 
@@ -736,15 +741,15 @@ export async function registerSupertokensAtHome(
         authorizeUrl.searchParams.set('client_id', env.auth.github.clientId);
         authorizeUrl.searchParams.set('redirect_uri', redirectUrl.toString());
         authorizeUrl.searchParams.set('scope', ['read:user', 'user:email'].join(' '));
-        authorizeUrl.searchParams.set('state', state);
         authorizeUrl.searchParams.set('code_challenge', codeChallenge);
         authorizeUrl.searchParams.set('code_challenge_method', 'S256');
 
-        await oauthCache.put(state, {
+        const state = await oauthCache.put({
           method: 'github',
           oidIntegrationId: null,
           pkceVerifier,
         });
+        authorizeUrl.searchParams.set('state', state);
 
         return rep.send({
           status: 'OK',
@@ -760,7 +765,6 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const state = oidClient.randomState();
         const pkceVerifier = oidClient.randomPKCECodeVerifier();
         const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
 
@@ -778,16 +782,15 @@ export async function registerSupertokensAtHome(
             'openid',
           ].join(' '),
         );
-        authorizeUrl.searchParams.set('state', state);
-        authorizeUrl.searchParams.set('state', state);
         authorizeUrl.searchParams.set('code_challenge', codeChallenge);
         authorizeUrl.searchParams.set('code_challenge_method', 'S256');
 
-        await oauthCache.put(state, {
+        const state = await oauthCache.put({
           method: 'google',
           oidIntegrationId: null,
           pkceVerifier,
         });
+        authorizeUrl.searchParams.set('state', state);
 
         return rep.send({
           status: 'OK',
@@ -803,7 +806,6 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const state = oidClient.randomState();
         const pkceVerifier = oidClient.randomPKCECodeVerifier();
         const codeChallenge = await oidClient.calculatePKCECodeChallenge(pkceVerifier);
 
@@ -819,16 +821,15 @@ export async function registerSupertokensAtHome(
           'scope',
           ['openid', 'email', 'profile', 'okta.users.read.self'].join(' '),
         );
-        authorizeUrl.searchParams.set('state', state);
-        authorizeUrl.searchParams.set('state', state);
         authorizeUrl.searchParams.set('code_challenge', codeChallenge);
         authorizeUrl.searchParams.set('code_challenge_method', 'S256');
 
-        await oauthCache.put(state, {
+        const state = await oauthCache.put({
           method: 'okta',
           oidIntegrationId: null,
           pkceVerifier,
         });
+        authorizeUrl.searchParams.set('state', state);
 
         return rep.send({
           status: 'OK',
@@ -844,7 +845,7 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        if (!z.string().uuid().safeParse(query.data.oidc_id).success) {
+        if (!z.uuid().safeParse(query.data.oidc_id).success) {
           return rep.status(200).send({
             status: 'GENERAL_ERROR',
             message: 'Something went wrong. Please try again',
@@ -901,14 +902,12 @@ export async function registerSupertokensAtHome(
         };
 
         let redirectTo = oidClient.buildAuthorizationUrl(oidClientConfig, parameters);
-        const state = createOIDCState();
-
-        redirectTo.searchParams.set('state', state);
-        await oauthCache.put(state, {
+        const state = await oauthCache.put({
           method: 'oidc',
           oidIntegrationId: oidcIntegration.id,
           pkceVerifier,
         });
+        redirectTo.searchParams.set('state', state);
 
         broadcastLog(
           oidcIntegration.id,
@@ -980,7 +979,7 @@ export async function registerSupertokensAtHome(
           scope: z.string(),
         });
 
-        const accessTokenResponse = await fetch(accessTokenUrl.toString(), {
+        const accessTokenResponse = await oauthFetch(accessTokenUrl.toString(), {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
@@ -1011,7 +1010,7 @@ export async function registerSupertokensAtHome(
           id: z.number(),
         });
 
-        const userInfoResponse = await fetch('https://api.github.com/user', {
+        const userInfoResponse = await oauthFetch('https://api.github.com/user', {
           method: 'GET',
           headers: {
             accept: 'application/vnd.github+json',
@@ -1045,7 +1044,7 @@ export async function registerSupertokensAtHome(
           thirdPartyUserId: String(userInfoBody.id),
         });
 
-        const emailsResponse = await fetch('https://api.github.com/user/emails', {
+        const emailsResponse = await oauthFetch('https://api.github.com/user/emails', {
           method: 'GET',
           headers: {
             accept: 'application/vnd.github+json',
@@ -1134,7 +1133,7 @@ export async function registerSupertokensAtHome(
           scope: z.string(),
         });
 
-        const accessTokenResponse = await fetch(accessTokenUrl.toString(), {
+        const accessTokenResponse = await oauthFetch(accessTokenUrl.toString(), {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
@@ -1170,7 +1169,7 @@ export async function registerSupertokensAtHome(
           email: z.string(),
         });
 
-        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        const userInfoResponse = await oauthFetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           method: 'GET',
           headers: {
             accept: 'application/json',
@@ -1253,7 +1252,7 @@ export async function registerSupertokensAtHome(
           access_token: z.string(),
         });
 
-        const grantResponse = await fetch(env.auth.okta.endpoint + '/oauth2/v1/token', {
+        const grantResponse = await oauthFetch(env.auth.okta.endpoint + '/oauth2/v1/token', {
           method: 'POST',
           headers: {
             'content-type': 'application/x-www-form-urlencoded',
@@ -1304,7 +1303,7 @@ export async function registerSupertokensAtHome(
 
         const accessToken = grantBodyResult.data.access_token;
 
-        const response = await fetch(`${env.auth.okta.endpoint}/api/v1/users/me`, {
+        const response = await oauthFetch(`${env.auth.okta.endpoint}/api/v1/users/me`, {
           method: 'GET',
           headers: {
             'content-type': 'application/json',
@@ -1378,7 +1377,7 @@ export async function registerSupertokensAtHome(
 
         const cacheRecord = await oauthCache.get(state);
 
-        if (!cacheRecord?.oidIntegrationId || cacheRecord.method !== 'oidc') {
+        if (cacheRecord?.method !== 'oidc') {
           req.log.debug('failed looking up pending oauth cache record.');
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
@@ -1450,7 +1449,7 @@ export async function registerSupertokensAtHome(
           grantParams['client_secret'] = crypto.decrypt(oidcIntegration.encryptedClientSecret);
         }
 
-        const grantResponse = await fetch(oidcIntegration.tokenEndpoint, {
+        const grantResponse = await oauthFetch(oidcIntegration.tokenEndpoint, {
           method: 'POST',
           headers: {
             'content-type': 'application/x-www-form-urlencoded',
@@ -1508,7 +1507,7 @@ export async function registerSupertokensAtHome(
         req.log.debug('successfully exchanged code for access token ');
         req.log.debug('attempt fetching user info');
 
-        const userInfoResponse = await fetch(oidcIntegration.userinfoEndpoint, {
+        const userInfoResponse = await oauthFetch(oidcIntegration.userinfoEndpoint, {
           method: 'GET',
           headers: {
             authorization: `Bearer ${codeGrantAccessToken}`,
@@ -1547,7 +1546,7 @@ export async function registerSupertokensAtHome(
           });
         }
 
-        const userInfoBody = z.record(z.unknown()).safeParse(userInfoBodyJSON.data);
+        const userInfoBody = z.record(z.string(), z.unknown()).safeParse(userInfoBodyJSON.data);
 
         if (!userInfoBody.success) {
           req.log.debug('received invalid JSON body from user info endpoint');

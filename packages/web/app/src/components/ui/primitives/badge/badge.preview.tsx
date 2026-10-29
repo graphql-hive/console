@@ -1,3 +1,4 @@
+import { ActivityIcon, BoxIcon, CheckIcon, TriangleAlertIcon } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Badge } from './badge';
 
@@ -91,6 +92,55 @@ function CompositionErrorText(props: { padding: 'default' | 'tight' }) {
  * `tight` drops the vertical padding for a badge inside running text, so a wrapped line of
  * badges doesn't touch the one above. Shown with a composition error from a schema check.
  */
+/** A leading icon takes the badge's text colour, at a size matched to the badge's. */
+export const WithIcon = createPreview(() => (
+  <div className="flex flex-col gap-3">
+    <div className="flex items-center gap-2">
+      <Badge icon={ActivityIcon} content="2 clients" variants={{ variant: 'critical' }} />
+      <Badge icon={TriangleAlertIcon} content="Unapproved" variants={{ variant: 'warning' }} />
+      <Badge icon={CheckIcon} content="Approved" variants={{ variant: 'success' }} />
+      <Badge icon={ActivityIcon} content="Outline" variants={{ variant: 'outline' }} />
+    </div>
+    <div className="flex items-center gap-2">
+      <Badge
+        icon={ActivityIcon}
+        content="1 client"
+        variants={{ variant: 'critical', size: 'sm' }}
+      />
+      <Badge icon={CheckIcon} content="sm" variants={{ variant: 'success', size: 'sm' }} />
+    </div>
+  </div>
+));
+
+// A short badge with its full sentence on hover.
+export const WithTooltip = createPreview(() => (
+  <div className="flex items-center gap-2">
+    <Badge
+      icon={ActivityIcon}
+      content="2 clients"
+      tooltip="10+ operations by 2 clients affected"
+      variants={{ variant: 'critical' }}
+    />
+    <Badge
+      icon={BoxIcon}
+      content="101 deployments"
+      tooltip="101 app deployments affected"
+      variants={{ variant: 'warning' }}
+    />
+    <Badge
+      icon={CheckIcon}
+      content="Approved"
+      tooltip="Approved by User on 20th October 2026"
+      variants={{ variant: 'success' }}
+    />
+    <Badge
+      content="Usage not tracked"
+      tooltip="Usage isn't tracked for this kind of change, so it can't be called safe"
+      variants={{ variant: 'secondary' }}
+    />
+  </div>
+));
+
 export const Padding = createPreview(() => (
   <div className="flex gap-8">
     <div className="flex flex-col gap-2">

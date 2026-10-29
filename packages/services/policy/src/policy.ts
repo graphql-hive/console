@@ -1,7 +1,9 @@
 import Ajv from 'ajv';
-import { Linter } from 'eslint';
-import { z, ZodType } from 'zod';
-import { GraphQLESLintRule, parseForESLint, rules } from '@graphql-eslint/eslint-plugin';
+import { z } from 'zod';
+import { lint } from './engine/linter';
+import type { RuleSeverity } from './engine/linter';
+import { rules } from './engine/rules';
+import type { GraphQLESLintRule } from './engine/types';
 import { RELEVANT_RULES } from './rules';
 
 const ajv = new Ajv({
@@ -11,22 +13,18 @@ const ajv = new Ajv({
   verbose: true,
   allowMatchingProperties: true,
 });
-const linter = new Linter();
-linter.defineParser('@graphql-eslint/eslint-plugin', { parseForESLint });
-
-for (const [ruleId, rule] of Object.entries(rules)) {
-  linter.defineRule(ruleId, rule as any);
-}
 
 const RULE_LEVEL = z.union([z.number().min(0).max(2), z.enum(['off', 'warn', 'error'])]);
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type RuleConfiguration = [RuleSeverity, ...JsonValue[]];
 
 type RulemapValidationType = {
-  [_RuleKey in keyof typeof rules]: ZodType;
+  [_RuleKey in keyof typeof rules]: z.ZodType<RuleConfiguration>;
 };
 
 export function normalizeAjvSchema(
   schema: GraphQLESLintRule['meta']['schema'],
-): GraphQLESLintRule['meta']['schema'] {
+): GraphQLESLintRule['meta']['schema'] | null {
   if (Array.isArray(schema)) {
     if (schema.length === 0) {
       return null;
@@ -45,43 +43,54 @@ export function normalizeAjvSchema(
 
 export function createInputValidationSchema() {
   return z
-    .object(
+    .strictObject(
       RELEVANT_RULES.reduce((acc, [name, rule]) => {
         const schema = normalizeAjvSchema(rule.meta.schema);
         const validate = schema ? ajv.compile(schema) : null;
+
+        if (!validate) {
+          return {
+            ...acc,
+            [name]: z.tuple([RULE_LEVEL], {
+              error: issue =>
+                issue.code === 'too_big'
+                  ? 'This rule does not accept any configuration'
+                  : undefined,
+            }) as z.ZodType<RuleConfiguration>,
+          };
+        }
 
         return {
           ...acc,
           [name]: z.union([
             z.tuple([RULE_LEVEL]),
-            z.tuple(
-              validate
-                ? [
-                    RULE_LEVEL,
-                    z.custom(data => {
-                      const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
-                      const result = validate(asArray);
+            z.tuple([
+              RULE_LEVEL,
+              z.custom(data => {
+                const asArray = (Array.isArray(data) ? data : [data]).filter(Boolean);
+                const result = validate(asArray);
 
-                      if (result) {
-                        return true;
-                      }
+                if (result) {
+                  return true;
+                }
 
-                      throw new Error(
-                        `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
-                          validate.errors,
-                        )}`,
-                      );
-                    }),
-                  ]
-                : [RULE_LEVEL],
-            ),
-          ]),
+                throw new Error(
+                  `Failed to validate rule "${name}" configuration: ${ajv.errorsText(
+                    validate.errors,
+                  )}`,
+                );
+              }),
+            ]),
+          ]) as z.ZodType<RuleConfiguration>,
         };
       }, {} as RulemapValidationType),
+      {
+        error: issue =>
+          issue.code === 'unrecognized_keys' ? 'Unknown rule name passed' : undefined,
+      },
     )
     .required()
-    .partial()
-    .strict('Unknown rule name passed');
+    .partial();
 }
 
 export type PolicyConfigurationObject = z.infer<ReturnType<typeof createInputValidationSchema>>;
@@ -91,13 +100,5 @@ export async function schemaPolicyCheck(input: {
   schema: string;
   policy: PolicyConfigurationObject;
 }) {
-  return linter.verify(
-    input.source,
-    {
-      parser: '@graphql-eslint/eslint-plugin',
-      parserOptions: { schema: input.schema },
-      rules: input.policy,
-    },
-    'schema.graphql',
-  );
+  return lint({ source: input.source, schema: input.schema, rules: input.policy });
 }

@@ -16,6 +16,10 @@ jobs:
           POSTGRES_DB: registry
         options: >-
           --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
 
     env:
       POSTGRES_HOST: localhost
@@ -23,18 +27,25 @@ jobs:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
       POSTGRES_DB: registry
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ''
 
     steps:
       - name: checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
+          persist-credentials: false
           fetch-depth: 2
 
       - name: setup environment
         uses: ./.github/actions/setup
         with:
-          codegen: false # no need to run codegen in this case, we can skip
+          codegen: true
           actor: migrations-test
+
+      - name: build workspace dependencies
+        run: pnpm turbo build --filter=@graphql-hive/core --filter=@graphql-hive/yoga
 
       - name: migrations tests
         run: pnpm test

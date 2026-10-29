@@ -8,24 +8,25 @@ import {
   useExecutionCancellation,
   useExtendContext,
 } from 'graphql-yoga';
-import hyperid from 'hyperid';
 import { isGraphQLError } from '@envelop/core';
 import { useGraphQlJit } from '@envelop/graphql-jit';
 import { useGraphQLModules } from '@envelop/graphql-modules';
-import { useOpenTelemetry } from '@graphql-hive/plugin-opentelemetry';
-import { hive, trace } from '@graphql-hive/plugin-opentelemetry/api';
+import {
+  useOpenTelemetry,
+  type OpenTelemetryContextExtension,
+} from '@graphql-hive/plugin-opentelemetry';
+import { trace } from '@graphql-hive/plugin-opentelemetry/api';
 import { useHive } from '@graphql-hive/yoga';
+import { useCSRFPrevention } from '@graphql-yoga/plugin-csrf-prevention';
 import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Registry, RegistryContext } from '@hive/api';
 import { SuperTokensCookieBasedSession } from '@hive/api/modules/auth/lib/supertokens-strategy';
-import { cleanRequestId, type TracingInstance } from '@hive/service-common';
+import { requestIdStorage, type TracingInstance } from '@hive/service-common';
 import { captureException, runWithAsyncContext, withScope } from '@sentry/node';
 import { AuthN, Session } from '../../api/src/modules/auth/lib/authz';
-import { asyncStorage } from './async-storage';
+import { authenticateRequest } from './authenticate-request';
 import type { HivePersistedDocumentsConfig, HiveUsageConfig } from './environment';
 import { useArmor } from './use-armor';
-
-export const reqIdGenerate = hyperid({ fixedLength: true });
 
 function hashSessionId(sessionId: string): string {
   return createHash('sha256').update(sessionId).digest('hex');
@@ -179,9 +180,17 @@ export function useHiveTracing(): Plugin {
         }) as Plugin,
       );
     },
-    onParams({ params: { variables }, context }) {
-      const otelCtx = hive.getOperationContext(context);
-      const operationSpan = otelCtx && trace.getSpan(otelCtx);
+    onContextBuilding({ context }) {
+      const otelCtx = (
+        context as Partial<OpenTelemetryContextExtension>
+      ).openTelemetry?.getOperationContext();
+
+      if (!otelCtx) {
+        return;
+      }
+
+      const operationSpan = trace.getSpan(otelCtx);
+      const variables = context.params?.variables;
 
       if (operationSpan && variables && typeof variables === 'object' && 'selector' in variables) {
         operationSpan?.setAttribute('hive.variables.selector', JSON.stringify(variables.selector));
@@ -194,12 +203,17 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
   const server = createYoga<Context>({
     logging: options.logger,
     plugins: [
+      // The session cookie is `SameSite=Lax`, so it is sent along with cross-site top-level GET navigations.
+      // Reject requests that did not go through a CORS preflight unless they carry a custom header.
+      useCSRFPrevention({
+        requestHeaders: ['graphql-client-name'],
+      }),
       useArmor(),
       useHiveErrorHandler(err => {
         options.logger.error(err, 'Unexpected error occurred while handling exception.');
       }),
       useExtendContext(async context => ({
-        session: await options.authN.authenticate(context),
+        session: await authenticateRequest(options.authN, context),
       })),
       useHive({
         debug: true,
@@ -236,14 +250,17 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
       }),
       useResponseCache({
         session: request => {
-          const sessionValue =
-            request.headers.get('authorization') ?? request.headers.get('x-api-token');
+          // The cache key MUST be derived from all headers that can influence authentication,
+          // otherwise a response authenticated via one header could be served to a request
+          // only sending the other header.
+          const authorization = request.headers.get('authorization');
+          const apiToken = request.headers.get('x-api-token');
 
-          if (sessionValue != null) {
-            return hashSessionId(sessionValue);
+          if (authorization == null && apiToken == null) {
+            return null;
           }
 
-          return null;
+          return hashSessionId(JSON.stringify({ authorization, apiToken }));
         },
         ttl: 0,
         ttlPerSchemaCoordinate: {
@@ -281,10 +298,9 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
   });
 
   return async (req, reply) => {
-    const requestIdHeader = req.headers['x-request-id'] ?? reqIdGenerate();
-    const requestId = cleanRequestId(requestIdHeader);
+    const requestId = req.id;
 
-    await asyncStorage.run(
+    await requestIdStorage.run(
       {
         requestId,
       },
@@ -301,10 +317,6 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
         response.headers.forEach((value, key) => {
           void reply.header(key, value);
         });
-
-        if (!reply.hasHeader('x-request-id')) {
-          void reply.header('x-request-id', requestId || '');
-        }
 
         const accept = req.headers.accept;
 

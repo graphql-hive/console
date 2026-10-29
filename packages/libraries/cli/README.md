@@ -34,6 +34,19 @@ the following command:
 curl -sSL https://graphql-hive.com/install.sh | sh
 ```
 
+Each version's standalone archives and `SHA256SUMS` manifest are attached to its GitHub release. The
+manifest is also available from `https://cli.graphql-hive.com/versions/VERSION/SHA256SUMS`. The
+exact version currently promoted to the standalone stable channel is available as plain text from
+`https://cli.graphql-hive.com/channels/stable/VERSION`; its body is the semantic version followed by
+a newline.
+
+Historical versions whose standalone archives are retained anywhere under `versions/VERSION/`
+receive manifests through the manual **Backfill CLI checksum manifests** workflow. Run it from
+`main` with `publish` disabled to preview missing manifests, then run it again with `publish`
+enabled. The workflow preserves existing manifests, creates only missing `SHA256SUMS` objects,
+verifies each through the public endpoint, and fails if any retained version remains without a
+manifest.
+
 ## Commands
 
 <!-- commands -->
@@ -84,7 +97,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/check.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/app/check.ts)_
+[src/commands/app/check.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/app/check.ts)_
 
 ## `hive app:create OPERATIONS`
 
@@ -117,7 +130,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/create.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/app/create.ts)_
+[src/commands/app/create.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/app/create.ts)_
 
 ## `hive app:publish`
 
@@ -145,7 +158,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/publish.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/app/publish.ts)_
+[src/commands/app/publish.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/app/publish.ts)_
 
 ## `hive app:retire`
 
@@ -174,7 +187,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/app/retire.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/app/retire.ts)_
+[src/commands/app/retire.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/app/retire.ts)_
 
 ## `hive artifact:fetch`
 
@@ -200,7 +213,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/artifact/fetch.ts)_
+[src/commands/artifact/fetch.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/artifact/fetch.ts)_
 
 ## `hive dev`
 
@@ -275,7 +288,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/dev.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/dev.ts)_
+[src/commands/dev.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/dev.ts)_
 
 ## `hive help [COMMAND]`
 
@@ -323,7 +336,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/introspect.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/introspect.ts)_
+[src/commands/introspect.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/introspect.ts)_
 
 ## `hive operations:check FILE`
 
@@ -385,7 +398,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/operations/check.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/operations/check.ts)_
+[src/commands/operations/check.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/operations/check.ts)_
 
 ## `hive schema:check FILE`
 
@@ -434,7 +447,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/check.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/schema/check.ts)_
+[src/commands/schema/check.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/schema/check.ts)_
 
 ## `hive schema:delete SERVICE`
 
@@ -468,7 +481,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/delete.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/schema/delete.ts)_
+[src/commands/schema/delete.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/schema/delete.ts)_
 
 ## `hive schema:fetch [COMMIT]`
 
@@ -503,7 +516,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/fetch.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/schema/fetch.ts)_
+[src/commands/schema/fetch.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/schema/fetch.ts)_
 
 ## `hive schema:promote`
 
@@ -537,7 +550,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/promote.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/schema/promote.ts)_
+[src/commands/schema/promote.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/schema/promote.ts)_
 
 ## `hive schema:publish [FILE]`
 
@@ -585,7 +598,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/publish.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/schema/publish.ts)_
+[src/commands/schema/publish.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/schema/publish.ts)_
 
 ## `hive schema:push FILE`
 
@@ -620,7 +633,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/schema/push.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/schema/push.ts)_
+[src/commands/schema/push.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/schema/push.ts)_
 
 ## `hive update [CHANNEL]`
 
@@ -684,7 +697,7 @@ DESCRIPTION
 ```
 
 _See code:
-[src/commands/whoami.ts](https://github.com/graphql-hive/console/blob/v0.66.0/src/commands/whoami.ts)_
+[src/commands/whoami.ts](https://github.com/graphql-hive/console/blob/v0.68.2/src/commands/whoami.ts)_
 
 <!-- commandsstop -->
 
@@ -778,6 +791,7 @@ stdout.
 | <a id="errors-302"></a>302 | Missing service name (`SchemaPublishMissingServiceError`)           | 3         | Pass `--service <name>`. Federation and schema stitching projects require a service name.                                                                                                                                                                                               |
 | <a id="errors-303"></a>303 | Missing service URL (`SchemaPublishMissingUrlError`)                | 3         | Pass `--url <url>`. A service needs a URL the first time it is published, and the URL must be valid.                                                                                                                                                                                    |
 | <a id="errors-400"></a>400 | Malformed persisted documents (`PersistedOperationsMalformedError`) | 3         | Use a GraphQL Code Generator, Relay or Apollo persisted query manifest, a directory of `.graphql` files, or a glob that matches `.graphql` files containing operations.                                                                                                                 |
+| <a id="errors-401"></a>401 | Invalid operations (`InvalidPersistedDocumentsError`)               | 1         | Fix the listed operations so they comply with the requirements.                                                                                                                                                                                                                         |
 | <a id="errors-500"></a>500 | Schema not found in the registry (`SchemaNotFoundError`)            | 1         | Publish a schema to the target first, or check the target, the commit and the `--type` value.                                                                                                                                                                                           |
 | <a id="errors-501"></a>501 | Schema version is not valid (`InvalidSchemaError`)                  | 1         | The requested schema version is not valid. Use a different commit, or fix and publish the schema again.                                                                                                                                                                                 |
 | <a id="errors-600"></a>600 | Service and URL count mismatch (`ServiceAndUrlLengthMismatch`)      | 3         | Pass exactly one `--url` for every `--service`.                                                                                                                                                                                                                                         |

@@ -4,6 +4,7 @@ import { Target } from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { batch } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
+import { GraphStore } from '../../graph/providers/graph-store';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import {
@@ -13,6 +14,7 @@ import {
 } from '../../shared/providers/registry-operation-metrics';
 import { TargetManager } from '../../target/providers/target-manager';
 import { AppDeployments, type AppDeploymentRecord } from './app-deployments';
+import type { PreprocessedDocument } from './persisted-document-ingester';
 
 export type AppDeploymentStatus = 'pending' | 'active' | 'retired';
 
@@ -29,6 +31,7 @@ export class AppDeploymentsManager {
     private targetManager: TargetManager,
     private appDeployments: AppDeployments,
     private idTranslator: IdTranslator,
+    private graphs: GraphStore,
   ) {
     this.logger = logger.child({ source: 'AppDeploymentsManager' });
   }
@@ -135,18 +138,74 @@ export class AppDeploymentsManager {
     });
   }
 
-  async addDocumentsToAppDeployment(args: {
-    reference: GraphQLSchema.TargetReferenceInput | null;
-    appDeployment: {
-      name: string;
-      version: string;
-    };
-    documents: ReadonlyArray<{
-      hash: string;
-      body: string;
-    }>;
-  }) {
-    return this.internalAddDocumentsToAppDeployment(args).then(
+  async addDocumentsToAppDeployment(
+    args: {
+      reference: GraphQLSchema.TargetReferenceInput | null;
+      appDeployment: {
+        name: string;
+        version: string;
+      };
+      documents: ReadonlyArray<{
+        hash: string;
+        body: string;
+      }>;
+    },
+    signal: AbortSignal,
+  ) {
+    return this.trackDocumentUpload(
+      () => this.internalAddDocumentsToAppDeployment(args, signal),
+      signal,
+    );
+  }
+
+  async addPreprocessedDocumentsToAppDeployment(
+    args: {
+      reference: GraphQLSchema.TargetReferenceInput | null;
+      appDeployment: { name: string; version: string };
+      documents: ReadonlyArray<PreprocessedDocument>;
+    },
+    signal: AbortSignal,
+  ) {
+    return this.trackDocumentUpload(
+      () => this.internalAddPreprocessedDocumentsToAppDeployment(args, signal),
+      signal,
+    );
+  }
+
+  private async internalAddPreprocessedDocumentsToAppDeployment(
+    args: {
+      reference: GraphQLSchema.TargetReferenceInput | null;
+      appDeployment: { name: string; version: string };
+      documents: ReadonlyArray<PreprocessedDocument>;
+    },
+    signal: AbortSignal,
+  ) {
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.reference });
+    if (!selector) {
+      this.session.raise('appDeployment:create');
+    }
+
+    await this.session.assertPerformAction({
+      action: 'appDeployment:create',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+        appDeploymentName: args.appDeployment.name,
+      },
+    });
+
+    const target = await this.targetManager.getTargetById(selector);
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
+    return this.appDeployments.addPreprocessedDocumentsToAppDeployment(
+      { graph, appDeployment: args.appDeployment, documents: args.documents },
+      signal,
+    );
+  }
+
+  private trackDocumentUpload<T>(operation: () => Promise<T>, signal: AbortSignal): Promise<T> {
+    return operation().then(
       result => {
         registryOperationOutcomeCount.inc({
           operation: 'persisted_document_upload',
@@ -155,7 +214,12 @@ export class AppDeploymentsManager {
         return result;
       },
       error => {
-        if (error instanceof HiveError) {
+        if (signal.aborted) {
+          registryOperationOutcomeCount.inc({
+            operation: 'persisted_document_upload',
+            conclusion: 'aborted',
+          });
+        } else if (error instanceof HiveError) {
           registryOperationOutcomeCount.inc({
             operation: 'persisted_document_upload',
             conclusion: 'success',
@@ -174,17 +238,20 @@ export class AppDeploymentsManager {
     );
   }
 
-  private async internalAddDocumentsToAppDeployment(args: {
-    reference: GraphQLSchema.TargetReferenceInput | null;
-    appDeployment: {
-      name: string;
-      version: string;
-    };
-    documents: ReadonlyArray<{
-      hash: string;
-      body: string;
-    }>;
-  }) {
+  private async internalAddDocumentsToAppDeployment(
+    args: {
+      reference: GraphQLSchema.TargetReferenceInput | null;
+      appDeployment: {
+        name: string;
+        version: string;
+      };
+      documents: ReadonlyArray<{
+        hash: string;
+        body: string;
+      }>;
+    },
+    signal: AbortSignal,
+  ) {
     const selector = await this.idTranslator.resolveTargetReference({
       reference: args.reference,
     });
@@ -205,12 +272,16 @@ export class AppDeploymentsManager {
     });
 
     const target = await this.targetManager.getTargetById(selector);
+    const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
 
-    return await this.appDeployments.addDocumentsToAppDeployment({
-      target,
-      appDeployment: args.appDeployment,
-      operations: args.documents,
-    });
+    return await this.appDeployments.addDocumentsToAppDeployment(
+      {
+        graph,
+        appDeployment: args.appDeployment,
+        operations: args.documents,
+      },
+      signal,
+    );
   }
 
   async activateAppDeployment(args: {

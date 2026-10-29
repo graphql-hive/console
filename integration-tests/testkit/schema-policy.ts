@@ -114,6 +114,17 @@ export const INVALID_RULE_CONFIG_POLICY: SchemaPolicyInput = {
   ],
 };
 
+export const UNEXPECTED_RULE_CONFIG_POLICY: SchemaPolicyInput = {
+  rules: [
+    {
+      // this rule does not accept any configuration
+      ruleId: 'require-nullable-result-in-root',
+      severity: RuleInstanceSeverityLevel.Error,
+      configuration: {},
+    },
+  ],
+};
+
 export const EMPTY_RULE_CONFIG_POLICY: SchemaPolicyInput = {
   rules: [
     {

@@ -1,7 +1,6 @@
 import { resolve } from 'node:path';
 import type { Plugin, UserConfig } from 'vite';
 import monacoEditor from 'vite-plugin-monaco-editor';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import viteFastify from '@fastify/vite/plugin';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
@@ -26,9 +25,9 @@ const reactScanPlugin: Plugin = {
 
 export default {
   root: __dirname,
+  resolve: { tsconfigPaths: true },
   plugins: [
-    tsconfigPaths(),
-    viteFastify({ spa: true, useRelativePaths: true }),
+    viteFastify({ spa: true }),
     react(),
     tailwindcss(),
     reactScanPlugin,
@@ -48,9 +47,13 @@ export default {
       ],
     }),
   ],
+  // Keep the default iife worker format: the inline preflight worker breaks as an ES module worker
+  // (e2e laboratory-preflight). The diffs worker's only dynamic import is the wasm engine it never
+  // uses, so leaving it external keeps that worker a single chunk without inlining it.
+  worker: { rolldownOptions: { external: ['shiki/wasm'] } },
   build: {
     outDir: 'dist',
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         index: resolve(__dirname, 'index.html'),
         ['preflight-worker-embed']: resolve(__dirname, 'preflight-worker-embed.html'),

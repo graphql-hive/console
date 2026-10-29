@@ -17,6 +17,7 @@
     "graphql": "^16.0.0"
   },
   "devDependencies": {
+    "@aws-sdk/credential-providers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@hive/service-common": "workspace:*",
     "@types/service-worker-mock": "catalog:",
@@ -25,11 +26,11 @@
     "dotenv": "catalog:",
     "esbuild": "catalog:",
     "fastify": "catalog:",
-    "graphql": "16.9.0",
+    "graphql": "catalog:",
     "itty-router": "catalog:",
     "itty-router-extras": "0.4.6",
     "toucan-js": "catalog:",
     "undici": "catalog:",
-    "zod": "3.25.76"
+    "zod": "4.6.6"
   }
 }

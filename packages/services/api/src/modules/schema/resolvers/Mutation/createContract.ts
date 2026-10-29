@@ -20,14 +20,14 @@ export const createContract: NonNullable<MutationResolvers['createContract']> = 
   if (result.type === 'success') {
     return {
       ok: {
-        createdContract: result.contract,
+        createdContract: result.graph,
       },
     };
   }
 
   return {
     error: {
-      message: 'Something went wrong.',
+      message: result.message ?? 'Something went wrong.',
       details: result.errors,
     },
   };

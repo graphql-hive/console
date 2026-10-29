@@ -198,10 +198,10 @@ const groupRoleAssignmentsFields = psql`
 `;
 
 const GroupRoleAssignmentModel = z.object({
-  id: z.string().uuid(),
-  organizationId: z.string().uuid(),
-  groupId: z.string().uuid(),
-  roleId: z.string().uuid(),
+  id: z.uuid(),
+  organizationId: z.uuid(),
+  groupId: z.uuid(),
+  roleId: z.uuid(),
   assignedResources: ResourceAssignmentModel.transform(
     value => value ?? { mode: '*' as const, projects: [] },
   ),

@@ -10,7 +10,7 @@ type ParseOk = {
   data: GraphQLSchema.TargetReferenceInput;
 };
 
-const UUIDModel = z.string().uuid();
+const UUIDModel = z.uuid();
 
 /**
  * Parse a target slug into its parts. Returns an error if slug is invalid
