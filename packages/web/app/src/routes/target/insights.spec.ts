@@ -8,7 +8,7 @@ import {
 } from '@/lib/testing/fixtures/insights';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
-import { createTestClient, operationName } from '@/lib/testing/urql';
+import { createTestClient, GraphQLResponse, operationName } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory } from '@tanstack/react-router';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
@@ -143,6 +143,26 @@ describe('insights route', () => {
       expect(variablesOf(client, 'OperationsList_OperationsStats')).toMatchObject({ filter });
     },
   );
+
+  it('shows the error for a subgraph the schema does not have', { timeout: 30_000 }, async () => {
+    // The API answers with the error and a null target, which must not read as empty stats.
+    const rejected = new GraphQLResponse({ __typename: 'Query', target: null }, [
+      { message: 'Unknown subgraph: gone.', path: ['target', 'operationsStats'] },
+    ]);
+    const client = createTestClient(
+      new Map([
+        ...fixtures(),
+        ['Stats_GeneralOperationsStats', rejected],
+        ['OperationsList_OperationsStats', rejected],
+      ]),
+    );
+    const subgraphs = encodeURIComponent(JSON.stringify(['gone']));
+    renderAtUrl(`${TARGET}/insights?${RANGE}&subgraphs=${subgraphs}`, { client });
+
+    await screen.findByRole('button', { name: 'Refresh' });
+    expect((await screen.findAllByText(/Unknown subgraph: gone/)).length).toBeGreaterThan(0);
+    expect(screen.queryByText('No stats available yet.')).toBeNull();
+  });
 
   it('sends a bare URL to the default range and loads once', { timeout: 30_000 }, async () => {
     const client = createTestClient(layoutFixtures());

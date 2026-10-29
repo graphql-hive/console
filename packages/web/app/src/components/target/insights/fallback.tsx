@@ -7,10 +7,13 @@ import { cn } from '@/lib/utils';
 export function OperationsFallback({
   children,
   state,
+  errorMessage,
   refetch,
 }: {
   children: ReactNode;
   state: 'fetching' | 'error' | 'empty' | 'success';
+  /** What the API said, when the failure is the request's own (a filter it rejected). */
+  errorMessage?: string;
   refetch: () => void;
 }): ReactElement {
   return (
@@ -35,7 +38,8 @@ export function OperationsFallback({
         </div>
       ) : null}
       {state === 'error' ? (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          {errorMessage ? <p className="text-sm text-critical">{errorMessage}</p> : null}
           <Button variant="destructive" onClick={refetch}>
             Failed to load data. Click to retry.
           </Button>
