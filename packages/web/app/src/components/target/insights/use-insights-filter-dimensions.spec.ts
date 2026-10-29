@@ -58,11 +58,21 @@ describe('insightsFilterDimensions', () => {
       'field',
       'subgraph',
     ]);
-    expect(insightsFilterDimensions({ ...input, showSubgraphs: false }).map(d => d.key)).toEqual([
-      'operation',
-      'client',
-      'field',
-    ]);
+    expect(
+      insightsFilterDimensions({ ...input, showSubgraphs: false, search: {} }).map(d => d.key),
+    ).toEqual(['operation', 'client', 'field']);
+  });
+
+  it('keeps the Subgraph dimension for a URL that carries subgraphs on any project', () => {
+    const dims = insightsFilterDimensions({
+      ...input,
+      showSubgraphs: false,
+      subgraphNames: [],
+      search: { subgraphs: ['Reviews'] },
+    });
+    const subgraph = byKey(dims, 'subgraph')!;
+    expect(subgraph.items).toEqual([{ name: 'reviews', values: [], unavailable: true }]);
+    expect(subgraph.selectedItems).toEqual([{ name: 'reviews', values: null }]);
   });
 
   it('decodes URL names into selections without ids, matching the items by name', () => {

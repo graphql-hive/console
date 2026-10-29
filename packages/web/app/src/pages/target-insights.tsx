@@ -30,6 +30,9 @@ import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
 
+// Stable while the schema document is pending, so the dimensions memo does not rebuild each render.
+const NO_SUBGRAPH_NAMES: readonly string[] = [];
+
 const insightsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights',
 );
@@ -150,7 +153,8 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
       ),
     [schemaOptions?.latestValidSchemaVersion?.explorer?.types],
   );
-  const subgraphNames = schemaOptions?.latestValidSchemaVersion?.explorer?.subgraphNames ?? [];
+  const subgraphNames =
+    schemaOptions?.latestValidSchemaVersion?.explorer?.subgraphNames ?? NO_SUBGRAPH_NAMES;
   const showSubgraphs = schemaOptions?.project?.type === ProjectType.Federation;
 
   const operationFilterItems: FilterItem[] = useMemo(() => {

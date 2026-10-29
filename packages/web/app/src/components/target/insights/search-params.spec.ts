@@ -12,7 +12,7 @@ const base = {
 };
 
 describe('savedFilterToSearchParams', () => {
-  it('spreads over the previous search, so empty dimensions clear their keys', () => {
+  it('maps empty dimensions to undefined keys, so a spread over the previous search clears them', () => {
     const params = savedFilterToSearchParams(base);
     expect(params.operations).toBeUndefined();
     expect(params.clients).toBeUndefined();

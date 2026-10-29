@@ -98,6 +98,10 @@ export function schemaFilterItems(
 export const nameSelections = (names: unknown): FilterSelection[] =>
   Array.isArray(names) ? (names as string[]).map(name => ({ name, values: null })) : [];
 
+// Subgraph names are lowercase in the schema; a hand-typed URL may not be.
+const lowercaseNames = (names: unknown): string[] =>
+  Array.isArray(names) ? (names as string[]).map(name => name.toLowerCase()) : [];
+
 /** The `unavailableNote` for dimensions whose options come from the schema. */
 export const SCHEMA_UNAVAILABLE_NOTE = 'not in the current schema';
 
@@ -120,7 +124,10 @@ export type InsightsFilterDimensionsInput = {
   fieldCoordinates: readonly string[];
   /** Subgraph names of the latest valid version. */
   subgraphNames: readonly string[];
-  /** False on non-federation projects, which have no subgraphs to filter by. */
+  /**
+   * False on non-federation projects, which have no subgraphs to filter by. A URL that already
+   * carries subgraphs still gets the dimension so the filter can be seen and removed.
+   */
   showSubgraphs: boolean;
 };
 
@@ -190,7 +197,8 @@ export function insightsFilterDimensions({
 
   const dimensions: FilterDimension[] = [operationsDim, clientsDim, fieldsDim];
 
-  if (showSubgraphs) {
+  const selectedSubgraphs = lowercaseNames(search.subgraphs);
+  if (showSubgraphs || selectedSubgraphs.length > 0) {
     dimensions.push({
       ...urlFilterDimension({
         navigate,
@@ -198,9 +206,9 @@ export function insightsFilterDimensions({
         searchKey: 'subgraphs',
         key: 'subgraph',
         label: 'Subgraph',
-        items: schemaFilterItems(subgraphNames, search.subgraphs ?? []),
+        items: schemaFilterItems(subgraphNames, selectedSubgraphs),
         encode: encodeIdSelections,
-        decode: nameSelections,
+        decode: value => nameSelections(lowercaseNames(value)),
       }),
       unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
     });
