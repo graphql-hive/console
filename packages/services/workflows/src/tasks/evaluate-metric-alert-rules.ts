@@ -1,5 +1,6 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
+import type { Logger } from '@graphql-hive/logger';
 import type { SqlValue } from '@hive/clickhouse';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
@@ -35,10 +36,7 @@ export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
   await reportHeartbeat(args.context.metricAlertsHeartbeatEndpoint, args.logger);
 });
 
-async function reportHeartbeat(
-  endpoint: string | null,
-  logger: Parameters<TaskImplementation<unknown>>[0]['logger'],
-) {
+async function reportHeartbeat(endpoint: string | null, logger: Logger) {
   if (!endpoint) {
     return;
   }
