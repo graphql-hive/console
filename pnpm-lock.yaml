@@ -708,6 +708,22 @@ importers:
         specifier: 'catalog:'
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@25.9.9)(happy-dom@21.0.4)(jsdom@30.1.3(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.9.9)(typescript@5.7.3))(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
 
+  packages/internal/supergraph:
+    dependencies:
+      '@theguild/federation-composition':
+        specifier: 'catalog:'
+        version: 0.27.0(graphql@16.14.2)
+      graphql:
+        specifier: 'catalog:'
+        version: 16.14.2
+    devDependencies:
+      '@hive/service-common':
+        specifier: workspace:*
+        version: link:../../services/service-common
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@25.9.9)(happy-dom@21.0.4)(jsdom@30.1.3(@noble/hashes@2.2.0))(msw@2.12.7(@types/node@25.9.9)(typescript@5.7.3))(vite@8.3.5(@types/node@25.9.9)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.19.2)(yaml@2.8.3))
+
   packages/libraries/apollo:
     dependencies:
       '@graphql-hive/core':
@@ -1351,6 +1367,9 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../storage
+      '@hive/supergraph':
+        specifier: workspace:*
+        version: link:../../internal/supergraph
       '@hive/usage-common':
         specifier: workspace:*
         version: link:../usage-common
@@ -2181,12 +2200,18 @@ importers:
       '@hive/storage':
         specifier: workspace:*
         version: link:../storage
+      '@hive/supergraph':
+        specifier: workspace:*
+        version: link:../../internal/supergraph
       '@sentry/node':
         specifier: 'catalog:'
         version: 7.120.2
       '@slack/web-api':
         specifier: 'catalog:'
         version: 7.10.0
+      '@theguild/federation-composition':
+        specifier: 'catalog:'
+        version: 0.27.0(graphql@16.14.2)
       '@trpc/client':
         specifier: 'catalog:'
         version: 10.45.3(@trpc/server@10.45.3)
@@ -5400,9 +5425,6 @@ packages:
 
   '@jridgewell/source-map@0.3.11':
     resolution: {integrity: sha512-ZMp1V8ZFcPG5dIWnQLr3NSI1MiCU7UETdS/A0G8V/XWHvJv3ZsFqutJn1Y5RPmAPX6F3BiE397OqveU/9NCuIA==}
-
-  '@jridgewell/sourcemap-codec@1.5.5':
-    resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
   '@jridgewell/sourcemap-codec@1.6.0':
     resolution: {integrity: sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw==}
@@ -21356,8 +21378,6 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
     optional: true
 
-  '@jridgewell/sourcemap-codec@1.5.5': {}
-
   '@jridgewell/sourcemap-codec@1.6.0': {}
 
   '@jridgewell/trace-mapping@0.3.31':
@@ -30560,7 +30580,7 @@ snapshots:
 
   magic-string@0.30.21:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   magic-string@1.4.4:
     dependencies:

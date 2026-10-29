@@ -164,6 +164,79 @@ describe('OperationsReader.createFilter (characterization)', () => {
     );
   });
 
+  describe('coordinateScope', () => {
+    const table = sql.raw('coordinates_hourly');
+
+    test('one scope -> hash subquery over the same target and period', () => {
+      expect(
+        render(
+          reader.createFilter({
+            target: 't1',
+            period,
+            coordinateScope: { table, scopes: [['Query.me', 'User.name']] },
+          }),
+        ),
+      ).toMatchInlineSnapshot(
+        `PREWHERE target = 't1' AND timestamp >= toDateTime('2024-01-01 00:00:00', 'UTC') AND timestamp <= toDateTime('2024-01-02 00:00:00', 'UTC') AND hash IN (SELECT hash FROM coordinates_hourly PREWHERE target = 't1' AND timestamp >= toDateTime('2024-01-01 00:00:00', 'UTC') AND timestamp <= toDateTime('2024-01-02 00:00:00', 'UTC') AND coordinate IN (['Query.me', 'User.name']))`,
+      );
+    });
+
+    test('two scopes are ANDed as separate subqueries', () => {
+      expect(
+        render(
+          reader.createFilter({
+            target: 't1',
+            coordinateScope: { table, scopes: [['Query.me'], ['Review.body']] },
+          }),
+        ),
+      ).toMatchInlineSnapshot(
+        `PREWHERE target = 't1' AND hash IN (SELECT hash FROM coordinates_hourly PREWHERE target = 't1' AND coordinate IN (['Query.me'])) AND hash IN (SELECT hash FROM coordinates_hourly PREWHERE target = 't1' AND coordinate IN (['Review.body']))`,
+      );
+    });
+
+    test('an empty scope matches nothing', () => {
+      expect(
+        render(reader.createFilter({ target: 't1', coordinateScope: { table, scopes: [[]] } })),
+      ).toMatchInlineSnapshot(`PREWHERE target = 't1' AND 1 = 0`);
+    });
+
+    test('no scopes adds nothing', () => {
+      expect(
+        render(reader.createFilter({ target: 't1', coordinateScope: { table, scopes: [] } })),
+      ).toMatchInlineSnapshot(`PREWHERE target = 't1'`);
+    });
+
+    test('scopes come after the operations and client conditions and before extra', () => {
+      expect(
+        render(
+          reader.createFilter({
+            target: 't1',
+            operations: ['h1'],
+            clients: ['web'],
+            coordinateScope: { table, scopes: [['Query.me']] },
+            extra: [sql`total > 0`],
+          }),
+        ),
+      ).toMatchInlineSnapshot(
+        `PREWHERE target = 't1' AND (hash) IN (['h1']) AND client_name IN (['web']) AND hash IN (SELECT hash FROM coordinates_hourly PREWHERE target = 't1' AND coordinate IN (['Query.me'])) AND total > 0`,
+      );
+    });
+
+    test('namespace prefixes the outer hash but not the subquery', () => {
+      expect(
+        render(
+          reader.createFilter({
+            target: 't1',
+            namespace: 'o',
+            coordinateScope: { table, scopes: [['Query.me']] },
+          }),
+        ),
+      ).toMatchInlineSnapshot(
+        `PREWHERE o.target = 't1' AND o.hash IN (SELECT hash FROM coordinates_hourly PREWHERE target = 't1' AND coordinate IN (['Query.me']))`,
+      );
+    });
+  });
+
   test('skipWhere omits the PREWHERE keyword', () => {
     expect(
       render(reader.createFilter({ target: 't1', operations: ['h1'], skipWhere: true })),

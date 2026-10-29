@@ -24,14 +24,27 @@ export type SuperGraphInformation = {
   metadataAttributes: Array<{ name: string; values: string[] }> | null;
 };
 
+/** What a supergraph says about who owns which coordinate. */
+export type SuperGraphOwnership = Pick<
+  SuperGraphInformation,
+  'schemaCoordinateServicesMappings'
+> & {
+  /**
+   * Every object and interface field coordinate in the supergraph. Ownership lookups that
+   * must not match shared types, enum values or input fields filter through this set.
+   */
+  objectFieldCoordinates: Set<string>;
+};
+
 /**
  * Extracts the super graph information from the GraphQL schema AST.
  */
 export const extractSuperGraphInformation = traceInlineSync(
   'Extract Supergraph Info',
   {},
-  (documentAst: DocumentNode): Pick<SuperGraphInformation, 'schemaCoordinateServicesMappings'> => {
+  (documentAst: DocumentNode): SuperGraphOwnership => {
     const schemaCoordinateServicesMappings = new Map<string, Array<string>>();
+    const objectFieldCoordinates = new Set<string>();
 
     const serviceEnumValueToServiceNameMappings = new Map<string, string>();
     const schemaCoordinateToServiceEnumValueMappings = new Map<string, Set<string>>();
@@ -83,6 +96,7 @@ export const extractSuperGraphInformation = traceInlineSync(
 
       for (const fieldNode of node.fields) {
         const schemaCoordinate = `${node.name.value}.${fieldNode.name.value}`;
+        objectFieldCoordinates.add(schemaCoordinate);
 
         const joinField = fieldNode.directives?.find(
           directive =>
@@ -302,7 +316,7 @@ export const extractSuperGraphInformation = traceInlineSync(
     }
     // END -- Federation 1.0 support
 
-    return { schemaCoordinateServicesMappings };
+    return { schemaCoordinateServicesMappings, objectFieldCoordinates };
   },
 );
 

@@ -302,7 +302,7 @@
           }
         ]
       },
-      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 20 },
+      "gridPos": { "h": 10, "w": 8, "x": 0, "y": 20 },
       "id": 5,
       "options": {
         "legend": {
@@ -365,7 +365,7 @@
           }
         ]
       },
-      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 20 },
+      "gridPos": { "h": 10, "w": 8, "x": 8, "y": 20 },
       "id": 6,
       "options": {
         "legend": {
@@ -396,6 +396,62 @@
         }
       ],
       "title": "Enabled rules: filtered vs unfiltered",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+      "description": "Query groups skipped this tick because their saved filter could not be resolved against the target's latest composable schema version, by reason. A skipped group's rules are frozen: state does not change and last_evaluated_at stops advancing, so a FIRING rule never resolves and a PENDING one never fires. Anything non-zero that persists needs the saved filter fixed (most often a renamed or removed subgraph).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 8, "x": 16, "y": 20 },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": ["last", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PROM_DATASOURCE_UID" },
+          "editorMode": "code",
+          "expr": "max by (reason) (hive_metric_alert_groups_skipped)",
+          "legendFormat": "{{reason}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Alert groups skipped: unresolvable saved filter",
       "type": "timeseries"
     },
     {

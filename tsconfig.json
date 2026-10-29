@@ -27,6 +27,7 @@
     "paths": {
       "@hive/clickhouse": ["./packages/internal/clickhouse/src/index.ts"],
       "@hive/postgres": ["./packages/internal/postgres/src/index.ts"],
+      "@hive/supergraph": ["./packages/internal/supergraph/src/index.ts"],
       "@hive/api": ["./packages/services/api/src/index.ts"],
       "@hive/api/*": ["./packages/services/api/src/*"],
       "@hive/service-common": ["./packages/services/service-common/src/index.ts"],

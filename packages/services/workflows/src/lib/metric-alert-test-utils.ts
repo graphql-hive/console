@@ -1,4 +1,5 @@
 import type { Logger } from '@graphql-hive/logger';
+import type { CommonQueryMethods } from '@hive/postgres';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
 
 /** Minimal logger that records warn() calls so specs can assert defensive logging. */
@@ -37,4 +38,20 @@ export function makeRule(overrides: Partial<MetricAlertRuleRow> = {}): MetricAle
     organizationPlanName: 'PRO',
     ...overrides,
   };
+}
+
+/**
+ * Stub of the one Postgres method the supergraph ownership loader uses. `answer` receives
+ * the query's SQL text and bound values and returns the first column of the first row.
+ * Every call is recorded so specs can assert how often each query ran.
+ */
+export function makePg(answer: (sql: string, values: readonly unknown[]) => unknown) {
+  const calls: Array<{ sql: string; values: readonly unknown[] }> = [];
+  const pg = {
+    maybeOneFirst: async (query: { sql: string; values: readonly unknown[] }) => {
+      calls.push({ sql: query.sql, values: query.values });
+      return answer(query.sql, query.values);
+    },
+  } as unknown as Pick<CommonQueryMethods, 'maybeOneFirst'>;
+  return { pg, calls };
 }

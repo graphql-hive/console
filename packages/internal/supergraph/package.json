@@ -1,0 +1,17 @@
+{
+  "name": "@hive/supergraph",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@theguild/federation-composition": "catalog:",
+    "graphql": "catalog:"
+  },
+  "devDependencies": {
+    "@hive/service-common": "workspace:*",
+    "vitest": "catalog:"
+  }
+}
