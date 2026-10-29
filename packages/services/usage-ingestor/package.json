@@ -20,6 +20,6 @@
     "kafkajs": "catalog:",
     "pino-pretty": "catalog:",
     "tiny-lru": "11.4.7",
-    "zod": "4.6.6"
+    "zod": "4.6.7"
   }
 }

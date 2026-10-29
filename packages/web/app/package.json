@@ -100,7 +100,7 @@
     "vite": "catalog:",
     "vite-plugin-monaco-editor": "catalog:",
     "wonka": "6.3.6",
-    "zod": "4.6.6"
+    "zod": "4.6.7"
   },
   "buildOptions": {
     "external": [
