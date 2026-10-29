@@ -4476,6 +4476,30 @@ describe('schema coordinate and subgraph filters', () => {
 
     expect(errors[0].message).toContain('must contain at most 100 elements');
   });
+
+  test.concurrent('caps the length of each coordinate and subgraph name', async ({ expect }) => {
+    const { ownerToken, createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Federation);
+
+    const from = formatISO(subHours(Date.now(), 6));
+    const to = formatISO(Date.now());
+    const coordinateErrors = await readOperationsStats(
+      { byId: target.id },
+      { from, to },
+      { schemaCoordinates: [`Query.${'f'.repeat(195)}`] },
+      ownerToken,
+    ).then(r => r.expectGraphQLErrors());
+    expect(coordinateErrors[0].message).toContain('at most 200 characters');
+
+    const nameErrors = await readOperationsStats(
+      { byId: target.id },
+      { from, to },
+      { subgraphNames: ['s'.repeat(101)] },
+      ownerToken,
+    ).then(r => r.expectGraphQLErrors());
+    expect(nameErrors[0].message).toContain('at most 100 characters');
+  });
 });
 test.concurrent(
   'Mutation.updateTargetConditionalBreakingChangeConfiguration: values below minimum',
