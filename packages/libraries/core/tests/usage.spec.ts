@@ -1343,7 +1343,6 @@ describe('graph version', () => {
       duration: 1,
       graph,
     });
-    await waitFor(10);
 
     const report = await getReport();
     expect(report.operations?.[0].metadata?.graph).toEqual(graph);
@@ -1356,7 +1355,6 @@ describe('graph version', () => {
       args: { schema, document: op2, operationName: 'getProject' },
       graph,
     });
-    await waitFor(10);
 
     const report = await getReport();
     expect(report.subscriptionOperations?.[0].metadata?.graph).toEqual(graph);
