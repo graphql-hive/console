@@ -47,7 +47,6 @@ export const TargetAlertsRulesPage_Query = graphql(`
         updatedAt
         incidentCount
         evaluationBlocked {
-          reason
           since
           message
         }

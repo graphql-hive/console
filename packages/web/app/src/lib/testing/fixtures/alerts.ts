@@ -14,7 +14,6 @@ function evaluationBlocked(blocked: boolean) {
   return blocked
     ? {
         __typename: 'MetricAlertRuleEvaluationBlock' as const,
-        reason: 'UNKNOWN_SUBGRAPH',
         since: BLOCKED_RULE.since,
         message: BLOCKED_RULE.message,
       }

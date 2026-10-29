@@ -64,7 +64,6 @@ export const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
         direction
         confirmationMinutes
         evaluationBlocked {
-          reason
           since
           message
         }

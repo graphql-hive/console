@@ -192,9 +192,13 @@ describe('alerts rules and detail routes', () => {
         ['TargetAlertsRulesPage_Query', alertRulesPage({ blocked: true })],
       ]),
     );
-    renderAtUrl(`${ALERTS}/rules`, { client: blockedList });
+    const list = renderAtUrl(`${ALERTS}/rules`, { client: blockedList });
     await screen.findByText(BLOCKED_RULE.name);
     expect(screen.getByText('Not evaluated')).toBeTruthy();
+    // The icon explains; only the row itself opens the rule.
+    fireEvent.click(screen.getByRole('button', { name: 'Why this rule is not evaluated' }));
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(list.router.state.location.pathname).toBe(`${ALERTS}/rules`);
 
     const detail = createTestClient(
       new Map<string, unknown>([

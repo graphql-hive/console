@@ -17,6 +17,8 @@ export function EvaluationBlockedNote({ since, message }: { since: string; messa
             type="button"
             aria-label="Why this rule is not evaluated"
             className="inline-flex text-warning-text"
+            // The row opens the rule; a click on the icon only means the tooltip.
+            onClick={event => event.stopPropagation()}
           >
             <Info className="size-3" />
           </button>
