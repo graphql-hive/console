@@ -1,12 +1,11 @@
-import { MAX_RESOLVED_SUBGRAPH_COORDINATES } from '@hive/supergraph';
+import { MAX_RESOLVED_SUBGRAPH_COORDINATES, type SavedFilterSkipReason } from '@hive/supergraph';
 import type { MetricAlertRuleEvaluationBlockReason } from '../../../__generated__/types';
 
 /**
- * The reasons the workflows evaluator writes to `metric_alert_rules.evaluation_blocked_reason`
- * (`SavedFilterSkipReason` in packages/services/workflows). Workflows cannot be imported here,
- * so the two lists are kept in sync by hand; an unrecognised value reads as "not blocked".
+ * The enum value for each reason the workflows evaluator writes. The row may still carry a
+ * value this build does not know (a newer evaluator); it reads as "not blocked".
  */
-const REASONS: Record<string, MetricAlertRuleEvaluationBlockReason> = {
+const REASONS: Record<SavedFilterSkipReason, MetricAlertRuleEvaluationBlockReason> = {
   'no-composable-version': 'NO_COMPOSABLE_VERSION',
   'no-supergraph-sdl': 'NO_SUPERGRAPH_SDL',
   'supergraph-parse-failed': 'SUPERGRAPH_PARSE_FAILED',
@@ -28,7 +27,9 @@ export function evaluationBlockOf(rule: {
   if (!rule.evaluationBlockedReason || !rule.evaluationBlockedSince) {
     return null;
   }
-  const reason = REASONS[rule.evaluationBlockedReason];
+  const reason = (REASONS as Partial<Record<string, MetricAlertRuleEvaluationBlockReason>>)[
+    rule.evaluationBlockedReason
+  ];
   if (!reason) {
     return null;
   }

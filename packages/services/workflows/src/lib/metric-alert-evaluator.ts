@@ -9,7 +9,12 @@ import {
 } from '@hive/clickhouse';
 import type { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
-import { fieldCoordinatesOwnedBy, MAX_RESOLVED_SUBGRAPH_COORDINATES } from '@hive/supergraph';
+import {
+  fieldCoordinatesOwnedBy,
+  MAX_RESOLVED_SUBGRAPH_COORDINATES,
+  SAVED_FILTER_SKIP_REASONS,
+  type SavedFilterSkipReason,
+} from '@hive/supergraph';
 import { metricAlertClickHouseQueryDuration } from '../metrics.js';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import type { SupergraphOwnershipLoader } from './supergraph-ownership.js';
@@ -363,15 +368,7 @@ export type ResolvedSavedFilter = {
 
 export const EMPTY_RESOLVED_FILTER: ResolvedSavedFilter = { conditions: [], coordinateScopes: [] };
 
-export const SAVED_FILTER_SKIP_REASONS = [
-  'no-composable-version',
-  'no-supergraph-sdl',
-  'supergraph-parse-failed',
-  'unknown-subgraph',
-  'scope-too-large',
-] as const;
-
-export type SavedFilterSkipReason = (typeof SAVED_FILTER_SKIP_REASONS)[number];
+export { SAVED_FILTER_SKIP_REASONS, type SavedFilterSkipReason };
 
 /** Drops skip state for groups that no longer exist (rules deleted or disabled while skipped). */
 export function pruneSkipState(
