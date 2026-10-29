@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { createCdnAccess } from 'testkit/flow';
+import { createCdnAccess, deleteContract } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import z from 'zod';
 import { ApolloGateway } from '@apollo/gateway';
@@ -1605,6 +1605,109 @@ function runArtifactsCDNTests(
         );
         expect(contractSupergraphResponse.headers.get('x-hive-graph-version-id')).toBe(
           contractVersion.id,
+        );
+      },
+    );
+
+    test.concurrent(
+      'if-none-match returns 304 with the latest graph id and graph version id if only the metadata changed',
+      async ({ expect }) => {
+        const { createOrg, ownerToken } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        const publish = (extraField: string) =>
+          writeToken
+            .publishSchema({
+              sdl: /* GraphQL */ `
+                extend schema
+                  @link(url: "https://specs.apollo.dev/link/v1.0")
+                  @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+                type Query {
+                  hello: String
+                  helloHidden: String @tag(name: "internal")
+                  ${extraField}: String
+                }
+              `,
+              service: 'hello',
+              url: 'http://hello.com',
+            })
+            .then(r => r.expectNoGraphQLErrors());
+
+        const createContract = async () => {
+          const result = await execute({
+            document: CreateContractMutation,
+            variables: {
+              input: {
+                target: { byId: target.id },
+                contractName: 'my-contract',
+                removeUnreachableTypesFromPublicApiSchema: true,
+                includeTags: ['internal'],
+              },
+            },
+            authToken: ownerToken,
+          }).then(r => r.expectNoGraphQLErrors());
+          invariant(result.createContract.ok, 'Contract must be created');
+          return result.createContract.ok.createdContract.id;
+        };
+
+        await publish('a');
+        const firstContractId = await createContract();
+        // Publish again to write the contract artifacts
+        await publish('b');
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+        const contractSdlUrl = `${endpointBaseUrl}${target.id}/contracts/my-contract/sdl`;
+        const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
+
+        const firstResponse = await fetch(contractSdlUrl, { headers });
+        expect(firstResponse.status).toBe(200);
+        expect(firstResponse.headers.get('x-hive-graph-id')).toBe(firstContractId);
+        const firstBody = await firstResponse.text();
+        const firstETag = firstResponse.headers.get('etag');
+        invariant(firstETag, 'etag must exist');
+        const firstGraphVersionId = firstResponse.headers.get('x-hive-graph-version-id');
+        invariant(firstGraphVersionId, 'graph version id must exist');
+
+        // Re-create the contract with the same name and filter, which results in a new graph id
+        const deleteResult = await deleteContract(
+          { contract: { byId: firstContractId } },
+          ownerToken,
+        ).then(r => r.expectNoGraphQLErrors());
+        expect(deleteResult.deleteContract.ok?.deletedContractId).toBe(firstContractId);
+        const secondContractId = await createContract();
+        expect(secondContractId).not.toBe(firstContractId);
+        // The new field is not tagged, so the contract SDL stays the same
+        await publish('c');
+
+        // Sanity check: the artifact content is unchanged, only the metadata changed
+        const freshResponse = await fetch(contractSdlUrl, { headers });
+        expect(freshResponse.status).toBe(200);
+        expect(await freshResponse.text()).toBe(firstBody);
+        expect(freshResponse.headers.get('etag')).toBe(firstETag);
+        expect(freshResponse.headers.get('x-hive-graph-id')).toBe(secondContractId);
+        const secondGraphVersionId = freshResponse.headers.get('x-hive-graph-version-id');
+        invariant(secondGraphVersionId, 'graph version id must exist');
+        expect(secondGraphVersionId).not.toBe(firstGraphVersionId);
+
+        // A client that cached the previous response does not need to download the artifact again,
+        // but must receive the latest metadata, otherwise it would keep reporting the old graph id
+        const conditionalResponse = await fetch(contractSdlUrl, {
+          headers: { ...headers, 'if-none-match': firstETag },
+        });
+        expect(conditionalResponse.status).toBe(304);
+        expect(conditionalResponse.headers.get('etag')).toBe(firstETag);
+        expect(conditionalResponse.headers.get('x-hive-graph-id')).toBe(secondContractId);
+        expect(conditionalResponse.headers.get('x-hive-graph-version-id')).toBe(
+          secondGraphVersionId,
+        );
+        expect(conditionalResponse.headers.get('x-hive-schema-version-id')).toBe(
+          secondGraphVersionId,
         );
       },
     );
