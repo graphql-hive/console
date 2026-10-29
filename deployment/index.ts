@@ -192,11 +192,13 @@ deployWorkflows({
   observability,
   sentry,
   heartbeat: heartbeatsConfig.get('webhooks'),
+  metricAlertsHeartbeat: heartbeatsConfig.get('metricAlertsEvaluator'),
   schema,
   redis,
   clickhouse,
   dbMigrations,
   egressManager,
+  broker,
 });
 
 const zendesk = configureZendesk({ environment });
@@ -330,7 +332,6 @@ deployCloudFlareSecurityTransform({
     '/usage',
     '/graphql',
     '/registry',
-    '/server',
     '/api/github',
     '/api/slack',
   ],
