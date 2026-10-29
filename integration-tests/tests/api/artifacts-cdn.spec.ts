@@ -1622,7 +1622,7 @@ function runArtifactsCDNTests(
         const publish = (extraField: string) =>
           writeToken
             .publishSchema({
-              sdl: /* GraphQL */ `
+              sdl: `
                 extend schema
                   @link(url: "https://specs.apollo.dev/link/v1.0")
                   @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
