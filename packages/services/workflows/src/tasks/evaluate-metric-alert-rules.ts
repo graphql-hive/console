@@ -37,7 +37,8 @@ const lastSkipReasonByGroup = new Map<string, SavedFilterSkipReason>();
 
 export const EvaluateMetricAlertRulesTask = defineTask({
   name: 'evaluateMetricAlertRules',
-  schema: z.unknown(),
+  // A cron job's payload carries no `input`; under zod v4 an `unknown` key is still required.
+  schema: z.unknown().optional(),
 });
 
 export const task = implementTask(EvaluateMetricAlertRulesTask, async args => {
