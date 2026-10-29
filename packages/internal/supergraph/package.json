@@ -7,11 +7,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@hive/service-common": "workspace:*",
     "@theguild/federation-composition": "catalog:",
     "graphql": "catalog:"
   },
   "devDependencies": {
+    "@hive/service-common": "workspace:*",
     "vitest": "catalog:"
   }
 }
