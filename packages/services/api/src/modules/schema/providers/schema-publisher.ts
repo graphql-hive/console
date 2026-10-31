@@ -3451,6 +3451,8 @@ export class SchemaPublisher {
             (await this.graphStore.findContractGraphsForGraph(defaultGraph))
               .values()
               .toArray()
+              // the deleted contract must no longer be part of the graph manifest
+              .filter(contractGraph => contractGraph.id !== graph.id)
               .map(graph => this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(graph)),
           );
 
