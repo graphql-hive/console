@@ -839,12 +839,12 @@ importers:
       '@graphql-tools/utils':
         specifier: 12.0.3
         version: 12.0.3(graphql@16.14.2)
+      '@tendjs/async-retry':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@whatwg-node/fetch':
         specifier: 0.12.1
         version: 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
-      async-retry:
-        specifier: ^1.3.3
-        version: 1.3.3
       events:
         specifier: ^3.3.0
         version: 3.3.0
@@ -867,9 +867,6 @@ importers:
       '@apollo/subgraph':
         specifier: 2.13.2
         version: 2.13.2(graphql@16.14.2)
-      '@types/async-retry':
-        specifier: 'catalog:'
-        version: 1.4.8
       '@types/js-md5':
         specifier: 0.8.0
         version: 0.8.0
@@ -9152,6 +9149,10 @@ packages:
 
   '@tanstack/virtual-core@3.17.11':
     resolution: {integrity: sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g==}
+
+  '@tendjs/async-retry@1.0.1':
+    resolution: {integrity: sha512-mkJg8qkbq5ohNo3tVp5cYB8k6vrYY/1GZ72CpNXAk5jsJb7PaErtHM25wLAgdayaqnWy8CC56TSq2I8Ab/C6NA==}
+    engines: {node: '>=18'}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -25860,6 +25861,8 @@ snapshots:
   '@tanstack/table-core@8.20.5': {}
 
   '@tanstack/virtual-core@3.17.11': {}
+
+  '@tendjs/async-retry@1.0.1': {}
 
   '@testing-library/dom@10.4.1':
     dependencies:

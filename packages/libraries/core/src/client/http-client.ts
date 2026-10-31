@@ -1,6 +1,6 @@
-import asyncRetry from 'async-retry';
 import { Logger } from '@graphql-hive/logger';
 import { abortSignalAny } from '@graphql-hive/signal';
+import asyncRetry from '@tendjs/async-retry';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
 import type { LegacyLogger } from './types';
 
