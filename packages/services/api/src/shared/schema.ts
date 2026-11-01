@@ -65,7 +65,7 @@ export const buildASTSchema = traceInlineSync(
 );
 
 /**
- * It's a wrapper around `graphql.parse` that adds Sentry span to current transaction. It helps us measure performance.
+ * It's a wrapper around `graphql.parse` that records an OpenTelemetry span. It helps us measure performance.
  * @param source GraphQL source
  * @param context Context of the operation, e.g. `parse supergraphSDL in Query.explorer`
  * @returns

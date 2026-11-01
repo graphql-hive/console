@@ -48,7 +48,6 @@
     "@octokit/plugin-retry": "7.1.4",
     "@octokit/request-error": "6.1.7",
     "@sentry/node": "catalog:",
-    "@sentry/types": "catalog:",
     "@slack/web-api": "catalog:",
     "@theguild/federation-composition": "catalog:",
     "@trpc/client": "catalog:",

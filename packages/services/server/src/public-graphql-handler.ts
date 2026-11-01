@@ -5,7 +5,7 @@ import { useHive } from '@graphql-hive/yoga';
 import { type Registry } from '@hive/api';
 import { type AuthN } from '@hive/api/modules/auth/lib/authz';
 import { requestIdStorage, TracingInstance } from '@hive/service-common';
-import { runWithAsyncContext } from '@sentry/node';
+import { withIsolationScope } from '@sentry/node';
 import { authenticateRequest } from './authenticate-request';
 import { type HiveUsageConfig } from './environment';
 import { useHiveErrorHandler, useHiveTracing, type Context } from './graphql-handler';
@@ -75,7 +75,9 @@ export const createPublicGraphQLHandler = (
         requestId,
       },
       async () => {
-        const response = await runWithAsyncContext(() => {
+        // Sentry's http integration already isolates each incoming request; this keeps the
+        // GraphQL handling isolated on its own, including under fastify.inject in tests.
+        const response = await withIsolationScope(() => {
           return server.handleNodeRequestAndResponse(req, reply, {
             req,
             reply,
