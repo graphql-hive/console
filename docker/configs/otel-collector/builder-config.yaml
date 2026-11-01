@@ -41,3 +41,9 @@ extensions:
   - gomod: github.com/graphql-hive/console/docker/configs/otel-collector/extension-statsviz v0.0.0
     path: ./extension-statsviz
     name: statsvizextension
+
+replaces:
+  # GHSA-c9gr-gmg4-2vqv: malformed Brotli input can panic the decoder (DoS).
+  # Transitive dependency of the OTel components above; pin the patched version
+  # until upstream OTel ships with >= v1.2.7. Remove once no longer needed.
+  - github.com/andybalholm/brotli => github.com/andybalholm/brotli v1.2.7
