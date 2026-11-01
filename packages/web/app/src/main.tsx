@@ -6,7 +6,7 @@ import { init } from '@sentry/react';
 import { RouterProvider } from '@tanstack/react-router';
 import './index.css';
 import { clearChunkReloadFlag, isChunkLoadError, reloadOnChunkError } from './lib/chunk-error';
-import { sentryIgnoreErrors, tagMonacoErrors } from './lib/sentry';
+import { buildSentryInitOptions } from './lib/sentry';
 import { createAppRouter } from './router';
 
 // Register things for typesafety
@@ -19,15 +19,7 @@ declare module '@tanstack/react-router' {
 // App-wide side effects live here, not in the router module, so the route tree can be imported
 // (tests, previews) without initializing Sentry or touching the network.
 if (env.sentry) {
-  init({
-    dsn: env.sentry.dsn,
-    enabled: true,
-    dist: 'webapp',
-    release: env.release,
-    environment: env.environment,
-    ignoreErrors: sentryIgnoreErrors,
-    beforeSend: tagMonacoErrors,
-  });
+  init(buildSentryInitOptions({ ...env, sentry: env.sentry }));
 }
 
 Error.stackTraceLimit = 15;
