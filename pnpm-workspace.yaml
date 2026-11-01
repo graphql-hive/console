@@ -36,8 +36,7 @@ catalog:
   '@graphql-yoga/redis-event-target': 3.0.4
   '@manypkg/get-packages': 2.2.2
   '@monaco-editor/react': '4.8.0-rc.2'
-  '@sentry/node': 7.120.2
-  '@sentry/types': 7.120.2
+  '@sentry/node': 11.9.0
   '@slack/web-api': 7.10.0
   '@tailwindcss/vite': 4.3.3
   '@swc/core': 1.16.0
