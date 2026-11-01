@@ -19,5 +19,7 @@ export type Context = {
   webAppUrl: string | null;
   /** Decrypts secrets written by the API service. Null when ENCRYPTION_SECRET is unset. */
   crypto: Encryptor | null;
+  /** Pinged after each successful metric alert evaluation tick. */
+  metricAlertsHeartbeatEndpoint: string | null;
   redis: Redis;
 };

@@ -1140,7 +1140,7 @@ export class OrganizationManager {
 
     const newRole = await this.organizationMemberRoles.findMemberRoleById(args.memberRoleId);
 
-    if (!newRole) {
+    if (!newRole || newRole.organizationId !== organizationId) {
       return {
         error: {
           message: 'Role not found',

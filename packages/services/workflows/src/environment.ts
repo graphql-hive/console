@@ -37,6 +37,8 @@ const EnvironmentModel = zod.object({
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   HEARTBEAT_ENDPOINT: emptyString(zod.url().optional()),
+  // Pinged after every successful run of the per-minute metric alert evaluator cron.
+  METRIC_ALERTS_HEARTBEAT_ENDPOINT: emptyString(zod.url().optional()),
   EMAIL_FROM: zod.email(),
   SCHEMA_ENDPOINT: zod.url(),
   // Base URL of the Hive Console, used to link alert notifications back to the
@@ -293,6 +295,9 @@ export const env = {
         } satisfies RequestBroker)
       : null,
   httpHeartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
+  metricAlertsHeartbeat: base.METRIC_ALERTS_HEARTBEAT_ENDPOINT
+    ? { endpoint: base.METRIC_ALERTS_HEARTBEAT_ENDPOINT }
+    : null,
   redis:
     redisConfigResult?.type === 'ok'
       ? redisConfigResult.config

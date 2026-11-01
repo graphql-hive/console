@@ -1,4 +1,11 @@
-import { createMemberRole, inviteToOrganization, pollFor, updateMemberRole } from 'testkit/flow';
+import {
+  assignMemberRole,
+  createMemberRole,
+  getOrganization,
+  inviteToOrganization,
+  pollFor,
+  updateMemberRole,
+} from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -419,3 +426,35 @@ test.concurrent('Mutation.updateMemberRole: name and description too short', asy
     }
   `);
 });
+
+test.concurrent(
+  'Mutation.assignMemberRole: cannot assign a role from another organization',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const owner1 = await seed.createOwner();
+    const org1 = await owner1.createOrg();
+    const { member } = await org1.inviteAndJoinMember();
+
+    const owner2 = await seed.createOwner();
+    const org2 = await owner2.createOrg();
+    const org2Members = await org2.inviteAndJoinMember();
+    const org2Role = await org2Members.createMemberRole(['organization:describe']);
+
+    const result = await assignMemberRole(
+      {
+        organization: { bySelector: { organizationSlug: org1.organization.slug } },
+        member: { byId: member.user.id },
+        memberRole: { byId: org2Role.id },
+        resources: { mode: ResourceAssignmentModeType.All, projects: [] },
+      },
+      owner1.ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.assignMemberRole).toEqual({
+      ok: null,
+      error: {
+        message: 'Role not found',
+      },
+    });
+  },
+);

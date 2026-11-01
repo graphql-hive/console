@@ -1,4 +1,6 @@
 @import 'tailwindcss' source('./');
+@import '@fontsource-variable/instrument-sans/wght.css';
+@import '@fontsource-variable/instrument-sans/wght-italic.css';
 @plugin "./lib/tailwind-plugins.js";
 
 /* Configure dark mode to use .dark class instead of prefers-color-scheme */
@@ -6,7 +8,7 @@
 
 @theme {
   /* Typography */
-  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', 'Monaco', monospace;
 
   /* Two steps Tailwind lacks and the app kept typing by hand: micro text (badges, chips, tick

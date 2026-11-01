@@ -405,6 +405,27 @@ export class TargetManager {
       };
     }
 
+    if (validationResult.data.targetIds) {
+      const projectTargetIds = new Set(
+        await this.targetStore.getTargetIdsOfProject({
+          organizationId: selector.organizationId,
+          projectId: selector.projectId,
+        }),
+      );
+
+      if (validationResult.data.targetIds.some(targetId => !projectTargetIds.has(targetId))) {
+        return {
+          ok: false,
+          error: {
+            message: 'Please check your input.',
+            inputErrors: {
+              targetIds: 'All targets must belong to the same project',
+            },
+          },
+        };
+      }
+    }
+
     if (args.configuration.isEnabled === true) {
       await this.storage.completeGetStartedStep({
         organizationId: selector.organizationId,

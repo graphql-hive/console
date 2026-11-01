@@ -4,7 +4,7 @@ COPY builder-config.yaml .
 COPY extension-hiveauth/ ./extension-hiveauth/
 COPY extension-statsviz/ ./extension-statsviz/
 
-FROM golang:1.26.10-bookworm AS builder
+FROM golang:1.27.2-bookworm AS builder
 
 ARG OTEL_VERSION=0.162.0
 

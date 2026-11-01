@@ -514,9 +514,14 @@ export async function evaluateRule(args: {
           await updateState(trx, rule.id, 'FIRING', now);
           const incidentId = await trx
             .maybeOneFirst(
+              // A rule should hold one open incident; if the data ever holds more, the newest is
+              // the one this transition belongs to. Reading one row keeps a single inconsistent
+              // rule from throwing here every tick and taking its whole group down with it.
               psql`
               SELECT "id" FROM "metric_alert_incidents"
               WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
+              ORDER BY "started_at" DESC
+              LIMIT 1
             `,
             )
             .then(z.string().nullable().parse);
@@ -566,9 +571,14 @@ export async function evaluateRule(args: {
           await updateState(trx, rule.id, 'RECOVERING', now);
           const incidentId = await trx
             .maybeOneFirst(
+              // A rule should hold one open incident; if the data ever holds more, the newest is
+              // the one this transition belongs to. Reading one row keeps a single inconsistent
+              // rule from throwing here every tick and taking its whole group down with it.
               psql`
               SELECT "id" FROM "metric_alert_incidents"
               WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
+              ORDER BY "started_at" DESC
+              LIMIT 1
             `,
             )
             .then(z.string().nullable().parse);
@@ -594,13 +604,19 @@ export async function evaluateRule(args: {
         ) {
           await pg.transaction('alertEval:recoveringToNormal', async trx => {
             await updateState(trx, rule.id, 'NORMAL', now);
+            // Resolves every open incident of the rule (there should be one) and logs the
+            // transition against the newest, the same one the SELECTs above pick, so a rule's
+            // timeline stays on one incident even if the data holds more.
             const incidentId = await trx
               .maybeOneFirst(
                 psql`
-                UPDATE "metric_alert_incidents"
-                SET "resolved_at" = NOW()
-                WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
-                RETURNING "id"
+                WITH "resolved" AS (
+                  UPDATE "metric_alert_incidents"
+                  SET "resolved_at" = NOW()
+                  WHERE "metric_alert_rule_id" = ${rule.id} AND "resolved_at" IS NULL
+                  RETURNING "id", "started_at"
+                )
+                SELECT "id" FROM "resolved" ORDER BY "started_at" DESC LIMIT 1
               `,
               )
               .then(z.string().nullable().parse);
