@@ -310,8 +310,10 @@ jobs:
 
             **Image Tags**: `${{ inputs.latestVersion }}-${{ inputs.publishLatest == false && 'alpha-' || '' }}${{ steps.git_hash.outputs.sha_short }}`, `${{ steps.git_hash.outputs.sha_short }}`, `${{ inputs.imageTag }}`
 
+      # The bundles are platform-independent and their debug ids are content-derived, so one
+      # leg's upload covers both images; running it per leg only doubled the API calls.
       - name: upload sourcemaps to Sentry
-        if: ${{ inputs.publishSourceMaps }}
+        if: ${{ inputs.publishSourceMaps && matrix.platform == 'linux/amd64' }}
         env:
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
