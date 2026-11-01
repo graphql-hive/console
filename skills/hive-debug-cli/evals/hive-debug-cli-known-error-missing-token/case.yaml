@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: hive-debug-cli-known-error-missing-token
+expected_outcome: |
+  Identifies 103 as a missing/invalid registry token error, grounds the explanation in the CLI error
+  docs, and gives a concrete fix (env var, flag, or config file) without running any commands.

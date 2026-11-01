@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: hive-debug-cli-no-error-code-provided
+expected_outcome: |
+  Recognizes the missing command/error code and asks the user for it instead of guessing or running
+  commands on their behalf.
