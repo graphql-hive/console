@@ -3678,14 +3678,23 @@ export class SchemaPublisher {
         return;
       }
 
+      let artifactPath = `/artifacts/v1/${args.schemaVersion.targetId}/version/`;
+
+      if (schemaVersion.graphMetadata.type === 'contract') {
+        invariant(
+          schemaVersion.sourceSchemaVersionId,
+          'Contract schema version must have source schema version id',
+        );
+        artifactPath += `${schemaVersion.sourceSchemaVersionId}/contracts/${formatContractName(schemaVersion.graphMetadata.name)}`;
+      } else {
+        artifactPath += schemaVersion.id;
+      }
+
       manifest.graphs[schemaVersion.graphMetadata.name] = {
         id: schemaVersion.graphMetadata.id,
         currentVersion: {
           id: schemaVersion.id,
-          artifactPath:
-            schemaVersion.graphMetadata.type === 'contract'
-              ? `/artifacts/v1/${args.schemaVersion.targetId}/version/${args.schemaVersion.id}/contracts/${formatContractName(schemaVersion.graphMetadata.name)}`
-              : `/artifacts/v1/${schemaVersion.targetId}/version/${schemaVersion.id}`,
+          artifactPath,
         },
       };
     }

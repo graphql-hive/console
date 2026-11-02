@@ -1551,6 +1551,99 @@ function runArtifactsCDNTests(
     );
 
     test.concurrent(
+      'deleting a contract retains valid artifact paths for contracts from an older schema version',
+      async ({ expect }) => {
+        const { createOrg, ownerToken } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        const createContract = async (
+          contractName: string,
+          tagFilter: { includeTags: string[] } | { excludeTags: string[] },
+        ) => {
+          const result = await execute({
+            document: CreateContractMutation,
+            variables: {
+              input: {
+                target: { byId: target.id },
+                contractName,
+                removeUnreachableTypesFromPublicApiSchema: true,
+                ...tagFilter,
+              },
+            },
+            authToken: ownerToken,
+          }).then(r => r.expectNoGraphQLErrors());
+          invariant(result.createContract.ok, 'Contract must be created');
+          return result.createContract.ok.createdContract.id;
+        };
+
+        const deletedContractId = await createContract('deleted-contract', {
+          includeTags: ['internal'],
+        });
+        await createContract('retained-contract', { excludeTags: ['internal'] });
+
+        await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String
+                internal: String @tag(name: "internal")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        // This creates a newer default version, but retained-contract fails to compose because
+        // every field is excluded. Its latest valid artifact remains under the previous version.
+        await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String @tag(name: "internal")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        await deleteContract({ contract: { byId: deletedContractId } }, ownerToken).then(r =>
+          r.expectNoGraphQLErrors(),
+        );
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+        const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
+        const manifestResponse = await fetch(`${endpointBaseUrl}${target.id}/manifest.json`, {
+          headers,
+        });
+        expect(manifestResponse.status).toBe(200);
+        const manifest = GraphManifestModel.parse(await manifestResponse.json());
+        const retainedContract = manifest.graphs['default/retained-contract'];
+        invariant(retainedContract, 'Retained contract must be in the manifest');
+
+        const artifactResponse = await fetch(
+          new URL(`${retainedContract.currentVersion.artifactPath}/sdl`, endpointBaseUrl),
+          { headers },
+        );
+        expect(artifactResponse.status).toBe(200);
+      },
+    );
+
+    test.concurrent(
       'deleting a contract succeeds for a backfilled graph whose latest version has no graph metadata',
       async ({ expect }) => {
         const seed = initSeed();
