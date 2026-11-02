@@ -1,8 +1,19 @@
 import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { beforeEach, vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
+import { AlertChannelDeliveryRecorder } from '../alert-channel-delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
 import { DiscordCommunicationAdapter } from './discord';
+
+vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
+vi.mock('@hive/service-common', () => ({ getRequestId: () => 'req-1' }));
+vi.mock('../../../operations/providers/clickhouse-client', () => ({
+  ClickHouse: class {},
+  sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+    sql: strings.join('?'),
+    values,
+  }),
+}));
 
 const logger = {
   child: () => ({
@@ -16,12 +27,33 @@ const webhookUrl = 'webhook-url';
 
 function createAdapter() {
   const httpClient = {
-    post: vi.fn().mockResolvedValue(undefined),
+    postWithResponse: vi
+      .fn()
+      .mockResolvedValue({ statusCode: 204, statusText: 'No Content', body: undefined }),
   };
-  const adapter = new DiscordCommunicationAdapter(logger as any, httpClient as any, appBaseUrl);
+  const recorder = new AlertChannelDeliveryRecorder(
+    { postQuery: vi.fn().mockResolvedValue(undefined) } as any,
+    logger as any,
+    '1.2.3',
+  );
+  const record = vi.spyOn(recorder, 'record').mockResolvedValue(undefined);
+  const adapter = new DiscordCommunicationAdapter(
+    logger as any,
+    httpClient as any,
+    appBaseUrl,
+    recorder,
+  );
 
-  return { adapter, httpClient };
+  return { adapter, httpClient, record };
 }
+
+const hiveHeaders = (event: string, idempotencyKey: string) =>
+  expect.objectContaining({
+    'Hive-Request-ID': 'req-1',
+    'Hive-Event': event,
+    'User-Agent': 'Hive-Webhooks/1.2.3',
+    'Idempotency-Key': idempotencyKey,
+  });
 
 describe('DiscordCommunicationAdapter', () => {
   beforeEach(() => {
@@ -116,16 +148,19 @@ describe('DiscordCommunicationAdapter', () => {
           },
         },
         channel: {
+          id: 'channel-id',
           webhookEndpoint: webhookUrl,
         } as AlertChannel,
       } as SchemaChangeNotificationInput;
 
-      const { adapter } = createAdapter();
+      const { adapter, record } = createAdapter();
       const sendDiscordMessageSpy = vi.spyOn(adapter, 'sendDiscordMessage');
 
       await adapter.sendSchemaChangeNotification(input);
 
-      expect(sendDiscordMessageSpy).toHaveBeenCalledWith(webhookUrl, {
+      expect(sendDiscordMessageSpy).toHaveBeenCalledWith(
+        webhookUrl,
+        {
         embeds: [
           expect.objectContaining({
             title: 'Breaking schema changes detected',
@@ -139,9 +174,25 @@ describe('DiscordCommunicationAdapter', () => {
             ],
           }),
         ],
-      });
+        },
+        hiveHeaders('schema_change', 'schema-change:schema-id:channel-id'),
+      );
+      expect(sendDiscordMessageSpy.mock.calls[0]?.[2]).toEqual(
+        expect.objectContaining({ 'Hive-Target-ID': 'target-id', 'Hive-Schema-ID': 'schema-id' }),
+      );
       expect(sendDiscordMessageSpy.mock.calls[0]?.[1].embeds?.[0]?.description).toContain(
         'Field `addFoo` was removed from object type `Mutation`',
+      );
+      expect(record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelId: 'channel-id',
+          channelType: 'DISCORD',
+          event: 'schema_change',
+          ok: true,
+          statusCode: 204,
+          statusText: 'No Content',
+          metadata: sendDiscordMessageSpy.mock.calls[0]?.[2],
+        }),
       );
       expect(sendDiscordMessageSpy.mock.calls[0]?.[1].embeds?.[0]?.description).toContain(
         '### Safe changes',
@@ -184,6 +235,7 @@ describe('DiscordCommunicationAdapter', () => {
           kind: 'created',
         },
         channel: {
+          id: 'channel-id',
           webhookEndpoint: webhookUrl,
         },
       } as ChannelConfirmationInput;
@@ -192,30 +244,38 @@ describe('DiscordCommunicationAdapter', () => {
 
       await adapter.sendChannelConfirmation(input);
 
-      expect(sendDiscordMessageSpy).toHaveBeenCalledWith(webhookUrl, {
-        embeds: [
-          {
-            title: 'GraphQL Hive notifications',
-            color: 0x5865f2,
-            description:
-              'I will send notifications here about your [project-name](app-base-url/org-clean-id/project-clean-id) project.',
-          },
-        ],
-      });
+      expect(sendDiscordMessageSpy).toHaveBeenCalledWith(
+        webhookUrl,
+        {
+          embeds: [
+            {
+              title: 'GraphQL Hive notifications',
+              color: 0x5865f2,
+              description:
+                'I will send notifications here about your [project-name](app-base-url/org-clean-id/project-clean-id) project.',
+            },
+          ],
+        },
+        hiveHeaders('channel_confirmation', 'channel-confirmation:created:channel-id'),
+      );
 
       input.event.kind = 'deleted';
       await adapter.sendChannelConfirmation(input);
 
-      expect(sendDiscordMessageSpy).toHaveBeenLastCalledWith(webhookUrl, {
-        embeds: [
-          {
-            title: 'GraphQL Hive notifications',
-            color: 0x5865f2,
-            description:
-              'I will no longer send notifications here about your [project-name](app-base-url/org-clean-id/project-clean-id) project.',
-          },
-        ],
-      });
+      expect(sendDiscordMessageSpy).toHaveBeenLastCalledWith(
+        webhookUrl,
+        {
+          embeds: [
+            {
+              title: 'GraphQL Hive notifications',
+              color: 0x5865f2,
+              description:
+                'I will no longer send notifications here about your [project-name](app-base-url/org-clean-id/project-clean-id) project.',
+            },
+          ],
+        },
+        hiveHeaders('channel_confirmation', 'channel-confirmation:deleted:channel-id'),
+      );
     });
   });
 
@@ -233,7 +293,7 @@ describe('DiscordCommunicationAdapter', () => {
         ],
       });
 
-      expect(httpClient.post).toHaveBeenCalledWith(
+      expect(httpClient.postWithResponse).toHaveBeenCalledWith(
         'http://example.com/webhook',
         expect.objectContaining({
           headers: {
@@ -275,7 +335,7 @@ describe('DiscordCommunicationAdapter', () => {
         ],
       });
 
-      const body = httpClient.post.mock.calls[0][1].json;
+      const body = httpClient.postWithResponse.mock.calls[0][1].json;
 
       expect(body.embeds[0].title).toHaveLength(256);
       expect(body.embeds[0].description).toHaveLength(4096);
@@ -285,7 +345,7 @@ describe('DiscordCommunicationAdapter', () => {
 
     it('handles failed send operation', async () => {
       const { adapter, httpClient } = createAdapter();
-      httpClient.post.mockRejectedValueOnce(
+      httpClient.postWithResponse.mockRejectedValueOnce(
         new Error('Failed to send Discord message: Bad Request'),
       );
 

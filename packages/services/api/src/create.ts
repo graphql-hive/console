@@ -64,7 +64,7 @@ import { RedisRateLimiter } from './modules/shared/providers/redis-rate-limiter'
 import { S3Config } from './modules/shared/providers/s3-config';
 import { S3Writer } from './modules/shared/providers/s3-writer';
 import { Storage } from './modules/shared/providers/storage';
-import { RateLimitConfig, WEB_APP_URL } from './modules/shared/providers/tokens';
+import { RateLimitConfig, RELEASE, WEB_APP_URL } from './modules/shared/providers/tokens';
 import { supportModule } from './modules/support';
 import { provideSupportConfig, SupportConfig } from './modules/support/providers/config';
 import { targetModule } from './modules/target';
@@ -121,6 +121,7 @@ export function createRegistry({
   metricAlertRulesEnabled,
   prometheus,
   taskScheduler,
+  release,
 }: {
   logger: Logger;
   storage: Storage;
@@ -164,6 +165,8 @@ export function createRegistry({
   metricAlertRulesEnabled: boolean;
   prometheus: null | Record<string, unknown>;
   taskScheduler: TaskScheduler;
+  /** Hive release version, sent as the User-Agent of outbound webhook calls. */
+  release: string;
 }) {
   const s3Config = new S3Config([
     {
@@ -292,6 +295,11 @@ export function createRegistry({
     {
       provide: WEB_APP_URL,
       useValue: app?.baseUrl.replace(/\/$/, '') ?? 'http://localhost:3000',
+      scope: Scope.Singleton,
+    },
+    {
+      provide: RELEASE,
+      useValue: release,
       scope: Scope.Singleton,
     },
     {

@@ -193,6 +193,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/019-metric-alert-target-daily-rollup'),
     import('./clickhouse-actions/020-usage-coordinate-counts'),
     import('./clickhouse-actions/021-usage-coordinate-errors'),
+    import('./clickhouse-actions/022-alert-channel-deliveries'),
   ]);
 
   async function actionRunner(action: Action, index: number) {

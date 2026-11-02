@@ -1,4 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
+import { getRequestId } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { SchemaChangeNotificationTask } from '@hive/workflows/tasks/schema-change-notification';
 import { Logger } from '../../../shared/providers/logger';
@@ -24,10 +25,15 @@ export class WebhookCommunicationAdapter implements CommunicationAdapter {
       input.event.project.id,
       input.event.target.id,
     );
-    await this.taskScheduler.scheduleTask(SchemaChangeNotificationTask, {
-      endpoint: input.channel.webhookEndpoint!,
-      event: input.event,
-    });
+    await this.taskScheduler.scheduleTask(
+      SchemaChangeNotificationTask,
+      {
+        endpoint: input.channel.webhookEndpoint!,
+        event: input.event,
+      },
+      // Forwarded to the destination as Hive-Request-ID by the task.
+      { requestId: getRequestId() },
+    );
   }
 
   async sendChannelConfirmation() {
