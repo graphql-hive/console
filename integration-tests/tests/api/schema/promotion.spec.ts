@@ -719,6 +719,207 @@ test.concurrent(
   },
 );
 
+async function fetchGraphManifest(targetId: string) {
+  const artifact = await fetchS3ObjectArtifact(`artifact/${targetId}/manifest.json`);
+  return artifact ? JSON.parse(artifact.body) : null;
+}
+
+test.concurrent(
+  'promote valid schema version to another target publishes graph manifest',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, createOrganizationAccessToken } = await createOrg();
+    const { target, fetchVersions, createTarget } = await createProject(ProjectType.Federation);
+    const createTargetResult = await createTarget().then(r => r.expectNoGraphQLErrors());
+    const otherTarget = createTargetResult.createTarget.ok?.createdTarget;
+    assertNonNullish(otherTarget);
+    const { privateAccessKey } = await createOrganizationAccessToken({
+      resources: {
+        mode: ResourceAssignmentModeType.All,
+      },
+      permissions: ['schemaVersion:publish', 'schemaVersion:promote'],
+    });
+
+    await publishSchema(
+      {
+        author: 'a',
+        commit: 'a',
+        sdl: /* GraphQL */ `
+          type Query {
+            a: String!
+          }
+        `,
+        service: 'a',
+        url: 'http://a',
+        target: {
+          byId: target.id,
+        },
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(await fetchGraphManifest(otherTarget.id)).toEqual(null);
+
+    const promoteResult = await schemaVersionPromote(
+      {
+        source: {
+          fromTarget: {
+            byId: target.id,
+          },
+        },
+        target: {
+          toTarget: {
+            byId: otherTarget.id,
+          },
+        },
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(promoteResult.schemaVersionPromote).toMatchObject({
+      ok: {},
+      error: null,
+    });
+
+    const [promotedVersion] = await fetchVersions(1, otherTarget);
+    assertNonNullish(promotedVersion);
+
+    expect(await fetchGraphManifest(otherTarget.id)).toEqual({
+      graphs: {
+        default: {
+          id: expect.any(String),
+          currentVersion: {
+            id: promotedVersion.id,
+            artifactPath: `/artifacts/v1/${otherTarget.id}/version/${promotedVersion.id}`,
+          },
+        },
+      },
+    });
+  },
+);
+
+test.concurrent(
+  'promote schema version within target updates graph manifest including contracts',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject, createOrganizationAccessToken } = await createOrg();
+    const { target, fetchVersions } = await createProject(ProjectType.Federation);
+    const { privateAccessKey } = await createOrganizationAccessToken({
+      resources: {
+        mode: ResourceAssignmentModeType.All,
+      },
+      permissions: [
+        'schemaVersion:publish',
+        'target:modifySettings',
+        'project:describe',
+        'schemaVersion:promote',
+      ],
+    });
+
+    await createContract(
+      {
+        contractName: 'public',
+        target: {
+          byId: target.id,
+        },
+        includeTags: ['public'],
+        removeUnreachableTypesFromPublicApiSchema: true,
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    await publishSchema(
+      {
+        author: 'a',
+        commit: 'a',
+        sdl: /* GraphQL */ `
+          type Query {
+            a: String!
+            b: String! @tag(name: "public")
+          }
+        `,
+        service: 'a',
+        url: 'http://a',
+        target: {
+          byId: target.id,
+        },
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    const manifestBeforePromotion = await fetchGraphManifest(target.id);
+    assertNonNullish(manifestBeforePromotion);
+
+    const promoteResult = await schemaVersionPromote(
+      {
+        source: {
+          fromTarget: {
+            byId: target.id,
+          },
+        },
+        target: {
+          toTarget: {
+            byId: target.id,
+          },
+        },
+      },
+      privateAccessKey,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(promoteResult.schemaVersionPromote).toMatchObject({
+      ok: {},
+      error: null,
+    });
+
+    const [promotedVersion, publishedVersion] = await fetchVersions(2);
+    assertNonNullish(promotedVersion);
+    assertNonNullish(publishedVersion);
+
+    const promotedVersionDetails = await getSchemaVersionWithAllDetails(
+      target.id,
+      promotedVersion.id,
+      privateAccessKey,
+    );
+    const promotedContractVersion = promotedVersionDetails?.contractVersions?.edges.at(0)?.node;
+    assertNonNullish(promotedContractVersion);
+
+    expect(await fetchGraphManifest(target.id)).toEqual({
+      graphs: {
+        default: {
+          // graph ids are stable across versions
+          id: manifestBeforePromotion.graphs['default'].id,
+          currentVersion: {
+            id: promotedVersion.id,
+            artifactPath: `/artifacts/v1/${target.id}/version/${promotedVersion.id}`,
+          },
+        },
+        'default/public': {
+          id: manifestBeforePromotion.graphs['default/public'].id,
+          currentVersion: {
+            id: promotedContractVersion.id,
+            // contract artifacts are stored under the source (default graph) schema version
+            artifactPath: `/artifacts/v1/${target.id}/version/${promotedVersion.id}/contracts/public`,
+          },
+        },
+      },
+    });
+
+    // the manifest moved forward from the published to the promoted version
+    expect(manifestBeforePromotion.graphs['default'].currentVersion.id).toEqual(
+      publishedVersion.id,
+    );
+
+    // the referenced contract artifact exists
+    const contractSupergraph = await fetchS3ObjectArtifact(
+      `artifact/${target.id}/version/${promotedVersion.id}/contracts/public/supergraph`,
+    );
+    assertNonNullish(contractSupergraph);
+    expect(contractSupergraph.metadata['x-hive-graph-version-id']).toEqual(
+      promotedContractVersion.id,
+    );
+  },
+);
+
 test.concurrent(
   'promote schema version within target moves along active contracts',
   async ({ expect }) => {
