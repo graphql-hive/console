@@ -30,6 +30,6 @@
     "nock": "catalog:",
     "pino-pretty": "catalog:",
     "reflect-metadata": "catalog:",
-    "zod": "4.6.6"
+    "zod": "catalog:"
   }
 }
