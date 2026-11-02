@@ -4,6 +4,11 @@ import { SchemaChangeType } from '@hive/storage';
 import { HttpClient } from '../../../shared/providers/http-client';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
+import { buildHiveWebhookHeaders } from '../../lib/delivery-metadata';
+import {
+  AlertChannelDeliveryRecorder,
+  type DeliveryOutcome,
+} from '../alert-channel-delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -54,6 +59,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     logger: Logger,
     private httpClient: HttpClient,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
+    private deliveries: AlertChannelDeliveryRecorder,
   ) {
     this.logger = logger.child({ service: 'DiscordCommunicationAdapter' });
   }
@@ -105,37 +111,63 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       );
       const hasErrors = input.event.errors.length > 0;
 
-      await this.sendDiscordMessage(webhookUrl, {
-        embeds: [
-          {
-            title: input.event.initial
-              ? 'Schema published'
-              : hasBreakingChanges || hasErrors
-                ? 'Breaking schema changes detected'
-                : 'Schema changes detected',
-            url: changeUrl,
-            color: hasBreakingChanges || hasErrors ? DISCORD_RED : DISCORD_GREEN,
-            description: [message, detailsText].filter(Boolean).join('\n\n'),
-            fields: [
-              {
-                name: 'Project',
-                value: input.event.project.name || input.event.project.slug,
-                inline: true,
-              },
-              {
-                name: 'Target',
-                value: input.event.target.name || input.event.target.slug,
-                inline: true,
-              },
-              {
-                name: 'Commit',
-                value: input.event.schema.commit || '—',
-                inline: true,
-              },
-            ],
-          },
-        ],
-      });
+      const headers = buildHiveWebhookHeaders(
+        this.deliveries.describe({
+          event: 'schema_change',
+          targetId: input.event.target.id,
+          schemaId: input.event.schema.id,
+          idempotencyKey: `schema-change:${input.event.schema.id}:${input.channel.id}`,
+        }),
+      );
+
+      await this.deliveries.track(
+        {
+          organizationId: input.event.organization.id,
+          projectId: input.event.project.id,
+          channelId: input.channel.id,
+          channelType: 'DISCORD',
+          event: 'schema_change',
+          metadata: headers,
+        },
+        async () => ({
+          outcome: await this.sendDiscordMessage(
+            webhookUrl,
+            {
+              embeds: [
+                {
+                  title: input.event.initial
+                    ? 'Schema published'
+                    : hasBreakingChanges || hasErrors
+                      ? 'Breaking schema changes detected'
+                      : 'Schema changes detected',
+                  url: changeUrl,
+                  color: hasBreakingChanges || hasErrors ? DISCORD_RED : DISCORD_GREEN,
+                  description: [message, detailsText].filter(Boolean).join('\n\n'),
+                  fields: [
+                    {
+                      name: 'Project',
+                      value: input.event.project.name || input.event.project.slug,
+                      inline: true,
+                    },
+                    {
+                      name: 'Target',
+                      value: input.event.target.name || input.event.target.slug,
+                      inline: true,
+                    },
+                    {
+                      name: 'Commit',
+                      value: input.event.schema.commit || '—',
+                      inline: true,
+                    },
+                  ],
+                },
+              ],
+            },
+            headers,
+          ),
+          value: undefined,
+        }),
+      );
     } catch (error) {
       this.logger.error('Failed to send Discord notification (error=%o)', error);
     }
@@ -166,15 +198,39 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
         url: `${this.appBaseUrl}/${input.event.organization.slug}/${input.event.project.slug}`,
       });
 
-      await this.sendDiscordMessage(webhookUrl, {
-        embeds: [
-          {
-            title: 'GraphQL Hive notifications',
-            color: DISCORD_BLUE,
-            description: `${actionMessage} about your ${projectLink} project.`,
-          },
-        ],
-      });
+      const headers = buildHiveWebhookHeaders(
+        this.deliveries.describe({
+          event: 'channel_confirmation',
+          idempotencyKey: `channel-confirmation:${input.event.kind}:${input.channel.id}`,
+        }),
+      );
+
+      await this.deliveries.track(
+        {
+          organizationId: input.event.organization.id,
+          projectId: input.event.project.id,
+          channelId: input.channel.id,
+          channelType: 'DISCORD',
+          event: 'channel_confirmation',
+          metadata: headers,
+        },
+        async () => ({
+          outcome: await this.sendDiscordMessage(
+            webhookUrl,
+            {
+              embeds: [
+                {
+                  title: 'GraphQL Hive notifications',
+                  color: DISCORD_BLUE,
+                  description: `${actionMessage} about your ${projectLink} project.`,
+                },
+              ],
+            },
+            headers,
+          ),
+          value: undefined,
+        }),
+      );
     } catch (error) {
       this.logger.error('Failed to send Discord notification (error=%o)', error);
     }
@@ -184,7 +240,11 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     return word + (num !== 1 ? 's' : '');
   }
 
-  async sendDiscordMessage(webhookUrl: string, payload: DiscordWebhookPayload) {
+  async sendDiscordMessage(
+    webhookUrl: string,
+    payload: DiscordWebhookPayload,
+    headers: Record<string, string> = {},
+  ): Promise<DeliveryOutcome> {
     const normalizedPayload: DiscordWebhookPayload = {
       username: 'GraphQL Hive',
       ...payload,
@@ -192,15 +252,18 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       embeds: payload.embeds?.slice(0, DISCORD_MAX_EMBEDS).map(limitEmbed),
     };
 
-    await this.httpClient.post(webhookUrl, {
+    const response = await this.httpClient.postWithResponse(webhookUrl, {
       headers: {
         'Content-Type': 'application/json',
+        ...headers,
       },
       json: normalizedPayload,
       context: {
         logger: this.logger,
       },
     });
+
+    return { statusCode: response.statusCode, statusText: response.statusText };
   }
 }
 

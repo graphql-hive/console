@@ -3,6 +3,11 @@ import { CriticalityLevel } from '@graphql-inspector/core';
 import { SchemaChangeType } from '@hive/storage';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
+import { buildHiveWebhookHeaders } from '../../lib/delivery-metadata';
+import {
+  AlertChannelDeliveryRecorder,
+  type DeliveryOutcome,
+} from '../alert-channel-delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -18,6 +23,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
   constructor(
     logger: Logger,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
+    private deliveries: AlertChannelDeliveryRecorder,
   ) {
     this.logger = logger.child({ service: 'TeamsCommunicationAdapter' });
   }
@@ -63,12 +69,35 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
         ? ''
         : createAttachmentsText(input.event.changes, input.event.messages);
 
-      await this.sendTeamsMessage(
-        webhookUrl,
-        `${message}\n\n${attachmentsText}`,
-        createMDLink({
-          text: 'view full report',
-          url: changeUrl,
+      const headers = buildHiveWebhookHeaders(
+        this.deliveries.describe({
+          event: 'schema_change',
+          targetId: input.event.target.id,
+          schemaId: input.event.schema.id,
+          idempotencyKey: `schema-change:${input.event.schema.id}:${input.channel.id}`,
+        }),
+      );
+
+      await this.deliveries.track(
+        {
+          organizationId: input.event.organization.id,
+          projectId: input.event.project.id,
+          channelId: input.channel.id,
+          channelType: 'MSTEAMS_WEBHOOK',
+          event: 'schema_change',
+          metadata: headers,
+        },
+        async () => ({
+          outcome: await this.sendTeamsMessage(
+            webhookUrl,
+            `${message}\n\n${attachmentsText}`,
+            createMDLink({
+              text: 'view full report',
+              url: changeUrl,
+            }),
+            headers,
+          ),
+          value: undefined,
         }),
       );
     } catch (error) {
@@ -112,7 +141,27 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
         `${actionMessage} about your ${projectLink} project.`,
       ].join('\n');
 
-      await this.sendTeamsMessage(webhookUrl, message);
+      const headers = buildHiveWebhookHeaders(
+        this.deliveries.describe({
+          event: 'channel_confirmation',
+          idempotencyKey: `channel-confirmation:${input.event.kind}:${input.channel.id}`,
+        }),
+      );
+
+      await this.deliveries.track(
+        {
+          organizationId: input.event.organization.id,
+          projectId: input.event.project.id,
+          channelId: input.channel.id,
+          channelType: 'MSTEAMS_WEBHOOK',
+          event: 'channel_confirmation',
+          metadata: headers,
+        },
+        async () => ({
+          outcome: await this.sendTeamsMessage(webhookUrl, message, undefined, headers),
+          value: undefined,
+        }),
+      );
     } catch (error) {
       const errorText =
         error instanceof Error
@@ -131,7 +180,12 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
   /**
    * message gets truncated to max 27k characters-max payload size for Microsoft Teams is 28 KB
    */
-  async sendTeamsMessage(webhookUrl: string, message: string, fullReportMdLink?: string) {
+  async sendTeamsMessage(
+    webhookUrl: string,
+    message: string,
+    fullReportMdLink?: string,
+    headers: Record<string, string> = {},
+  ): Promise<DeliveryOutcome> {
     if (message.length > 27000) {
       message = message.slice(0, 27000) + `\n\n... message truncated. ${fullReportMdLink ?? ''}`;
     }
@@ -154,13 +208,27 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...headers,
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to send Microsoft Teams message: ${response.statusText}`);
+      throw new TeamsWebhookError(response.status, response.statusText);
     }
+
+    return { statusCode: response.status, statusText: response.statusText };
+  }
+}
+
+/** A Microsoft Teams webhook answered with a non-2xx status. */
+export class TeamsWebhookError extends Error {
+  constructor(
+    public readonly statusCode: number,
+    public readonly statusText: string,
+  ) {
+    super(`Failed to send Microsoft Teams message: ${statusText}`);
+    this.name = 'TeamsWebhookError';
   }
 }
 

@@ -1,15 +1,27 @@
 import { Inject, Injectable } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { SchemaChangeType } from '@hive/storage';
-import { ErrorCode, MessageAttachment, WebAPICallError, WebClient } from '@slack/web-api';
+import {
+  ChatPostMessageArguments,
+  ErrorCode,
+  MessageAttachment,
+  WebAPICallError,
+  WebClient,
+} from '@slack/web-api';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
+import { buildHiveSlackMetadata, flattenSlackMetadata } from '../../lib/delivery-metadata';
+import { AlertChannelDeliveryRecorder, SLACK_OK } from '../alert-channel-delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
   SchemaChangeNotificationInput,
   slackCoderize,
 } from './common';
+
+// The client default retries 10 times over about 30 minutes; a notification is not worth that, and
+// each recorded delivery should stand for a handful of calls at most.
+const SLACK_CLIENT_OPTIONS = { retryConfig: { retries: 3 } };
 
 @Injectable()
 export class SlackCommunicationAdapter implements CommunicationAdapter {
@@ -18,6 +30,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
   constructor(
     logger: Logger,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
+    private deliveries: AlertChannelDeliveryRecorder,
   ) {
     this.logger = logger.child({ service: 'SlackCommunicationAdapter' });
   }
@@ -40,7 +53,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
     }
 
     try {
-      const client = new WebClient(input.integrations.slack.token, {});
+      const client = new WebClient(input.integrations.slack.token, SLACK_CLIENT_OPTIONS);
 
       const totalChanges = input.event.changes.length + input.event.messages.length;
       const projectLink = this.createLink({
@@ -56,27 +69,47 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
         url: `${this.appBaseUrl}/${input.event.organization.slug}/${input.event.project.slug}/${input.event.target.slug}/history/${input.event.schema.id}`,
       });
 
-      if (input.event.initial) {
-        await client.chat.postMessage({
-          channel: input.channel.slackChannel!,
-          text: `:bee: Hi, I received your *first* schema in project ${projectLink}, target ${targetLink} (${viewLink}):`,
-          mrkdwn: true,
-          unfurl_links: false,
-          unfurl_media: false,
-        });
-      } else {
-        await client.chat.postMessage({
-          channel: input.channel.slackChannel!,
-          text: `:bee: Hi, I found *${totalChanges} ${this.pluralize(
-            'change',
-            totalChanges,
-          )}* in project ${projectLink}, target ${targetLink} (${viewLink}):`,
-          mrkdwn: true,
-          attachments: createAttachments(input.event.changes, input.event.messages),
-          unfurl_links: false,
-          unfurl_media: false,
-        });
-      }
+      const metadata = buildHiveSlackMetadata(
+        this.deliveries.describe({
+          event: 'schema_change',
+          targetId: input.event.target.id,
+          schemaId: input.event.schema.id,
+          idempotencyKey: `schema-change:${input.event.schema.id}:${input.channel.id}`,
+        }),
+      );
+      const message: ChatPostMessageArguments = input.event.initial
+        ? {
+            channel: input.channel.slackChannel!,
+            text: `:bee: Hi, I received your *first* schema in project ${projectLink}, target ${targetLink} (${viewLink}):`,
+            mrkdwn: true,
+            unfurl_links: false,
+            unfurl_media: false,
+            metadata,
+          }
+        : {
+            channel: input.channel.slackChannel!,
+            text: `:bee: Hi, I found *${totalChanges} ${this.pluralize(
+              'change',
+              totalChanges,
+            )}* in project ${projectLink}, target ${targetLink} (${viewLink}):`,
+            mrkdwn: true,
+            attachments: createAttachments(input.event.changes, input.event.messages),
+            unfurl_links: false,
+            unfurl_media: false,
+            metadata,
+          };
+
+      await this.deliveries.track(
+        {
+          organizationId: input.event.organization.id,
+          projectId: input.event.project.id,
+          channelId: input.channel.id,
+          channelType: 'SLACK',
+          event: 'schema_change',
+          metadata: flattenSlackMetadata(metadata),
+        },
+        async () => ({ outcome: SLACK_OK, value: await client.chat.postMessage(message) }),
+      );
     } catch (error: any) {
       this.handleSlackClientError(error);
     }
@@ -111,14 +144,35 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
         url: `${this.appBaseUrl}/${input.event.organization.slug}/${input.event.project.slug}`,
       });
 
-      const client = new WebClient(token);
-      await client.chat.postMessage({
-        channel: input.channel.slackChannel!,
-        text: [
-          `:wave: Hi! I'm the notification :bee:.`,
-          `${actionMessage} about your ${projectLink} project.`,
-        ].join('\n'),
-      });
+      const client = new WebClient(token, SLACK_CLIENT_OPTIONS);
+      const metadata = buildHiveSlackMetadata(
+        this.deliveries.describe({
+          event: 'channel_confirmation',
+          idempotencyKey: `channel-confirmation:${input.event.kind}:${input.channel.id}`,
+        }),
+      );
+
+      await this.deliveries.track(
+        {
+          organizationId: input.event.organization.id,
+          projectId: input.event.project.id,
+          channelId: input.channel.id,
+          channelType: 'SLACK',
+          event: 'channel_confirmation',
+          metadata: flattenSlackMetadata(metadata),
+        },
+        async () => ({
+          outcome: SLACK_OK,
+          value: await client.chat.postMessage({
+            channel: input.channel.slackChannel!,
+            text: [
+              `:wave: Hi! I'm the notification :bee:.`,
+              `${actionMessage} about your ${projectLink} project.`,
+            ].join('\n'),
+            metadata,
+          }),
+        }),
+      );
     } catch (error) {
       this.handleSlackClientError(error);
     }
