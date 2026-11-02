@@ -188,7 +188,7 @@ test('HTTP error carries the request id returned by the server', async () => {
 
 test('HTTP with 4xx status code sends only one request', async () => {
   let requests = 0;
-  const r = await makeFetchCall('https://ap.localhost.noop', {
+  await makeFetchCall('https://ap.localhost.noop', {
     method: 'GET',
     retry: {
       retries: 3,
