@@ -1,6 +1,6 @@
+import asyncRetry from 'async-retry';
 import { Logger } from '@graphql-hive/logger';
 import { abortSignalAny } from '@graphql-hive/signal';
-import asyncRetry from '@tendjs/async-retry';
 import { crypto, fetch, URL } from '@whatwg-node/fetch';
 import type { LegacyLogger } from './types';
 
@@ -182,8 +182,7 @@ export async function makeFetchCall(
 
       if (config.signal?.aborted === true) {
         const error = config.signal.reason ?? new Error('Request aborted externally.');
-        bail(error);
-        throw error;
+        return bail(error) as never;
       }
 
       if (isRequestOk(response)) {
@@ -218,7 +217,7 @@ export async function makeFetchCall(
         if (retries > 0) {
           logger.error(`Abort retry because of status code ${response.status}.`);
         }
-        bail(error);
+        return bail(error) as never;
       }
 
       throw error;
