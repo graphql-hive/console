@@ -261,8 +261,8 @@ the server proxy.
 3. Set the `Callback URL` to `https://hive-<your-name>-api.loophole.site/api/github/callback`.
 4. Enable `Request user authorization (OAuth) during installation`. Leave the `Setup URL` empty.
 5. Webhooks are not needed; you can uncheck `Active` under `Webhook`.
-6. Under `Repository permissions`, grant `Checks: Read and write` (`Metadata: Read-only` is
-   selected automatically).
+6. Under `Repository permissions`, grant `Checks: Read and write` (`Metadata: Read-only` is selected
+   automatically).
 7. Click on `Create GitHub App`.
 8. In the `General` tab of your GitHub App, generate a client secret and a private key.
 
