@@ -8,6 +8,7 @@ beforeAll(() => {
   Sentry.init({
     dsn: 'https://public@sentry.invalid/1',
     defaultIntegrations: false,
+    enableRuntimeChannelInjection: false,
     beforeSend(event) {
       events.push(event);
       return null;

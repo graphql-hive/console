@@ -22,7 +22,7 @@ import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Registry, RegistryContext } from '@hive/api';
 import { SuperTokensCookieBasedSession } from '@hive/api/modules/auth/lib/supertokens-strategy';
 import { requestIdStorage, type TracingInstance } from '@hive/service-common';
-import { captureException, runWithAsyncContext, withScope } from '@sentry/node';
+import { captureException, withIsolationScope, withScope } from '@sentry/node';
 import { AuthN, Session } from '../../api/src/modules/auth/lib/authz';
 import { authenticateRequest } from './authenticate-request';
 import type { HivePersistedDocumentsConfig, HiveUsageConfig } from './environment';
@@ -305,7 +305,9 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
         requestId,
       },
       async () => {
-        const response = await runWithAsyncContext(() => {
+        // Sentry's http integration already isolates each incoming request; this keeps the
+        // GraphQL handling isolated on its own, including under fastify.inject in tests.
+        const response = await withIsolationScope(() => {
           return server.handleNodeRequestAndResponse(req, reply, {
             req,
             reply,

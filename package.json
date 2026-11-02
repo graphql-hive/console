@@ -93,7 +93,7 @@
     "@manypkg/get-packages": "catalog:",
     "@parcel/watcher": "2.5.1",
     "@playwright/test": "1.60.0",
-    "@sentry/cli": "2.40.0",
+    "@sentry/cli": "3.8.2",
     "@swc/core": "catalog:",
     "@theguild/eslint-config": "0.12.1",
     "@theguild/federation-composition": "catalog:",

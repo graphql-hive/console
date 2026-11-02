@@ -247,36 +247,44 @@ curl -s -X PUT 'http://localhost:3043/mockserver/retrieve?type=REQUESTS' | jq
 
 1. Follow first two steps from `Setting up Slack App for developing` (download loophole and log in).
 2. Start web app proxy: `$ loophole http 3000 --hostname hive-<your-name>`
-3. Start server proxy: `$ loophole http 3001 --hostname hive-<your-name>`
+3. Start server proxy: `$ loophole http 3001 --hostname hive-<your-name>-api`
+
+The GitHub integration routes (`/api/github/*`) are served by the server, so GitHub needs to reach
+the server proxy.
 
 #### Creating a GitHub App
 
 1. Go to `Settings` -> `Developer settings` -> `GitHub Apps`, and click on the `New GitHub App`
    button.
-2. Provide a name for your app, and set the `Homepage URL` to
-   `https://hive-<your-name>.loophole.site`. Then set the callback URL to
-   `https://hive-<your-name>.loophole.site/api/github/callback`, and post installation's callback
-   URL to `https://hive-<your-name>.loophole.site/api/github/setup-callback`.
-3. Click on `Create GitHub App`.
+2. Provide a name for your app and set the `Homepage URL` to
+   `https://hive-<your-name>.loophole.site`.
+3. Set the `Callback URL` to `https://hive-<your-name>-api.loophole.site/api/github/callback`.
+4. Enable `Request user authorization (OAuth) during installation`. Leave the `Setup URL` empty.
+5. Webhooks are not needed; you can uncheck `Active` under `Webhook`.
+6. Under `Repository permissions`, grant `Checks: Read and write` (`Metadata: Read-only` is selected
+   automatically).
+7. Click on `Create GitHub App`.
+8. In the `General` tab of your GitHub App, generate a client secret and a private key.
 
 #### Setting up env variables
 
-1. Server: Set the following env variables in `packages/services/server/.env`:
+Set the following env variables in `packages/services/server/.env`:
 
-   ```dotenv
-   INTEGRATION_GITHUB=1
-   INTEGRATION_GITHUB_GITHUB_APP_ID=<your-github-app-id>
-   ```
+```dotenv
+INTEGRATION_GITHUB=1
+INTEGRATION_GITHUB_APP_ID=<your-github-app-id>
+INTEGRATION_GITHUB_APP_NAME=<your-github-app-slug>
+INTEGRATION_GITHUB_APP_CLIENT_ID=<your-github-app-client-id>
+INTEGRATION_GITHUB_APP_CLIENT_SECRET=<your-github-app-client-secret>
+GRAPHQL_PUBLIC_ORIGIN=https://hive-<your-name>-api.loophole.site
+```
 
-   You'll find the GitHub App ID and private key in the `General` tab of your GitHub App.
+You'll find the App ID and Client ID in the `General` tab of your GitHub App. The app slug is the
+last segment of `https://github.com/apps/<slug>`.
 
-   Store the Github private key next to the `.env` file with the name `github-app.pem`
-   (`packages/services/server/github-app.pem`)
-
-2. Web App: Set the following in `packages/web/app/.env`:
-   ```dotenv
-   INTEGRATION_GITHUB_APP_NAME=<your-github-app-name>
-   ```
+Store the GitHub private key next to the `.env` file with the name `github-app.pem`
+(`packages/services/server/github-app.pem`). The dev server reads it into
+`INTEGRATION_GITHUB_APP_PRIVATE_KEY` automatically.
 
 #### Installing the GitHub App
 

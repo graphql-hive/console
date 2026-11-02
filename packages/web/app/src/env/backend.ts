@@ -207,9 +207,27 @@ Sentry.init({
   serverName: 'app',
   dist: 'app',
   enabled: !!env.sentry,
-  enableTracing: false,
-  tracesSampleRate: 1,
   dsn: env.sentry?.dsn,
   release: env.release,
   environment: env.environment,
+  // Error capture only; tracesSampleRate stays unset so no spans are produced. These replace
+  // the same-named default integrations, which would otherwise record request sessions and
+  // add sentry-trace headers to the lab proxy's outgoing requests.
+  integrations: [
+    Sentry.httpIntegration({ spans: false, sessions: false, tracePropagation: false }),
+    Sentry.nativeNodeFetchIntegration({ spans: false, tracePropagation: false }),
+  ],
+  attachStacktrace: false,
+  // Single-file bundle without node_modules: the module loader hook has nothing to resolve.
+  enableRuntimeChannelInjection: false,
+  // Default integrations stay on, so request data would otherwise land on events captured
+  // inside a request, session cookies included.
+  dataCollection: {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: false,
+    httpBodies: [],
+    urlQueryParams: false,
+    stackFrameVariables: false,
+  },
 });

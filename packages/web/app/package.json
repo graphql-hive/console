@@ -31,8 +31,8 @@
     "@pierre/diffs": "1.5.1",
     "@repeaterjs/repeater": "3.1.0",
     "@sentry/node": "catalog:",
-    "@sentry/react": "7.120.2",
-    "@sentry/vite-plugin": "5.4.0",
+    "@sentry/react": "11.9.0",
+    "@sentry/vite-plugin": "11.9.0",
     "@stepperize/react": "8.0.0",
     "@stripe/react-stripe-js": "3.1.1",
     "@stripe/stripe-js": "5.5.0",
@@ -101,7 +101,7 @@
     "vite": "catalog:",
     "vite-plugin-monaco-editor": "catalog:",
     "wonka": "6.3.6",
-    "zod": "4.6.6"
+    "zod": "catalog:"
   },
   "buildOptions": {
     "external": [
