@@ -13,6 +13,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { createSupergraphManager } from '@graphql-hive/apollo';
+import { psql } from '@hive/postgres';
 import { invariant } from '@hive/service-common';
 import { graphql } from '../../testkit/gql';
 import { execute } from '../../testkit/graphql';
@@ -1546,6 +1547,72 @@ function runArtifactsCDNTests(
             'default/other-contract': initialManifest.graphs['default/other-contract'],
           },
         });
+      },
+    );
+
+    test.concurrent(
+      'deleting a contract succeeds for a backfilled graph whose latest version has no graph metadata',
+      async ({ expect }) => {
+        const seed = initSeed();
+        const { createOrg, ownerToken } = await seed.createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+        const writeToken = await createTargetAccessToken({});
+
+        const createContractResult = await execute({
+          document: CreateContractMutation,
+          variables: {
+            input: {
+              target: { byId: target.id },
+              contractName: 'my-contract',
+              removeUnreachableTypesFromPublicApiSchema: true,
+              includeTags: ['internal'],
+            },
+          },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
+        invariant(createContractResult.createContract.ok, 'Contract must be created');
+        const myContractId = createContractResult.createContract.ok.createdContract.id;
+
+        const publishResult = await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String
+                internal: String @tag(name: "internal")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+        expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+        // Simulate a target that has not published since the graphs were backfilled:
+        // the schema versions are not linked to a graph and have no graph metadata.
+        await using db = await seed.createDbConnection();
+        await db.pool.query(psql`
+          UPDATE "graphs"
+          SET "is_backfilled" = TRUE
+          WHERE "target_id" = ${target.id}
+        `);
+        await db.pool.query(psql`
+          UPDATE "schema_versions"
+          SET
+            "graph_id" = NULL
+            , "graph_metadata" = NULL
+          WHERE "target_id" = ${target.id}
+        `);
+
+        const deleteResult = await deleteContract(
+          { contract: { byId: myContractId } },
+          ownerToken,
+        ).then(r => r.expectNoGraphQLErrors());
+        expect(deleteResult.deleteContract.ok?.deletedContractId).toBe(myContractId);
       },
     );
 

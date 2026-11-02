@@ -3655,7 +3655,18 @@ export class SchemaPublisher {
     };
 
     for (const schemaVersion of [args.schemaVersion, ...(args.contractSchemaVersions ?? [])]) {
-      invariant(schemaVersion.graphMetadata, 'Schema version must have graph metadata.');
+      if (!schemaVersion.graphMetadata) {
+        // Versions of backfilled graphs published before the graph migration have no metadata.
+        // No manifest has been written for such a target yet, so there is nothing to update.
+        // This can happen on the delete contract path
+        this.logger.debug(
+          'Schema version has no graph metadata. Abort writing the graph manifest (schemaVersionId=%s, parentSchemaVersionId=%s)',
+          schemaVersion.id,
+          args.schemaVersion.id,
+        );
+
+        return;
+      }
 
       if (!schemaVersion.isComposable) {
         this.logger.debug(
