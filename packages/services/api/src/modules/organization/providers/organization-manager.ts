@@ -326,7 +326,7 @@ export class OrganizationManager {
     return this.storage.getOrganizationOwner(selector);
   }
 
-  async createOrganization(input: { slug: string; user: User }) {
+  async createOrganization(input: { slug: string; user: User }, req: FastifyRequest) {
     const { slug, user } = input;
     this.logger.info('Creating an organization (input=%o)', input);
 
@@ -334,6 +334,21 @@ export class OrganizationManager {
       return {
         ok: false as const,
         message: 'Provisioned users can not create organizations.',
+      };
+    }
+
+    if (
+      await this.rateLimiter.isUserActionRateLimited(
+        req,
+        user.id,
+        'createOrganization',
+        60 * 60, // 1 hour
+        3, // 3 organizations
+      )
+    ) {
+      return {
+        ok: false as const,
+        message: 'Exceeded rate limit for creating organizations. Please try again later.',
       };
     }
 
