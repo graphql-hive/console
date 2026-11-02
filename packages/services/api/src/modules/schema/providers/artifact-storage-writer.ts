@@ -23,10 +23,6 @@ const artifactMeta = {
     contentType: 'application/json',
     preprocessor: (rawValue: unknown) => JSON.stringify(rawValue),
   },
-  'manifest.json': {
-    contentType: 'application/json',
-    preprocessor: (rawValue: unknown) => JSON.stringify(rawValue),
-  },
 } as const;
 
 function extractContractName(contractName: string | null): null | string {
@@ -36,6 +32,23 @@ function extractContractName(contractName: string | null): null | string {
   const parts = contractName.split('/');
 
   return parts[parts.length - 1] ?? null;
+}
+
+function buildHeaders(args: {
+  contentType: string;
+  graphId?: string | null;
+  referenceDate: Date;
+}): Record<string, string> {
+  const headers: Record<string, string> = {
+    'content-type': args.contentType,
+    'x-amz-meta-x-hive-updated-at': args.referenceDate.toUTCString(),
+  };
+
+  if (args.graphId) {
+    headers['x-amz-meta-x-hive-graph-id'] = args.graphId;
+  }
+
+  return headers;
 }
 
 /**
@@ -52,45 +65,42 @@ export class ArtifactStorageWriter {
     this.logger = logger.child({ service: 'f' });
   }
 
-  @traceFn('CDN: Write Artifact', {
+  /**
+   * Write an artifact that belongs to a schema version.
+   * It is written to the versioned key first and then to the "latest" key.
+   * This order ensures that if the versioned write fails, "latest" still points to the previous version.
+   */
+  @traceFn('CDN: Write Versioned Artifact', {
     initAttributes: args => ({
       'hive.target.id': args.targetId,
       'hive.artifact.type': args.artifactType,
       'hive.contract.name': args.contractName || '',
-      'hive.version.id': args.versionId || '',
+      'hive.version.id': args.versionId,
     }),
   })
-  async writeArtifact(args: {
+  async writeVersionedArtifact(args: {
     targetId: string;
     artifactType: keyof typeof artifactMeta;
     artifact: unknown;
     contractName: null | string;
-    versionId?: string | null;
+    versionId: string;
     /** versioned contracts are historically stored under the source graph ID */
     contractSourceSchemaVersionId?: string | null;
-    graphId?: string | null;
+    graphId: string | null;
     /** When the artifact update was initiated. */
-    referenceDate?: Date;
+    referenceDate: Date;
   }) {
-    const latestKey = buildArtifactStorageKey(
+    const contractName = extractContractName(args.contractName);
+    const latestKey = buildArtifactStorageKey(args.targetId, args.artifactType, contractName);
+    const versionedKey = buildArtifactStorageKey(
       args.targetId,
       args.artifactType,
-      extractContractName(args.contractName),
+      contractName,
+      args.contractSourceSchemaVersionId ?? args.versionId,
     );
-    const storageVersionId = args.contractSourceSchemaVersionId ?? args.versionId;
-    const versionedKey = storageVersionId
-      ? buildArtifactStorageKey(
-          args.targetId,
-          args.artifactType,
-          extractContractName(args.contractName),
-          storageVersionId,
-        )
-      : null;
-    const meta = artifactMeta[args.artifactType];
-    const body = meta.preprocessor(args.artifact);
 
     this.logger.debug(
-      'Writing artifact to S3 (targetId=%s, artifactType=%s, contractName=%s, versionId=%s, latestKey=%s, versionedKey=%s)',
+      'Writing versioned artifact to S3 (targetId=%s, artifactType=%s, contractName=%s, versionId=%s, latestKey=%s, versionedKey=%s)',
       args.targetId,
       args.artifactType,
       args.contractName,
@@ -99,73 +109,91 @@ export class ArtifactStorageWriter {
       versionedKey,
     );
 
-    const headers: Record<string, string> = {
-      'content-type': meta.contentType,
-    };
+    const headers = buildHeaders({
+      contentType: artifactMeta[args.artifactType].contentType,
+      graphId: args.graphId,
+      referenceDate: args.referenceDate,
+    });
+    // Store version ID as S3 object metadata for CDN response headers
+    headers['x-amz-meta-x-hive-graph-version-id'] = args.versionId;
+    headers['x-amz-meta-x-hive-schema-version-id'] = args.versionId;
+    const body = artifactMeta[args.artifactType].preprocessor(args.artifact);
 
-    if (args.referenceDate) {
-      headers['x-amz-meta-x-hive-updated-at'] = args.referenceDate.toUTCString();
-    }
-
-    if (args.graphId) {
-      headers['x-amz-meta-x-hive-graph-id'] = args.graphId;
-    }
-
-    // Write versioned key first (if versionId provided)
-    // This order ensures that if versioned write fails, "latest" still points to the previous version
-    if (versionedKey && args.versionId) {
-      // Store version ID as S3 object metadata for CDN response headers
-      headers['x-amz-meta-x-hive-graph-version-id'] = args.versionId;
-      headers['x-amz-meta-x-hive-schema-version-id'] = args.versionId;
-
-      if (args.artifactType !== 'manifest.json') {
-        const versionedResults = await this.s3.write(versionedKey, 'artifact_versioned', {
-          headers,
-          body,
-        });
-
-        for (const versionedResult of versionedResults) {
-          if (versionedResult.statusCode !== 200) {
-            this.logger.error(
-              'Failed to write versioned artifact (targetId=%s, artifactType=%s, versionId=%s, key=%s, statusCode=%s)',
-              args.targetId,
-              args.artifactType,
-              args.versionId,
-              versionedKey,
-              versionedResult.statusCode,
-            );
-            throw setErrorSource(
-              new Error(
-                `Unexpected status code ${versionedResult.statusCode} when writing versioned artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, versionId=${args.versionId}, key=${versionedKey})`,
-              ),
-              `s3 ${new URL(versionedResult.url).origin}`,
-            );
-          }
-        }
-      }
-    }
-
-    // Write to latest key (always) - only after versioned succeeds
-    const latestResults = await this.s3.write(latestKey, 'artifact_latest', {
+    await this.putObject({
+      key: versionedKey,
+      operation: 'artifact_versioned',
       headers,
       body,
+      context: `targetId=${args.targetId}, artifactType=${args.artifactType}, contractName=${args.contractName}, versionId=${args.versionId}`,
     });
 
-    for (const latestResult of latestResults) {
-      if (latestResult.statusCode !== 200) {
+    await this.putObject({
+      key: latestKey,
+      operation: 'artifact_latest',
+      headers,
+      body,
+      context: `targetId=${args.targetId}, artifactType=${args.artifactType}, contractName=${args.contractName}, versionId=${args.versionId}, versionedKey=${versionedKey} already written`,
+    });
+  }
+
+  /**
+   * Write the graph manifest of a target.
+   * The manifest describes the latest state of all graphs and is therefore never versioned.
+   */
+  @traceFn('CDN: Write Graph Manifest', {
+    initAttributes: args => ({
+      'hive.target.id': args.targetId,
+    }),
+  })
+  async writeGraphManifest(args: {
+    targetId: string;
+    manifest: z.TypeOf<typeof GraphManifestModel>;
+    /** When the manifest update was initiated. */
+    referenceDate: Date;
+  }) {
+    const key = buildArtifactStorageKey(args.targetId, 'manifest.json', null);
+
+    this.logger.debug('Writing graph manifest to S3 (targetId=%s, key=%s)', args.targetId, key);
+
+    await this.putObject({
+      key,
+      operation: 'artifact_latest',
+      headers: buildHeaders({
+        contentType: 'application/json',
+        referenceDate: args.referenceDate,
+      }),
+      body: JSON.stringify(args.manifest),
+      context: `targetId=${args.targetId}, artifactType=manifest.json`,
+    });
+  }
+
+  private async putObject(args: {
+    key: string;
+    operation: 'artifact_versioned' | 'artifact_latest';
+    headers: Record<string, string>;
+    body: string;
+    /** Included in the log and error message on failure. */
+    context: string;
+  }) {
+    const results = await this.s3.write(args.key, args.operation, {
+      headers: args.headers,
+      body: args.body,
+    });
+
+    for (const result of results) {
+      if (result.statusCode !== 200) {
         this.logger.error(
-          'Failed to write latest artifact after versioned succeeded (targetId=%s, artifactType=%s, versionId=%s, versionedKey=%s written, latestKey=%s failed)',
-          args.targetId,
-          args.artifactType,
-          args.versionId,
-          versionedKey,
-          latestKey,
+          'Failed to write artifact (operation=%s, key=%s, statusCode=%s, %s)',
+          args.operation,
+          args.key,
+          result.statusCode,
+          args.context,
         );
         throw setErrorSource(
           new Error(
-            `Unexpected status code ${latestResult.statusCode} when writing latest artifact (targetId=${args.targetId}, artifactType=${args.artifactType}, contractName=${args.contractName}, key=${latestKey}). Note: versioned artifact was already written.`,
+            `Unexpected status code ${result.statusCode} when writing artifact (operation=${args.operation}, key=${args.key}, ${args.context})`,
           ),
-          `s3 ${new URL(latestResult.url).origin}`,
+          `s3 ${new URL(result.url).origin}`,
         );
       }
     }

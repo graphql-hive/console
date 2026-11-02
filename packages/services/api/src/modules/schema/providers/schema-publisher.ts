@@ -3699,11 +3699,9 @@ export class SchemaPublisher {
       };
     }
 
-    await this.artifactStorageWriter.writeArtifact({
+    await this.artifactStorageWriter.writeGraphManifest({
       targetId: args.schemaVersion.targetId,
-      artifactType: 'manifest.json',
-      artifact: manifest,
-      contractName: null,
+      manifest,
       referenceDate: args.referenceDate,
     });
 
@@ -3744,7 +3742,7 @@ export class SchemaPublisher {
       }
 
       if (metadata.length > 0) {
-        await this.artifactStorageWriter.writeArtifact({
+        await this.artifactStorageWriter.writeVersionedArtifact({
           targetId: schemaVersion.targetId,
           // SINGLE project can have only one metadata, we need to pass it as an object,
           // COMPOSITE projects can have multiple metadata, we need to pass it as an array
@@ -3760,7 +3758,7 @@ export class SchemaPublisher {
 
     const publishCompositeSchema = async () => {
       await Promise.all([
-        this.artifactStorageWriter.writeArtifact({
+        this.artifactStorageWriter.writeVersionedArtifact({
           targetId: schemaVersion.targetId,
           artifactType: 'services',
           artifact: schemas.map(s => ({
@@ -3773,7 +3771,7 @@ export class SchemaPublisher {
           graphId: schemaVersion.graphId,
           referenceDate,
         }),
-        this.artifactStorageWriter.writeArtifact({
+        this.artifactStorageWriter.writeVersionedArtifact({
           targetId: schemaVersion.targetId,
           artifactType: 'sdl',
           artifact: schemaVersion.compositeSchemaSDL,
@@ -3786,7 +3784,7 @@ export class SchemaPublisher {
     };
 
     const publishSingleSchema = async () => {
-      await this.artifactStorageWriter.writeArtifact({
+      await this.artifactStorageWriter.writeVersionedArtifact({
         targetId: schemaVersion.targetId,
         artifactType: 'sdl',
         artifact: schemaVersion.compositeSchemaSDL,
@@ -3807,7 +3805,7 @@ export class SchemaPublisher {
         this.logger.debug('Publishing supergraph to CDN');
 
         actions.push(
-          this.artifactStorageWriter.writeArtifact({
+          this.artifactStorageWriter.writeVersionedArtifact({
             targetId: schemaVersion.targetId,
             artifactType: 'supergraph',
             artifact: schemaVersion.supergraphSDL,
@@ -3834,7 +3832,7 @@ export class SchemaPublisher {
         const contractName = formatContractName(contractVersion.graphMetadata.name);
 
         actions.push(
-          this.artifactStorageWriter.writeArtifact({
+          this.artifactStorageWriter.writeVersionedArtifact({
             targetId: schemaVersion.targetId,
             artifactType: 'sdl',
             artifact: contractVersion.compositeSchemaSDL,
@@ -3844,7 +3842,7 @@ export class SchemaPublisher {
             graphId: contractVersion.graphMetadata.id,
             referenceDate,
           }),
-          this.artifactStorageWriter.writeArtifact({
+          this.artifactStorageWriter.writeVersionedArtifact({
             targetId: schemaVersion.targetId,
             artifactType: 'supergraph',
             artifact: contractVersion.supergraphSDL,
