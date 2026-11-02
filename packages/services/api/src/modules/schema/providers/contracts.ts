@@ -124,7 +124,7 @@ export class Contracts {
     this.logger.debug('Delete contract (graphId=%s)', args.graph.id);
 
     await this.pool.transaction('delete contract graph', async trx => {
-      this.logger.debug('Deleted contract graph. (graphId=%s)', args.graph.id);
+      this.logger.debug('Deleting contract graph. (graphId=%s)', args.graph.id);
 
       await this.graphStore.deleteGraph(args.graph, trx);
 
