@@ -4,6 +4,7 @@ import type { HivePubSub } from '@hive/pubsub';
 import type { Encryptor, Redis } from '@hive/service-common';
 import type { ClickHouseClient } from './lib/clickhouse-client.js';
 import type { EmailProvider } from './lib/emails/providers.js';
+import type { ObjectStorageWriter } from './lib/oci/object-storage.js';
 import type { SchemaProvider } from './lib/schema/provider.js';
 import type { RequestBroker } from './lib/webhooks/send-webhook.js';
 
@@ -22,4 +23,6 @@ export type Context = {
   /** Pinged after each successful metric alert evaluation tick. */
   metricAlertsHeartbeatEndpoint: string | null;
   redis: Redis;
+  /** Artifact storage (primary and mirror) for supergraph OCI images. Null when S3 is unset. */
+  ociStorage: ObjectStorageWriter | null;
 };

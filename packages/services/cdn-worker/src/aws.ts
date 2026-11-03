@@ -255,9 +255,10 @@ export class AwsClient {
           // For this reason, I prefer to read the body first, make it part of the retry logic,
           // and only then return the response to the consumer,
           // even at the cost of higher memory footprint (like it matters...).
-          const bodyText = await response.text();
+          // Buffer as bytes (not text), so binary objects (e.g. OCI layers) are not corrupted.
+          const body = await response.arrayBuffer();
 
-          return new Response(bodyText, {
+          return new Response(body, {
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,

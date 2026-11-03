@@ -107,6 +107,8 @@ export class ArtifactStorageReader {
     key: string;
     method: 'GET' | 'HEAD' | 'POST';
     headers?: HeadersInit;
+    /** Status codes that are considered a successful (non retryable) response. */
+    okStatusCodes?: ReadonlyArray<number>;
     onAttempt: (args: {
       /** whether the attempt is for the mirror */
       isMirror: boolean;
@@ -129,6 +131,8 @@ export class ArtifactStorageReader {
     }) => void;
   }) {
     const primaryObjectEndpoint = [this.s3.endpoint, this.s3.bucketName, args.key].join('/');
+    const okStatusCodes = args.okStatusCodes ?? DEFAULT_OK_STATUS_CODES;
+    const isResponseOk = (response: Response) => okStatusCodes.includes(response.status);
 
     return this.s3.client
       .fetch(primaryObjectEndpoint, {
@@ -136,8 +140,7 @@ export class ArtifactStorageReader {
         headers: args.headers,
         timeout: this.timeout,
         retries: this.s3Mirror ? 1 : undefined,
-        isResponseOk: response =>
-          response.status === 200 || response.status === 304 || response.status === 404,
+        isResponseOk,
         onAttempt: args1 => {
           args.onAttempt({
             ...args1,
@@ -188,8 +191,7 @@ export class ArtifactStorageReader {
               headers: args.headers,
               timeout: this.timeout,
               signal: primaryController.signal,
-              isResponseOk: response =>
-                response.status === 200 || response.status === 304 || response.status === 404,
+              isResponseOk,
               onAttempt: args1 => {
                 args.onAttempt({
                   ...args1,
@@ -208,8 +210,7 @@ export class ArtifactStorageReader {
               headers: args.headers,
               timeout: this.timeout,
               signal: mirrorController.signal,
-              isResponseOk: response =>
-                response.status === 200 || response.status === 304 || response.status === 404,
+              isResponseOk,
               onAttempt: args1 => {
                 args.onAttempt({
                   ...args1,
@@ -465,6 +466,57 @@ export class ArtifactStorageReader {
     throw new Error(`HEAD request failed with status ${response.status}: ${body}`);
   }
 
+  /** Read an OCI object (blob, manifest or tag) as raw bytes. Supports byte range requests. */
+  async readOciObject(
+    key: string,
+    args: { targetId: string; method: 'GET' | 'HEAD'; range?: string | null },
+  ): Promise<OciObjectReadResult> {
+    this.breadcrumb(`Reading OCI object from S3 key: ${key}`);
+
+    const headers: Record<string, string> = {};
+    if (args.range) {
+      headers['range'] = args.range;
+    }
+
+    const response = await this.request({
+      key,
+      method: args.method,
+      headers,
+      okStatusCodes: [200, 206, 404, 416],
+      onAttempt: attempt => {
+        this.analytics?.track(
+          {
+            type: attempt.isMirror ? 's3' : 'r2',
+            statusCodeOrErrCode:
+              attempt.result.type === 'error'
+                ? String(attempt.result.error.name ?? 'unknown')
+                : attempt.result.response.status,
+            action: args.method === 'GET' ? 'GET oci' : 'HEAD oci',
+            duration: attempt.duration,
+          },
+          args.targetId,
+        );
+      },
+    });
+
+    if (response.status === 404) {
+      return { type: 'notFound' };
+    }
+    if (response.status === 416) {
+      return { type: 'rangeNotSatisfiable', headers: response.headers };
+    }
+    if (response.status === 200 || response.status === 206) {
+      return {
+        type: 'ok',
+        status: response.status,
+        headers: response.headers,
+        body: args.method === 'HEAD' ? null : await response.arrayBuffer(),
+      };
+    }
+
+    throw new Error(`${args.method} OCI object failed with status ${response.status} (key=${key})`);
+  }
+
   async readLegacyAccessKey(targetId: string) {
     const key = ['cdn-legacy-keys', targetId].join('/');
     this.breadcrumb(`Reading from S3 key: ${key}`);
@@ -535,6 +587,13 @@ export class ArtifactStorageReader {
     return response;
   }
 }
+
+const DEFAULT_OK_STATUS_CODES = [200, 304, 404] as const;
+
+export type OciObjectReadResult =
+  | { type: 'notFound' }
+  | { type: 'rangeNotSatisfiable'; headers: Headers }
+  | { type: 'ok'; status: 200 | 206; headers: Headers; body: ArrayBuffer | null };
 
 class PendingRequestAbortedError extends Error {
   constructor() {
