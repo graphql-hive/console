@@ -45,7 +45,7 @@ export interface AlertChannelDelivery {
   metadata: Record<string, string>;
 }
 
-type ChannelSelector = { projectId: string; channelId: string };
+type ChannelSelector = { organizationId: string; channelId: string };
 
 // UInt64 aggregates arrive quoted (output_format_json_quote_64bit_integers); smaller integers as numbers.
 const TotalsRowModel = z.object({
@@ -107,7 +107,7 @@ export class AlertChannelDeliveryReader {
         SELECT count() AS total, countIf("ok" = 0) AS failed
         FROM "alert_channel_deliveries"
         WHERE
-          "project_id" = ${input.projectId}
+          "organization_id" = ${input.organizationId}
           AND "channel_id" = ${input.channelId}
           AND "timestamp" >= toDateTime(${formatDateTime(input.period.from)}, 'UTC')
           AND "timestamp" <= toDateTime(${formatDateTime(input.period.to)}, 'UTC')
@@ -142,7 +142,7 @@ export class AlertChannelDeliveryReader {
           , countIf("ok" = 0) AS failed
         FROM "alert_channel_deliveries"
         WHERE
-          "project_id" = ${input.projectId}
+          "organization_id" = ${input.organizationId}
           AND "channel_id" = ${input.channelId}
           AND "timestamp" >= toDateTime(${from}, 'UTC')
           AND "timestamp" <= toDateTime(${to}, 'UTC')
@@ -168,7 +168,7 @@ export class AlertChannelDeliveryReader {
         WITH (
           SELECT maxIf("timestamp", "ok" = 1)
           FROM "alert_channel_deliveries"
-          WHERE "project_id" = ${input.projectId} AND "channel_id" = ${input.channelId}
+          WHERE "organization_id" = ${input.organizationId} AND "channel_id" = ${input.channelId}
         ) AS last_success
         SELECT
           count() AS total
@@ -180,7 +180,7 @@ export class AlertChannelDeliveryReader {
           , argMax("ok", ("timestamp", 1 - "ok")) AS latest_ok
           , toUnixTimestamp(minIf("timestamp", "ok" = 0 AND "timestamp" > last_success)) AS failing_since
         FROM "alert_channel_deliveries"
-        WHERE "project_id" = ${input.projectId} AND "channel_id" = ${input.channelId}
+        WHERE "organization_id" = ${input.organizationId} AND "channel_id" = ${input.channelId}
       `,
       queryId: 'alert_channel_delivery_health',
       timeout: 10_000,
@@ -212,7 +212,7 @@ export class AlertChannelDeliveryReader {
           , "metadata"
         FROM "alert_channel_deliveries"
         WHERE
-          "project_id" = ${input.projectId}
+          "organization_id" = ${input.organizationId}
           AND "channel_id" = ${input.channelId}
           AND "timestamp" >= toDateTime(${formatDateTime(input.period.from)}, 'UTC')
           AND "timestamp" <= toDateTime(${formatDateTime(input.period.to)}, 'UTC')
