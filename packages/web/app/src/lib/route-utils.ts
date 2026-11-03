@@ -71,6 +71,27 @@ export const redirectToPathSchema = z
   .optional()
   .transform(value => (value !== undefined && isSafeRedirectPath(value) ? value : '/'));
 
+const RESERVED_TOP_LEVEL_SEGMENTS = new Set([
+  '404',
+  'action',
+  'auth',
+  'dev',
+  'join',
+  'logout',
+  'manage',
+  'native-composition-compatibility-report',
+  'org',
+]);
+
+export function organizationSlugFromPath(path: string): string | undefined {
+  const [segment] = path.replace(/^\/+/, '').split(/[/?#]/, 1);
+  if (!segment) {
+    return undefined;
+  }
+  const slug = segment.toLowerCase();
+  return RESERVED_TOP_LEVEL_SEGMENTS.has(slug) ? undefined : slug;
+}
+
 /** What a route loader receives that `loadQuery` needs: the client in router context, and whether this run is a preload. */
 export type LoaderContext = { context: { urqlClient: Client }; preload: boolean };
 
