@@ -161,19 +161,19 @@ describe('DiscordCommunicationAdapter', () => {
       expect(sendDiscordMessageSpy).toHaveBeenCalledWith(
         webhookUrl,
         {
-        embeds: [
-          expect.objectContaining({
-            title: 'Breaking schema changes detected',
-            url: 'app-base-url/org-clean-id/project-clean-id/target-clean-id/history/schema-id',
-            color: 0xe74c3c,
-            description: expect.stringContaining('### Breaking changes'),
-            fields: [
-              { name: 'Project', value: 'project-name', inline: true },
-              { name: 'Target', value: 'target-name', inline: true },
-              { name: 'Commit', value: 'commit', inline: true },
-            ],
-          }),
-        ],
+          embeds: [
+            expect.objectContaining({
+              title: 'Breaking schema changes detected',
+              url: 'app-base-url/org-clean-id/project-clean-id/target-clean-id/history/schema-id',
+              color: 0xe74c3c,
+              description: expect.stringContaining('### Breaking changes'),
+              fields: [
+                { name: 'Project', value: 'project-name', inline: true },
+                { name: 'Target', value: 'target-name', inline: true },
+                { name: 'Commit', value: 'commit', inline: true },
+              ],
+            }),
+          ],
         },
         hiveHeaders('schema_change', 'schema-change:schema-id:channel-id'),
       );
