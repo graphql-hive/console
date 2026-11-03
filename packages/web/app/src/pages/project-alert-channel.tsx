@@ -174,7 +174,7 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
 
             <PageLead
               title={channel.name}
-              description={`Notifications Hive sent to this channel in ${DELIVERY_WINDOW_LABEL}, with the response each one received.`}
+              description="Channel details and audit log. We do not store the response payload and only certain headers are tracked for security purposes."
               titleAccessory={
                 <Badge
                   content={CHANNEL_TYPE_LABEL[channel.type]}
@@ -309,43 +309,37 @@ function DeliveryStatCards({
   }
 
   const errorRate =
-    stats && stats.totalDeliveries > 0
+    stats && stats.totalFailures > 0
       ? `${toDecimal((stats.totalFailures * 100) / stats.totalDeliveries)}%`
-      : '-';
-  const lastResponse = health
-    ? [health.lastStatusCode, health.lastStatusText].filter(Boolean).join(' ')
-    : '';
+      : null;
 
   return (
     <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
       <StatCard
-        title="Deliveries"
+        title="Total calls"
         value={stats ? formatNumber(stats.totalDeliveries) : '-'}
         caption={`in ${DELIVERY_WINDOW_LABEL}`}
       />
       <StatCard
         title="Failed"
-        value={stats ? formatNumber(stats.totalFailures) : '-'}
+        value={
+          stats ? (
+            <>
+              {formatNumber(stats.totalFailures)}
+              {errorRate ? (
+                <span className="ml-2 text-sm font-normal text-critical">({errorRate})</span>
+              ) : null}
+            </>
+          ) : (
+            '-'
+          )
+        }
         caption={`in ${DELIVERY_WINDOW_LABEL}`}
-        variants={{ tone: stats && stats.totalFailures > 0 ? 'danger' : 'default' }}
-      />
-      <StatCard
-        title="Error rate"
-        value={errorRate}
-        caption={`in ${DELIVERY_WINDOW_LABEL}`}
-        variants={{ tone: stats && stats.totalFailures > 0 ? 'danger' : 'default' }}
+        variants={{ tone: errorRate ? 'danger' : 'default' }}
       />
       <StatCard
         title="Last success"
         value={health?.lastSuccessAt ? <TimeAgo date={health.lastSuccessAt} /> : 'Never'}
-        caption={
-          health?.lastFailureAt ? (
-            <>
-              Last failure <TimeAgo date={health.lastFailureAt} />
-              {lastResponse ? ` · ${lastResponse}` : null}
-            </>
-          ) : undefined
-        }
         variants={{
           tone:
             health?.status === AlertChannelHealthStatus.Failing
@@ -354,6 +348,11 @@ function DeliveryStatCards({
                 ? 'success'
                 : 'default',
         }}
+      />
+      <StatCard
+        title="Last failure"
+        value={health?.lastFailureAt ? <TimeAgo date={health.lastFailureAt} /> : 'Never'}
+        variants={{ tone: 'danger' }}
       />
     </div>
   );
@@ -376,7 +375,7 @@ function DeliveryCharts({ stats }: { stats: DeliveryStats | null }) {
     <section className="space-y-2">
       <h2 className="m-0 text-sm font-medium text-fg">Deliveries over time</h2>
       <p className="m-0 text-sm text-fg-secondary">
-        Attempts and failures per interval, over {DELIVERY_WINDOW_LABEL}.
+        Total calls and failures per interval, over {DELIVERY_WINDOW_LABEL}
       </p>
       {series.total.length === 0 ? (
         // Zero deliveries still draw as a flat line, like the rule page; the box is for no buckets at all.

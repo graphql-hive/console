@@ -6,6 +6,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import {
   ChannelDeliveriesTable,
   metadataValue,
+  statusPopover,
   type ChannelDeliveryRow,
 } from './channel-deliveries-table';
 
@@ -54,6 +55,18 @@ function delivery(overrides: Partial<ChannelDeliveryRow> = {}): ChannelDeliveryR
     ...overrides,
   };
 }
+
+describe('statusPopover', () => {
+  it('offers the full status only when it is too long for the column', () => {
+    expect(statusPopover('404 Not Found')).toBeUndefined();
+    expect(statusPopover('431 Request Header Fields Too Large')).toBe(
+      '431 Request Header Fields Too Large',
+    );
+    expect(statusPopover("ETIMEDOUT: Timeout awaiting 'request' for 10000ms")).toBe(
+      "ETIMEDOUT: Timeout awaiting 'request' for 10000ms",
+    );
+  });
+});
 
 describe('ChannelDeliveriesTable', () => {
   it('shows the status the destination answered and links the schema id to its version', () => {
