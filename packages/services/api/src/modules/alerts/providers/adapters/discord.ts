@@ -123,7 +123,6 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          projectId: input.event.project.id,
           channelId: input.channel.id,
           channelType: 'DISCORD',
           event: 'schema_change',
@@ -208,7 +207,6 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          projectId: input.event.project.id,
           channelId: input.channel.id,
           channelType: 'DISCORD',
           event: 'channel_confirmation',

@@ -81,7 +81,6 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          projectId: input.event.project.id,
           channelId: input.channel.id,
           channelType: 'MSTEAMS_WEBHOOK',
           event: 'schema_change',
@@ -151,7 +150,6 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          projectId: input.event.project.id,
           channelId: input.channel.id,
           channelType: 'MSTEAMS_WEBHOOK',
           event: 'channel_confirmation',

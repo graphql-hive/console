@@ -75,10 +75,14 @@ export class AlertChannelDeliveryRecorder {
     }
   }
 
-  /** Never throws: a lost stats row must not fail the notification. */
+  /**
+   * Never throws: a lost stats row must not fail the notification. Goes through `insert`, which
+   * does not resend after a timeout: ClickHouse keeps a buffered row whether or not the response
+   * arrived, and a resend would count the attempt twice.
+   */
   async record(attempt: AlertChannelDeliveryAttempt): Promise<void> {
     try {
-      await this.clickHouse.postQuery({
+      await this.clickHouse.insert({
         query: sql`
           INSERT INTO "alert_channel_deliveries" (
             "timestamp"
@@ -93,20 +97,23 @@ export class AlertChannelDeliveryRecorder {
             , "duration_ms"
             , "metadata"
           )
-          VALUES (
-            ${formatClickHouseDateTime(new Date())}
-            , ${attempt.organizationId}
-            , ${attempt.channelId}
-            , ${attempt.channelType}
-            , ${attempt.event}
-            , toUInt8(1)
-            , toUInt8(${attempt.ok ? '1' : '0'})
-            , toUInt16(${String(attempt.statusCode ?? 0)})
-            , ${truncateStatusText(attempt.statusText)}
-            , toUInt32(${String(Math.max(0, Math.round(attempt.durationMs)))})
-            , JSONExtract(${JSON.stringify(attempt.metadata)}, 'Map(String, String)')
-          )
+          FORMAT CSV
         `,
+        data: [
+          [
+            formatClickHouseDateTime(new Date()),
+            attempt.organizationId,
+            attempt.channelId,
+            attempt.channelType,
+            attempt.event,
+            1,
+            attempt.ok ? 1 : 0,
+            attempt.statusCode ?? 0,
+            truncateStatusText(attempt.statusText),
+            Math.max(0, Math.round(attempt.durationMs)),
+            toMapLiteral(attempt.metadata),
+          ],
+        ],
         queryId: 'record-alert-channel-delivery',
         timeout: 5_000,
       });
@@ -207,6 +214,14 @@ function stringOrNull(value: unknown): string | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+/** A Map(String, String) in the text form ClickHouse reads from a CSV field: Values syntax. */
+function toMapLiteral(map: Record<string, string>): string {
+  const quote = (text: string) => `'${text.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  return `{${Object.entries(map)
+    .map(([key, value]) => `${quote(key)}:${quote(value)}`)
+    .join(',')}}`;
 }
 
 function truncateStatusText(text: string): string {

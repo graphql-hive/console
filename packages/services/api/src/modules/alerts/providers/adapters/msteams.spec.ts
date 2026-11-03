@@ -206,7 +206,6 @@ describe('TeamsCommunicationAdapter', () => {
       expect(record).toHaveBeenCalledWith(
         expect.objectContaining({
           organizationId: 'org-id',
-          projectId: 'project-id',
           channelId: 'channel-id',
           channelType: 'MSTEAMS_WEBHOOK',
           event: 'schema_change',

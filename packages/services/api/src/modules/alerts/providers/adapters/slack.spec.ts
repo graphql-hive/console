@@ -92,7 +92,6 @@ describe('SlackCommunicationAdapter', () => {
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({
         organizationId: 'org-id',
-        projectId: 'project-id',
         channelId: 'channel-id',
         channelType: 'SLACK',
         event: 'channel_confirmation',
