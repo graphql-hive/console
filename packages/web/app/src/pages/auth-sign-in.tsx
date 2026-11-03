@@ -227,7 +227,11 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       width="full"
                       disabled={isPending}
                       render={
-                        <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
+                        <Link
+                          to="/auth/sso"
+                          search={{ redirectToPath: props.redirectToPath }}
+                          preload={false}
+                        />
                       }
                     >
                       <CircleUserRound className="mr-4 size-4" /> Login with SSO

@@ -1,6 +1,10 @@
 import { z } from 'zod';
+import { AuthCard } from '@/components/auth';
 import { authenticated } from '@/components/authenticated-container';
+import { resolveOidcId } from '@/lib/auth/oidc-lookup';
+import { isProviderEnabled } from '@/lib/auth/providers';
 import { requireSession } from '@/lib/auth/require-session';
+import { doesSessionExist } from '@/lib/auth/session';
 import { organizationSlugFromPath, redirectToPathSchema } from '@/lib/route-utils';
 import { AuthPage } from '@/pages/auth';
 import { AuthCallbackPage } from '@/pages/auth-callback';
@@ -85,14 +89,29 @@ export const authSSORoute = createRoute({
   validateSearch(search) {
     return AuthSSORouteSearch.parse(search);
   },
+  loaderDeps: ({ search }) => search,
+  pendingComponent: () => (
+    <AuthCard title="Login with SSO" description="Checking your organization's sign-in method" />
+  ),
+  loader: async ({ deps, preload }) => {
+    const slug = deps.slug ?? organizationSlugFromPath(deps.redirectToPath) ?? '';
+    if (!slug || preload || !isProviderEnabled('oidc') || (await doesSessionExist())) {
+      return { slug };
+    }
+    const result = await resolveOidcId(slug).catch(() => undefined);
+    if (result?.ok) {
+      throw redirect({
+        to: '/auth/oidc',
+        search: { id: result.id, redirectToPath: deps.redirectToPath },
+        replace: true,
+      });
+    }
+    return { slug };
+  },
   component: () => {
-    const { slug, redirectToPath } = authSSORoute.useSearch();
-    return (
-      <AuthSSOPage
-        redirectToPath={redirectToPath}
-        initialSlug={slug ?? organizationSlugFromPath(redirectToPath) ?? ''}
-      />
-    );
+    const { slug } = authSSORoute.useLoaderData();
+    const { redirectToPath } = authSSORoute.useSearch();
+    return <AuthSSOPage redirectToPath={redirectToPath} initialSlug={slug} />;
   },
 });
 
