@@ -210,7 +210,10 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
         {
           status: 304,
           // The metadata might have changed even though the artifact content did not.
-          headers: buildArtifactResponseHeaders(result.headers),
+          headers: {
+            'Cache-Control': 'no-cache',
+            ...buildArtifactResponseHeaders(result.headers),
+          },
         },
         params.targetId,
         request,
@@ -249,6 +252,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
               status: 200,
               headers: {
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
                 ...sharedHeaders,
               },
             },
@@ -270,6 +274,7 @@ export const createArtifactRequestHandler = (deps: ArtifactRequestHandler) => {
               params.artifactType === 'manifest.json'
                 ? 'application/json'
                 : 'text/plain',
+            'Cache-Control': 'no-cache',
             ...sharedHeaders,
           },
         },
