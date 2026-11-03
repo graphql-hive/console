@@ -15,6 +15,19 @@ import { AlertChannelType } from '@/gql/graphql';
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
 export const CHANNEL_FORM_ID = 'create-channel-form';
 
+/** How each channel type is named in the UI. */
+export const CHANNEL_TYPE_LABEL: Record<AlertChannelType, string> = {
+  [AlertChannelType.Slack]: 'Slack',
+  [AlertChannelType.Webhook]: 'Webhook',
+  [AlertChannelType.MsteamsWebhook]: 'MS Teams Webhook',
+  [AlertChannelType.Discord]: 'Discord Webhook',
+};
+
+const CHANNEL_TYPE_OPTIONS = Object.entries(CHANNEL_TYPE_LABEL).map(([value, label]) => ({
+  value,
+  label,
+}));
+
 export function isWebhookLike(type: AlertChannelType | '') {
   return (
     type === AlertChannelType.Webhook ||
@@ -114,12 +127,7 @@ export function ChannelForm(props: {
                 onValueChange={field.onChange}
                 onBlur={field.onBlur}
                 placeholder="Select channel type"
-                options={[
-                  { value: AlertChannelType.Slack, label: 'Slack' },
-                  { value: AlertChannelType.Webhook, label: 'Webhook' },
-                  { value: AlertChannelType.MsteamsWebhook, label: 'MS Teams Webhook' },
-                  { value: AlertChannelType.Discord, label: 'Discord Webhook' },
-                ]}
+                options={CHANNEL_TYPE_OPTIONS}
                 width="full"
                 onSurface="raised"
               />
