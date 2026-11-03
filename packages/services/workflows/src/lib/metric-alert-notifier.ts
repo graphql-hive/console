@@ -42,7 +42,6 @@ export type NotificationEvent = {
   currentValue: number;
   // Null for absolute-only groups that skip the previous window.
   previousValue: number | null;
-  projectId: string;
   targetId: string;
   organizationSlug: string;
   projectSlug: string;
@@ -82,7 +81,6 @@ function deliveryMeta(args: {
 }): DeliveryMeta {
   return {
     organizationId: args.event.rule.organizationId,
-    projectId: args.event.projectId,
     channelId: args.channel.id,
     channelType: args.channel.type,
     event: 'metric_alert',

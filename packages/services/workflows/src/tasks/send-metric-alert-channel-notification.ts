@@ -41,7 +41,6 @@ const HydrationRowSchema = z.object({
   ruleDirection: z.enum(['ABOVE', 'BELOW']),
   ruleSeverity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
   organizationId: z.string(),
-  projectId: z.string(),
   targetId: z.string(),
   // channel
   channelId: z.string(),
@@ -129,7 +128,6 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             , r."direction" as "ruleDirection"
             , r."severity" as "ruleSeverity"
             , r."organization_id" as "organizationId"
-            , p."id" as "projectId"
             , t."id" as "targetId"
             , ac."id" as "channelId"
             , ac."type" as "channelType"
@@ -180,7 +178,6 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
           },
           currentValue: Number(row.value),
           previousValue: row.previousValue === null ? null : Number(row.previousValue),
-          projectId: row.projectId,
           targetId: row.targetId,
           organizationSlug: row.organizationSlug,
           projectSlug: row.projectSlug,

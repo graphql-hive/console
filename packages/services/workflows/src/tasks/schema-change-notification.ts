@@ -34,7 +34,6 @@ export const task = implementTask(SchemaChangeNotificationTask, async args => {
           recorder: context.alertDeliveries,
           meta: {
             organizationId: input.event.organization.id,
-            projectId: input.event.project.id,
             channelId,
             channelType: 'WEBHOOK',
             event: 'schema_change',
