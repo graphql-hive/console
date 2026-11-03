@@ -6,7 +6,8 @@
   "exports": {
     "./aws": "./src/aws.ts",
     "./cdn-token": "./src/cdn-token.ts",
-    "./artifact-storage-reader": "./src/artifact-storage-reader.ts"
+    "./artifact-storage-reader": "./src/artifact-storage-reader.ts",
+    "./oci-handler": "./src/oci-handler.ts"
   },
   "scripts": {
     "build": "node build.mjs",
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@aws-sdk/credential-providers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
+    "@hive/oci": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@types/service-worker-mock": "catalog:",
     "@whatwg-node/server": "catalog:",

@@ -44,6 +44,7 @@
         "./packages/services/cdn-worker/src/is-app-deployment-active.ts"
       ],
       "@hive/cdn-script/aws": ["./packages/services/cdn-worker/src/aws.ts"],
+      "@hive/cdn-script/oci-handler": ["./packages/services/cdn-worker/src/oci-handler.ts"],
       "@hive/server/*": ["./packages/services/server/src/*"],
       "@hive/schema": ["./packages/services/schema/src/api.ts"],
       "@hive/schema/*": ["./packages/services/schema/src/*"],

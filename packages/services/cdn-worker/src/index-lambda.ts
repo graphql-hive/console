@@ -7,6 +7,7 @@ import { ArtifactStorageReader } from './artifact-storage-reader';
 import { AwsClient, type AwsCredentials } from './aws';
 import { createIsAppDeploymentActive } from './is-app-deployment-active';
 import { createIsKeyValid } from './key-validation';
+import { createOciRequestHandler, isOciPath, isOciRequest } from './oci-handler';
 
 const env = z
   .object({
@@ -15,6 +16,7 @@ const env = z
     AWS_S3_ACCESSS_KEY_SECRET: z.string().optional(),
     AWS_S3_ENDPOINT: z.string(),
     AWS_S3_BUCKET_NAME: z.string(),
+    FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED: z.enum(['0', '1']).default('0'),
   })
   .parse((globalThis as any).process.env);
 
@@ -54,17 +56,19 @@ const s3Mirror = null;
 
 const artifactStorageReader = new ArtifactStorageReader(s3, s3Mirror, null, null);
 
+const isKeyValid = createIsKeyValid({
+  artifactStorageReader,
+  analytics: null,
+  breadcrumb(message: string) {
+    console.log(message);
+  },
+  getCache: null,
+  waitUntil: null,
+  captureException() {},
+});
+
 const artifactHandler = createArtifactRequestHandler({
-  isKeyValid: createIsKeyValid({
-    artifactStorageReader,
-    analytics: null,
-    breadcrumb(message: string) {
-      console.log(message);
-    },
-    getCache: null,
-    waitUntil: null,
-    captureException() {},
-  }),
+  isKeyValid,
   artifactStorageReader,
   isAppDeploymentActive: createIsAppDeploymentActive({
     artifactStorageReader,
@@ -73,7 +77,24 @@ const artifactHandler = createArtifactRequestHandler({
   }),
 });
 
-const artifactRouteHandler = createServerAdapter(artifactHandler as any);
+/** Whether the OCI Distribution API (`/v2/`) for supergraph images is served. */
+const ociEnabled = env.FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED === '1';
+
+const ociHandler = createOciRequestHandler({
+  isKeyValid,
+  storage: artifactStorageReader,
+});
+
+const artifactRouteHandler = createServerAdapter(((request: Request) =>
+  ociEnabled && isOciRequest(request) ? ociHandler(request) : artifactHandler(request)) as any);
+
+/**
+ * Node.js `Buffer`, which is available in the Lambda runtime. Accessed via `globalThis` because
+ * this package is type checked against the Cloudflare Worker types.
+ */
+const NodeBuffer: {
+  from(data: ArrayBuffer): { toString(encoding: 'base64'): string };
+} = (globalThis as any).Buffer;
 
 function tryParseEventUrl(rawPath: string): URL | null {
   try {
@@ -134,6 +155,16 @@ export async function handler(
   response.headers.forEach((value, name) => {
     responseHeaders[name] = value;
   });
+
+  // OCI blobs are binary (gzip), so they are passed base64 encoded.
+  if (ociEnabled && isOciPath(url.pathname)) {
+    return {
+      statusCode: response.status,
+      headers: responseHeaders,
+      body: NodeBuffer.from(await response.arrayBuffer()).toString('base64'),
+      isBase64Encoded: true,
+    };
+  }
 
   return {
     statusCode: response.status,

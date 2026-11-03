@@ -23,4 +23,8 @@ export type Env = {
    * @default https://key-cache.graphql-hive.com
    */
   KV_STORAGE_BASE_URL?: string;
+  /**
+   * Whether the OCI Distribution API (`/v2/`) for supergraph images is served. Set to `1` to enable.
+   */
+  FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED?: string;
 };

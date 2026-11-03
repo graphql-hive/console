@@ -15,4 +15,7 @@ export const env: Env = {
   SENTRY_RELEASE: '',
   // eslint-disable-next-line no-process-env
   KV_STORAGE_BASE_URL: process.env.KV_STORAGE_BASE_URL,
+  FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED:
+    // eslint-disable-next-line no-process-env
+    process.env.FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED,
 };
