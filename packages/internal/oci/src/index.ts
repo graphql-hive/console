@@ -13,8 +13,8 @@ export const OciMediaType = {
 
 /** Labels (image config) and annotations (image manifest) carrying the graph identity. */
 export const OciAnnotation = {
-  graphId: 'org.graphql-hive.graph-id',
-  graphVersionId: 'org.graphql-hive.graph-version-id',
+  graphId: 'org.hive_console.graph_id',
+  graphVersionId: 'org.hive_console.graph_version_id',
   title: 'org.opencontainers.image.title',
 } as const;
 
