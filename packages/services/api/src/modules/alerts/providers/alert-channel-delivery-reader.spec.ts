@@ -145,7 +145,7 @@ describe('AlertChannelDeliveryReader', () => {
 
     await expect(
       reader.getOverTime({
-        projectId: 'p1',
+        organizationId: 'o1',
         channelId: 'c1',
         period: { from: new Date('2026-11-02T10:00:00Z'), to: new Date('2026-11-02T13:00:00Z') },
         resolution: 3,
@@ -162,7 +162,7 @@ describe('AlertChannelDeliveryReader', () => {
 
     await expect(
       reader.getTotals({
-        projectId: 'p1',
+        organizationId: 'o1',
         channelId: 'c1',
         period: { from: new Date('2026-11-02T10:00:00Z'), to: new Date('2026-11-02T13:00:00Z') },
       }),
@@ -185,7 +185,7 @@ describe('AlertChannelDeliveryReader', () => {
 
     await expect(
       reader.getLog({
-        projectId: 'p1',
+        organizationId: 'o1',
         channelId: 'c1',
         period: { from: new Date('2026-11-01T00:00:00Z'), to: new Date('2026-11-03T00:00:00Z') },
       }),
