@@ -5,24 +5,25 @@ import { SSOForm, SSOFormSchema, type SSOFormValues } from '@/components/auth/ss
 import { Meta } from '@/components/ui/meta';
 import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { lookupOidcId } from '@/lib/auth/api';
+import { resolveOidcId } from '@/lib/auth/oidc-lookup';
 import { isProviderEnabled } from '@/lib/auth/providers';
 import { useSession } from '@/lib/auth/use-session';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 
-export function AuthSSOPage(props: { redirectToPath: string }) {
+export function AuthSSOPage(props: { redirectToPath: string; initialSlug: string }) {
   const session = useSession();
   const router = useRouter();
   const sso = useMutation({
-    mutationFn: lookupOidcId,
-    onSuccess(data) {
+    mutationFn: resolveOidcId,
+    onSuccess(data, slug) {
       if (data.ok) {
         void router.navigate({
           to: '/auth/oidc',
           search: {
             id: data.id,
+            slug,
             redirectToPath: props.redirectToPath,
           },
         });
@@ -46,7 +47,7 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
     mode: 'onSubmit',
     resolver: zodResolver(SSOFormSchema),
     defaultValues: {
-      slug: '',
+      slug: props.initialSlug,
     },
     disabled: sso.isPending,
   });
@@ -58,9 +59,7 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
 
   const onSubmit = useCallback(
     (data: SSOFormValues) => {
-      sso.mutate({
-        slug: data.slug,
-      });
+      sso.mutate(data.slug);
     },
     [sso.mutate],
   );

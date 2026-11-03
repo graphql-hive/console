@@ -15,12 +15,14 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { Text } from '@/components/ui/text';
 import { signIn } from '@/lib/auth/api';
 import { useLastAuthMethod } from '@/lib/auth/last-auth-method';
+import { resolveOidcId } from '@/lib/auth/oidc-lookup';
 import { enabledProviders, isProviderEnabled } from '@/lib/auth/providers';
 import { startThirdPartyAuth } from '@/lib/auth/third-party';
 import { useSession } from '@/lib/auth/use-session';
+import { organizationSlugFromPath } from '@/lib/route-utils';
 import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 
 export function SignInButton(props: {
@@ -108,6 +110,18 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
   });
 
   const isPending = emailPasswordSignIn.isPending || thirdPartySignIn.isPending;
+
+  const ssoSlug = organizationSlugFromPath(props.redirectToPath);
+  const ssoLookup = useQuery({
+    queryKey: ['oidc-lookup', ssoSlug],
+    queryFn: () => resolveOidcId(ssoSlug!),
+    enabled:
+      !!ssoSlug && isProviderEnabled('oidc') && !session.loading && !session.doesSessionExist,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const ssoOrganization =
+    ssoSlug && ssoLookup.data?.ok ? { slug: ssoSlug, id: ssoLookup.data.id } : undefined;
 
   const form = useForm({
     mode: 'onSubmit',
@@ -227,10 +241,28 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       width="full"
                       disabled={isPending}
                       render={
-                        <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
+                        ssoOrganization ? (
+                          <Link
+                            to="/auth/oidc"
+                            search={{
+                              id: ssoOrganization.id,
+                              slug: ssoOrganization.slug,
+                              redirectToPath: props.redirectToPath,
+                            }}
+                          />
+                        ) : (
+                          <Link
+                            to="/auth/sso"
+                            search={{ redirectToPath: props.redirectToPath }}
+                            preload={false}
+                          />
+                        )
                       }
                     >
-                      <CircleUserRound className="mr-4 size-4" /> Login with SSO
+                      <CircleUserRound className="mr-4 size-4" />
+                      {ssoOrganization
+                        ? `Login with SSO (${ssoOrganization.slug})`
+                        : 'Login with SSO'}
                     </Button>
                   </SignInButton>
                 ) : null}
