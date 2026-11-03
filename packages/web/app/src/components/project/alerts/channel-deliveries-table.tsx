@@ -1,4 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
+import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
@@ -64,24 +65,6 @@ export function ChannelDeliveriesTable({
         id: 'event',
         header: 'Event',
         cell: ({ row }) => {
-          const targetSlug = slugOf(metadataValue(row.original.metadata, 'Hive-Target-ID'));
-          const versionId = metadataValue(row.original.metadata, 'Hive-Schema-ID');
-          if (
-            row.original.event === AlertChannelDeliveryEvent.SchemaChange &&
-            targetSlug &&
-            versionId
-          ) {
-            return (
-              <DataTableCell
-                kind="link"
-                label={EVENT_LABEL[row.original.event]}
-                link={{
-                  to: '/$organizationSlug/$projectSlug/$targetSlug/history/$versionId',
-                  params: { organizationSlug, projectSlug, targetSlug, versionId },
-                }}
-              />
-            );
-          }
           return (
             <DataTableCell
               kind="badge"
@@ -141,9 +124,10 @@ export function ChannelDeliveriesTable({
       {
         id: 'attempt',
         header: 'Attempt',
+        meta: { align: 'center' },
         cell: ({ row }) =>
           row.original.attempt > 1 ? (
-            <DataTableCell kind="number" value={row.original.attempt} />
+            <DataTableCell kind="text" value={String(row.original.attempt)} />
           ) : (
             <DataTableCell kind="placeholder" />
           ),
@@ -184,37 +168,42 @@ function DeliveryMetadata({
     targets.find(target => target.id === metadataValue(delivery.metadata, 'Hive-Target-ID'))
       ?.slug ?? null;
 
+  // Every value copies, labelled by its header as the list shows it.
   const describe = (key: string, value: string): ReactNode => {
     const isSchemaId = key === 'Hive-Schema-ID' || key === 'hive_schema_id';
-    if (isSchemaId && targetSlug) {
-      return (
-        <Link
-          to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
-          params={{ organizationSlug, projectSlug, targetSlug, versionId: value }}
-          className="text-accent hover:text-accent-muted"
-        >
-          {value}
-        </Link>
-      );
-    }
-    return value;
+    return (
+      <span className="inline-flex items-center gap-1">
+        {isSchemaId && targetSlug ? (
+          <Link
+            to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
+            params={{ organizationSlug, projectSlug, targetSlug, versionId: value }}
+            className="text-accent hover:text-accent-muted"
+          >
+            {value}
+          </Link>
+        ) : (
+          value
+        )}
+        <CopyIconButton value={value} label={`Copy ${key.toUpperCase()}`} />
+      </span>
+    );
   };
+
+  const rows = entries.map(([key, value]) => ({
+    items: [{ term: key, description: describe(key, value), mono: true }],
+  }));
+  // Two columns on a wide window: header order runs down the left column, then the right.
+  const split = Math.ceil(rows.length / 2);
 
   return (
     <div className="px-4 py-3">
       <h3 className="mb-2 text-xs font-medium text-fg-secondary">
         {'event_type' in delivery.metadata ? 'Message metadata' : 'Headers sent'}
       </h3>
-      <DescriptionList
-        rows={entries.map(([key, value]) => {
-          const description = describe(key, value);
-          return {
-            items: [
-              { term: key, description, mono: true, copyable: typeof description === 'string' },
-            ],
-          };
-        })}
-      />
+      <div className="grid gap-x-8 gap-y-3.5 xl:grid-cols-2">
+        <DescriptionList rows={rows.slice(0, split)} />
+        {rows.length > split ? <DescriptionList rows={rows.slice(split)} /> : null}
+      </div>
     </div>
   );
 }
