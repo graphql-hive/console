@@ -87,6 +87,9 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_OTEL_TRACING_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
   FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED: emptyString(
     zod
       .union([zod.literal('1'), zod.literal('0')])
@@ -821,6 +824,11 @@ export const env = {
     otelTracingEnabled: base.FEATURE_FLAGS_OTEL_TRACING_ENABLED === '1',
     /** Whether metric alert rules should be enabled cluster-wide. */
     metricAlertRulesEnabled: base.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
+    /**
+     * Whether supergraph OCI images are published (workflows) and served via the CDN's OCI
+     * Distribution API (`/v2/`).
+     */
+    supergraphOciImagesEnabled: base.FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED === '1',
   },
   oidcWorkloadFederation:
     oidcWorkloadFederation.OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER === 'azure'

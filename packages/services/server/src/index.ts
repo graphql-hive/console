@@ -29,6 +29,7 @@ import { ArtifactStorageReader } from '@hive/cdn-script/artifact-storage-reader'
 import { AwsClient } from '@hive/cdn-script/aws';
 import { createIsAppDeploymentActive } from '@hive/cdn-script/is-app-deployment-active';
 import { createIsKeyValid } from '@hive/cdn-script/key-validation';
+import { createOciRequestHandler } from '@hive/cdn-script/oci-handler';
 import { createConnectionStringProvider } from '@hive/postgres';
 import { createHivePubSub } from '@hive/pubsub';
 import {
@@ -43,6 +44,8 @@ import {
   sentryInit,
   startMetrics,
   TracingInstance,
+  type FastifyReply,
+  type FastifyRequest,
 } from '@hive/service-common';
 import { createStorage as createPostgreSQLStorage } from '@hive/storage';
 import { TaskScheduler } from '@hive/workflows/kit';
@@ -372,6 +375,7 @@ export async function main() {
       schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
       otelTracingEnabled: env.featureFlags.otelTracingEnabled,
       metricAlertRulesEnabled: env.featureFlags.metricAlertRulesEnabled,
+      supergraphOciImagesEnabled: env.featureFlags.supergraphOciImagesEnabled,
       prometheus: env.prometheus,
       taskScheduler,
     });
@@ -592,24 +596,26 @@ export async function main() {
 
       const artifactStorageReader = new ArtifactStorageReader(s3, s3Mirror, null, null);
 
+      const isKeyValid = createIsKeyValid({
+        kvStorageBaseUrl: env.cdn.providers.api.kv?.baseUrl,
+        artifactStorageReader,
+        analytics: null,
+        breadcrumb(message: string) {
+          server.log.debug(message);
+        },
+        getCache: null,
+        waitUntil: null,
+        captureException(error) {
+          captureException(error, {
+            extra: {
+              source: 'artifactRequestHandler',
+            },
+          });
+        },
+      });
+
       const artifactHandler = createArtifactRequestHandler({
-        isKeyValid: createIsKeyValid({
-          kvStorageBaseUrl: env.cdn.providers.api.kv?.baseUrl,
-          artifactStorageReader,
-          analytics: null,
-          breadcrumb(message: string) {
-            server.log.debug(message);
-          },
-          getCache: null,
-          waitUntil: null,
-          captureException(error) {
-            captureException(error, {
-              extra: {
-                source: 'artifactRequestHandler',
-              },
-            });
-          },
-        }),
+        isKeyValid,
         artifactStorageReader,
         isAppDeploymentActive: createIsAppDeploymentActive({
           artifactStorageReader,
@@ -644,6 +650,37 @@ export async function main() {
           void reply.send(textResponse);
         },
       });
+
+      if (env.featureFlags.supergraphOciImagesEnabled) {
+        const ociRouteHandler = createServerAdapter(
+          createOciRequestHandler({
+            isKeyValid,
+            storage: artifactStorageReader,
+            breadcrumb(message: string) {
+              server.log.debug(message);
+            },
+          }),
+        );
+
+        /** OCI Distribution API (supergraph images). Must be mounted at the root `/v2/`. */
+        // Other methods are routed as well, so they are answered with the OCI error format (405).
+        const ociMethods = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'];
+        server.route({ method: ociMethods, url: '/v2', handler: handleOciRoute });
+        server.route({ method: ociMethods, url: '/v2/*', handler: handleOciRoute });
+
+        async function handleOciRoute(req: FastifyRequest, reply: FastifyReply) {
+          const response = await ociRouteHandler.handleNodeRequest(req);
+
+          response.headers.forEach((value, key) => {
+            void reply.header(key, value);
+          });
+
+          void reply.status(response.status);
+          // Blobs are binary, never decode them as text.
+          void reply.send(req.method === 'HEAD' ? null : Buffer.from(await response.arrayBuffer()));
+          return reply;
+        }
+      }
     }
 
     const scimPlugin = createSCIMPlugin(
