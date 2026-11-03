@@ -78,7 +78,7 @@ describe('sign-in page SSO button', () => {
     await screen.findByText('Login with SSO (the-guild)');
     expect(searchOf(ssoLink())).toEqual({
       pathname: '/auth/oidc',
-      search: { id: 'oidc-1', redirectToPath: '/the-guild/view/settings' },
+      search: { id: 'oidc-1', slug: 'the-guild', redirectToPath: '/the-guild/view/settings' },
     });
     expect(api.lookupOidcId).toHaveBeenCalledTimes(1);
     expect(api.lookupOidcId).toHaveBeenCalledWith({ slug: 'the-guild' });

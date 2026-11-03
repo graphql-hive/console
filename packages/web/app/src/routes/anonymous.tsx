@@ -76,13 +76,13 @@ export const authSignInRoute = createRoute({
   },
 });
 
-const AuthSSORouteSearch = AuthSharedSearch.extend({
-  slug: z
-    .union([z.string(), z.number()])
-    .transform(value => String(value).trim().toLowerCase() || undefined)
-    .optional()
-    .catch(undefined),
-});
+const slugSearch = z
+  .union([z.string(), z.number()])
+  .transform(value => String(value).trim().toLowerCase() || undefined)
+  .optional()
+  .catch(undefined);
+
+const AuthSSORouteSearch = AuthSharedSearch.extend({ slug: slugSearch });
 export const authSSORoute = createRoute({
   getParentRoute: () => authRoute,
   path: 'sso',
@@ -102,7 +102,7 @@ export const authSSORoute = createRoute({
     if (result?.ok) {
       throw redirect({
         to: '/auth/oidc',
-        search: { id: result.id, redirectToPath: deps.redirectToPath },
+        search: { id: result.id, slug, redirectToPath: deps.redirectToPath },
         replace: true,
       });
     }
@@ -121,6 +121,7 @@ const AuthOIDCRouteSearch = AuthSharedSearch.extend({
       error: issue => (issue.input === undefined ? 'OIDC ID is required' : undefined),
     })
     .optional(),
+  slug: slugSearch,
 });
 export const authOIDCRoute = createRoute({
   getParentRoute: () => authRoute,
@@ -129,8 +130,8 @@ export const authOIDCRoute = createRoute({
     return AuthOIDCRouteSearch.parse(search);
   },
   component: function AuthOIDCRoute() {
-    const { id, redirectToPath } = authOIDCRoute.useSearch();
-    return <AuthOIDCPage oidcId={id} redirectToPath={redirectToPath} />;
+    const { id, slug, redirectToPath } = authOIDCRoute.useSearch();
+    return <AuthOIDCPage oidcId={id} slug={slug} redirectToPath={redirectToPath} />;
   },
 });
 

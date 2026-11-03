@@ -84,6 +84,7 @@ describe('SSO sign-in page', () => {
     expect(router.state.location.pathname).toBe('/auth/oidc');
     expect(router.state.location.search).toEqual({
       id: 'oidc-1',
+      slug: 'the-guild',
       redirectToPath: '/the-guild/view/settings',
     });
     expect(router.history.length).toBe(1);
@@ -128,7 +129,7 @@ describe('SSO sign-in page', () => {
     await waitFor(() =>
       expect(navigate).toHaveBeenCalledWith({
         to: '/auth/oidc',
-        search: { id: 'oidc-1', redirectToPath: '/the-guild' },
+        search: { id: 'oidc-1', slug: 'acme', redirectToPath: '/the-guild' },
       }),
     );
     expect(api.lookupOidcId).toHaveBeenLastCalledWith({ slug: 'acme' });

@@ -17,12 +17,13 @@ export function AuthSSOPage(props: { redirectToPath: string; initialSlug: string
   const router = useRouter();
   const sso = useMutation({
     mutationFn: resolveOidcId,
-    onSuccess(data) {
+    onSuccess(data, slug) {
       if (data.ok) {
         void router.navigate({
           to: '/auth/oidc',
           search: {
             id: data.id,
+            slug,
             redirectToPath: props.redirectToPath,
           },
         });

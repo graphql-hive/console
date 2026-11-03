@@ -246,6 +246,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                             to="/auth/oidc"
                             search={{
                               id: ssoOrganization.id,
+                              slug: ssoOrganization.slug,
                               redirectToPath: props.redirectToPath,
                             }}
                           />
