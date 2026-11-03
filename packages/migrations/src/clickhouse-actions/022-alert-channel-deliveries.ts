@@ -2,8 +2,8 @@ import type { Action } from '../clickhouse';
 
 /**
  * One row per attempt to deliver an alert-channel notification (schema change, metric alert,
- * channel confirmation), written by the API and the workflows service. Read per channel by the
- * alert channel page: bucketed totals, the latest outcome, and recent attempts with what was sent.
+ * channel confirmation), written by the API. Read per channel by the alert channel page: bucketed
+ * totals, the latest outcome, and recent attempts with what was sent.
  *
  * Volume is a few hundred rows a day, so the layout favours query shape over storage: monthly
  * partitions keep the longest page range (60 days) inside two or three partitions, and the TTL

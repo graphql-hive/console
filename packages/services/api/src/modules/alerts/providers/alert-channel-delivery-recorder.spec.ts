@@ -197,7 +197,7 @@ describe('AlertChannelDeliveryRecorder', () => {
     expect(errorLog).toHaveBeenCalled();
   });
 
-  test('describe fills in the request id and release', () => {
+  test('describe fills in the release, and a null request id outside a request', () => {
     const { recorder } = createRecorder();
 
     expect(
@@ -208,7 +208,7 @@ describe('AlertChannelDeliveryRecorder', () => {
         idempotencyKey: 'k',
       }),
     ).toEqual({
-      requestId: expect.any(String),
+      requestId: null,
       event: 'schema_change',
       targetId: 't1',
       schemaId: 'v1',

@@ -7,7 +7,8 @@
 export type AlertChannelDeliveryEvent = 'schema_change' | 'metric_alert' | 'channel_confirmation';
 
 export interface DeliveryMetadataInput {
-  requestId: string;
+  /** Hive's request id; null when the call is not made while serving a request. */
+  requestId: string | null;
   event: AlertChannelDeliveryEvent;
   /** Target the event belongs to; absent for channel confirmations. */
   targetId?: string | null;
@@ -24,7 +25,7 @@ export function hiveWebhooksUserAgent(release: string): string {
 
 export function buildHiveWebhookHeaders(input: DeliveryMetadataInput): Record<string, string> {
   return {
-    'Hive-Request-ID': input.requestId,
+    ...(input.requestId ? { 'Hive-Request-ID': input.requestId } : {}),
     'Hive-Event': input.event,
     ...(input.targetId ? { 'Hive-Target-ID': input.targetId } : {}),
     ...(input.schemaId ? { 'Hive-Schema-ID': input.schemaId } : {}),
@@ -44,7 +45,7 @@ export function buildHiveSlackMetadata(input: DeliveryMetadataInput): SlackMessa
   return {
     event_type: input.event,
     event_payload: {
-      hive_request_id: input.requestId,
+      ...(input.requestId ? { hive_request_id: input.requestId } : {}),
       ...(input.targetId ? { hive_target_id: input.targetId } : {}),
       ...(input.schemaId ? { hive_schema_id: input.schemaId } : {}),
       idempotency_key: input.idempotencyKey,
