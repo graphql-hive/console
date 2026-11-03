@@ -36,7 +36,7 @@ export function ChannelDeliveriesChart({
       series: [
         {
           ...line,
-          name: 'Deliveries',
+          name: 'Total calls',
           lineStyle: { color: colors.line, width: 1.5 },
           itemStyle: { color: colors.line },
           areaStyle: {

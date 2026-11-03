@@ -3,6 +3,8 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
+import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { AlertChannelDeliveryEvent } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
@@ -37,6 +39,27 @@ export function metadataValue(metadata: Record<string, unknown>, header: string)
 
 function statusLabel(row: ChannelDeliveryRow): string {
   return row.statusCode ? `${row.statusCode} ${row.statusText}` : row.statusText;
+}
+
+// Reason phrases and Slack result codes fit the column; a transport error such as
+// "ETIMEDOUT: Timeout awaiting 'request' for 10000ms" runs past it.
+const LONG_STATUS_LENGTH = 32;
+
+/** The full status for a popover when the column is likely to truncate it. */
+export function statusPopover(label: string): string | undefined {
+  return label.length > LONG_STATUS_LENGTH ? label : undefined;
+}
+
+/** The status cell's look, filling the column so a long status truncates instead of widening it. */
+function DeliveryStatusCell({ ok, label }: { ok: boolean; label: string }) {
+  const body = (
+    <span className="flex items-center gap-1.5 text-fg">
+      <StatusDot color={ok ? 'success' : 'critical'} />
+      <span className="min-w-0 truncate">{label}</span>
+    </span>
+  );
+  const popover = statusPopover(label);
+  return popover ? <Tooltip trigger={body} content={popover} /> : body;
 }
 
 export function ChannelDeliveriesTable({
@@ -102,11 +125,7 @@ export function ChannelDeliveriesTable({
         header: 'Status',
         meta: { width: 'fill' },
         cell: ({ row }) => (
-          <DataTableCell
-            kind="status"
-            dot={row.original.ok ? 'success' : 'critical'}
-            label={statusLabel(row.original)}
-          />
+          <DeliveryStatusCell ok={row.original.ok} label={statusLabel(row.original)} />
         ),
       },
       {
