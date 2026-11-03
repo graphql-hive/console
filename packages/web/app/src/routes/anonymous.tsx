@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { authenticated } from '@/components/authenticated-container';
 import { requireSession } from '@/lib/auth/require-session';
-import { redirectToPathSchema } from '@/lib/route-utils';
+import { organizationSlugFromPath, redirectToPathSchema } from '@/lib/route-utils';
 import { AuthPage } from '@/pages/auth';
 import { AuthCallbackPage } from '@/pages/auth-callback';
 import { AuthOIDCPage } from '@/pages/auth-oidc';
@@ -72,15 +72,27 @@ export const authSignInRoute = createRoute({
   },
 });
 
+const AuthSSORouteSearch = AuthSharedSearch.extend({
+  slug: z
+    .union([z.string(), z.number()])
+    .transform(value => String(value).trim().toLowerCase() || undefined)
+    .optional()
+    .catch(undefined),
+});
 export const authSSORoute = createRoute({
   getParentRoute: () => authRoute,
   path: 'sso',
   validateSearch(search) {
-    return AuthSharedSearch.parse(search);
+    return AuthSSORouteSearch.parse(search);
   },
   component: () => {
-    const { redirectToPath } = authSSORoute.useSearch();
-    return <AuthSSOPage redirectToPath={redirectToPath} />;
+    const { slug, redirectToPath } = authSSORoute.useSearch();
+    return (
+      <AuthSSOPage
+        redirectToPath={redirectToPath}
+        initialSlug={slug ?? organizationSlugFromPath(redirectToPath) ?? ''}
+      />
+    );
   },
 });
 
