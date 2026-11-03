@@ -8,7 +8,6 @@ import { makeLogger } from './metric-alert-test-utils.js';
 
 const meta = {
   organizationId: 'o1',
-  projectId: 'p1',
   channelId: 'c1',
   channelType: 'WEBHOOK' as const,
   event: 'schema_change' as const,

@@ -80,7 +80,6 @@ function makeEvent(overrides: Partial<NotificationEvent> = {}): NotificationEven
     rule: makeRule({ type: 'ERROR_RATE', thresholdValue: 2, severity: 'WARNING' }),
     currentValue: 2.15,
     previousValue: null,
-    projectId: 'p1',
     targetId: 't1',
     organizationSlug: 'the-guild',
     projectSlug: 'graphql-hive',
@@ -455,7 +454,6 @@ describe('delivery tracking', () => {
     expect(trackingRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         organizationId: 'o1',
-        projectId: 'p1',
         channelId: 'channel-1',
         channelType: 'SLACK',
         event: 'metric_alert',
@@ -519,7 +517,6 @@ describe('delivery tracking', () => {
       recorder: tracking.recorder,
       meta: expect.objectContaining({
         organizationId: 'o1',
-        projectId: 'p1',
         channelId: 'channel-2',
         channelType: 'DISCORD',
         event: 'metric_alert',
