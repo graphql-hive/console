@@ -9,12 +9,13 @@ import {
   targetLayout,
 } from '@/lib/testing/fixtures/layouts';
 import { createTestClient } from '@/lib/testing/urql';
-import { isRedirect } from '@tanstack/react-router';
+import { createMemoryHistory, createRouter, isRedirect } from '@tanstack/react-router';
 import { createClient, makeResult, type Exchange, type Operation } from '@urql/core';
 import {
   defaultRange,
   isSafeRedirectPath,
   loadQuery,
+  organizationSlugFromPath,
   redirectToPathSchema,
   requireLayoutFlag,
   requireRange,
@@ -61,6 +62,40 @@ describe('isSafeRedirectPath', () => {
     '',
   ])('rejects anything that could leave the app: %s', value => {
     expect(isSafeRedirectPath(value)).toBe(false);
+  });
+});
+
+describe('organizationSlugFromPath', () => {
+  it.each([
+    ['/the-guild/view/settings', 'the-guild'],
+    ['/acme', 'acme'],
+    ['/acme/', 'acme'],
+    ['/Acme/shop?x=1#top', 'acme'],
+  ])('reads the first segment of %s', (path, slug) => {
+    expect(organizationSlugFromPath(path)).toBe(slug);
+  });
+
+  it.each(['/', '', '/manage', '/auth/sign-in', '/org/new', '/404'])(
+    'gives nothing for %s',
+    path => {
+      expect(organizationSlugFromPath(path)).toBeUndefined();
+    },
+  );
+
+  it('reserves every static top-level route in the tree', { timeout: 30_000 }, async () => {
+    const { routeTree } = await import('@/routes/tree');
+    const router = createRouter({
+      routeTree,
+      history: createMemoryHistory(),
+      context: { urqlClient: createTestClient() },
+    });
+    const staticTopLevel = Object.keys(router.routesByPath).filter(
+      path => path !== '/' && !path.startsWith('/$'),
+    );
+    expect(staticTopLevel.length).toBeGreaterThan(0);
+    for (const path of staticTopLevel) {
+      expect(organizationSlugFromPath(path), path).toBeUndefined();
+    }
   });
 });
 
