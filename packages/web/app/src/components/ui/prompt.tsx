@@ -50,13 +50,13 @@ export function PromptManager() {
       dismissible={false}
       title={prompt?.title ?? ''}
       description={prompt?.description}
-      attrs={{ 'data-cy': 'prompt' }}
+      attrs={{ 'data-testid': 'prompt' }}
       footer={
         prompt ? (
           <>
             <Button
               type="button"
-              data-cy="prompt-cancel"
+              data-testid="prompt-cancel"
               variant="outline"
               onClick={() => closePrompt(prompt.id, null)}
             >

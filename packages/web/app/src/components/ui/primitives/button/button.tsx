@@ -101,7 +101,7 @@ type AnchorProps = {
 // the union below, so the union defines it rather than cva.
 type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
   Omit<VariantProps<typeof buttonVariants>, 'layout'> & {
-    'data-cy'?: string;
+    'data-testid'?: string;
     /**
      * Render an `<a>` instead of a `<button>`, for a button that links out: another site, a
      * mailto, an API redirect. A `_blank` target gets `rel="noopener noreferrer"` unless `rel`

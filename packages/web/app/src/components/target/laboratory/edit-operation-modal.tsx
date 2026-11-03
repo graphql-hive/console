@@ -134,7 +134,7 @@ export const EditOperationModalContent = (props: {
         props.form.reset();
       }}
       width="lg"
-      attrs={{ 'data-cy': 'edit-operation-modal' }}
+      attrs={{ 'data-testid': 'edit-operation-modal' }}
       title="Edit Operation"
       description="Update the operation name"
       footer={
@@ -160,7 +160,7 @@ export const EditOperationModalContent = (props: {
               !props.form.formState.isValid ||
               !props.form.formState.isDirty
             }
-            data-cy="confirm"
+            data-testid="confirm"
           >
             Update Operation
           </Button>

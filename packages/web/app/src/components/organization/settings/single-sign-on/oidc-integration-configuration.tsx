@@ -547,7 +547,7 @@ function OIDCDomainConfiguration(props: {
           <Switch
             checked={oidcIntegration.oidcForVerifiedDomainsRequired}
             onCheckedChange={() => setEnforceOpen(true)}
-            data-cy="oidc-require-verified-domain-login-toggle"
+            data-testid="oidc-require-verified-domain-login-toggle"
           />
           <AlertDialog
             open={enforceOpen}
@@ -891,7 +891,7 @@ function OIDCAccessSettings(props: {
                 </div>
                 <Switch
                   checked={oidcIntegration.requireInvitation}
-                  data-cy="oidc-require-invitation-toggle"
+                  data-testid="oidc-require-invitation-toggle"
                   onCheckedChange={checked =>
                     props.onRestrictionChange('requireInvitation', checked)
                   }

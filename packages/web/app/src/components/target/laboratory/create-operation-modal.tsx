@@ -150,7 +150,7 @@ export function CreateOperationModalContent(props: {
         props.form.reset();
       }}
       width="lg"
-      attrs={{ 'data-cy': 'create-operation-modal' }}
+      attrs={{ 'data-testid': 'create-operation-modal' }}
       title="Create Operation"
       description="Create a new operation and add it to a collection"
       footer={

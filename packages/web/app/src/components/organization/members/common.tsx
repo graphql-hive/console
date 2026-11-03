@@ -46,7 +46,7 @@ export function RoleSelector<T>(props: {
           description: role.description,
           disabled: !isActive,
           tooltip: isActive ? undefined : reason,
-          'data-cy': 'role-selector-item',
+          'data-testid': 'role-selector-item',
         };
       })}
       value={props.defaultRole?.id}
@@ -69,7 +69,7 @@ export function RoleSelector<T>(props: {
       align="end"
       width={props.width}
       onSurface={props.onSurface}
-      data-cy="role-selector-trigger"
+      data-testid="role-selector-trigger"
     />
   );
 }

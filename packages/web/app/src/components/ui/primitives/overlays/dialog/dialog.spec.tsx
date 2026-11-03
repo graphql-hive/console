@@ -12,13 +12,13 @@ describe('Dialog', () => {
         title="Create collection"
         description="Keeps operations together."
         footer={<button type="button">Create</button>}
-        attrs={{ 'data-cy': 'create-collection' }}
+        attrs={{ 'data-testid': 'create-collection' }}
       >
         <p>Body</p>
       </Dialog>,
     );
     const dialog = screen.getByRole('dialog');
-    expect(dialog.getAttribute('data-cy')).toBe('create-collection');
+    expect(dialog.getAttribute('data-testid')).toBe('create-collection');
     expect(dialog.className).toContain('max-w-[640px]');
     expect(screen.getByRole('heading', { name: 'Create collection' })).toBeTruthy();
     expect(screen.getByText('Keeps operations together.')).toBeTruthy();
