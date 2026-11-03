@@ -15,17 +15,16 @@ vi.mock('../../operations/providers/clickhouse-client', () => ({
 }));
 
 function createRecorder() {
-  const postQuery = vi.fn().mockResolvedValue(undefined);
+  const insert = vi.fn().mockResolvedValue(undefined);
   const errorLog = vi.fn();
   const logger = { child: () => ({ debug: vi.fn(), error: errorLog }) };
-  const recorder = new AlertChannelDeliveryRecorder({ postQuery } as any, logger as any, '1.2.3');
+  const recorder = new AlertChannelDeliveryRecorder({ insert } as any, logger as any, '1.2.3');
 
-  return { recorder, postQuery, errorLog };
+  return { recorder, insert, errorLog };
 }
 
 const meta = {
   organizationId: 'o1',
-  projectId: 'p1',
   channelId: 'c1',
   channelType: 'DISCORD' as const,
   event: 'schema_change' as const,
@@ -150,9 +149,42 @@ describe('AlertChannelDeliveryRecorder', () => {
     );
   });
 
+  test('record writes one row with the attempt and its metadata as a map literal', async () => {
+    const { recorder, insert } = createRecorder();
+
+    await recorder.record({
+      ...meta,
+      metadata: { 'Hive-Request-ID': "r'1", 'User-Agent': 'Hive/1 ("beta") \\ end' },
+      ok: false,
+      statusCode: null,
+      statusText: 'ENOTFOUND: getaddrinfo ENOTFOUND hooks.example.com',
+      durationMs: 12.6,
+    });
+
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(insert.mock.calls[0][0]).toMatchObject({
+      queryId: 'record-alert-channel-delivery',
+      data: [
+        [
+          expect.stringMatching(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/),
+          'o1',
+          'c1',
+          'DISCORD',
+          'schema_change',
+          1,
+          0,
+          0,
+          'ENOTFOUND: getaddrinfo ENOTFOUND hooks.example.com',
+          13,
+          "{'Hive-Request-ID':'r\\'1','User-Agent':'Hive/1 (\"beta\") \\\\ end'}",
+        ],
+      ],
+    });
+  });
+
   test('a failing insert is logged and never reaches the caller', async () => {
-    const { recorder, postQuery, errorLog } = createRecorder();
-    postQuery.mockRejectedValue(new Error('clickhouse down'));
+    const { recorder, insert, errorLog } = createRecorder();
+    insert.mockRejectedValue(new Error('clickhouse down'));
 
     await expect(
       recorder.track(meta, async () => ({
@@ -161,7 +193,7 @@ describe('AlertChannelDeliveryRecorder', () => {
       })),
     ).resolves.toBeUndefined();
 
-    expect(postQuery).toHaveBeenCalledTimes(1);
+    expect(insert).toHaveBeenCalledTimes(1);
     expect(errorLog).toHaveBeenCalled();
   });
 

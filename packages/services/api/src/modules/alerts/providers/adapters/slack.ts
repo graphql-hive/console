@@ -102,7 +102,6 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          projectId: input.event.project.id,
           channelId: input.channel.id,
           channelType: 'SLACK',
           event: 'schema_change',
@@ -155,7 +154,6 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          projectId: input.event.project.id,
           channelId: input.channel.id,
           channelType: 'SLACK',
           event: 'channel_confirmation',
