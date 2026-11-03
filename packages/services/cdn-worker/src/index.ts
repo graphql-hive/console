@@ -53,7 +53,7 @@ type Env = {
   /**
    * Whether the OCI Distribution API (`/v2/`) for supergraph images is served. Set to `1` to enable.
    */
-  FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED?: string;
+  OCI_SUPERGRAPH_ENABLED?: string;
 };
 
 const handler: ExportedHandler<Env> = {
@@ -210,7 +210,7 @@ const handler: ExportedHandler<Env> = {
       },
     });
 
-    if (env.FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED === '1' && isOciRequest(request)) {
+    if (env.OCI_SUPERGRAPH_ENABLED === '1' && isOciRequest(request)) {
       const handleOciRequest = createOciRequestHandler({
         isKeyValid,
         storage: artifactStorageReader,

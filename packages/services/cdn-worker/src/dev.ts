@@ -112,7 +112,7 @@ function main() {
     .get('*', handleRequest);
 
   app.all('*', (request: Request) => {
-    if (env.FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED === '1' && isOciRequest(request)) {
+    if (env.OCI_SUPERGRAPH_ENABLED === '1' && isOciRequest(request)) {
       return handleOciRequest(request);
     }
     if (request.method !== 'GET') {

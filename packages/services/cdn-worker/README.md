@@ -185,8 +185,8 @@ curl --fail --location \
      `AWS_S3_ACCESS_KEY_ID` and `AWS_S3_ACCESSS_KEY_SECRET`. The three consecutive `S` characters in
      `ACCESSS` are required by the current runtime contract.
 
-   - Optional: set `FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED` to `1` to serve supergraph OCI
-     images via the OCI Distribution API (`/v2/`). Disabled by default.
+   - Optional: set `OCI_SUPERGRAPH_ENABLED` to `1` to serve supergraph OCI images via the OCI
+     Distribution API (`/v2/`). Disabled by default.
 
 5. Create a Lambda Function URL. The current Hive deployment uses `NONE` authentication and buffered
    invocation. Review the exposure of an unauthenticated URL before using that setting.

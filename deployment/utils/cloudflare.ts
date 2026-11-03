@@ -67,7 +67,7 @@ export class CloudflareCDN {
       plainTextBindings: [
         {
           // Serve supergraph OCI images via the OCI Distribution API (`/v2/`)
-          name: 'FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED',
+          name: 'OCI_SUPERGRAPH_ENABLED',
           text: '1',
         },
       ],

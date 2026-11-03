@@ -16,7 +16,7 @@ const env = z
     AWS_S3_ACCESSS_KEY_SECRET: z.string().optional(),
     AWS_S3_ENDPOINT: z.string(),
     AWS_S3_BUCKET_NAME: z.string(),
-    FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED: z.enum(['0', '1']).default('0'),
+    OCI_SUPERGRAPH_ENABLED: z.enum(['0', '1']).default('0'),
   })
   .parse((globalThis as any).process.env);
 
@@ -78,7 +78,7 @@ const artifactHandler = createArtifactRequestHandler({
 });
 
 /** Whether the OCI Distribution API (`/v2/`) for supergraph images is served. */
-const ociEnabled = env.FEATURE_FLAGS_SUPERGRAPH_OCI_IMAGES_ENABLED === '1';
+const ociEnabled = env.OCI_SUPERGRAPH_ENABLED === '1';
 
 const ociHandler = createOciRequestHandler({
   isKeyValid,
