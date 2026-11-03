@@ -22,7 +22,6 @@ export const SLACK_OK: DeliveryOutcome = { statusCode: null, statusText: 'ok' };
 
 export interface DeliveryMeta {
   organizationId: string;
-  projectId: string;
   channelId: string;
   channelType: AlertChannel['type'];
   event: AlertChannelDeliveryEvent;
@@ -84,7 +83,6 @@ export class AlertChannelDeliveryRecorder {
           INSERT INTO "alert_channel_deliveries" (
             "timestamp"
             , "organization_id"
-            , "project_id"
             , "channel_id"
             , "channel_type"
             , "event"
@@ -98,7 +96,6 @@ export class AlertChannelDeliveryRecorder {
           VALUES (
             ${formatClickHouseDateTime(new Date())}
             , ${attempt.organizationId}
-            , ${attempt.projectId}
             , ${attempt.channelId}
             , ${attempt.channelType}
             , ${attempt.event}
