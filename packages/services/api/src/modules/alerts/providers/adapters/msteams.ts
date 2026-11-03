@@ -167,7 +167,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
           : typeof error === 'string'
             ? error
             : JSON.stringify(error);
-      this.logger.error(`Failed to send Microsoft Teams notification`, errorText);
+      this.logger.error(`Failed to send Microsoft Teams notification (error=%s)`, errorText);
     }
   }
 
