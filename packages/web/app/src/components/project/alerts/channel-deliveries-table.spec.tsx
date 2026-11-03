@@ -28,6 +28,8 @@ vi.mock('@tanstack/react-router', async importOriginal => ({
 vi.mock('@/lib/hooks', async importOriginal => ({
   ...(await importOriginal<typeof import('@/lib/hooks')>()),
   useSlugs: () => ({ organizationSlug: 'acme', projectSlug: 'shop' }),
+  // The copy button's hook reports through the app's toast provider, absent here.
+  useClipboard: () => vi.fn(),
 }));
 
 const targets = [{ id: 't1', slug: 'production' }];
@@ -54,15 +56,13 @@ function delivery(overrides: Partial<ChannelDeliveryRow> = {}): ChannelDeliveryR
 }
 
 describe('ChannelDeliveriesTable', () => {
-  it('shows the status the destination answered and links the schema change to its version', () => {
+  it('shows the status the destination answered and links the schema id to its version', () => {
     const { container } = render(
       <ChannelDeliveriesTable deliveries={[delivery()]} targets={targets} />,
     );
 
     expect(screen.getByText('404 Not Found')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Schema change' }).getAttribute('href')).toBe(
-      '/acme/shop/production/history/v1',
-    );
+    expect(screen.getByText('Schema change')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'production' }).getAttribute('href')).toBe(
       '/acme/shop/production',
     );
@@ -72,6 +72,11 @@ describe('ChannelDeliveriesTable', () => {
     expect(screen.getByText('req-1')).toBeTruthy();
     expect(screen.getByText('schema-change:v1:c1')).toBeTruthy();
     expect(screen.getByText('Hive-Webhooks/1.2.3')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'v1' }).getAttribute('href')).toBe(
+      '/acme/shop/production/history/v1',
+    );
+    expect(screen.getByRole('button', { name: 'Copy HIVE-SCHEMA-ID' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy HIVE-REQUEST-ID' })).toBeTruthy();
   });
 
   it('shows a Slack attempt by its API result alone, with its message metadata', () => {
