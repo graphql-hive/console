@@ -75,7 +75,7 @@ export function OperationForm(props: {
                     value: c.id,
                     label: c.name,
                     description: c.description,
-                    'data-cy': 'collection-select-item',
+                    'data-testid': 'collection-select-item',
                   }))}
                   value={field.value}
                   onValueChange={field.onChange}
@@ -83,7 +83,7 @@ export function OperationForm(props: {
                   matchTriggerWidth
                   width="full"
                   onSurface="raised"
-                  data-cy="collection-select-trigger"
+                  data-testid="collection-select-trigger"
                 />
               </FormControl>
               <FormMessage />

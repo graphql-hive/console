@@ -83,7 +83,7 @@ export function DeleteCollectionModalContent(props: {
     <AlertDialog
       open={props.isOpen}
       onOpenChange={props.toggleModalOpen}
-      attrs={{ 'data-cy': 'delete-collection-modal' }}
+      attrs={{ 'data-testid': 'delete-collection-modal' }}
       title="Delete Collection"
       description={
         <>
@@ -96,7 +96,7 @@ export function DeleteCollectionModalContent(props: {
         label: 'Delete',
         variant: 'destructive',
         onClick: props.handleDelete,
-        'data-cy': 'confirm',
+        'data-testid': 'confirm',
       }}
     />
   );

@@ -10,7 +10,7 @@ export function CompositionErrorsPopover() {
           variant="ghost"
           size="icon-sm"
           aria-label="About composition errors"
-          data-cy="composition-errors-info"
+          data-testid="composition-errors-info"
         >
           <InfoIcon className="size-3" />
         </Button>

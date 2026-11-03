@@ -31,12 +31,12 @@ PageLayoutContent.displayName = 'PageLayoutContent';
 
 const SubPageLayout = ({
   children,
-  'data-cy': dataCy,
+  'data-testid': dataTestId,
 }: {
   children: ReactNode;
-  'data-cy'?: string;
+  'data-testid'?: string;
 }) => (
-  <div className="space-y-2" data-cy={dataCy}>
+  <div className="space-y-2" data-testid={dataTestId}>
     {children}
   </div>
 );

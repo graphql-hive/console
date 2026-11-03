@@ -60,7 +60,7 @@ async function renderForm(props: Parameters<typeof Harness>[0]) {
 
 const emailInput = () => document.querySelector('input[name="email"]') as HTMLInputElement;
 const roleTrigger = () =>
-  document.querySelector('button[data-cy="role-selector-trigger"]') as HTMLButtonElement;
+  document.querySelector('button[data-testid="role-selector-trigger"]') as HTMLButtonElement;
 const submitButton = () =>
   screen.getByRole('button', { name: 'Send invitation' }) as HTMLButtonElement;
 

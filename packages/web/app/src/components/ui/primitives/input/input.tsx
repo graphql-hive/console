@@ -89,7 +89,7 @@ type InputProps = NativeInputProps &
     trailing?: ReactNode;
     /** A fixed block attached to the leading edge, such as the base URL before a slug. */
     prefixText?: string;
-    'data-cy'?: string;
+    'data-testid'?: string;
   };
 
 /** forwardRef is required: react-hook-form's Controller passes a ref to manage focus and validation. */

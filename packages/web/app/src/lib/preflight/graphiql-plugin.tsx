@@ -460,7 +460,7 @@ export function usePreflight(args: {
         src="/__preflight-embed"
         title="preflight-worker"
         className="hidden"
-        data-cy="preflight-embed-iframe"
+        data-testid="preflight-embed-iframe"
         /**
          * In DEV we need to use "allow-same-origin", as otherwise the embed can not instantiate the webworker (which is loaded from an URL).
          * In PROD the webworker is not
@@ -547,7 +547,7 @@ function PreflightContent() {
       <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
         {preflight.viewerCanModifyPreflightScript && (
-          <Button variant="link" onClick={toggleShowModal} data-cy="preflight-modal-button">
+          <Button variant="link" onClick={toggleShowModal} data-testid="preflight-modal-button">
             <span className="flex items-center gap-1">
               <PencilIcon className="size-4 shrink-0" />
               Edit
@@ -565,7 +565,7 @@ function PreflightContent() {
           size="compact"
           variant="outline"
           onClick={() => preflight.setIsEnabled(!preflight.isEnabled)}
-          data-cy="toggle-preflight"
+          data-testid="toggle-preflight"
         >
           <PowerIcon className="mr-2 size-4" />
           {preflight.isEnabled ? 'On' : 'Off'}
@@ -591,7 +591,7 @@ function PreflightContent() {
           theme={monacoTheme}
           className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
-            ['data-cy']: 'preflight-editor-mini',
+            ['data-testid']: 'preflight-editor-mini',
           }}
           options={{
             ...monacoProps.script.options,
@@ -620,7 +620,7 @@ function PreflightContent() {
         theme={monacoTheme}
         className={classes.monacoMini}
         wrapperProps={{
-          ['data-cy']: 'env-editor-mini',
+          ['data-testid']: 'env-editor-mini',
         }}
       />
     </>
@@ -735,14 +735,19 @@ function PreflightModal({
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
           </p>
-          <Button type="button" variant="outline" onClick={toggle} data-cy="preflight-modal-cancel">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={toggle}
+            data-testid="preflight-modal-cancel"
+          >
             Close
           </Button>
           <Button
             type="button"
             variant="primary"
             onClick={handleSubmit}
-            data-cy="preflight-modal-submit"
+            data-testid="preflight-modal-submit"
           >
             Save
           </Button>
@@ -767,7 +772,7 @@ function PreflightModal({
 
                 execute(scriptEditorRef.current?.getValue() ?? '');
               }}
-              data-cy="run-preflight"
+              data-testid="run-preflight"
             >
               <span className="flex items-center gap-1">
                 {state === PreflightWorkerState.running && (
@@ -796,7 +801,7 @@ function PreflightModal({
               wordWrap: 'wordWrapColumn',
             }}
             wrapperProps={{
-              ['data-cy']: 'preflight-editor',
+              ['data-testid']: 'preflight-editor',
             }}
           />
         </div>
@@ -815,7 +820,7 @@ function PreflightModal({
             </Button>
           </div>
           <div className="flex h-1/2 flex-col bg-editor">
-            <ScrollArea fill ref={consoleRef} data-cy="console-output">
+            <ScrollArea fill ref={consoleRef} data-testid="console-output">
               <section className="py-2.5 pr-2.5 pl-[26px] font-mono text-xs/[18px]">
                 {logs.map((log, index) => (
                   <LogLine key={index} log={log} />
@@ -838,7 +843,7 @@ function PreflightModal({
               wordWrap: 'wordWrapColumn',
             }}
             wrapperProps={{
-              ['data-cy']: 'env-editor',
+              ['data-testid']: 'env-editor',
             }}
           />
         </div>

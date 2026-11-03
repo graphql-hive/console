@@ -92,7 +92,7 @@ export function DeleteOperationModalContent(props: {
     <AlertDialog
       open={props.isOpen}
       onOpenChange={props.toggleModalOpen}
-      attrs={{ 'data-cy': 'delete-operation-modal' }}
+      attrs={{ 'data-testid': 'delete-operation-modal' }}
       title="Delete Operation"
       description={
         <>
@@ -105,7 +105,7 @@ export function DeleteOperationModalContent(props: {
         label: 'Delete',
         variant: 'destructive',
         onClick: props.handleDelete,
-        'data-cy': 'confirm',
+        'data-testid': 'confirm',
       }}
     />
   );
