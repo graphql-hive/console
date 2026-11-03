@@ -6,7 +6,7 @@ import type { MutationResolvers } from './../../../../__generated__/types';
 export const createOrganization: NonNullable<MutationResolvers['createOrganization']> = async (
   _,
   { input },
-  { injector },
+  { injector, req },
 ) => {
   const slugParseResult = OrganizationSlugModel.safeParse(input.slug);
   if (!slugParseResult.success) {
@@ -21,10 +21,13 @@ export const createOrganization: NonNullable<MutationResolvers['createOrganizati
   }
 
   const user = await injector.get(Session).getViewer();
-  const result = await injector.get(OrganizationManager).createOrganization({
-    slug: input.slug,
-    user,
-  });
+  const result = await injector.get(OrganizationManager).createOrganization(
+    {
+      slug: input.slug,
+      user,
+    },
+    req,
+  );
 
   if (result.ok) {
     return {
