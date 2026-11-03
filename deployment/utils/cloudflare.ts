@@ -31,13 +31,6 @@ export class CloudflareCDN {
       ),
       name: `hive-storage-cdn-${this.config.envName}`,
       module: true,
-      kvNamespaceBindings: [
-        {
-          // HIVE_DATA is in use in cdn-script.js as well, its the name of the global variable
-          name: 'HIVE_DATA',
-          namespaceId: kvStorage.id,
-        },
-      ],
       analyticsEngineBindings: [
         {
           name: 'USAGE_ANALYTICS',
@@ -123,7 +116,6 @@ export class CloudflareCDN {
 
     return {
       workerBaseUrl: workerUrl,
-      cfStorageNamespaceId: kvStorage.id,
     };
   }
 }
