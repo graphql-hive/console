@@ -1,0 +1,13 @@
+{
+  "name": "@hive/oci",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./node": "./src/node.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}
