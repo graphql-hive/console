@@ -13,9 +13,9 @@ export const action: Action = async exec => {
   await exec(`
     CREATE TABLE IF NOT EXISTS "alert_channel_deliveries" (
       "timestamp" DateTime('UTC') CODEC(DoubleDelta, LZ4),
-      "organization_id" LowCardinality(String) CODEC(ZSTD(1)),
-      "project_id" LowCardinality(String) CODEC(ZSTD(1)),
-      "channel_id" LowCardinality(String) CODEC(ZSTD(1)),
+      "organization_id" UUID CODEC(ZSTD(1)),
+      "project_id" UUID CODEC(ZSTD(1)),
+      "channel_id" UUID CODEC(ZSTD(1)),
       -- SLACK | WEBHOOK | MSTEAMS_WEBHOOK | DISCORD
       "channel_type" LowCardinality(String) CODEC(ZSTD(1)),
       -- schema_change | metric_alert | channel_confirmation
