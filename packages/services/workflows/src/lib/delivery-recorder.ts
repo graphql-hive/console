@@ -1,5 +1,5 @@
 import type { Logger } from '@graphql-hive/logger';
-import { sql, toQueryParams } from '@hive/clickhouse';
+import { formatDateTime, sql, toQueryParams } from '@hive/clickhouse';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import type { AlertChannelDeliveryEvent } from './delivery-metadata.js';
 
@@ -94,7 +94,7 @@ export function createDeliveryRecorder(
             , "metadata"
           )
           VALUES (
-            ${formatClickHouseDateTime(new Date())}
+            ${formatDateTime(new Date())}
             , ${attempt.organizationId}
             , ${attempt.deliveryType}
             , ${attempt.destination}
@@ -148,8 +148,4 @@ export async function trackDelivery<T>(
 
 function truncateStatusText(text: string): string {
   return text.length > MAX_STATUS_TEXT_LENGTH ? text.slice(0, MAX_STATUS_TEXT_LENGTH) : text;
-}
-
-function formatClickHouseDateTime(date: Date): string {
-  return date.toISOString().slice(0, 19).replace('T', ' ');
 }

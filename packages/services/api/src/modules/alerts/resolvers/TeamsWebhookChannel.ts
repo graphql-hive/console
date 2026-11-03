@@ -1,3 +1,4 @@
+import { alertChannelDeliveryResolvers } from '../lib/alert-channel-delivery-resolvers';
 import type { TeamsWebhookChannelResolvers } from './../../../__generated__/types';
 
 export const TeamsWebhookChannel: TeamsWebhookChannelResolvers = {
@@ -7,4 +8,7 @@ export const TeamsWebhookChannel: TeamsWebhookChannelResolvers = {
   endpoint: async channel => {
     return channel.webhookEndpoint!;
   },
+  deliveryStats: alertChannelDeliveryResolvers.deliveryStats,
+  deliveryHealth: alertChannelDeliveryResolvers.deliveryHealth,
+  deliveryLog: alertChannelDeliveryResolvers.deliveryLog,
 };

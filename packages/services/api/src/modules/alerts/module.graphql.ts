@@ -10,6 +10,10 @@ export default gql`
 
   extend type Project {
     alertChannels: [AlertChannel!]
+    """
+    A single alert channel of this project. Null when the id does not belong to this project.
+    """
+    alertChannel(id: ID!): AlertChannel
     alerts: [Alert!]
   }
 
@@ -134,6 +138,26 @@ export default gql`
     id: ID!
     name: String!
     type: AlertChannelType!
+    """
+    Delivery attempts recorded for this channel in the period.
+    Null when the delivery history could not be read.
+    """
+    deliveryStats(
+      """
+      The period for retrieving the statistics.
+      """
+      period: DateRangeInput!
+    ): AlertChannelDeliveryStats
+    """
+    Health derived from the most recent recorded attempts.
+    Null when the delivery history could not be read.
+    """
+    deliveryHealth: AlertChannelDeliveryHealth
+    """
+    The most recent attempts within the period, newest first. limit defaults to 50, at most 200.
+    Null when the delivery history could not be read.
+    """
+    deliveryLog(period: DateRangeInput!, limit: Int): [AlertChannelDelivery!]
   }
 
   type AlertSlackChannel implements AlertChannel {
@@ -141,6 +165,9 @@ export default gql`
     name: String!
     type: AlertChannelType!
     channel: String!
+    deliveryStats(period: DateRangeInput!): AlertChannelDeliveryStats
+    deliveryHealth: AlertChannelDeliveryHealth
+    deliveryLog(period: DateRangeInput!, limit: Int): [AlertChannelDelivery!]
   }
 
   type AlertWebhookChannel implements AlertChannel {
@@ -148,6 +175,9 @@ export default gql`
     name: String!
     type: AlertChannelType!
     endpoint: String!
+    deliveryStats(period: DateRangeInput!): AlertChannelDeliveryStats
+    deliveryHealth: AlertChannelDeliveryHealth
+    deliveryLog(period: DateRangeInput!, limit: Int): [AlertChannelDelivery!]
   }
 
   type TeamsWebhookChannel implements AlertChannel {
@@ -155,6 +185,9 @@ export default gql`
     name: String!
     type: AlertChannelType!
     endpoint: String!
+    deliveryStats(period: DateRangeInput!): AlertChannelDeliveryStats
+    deliveryHealth: AlertChannelDeliveryHealth
+    deliveryLog(period: DateRangeInput!, limit: Int): [AlertChannelDelivery!]
   }
 
   type DiscordWebhookChannel implements AlertChannel {
@@ -162,6 +195,94 @@ export default gql`
     name: String!
     type: AlertChannelType!
     endpoint: String!
+    deliveryStats(period: DateRangeInput!): AlertChannelDeliveryStats
+    deliveryHealth: AlertChannelDeliveryHealth
+    deliveryLog(period: DateRangeInput!, limit: Int): [AlertChannelDelivery!]
+  }
+
+  type AlertChannelDeliveryStats {
+    """
+    Attempts in the period, whatever their outcome.
+    """
+    totalDeliveries: SafeInt!
+    """
+    Attempts the destination did not accept.
+    """
+    totalFailures: SafeInt!
+    deliveriesOverTime(
+      """
+      How fine of granularity to show
+      """
+      resolution: Int!
+    ): [RequestsOverTime!]!
+    failuresOverTime(
+      """
+      How fine of granularity to show
+      """
+      resolution: Int!
+    ): [FailuresOverTime!]!
+  }
+
+  enum AlertChannelDeliveryEvent {
+    SCHEMA_CHANGE
+    METRIC_ALERT
+    CHANNEL_CONFIRMATION
+  }
+
+  type AlertChannelDelivery {
+    timestamp: DateTime!
+    event: AlertChannelDeliveryEvent!
+    ok: Boolean!
+    """
+    HTTP status of the response; null when there was no response.
+    """
+    statusCode: Int
+    """
+    One line describing the outcome: the reason phrase, the Slack API result code,
+    or "<error code>: <message>" when nothing answered.
+    """
+    statusText: String!
+    durationMs: Int!
+    """
+    Retry attempt number (1 = first try).
+    """
+    attempt: Int!
+    """
+    What Hive sent to identify the call, as a flat string map: the request headers
+    (Hive-Request-ID, Hive-Event, Hive-Target-ID, Hive-Schema-ID, User-Agent, Idempotency-Key)
+    for webhook channels, or the Slack message metadata (event_type, hive_request_id,
+    hive_target_id, hive_schema_id, idempotency_key, user_agent). Hive-Schema-ID is the schema
+    version id.
+    """
+    metadata: JSONObject!
+  }
+
+  enum AlertChannelHealthStatus {
+    """
+    No attempt recorded, or every recorded attempt has expired.
+    """
+    UNKNOWN
+    """
+    The most recent attempt succeeded.
+    """
+    HEALTHY
+    """
+    The most recent attempt failed; failingSince is the start of the current streak.
+    """
+    FAILING
+  }
+
+  type AlertChannelDeliveryHealth {
+    status: AlertChannelHealthStatus!
+    lastSuccessAt: DateTime
+    lastFailureAt: DateTime
+    lastStatusCode: Int
+    lastStatusText: String
+    """
+    First failure after the last success, at the earliest as far back as retention reaches.
+    Null unless FAILING.
+    """
+    failingSince: DateTime
   }
 
   type Alert {
