@@ -62,3 +62,22 @@ describe('buildHiveSlackMetadata', () => {
     });
   });
 });
+
+test('leaves out the request id when the call has none', () => {
+  const input = {
+    requestId: null,
+    event: 'channel_confirmation' as const,
+    release: '1.2.3',
+    idempotencyKey: 'channel-confirmation:created:c1',
+  };
+
+  expect(buildHiveWebhookHeaders(input)).toEqual({
+    'Hive-Event': 'channel_confirmation',
+    'User-Agent': 'Hive-Webhooks/1.2.3',
+    'Idempotency-Key': 'channel-confirmation:created:c1',
+  });
+  expect(buildHiveSlackMetadata(input).event_payload).toEqual({
+    idempotency_key: 'channel-confirmation:created:c1',
+    user_agent: 'Hive-Webhooks/1.2.3',
+  });
+});

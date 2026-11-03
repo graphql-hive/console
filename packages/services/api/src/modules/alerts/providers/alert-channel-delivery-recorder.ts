@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from 'graphql-modules';
 import { getRequestId } from '@hive/service-common';
 import { captureException } from '@sentry/node';
@@ -51,7 +50,7 @@ export class AlertChannelDeliveryRecorder {
   }
 
   describe(input: Omit<DeliveryMetadataInput, 'requestId' | 'release'>): DeliveryMetadataInput {
-    return { requestId: getRequestId() ?? randomUUID(), release: this.release, ...input };
+    return { requestId: getRequestId() ?? null, release: this.release, ...input };
   }
 
   /** Runs `send`, records exactly one attempt for it (success or failure) and rethrows its error. */
