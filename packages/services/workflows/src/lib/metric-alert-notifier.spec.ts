@@ -8,6 +8,7 @@ const postMessage = vi.fn(
   async (_args: {
     unfurl_links?: boolean;
     attachments: Array<{ color: string; blocks: Array<{ text: { text: string } }> }>;
+    metadata?: { event_type: string; event_payload: Record<string, string> };
   }) => ({ ok: true }),
 );
 
@@ -15,12 +16,14 @@ const postMessage = vi.fn(
 // the stub has to capture it. It previously ignored the argument, which is exactly how
 // an encrypted token reached Slack unnoticed.
 let constructedWithToken: string | null = null;
+let constructedWithOptions: Record<string, unknown> | null = null;
 
 vi.mock('@slack/web-api', () => ({
   WebClient: class {
     chat = { postMessage };
-    constructor(token: string) {
+    constructor(token: string, options?: Record<string, unknown>) {
       constructedWithToken = token;
+      constructedWithOptions = options ?? null;
     }
   },
 }));
@@ -55,6 +58,13 @@ function pgReturning(token: string | null) {
   return { maybeOneFirst: async () => token } as unknown as PostgresDatabasePool;
 }
 
+const trackingRecord = vi.fn(async () => {});
+const tracking = {
+  recorder: { record: trackingRecord },
+  release: '1.2.3',
+  requestId: 'req-1',
+};
+
 const channel: AlertChannelRow = {
   id: 'channel-1',
   type: 'SLACK',
@@ -70,6 +80,8 @@ function makeEvent(overrides: Partial<NotificationEvent> = {}): NotificationEven
     rule: makeRule({ type: 'ERROR_RATE', thresholdValue: 2, severity: 'WARNING' }),
     currentValue: 2.15,
     previousValue: null,
+    projectId: 'p1',
+    targetId: 't1',
     organizationSlug: 'the-guild',
     projectSlug: 'graphql-hive',
     targetSlug: 'production',
@@ -115,6 +127,9 @@ async function post(event: NotificationEvent, webAppUrl: string | null = null) {
     logger: makeLogger().logger,
     webAppUrl,
     crypto: encryptor,
+    tracking,
+    attempt: 1,
+    idempotencyKey: 'key-1',
   });
   const [args] = postMessage.mock.calls[0];
   return { args, attachment: args.attachments[0] };
@@ -165,6 +180,9 @@ describe('sendSlackNotification', () => {
       logger: makeLogger().logger,
       webAppUrl: null,
       crypto: encryptor,
+      tracking,
+      attempt: 1,
+      idempotencyKey: 'key-1',
     });
 
     expect(result).toEqual({ status: 'sent' });
@@ -181,6 +199,9 @@ describe('sendSlackNotification', () => {
       logger,
       webAppUrl: null,
       crypto: encryptor,
+      tracking,
+      attempt: 1,
+      idempotencyKey: 'key-1',
     });
 
     expect(result).toEqual({ status: 'skipped-config', reason: 'no-slack-channel' });
@@ -201,6 +222,9 @@ describe('sendSlackNotification', () => {
       logger,
       webAppUrl: null,
       crypto: encryptor,
+      tracking,
+      attempt: 1,
+      idempotencyKey: 'key-1',
     });
 
     expect(result).toEqual({ status: 'skipped-config', reason: 'no-slack-token' });
@@ -224,6 +248,9 @@ describe('sendSlackNotification token decryption', () => {
       logger,
       webAppUrl: null,
       crypto,
+      tracking,
+      attempt: 1,
+      idempotencyKey: 'key-1',
     });
 
     return { result, token: constructedWithToken };
@@ -322,6 +349,7 @@ async function postDiscord(
     attempt: 1,
     maxAttempts: 3,
     webAppUrl,
+    tracking,
   });
   const call = sendWebhook.mock.calls[0] as unknown as
     | [unknown, unknown, { data: { embeds: DiscordEmbed[] } }]
@@ -403,5 +431,101 @@ describe('sendDiscordNotification', () => {
     const { result } = await postDiscord(makeEvent(), WEB_APP_URL);
 
     expect(result).toEqual({ status: 'gave-up' });
+  });
+});
+
+describe('delivery tracking', () => {
+  beforeEach(() => {
+    trackingRecord.mockClear();
+  });
+
+  test('Slack messages carry the Hive metadata and the attempt is recorded', async () => {
+    const { args } = await post(makeEvent(), WEB_APP_URL);
+
+    expect(constructedWithOptions).toEqual({ retryConfig: { retries: 3 } });
+    expect(args.metadata).toEqual({
+      event_type: 'metric_alert',
+      event_payload: {
+        hive_request_id: 'req-1',
+        hive_target_id: 't1',
+        idempotency_key: 'key-1',
+        user_agent: 'Hive-Webhooks/1.2.3',
+      },
+    });
+    expect(trackingRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 'o1',
+        projectId: 'p1',
+        channelId: 'channel-1',
+        channelType: 'SLACK',
+        event: 'metric_alert',
+        attempt: 1,
+        ok: true,
+        statusCode: null,
+        statusText: 'ok',
+        metadata: { event_type: 'metric_alert', ...args.metadata!.event_payload },
+      }),
+    );
+  });
+
+  test('a Slack platform error is recorded and still rejects so the job retries', async () => {
+    const error = {
+      code: 'slack_webapi_platform_error',
+      message: 'An API error occurred: channel_not_found',
+      data: { ok: false, error: 'channel_not_found' },
+    };
+    postMessage.mockRejectedValueOnce(error);
+
+    await expect(
+      sendSlackNotification({
+        channel,
+        event: makeEvent(),
+        pg,
+        logger: makeLogger().logger,
+        webAppUrl: null,
+        crypto: encryptor,
+        tracking,
+        attempt: 2,
+        idempotencyKey: 'key-1',
+      }),
+    ).rejects.toBe(error);
+
+    expect(trackingRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attempt: 2,
+        ok: false,
+        statusCode: null,
+        statusText: 'channel_not_found',
+      }),
+    );
+  });
+
+  test('Discord webhooks carry the Hive headers and hand the recorder to sendWebhook', async () => {
+    await postDiscord(makeEvent());
+
+    const call = sendWebhook.mock.calls[0] as unknown as [
+      unknown,
+      unknown,
+      { headers: Record<string, string>; delivery: { recorder: unknown; meta: unknown } },
+    ];
+    expect(call[2].headers).toEqual({
+      'Hive-Request-ID': 'req-1',
+      'Hive-Event': 'metric_alert',
+      'Hive-Target-ID': 't1',
+      'User-Agent': 'Hive-Webhooks/1.2.3',
+      'Idempotency-Key': 'key-1',
+    });
+    expect(call[2].delivery).toEqual({
+      recorder: tracking.recorder,
+      meta: expect.objectContaining({
+        organizationId: 'o1',
+        projectId: 'p1',
+        channelId: 'channel-2',
+        channelType: 'DISCORD',
+        event: 'metric_alert',
+        attempt: 1,
+        metadata: call[2].headers,
+      }),
+    });
   });
 });

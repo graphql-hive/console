@@ -41,6 +41,8 @@ const HydrationRowSchema = z.object({
   ruleDirection: z.enum(['ABOVE', 'BELOW']),
   ruleSeverity: z.enum(['INFO', 'WARNING', 'CRITICAL']),
   organizationId: z.string(),
+  projectId: z.string(),
+  targetId: z.string(),
   // channel
   channelId: z.string(),
   channelType: z.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK', 'DISCORD']),
@@ -127,6 +129,8 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             , r."direction" as "ruleDirection"
             , r."severity" as "ruleSeverity"
             , r."organization_id" as "organizationId"
+            , p."id" as "projectId"
+            , t."id" as "targetId"
             , ac."id" as "channelId"
             , ac."type" as "channelType"
             , ac."name" as "channelName"
@@ -176,6 +180,8 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
           },
           currentValue: Number(row.value),
           previousValue: row.previousValue === null ? null : Number(row.previousValue),
+          projectId: row.projectId,
+          targetId: row.targetId,
           organizationSlug: row.organizationSlug,
           projectSlug: row.projectSlug,
           targetSlug: row.targetSlug,
@@ -190,6 +196,11 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
         };
 
         const idempotencyKey = `metric-alert:${stateLogId}:${channelId}`;
+        const tracking = {
+          recorder: context.alertDeliveries,
+          release: context.release,
+          requestId: args.requestId ?? stateLogId,
+        };
 
         let result: NotificationResult;
         switch (channel.type) {
@@ -201,6 +212,9 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               logger,
               webAppUrl: context.webAppUrl,
               crypto: context.crypto,
+              tracking,
+              attempt: helpers.job.attempts,
+              idempotencyKey,
             });
             break;
           case 'WEBHOOK':
@@ -213,6 +227,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               attempt: helpers.job.attempts,
               maxAttempts: helpers.job.max_attempts,
               webAppUrl: context.webAppUrl,
+              tracking,
             });
             break;
           case 'MSTEAMS_WEBHOOK':
@@ -225,6 +240,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               attempt: helpers.job.attempts,
               maxAttempts: helpers.job.max_attempts,
               webAppUrl: context.webAppUrl,
+              tracking,
             });
             break;
           case 'DISCORD':
@@ -237,6 +253,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               attempt: helpers.job.attempts,
               maxAttempts: helpers.job.max_attempts,
               webAppUrl: context.webAppUrl,
+              tracking,
             });
             break;
         }

@@ -105,6 +105,64 @@ test.concurrent(
         maxTimeout: 2000,
       },
     );
+
+    const channelId = channelResult.ok.addedAlertChannel.id;
+    const recordedRequest = (await getRecordedRequests()).find(
+      request => request.path === mockEndpoint.path,
+    );
+    const sentHeaders = Object.fromEntries(
+      Object.entries(recordedRequest?.headers ?? {}).map(([name, values]) => [
+        name.toLowerCase(),
+        values[0],
+      ]),
+    );
+    expect(sentHeaders).toEqual(
+      expect.objectContaining({
+        'hive-request-id': expect.any(String),
+        'hive-event': 'schema_change',
+        'hive-target-id': target.id,
+        'hive-schema-id': expect.any(String),
+        'idempotency-key': `schema-change:${sentHeaders['hive-schema-id']}:${channelId}`,
+        'user-agent': expect.stringMatching(/^Hive-Webhooks\//),
+      }),
+    );
+
+    // The workflows service records the delivery after the webhook answered.
+    await asyncRetry(
+      async () => {
+        await flushAsyncInserts();
+        const { data } = await clickHouseQuery<{
+          channel_type: string;
+          event: string;
+          ok: number;
+          status_code: number;
+          metadata: Record<string, string>;
+        }>(
+          `SELECT channel_type, event, ok, status_code, metadata
+           FROM alert_channel_deliveries
+           WHERE channel_id = '${channelId}' AND event = 'schema_change'`,
+        );
+        expect(data).toContainEqual(
+          expect.objectContaining({
+            channel_type: 'WEBHOOK',
+            event: 'schema_change',
+            ok: 1,
+            status_code: 200,
+            metadata: expect.objectContaining({
+              'Hive-Request-ID': sentHeaders['hive-request-id'],
+              'Hive-Event': 'schema_change',
+              'Hive-Target-ID': target.id,
+              'Hive-Schema-ID': sentHeaders['hive-schema-id'],
+              'Idempotency-Key': sentHeaders['idempotency-key'],
+            }),
+          }),
+        );
+      },
+      {
+        retries: 5,
+        maxTimeout: 2000,
+      },
+    );
   },
 );
 
