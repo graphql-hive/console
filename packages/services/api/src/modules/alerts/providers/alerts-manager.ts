@@ -1,5 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
-import type { Alert, AlertChannel } from '../../../shared/entities';
+import type { Alert, AlertChannel, DateRange } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import { IntegrationsAccessContext } from '../../integrations/providers/integrations-access-context';
@@ -14,6 +14,13 @@ import { DiscordCommunicationAdapter } from './adapters/discord';
 import { TeamsCommunicationAdapter } from './adapters/msteams';
 import { SlackCommunicationAdapter } from './adapters/slack';
 import { WebhookCommunicationAdapter } from './adapters/webhook';
+import {
+  AlertChannelDeliveryReader,
+  type AlertChannelDelivery,
+  type AlertChannelDeliveryBucket,
+  type AlertChannelDeliveryHealth,
+  type AlertChannelDeliveryTotals,
+} from './alert-channel-delivery-reader';
 
 @Injectable({
   scope: Scope.Operation,
@@ -33,6 +40,7 @@ export class AlertsManager {
     private organizationManager: OrganizationManager,
     private projectManager: ProjectManager,
     private storage: Storage,
+    private deliveryReader: AlertChannelDeliveryReader,
   ) {
     this.logger = logger.child({ source: 'AlertsManager' });
   }
@@ -135,6 +143,59 @@ export class AlertsManager {
       },
     });
     return this.storage.getAlertChannels(selector);
+  }
+
+  async getChannel(
+    selector: ProjectSelector & { channelId: string },
+  ): Promise<AlertChannel | null> {
+    const channels = await this.getChannels(selector);
+    return channels.find(channel => channel.id === selector.channelId) ?? null;
+  }
+
+  async getChannelDeliveryTotals(
+    input: ProjectSelector & { channelId: string; period: DateRange },
+  ): Promise<AlertChannelDeliveryTotals> {
+    await this.assertCanReadDeliveries(input);
+    return this.deliveryReader.getTotals(input);
+  }
+
+  async getChannelDeliveriesOverTime(
+    input: ProjectSelector & { channelId: string; period: DateRange; resolution: number },
+  ): Promise<AlertChannelDeliveryBucket[]> {
+    await this.assertCanReadDeliveries(input);
+    return this.deliveryReader.getOverTime(input);
+  }
+
+  async getChannelDeliveryHealth(
+    input: ProjectSelector & { channelId: string },
+  ): Promise<AlertChannelDeliveryHealth> {
+    await this.assertCanReadDeliveries(input);
+    return this.deliveryReader.getHealth(input);
+  }
+
+  async getChannelDeliveryLog(
+    input: ProjectSelector & { channelId: string; period: DateRange; limit?: number },
+  ): Promise<AlertChannelDelivery[]> {
+    await this.assertCanReadDeliveries(input);
+    return this.deliveryReader.getLog(input);
+  }
+
+  // `alert:modify` is the only alerts permission; reads such as `getChannels` use it too.
+  private async assertCanReadDeliveries(selector: ProjectSelector & { channelId: string }) {
+    this.logger.debug(
+      'Fetching Alert Channel deliveries (organization=%s, project=%s, channel=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.channelId,
+    );
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
+    });
   }
 
   async addAlert(input: {
