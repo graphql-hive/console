@@ -14,7 +14,6 @@ export const action: Action = async exec => {
     CREATE TABLE IF NOT EXISTS "alert_channel_deliveries" (
       "timestamp" DateTime('UTC') CODEC(DoubleDelta, LZ4),
       "organization_id" UUID CODEC(ZSTD(1)),
-      "project_id" UUID CODEC(ZSTD(1)),
       "channel_id" UUID CODEC(ZSTD(1)),
       -- SLACK | WEBHOOK | MSTEAMS_WEBHOOK | DISCORD
       "channel_type" LowCardinality(String) CODEC(ZSTD(1)),
@@ -33,7 +32,7 @@ export const action: Action = async exec => {
     )
     ENGINE = MergeTree
     PARTITION BY toYYYYMM("timestamp")
-    ORDER BY ("project_id", "channel_id", "timestamp")
+    ORDER BY ("organization_id", "channel_id", "timestamp")
     TTL "timestamp" + INTERVAL 75 DAY
     SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1;
   `);
