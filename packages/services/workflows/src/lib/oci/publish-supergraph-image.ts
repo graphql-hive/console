@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
-import { OciStorageKey } from '@hive/oci';
+import { buildSupergraphRepositoryName, OciStorageKey } from '@hive/oci';
 import { buildSupergraphImage, buildSupergraphTag } from '@hive/oci/node';
 import { psql, type CommonQueryMethods } from '@hive/postgres';
 import type { ObjectStorageWriter } from './object-storage.js';
@@ -117,7 +117,7 @@ export async function publishSupergraphImage(args: {
 
   return {
     type: 'published',
-    repository: `supergraph/${version.targetId}`,
+    repository: buildSupergraphRepositoryName(version.targetId),
     tag,
     manifestDigest,
   };

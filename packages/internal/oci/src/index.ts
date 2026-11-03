@@ -60,12 +60,12 @@ export function isSupergraphRepositoryTargetId(value: string): boolean {
   return uuidRegex.test(value);
 }
 
-/** Path prefix of all supergraph repositories: `supergraph/<target-id>`. */
-export const SUPERGRAPH_REPOSITORY_NAMESPACE = 'supergraph';
+/** Name of the supergraph repository within a target: `<target-id>/supergraph`. */
+export const SUPERGRAPH_REPOSITORY_NAME = 'supergraph';
 
 export function buildSupergraphRepositoryName(targetId: string): string {
   assertTargetId(targetId);
-  return `${SUPERGRAPH_REPOSITORY_NAMESPACE}/${targetId}`;
+  return `${targetId}/${SUPERGRAPH_REPOSITORY_NAME}`;
 }
 
 function digestHex(digest: string): string {

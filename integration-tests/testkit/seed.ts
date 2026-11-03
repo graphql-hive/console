@@ -32,6 +32,7 @@ import {
   createProject,
   createTarget,
   createToken,
+  deleteCdnAccessToken,
   deleteMemberRole,
   deleteMetricAlertRules,
   deleteSchema,
@@ -1101,6 +1102,7 @@ export function initSeed() {
                   const data = result.createCdnAccessToken.ok!;
 
                   return {
+                    id: data.createdCdnAccessToken.id,
                     secretAccessToken: data.secretAccessToken,
                     cdnUrl: data.cdnUrl,
                     fetchSchemaFromCDN() {
@@ -1113,6 +1115,23 @@ export function initSeed() {
                       return fetchSupergraphFromCDN(data.cdnUrl, data.secretAccessToken);
                     },
                   };
+                },
+                async deleteCdnAccess(cdnAccessTokenId: string, ttarget: TargetOverwrite = target) {
+                  const result = await deleteCdnAccessToken(
+                    {
+                      target: {
+                        bySelector: {
+                          organizationSlug: organization.slug,
+                          projectSlug: project.slug,
+                          targetSlug: ttarget.slug,
+                        },
+                      },
+                      cdnAccessTokenId,
+                    },
+                    ownerToken,
+                  ).then(r => r.expectNoGraphQLErrors());
+                  expect(result.deleteCdnAccessToken.error).toBeNull();
+                  return result.deleteCdnAccessToken.ok!;
                 },
                 async toggleTargetValidation(
                   isEnabled: boolean,

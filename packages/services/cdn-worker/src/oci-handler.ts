@@ -2,10 +2,10 @@
  * OCI Distribution (pull only) API for supergraph images.
  *
  *   GET  /v2/
- *   GET  /v2/supergraph/<target-id>/manifests/<tag-or-digest>
- *   HEAD /v2/supergraph/<target-id>/manifests/<tag-or-digest>
- *   GET  /v2/supergraph/<target-id>/blobs/<digest>
- *   HEAD /v2/supergraph/<target-id>/blobs/<digest>
+ *   GET  /v2/<target-id>/supergraph/manifests/<tag-or-digest>
+ *   HEAD /v2/<target-id>/supergraph/manifests/<tag-or-digest>
+ *   GET  /v2/<target-id>/supergraph/blobs/<digest>
+ *   HEAD /v2/<target-id>/supergraph/blobs/<digest>
  *
  * Authentication uses the existing target scoped CDN access tokens, either via
  * `X-Hive-CDN-Key: <token>` or `Authorization: Basic base64(<any-username>:<token>)`, so that
@@ -19,7 +19,7 @@ import {
   isSupergraphRepositoryTargetId,
   OciMediaType,
   OciStorageKey,
-  SUPERGRAPH_REPOSITORY_NAMESPACE,
+  SUPERGRAPH_REPOSITORY_NAME,
   type OciDigest,
 } from '@hive/oci';
 import { createAnalytics, type Analytics } from './analytics';
@@ -56,7 +56,7 @@ type OciErrorCode =
   | 'UNSUPPORTED';
 
 const routeRegex = new RegExp(
-  `^/v2/${SUPERGRAPH_REPOSITORY_NAMESPACE}/([^/]+)/(manifests|blobs)/([^/]+)$`,
+  `^/v2/([^/]+)/${SUPERGRAPH_REPOSITORY_NAME}/(manifests|blobs)/([^/]+)$`,
 );
 
 type ParsedRoute =
