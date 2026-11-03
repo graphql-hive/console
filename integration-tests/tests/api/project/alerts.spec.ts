@@ -221,13 +221,14 @@ test.concurrent(
     }
     const acceptedId = accepted.ok.addedAlertChannel.id;
 
-    // No expectation is registered for this path, so the mock server answers 404.
+    // The same mock server, on a path with no expectation registered, so it answers 404.
+    const rejectedEndpoint = new URL(`/random/no-expectation-${acceptedId}`, mockEndpoint.url).href;
     const rejected = await addAlertChannel({
       name: 'discord-rejected',
       organizationSlug: organization.slug,
       projectSlug: project.slug,
       type: AlertChannelType.Discord,
-      webhook: { endpoint: `http://mock_server:3042/random/no-expectation-${acceptedId}` },
+      webhook: { endpoint: rejectedEndpoint },
     });
     if (!rejected.ok) {
       throw new Error(rejected.error?.message ?? 'Expected ok');
