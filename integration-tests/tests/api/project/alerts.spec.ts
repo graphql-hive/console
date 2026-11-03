@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import asyncRetry from 'async-retry';
-import { clickHouseQuery, flushAsyncInserts } from 'testkit/clickhouse';
+import { clickHouseInsert, clickHouseQuery, flushAsyncInserts } from 'testkit/clickhouse';
 import { addAlertChannel } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
@@ -404,17 +404,41 @@ test.concurrent(
       },
     ]);
 
+    // One failed attempt is not a streak: the channel stays HEALTHY but reports the failure.
     const rejectedChannel = await readDeliveries(rejectedId);
     expect(rejectedChannel?.deliveryHealth).toEqual({
-      status: 'FAILING',
+      status: 'HEALTHY',
       lastSuccessAt: null,
       lastFailureAt: expect.any(String),
       lastStatusCode: 404,
       lastStatusText: 'Not Found',
-      failingSince: rejectedChannel?.deliveryHealth?.lastFailureAt,
+      failingSince: null,
     });
     expect(rejectedChannel?.deliveryStats).toEqual(
       expect.objectContaining({ totalDeliveries: 1, totalFailures: 1 }),
+    );
+
+    // Nine earlier failures complete the streak of ten that marks the channel as failing.
+    await clickHouseInsert(`
+      INSERT INTO "alert_channel_deliveries" (
+        "timestamp", "organization_id", "channel_id", "channel_type", "event", "attempt", "ok",
+        "status_code", "status_text", "duration_ms", "metadata"
+      )
+      SELECT
+        now() - toIntervalMinute(number + 1), '${organization.id}', '${rejectedId}', 'DISCORD',
+        'channel_confirmation', 1, 0, 404, 'Not Found', 5, map('Hive-Event', 'channel_confirmation')
+      FROM numbers(9)
+    `);
+    const failingChannel = await readDeliveries(rejectedId);
+    expect(failingChannel?.deliveryHealth).toEqual(
+      expect.objectContaining({
+        status: 'FAILING',
+        lastFailureAt: rejectedChannel?.deliveryHealth?.lastFailureAt,
+        failingSince: expect.any(String),
+      }),
+    );
+    expect(Date.parse(failingChannel?.deliveryHealth?.failingSince ?? '')).toBeLessThan(
+      Date.parse(rejectedChannel?.deliveryHealth?.lastFailureAt ?? ''),
     );
 
     await expect(readDeliveries('00000000-0000-4000-8000-000000000000')).resolves.toBeNull();

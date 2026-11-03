@@ -61,6 +61,7 @@ const pages: Array<{ url: string; current: string }> = [
   // The subscription pages redirect to the overview while Stripe is disabled, as it is here.
   { url: PROJECT, current: 'Targets' },
   { url: `${PROJECT}/view/alerts`, current: 'Alerts' },
+  { url: `${PROJECT}/view/alerts/channels/channel-1`, current: 'Alerts' },
   { url: `${PROJECT}/view/settings`, current: 'Settings' },
   { url: TARGET, current: 'Schema' },
   { url: `${TARGET}?service=users`, current: 'Schema' },

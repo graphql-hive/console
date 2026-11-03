@@ -9,6 +9,8 @@ import { Logger } from '../../shared/providers/logger';
 
 export const DEFAULT_DELIVERY_LOG_LIMIT = 50;
 export const MAX_DELIVERY_LOG_LIMIT = 200;
+/** A channel is failing once this many attempts in a row, the most recent ones, have failed. */
+export const FAILURE_STREAK_LENGTH = 10;
 
 /** The GraphQL `DeliveryEvent` member for a stored event name. */
 export type DeliveryEventName = 'SCHEMA_CHANGE' | 'METRIC_ALERT' | 'CHANNEL_CONFIRMATION';
@@ -70,12 +72,12 @@ const BucketRowModel = z.object({
 });
 
 const HealthRowModel = z.object({
-  total: z.coerce.number(),
+  recent_attempts: z.coerce.number(),
+  recent_failures: z.coerce.number(),
   last_success_at: z.coerce.number(),
   last_failure_at: z.coerce.number(),
   last_status_code: z.coerce.number(),
   last_status_text: z.string(),
-  latest_ok: z.coerce.number(),
   failing_since: z.coerce.number(),
 });
 
@@ -176,27 +178,70 @@ export class DeliveryReader {
     return result.data.map(row => toDeliveryBucket(BucketRowModel.parse(row)));
   }
 
-  /** The latest outcome and the current failure streak, over everything still retained. */
+  /**
+   * The most recent attempts decide the status. The lookups around them walk the sort key and stop
+   * early, so the scan grows with the current streak rather than with the channel's history.
+   */
   async getHealth(input: DeliverySelector): Promise<DeliveryHealth> {
     this.logger.debug('Reading delivery health (destination=%s)', input.destination ?? '*');
     const result = await this.clickHouse.query<unknown>({
       query: sql`
-        WITH (
-          SELECT maxIf("timestamp", "ok" = 1)
+        WITH
+          (
+            SELECT max("timestamp")
+            FROM (
+              SELECT "timestamp"
+              FROM "outbound_deliveries"
+              WHERE ${this.whereSelector(input)} AND "ok" = 1
+              ORDER BY "timestamp" DESC
+              LIMIT 1
+            )
+          ) AS last_success_ts
+          , (
+            SELECT (max("timestamp"), argMax("status_code", "timestamp"), argMax("status_text", "timestamp"))
+            FROM (
+              SELECT "timestamp", "status_code", "status_text"
+              FROM "outbound_deliveries"
+              WHERE ${this.whereSelector(input)} AND "ok" = 0
+              ORDER BY "timestamp" DESC
+              LIMIT 1
+            )
+          ) AS last_failure_row
+          , (
+            SELECT max("timestamp")
+            FROM (
+              SELECT "timestamp"
+              FROM "outbound_deliveries"
+              WHERE ${this.whereSelector(input)} AND "ok" = 0
+                AND "timestamp" > (
+                  SELECT max("timestamp")
+                  FROM (
+                    SELECT "timestamp"
+                    FROM "outbound_deliveries"
+                    WHERE ${this.whereSelector(input)} AND "ok" = 1
+                    ORDER BY "timestamp" DESC
+                    LIMIT 1
+                  )
+                )
+              ORDER BY "timestamp" ASC
+              LIMIT 1
+            )
+          ) AS streak_start_ts
+        SELECT
+          count() AS recent_attempts
+          , countIf("ok" = 0) AS recent_failures
+          , toUnixTimestamp(last_success_ts) AS last_success_at
+          , toUnixTimestamp(last_failure_row.1) AS last_failure_at
+          , last_failure_row.2 AS last_status_code
+          , last_failure_row.3 AS last_status_text
+          , toUnixTimestamp(streak_start_ts) AS failing_since
+        FROM (
+          SELECT "timestamp", "ok"
           FROM "outbound_deliveries"
           WHERE ${this.whereSelector(input)}
-        ) AS last_success
-        SELECT
-          count() AS total
-          , toUnixTimestamp(maxIf("timestamp", "ok" = 1)) AS last_success_at
-          , toUnixTimestamp(maxIf("timestamp", "ok" = 0)) AS last_failure_at
-          , argMaxIf("status_code", "timestamp", "ok" = 0) AS last_status_code
-          , argMaxIf("status_text", "timestamp", "ok" = 0) AS last_status_text
-          -- a success and a failure in the same second count as failing
-          , argMax("ok", ("timestamp", 1 - "ok")) AS latest_ok
-          , toUnixTimestamp(minIf("timestamp", "ok" = 0 AND "timestamp" > last_success)) AS failing_since
-        FROM "outbound_deliveries"
-        WHERE ${this.whereSelector(input)}
+          ORDER BY "timestamp" DESC
+          LIMIT ${sql.raw(String(FAILURE_STREAK_LENGTH))}
+        )
       `,
       queryId: 'delivery_health',
       timeout: 10_000,
@@ -253,7 +298,7 @@ export function toDeliveryBucket(row: z.infer<typeof BucketRowModel>): DeliveryB
 }
 
 export function toDeliveryHealth(row: HealthRow): DeliveryHealth {
-  if (row.total === 0) {
+  if (row.recent_attempts === 0) {
     return {
       status: 'UNKNOWN',
       lastSuccessAt: null,
@@ -265,7 +310,7 @@ export function toDeliveryHealth(row: HealthRow): DeliveryHealth {
   }
 
   const lastFailureAt = epochToDate(row.last_failure_at);
-  const failing = row.latest_ok === 0;
+  const failing = row.recent_failures >= FAILURE_STREAK_LENGTH;
 
   return {
     status: failing ? 'FAILING' : 'HEALTHY',
@@ -273,7 +318,7 @@ export function toDeliveryHealth(row: HealthRow): DeliveryHealth {
     lastFailureAt,
     lastStatusCode: row.last_status_code === 0 ? null : row.last_status_code,
     lastStatusText: row.last_status_text === '' ? null : row.last_status_text,
-    // A success and a failure in the same second leave `failing_since` empty; the streak then
+    // A success and a failure in the same second leave the streak start empty; the streak then
     // starts at the latest failure.
     failingSince: failing ? (epochToDate(row.failing_since) ?? lastFailureAt) : null,
   };
