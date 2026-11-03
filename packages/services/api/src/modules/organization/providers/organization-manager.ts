@@ -342,7 +342,7 @@ export class OrganizationManager {
         req,
         user.id,
         'createOrganization',
-        60 * 60, // 1 hour
+        60 * 60 * 24, // 24 hours
         3, // 3 organizations
       )
     ) {
