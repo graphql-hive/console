@@ -253,7 +253,6 @@ async function updateClickHouseMgTableTTL(retention: RetentionValue) {
       { name: 'daily_overview', ttlColumn: 'date', cast: false },
       { name: 'monthly_overview', ttlColumn: 'date', cast: false },
       { name: 'app_deployment_usage', ttlColumn: 'last_request', cast: false },
-      { name: 'alert_channel_deliveries', ttlColumn: 'timestamp', cast: false },
     ];
 
     let updatedCount = 0;
