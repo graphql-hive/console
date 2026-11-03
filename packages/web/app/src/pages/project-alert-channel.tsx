@@ -110,8 +110,8 @@ const ProjectAlertChannelPage_DeliveriesQuery = graphql(`
   }
 `);
 
-/** The page always shows the most recent two days of deliveries. */
-const DELIVERY_WINDOW_HOURS = 48;
+/** The page always shows the most recent three days of deliveries. */
+const DELIVERY_WINDOW_HOURS = 72;
 const DELIVERY_WINDOW_LABEL = `the last ${DELIVERY_WINDOW_HOURS} hours`;
 
 export function ProjectAlertChannelPage(props: { channelId: string }) {
