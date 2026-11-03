@@ -162,7 +162,7 @@ export class ArtifactStorageWriter {
         contentType: 'application/json',
         referenceDate: args.referenceDate,
       }),
-      body: JSON.stringify(args.manifest),
+      body: JSON.stringify(GraphManifestModel.parse(args.manifest)),
       context: `targetId=${args.targetId}, artifactType=manifest.json`,
     });
   }
