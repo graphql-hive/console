@@ -18,9 +18,14 @@ export class CloudflareCDN {
   ) {}
 
   deploy() {
-    const kvStorage = new cf.WorkersKvNamespace('hive-ha-storage', {
-      title: `hive-ha-cdn-${this.config.envName}`,
-    });
+    // Legacy CDN storage, unused since the legacy CDN was retired (#3298). No longer bound to the
+    // worker. Retained so Pulumi drops it from state without deleting it when the resource is
+    // removed in a follow-up; the namespace is then deleted manually.
+    new cf.WorkersKvNamespace(
+      'hive-ha-storage',
+      { title: `hive-ha-cdn-${this.config.envName}` },
+      { retainOnDelete: true },
+    );
 
     const script = new cf.WorkerScript('hive-ha-worker', {
       content: readFileSync(
