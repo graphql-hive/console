@@ -106,7 +106,7 @@ export function TargetSelector(props: {
           options={targetEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}
           value={props.currentTargetSlug}
           onValueChange={onTargetChange}
-          data-cy="target-picker-trigger"
+          data-testid="target-picker-trigger"
         />
       ) : (
         <div className="h-5 w-48 max-w-[200px] animate-pulse rounded-full bg-surface-skeleton" />

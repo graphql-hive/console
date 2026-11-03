@@ -164,7 +164,7 @@ function Save(): ReactElement {
           <GraphiQLTooltip label={label}>
             <GraphiQLButton
               {...props}
-              data-cy="save-operation"
+              data-testid="save-operation"
               className={cn(
                 'graphiql-toolbar-button',
                 currentOperation && !isSame && 'hive-badge-is-changed relative after:top-1',
@@ -228,7 +228,7 @@ function Save(): ReactElement {
                 }
                 toggleOperationModal();
               },
-              attrs: { 'data-cy': 'save-operation-as' },
+              attrs: { 'data-testid': 'save-operation-as' },
             },
           ],
         ]}
@@ -667,18 +667,18 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
               icon={EraserIcon}
               aria-label="Clear logs"
               variant="ghost"
-              data-cy="erase-logs"
+              data-testid="erase-logs"
               onClick={props.onClear}
             />
           ) : null
         }
-        panelDataCy="logs"
+        panelDataTestId="logs"
       >
         <ScrollArea fill ref={consoleRef}>
           <div className="p-4 font-mono text-xs/[18px]">
             {props.logs.length === 0 ? (
               <div
-                data-cy="empty-state"
+                data-testid="empty-state"
                 className="flex flex-col items-center justify-center text-fg-secondary"
               >
                 <p>No logs available</p>

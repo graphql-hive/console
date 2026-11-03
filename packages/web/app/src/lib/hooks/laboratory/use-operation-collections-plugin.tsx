@@ -310,8 +310,8 @@ export function Content() {
         {collection.name}
       </span>
     ),
-    attrs: { 'data-cy': 'collection-item' },
-    triggerAttrs: { 'data-cy': 'collection-item-trigger' },
+    attrs: { 'data-testid': 'collection-item' },
+    triggerAttrs: { 'data-testid': 'collection-item-trigger' },
     action: shouldShowMenu ? (
       <Menu
         align="end"
@@ -320,7 +320,7 @@ export function Content() {
             type="button"
             aria-label="More"
             className="graphiql-toolbar-button"
-            data-cy="collection-menu-trigger"
+            data-testid="collection-menu-trigger"
           >
             <EllipsisIcon className="size-4" />
           </button>
@@ -332,7 +332,7 @@ export function Content() {
               trailingIcon: PlusIcon,
               onClick: () => void addOperation(collection.id),
               disabled: createOperationState.fetching,
-              attrs: { 'data-cy': 'add-operation-to-collection' },
+              attrs: { 'data-testid': 'add-operation-to-collection' },
             },
           ],
           [
@@ -342,7 +342,7 @@ export function Content() {
                 setCollectionId(collection.id);
                 toggleCollectionModal();
               },
-              attrs: { 'data-cy': 'edit-collection' },
+              attrs: { 'data-testid': 'edit-collection' },
             },
             {
               label: 'Delete',
@@ -351,7 +351,7 @@ export function Content() {
                 setCollectionId(collection.id);
                 toggleDeleteCollectionModalOpen();
               },
-              attrs: { 'data-cy': 'delete-collection' },
+              attrs: { 'data-testid': 'delete-collection' },
             },
           ],
         ]}
@@ -370,7 +370,7 @@ export function Content() {
                   targetSlug,
                 }}
                 search={{ operation: node.id }}
-                data-cy={`operation-${node.name}`}
+                data-testid={`operation-${node.name}`}
                 className={cn(
                   'flex w-full items-center gap-x-3 rounded-sm p-2 font-normal text-fg-muted hover:bg-surface-hover hover:text-fg hover:no-underline',
                   node.id === queryParamsOperationId && [
@@ -404,14 +404,14 @@ export function Content() {
                         const url = new URL(window.location.href);
                         await copyToClipboard(`${url.origin}${url.pathname}?operation=${node.id}`);
                       },
-                      attrs: { 'data-cy': 'copy-operation-link' },
+                      attrs: { 'data-testid': 'copy-operation-link' },
                     },
                   ],
                   [
                     canEdit && {
                       label: 'Edit',
                       onClick: () => setOperationToEditId(node.id),
-                      attrs: { 'data-cy': 'edit-operation' },
+                      attrs: { 'data-testid': 'edit-operation' },
                     },
                     canDelete && {
                       label: 'Delete',
@@ -420,7 +420,7 @@ export function Content() {
                         setOperationToDeleteId(node.id);
                         toggleDeleteOperationModalOpen();
                       },
-                      attrs: { 'data-cy': 'delete-operation' },
+                      attrs: { 'data-testid': 'delete-operation' },
                     },
                   ],
                 ]}
@@ -452,7 +452,7 @@ export function Content() {
                 <Button
                   variant="link"
                   width="full"
-                  data-cy="new-collection"
+                  data-testid="new-collection"
                   onClick={() => {
                     if (collectionId) {
                       setCollectionId('');
@@ -502,7 +502,7 @@ export function Content() {
                     }
                     toggleCollectionModal();
                   }}
-                  data-cy="create-collection"
+                  data-testid="create-collection"
                 >
                   Create your first Collection.
                 </Button>

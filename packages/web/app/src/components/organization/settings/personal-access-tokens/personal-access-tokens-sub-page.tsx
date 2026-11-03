@@ -78,7 +78,7 @@ export function PersonalAccessTokensSubPage(): React.ReactNode {
               <>
                 {/* Outside the keyed sheet, so it is still there to take focus back on close. */}
                 <Button
-                  data-cy="organization-settings-access-tokens-create-new"
+                  data-testid="organization-settings-access-tokens-create-new"
                   onClick={() => setCreateAccessTokenState(CreateAccessTokenState.open)}
                 >
                   Create new access token
@@ -107,7 +107,7 @@ export function PersonalAccessTokensSubPage(): React.ReactNode {
                 />
               </>
             ) : (
-              <Button disabled data-cy="organization-settings-access-tokens-create-new">
+              <Button disabled data-testid="organization-settings-access-tokens-create-new">
                 Create new access token
               </Button>
             )}
@@ -124,7 +124,7 @@ export function PersonalAccessTokensSubPage(): React.ReactNode {
           </>
         }
       />
-      <div className="my-3.5 space-y-4" data-cy="organization-settings-personal-access-tokens">
+      <div className="my-3.5 space-y-4" data-testid="organization-settings-personal-access-tokens">
         {query.error ? (
           <QueryError
             organizationSlug={organizationSlug}

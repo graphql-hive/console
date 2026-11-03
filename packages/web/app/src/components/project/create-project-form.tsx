@@ -65,7 +65,7 @@ export function CreateProjectForm(props: {
   const { form } = props;
   return (
     // The submit stays inside the form: the e2e helper selects it through the form.
-    <Form form={form} onSubmit={props.onSubmit} attrs={{ 'data-cy': 'create-project-form' }}>
+    <Form form={form} onSubmit={props.onSubmit} attrs={{ 'data-testid': 'create-project-form' }}>
       <FormField
         control={form.control}
         name="projectSlug"
@@ -75,7 +75,7 @@ export function CreateProjectForm(props: {
             <FormControl>
               <Input
                 placeholder="my-project"
-                data-cy="slug"
+                data-testid="slug"
                 autoComplete="off"
                 onSurface="raised"
                 {...field}
@@ -125,7 +125,7 @@ export function CreateProjectForm(props: {
           width="full"
           onSurface="raised"
           type="submit"
-          data-cy="submit"
+          data-testid="submit"
           disabled={form.formState.isSubmitting || !form.formState.isValid}
         >
           {form.formState.isSubmitting ? 'Submitting...' : 'Create Project'}

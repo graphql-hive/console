@@ -177,7 +177,7 @@ export function MemberInvitationButton(props: {
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button data-cy="send-invite-trigger">
+        <Button data-testid="send-invite-trigger">
           <MailIcon size={14} className="mr-2" /> Send Invite
         </Button>
       }

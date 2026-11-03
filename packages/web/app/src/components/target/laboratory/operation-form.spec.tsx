@@ -48,7 +48,7 @@ describe('OperationForm', () => {
 
     rerender(<Harness onSubmit={() => {}} collections={collections} />);
     const trigger = screen.getByLabelText(collectionLabel);
-    expect(trigger.getAttribute('data-cy')).toBe('collection-select-trigger');
+    expect(trigger.getAttribute('data-testid')).toBe('collection-select-trigger');
     expect(trigger.textContent).toContain('Select a Collection');
   });
 

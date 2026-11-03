@@ -209,7 +209,7 @@ export function CreateCollectionModalContent(props: {
       open={props.isOpen}
       onOpenChange={props.toggleModalOpen}
       width="lg"
-      attrs={{ 'data-cy': 'create-collection-modal' }}
+      attrs={{ 'data-testid': 'create-collection-modal' }}
       title={`${props.collectionId ? 'Update' : 'Create'} Shared Collection`}
       description={
         props.collectionId
@@ -232,7 +232,7 @@ export function CreateCollectionModalContent(props: {
             width="full"
             onSurface="raised"
             disabled={props.form.formState.isSubmitting || !props.form.formState.isValid}
-            data-cy="confirm"
+            data-testid="confirm"
           >
             {props.collectionId ? 'Update' : 'Add'}
           </Button>

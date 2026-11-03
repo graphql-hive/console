@@ -428,37 +428,37 @@ const TARGET_SETTINGS: NavigationItem[] = [
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
     params: TARGET,
     exact: true,
-    attrs: { 'data-cy': 'target-settings-general-link' },
+    attrs: { 'data-testid': 'target-settings-general-link' },
   },
   {
     label: 'Base Schema',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/base-schema',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-base-schema-link' },
+    attrs: { 'data-testid': 'target-settings-base-schema-link' },
   },
   {
     label: 'Breaking Changes',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/breaking-changes',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-breaking-changes-link' },
+    attrs: { 'data-testid': 'target-settings-breaking-changes-link' },
   },
   {
     label: 'Schema Contracts',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/schema-contracts',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-schema-contracts-link' },
+    attrs: { 'data-testid': 'target-settings-schema-contracts-link' },
   },
   {
     label: 'Registry Tokens',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/registry-token',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-registry-token-link' },
+    attrs: { 'data-testid': 'target-settings-registry-token-link' },
   },
   {
     label: 'CDN Tokens',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-cdn-link' },
+    attrs: { 'data-testid': 'target-settings-cdn-link' },
   },
 ];
 
@@ -523,7 +523,7 @@ export const SettingsSections = createPreview({
         <CallSite
           source="pages/target-settings.tsx:1350"
           origin="base"
-          note="On /settings/cdn. Base Schema on non-federation projects, Schema Contracts on federation; Registry and CDN Tokens gated. Each link keeps its data-cy, which the usage e2e clicks."
+          note="On /settings/cdn. Base Schema on non-federation projects, Schema Contracts on federation; Registry and CDN Tokens gated. Each link keeps its data-testid, which the usage e2e clicks."
         >
           <SectionsPage
             label="Settings"
