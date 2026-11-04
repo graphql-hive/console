@@ -3447,14 +3447,13 @@ export class SchemaPublisher {
           const schemaVersion =
             await this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(defaultGraph);
 
-          const contractSchemaVersions = await Promise.all(
-            (await this.graphStore.findContractGraphsForGraph(defaultGraph))
-              .values()
-              .toArray()
-              // the deleted contract must no longer be part of the graph manifest
-              .filter(contractGraph => contractGraph.id !== graph.id)
-              .map(graph => this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(graph)),
-          );
+          const contractSchemaVersions = schemaVersion
+            ? (
+                await this.schemaVersions.getContractSchemaVersionsForSourceSchemaVersion(
+                  schemaVersion.id,
+                )
+              ).filter(contractVersion => contractVersion.graphId !== graph.id)
+            : null;
 
           return await this.contracts.deleteContractGraph({
             graph,
@@ -3465,9 +3464,7 @@ export class SchemaPublisher {
 
               await this.publishGraphManifest({
                 referenceDate: new Date(),
-                contractSchemaVersions: contractSchemaVersions.filter(
-                  <TValue>(value: TValue | null): value is TValue => !!value,
-                ),
+                contractSchemaVersions,
                 schemaVersion,
               });
             },
