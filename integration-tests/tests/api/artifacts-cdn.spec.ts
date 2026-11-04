@@ -1293,7 +1293,7 @@ function runArtifactsCDNTests(
       const manifest = GraphManifestModel.parse(await manifestResponse.json());
 
       expect(Object.keys(manifest.graphs)).toEqual(
-        expect.arrayContaining(['default', 'default/my-contract']),
+        expect.arrayContaining(['default', 'my-contract']),
       );
 
       for (const graph of Object.values(manifest.graphs)) {
@@ -1433,7 +1433,7 @@ function runArtifactsCDNTests(
 
         const initialManifest = await fetchManifest();
         expect(Object.keys(initialManifest.graphs)).toEqual(
-          expect.arrayContaining(['default', 'default/my-contract']),
+          expect.arrayContaining(['default', 'my-contract']),
         );
         expect(initialManifest.graphs['default'].currentVersion.id).toBe(firstVersionId);
 
@@ -1528,10 +1528,10 @@ function runArtifactsCDNTests(
         const initialManifest = await fetchManifest();
         expect(Object.keys(initialManifest.graphs).sort()).toEqual([
           'default',
-          'default/my-contract',
-          'default/other-contract',
+          'my-contract',
+          'other-contract',
         ]);
-        expect(initialManifest.graphs['default/my-contract'].id).toBe(myContractId);
+        expect(initialManifest.graphs['my-contract'].id).toBe(myContractId);
 
         const deleteResult = await deleteContract(
           { contract: { byId: myContractId } },
@@ -1544,7 +1544,7 @@ function runArtifactsCDNTests(
         expect(manifestAfterDelete).toEqual({
           graphs: {
             default: initialManifest.graphs['default'],
-            'default/other-contract': initialManifest.graphs['default/other-contract'],
+            'other-contract': initialManifest.graphs['other-contract'],
           },
         });
       },
@@ -1648,7 +1648,7 @@ function runArtifactsCDNTests(
         expect(await fetchManifest()).toEqual({
           graphs: {
             default: initialManifest.graphs['default'],
-            'default/retained-contract': initialManifest.graphs['default/retained-contract'],
+            'retained-contract': initialManifest.graphs['retained-contract'],
           },
         });
       },

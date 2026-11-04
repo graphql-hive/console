@@ -3687,7 +3687,12 @@ export class SchemaPublisher {
         artifactPath += schemaVersion.id;
       }
 
-      manifest.graphs[schemaVersion.graphMetadata.name] = {
+      const graphName =
+        schemaVersion.graphMetadata.type === 'contract'
+          ? formatContractName(schemaVersion.graphMetadata.name)
+          : schemaVersion.graphMetadata.name;
+
+      manifest.graphs[graphName] = {
         id: schemaVersion.graphMetadata.id,
         currentVersion: {
           id: schemaVersion.id,

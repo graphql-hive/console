@@ -893,8 +893,8 @@ test.concurrent(
             artifactPath: `/artifacts/v1/${target.id}/version/${promotedVersion.id}`,
           },
         },
-        'default/public': {
-          id: manifestBeforePromotion.graphs['default/public'].id,
+        public: {
+          id: manifestBeforePromotion.graphs['public'].id,
           currentVersion: {
             id: promotedContractVersion.id,
             // contract artifacts are stored under the source (default graph) schema version
