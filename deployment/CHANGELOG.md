@@ -1,5 +1,92 @@
 # hive
 
+## 15.1.0
+
+### Minor Changes
+
+- [#8829](https://github.com/graphql-hive/console/pull/8829)
+  [`04aaa44`](https://github.com/graphql-hive/console/commit/04aaa44b314df36666b9ddd4949be05c79c463e0)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - The OpenTelemetry collector docker image now run as
+  the unprivileged user with UID `1000` instead of `root`.
+
+  No changes are required for the default `docker-compose` or Kubernetes setups. You may need to
+  adjust your setup if you:
+
+  - build custom images on top of the Hive images and install packages or certificates (switch to
+    `USER root` for those steps and back to `USER 1000` afterwards)
+  - mount files into the containers that are only readable by `root` (e.g. custom CA certificates or
+    secrets with mode `600`); make them readable by UID `1000`
+
+- [#8866](https://github.com/graphql-hive/console/pull/8866)
+  [`6f71428`](https://github.com/graphql-hive/console/commit/6f714282330d913b3d9ec1697f6e49a4cdc8d95e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Expose client version statistics on the public
+  GraphQL API. The `ClientStats.versions` field and the `ClientVersionStatsValues` type (`version`,
+  `count`, `percentage`) are now publicly available.
+
+- [#8881](https://github.com/graphql-hive/console/pull/8881)
+  [`2b6a320`](https://github.com/graphql-hive/console/commit/2b6a320e32b6d53986ae85df333c4c3427304e59)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Opening a deep link into an
+  organization that uses SSO now resolves the organization automatically: the sign-in page's "Login
+  with SSO" button names the organization and goes straight to its identity provider, and
+  `/auth/sso` prefills the slug from `redirectToPath` or an explicit `slug` parameter.
+
+### Patch Changes
+
+- [#8806](https://github.com/graphql-hive/console/pull/8806)
+  [`f79adf8`](https://github.com/graphql-hive/console/commit/f79adf86449dea0d827a704722b6ef11fd99eea8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Consolidate GraphQL API error messages to be more
+  helpful and consistent for end-users.
+
+- [#8806](https://github.com/graphql-hive/console/pull/8806)
+  [`f79adf8`](https://github.com/graphql-hive/console/commit/f79adf86449dea0d827a704722b6ef11fd99eea8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [AIKIDO-2026-143019](https://intel.aikido.dev/cve/AIKIDO-2026-143019),
+  [AIKIDO-2026-10707](https://intel.aikido.dev/cve/AIKIDO-2026-10707),
+  [AIKIDO-2026-10706](https://intel.aikido.dev/cve/AIKIDO-2026-10706),
+  [AIKIDO-2026-970919](https://intel.aikido.dev/cve/AIKIDO-2026-970919), and
+  [AIKIDO-2026-161437](https://intel.aikido.dev/cve/AIKIDO-2026-161437).
+
+- [#8867](https://github.com/graphql-hive/console/pull/8867)
+  [`219fdf5`](https://github.com/graphql-hive/console/commit/219fdf5b8da41a676ea2f350dff33911a94b1bb6)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Rate limit organization creation per user. A user
+  can create at most 3 organizations per 24 hours. Rate limiting is only applied if
+  `SUPERTOKENS_RATE_LIMIT` is enabled (default).
+
+- [#8819](https://github.com/graphql-hive/console/pull/8819)
+  [`035809a`](https://github.com/graphql-hive/console/commit/035809a6786170c9cfa173581e13ed2d3077831e)
+  Thanks [@jdolle](https://github.com/jdolle)! - A syntax error in a submitted SDL, including the
+  target's base schema, is now reported as a GraphQL validation error of the schema check or publish
+  instead of failing the request with an unexpected error.
+
+- [#8890](https://github.com/graphql-hive/console/pull/8890)
+  [`f1f1dc3`](https://github.com/graphql-hive/console/commit/f1f1dc3150ee3b0a2415c91fcd442814f0d087e9)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix accepting an organization ownership transfer as
+  a member whose role lacks the "View members" permission. The transfer page showed "No access
+  (reason: Missing permission for performing 'member:describe' on resource)" instead of the accept
+  prompt.
+
+- [#8883](https://github.com/graphql-hive/console/pull/8883)
+  [`cd5032a`](https://github.com/graphql-hive/console/commit/cd5032a76dace9b35d24bf97908d71435288ccbf)
+  Thanks [@kd-011](https://github.com/kd-011)! - Return "Integration not found." instead of an
+  unexpected database error when an OIDC integration id that is not a valid UUID is provided.
+
+- [#8850](https://github.com/graphql-hive/console/pull/8850)
+  [`10371fe`](https://github.com/graphql-hive/console/commit/10371fe259004ccdf010c8c02bf08e69101d6ae7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Prevent using a foreign target not belonging to the
+  same project being used for conditional breaking change detection.
+
+- [#8846](https://github.com/graphql-hive/console/pull/8846)
+  [`3a9146a`](https://github.com/graphql-hive/console/commit/3a9146aca1b0eba7a546f4b25ce8d611f81496dd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [GHSA-7648-jmwf-vw7j](https://github.com/advisories/GHSA-7648-jmwf-vw7j),
+  [GHSA-4vjg-vx72-qq4g](https://github.com/advisories/GHSA-4vjg-vx72-qq4g),
+  [GHSA-3f7j-7jwc-fxfj](https://github.com/advisories/GHSA-3f7j-7jwc-fxfj),
+  [GHSA-9wx9-5pv9-3349](https://github.com/advisories/GHSA-9wx9-5pv9-3349),
+  [GHSA-f86p-h4j2-7qgj](https://github.com/advisories/GHSA-f86p-h4j2-7qgj),
+  [GHSA-7rv5-mrxv-xcr9](https://github.com/advisories/GHSA-7rv5-mrxv-xcr9),
+  [GHSA-wp97-x4hv-qvhp](https://github.com/advisories/GHSA-wp97-x4hv-qvhp), and
+  [GHSA-97r2-qh9m-474h](https://github.com/advisories/GHSA-97r2-qh9m-474h).
+
 ## 15.0.1
 
 ### Patch Changes
