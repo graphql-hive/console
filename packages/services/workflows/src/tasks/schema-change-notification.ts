@@ -31,13 +31,14 @@ export const task = implementTask(SchemaChangeNotificationTask, async args => {
     headers,
     delivery: channelId
       ? {
-          recorder: context.alertDeliveries,
+          recorder: context.deliveries,
           meta: {
             organizationId: input.event.organization.id,
-            channelId,
-            channelType: 'WEBHOOK',
+            deliveryType: 'WEBHOOK',
+            destination: channelId,
             event: 'schema_change',
             attempt: helpers.job.attempts,
+            maxAttempts: helpers.job.max_attempts,
             metadata: headers,
           },
         }

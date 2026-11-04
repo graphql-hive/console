@@ -24,10 +24,11 @@ function makeDelivery() {
       recorder: { record },
       meta: {
         organizationId: 'o1',
-        channelId: 'c1',
-        channelType: 'WEBHOOK' as const,
+        deliveryType: 'WEBHOOK' as const,
+        destination: 'c1',
         event: 'schema_change' as const,
         attempt: 1,
+        maxAttempts: 25,
         metadata: headers,
       },
     },

@@ -128,6 +128,7 @@ async function post(event: NotificationEvent, webAppUrl: string | null = null) {
     crypto: encryptor,
     tracking,
     attempt: 1,
+    maxAttempts: 25,
     idempotencyKey: 'key-1',
   });
   const [args] = postMessage.mock.calls[0];
@@ -181,6 +182,7 @@ describe('sendSlackNotification', () => {
       crypto: encryptor,
       tracking,
       attempt: 1,
+      maxAttempts: 25,
       idempotencyKey: 'key-1',
     });
 
@@ -200,6 +202,7 @@ describe('sendSlackNotification', () => {
       crypto: encryptor,
       tracking,
       attempt: 1,
+      maxAttempts: 25,
       idempotencyKey: 'key-1',
     });
 
@@ -223,6 +226,7 @@ describe('sendSlackNotification', () => {
       crypto: encryptor,
       tracking,
       attempt: 1,
+      maxAttempts: 25,
       idempotencyKey: 'key-1',
     });
 
@@ -249,6 +253,7 @@ describe('sendSlackNotification token decryption', () => {
       crypto,
       tracking,
       attempt: 1,
+      maxAttempts: 25,
       idempotencyKey: 'key-1',
     });
 
@@ -454,8 +459,8 @@ describe('delivery tracking', () => {
     expect(trackingRecord).toHaveBeenCalledWith(
       expect.objectContaining({
         organizationId: 'o1',
-        channelId: 'channel-1',
-        channelType: 'SLACK',
+        deliveryType: 'SLACK',
+        destination: 'channel-1',
         event: 'metric_alert',
         attempt: 1,
         ok: true,
@@ -484,6 +489,7 @@ describe('delivery tracking', () => {
         crypto: encryptor,
         tracking,
         attempt: 2,
+        maxAttempts: 25,
         idempotencyKey: 'key-1',
       }),
     ).rejects.toBe(error);
@@ -517,8 +523,8 @@ describe('delivery tracking', () => {
       recorder: tracking.recorder,
       meta: expect.objectContaining({
         organizationId: 'o1',
-        channelId: 'channel-2',
-        channelType: 'DISCORD',
+        deliveryType: 'DISCORD',
+        destination: 'channel-2',
         event: 'metric_alert',
         attempt: 1,
         metadata: call[2].headers,

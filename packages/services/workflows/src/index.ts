@@ -17,8 +17,8 @@ import {
 } from '@hive/service-common';
 import { Context } from './context.js';
 import { env } from './environment.js';
-import { createAlertChannelDeliveryRecorder } from './lib/alert-channel-delivery-recorder.js';
 import { ClickHouseClient } from './lib/clickhouse-client.js';
+import { createDeliveryRecorder } from './lib/delivery-recorder.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
@@ -114,7 +114,7 @@ if (env.clickhouse) {
   );
 } else {
   logger.warn(
-    'ClickHouse not configured — metric alert rules will not be evaluated and alert channel ' +
+    'ClickHouse not configured — metric alert rules will not be evaluated and outbound ' +
       'deliveries will not be recorded. Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
   );
 }
@@ -156,10 +156,7 @@ const pubSub = createHivePubSub({
 const clickhouse = env.clickhouse
   ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
   : null;
-const alertDeliveries = createAlertChannelDeliveryRecorder(
-  clickhouse,
-  logger.child({ source: 'AlertChannelDeliveries' }),
-);
+const deliveries = createDeliveryRecorder(clickhouse, logger.child({ source: 'Deliveries' }));
 
 const encryptor = env.encryptionSecret ? new Encryptor(env.encryptionSecret) : null;
 if (!encryptor) {
@@ -174,7 +171,7 @@ const context: Context = {
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
   clickhouse,
-  alertDeliveries,
+  deliveries,
   release: env.release,
   requestBroker: env.requestBroker,
   redis,

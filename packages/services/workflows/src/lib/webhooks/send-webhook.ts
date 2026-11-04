@@ -1,10 +1,6 @@
 import got from 'got';
 import type { Logger } from '@graphql-hive/logger';
-import {
-  trackDelivery,
-  type AlertChannelDeliveryRecorder,
-  type DeliveryMeta,
-} from '../alert-channel-delivery-recorder.js';
+import { trackDelivery, type DeliveryMeta, type DeliveryRecorder } from '../delivery-recorder.js';
 
 export type RequestBroker = {
   endpoint: string;
@@ -26,7 +22,7 @@ export async function sendWebhook(
     /** extra headers to forward to the destination (e.g. Idempotency-Key) */
     headers?: Record<string, string>;
     /** When set, the attempt (delivered or failed) is recorded in ClickHouse. */
-    delivery?: { recorder: AlertChannelDeliveryRecorder; meta: DeliveryMeta };
+    delivery?: { recorder: DeliveryRecorder; meta: DeliveryMeta };
   },
 ): Promise<SendWebhookResult> {
   if (args.attempt < args.maxAttempts) {

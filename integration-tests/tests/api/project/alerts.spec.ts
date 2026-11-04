@@ -132,19 +132,19 @@ test.concurrent(
       async () => {
         await flushAsyncInserts();
         const { data } = await clickHouseQuery<{
-          channel_type: string;
+          delivery_type: string;
           event: string;
           ok: number;
           status_code: number;
           metadata: Record<string, string>;
         }>(
-          `SELECT channel_type, event, ok, status_code, metadata
-           FROM alert_channel_deliveries
-           WHERE channel_id = '${channelId}' AND event = 'schema_change'`,
+          `SELECT delivery_type, event, ok, status_code, metadata
+           FROM outbound_deliveries
+           WHERE destination = '${channelId}' AND event = 'schema_change'`,
         );
         expect(data).toContainEqual(
           expect.objectContaining({
-            channel_type: 'WEBHOOK',
+            delivery_type: 'WEBHOOK',
             event: 'schema_change',
             ok: 1,
             status_code: 200,
