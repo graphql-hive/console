@@ -1550,7 +1550,7 @@ function runArtifactsCDNTests(
       },
     );
 
-    test.concurrent.only(
+    test.concurrent(
       'deleting a contract does not advance a manifest after another contract fails composition',
       async ({ expect }) => {
         const { createOrg, ownerToken } = await initSeed().createOwner();
