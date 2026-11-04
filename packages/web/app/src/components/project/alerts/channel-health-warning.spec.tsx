@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import { AlertChannelHealthStatus } from '@/gql/graphql';
+import { DeliveryHealthStatus } from '@/gql/graphql';
 import { render, screen } from '@testing-library/react';
 import { ChannelHealthWarning } from './channel-health-warning';
 
 const now = new Date('2026-11-03T12:00:00Z');
 
 describe('ChannelHealthWarning', () => {
-  it.each([AlertChannelHealthStatus.Healthy, AlertChannelHealthStatus.Unknown])(
+  it.each([DeliveryHealthStatus.Healthy, DeliveryHealthStatus.Unknown])(
     'shows nothing for a %s channel',
     status => {
       const { container } = render(
@@ -20,7 +20,7 @@ describe('ChannelHealthWarning', () => {
     const { container } = render(
       <ChannelHealthWarning
         health={{
-          status: AlertChannelHealthStatus.Failing,
+          status: DeliveryHealthStatus.Failing,
           failingSince: '2026-11-03T11:30:00Z',
         }}
         now={now}
@@ -33,7 +33,7 @@ describe('ChannelHealthWarning', () => {
     render(
       <ChannelHealthWarning
         health={{
-          status: AlertChannelHealthStatus.Failing,
+          status: DeliveryHealthStatus.Failing,
           failingSince: '2026-11-03T09:00:00Z',
           lastStatusCode: 404,
           lastStatusText: 'Not Found',

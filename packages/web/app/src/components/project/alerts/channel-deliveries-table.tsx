@@ -5,7 +5,7 @@ import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
-import { AlertChannelDeliveryEvent } from '@/gql/graphql';
+import { DeliveryEvent } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { Link } from '@tanstack/react-router';
@@ -13,7 +13,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 
 export type ChannelDeliveryRow = {
   timestamp: string;
-  event: AlertChannelDeliveryEvent;
+  event: DeliveryEvent;
   ok: boolean;
   statusCode: number | null;
   statusText: string;
@@ -25,10 +25,10 @@ export type ChannelDeliveryRow = {
 
 export type ChannelDeliveryTarget = { id: string; slug: string };
 
-const EVENT_LABEL: Record<AlertChannelDeliveryEvent, string> = {
-  [AlertChannelDeliveryEvent.SchemaChange]: 'Schema change',
-  [AlertChannelDeliveryEvent.MetricAlert]: 'Metric alert',
-  [AlertChannelDeliveryEvent.ChannelConfirmation]: 'Channel confirmation',
+const EVENT_LABEL: Record<DeliveryEvent, string> = {
+  [DeliveryEvent.SchemaChange]: 'Schema change',
+  [DeliveryEvent.MetricAlert]: 'Metric alert',
+  [DeliveryEvent.ChannelConfirmation]: 'Channel confirmation',
 };
 
 /** A header's value, by its webhook name or its Slack metadata form (`Hive-Target-ID` / `hive_target_id`). */

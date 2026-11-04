@@ -420,13 +420,13 @@ test.concurrent(
 
     // Nine earlier failures complete the streak of ten that marks the channel as failing.
     await clickHouseInsert(`
-      INSERT INTO "alert_channel_deliveries" (
-        "timestamp", "organization_id", "channel_id", "channel_type", "event", "attempt", "ok",
-        "status_code", "status_text", "duration_ms", "metadata"
+      INSERT INTO "outbound_deliveries" (
+        "timestamp", "organization_id", "delivery_type", "destination", "event", "attempt",
+        "max_attempts", "ok", "status_code", "status_text", "duration_ms", "metadata"
       )
       SELECT
-        now() - toIntervalMinute(number + 1), '${organization.id}', '${rejectedId}', 'DISCORD',
-        'channel_confirmation', 1, 0, 404, 'Not Found', 5, map('Hive-Event', 'channel_confirmation')
+        now() - toIntervalMinute(number + 1), '${organization.id}', 'DISCORD', '${rejectedId}',
+        'channel_confirmation', 1, 1, 0, 404, 'Not Found', 5, map('Hive-Event', 'channel_confirmation')
       FROM numbers(9)
     `);
     const failingChannel = await readDeliveries(rejectedId);

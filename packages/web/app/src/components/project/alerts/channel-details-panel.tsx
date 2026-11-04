@@ -4,7 +4,7 @@ import { DescriptionList } from '@/components/ui/primitives/description-list/des
 import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
-import { AlertChannelHealthStatus, AlertChannelType } from '@/gql/graphql';
+import { AlertChannelType, DeliveryHealthStatus } from '@/gql/graphql';
 import { CHANNEL_TYPE_LABEL } from './channel-form';
 import { DeleteChannelConfirmationDialog } from './delete-channel-confirmation-dialog';
 
@@ -93,24 +93,23 @@ export function ChannelDetailsPanel(props: {
 }
 
 const STATUS_PRESENTATION = {
-  [AlertChannelHealthStatus.Healthy]: { color: 'success', label: 'Healthy' },
-  [AlertChannelHealthStatus.Failing]: { color: 'critical', label: 'Failing' },
-  [AlertChannelHealthStatus.Unknown]: { color: 'neutral', label: 'Unknown' },
+  [DeliveryHealthStatus.Healthy]: { color: 'success', label: 'Healthy' },
+  [DeliveryHealthStatus.Failing]: { color: 'critical', label: 'Failing' },
+  [DeliveryHealthStatus.Unknown]: { color: 'neutral', label: 'Unknown' },
 } as const;
 
 /** The channel's delivery status; null when the delivery history could not be read. */
 function ChannelStatus({
   health,
 }: {
-  health: { status: AlertChannelHealthStatus; failingSince?: string | null } | null;
+  health: { status: DeliveryHealthStatus; failingSince?: string | null } | null;
 }) {
   if (!health) {
     return <span className="text-fg-subtle">Unavailable</span>;
   }
 
   const { color, label } = STATUS_PRESENTATION[health.status];
-  const failingSince =
-    health.status === AlertChannelHealthStatus.Failing ? health.failingSince : null;
+  const failingSince = health.status === DeliveryHealthStatus.Failing ? health.failingSince : null;
 
   return (
     <span className="inline-flex items-center gap-0.5">
