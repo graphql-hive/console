@@ -452,6 +452,29 @@ describe('delete', () => {
       });
     });
 
+    test.concurrent('error: malformed integration id', async ({ expect }) => {
+      const { ownerToken } = await initSeed().createOwner();
+
+      const result = await execute({
+        document: DeleteOIDCIntegrationMutation,
+        variables: {
+          input: {
+            oidcIntegrationId: 'i-do-not-exist',
+          },
+        },
+        authToken: ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+
+      expect(result).toEqual({
+        deleteOIDCIntegration: {
+          error: {
+            message: 'Integration not found.',
+          },
+          ok: null,
+        },
+      });
+    });
+
     test("error: user doesn't have permissions", async () => {
       const { ownerToken, createOrg } = await initSeed().createOwner();
       const { organization } = await createOrg();
