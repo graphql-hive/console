@@ -1,11 +1,13 @@
-import { useMemo, type ReactNode } from 'react';
-import { CopyIconButton } from '@/components/ui/copy-icon-button';
+import { useMemo } from 'react';
+import { DELIVERY_EVENT_LABEL } from '@/components/common/deliveries/delivery-event-label';
+import { DeliveryMetadata } from '@/components/common/deliveries/delivery-metadata';
+import {
+  DeliveryStatusCell,
+  statusLabel,
+} from '@/components/common/deliveries/delivery-status-cell';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
-import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
-import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
-import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
-import { DeliveryEvent } from '@/gql/graphql';
+import type { DeliveryEvent } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { Link } from '@tanstack/react-router';
@@ -25,47 +27,10 @@ export type ChannelDeliveryRow = {
 
 export type ChannelDeliveryTarget = { id: string; slug: string };
 
-const EVENT_LABEL: Record<DeliveryEvent, string> = {
-  [DeliveryEvent.SchemaChange]: 'Schema change',
-  [DeliveryEvent.MetricAlert]: 'Metric alert',
-  [DeliveryEvent.ChannelConfirmation]: 'Channel confirmation',
-  // Email events: never delivered to an alert channel, listed to cover the enum.
-  [DeliveryEvent.OrganizationInvitation]: 'Invitation',
-  [DeliveryEvent.OrganizationOwnershipTransfer]: 'Ownership transfer',
-  [DeliveryEvent.AuditLogExport]: 'Audit log export',
-  [DeliveryEvent.UsageRateLimitWarning]: 'Usage limit warning',
-  [DeliveryEvent.UsageRateLimitExceeded]: 'Usage limit exceeded',
-};
-
 /** A header's value, by its webhook name or its Slack metadata form (`Hive-Target-ID` / `hive_target_id`). */
 export function metadataValue(metadata: Record<string, unknown>, header: string): string | null {
   const value = metadata[header] ?? metadata[header.toLowerCase().replace(/-/g, '_')];
   return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function statusLabel(row: ChannelDeliveryRow): string {
-  return row.statusCode ? `${row.statusCode} ${row.statusText}` : row.statusText;
-}
-
-// Reason phrases and Slack result codes fit the column; a transport error such as
-// "ETIMEDOUT: Timeout awaiting 'request' for 10000ms" runs past it.
-const LONG_STATUS_LENGTH = 32;
-
-/** The full status for a popover when the column is likely to truncate it. */
-export function statusPopover(label: string): string | undefined {
-  return label.length > LONG_STATUS_LENGTH ? label : undefined;
-}
-
-/** The status cell's look, filling the column so a long status truncates instead of widening it. */
-function DeliveryStatusCell({ ok, label }: { ok: boolean; label: string }) {
-  const body = (
-    <span className="flex items-center gap-1.5 text-fg">
-      <StatusDot color={ok ? 'success' : 'critical'} />
-      <span className="min-w-0 truncate">{label}</span>
-    </span>
-  );
-  const popover = statusPopover(label);
-  return popover ? <Tooltip trigger={body} content={popover} /> : body;
 }
 
 export function ChannelDeliveriesTable({
@@ -97,7 +62,7 @@ export function ChannelDeliveriesTable({
           return (
             <DataTableCell
               kind="badge"
-              items={{ content: EVENT_LABEL[row.original.event], variant: 'secondary' }}
+              items={{ content: DELIVERY_EVENT_LABEL[row.original.event], variant: 'secondary' }}
             />
           );
         },
@@ -173,12 +138,15 @@ export function ChannelDeliveriesTable({
         `${row.timestamp}:${metadataValue(row.metadata, 'Hive-Request-ID') ?? ''}:${row.attempt}`
       }
       emptyMessage="No deliveries in this range."
-      renderSubComponent={row => <DeliveryMetadata delivery={row.original} targets={targets} />}
+      renderSubComponent={row => (
+        <ChannelDeliveryMetadata delivery={row.original} targets={targets} />
+      )}
     />
   );
 }
 
-function DeliveryMetadata({
+/** The headers or Slack metadata sent, with the schema version id linked to its history page. */
+function ChannelDeliveryMetadata({
   delivery,
   targets,
 }: {
@@ -186,19 +154,16 @@ function DeliveryMetadata({
   targets: ChannelDeliveryTarget[];
 }) {
   const { organizationSlug, projectSlug } = useSlugs('project');
-  const entries = Object.entries(delivery.metadata).filter(
-    (entry): entry is [string, string] => typeof entry[1] === 'string',
-  );
   const targetSlug =
     targets.find(target => target.id === metadataValue(delivery.metadata, 'Hive-Target-ID'))
       ?.slug ?? null;
 
-  // Every value copies, labelled by its header as the list shows it.
-  const describe = (key: string, value: string): ReactNode => {
-    const isSchemaId = key === 'Hive-Schema-ID' || key === 'hive_schema_id';
-    return (
-      <span className="inline-flex items-center gap-1">
-        {isSchemaId && targetSlug ? (
+  return (
+    <DeliveryMetadata
+      title={'event_type' in delivery.metadata ? 'Message metadata' : 'Headers sent'}
+      metadata={delivery.metadata}
+      describe={(key, value) =>
+        (key === 'Hive-Schema-ID' || key === 'hive_schema_id') && targetSlug ? (
           <Link
             to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
             params={{ organizationSlug, projectSlug, targetSlug, versionId: value }}
@@ -208,27 +173,8 @@ function DeliveryMetadata({
           </Link>
         ) : (
           value
-        )}
-        <CopyIconButton value={value} label={`Copy ${key.toUpperCase()}`} />
-      </span>
-    );
-  };
-
-  const rows = entries.map(([key, value]) => ({
-    items: [{ term: key, description: describe(key, value), mono: true }],
-  }));
-  // Two columns on a wide window: header order runs down the left column, then the right.
-  const split = Math.ceil(rows.length / 2);
-
-  return (
-    <div className="px-4 py-3">
-      <h3 className="mb-2 text-xs font-medium text-fg-secondary">
-        {'event_type' in delivery.metadata ? 'Message metadata' : 'Headers sent'}
-      </h3>
-      <div className="grid gap-x-8 gap-y-3.5 xl:grid-cols-2">
-        <DescriptionList rows={rows.slice(0, split)} />
-        {rows.length > split ? <DescriptionList rows={rows.slice(split)} /> : null}
-      </div>
-    </div>
+        )
+      }
+    />
   );
 }

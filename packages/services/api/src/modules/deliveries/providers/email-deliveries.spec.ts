@@ -42,7 +42,7 @@ function createProvider(latest: Delivery[] | Error) {
       ? Promise.reject(latest)
       : Promise.resolve(new Map(latest.map(delivery => [delivery.idempotencyKey!, delivery]))),
   );
-  const provider = new EmailDeliveries({ getLatestByKey } as any, logger as any);
+  const provider = new EmailDeliveries({ getLatestByKey } as any, {} as any, logger as any);
   return { provider, getLatestByKey };
 }
 

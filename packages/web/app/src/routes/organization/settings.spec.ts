@@ -93,6 +93,23 @@ describe('organization settings loaders', () => {
     },
   );
 
+  it(
+    'opens Email Deliveries from the page document alone, and keeps a viewer without the flag out',
+    { timeout: 30_000 },
+    async () => {
+      const allowed = await loadedAt(`${SETTINGS}/emails`);
+      expect(allowed.router.state.location.pathname).toBe(`${SETTINGS}/emails`);
+      expect(allowed.client.requests(PAGE)).toHaveLength(1);
+
+      const { router } = await loadedAt(
+        `${SETTINGS}/emails`,
+        organizationSettings({ viewerCanSeeEmailDeliveries: false }),
+        organizationLayout({ viewerCanSeeEmailDeliveries: false }),
+      );
+      await waitFor(() => expect(router.state.location.pathname).toBe(SETTINGS));
+    },
+  );
+
   it('sends a viewer who may not open General to Policy', { timeout: 30_000 }, async () => {
     const { router } = await loadedAt(
       SETTINGS,
