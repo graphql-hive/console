@@ -239,23 +239,23 @@ test.concurrent(
     // the async insert queue is flushed.
     await flushAsyncInserts();
     const { data: rows } = await clickHouseQuery<{
-      channel_id: string;
-      channel_type: string;
+      destination: string;
+      delivery_type: string;
       event: string;
       ok: number;
       status_code: number;
       status_text: string;
       metadata: Record<string, string>;
     }>(
-      `SELECT channel_id, channel_type, event, ok, status_code, status_text, metadata
-       FROM alert_channel_deliveries
-       WHERE channel_id IN ('${acceptedId}', '${rejectedId}')`,
+      `SELECT destination, delivery_type, event, ok, status_code, status_text, metadata
+       FROM outbound_deliveries
+       WHERE destination IN ('${acceptedId}', '${rejectedId}')`,
     );
 
-    const acceptedRow = rows.find(row => row.channel_id === acceptedId);
+    const acceptedRow = rows.find(row => row.destination === acceptedId);
     expect(acceptedRow).toEqual(
       expect.objectContaining({
-        channel_type: 'DISCORD',
+        delivery_type: 'DISCORD',
         event: 'channel_confirmation',
         ok: 1,
         status_code: 200,
@@ -269,7 +269,7 @@ test.concurrent(
       'Idempotency-Key': `channel-confirmation:created:${acceptedId}`,
     });
 
-    expect(rows.find(row => row.channel_id === rejectedId)).toEqual(
+    expect(rows.find(row => row.destination === rejectedId)).toEqual(
       expect.objectContaining({
         event: 'channel_confirmation',
         ok: 0,

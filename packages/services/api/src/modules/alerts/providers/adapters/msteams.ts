@@ -4,10 +4,7 @@ import { SchemaChangeType } from '@hive/storage';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
 import { buildHiveWebhookHeaders } from '../../lib/delivery-metadata';
-import {
-  AlertChannelDeliveryRecorder,
-  type DeliveryOutcome,
-} from '../alert-channel-delivery-recorder';
+import { DeliveryRecorder, type DeliveryOutcome } from '../delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -23,7 +20,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
   constructor(
     logger: Logger,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
-    private deliveries: AlertChannelDeliveryRecorder,
+    private deliveries: DeliveryRecorder,
   ) {
     this.logger = logger.child({ service: 'TeamsCommunicationAdapter' });
   }
@@ -81,8 +78,8 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          channelId: input.channel.id,
-          channelType: 'MSTEAMS_WEBHOOK',
+          deliveryType: 'MSTEAMS_WEBHOOK',
+          destination: input.channel.id,
           event: 'schema_change',
           metadata: headers,
         },
@@ -150,8 +147,8 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          channelId: input.channel.id,
-          channelType: 'MSTEAMS_WEBHOOK',
+          deliveryType: 'MSTEAMS_WEBHOOK',
+          destination: input.channel.id,
           event: 'channel_confirmation',
           metadata: headers,
         },

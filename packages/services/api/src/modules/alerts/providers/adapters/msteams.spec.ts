@@ -1,7 +1,7 @@
 import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
-import { AlertChannelDeliveryRecorder } from '../alert-channel-delivery-recorder';
+import { DeliveryRecorder } from '../delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
 import { TeamsCommunicationAdapter } from './msteams';
 
@@ -23,7 +23,7 @@ const logger = {
 };
 
 function createAdapter() {
-  const recorder = new AlertChannelDeliveryRecorder(
+  const recorder = new DeliveryRecorder(
     { postQuery: vi.fn().mockResolvedValue(undefined) } as any,
     logger as any,
     '1.2.3',
@@ -206,8 +206,8 @@ describe('TeamsCommunicationAdapter', () => {
       expect(record).toHaveBeenCalledWith(
         expect.objectContaining({
           organizationId: 'org-id',
-          channelId: 'channel-id',
-          channelType: 'MSTEAMS_WEBHOOK',
+          deliveryType: 'MSTEAMS_WEBHOOK',
+          destination: 'channel-id',
           event: 'schema_change',
           ok: true,
           statusCode: 200,
@@ -236,7 +236,7 @@ describe('TeamsCommunicationAdapter', () => {
 
       expect(record).toHaveBeenCalledWith(
         expect.objectContaining({
-          channelType: 'MSTEAMS_WEBHOOK',
+          deliveryType: 'MSTEAMS_WEBHOOK',
           event: 'channel_confirmation',
           ok: false,
           statusCode: 400,

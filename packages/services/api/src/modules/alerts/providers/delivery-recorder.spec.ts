@@ -1,8 +1,5 @@
 import { vi } from 'vitest';
-import {
-  AlertChannelDeliveryRecorder,
-  describeDeliveryError,
-} from './alert-channel-delivery-recorder';
+import { DeliveryRecorder, describeDeliveryError } from './delivery-recorder';
 
 vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
 vi.mock('@hive/service-common', () => ({ getRequestId: () => undefined }));
@@ -18,15 +15,15 @@ function createRecorder() {
   const insert = vi.fn().mockResolvedValue(undefined);
   const errorLog = vi.fn();
   const logger = { child: () => ({ debug: vi.fn(), error: errorLog }) };
-  const recorder = new AlertChannelDeliveryRecorder({ insert } as any, logger as any, '1.2.3');
+  const recorder = new DeliveryRecorder({ insert } as any, logger as any, '1.2.3');
 
   return { recorder, insert, errorLog };
 }
 
 const meta = {
   organizationId: 'o1',
-  channelId: 'c1',
-  channelType: 'DISCORD' as const,
+  deliveryType: 'DISCORD' as const,
+  destination: 'c1',
   event: 'schema_change' as const,
   metadata: { 'Hive-Request-ID': 'r1' },
 };
@@ -116,7 +113,7 @@ describe('describeDeliveryError', () => {
   });
 });
 
-describe('AlertChannelDeliveryRecorder', () => {
+describe('DeliveryRecorder', () => {
   test('track records a successful attempt with the response and resolves with the value', async () => {
     const { recorder } = createRecorder();
     const record = vi.spyOn(recorder, 'record').mockResolvedValue(undefined);
@@ -163,14 +160,15 @@ describe('AlertChannelDeliveryRecorder', () => {
 
     expect(insert).toHaveBeenCalledTimes(1);
     expect(insert.mock.calls[0][0]).toMatchObject({
-      queryId: 'record-alert-channel-delivery',
+      queryId: 'record-delivery',
       data: [
         [
           expect.stringMatching(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/),
           'o1',
-          'c1',
           'DISCORD',
+          'c1',
           'schema_change',
+          1,
           1,
           0,
           0,

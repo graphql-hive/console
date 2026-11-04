@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { AlertChannelDeliveryRecorder } from '../alert-channel-delivery-recorder';
+import { DeliveryRecorder } from '../delivery-recorder';
 import type { ChannelConfirmationInput } from './common';
 import { SlackCommunicationAdapter } from './slack';
 
@@ -33,7 +33,7 @@ vi.mock('../../../operations/providers/clickhouse-client', () => ({
 const logger = { child: () => ({ debug: vi.fn(), error: vi.fn(), warn: vi.fn() }) };
 
 function createAdapter() {
-  const recorder = new AlertChannelDeliveryRecorder(
+  const recorder = new DeliveryRecorder(
     { postQuery: vi.fn().mockResolvedValue(undefined) } as any,
     logger as any,
     '1.2.3',
@@ -92,8 +92,8 @@ describe('SlackCommunicationAdapter', () => {
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({
         organizationId: 'org-id',
-        channelId: 'channel-id',
-        channelType: 'SLACK',
+        deliveryType: 'SLACK',
+        destination: 'channel-id',
         event: 'channel_confirmation',
         ok: true,
         statusCode: null,

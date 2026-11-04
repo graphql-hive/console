@@ -1,7 +1,7 @@
 import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { beforeEach, vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
-import { AlertChannelDeliveryRecorder } from '../alert-channel-delivery-recorder';
+import { DeliveryRecorder } from '../delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
 import { DiscordCommunicationAdapter } from './discord';
 
@@ -31,7 +31,7 @@ function createAdapter() {
       .fn()
       .mockResolvedValue({ statusCode: 204, statusText: 'No Content', body: undefined }),
   };
-  const recorder = new AlertChannelDeliveryRecorder(
+  const recorder = new DeliveryRecorder(
     { postQuery: vi.fn().mockResolvedValue(undefined) } as any,
     logger as any,
     '1.2.3',
@@ -185,8 +185,8 @@ describe('DiscordCommunicationAdapter', () => {
       );
       expect(record).toHaveBeenCalledWith(
         expect.objectContaining({
-          channelId: 'channel-id',
-          channelType: 'DISCORD',
+          deliveryType: 'DISCORD',
+          destination: 'channel-id',
           event: 'schema_change',
           ok: true,
           statusCode: 204,
