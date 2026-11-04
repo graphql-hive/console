@@ -194,7 +194,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
 
         const idempotencyKey = `metric-alert:${stateLogId}:${channelId}`;
         const tracking = {
-          recorder: context.alertDeliveries,
+          recorder: context.deliveries,
           release: context.release,
           requestId: args.requestId ?? stateLogId,
         };
@@ -211,6 +211,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
               crypto: context.crypto,
               tracking,
               attempt: helpers.job.attempts,
+              maxAttempts: helpers.job.max_attempts,
               idempotencyKey,
             });
             break;

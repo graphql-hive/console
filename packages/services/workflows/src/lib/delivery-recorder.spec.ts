@@ -1,17 +1,18 @@
 import {
-  createAlertChannelDeliveryRecorder,
+  createDeliveryRecorder,
   describeDeliveryError,
   trackDelivery,
-  type AlertChannelDeliveryRecorder,
-} from './alert-channel-delivery-recorder.js';
+  type DeliveryRecorder,
+} from './delivery-recorder.js';
 import { makeLogger } from './metric-alert-test-utils.js';
 
 const meta = {
   organizationId: 'o1',
-  channelId: 'c1',
-  channelType: 'WEBHOOK' as const,
+  deliveryType: 'WEBHOOK' as const,
+  destination: 'c1',
   event: 'schema_change' as const,
   attempt: 2,
+  maxAttempts: 25,
   metadata: { 'Hive-Request-ID': 'r1' },
 };
 
@@ -81,7 +82,7 @@ describe('describeDeliveryError', () => {
 describe('trackDelivery', () => {
   test('records a successful attempt with the response and resolves with the value', async () => {
     const record = vi.fn(async () => {});
-    const recorder: AlertChannelDeliveryRecorder = { record };
+    const recorder: DeliveryRecorder = { record };
 
     await expect(
       trackDelivery(recorder, meta, async () => ({
@@ -110,12 +111,12 @@ describe('trackDelivery', () => {
   });
 });
 
-describe('createAlertChannelDeliveryRecorder', () => {
+describe('createDeliveryRecorder', () => {
   const attempt = { ...meta, ok: true, statusCode: 200, statusText: 'OK', durationMs: 5 };
 
   test('writes one statement per attempt', async () => {
     const { client, command } = makeClient();
-    const recorder = createAlertChannelDeliveryRecorder(client, makeLogger().logger);
+    const recorder = createDeliveryRecorder(client, makeLogger().logger);
 
     await expect(recorder.record(attempt)).resolves.toBeUndefined();
 
@@ -123,7 +124,7 @@ describe('createAlertChannelDeliveryRecorder', () => {
   });
 
   test('is a no-op without ClickHouse', async () => {
-    const recorder = createAlertChannelDeliveryRecorder(null, makeLogger().logger);
+    const recorder = createDeliveryRecorder(null, makeLogger().logger);
 
     await expect(recorder.record(attempt)).resolves.toBeUndefined();
   });
@@ -133,7 +134,7 @@ describe('createAlertChannelDeliveryRecorder', () => {
     const { logger } = makeLogger();
     logger.error = (...args: unknown[]) => void errors.push(args);
     const { client } = makeClient(vi.fn(async () => Promise.reject(new Error('clickhouse down'))));
-    const recorder = createAlertChannelDeliveryRecorder(client, logger);
+    const recorder = createDeliveryRecorder(client, logger);
 
     await expect(recorder.record(attempt)).resolves.toBeUndefined();
 

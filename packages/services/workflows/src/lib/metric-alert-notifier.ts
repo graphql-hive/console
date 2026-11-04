@@ -4,16 +4,16 @@ import { psql } from '@hive/postgres';
 import type { Encryptor } from '@hive/service-common';
 import { WebClient } from '@slack/web-api';
 import {
-  SLACK_OK,
-  trackDelivery,
-  type AlertChannelDeliveryRecorder,
-  type DeliveryMeta,
-} from './alert-channel-delivery-recorder.js';
-import {
   buildHiveSlackMetadata,
   buildHiveWebhookHeaders,
   flattenSlackMetadata,
 } from './delivery-metadata.js';
+import {
+  SLACK_OK,
+  trackDelivery,
+  type DeliveryMeta,
+  type DeliveryRecorder,
+} from './delivery-recorder.js';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
 import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
 
@@ -50,7 +50,7 @@ export type NotificationEvent = {
 
 /** How a sender records its attempt and identifies the call to the destination. */
 export type DeliveryTracking = {
-  recorder: AlertChannelDeliveryRecorder;
+  recorder: DeliveryRecorder;
   /** Hive release, for the User-Agent. */
   release: string;
   requestId: string;
@@ -77,14 +77,16 @@ function deliveryMeta(args: {
   channel: AlertChannelRow;
   event: NotificationEvent;
   attempt: number;
+  maxAttempts: number;
   metadata: Record<string, string>;
 }): DeliveryMeta {
   return {
     organizationId: args.event.rule.organizationId,
-    channelId: args.channel.id,
-    channelType: args.channel.type,
+    deliveryType: args.channel.type,
+    destination: args.channel.id,
     event: 'metric_alert',
     attempt: args.attempt,
+    maxAttempts: args.maxAttempts,
     metadata: args.metadata,
   };
 }
@@ -150,6 +152,7 @@ export async function sendSlackNotification(args: {
   crypto: Encryptor | null;
   tracking: DeliveryTracking;
   attempt: number;
+  maxAttempts: number;
   idempotencyKey: string;
 }): Promise<NotificationResult> {
   const { channel, event, pg, logger } = args;
@@ -227,6 +230,7 @@ export async function sendSlackNotification(args: {
       channel,
       event,
       attempt: args.attempt,
+      maxAttempts: args.maxAttempts,
       metadata: flattenSlackMetadata(metadata),
     }),
     async () => ({
@@ -296,7 +300,13 @@ export async function sendWebhookNotification(args: {
     headers,
     delivery: {
       recorder: args.tracking.recorder,
-      meta: deliveryMeta({ channel, event, attempt: args.attempt, metadata: headers }),
+      meta: deliveryMeta({
+        channel,
+        event,
+        attempt: args.attempt,
+        maxAttempts: args.maxAttempts,
+        metadata: headers,
+      }),
     },
   });
 
@@ -361,7 +371,13 @@ export async function sendTeamsNotification(args: {
     headers,
     delivery: {
       recorder: args.tracking.recorder,
-      meta: deliveryMeta({ channel, event, attempt: args.attempt, metadata: headers }),
+      meta: deliveryMeta({
+        channel,
+        event,
+        attempt: args.attempt,
+        maxAttempts: args.maxAttempts,
+        metadata: headers,
+      }),
     },
   });
 
@@ -462,7 +478,13 @@ export async function sendDiscordNotification(args: {
     headers,
     delivery: {
       recorder: args.tracking.recorder,
-      meta: deliveryMeta({ channel, event, attempt: args.attempt, metadata: headers }),
+      meta: deliveryMeta({
+        channel,
+        event,
+        attempt: args.attempt,
+        maxAttempts: args.maxAttempts,
+        metadata: headers,
+      }),
     },
   });
 

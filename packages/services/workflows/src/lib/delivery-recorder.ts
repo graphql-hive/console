@@ -15,35 +15,42 @@ export interface DeliveryOutcome {
 /** Slack's API answered `ok: true`; the SDK exposes no HTTP status on success. */
 export const SLACK_OK: DeliveryOutcome = { statusCode: null, statusText: 'ok' };
 
+/** The kind of destination a delivery went to. */
+export type DeliveryType = 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD';
+export type DeliveryEvent = AlertChannelDeliveryEvent;
+
 export interface DeliveryMeta {
   organizationId: string;
-  channelId: string;
-  channelType: 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD';
-  event: AlertChannelDeliveryEvent;
+  deliveryType: DeliveryType;
+  /** Where it went: the alert channel id. */
+  destination: string;
+  event: DeliveryEvent;
   /** graphile-worker attempt number of the job making the call. */
   attempt: number;
+  /** The retry budget of that job. */
+  maxAttempts: number;
   /** Exactly what was sent to identify the call: the request headers, or the Slack metadata flattened. */
   metadata: Record<string, string>;
 }
 
-export interface AlertChannelDeliveryAttempt extends DeliveryMeta, DeliveryOutcome {
+export interface DeliveryAttempt extends DeliveryMeta, DeliveryOutcome {
   ok: boolean;
   durationMs: number;
 }
 
-export type AlertChannelDeliveryRecorder = {
+export type DeliveryRecorder = {
   /** Never throws: a lost stats row must not fail the notification. */
-  record(attempt: AlertChannelDeliveryAttempt): Promise<void>;
+  record(attempt: DeliveryAttempt): Promise<void>;
 };
 
 /**
- * Records every alert-channel delivery attempt made by this service in ClickHouse
- * (`alert_channel_deliveries`). Without ClickHouse configured, nothing is recorded.
+ * Records every outbound delivery attempt made by this service in ClickHouse
+ * (`outbound_deliveries`). Without ClickHouse configured, nothing is recorded.
  */
-export function createAlertChannelDeliveryRecorder(
+export function createDeliveryRecorder(
   clickhouse: ClickHouseClient | null,
   logger: Logger,
-): AlertChannelDeliveryRecorder {
+): DeliveryRecorder {
   if (!clickhouse) {
     return { async record() {} };
   }
@@ -52,13 +59,14 @@ export function createAlertChannelDeliveryRecorder(
     async record(attempt) {
       try {
         const statement = sql`
-          INSERT INTO "alert_channel_deliveries" (
+          INSERT INTO "outbound_deliveries" (
             "timestamp"
             , "organization_id"
-            , "channel_id"
-            , "channel_type"
+            , "delivery_type"
+            , "destination"
             , "event"
             , "attempt"
+            , "max_attempts"
             , "ok"
             , "status_code"
             , "status_text"
@@ -68,10 +76,11 @@ export function createAlertChannelDeliveryRecorder(
           VALUES (
             ${formatClickHouseDateTime(new Date())}
             , ${attempt.organizationId}
-            , ${attempt.channelId}
-            , ${attempt.channelType}
+            , ${attempt.deliveryType}
+            , ${attempt.destination}
             , ${attempt.event}
             , toUInt8(${String(Math.min(255, Math.max(1, attempt.attempt)))})
+            , toUInt8(${String(Math.min(255, Math.max(1, attempt.maxAttempts)))})
             , toUInt8(${attempt.ok ? '1' : '0'})
             , toUInt16(${String(attempt.statusCode ?? 0)})
             , ${truncateStatusText(attempt.statusText)}
@@ -79,19 +88,15 @@ export function createAlertChannelDeliveryRecorder(
             , JSONExtract(${JSON.stringify(attempt.metadata)}, 'Map(String, String)')
           )
         `;
-        await clickhouse.command(
-          statement.sql,
-          'record-alert-channel-delivery',
-          toQueryParams(statement),
-        );
+        await clickhouse.command(statement.sql, 'record-delivery', toQueryParams(statement));
       } catch (error) {
         logger.error(
           {
-            channelId: attempt.channelId,
+            destination: attempt.destination,
             event: attempt.event,
             error: error instanceof Error ? error.message : String(error),
           },
-          'Failed to record alert channel delivery',
+          'Failed to record delivery',
         );
       }
     },
@@ -100,7 +105,7 @@ export function createAlertChannelDeliveryRecorder(
 
 /** Runs `send`, records exactly one attempt for it (success or failure) and rethrows its error. */
 export async function trackDelivery<T>(
-  recorder: AlertChannelDeliveryRecorder,
+  recorder: DeliveryRecorder,
   meta: DeliveryMeta,
   send: () => Promise<{ outcome: DeliveryOutcome; value: T }>,
 ): Promise<T> {
