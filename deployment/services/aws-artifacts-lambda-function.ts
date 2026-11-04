@@ -91,14 +91,46 @@ export function deployAWSArtifactsLambdaFunction(args: {
     timeout: 10,
   });
 
-  const example = new aws.lambda.FunctionUrl('awsLambdaArtifactsHandlerUrl', {
-    functionName: awsLambdaArtifactsHandler.arn,
-    authorizationType: 'NONE',
-    invokeMode: 'BUFFERED',
-    region: 'us-east-2',
-  });
+  // The CloudFront distribution in front of the Function URL (managed outside of Pulumi).
+  // When set, only that distribution may invoke the Function URL (it signs origin requests via OAC),
+  // so the distribution must have a Lambda origin access control attached before this is deployed.
+  const cloudFrontDistributionArn = new pulumi.Config('artifactsLambda').get(
+    'cloudFrontDistributionArn',
+  );
+
+  const cloudFrontPermissions = cloudFrontDistributionArn
+    ? [
+        new aws.lambda.Permission('awsLambdaArtifactsHandlerCloudFrontInvokeUrl', {
+          function: awsLambdaArtifactsHandler.name,
+          action: 'lambda:InvokeFunctionUrl',
+          principal: 'cloudfront.amazonaws.com',
+          sourceArn: cloudFrontDistributionArn,
+          functionUrlAuthType: 'AWS_IAM',
+          region: 'us-east-2',
+        }),
+        // Function URLs also require lambda:InvokeFunction for the caller.
+        new aws.lambda.Permission('awsLambdaArtifactsHandlerCloudFrontInvoke', {
+          function: awsLambdaArtifactsHandler.name,
+          action: 'lambda:InvokeFunction',
+          principal: 'cloudfront.amazonaws.com',
+          sourceArn: cloudFrontDistributionArn,
+          region: 'us-east-2',
+        }),
+      ]
+    : [];
+
+  const functionUrl = new aws.lambda.FunctionUrl(
+    'awsLambdaArtifactsHandlerUrl',
+    {
+      functionName: awsLambdaArtifactsHandler.arn,
+      authorizationType: cloudFrontDistributionArn ? 'AWS_IAM' : 'NONE',
+      invokeMode: 'BUFFERED',
+      region: 'us-east-2',
+    },
+    { dependsOn: cloudFrontPermissions },
+  );
 
   return {
-    functionUrl: example.functionUrl,
+    functionUrl: functionUrl.functionUrl,
   };
 }
