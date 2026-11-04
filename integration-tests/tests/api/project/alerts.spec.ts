@@ -394,10 +394,12 @@ test.concurrent(
     expect(acceptedChannel?.deliveryLog).toEqual([
       {
         event: 'CHANNEL_CONFIRMATION',
+        destination: acceptedId,
         ok: true,
         statusCode: 200,
         statusText: 'OK',
         attempt: 1,
+        maxAttempts: 1,
         metadata: acceptedRow?.metadata,
       },
     ]);
@@ -452,10 +454,12 @@ const AlertChannelDeliveriesQuery = graphql(`
         }
         deliveryLog(period: { from: $from, to: $to }) {
           event
+          destination
           ok
           statusCode
           statusText
           attempt
+          maxAttempts
           metadata
         }
       }
