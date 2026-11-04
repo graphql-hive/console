@@ -22,7 +22,7 @@ import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { StatCard } from '@/components/ui/stat-card/stat-card';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
-import { AlertChannelHealthStatus } from '@/gql/graphql';
+import { DeliveryHealthStatus } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { toDecimal } from '@/lib/hooks/use-decimal';
@@ -290,7 +290,7 @@ type DeliveryStats = {
 };
 
 type DeliveryHealth = {
-  status: AlertChannelHealthStatus;
+  status: DeliveryHealthStatus;
   lastSuccessAt?: string | null;
   lastFailureAt?: string | null;
   lastStatusCode?: number | null;
@@ -342,9 +342,9 @@ function DeliveryStatCards({
         value={health?.lastSuccessAt ? <TimeAgo date={health.lastSuccessAt} /> : 'Never'}
         variants={{
           tone:
-            health?.status === AlertChannelHealthStatus.Failing
+            health?.status === DeliveryHealthStatus.Failing
               ? 'danger'
-              : health?.status === AlertChannelHealthStatus.Healthy
+              : health?.status === DeliveryHealthStatus.Healthy
                 ? 'success'
                 : 'default',
         }}

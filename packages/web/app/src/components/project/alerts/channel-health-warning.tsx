@@ -1,6 +1,6 @@
 import { Callout } from '@/components/ui/callout';
 import { TimeAgo } from '@/components/ui/time-ago';
-import { AlertChannelHealthStatus } from '@/gql/graphql';
+import { DeliveryHealthStatus } from '@/gql/graphql';
 
 /** A channel failing for this long gets the warning. */
 export const CHANNEL_FAILING_WARNING_AFTER_MS = 60 * 60 * 1000;
@@ -12,14 +12,14 @@ export function channelDisableNotice(): string {
 }
 
 export type ChannelHealth = {
-  status: AlertChannelHealthStatus;
+  status: DeliveryHealthStatus;
   failingSince?: string | null;
   lastStatusCode?: number | null;
   lastStatusText?: string | null;
 };
 
 export function ChannelHealthWarning({ health, now }: { health: ChannelHealth | null; now: Date }) {
-  if (!health || health.status !== AlertChannelHealthStatus.Failing || !health.failingSince) {
+  if (!health || health.status !== DeliveryHealthStatus.Failing || !health.failingSince) {
     return null;
   }
   if (now.getTime() - new Date(health.failingSince).getTime() < CHANNEL_FAILING_WARNING_AFTER_MS) {

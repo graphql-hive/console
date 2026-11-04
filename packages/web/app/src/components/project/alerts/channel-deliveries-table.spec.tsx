@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import type { ReactNode } from 'react';
-import { AlertChannelDeliveryEvent } from '@/gql/graphql';
+import { DeliveryEvent } from '@/gql/graphql';
 import type * as Router from '@tanstack/react-router';
 import { fireEvent, render, screen } from '@testing-library/react';
 import {
@@ -38,7 +38,7 @@ const targets = [{ id: 't1', slug: 'production' }];
 function delivery(overrides: Partial<ChannelDeliveryRow> = {}): ChannelDeliveryRow {
   return {
     timestamp: '2026-11-03T10:00:00.000Z',
-    event: AlertChannelDeliveryEvent.SchemaChange,
+    event: DeliveryEvent.SchemaChange,
     ok: false,
     statusCode: 404,
     statusText: 'Not Found',
@@ -97,7 +97,7 @@ describe('ChannelDeliveriesTable', () => {
       <ChannelDeliveriesTable
         deliveries={[
           delivery({
-            event: AlertChannelDeliveryEvent.MetricAlert,
+            event: DeliveryEvent.MetricAlert,
             ok: true,
             statusCode: null,
             statusText: 'ok',
