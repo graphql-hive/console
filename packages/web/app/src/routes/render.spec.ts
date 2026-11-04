@@ -56,6 +56,7 @@ const pages: Array<{ url: string; current: string }> = [
   { url: `${ORGANIZATION}?search=gate&sortBy=name`, current: 'Overview' },
   { url: `${ORGANIZATION}/view/members`, current: 'Members' },
   { url: `${ORGANIZATION}/view/settings`, current: 'Settings' },
+  { url: `${ORGANIZATION}/view/settings/emails`, current: 'Settings' },
   { url: `${ORGANIZATION}/view/support`, current: 'Support' },
   { url: `${ORGANIZATION}/view/support/ticket/ticket-1`, current: 'Support' },
   // The subscription pages redirect to the overview while Stripe is disabled, as it is here.
@@ -509,7 +510,14 @@ describe('organization settings sections', () => {
     async () => {
       renderSettings(SETTINGS);
       expect(await sectionNav()).toEqual({
-        labels: ['General', 'Policy', 'SSO / SCIM', 'Access Tokens', 'Personal Access Tokens'],
+        labels: [
+          'General',
+          'Policy',
+          'SSO / SCIM',
+          'Access Tokens',
+          'Personal Access Tokens',
+          'Email Deliveries',
+        ],
         current: 'General',
       });
       expect(await screen.findByText('Organization ID')).toBeTruthy();
@@ -536,7 +544,12 @@ describe('organization settings sections', () => {
       }),
       organizationLayout({ viewerCanManagePersonalAccessTokens: false }),
     );
-    expect((await sectionNav()).labels).toEqual(['General', 'Policy', 'Access Tokens']);
+    expect((await sectionNav()).labels).toEqual([
+      'General',
+      'Policy',
+      'Access Tokens',
+      'Email Deliveries',
+    ]);
   });
 
   it('sends a viewer who may not open General to Policy', { timeout: 30_000 }, async () => {

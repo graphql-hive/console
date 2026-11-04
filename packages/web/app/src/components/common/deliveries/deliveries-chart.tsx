@@ -10,12 +10,15 @@ import { formatNumber } from '@/lib/hooks/use-formatted-number';
  * Delivery attempts per interval as a neutral area, like the metric chart on the alert rule page,
  * with the failed attempts as a line over it.
  */
-export function ChannelDeliveriesChart({
+export function DeliveriesChart({
   deliveries,
   errors,
+  totalLabel,
 }: {
   deliveries: TimeSeries['data'];
   errors: TimeSeries['data'];
+  /** The legend entry for the attempts series: "Total calls" for a channel, "Emails" for email. */
+  totalLabel: string;
 }) {
   const theme = useChartTheme();
 
@@ -36,7 +39,7 @@ export function ChannelDeliveriesChart({
       series: [
         {
           ...line,
-          name: 'Total calls',
+          name: totalLabel,
           lineStyle: { color: colors.line, width: 1.5 },
           itemStyle: { color: colors.line },
           areaStyle: {
@@ -57,7 +60,7 @@ export function ChannelDeliveriesChart({
         },
       ],
     };
-  }, [theme, deliveries, errors]);
+  }, [theme, deliveries, errors, totalLabel]);
 
   return <Chart option={option} height={200} />;
 }

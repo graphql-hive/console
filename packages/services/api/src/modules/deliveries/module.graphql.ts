@@ -128,4 +128,29 @@ export default gql`
     """
     delivery: Delivery
   }
+
+  extend type Organization {
+    """
+    Attempts to email the organization's members and invitees in the period: invitations,
+    ownership transfers, audit log exports and usage rate limit notices. Requires member:modify.
+    Null when the delivery history could not be read.
+    """
+    emailDeliveryStats(
+      """
+      The period for retrieving the statistics.
+      """
+      period: DateRangeInput!
+    ): DeliveryStats
+    """
+    Health derived across every recipient: lastSuccessAt and lastFailureAt are meaningful, status
+    is not. Requires member:modify. Null when the delivery history could not be read.
+    """
+    emailDeliveryHealth: DeliveryHealth
+    """
+    The most recent email attempts within the period, newest first. limit defaults to 50, at most
+    200. Requires member:modify. Null when the delivery history could not be read.
+    """
+    emailDeliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
+    viewerCanSeeEmailDeliveries: Boolean!
+  }
 `;

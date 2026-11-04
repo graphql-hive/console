@@ -38,6 +38,7 @@ import {
 } from './organization/route';
 import {
   organizationSettingsAccessTokensRoute,
+  organizationSettingsEmailsRoute,
   organizationSettingsIndexRoute,
   organizationSettingsPersonalAccessTokensRoute,
   organizationSettingsPolicyRoute,
@@ -154,6 +155,7 @@ export const routeTree = root.addChildren([
           organizationSettingsPolicyRoute,
           organizationSettingsAccessTokensRoute,
           organizationSettingsPersonalAccessTokensRoute,
+          organizationSettingsEmailsRoute,
         ]),
         ...legacyRoutesUnder(organizationRoute),
       ]),

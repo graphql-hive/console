@@ -504,6 +504,7 @@ export const OrganizationSettingsPageQuery = graphql(`
       viewerCanManageAccessTokens
       viewerCanManagePersonalAccessTokens
       viewerCanManageOIDCIntegration
+      viewerCanSeeEmailDeliveries
     }
   }
 `);
@@ -513,7 +514,8 @@ export type OrganizationSettingsSectionId =
   | 'policy'
   | 'sso'
   | 'access-tokens'
-  | 'personal-access-tokens';
+  | 'personal-access-tokens'
+  | 'emails';
 
 type Section = {
   id: OrganizationSettingsSectionId;
@@ -537,6 +539,7 @@ const sections: readonly Section[] = [
     label: 'Personal Access Tokens',
     to: '/$organizationSlug/view/settings/personal-access-tokens',
   },
+  { id: 'emails', label: 'Email Deliveries', to: '/$organizationSlug/view/settings/emails' },
 ];
 
 // The sections this viewer may open; the route loaders and the nav both read it.
@@ -545,6 +548,7 @@ export function organizationSettingsSections(organization: {
   viewerCanManageOIDCIntegration: boolean;
   viewerCanManageAccessTokens: boolean;
   viewerCanManagePersonalAccessTokens: boolean;
+  viewerCanSeeEmailDeliveries: boolean;
 }) {
   const ids = new Set<OrganizationSettingsSectionId>(['policy']);
   if (organization.viewerCanAccessSettings) {
@@ -558,6 +562,9 @@ export function organizationSettingsSections(organization: {
   }
   if (organization.viewerCanManagePersonalAccessTokens) {
     ids.add('personal-access-tokens');
+  }
+  if (organization.viewerCanSeeEmailDeliveries) {
+    ids.add('emails');
   }
   return sections.filter(section => ids.has(section.id));
 }
