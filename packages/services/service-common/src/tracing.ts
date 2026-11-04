@@ -1,8 +1,4 @@
 import { FastifyPluginCallback } from 'fastify';
-import {
-  FetchInstrumentation,
-  type FetchInstrumentationConfig,
-} from 'opentelemetry-instrumentation-fetch-node';
 import zod from 'zod';
 import { type HiveTracingSpanProcessorOptions } from '@graphql-hive/plugin-opentelemetry/setup';
 import * as hiveOtel from '@graphql-hive/plugin-opentelemetry/setup';
@@ -23,6 +19,10 @@ import {
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { Instrumentation, registerInstrumentations } from '@opentelemetry/instrumentation';
+import {
+  UndiciInstrumentation,
+  type UndiciInstrumentationConfig,
+} from '@opentelemetry/instrumentation-undici';
 import {
   BatchSpanProcessor,
   ReadableSpan,
@@ -143,11 +143,11 @@ export class TracingInstance {
     });
   }
 
-  instrumentNodeFetch(config: FetchInstrumentationConfig = {}) {
+  instrumentNodeFetch(config: UndiciInstrumentationConfig = {}) {
     const serviceName = this.options.serviceName;
-    const instance = new FetchInstrumentation({
-      onRequest({ request, span, additionalHeaders }) {
-        additionalHeaders['x-requesting-service'] = serviceName;
+    const instance = new UndiciInstrumentation({
+      requestHook(span, request) {
+        request.addHeader('x-requesting-service', serviceName);
 
         if (request.path.startsWith('/trpc/')) {
           const url = new URL(request.origin + request.path);
