@@ -203,7 +203,13 @@
       "body-parser@<=1.20.9": "1.20.9",
       "pg": "8.23.1",
       "@whatwg-node/fetch": "0.12.1",
-      "@graphql-tools/utils": "catalog:"
+      "@graphql-tools/utils": "catalog:",
+      "graphql-yoga@6>@graphql-tools/utils": "13.2.1",
+      "@graphql-yoga/plugin-defer-stream@4>@graphql-tools/utils": "13.2.1",
+      "@envelop/response-cache@10>@graphql-tools/utils": "13.2.1",
+      "@graphql-tools/executor@4>@graphql-tools/utils": "13.2.1",
+      "@graphql-tools/schema@11>@graphql-tools/utils": "13.2.1",
+      "@graphql-tools/merge@10>@graphql-tools/utils": "13.2.1"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
