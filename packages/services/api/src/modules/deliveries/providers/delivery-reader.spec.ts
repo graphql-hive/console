@@ -1,9 +1,5 @@
 import { vi } from 'vitest';
-import {
-  AlertChannelDeliveryReader,
-  toDelivery,
-  toDeliveryHealth,
-} from './alert-channel-delivery-reader';
+import { DeliveryReader, toDelivery, toDeliveryHealth } from './delivery-reader';
 
 vi.mock('@hive/service-common', () => ({ getRequestId: () => undefined }));
 vi.mock('../../operations/providers/clickhouse-client', () => ({
@@ -21,7 +17,7 @@ const logger = { child: () => ({ debug: vi.fn(), error: vi.fn() }) };
 
 function createReader(rows: unknown[]) {
   const query = vi.fn().mockResolvedValue({ data: rows, rows: rows.length });
-  const reader = new AlertChannelDeliveryReader(
+  const reader = new DeliveryReader(
     { query, translateWindow: () => ({ sql: '1 HOUR', values: [] }) } as any,
     logger as any,
   );
@@ -100,21 +96,25 @@ describe('toDelivery', () => {
       toDelivery({
         unix_timestamp: 1_762_000_000,
         event: 'schema_change',
+        destination: 'c1',
         ok: 0,
         status_code: 404,
         status_text: 'Not Found',
         duration_ms: 123,
         attempt: 2,
+        max_attempts: 25,
         metadata: { 'Hive-Request-ID': 'r1' },
       }),
     ).toEqual({
       timestamp: new Date(1_762_000_000_000),
       event: 'SCHEMA_CHANGE',
+      destination: 'c1',
       ok: false,
       statusCode: 404,
       statusText: 'Not Found',
       durationMs: 123,
       attempt: 2,
+      maxAttempts: 25,
       metadata: { 'Hive-Request-ID': 'r1' },
     });
   });
@@ -124,18 +124,20 @@ describe('toDelivery', () => {
       toDelivery({
         unix_timestamp: 1_762_000_000,
         event: 'metric_alert',
+        destination: 'c1',
         ok: 1,
         status_code: 0,
         status_text: 'ok',
         duration_ms: 5,
         attempt: 1,
+        max_attempts: 1,
         metadata: {},
       }),
     ).toEqual(expect.objectContaining({ event: 'METRIC_ALERT', ok: true, statusCode: null }));
   });
 });
 
-describe('AlertChannelDeliveryReader', () => {
+describe('DeliveryReader', () => {
   test('getOverTime parses the buckets and their dates as UTC', async () => {
     const { reader } = createReader([
       { date: '2026-11-02 10:00:00', total: '3', failed: '1' },
@@ -146,7 +148,8 @@ describe('AlertChannelDeliveryReader', () => {
     await expect(
       reader.getOverTime({
         organizationId: 'o1',
-        channelId: 'c1',
+        deliveryType: 'WEBHOOK',
+        destination: 'c1',
         period: { from: new Date('2026-11-02T10:00:00Z'), to: new Date('2026-11-02T13:00:00Z') },
         resolution: 3,
       }),
@@ -163,7 +166,8 @@ describe('AlertChannelDeliveryReader', () => {
     await expect(
       reader.getTotals({
         organizationId: 'o1',
-        channelId: 'c1',
+        deliveryType: 'WEBHOOK',
+        destination: 'c1',
         period: { from: new Date('2026-11-02T10:00:00Z'), to: new Date('2026-11-02T13:00:00Z') },
       }),
     ).resolves.toEqual({ total: 5, failed: 3 });
@@ -174,11 +178,13 @@ describe('AlertChannelDeliveryReader', () => {
       {
         unix_timestamp: 1_762_000_000,
         event: 'channel_confirmation',
+        destination: 'c1',
         ok: 1,
         status_code: 200,
         status_text: 'OK',
         duration_ms: 40,
         attempt: 1,
+        max_attempts: 1,
         metadata: { 'Hive-Event': 'channel_confirmation' },
       },
     ]);
@@ -186,7 +192,8 @@ describe('AlertChannelDeliveryReader', () => {
     await expect(
       reader.getLog({
         organizationId: 'o1',
-        channelId: 'c1',
+        deliveryType: 'WEBHOOK',
+        destination: 'c1',
         period: { from: new Date('2026-11-01T00:00:00Z'), to: new Date('2026-11-03T00:00:00Z') },
       }),
     ).resolves.toEqual([

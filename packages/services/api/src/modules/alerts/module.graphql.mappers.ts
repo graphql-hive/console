@@ -1,7 +1,6 @@
 import type {
   Alert,
   AlertChannel,
-  DateRange,
   MetricAlertIncident,
   MetricAlertRule,
   MetricAlertStateLogEntry,
@@ -16,13 +15,6 @@ export type AlertSlackChannelMapper = AlertChannelMapper;
 export type AlertWebhookChannelMapper = AlertChannelMapper;
 export type TeamsWebhookChannelMapper = AlertChannelMapper;
 export type DiscordWebhookChannelMapper = AlertChannelMapper;
-/** The selection the stats fields read for; each field runs its own query, like OperationsStats. */
-export type AlertChannelDeliveryStatsMapper = {
-  organizationId: string;
-  projectId: string;
-  channelId: string;
-  period: DateRange;
-};
 export type AlertMapper = Alert;
 export type MetricAlertRuleMapper = MetricAlertRule;
 export type MetricAlertRuleIncidentMapper = MetricAlertIncident;
