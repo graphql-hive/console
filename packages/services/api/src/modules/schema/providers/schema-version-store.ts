@@ -1112,6 +1112,7 @@ export class SchemaVersionStore {
       WHERE
         "sv"."source_schema_version_id" = ${sourceSchemaVersionId}
         AND "sv"."graph_metadata"->>'type' = 'contract'
+        AND "sv"."graph_id" IS NOT NULL
     `);
 
     return z.array(SchemaVersionModel).parse(result);
