@@ -37,26 +37,32 @@ export default gql`
     SCHEMA_CHANGE
     METRIC_ALERT
     CHANNEL_CONFIRMATION
+    ORGANIZATION_INVITATION
+    ORGANIZATION_OWNERSHIP_TRANSFER
+    AUDIT_LOG_EXPORT
+    USAGE_RATE_LIMIT_WARNING
+    USAGE_RATE_LIMIT_EXCEEDED
   }
 
   """
-  One attempt to deliver a notification.
+  One attempt to deliver a notification to an alert channel, or an email to a recipient.
   """
   type Delivery {
     timestamp: DateTime!
     event: DeliveryEvent!
     """
-    Where the attempt went: the alert channel id.
+    Where the attempt went: the alert channel id, or the recipient email address.
     """
     destination: String!
     ok: Boolean!
     """
-    HTTP status of the response; null when there was no response.
+    What the destination answered with: the HTTP status for webhooks and Slack, the SMTP reply
+    code for email; null when nothing answered.
     """
     statusCode: Int
     """
-    One line describing the outcome: the reason phrase, the Slack API result code,
-    or "<error code>: <message>" when nothing answered.
+    One line describing the outcome: the reason phrase, the Slack API result code, the mail
+    provider's "<code>: <message>" refusal, or "<error code>: <message>" when nothing answered.
     """
     statusText: String!
     durationMs: Int!
@@ -73,7 +79,9 @@ export default gql`
     (Hive-Request-ID, Hive-Event, Hive-Target-ID, Hive-Schema-ID, User-Agent, Idempotency-Key)
     for webhook channels, or the Slack message metadata (event_type, hive_request_id,
     hive_target_id, hive_schema_id, idempotency_key, user_agent). Hive-Schema-ID is the schema
-    version id.
+    version id. For email: subject, job_id, hive_request_id, message_id (Postmark's id for the
+    message, or the Message-ID header of the message sent over SMTP) and, per event, period, limit
+    or current_usage; never the body or a link.
     """
     metadata: JSONObject!
   }
@@ -100,6 +108,10 @@ export default gql`
     status: DeliveryHealthStatus!
     lastSuccessAt: DateTime
     lastFailureAt: DateTime
+    """
+    What the destination answered with on the last failure: the HTTP status for webhooks and
+    Slack, the SMTP reply code for email; null when nothing answered.
+    """
     lastStatusCode: Int
     lastStatusText: String
     """
@@ -107,5 +119,13 @@ export default gql`
     Null unless FAILING.
     """
     failingSince: DateTime
+  }
+
+  extend type OrganizationInvitation {
+    """
+    The most recent attempt to email this invitation; null before one is recorded or when the
+    delivery history could not be read.
+    """
+    delivery: Delivery
   }
 `;
