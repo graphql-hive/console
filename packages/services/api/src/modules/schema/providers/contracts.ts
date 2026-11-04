@@ -743,7 +743,10 @@ const CreateContractInputModel = z
       .max(64, 'Contract name must be at most 64 characters long')
       .min(2, 'Contract name must be at least 2 characters long')
       .toLowerCase()
-      .regex(/^[a-zA-Z0-9_-]+$/, "Can only contain letters, numbers, '_', and '-'"),
+      .regex(/^[a-zA-Z0-9_-]+$/, "Can only contain letters, numbers, '_', and '-'")
+      .refine(name => name !== 'default', {
+        error: "The contract name 'default' is reserved",
+      }),
     includeTags: z.array(z.string()).nullable(),
     excludeTags: z.array(z.string()).nullable(),
     removeUnreachableTypesFromPublicApiSchema: z.boolean(),
