@@ -1,9 +1,9 @@
-import { clickHouseQuery, flushAsyncInserts } from 'testkit/clickhouse';
-import { history } from 'testkit/emails';
 import { pollFor } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
+import { clickHouseQuery, flushAsyncInserts } from '../../../testkit/clickhouse';
+import { history } from '../../../testkit/emails';
 
 const InvitationDeliveriesQuery = graphql(`
   query InvitationDeliveriesQuery($organizationSlug: String!) {
