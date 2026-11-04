@@ -19,26 +19,31 @@ export interface DeliveryOutcome {
 /** Slack's API answered `ok: true`; the SDK exposes no HTTP status on success. */
 export const SLACK_OK: DeliveryOutcome = { statusCode: null, statusText: 'ok' };
 
+/** The kind of destination a delivery went to. */
+export type DeliveryType = AlertChannel['type'];
+export type DeliveryEvent = AlertChannelDeliveryEvent;
+
 export interface DeliveryMeta {
   organizationId: string;
-  channelId: string;
-  channelType: AlertChannel['type'];
-  event: AlertChannelDeliveryEvent;
+  deliveryType: DeliveryType;
+  /** Where it went: the alert channel id. */
+  destination: string;
+  event: DeliveryEvent;
   /** Exactly what was sent to identify the call: the request headers, or the Slack metadata flattened. */
   metadata: Record<string, string>;
 }
 
-export interface AlertChannelDeliveryAttempt extends DeliveryMeta, DeliveryOutcome {
+export interface DeliveryAttempt extends DeliveryMeta, DeliveryOutcome {
   ok: boolean;
   durationMs: number;
 }
 
 /**
- * Records every alert-channel delivery attempt made by the API in ClickHouse
- * (`alert_channel_deliveries`). A singleton, because the Slack, Teams and Discord adapters are.
+ * Records every outbound delivery attempt made by the API in ClickHouse (`outbound_deliveries`).
+ * A singleton, because the Slack, Teams and Discord adapters are.
  */
 @Injectable()
-export class AlertChannelDeliveryRecorder {
+export class DeliveryRecorder {
   private logger: Logger;
 
   constructor(
@@ -46,7 +51,7 @@ export class AlertChannelDeliveryRecorder {
     logger: Logger,
     @Inject(RELEASE) private release: string,
   ) {
-    this.logger = logger.child({ source: 'AlertChannelDeliveryRecorder' });
+    this.logger = logger.child({ source: 'DeliveryRecorder' });
   }
 
   describe(input: Omit<DeliveryMetadataInput, 'requestId' | 'release'>): DeliveryMetadataInput {
@@ -79,17 +84,18 @@ export class AlertChannelDeliveryRecorder {
    * does not resend after a timeout: ClickHouse keeps a buffered row whether or not the response
    * arrived, and a resend would count the attempt twice.
    */
-  async record(attempt: AlertChannelDeliveryAttempt): Promise<void> {
+  async record(attempt: DeliveryAttempt): Promise<void> {
     try {
       await this.clickHouse.insert({
         query: sql`
-          INSERT INTO "alert_channel_deliveries" (
+          INSERT INTO "outbound_deliveries" (
             "timestamp"
             , "organization_id"
-            , "channel_id"
-            , "channel_type"
+            , "delivery_type"
+            , "destination"
             , "event"
             , "attempt"
+            , "max_attempts"
             , "ok"
             , "status_code"
             , "status_text"
@@ -102,9 +108,10 @@ export class AlertChannelDeliveryRecorder {
           [
             formatClickHouseDateTime(new Date()),
             attempt.organizationId,
-            attempt.channelId,
-            attempt.channelType,
+            attempt.deliveryType,
+            attempt.destination,
             attempt.event,
+            1,
             1,
             attempt.ok ? 1 : 0,
             attempt.statusCode ?? 0,
@@ -113,18 +120,18 @@ export class AlertChannelDeliveryRecorder {
             toMapLiteral(attempt.metadata),
           ],
         ],
-        queryId: 'record-alert-channel-delivery',
+        queryId: 'record-delivery',
         timeout: 5_000,
       });
     } catch (error) {
       this.logger.error(
-        'Failed to record alert channel delivery (channel=%s, event=%s, error=%s)',
-        attempt.channelId,
+        'Failed to record delivery (destination=%s, event=%s, error=%s)',
+        attempt.destination,
         attempt.event,
         error instanceof Error ? error.message : String(error),
       );
       captureException(error, {
-        extra: { channelId: attempt.channelId, event: attempt.event },
+        extra: { destination: attempt.destination, event: attempt.event },
       });
     }
   }

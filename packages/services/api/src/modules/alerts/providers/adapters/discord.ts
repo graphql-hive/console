@@ -5,10 +5,7 @@ import { HttpClient } from '../../../shared/providers/http-client';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
 import { buildHiveWebhookHeaders } from '../../lib/delivery-metadata';
-import {
-  AlertChannelDeliveryRecorder,
-  type DeliveryOutcome,
-} from '../alert-channel-delivery-recorder';
+import { DeliveryRecorder, type DeliveryOutcome } from '../delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -59,7 +56,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     logger: Logger,
     private httpClient: HttpClient,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
-    private deliveries: AlertChannelDeliveryRecorder,
+    private deliveries: DeliveryRecorder,
   ) {
     this.logger = logger.child({ service: 'DiscordCommunicationAdapter' });
   }
@@ -123,8 +120,8 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          channelId: input.channel.id,
-          channelType: 'DISCORD',
+          deliveryType: 'DISCORD',
+          destination: input.channel.id,
           event: 'schema_change',
           metadata: headers,
         },
@@ -207,8 +204,8 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          channelId: input.channel.id,
-          channelType: 'DISCORD',
+          deliveryType: 'DISCORD',
+          destination: input.channel.id,
           event: 'channel_confirmation',
           metadata: headers,
         },

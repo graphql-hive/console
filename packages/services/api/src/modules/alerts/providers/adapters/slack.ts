@@ -11,7 +11,7 @@ import {
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
 import { buildHiveSlackMetadata, flattenSlackMetadata } from '../../lib/delivery-metadata';
-import { AlertChannelDeliveryRecorder, SLACK_OK } from '../alert-channel-delivery-recorder';
+import { DeliveryRecorder, SLACK_OK } from '../delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -30,7 +30,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
   constructor(
     logger: Logger,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
-    private deliveries: AlertChannelDeliveryRecorder,
+    private deliveries: DeliveryRecorder,
   ) {
     this.logger = logger.child({ service: 'SlackCommunicationAdapter' });
   }
@@ -102,8 +102,8 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          channelId: input.channel.id,
-          channelType: 'SLACK',
+          deliveryType: 'SLACK',
+          destination: input.channel.id,
           event: 'schema_change',
           metadata: flattenSlackMetadata(metadata),
         },
@@ -154,8 +154,8 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
       await this.deliveries.track(
         {
           organizationId: input.event.organization.id,
-          channelId: input.channel.id,
-          channelType: 'SLACK',
+          deliveryType: 'SLACK',
+          destination: input.channel.id,
           event: 'channel_confirmation',
           metadata: flattenSlackMetadata(metadata),
         },
