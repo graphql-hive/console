@@ -82,7 +82,8 @@ export class DeliveryRecorder {
   /**
    * Never throws: a lost stats row must not fail the notification. Goes through `insert`, which
    * does not resend after a timeout: ClickHouse keeps a buffered row whether or not the response
-   * arrived, and a resend would count the attempt twice.
+   * arrived, and a resend would count the attempt twice. The statement must end right after
+   * `FORMAT CSV`: ClickHouse reads whatever follows it as the first row.
    */
   async record(attempt: DeliveryAttempt): Promise<void> {
     try {
@@ -102,8 +103,7 @@ export class DeliveryRecorder {
             , "duration_ms"
             , "metadata"
           )
-          FORMAT CSV
-        `,
+          FORMAT CSV`,
         data: [
           [
             formatClickHouseDateTime(new Date()),
