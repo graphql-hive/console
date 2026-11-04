@@ -284,7 +284,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
       )}
       <div className="flex items-center gap-x-3">
         <Button
-          disabled={mutation.fetching}
+          disabled={mutation.fetching || syntaxError !== null}
           onClick={async () => {
             await mutate({
               input: {
