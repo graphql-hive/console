@@ -176,3 +176,46 @@ test('a fast failure of the external composition service is retried within the b
   expect(result.type).toBe('success');
   http.done();
 });
+
+test('a response body that is not JSON is reported as an external composition failure', async ({
+  expect,
+}) => {
+  nock('http://localhost').post('/broker').reply(200, 'not json');
+
+  const result = await composeExternalFederation({
+    decrypt: v => v,
+    external,
+    requestId: '1',
+    deadline: Date.now() + 5_000,
+    subgraphs: [],
+  });
+
+  expect(result.type).toBe('failure');
+  assert(result.type === 'failure');
+  expect(result.includesException).toBe(true);
+  expect(result.result.errors[0].message).toMatch(/invalid shape of data/);
+});
+
+test('a success result whose SDL does not parse is reported as an external composition failure', async ({
+  expect,
+}) => {
+  nock('http://localhost')
+    .post('/broker')
+    .reply(200, {
+      type: 'success',
+      result: { sdl: 'iliketurtles', supergraph: 'iliketurtles' },
+    });
+
+  const result = await composeExternalFederation({
+    decrypt: v => v,
+    external,
+    requestId: '1',
+    deadline: Date.now() + 5_000,
+    subgraphs: [],
+  });
+
+  expect(result.type).toBe('failure');
+  assert(result.type === 'failure');
+  expect(result.includesException).toBe(true);
+  expect(result.result.errors[0].message).toMatch(/invalid SDL returned from service/);
+});
