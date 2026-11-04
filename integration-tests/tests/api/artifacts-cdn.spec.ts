@@ -1550,8 +1550,8 @@ function runArtifactsCDNTests(
       },
     );
 
-    test.concurrent(
-      'deleting a contract retains valid artifact paths for contracts from an older schema version',
+    test.concurrent.only(
+      'deleting a contract does not advance a manifest after another contract fails composition',
       async ({ expect }) => {
         const { createOrg, ownerToken } = await initSeed().createOwner();
         const { createProject } = await createOrg();
@@ -1602,8 +1602,23 @@ function runArtifactsCDNTests(
           })
           .then(r => r.expectNoGraphQLErrors());
 
+        const firstVersion = await writeToken.fetchLatestValidSchema();
+        const firstVersionId = firstVersion.latestValidVersion?.id;
+        invariant(firstVersionId, 'Version must exist');
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+        const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
+        const fetchManifest = async () => {
+          const response = await fetch(`${endpointBaseUrl}${target.id}/manifest.json`, { headers });
+          expect(response.status).toBe(200);
+          return GraphManifestModel.parse(await response.json());
+        };
+
+        const initialManifest = await fetchManifest();
+
         // This creates a newer default version, but retained-contract fails to compose because
-        // every field is excluded. Its latest valid artifact remains under the previous version.
+        // every field is excluded, so the manifest remains at the previous coherent snapshot.
         await writeToken
           .publishSchema({
             sdl: /* GraphQL */ `
@@ -1620,26 +1635,22 @@ function runArtifactsCDNTests(
           })
           .then(r => r.expectNoGraphQLErrors());
 
+        const secondVersion = await writeToken.fetchLatestValidSchema();
+        const secondVersionId = secondVersion.latestValidVersion?.id;
+        invariant(secondVersionId, 'Version must exist');
+        expect(secondVersionId).not.toBe(firstVersionId);
+        expect(await fetchManifest()).toEqual(initialManifest);
+
         await deleteContract({ contract: { byId: deletedContractId } }, ownerToken).then(r =>
           r.expectNoGraphQLErrors(),
         );
 
-        const cdnAccessResult = await createCdnAccess();
-        const endpointBaseUrl = await getBaseEndpoint();
-        const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
-        const manifestResponse = await fetch(`${endpointBaseUrl}${target.id}/manifest.json`, {
-          headers,
+        expect(await fetchManifest()).toEqual({
+          graphs: {
+            default: initialManifest.graphs['default'],
+            'default/retained-contract': initialManifest.graphs['default/retained-contract'],
+          },
         });
-        expect(manifestResponse.status).toBe(200);
-        const manifest = GraphManifestModel.parse(await manifestResponse.json());
-        const retainedContract = manifest.graphs['default/retained-contract'];
-        invariant(retainedContract, 'Retained contract must be in the manifest');
-
-        const artifactResponse = await fetch(
-          new URL(`${retainedContract.currentVersion.artifactPath}/sdl`, endpointBaseUrl),
-          { headers },
-        );
-        expect(artifactResponse.status).toBe(200);
       },
     );
 

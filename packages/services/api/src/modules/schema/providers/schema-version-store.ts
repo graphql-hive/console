@@ -1102,6 +1102,21 @@ export class SchemaVersionStore {
     return SchemaVersionModel.nullable().parse(result);
   }
 
+  async getContractSchemaVersionsForSourceSchemaVersion(
+    sourceSchemaVersionId: string,
+  ): Promise<Array<SchemaVersion>> {
+    const result = await this.pg.any(psql`/* getContractSchemaVersionsForSourceSchemaVersion */
+      SELECT
+        ${schemaVersionSQLFields(psql`"sv".`)}
+      FROM "schema_versions" AS "sv"
+      WHERE
+        "sv"."source_schema_version_id" = ${sourceSchemaVersionId}
+        AND "sv"."graph_metadata"->>'type' = 'contract'
+    `);
+
+    return z.array(SchemaVersionModel).parse(result);
+  }
+
   getSchemaVersionByIdWithProjection = batchBy<
     { schemaVersionId: string; withSDL: boolean; withChanges: boolean },
     SchemaVersion | null
