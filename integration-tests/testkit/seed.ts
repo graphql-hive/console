@@ -934,6 +934,31 @@ export function initSeed() {
                   return result.deleteMetricAlertRules;
                 },
                 /**
+                 * Writes what the workflows evaluator writes when it skips a rule, so the API
+                 * side can be tested without running the evaluator. `reason: null` clears it.
+                 */
+                async setMetricAlertRuleEvaluationBlocked(input: {
+                  ruleId: string;
+                  reason: string | null;
+                  details?: string[];
+                  since?: Date;
+                }) {
+                  const pool = await createConnectionPool();
+                  await pool.query(psql`
+                    UPDATE metric_alert_rules
+                    SET
+                      evaluation_blocked_reason = ${input.reason}
+                      , evaluation_blocked_since = ${
+                        input.reason ? (input.since ?? new Date()).toISOString() : null
+                      }
+                      , evaluation_blocked_details = ${
+                        input.reason && input.details ? psql.array(input.details, 'text') : null
+                      }
+                    WHERE id = ${input.ruleId}
+                  `);
+                  await pool.end();
+                },
+                /**
                  * Create an access token for a given target.
                  * This token can be used for usage reporting and all actions that would be performed by the CLI.
                  */

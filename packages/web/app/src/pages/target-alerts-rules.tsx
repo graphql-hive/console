@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Info } from 'lucide-react';
 import { useQuery } from 'urql';
+import { EvaluationBlockedNote } from '@/components/target/alerts/evaluation-blocked-note';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { PageLead } from '@/components/ui/page-lead';
@@ -45,6 +46,10 @@ export const TargetAlertsRulesPage_Query = graphql(`
         lastTriggeredAt
         updatedAt
         incidentCount
+        evaluationBlocked {
+          since
+          message
+        }
         channels {
           id
           type
@@ -78,6 +83,8 @@ type RuleRow = {
   lastTriggeredAt?: string | null;
   updatedAt: string;
   incidentCount: number;
+  /** Set while the evaluator skips the rule because its saved filter cannot be resolved. */
+  evaluationBlocked?: { since: string; message: string } | null;
   channels: ReadonlyArray<{ id: string; type: string; name: string; detail: string | null }>;
   createdBy?: { id: string; displayName: string } | null;
 };
@@ -142,9 +149,11 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
         value={info.getValue()}
         weight="medium"
         trailing={
-          info.row.original.enabled ? undefined : (
+          !info.row.original.enabled ? (
             <Badge content="Paused" variants={{ variant: 'info' }} />
-          )
+          ) : info.row.original.evaluationBlocked ? (
+            <EvaluationBlockedNote {...info.row.original.evaluationBlocked} />
+          ) : undefined
         }
       />
     ),
@@ -307,6 +316,7 @@ export function TargetAlertsRulesPage() {
         lastTriggeredAt: r.lastTriggeredAt,
         updatedAt: r.updatedAt,
         incidentCount: r.incidentCount,
+        evaluationBlocked: r.evaluationBlocked,
         channels: r.channels.map(c => ({
           id: c.id,
           type: c.type,

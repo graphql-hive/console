@@ -9,18 +9,20 @@ import {
   evaluationIntervalMinutes,
   extractMetricValue,
   groupRulesByQuery,
+  groupSkipReasons,
   isFilteredFilter,
   isRuleDue,
+  markRulesEvaluated,
+  markRulesEvaluationBlocked,
   parseSavedFilter,
   previousValueForRule,
-  pruneSkipState,
   queryClickHouseWindows,
   resolutionFor,
   resolveSavedFilter,
+  rulesNeedingBlockWrite,
   type ParsedSavedFilter,
-  type SavedFilterSkipReason,
 } from './metric-alert-evaluator.js';
-import { makeLogger, makeRule } from './metric-alert-test-utils.js';
+import { makeLogger, makePg, makeRule } from './metric-alert-test-utils.js';
 import type { SupergraphOwnershipLoader } from './supergraph-ownership.js';
 
 const render = (conds: SqlValue[]) => conds.map(c => printWithValues(c));
@@ -619,6 +621,115 @@ describe('queryClickHouseWindows', () => {
   });
 });
 
+describe('rulesNeedingBlockWrite', () => {
+  const skip = { reason: 'unknown-subgraph' as const, details: ['orders'] };
+
+  test('every rule of a group that was not blocked', () => {
+    expect(rulesNeedingBlockWrite([makeRule({ id: 'a' }), makeRule({ id: 'b' })], skip)).toEqual([
+      'a',
+      'b',
+    ]);
+  });
+
+  test('nothing when the row already holds this reason and details', () => {
+    const blocked = makeRule({
+      id: 'a',
+      evaluationBlockedReason: 'unknown-subgraph',
+      evaluationBlockedDetails: ['orders'],
+    });
+    expect(rulesNeedingBlockWrite([blocked], skip)).toEqual([]);
+  });
+
+  test('a changed reason or changed details is written again', () => {
+    const otherReason = makeRule({ id: 'a', evaluationBlockedReason: 'no-supergraph-sdl' });
+    const otherDetails = makeRule({
+      id: 'b',
+      evaluationBlockedReason: 'unknown-subgraph',
+      evaluationBlockedDetails: ['inventory'],
+    });
+    expect(rulesNeedingBlockWrite([otherReason, otherDetails], skip)).toEqual(['a', 'b']);
+  });
+
+  test('a reason without details matches a row with an empty details array', () => {
+    const blocked = makeRule({
+      id: 'a',
+      evaluationBlockedReason: 'no-composable-version',
+      evaluationBlockedDetails: [],
+    });
+    expect(rulesNeedingBlockWrite([blocked], { reason: 'no-composable-version' })).toEqual([]);
+  });
+});
+
+describe('markRulesEvaluationBlocked', () => {
+  test('writes reason, since and details for the given rules in one statement', async () => {
+    const { pg, calls } = makePg();
+    const since = new Date('2026-10-29T10:00:00.000Z');
+    await markRulesEvaluationBlocked(pg, {
+      ruleIds: ['a', 'b'],
+      reason: 'unknown-subgraph',
+      details: ['orders'],
+      since,
+    });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].sql).toContain('UPDATE "metric_alert_rules"');
+    expect(calls[0].sql).toContain('"evaluation_blocked_reason" = $slonik_1');
+    expect(calls[0].sql).toContain('"evaluation_blocked_details" = $slonik_4::"text"[]');
+    expect(calls[0].values).toEqual([
+      'unknown-subgraph',
+      'unknown-subgraph',
+      since.toISOString(),
+      ['orders'],
+      ['a', 'b'],
+    ]);
+  });
+
+  test('keeps since when the row already holds this reason', async () => {
+    const { pg, calls } = makePg();
+    await markRulesEvaluationBlocked(pg, {
+      ruleIds: ['a'],
+      reason: 'unknown-subgraph',
+      details: ['orders', 'inventory'],
+      since: new Date(),
+    });
+    // SET expressions read the old row, so the comparison sees the stored reason.
+    expect(calls[0].sql.replace(/\s+/g, ' ')).toContain(
+      '"evaluation_blocked_since" = CASE WHEN "evaluation_blocked_reason" = $slonik_2 THEN "evaluation_blocked_since" ELSE $slonik_3 END',
+    );
+  });
+
+  test('no rules, no statement', async () => {
+    const { pg, calls } = makePg();
+    await markRulesEvaluationBlocked(pg, {
+      ruleIds: [],
+      reason: 'scope-too-large',
+      since: new Date(),
+    });
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('markRulesEvaluated', () => {
+  test('stamps the time and clears the block for the given rules in one statement', async () => {
+    const { pg, calls } = makePg();
+    const evaluationTime = new Date('2026-10-29T10:00:00.000Z');
+    await markRulesEvaluated(pg, { ruleIds: ['a', 'b'], evaluationTime });
+    expect(calls).toHaveLength(1);
+    const sql = calls[0].sql.replace(/\s+/g, ' ');
+    expect(sql).toContain('UPDATE "metric_alert_rules"');
+    expect(sql).toContain('"last_evaluated_at" = $slonik_1');
+    expect(sql).toContain('"evaluation_blocked_reason" = NULL');
+    expect(sql).toContain('"evaluation_blocked_since" = NULL');
+    expect(sql).toContain('"evaluation_blocked_details" = NULL');
+    expect(calls[0].values).toEqual([evaluationTime.toISOString(), ['a', 'b']]);
+  });
+
+  test('no rules, no statement', async () => {
+    const { pg, calls } = makePg();
+    await markRulesEvaluated(pg, { ruleIds: [], evaluationTime: new Date() });
+    expect(calls).toEqual([]);
+  });
+});
+
 describe('previousValueForRule', () => {
   const prev = {
     window: 'previous' as const,
@@ -773,13 +884,23 @@ describe('evaluateRule incident queries', () => {
 });
 
 describe('skip state for the gauge', () => {
-  test('pruneSkipState drops only groups that no longer exist', () => {
-    const state = new Map<string, SavedFilterSkipReason>([
-      ['live', 'unknown-subgraph'],
-      ['gone', 'scope-too-large'],
-    ]);
-    pruneSkipState(state, new Set(['live', 'other']));
-    expect([...state.keys()]).toEqual(['live']);
+  test("groupSkipReasons takes the tick's outcome for a due group and the rows for the rest", () => {
+    const blocked = makeRule({ id: 'a', evaluationBlockedReason: 'unknown-subgraph' });
+    expect(
+      groupSkipReasons([
+        // Due and skipped again, with a reason the rows have not caught up to.
+        { group: [blocked], result: 'scope-too-large' },
+        // Due and evaluated: the stored block is on its way out.
+        { group: [blocked], result: null },
+        // Not due: the rows hold.
+        { group: [makeRule({ id: 'b' }), blocked] },
+        // Not due and never blocked, or blocked for a reason this build does not know.
+        { group: [makeRule({ id: 'c' })] },
+        { group: [makeRule({ id: 'd', evaluationBlockedReason: 'something-new' })] },
+        // Threw this tick: the rows speak.
+        { group: [blocked], result: undefined },
+      ]),
+    ).toEqual(['scope-too-large', 'unknown-subgraph', 'unknown-subgraph']);
   });
 
   test('countSkippedByReason seeds every reason with 0 and tallies the rest', () => {

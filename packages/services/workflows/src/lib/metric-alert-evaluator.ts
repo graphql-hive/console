@@ -9,7 +9,12 @@ import {
 } from '@hive/clickhouse';
 import type { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
-import { fieldCoordinatesOwnedBy, MAX_RESOLVED_SUBGRAPH_COORDINATES } from '@hive/supergraph';
+import {
+  fieldCoordinatesOwnedBy,
+  MAX_RESOLVED_SUBGRAPH_COORDINATES,
+  SAVED_FILTER_SKIP_REASONS,
+  type SavedFilterSkipReason,
+} from '@hive/supergraph';
 import { metricAlertClickHouseQueryDuration } from '../metrics.js';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import type { SupergraphOwnershipLoader } from './supergraph-ownership.js';
@@ -43,6 +48,9 @@ const MetricAlertRuleRowSchema = z.object({
   savedFilterFilters: z.unknown().nullable(),
   /** Plan name of the rule's organization. Drives state-log retention. */
   organizationPlanName: z.string().nullable(),
+  /** What the last skipped tick wrote, so a repeat skip does not write (or warn) again. */
+  evaluationBlockedReason: z.string().nullable(),
+  evaluationBlockedDetails: z.array(z.string()).nullable(),
 });
 
 export type MetricAlertRuleRow = z.infer<typeof MetricAlertRuleRowSchema>;
@@ -223,6 +231,8 @@ export async function fetchEnabledRules(pg: PostgresDatabasePool): Promise<Metri
       , r."saved_filter_id" as "savedFilterId"
       , sf."filters" as "savedFilterFilters"
       , o."plan_name" as "organizationPlanName"
+      , r."evaluation_blocked_reason" as "evaluationBlockedReason"
+      , r."evaluation_blocked_details" as "evaluationBlockedDetails"
     FROM "metric_alert_rules" r
     INNER JOIN "organizations" o ON o."id" = r."organization_id"
     LEFT JOIN "saved_filters" sf ON sf."id" = r."saved_filter_id"
@@ -358,26 +368,34 @@ export type ResolvedSavedFilter = {
 
 export const EMPTY_RESOLVED_FILTER: ResolvedSavedFilter = { conditions: [], coordinateScopes: [] };
 
-export const SAVED_FILTER_SKIP_REASONS = [
-  'no-composable-version',
-  'no-supergraph-sdl',
-  'supergraph-parse-failed',
-  'unknown-subgraph',
-  'scope-too-large',
-] as const;
+export { SAVED_FILTER_SKIP_REASONS, type SavedFilterSkipReason };
 
-export type SavedFilterSkipReason = (typeof SAVED_FILTER_SKIP_REASONS)[number];
+const isSkipReason = (value: string | null): value is SavedFilterSkipReason =>
+  value !== null && (SAVED_FILTER_SKIP_REASONS as readonly string[]).includes(value);
 
-/** Drops skip state for groups that no longer exist (rules deleted or disabled while skipped). */
-export function pruneSkipState(
-  state: Map<string, SavedFilterSkipReason>,
-  live: { has(key: string): boolean },
-): void {
-  for (const key of state.keys()) {
-    if (!live.has(key)) {
-      state.delete(key);
+/**
+ * Why each group stands skipped after this tick. A group evaluated this tick reports its
+ * outcome; any other keeps the block its rows store, which the rows also lose when the rule is
+ * edited. Groups that are not skipped contribute nothing.
+ */
+export function groupSkipReasons(
+  groups: Iterable<{
+    group: ReadonlyArray<Pick<MetricAlertRuleRow, 'evaluationBlockedReason'>>;
+    /** This tick's outcome for a due group; `undefined` when the group was not evaluated. */
+    result?: SavedFilterSkipReason | null;
+  }>,
+): SavedFilterSkipReason[] {
+  const reasons: SavedFilterSkipReason[] = [];
+  for (const { group, result } of groups) {
+    const reason =
+      result !== undefined
+        ? result
+        : (group.map(rule => rule.evaluationBlockedReason).find(isSkipReason) ?? null);
+    if (reason !== null) {
+      reasons.push(reason);
     }
   }
+  return reasons;
 }
 
 /** Every reason is present (0 when absent) so a fixed filter clears its gauge series. */
@@ -396,6 +414,79 @@ export function countSkippedByReason(
 export type SavedFilterResolution =
   | { kind: 'ok'; filter: ResolvedSavedFilter }
   | { kind: 'skip'; reason: SavedFilterSkipReason; details?: string[] };
+
+/**
+ * The rules of a skipped group whose stored block differs from this tick's reason, so the
+ * block is written once per change rather than every tick. The row is the source of truth,
+ * which also survives a worker restart.
+ */
+export function rulesNeedingBlockWrite(
+  rules: ReadonlyArray<
+    Pick<MetricAlertRuleRow, 'id' | 'evaluationBlockedReason' | 'evaluationBlockedDetails'>
+  >,
+  skip: { reason: SavedFilterSkipReason; details?: string[] },
+): string[] {
+  const details = skip.details ?? [];
+  return rules
+    .filter(
+      rule =>
+        rule.evaluationBlockedReason !== skip.reason ||
+        JSON.stringify(rule.evaluationBlockedDetails ?? []) !== JSON.stringify(details),
+    )
+    .map(rule => rule.id);
+}
+
+/**
+ * Records why the evaluator is skipping these rules; read by the API's `evaluationBlocked`.
+ * `since` only moves when the reason changes: a rewrite for new details (one more unknown
+ * subgraph, say) keeps the date the block began.
+ */
+export async function markRulesEvaluationBlocked(
+  pg: Pick<CommonQueryMethods, 'query'>,
+  args: {
+    ruleIds: readonly string[];
+    reason: SavedFilterSkipReason;
+    details?: string[];
+    since: Date;
+  },
+): Promise<void> {
+  if (args.ruleIds.length === 0) {
+    return;
+  }
+  await pg.query(psql`
+    UPDATE "metric_alert_rules"
+    SET
+      "evaluation_blocked_reason" = ${args.reason}
+      , "evaluation_blocked_since" = CASE
+          WHEN "evaluation_blocked_reason" = ${args.reason} THEN "evaluation_blocked_since"
+          ELSE ${args.since.toISOString()}
+        END
+      , "evaluation_blocked_details" = ${psql.array(args.details ?? [], 'text')}
+    WHERE "id" = ANY(${psql.array([...args.ruleIds], 'uuid')})
+  `);
+}
+
+/**
+ * Stamps the tick's time on the rules it evaluated. An evaluated rule is by definition not
+ * blocked any more, so the same statement clears its block.
+ */
+export async function markRulesEvaluated(
+  pg: Pick<CommonQueryMethods, 'query'>,
+  args: { ruleIds: readonly string[]; evaluationTime: Date },
+): Promise<void> {
+  if (args.ruleIds.length === 0) {
+    return;
+  }
+  await pg.query(psql`
+    UPDATE "metric_alert_rules"
+    SET
+      "last_evaluated_at" = ${args.evaluationTime.toISOString()}
+      , "evaluation_blocked_reason" = NULL
+      , "evaluation_blocked_since" = NULL
+      , "evaluation_blocked_details" = NULL
+    WHERE "id" = ANY(${psql.array([...args.ruleIds], 'uuid')})
+  `);
+}
 
 /**
  * Turns subgraph names into the field coordinates they own in the target's latest

@@ -71,6 +71,9 @@ const MetricAlertRuleModel = zod
     stateChangedAt: zod.string().nullable(),
     confirmationMinutes: zod.number(),
     savedFilterId: zod.string().nullable(),
+    evaluationBlockedReason: zod.string().nullable(),
+    evaluationBlockedSince: zod.string().nullable(),
+    evaluationBlockedDetails: zod.array(zod.string()).nullable(),
   })
   .refine(data => (data.type === 'LATENCY') === (data.metric !== null), {
     error: 'metric must be set for LATENCY type and null for other types',
@@ -123,6 +126,9 @@ const METRIC_ALERT_RULE_SELECT = psql`
   , to_json("state_changed_at") as "stateChangedAt"
   , "confirmation_minutes" as "confirmationMinutes"
   , "saved_filter_id" as "savedFilterId"
+  , "evaluation_blocked_reason" as "evaluationBlockedReason"
+  , to_json("evaluation_blocked_since") as "evaluationBlockedSince"
+  , "evaluation_blocked_details" as "evaluationBlockedDetails"
 `;
 
 const METRIC_ALERT_INCIDENT_SELECT = psql`
@@ -441,6 +447,9 @@ export class MetricAlertRulesStorage {
      */
     channelIds?: ReadonlyArray<string>;
   }): Promise<MetricAlertRule | null> {
+    // A new filter or a toggle makes the stored block stale; the evaluator writes a fresh one
+    // on the rule's next due tick if the cause remains. A rename says nothing about it.
+    const clearsBlock = args.savedFilterId !== undefined || args.enabled !== undefined;
     const result = await this.pool.transaction('updateMetricAlertRule', async trx => {
       const ruleRow = await trx.maybeOne(psql`/* updateMetricAlertRule:rule */
         UPDATE "metric_alert_rules"
@@ -456,6 +465,9 @@ export class MetricAlertRulesStorage {
           , "confirmation_minutes" = COALESCE(${args.confirmationMinutes ?? null}, "confirmation_minutes")
           , "saved_filter_id" = COALESCE(${args.savedFilterId ?? null}, "saved_filter_id")
           , "enabled" = COALESCE(${args.enabled ?? null}, "enabled")
+          , "evaluation_blocked_reason" = CASE WHEN ${clearsBlock} THEN NULL ELSE "evaluation_blocked_reason" END
+          , "evaluation_blocked_since" = CASE WHEN ${clearsBlock} THEN NULL ELSE "evaluation_blocked_since" END
+          , "evaluation_blocked_details" = CASE WHEN ${clearsBlock} THEN NULL ELSE "evaluation_blocked_details" END
           , "updated_at" = NOW()
           , "updated_by_user_id" = ${args.updatedByUserId}
         WHERE

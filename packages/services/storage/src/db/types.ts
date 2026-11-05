@@ -232,6 +232,9 @@ export interface metric_alert_rules {
   created_by_user_id: string | null;
   direction: metric_alert_direction;
   enabled: boolean;
+  evaluation_blocked_details: Array<string> | null;
+  evaluation_blocked_reason: string | null;
+  evaluation_blocked_since: Date | null;
   id: string;
   last_evaluated_at: Date | null;
   last_triggered_at: Date | null;

@@ -157,6 +157,10 @@ export const AlertForm_UpdateMetricAlertRuleMutation = graphql(`
           thresholdValue
           direction
           confirmationMinutes
+          evaluationBlocked {
+            since
+            message
+          }
           channels {
             id
             name

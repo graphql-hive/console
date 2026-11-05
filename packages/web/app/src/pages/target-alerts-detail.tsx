@@ -63,6 +63,10 @@ export const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
         thresholdValue
         direction
         confirmationMinutes
+        evaluationBlocked {
+          since
+          message
+        }
         channels {
           id
           name

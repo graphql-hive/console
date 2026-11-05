@@ -267,6 +267,44 @@ export default gql`
     the state the rule carried into the window.
     """
     stateAt(timestamp: DateTime!): MetricAlertRuleState!
+    """
+    Set while the evaluator cannot apply this rule's saved filter and therefore skips the
+    rule: its state and lastEvaluatedAt stop changing until the filter or the schema is fixed.
+    Null when the rule evaluates normally.
+    """
+    evaluationBlocked: MetricAlertRuleEvaluationBlock
+  }
+
+  type MetricAlertRuleEvaluationBlock {
+    reason: MetricAlertRuleEvaluationBlockReason!
+    """
+    When the evaluator first skipped the rule for this reason.
+    """
+    since: DateTime!
+    """
+    A sentence for people, naming what to fix.
+    """
+    message: String!
+  }
+
+  enum MetricAlertRuleEvaluationBlockReason {
+    """
+    The target has no composable schema version to resolve subgraphs against.
+    """
+    NO_COMPOSABLE_VERSION
+    """
+    The latest composable version has no stored supergraph (a legacy version).
+    """
+    NO_SUPERGRAPH_SDL
+    SUPERGRAPH_PARSE_FAILED
+    """
+    A subgraph named by the filter is not in the latest composable version.
+    """
+    UNKNOWN_SUBGRAPH
+    """
+    The filter's subgraphs own more fields than a filter can scope.
+    """
+    SCOPE_TOO_LARGE
   }
 
   type MetricAlertRuleIncident {

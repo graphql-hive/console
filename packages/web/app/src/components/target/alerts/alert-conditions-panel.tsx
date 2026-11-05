@@ -23,6 +23,7 @@ import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
 import { AlertRuleEnabledToggle } from './alert-rule-enabled-toggle';
 import { DeleteRuleConfirmationDialog } from './delete-rule-confirmation-dialog';
+import { EvaluationBlockedNote } from './evaluation-blocked-note';
 
 const TYPE_CATEGORY: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.ErrorRate]: 'Reliability',
@@ -104,6 +105,8 @@ export type AlertConditionsPanelProps = {
     confirmationMinutes: number;
     channels: ReadonlyArray<Channel>;
     savedFilter?: SavedFilter | null;
+    /** Set while the evaluator skips the rule because its saved filter cannot be resolved. */
+    evaluationBlocked?: { since: string; message: string } | null;
     createdAt: string;
     createdBy?: User;
     updatedAt: string;
@@ -187,7 +190,7 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
   );
 
   return (
-    <div className="space-y-6 border-l border-line bg-surface-card px-5 py-3">
+    <div className="space-y-6 bg-surface-card px-5 py-3">
       <h2 className="mb-2 block text-sm font-semibold text-fg">Alert conditions</h2>
 
       <DescriptionList
@@ -231,7 +234,19 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
             ],
           },
           {
-            items: [{ term: 'On filter', description: onFilterValue }],
+            items: [
+              { term: 'On filter', description: onFilterValue },
+              // The rule's state and chart stop moving while this is set; say why here, next to
+              // the filter that needs fixing, rather than leaving a stale page to explain itself.
+              ...(rule.evaluationBlocked
+                ? [
+                    {
+                      term: 'Evaluation',
+                      description: <EvaluationBlockedNote {...rule.evaluationBlocked} />,
+                    },
+                  ]
+                : []),
+            ],
           },
           {
             items: [{ term: 'Destination', description: destination }],
