@@ -51,6 +51,7 @@ import {
   SCHEMA_SERVICE_CONFIG,
   SchemaServiceConfig,
 } from './modules/schema/providers/orchestrator/tokens';
+import { SupergraphOciImagesConfig } from './modules/schema/providers/supergraph-oci-images-config';
 import { sharedModule } from './modules/shared';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { HttpClient } from './modules/shared/providers/http-client';
@@ -119,6 +120,7 @@ export function createRegistry({
   schemaProposalsEnabled,
   otelTracingEnabled,
   metricAlertRulesEnabled,
+  supergraphOciImagesEnabled,
   prometheus,
   taskScheduler,
 }: {
@@ -162,6 +164,7 @@ export function createRegistry({
   schemaProposalsEnabled: boolean;
   otelTracingEnabled: boolean;
   metricAlertRulesEnabled: boolean;
+  supergraphOciImagesEnabled: boolean;
   prometheus: null | Record<string, unknown>;
   taskScheduler: TaskScheduler;
 }) {
@@ -287,6 +290,11 @@ export function createRegistry({
     {
       provide: METRIC_ALERT_RULES_ENABLED,
       useValue: metricAlertRulesEnabled,
+      scope: Scope.Singleton,
+    },
+    {
+      provide: SupergraphOciImagesConfig,
+      useValue: new SupergraphOciImagesConfig(supergraphOciImagesEnabled),
       scope: Scope.Singleton,
     },
     {

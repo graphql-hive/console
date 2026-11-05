@@ -7,8 +7,10 @@ export type Analytics = ReturnType<typeof createAnalytics>;
 type Event =
   | {
       type: 'artifact';
-      version: 'v0' | 'v1' | 'v1-versioned';
+      version: 'v0' | 'v1' | 'v1-versioned' | 'oci';
       value:
+        | 'oci-manifest'
+        | 'oci-blob'
         | 'schema'
         | 'supergraph'
         | 'sdl'
@@ -62,7 +64,9 @@ type Event =
         | 'GET cdn-access-token'
         | 'GET persistedOperation'
         | 'HEAD appDeploymentIsEnabled'
-        | 'GET appDeploymentManifest';
+        | 'GET appDeploymentManifest'
+        | 'GET oci'
+        | 'HEAD oci';
       // Either 3 digit status code or error code e.g. timeout, http error etc.
       statusCodeOrErrCode: number | string;
       /** duration in milliseconds */

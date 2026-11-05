@@ -19,6 +19,7 @@ import { Context } from './context.js';
 import { env } from './environment.js';
 import { ClickHouseClient } from './lib/clickhouse-client.js';
 import { createEmailProvider } from './lib/emails/providers.js';
+import { ObjectStorageWriter } from './lib/oci/object-storage.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
 import { createTaskEventEmitter } from './task-events.js';
@@ -64,6 +65,7 @@ const modules = await Promise.all([
   import('./tasks/purge-expired-alert-state-log.js'),
   import('./tasks/purge-target-tokens.js'),
   import('./tasks/flush-target-token-last-used.js'),
+  import('./tasks/publish-supergraph-oci-image.js'),
 ]);
 
 const logger = new Logger({ level: env.log.level });
@@ -164,6 +166,22 @@ if (!encryptor) {
   );
 }
 
+const ociStorage = env.s3
+  ? ObjectStorageWriter.fromConfigs(
+      [
+        { name: 'primary', config: env.s3 },
+        ...(env.s3Mirror ? [{ name: 'mirror', config: env.s3Mirror }] : []),
+      ],
+      logger.child({ source: 'OciObjectStorage' }),
+    )
+  : null;
+if (!ociStorage) {
+  logger.warn(
+    'S3 artifact storage not configured — supergraph OCI images will not be published. ' +
+      'Set S3_ENDPOINT, S3_BUCKET_NAME and credentials (same values as the API service) to enable.',
+  );
+}
+
 const context: Context = {
   logger,
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
@@ -179,6 +197,7 @@ const context: Context = {
   webAppUrl: env.webAppUrl,
   crypto: encryptor,
   metricAlertsHeartbeatEndpoint: env.metricAlertsHeartbeat?.endpoint ?? null,
+  ociStorage,
 };
 
 server.route({

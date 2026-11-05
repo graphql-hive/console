@@ -11,6 +11,7 @@ import { Environment } from './environment';
 import { Observability } from './observability';
 import { Postgres } from './postgres';
 import { Redis } from './redis';
+import type { S3, S3Mirror } from './s3';
 import { Schema } from './schema';
 import { Sentry } from './sentry';
 
@@ -36,6 +37,8 @@ export function deployWorkflows({
   dbMigrations,
   egressManager,
   broker,
+  s3,
+  s3Mirror,
 }: {
   postgres: Postgres;
   observability: Observability;
@@ -52,6 +55,8 @@ export function deployWorkflows({
   dbMigrations: DbMigrations;
   egressManager: EgressPolicyManager;
   broker: Broker;
+  s3: S3;
+  s3Mirror: S3Mirror;
 }) {
   const requestBrokerEnabled = true;
 
@@ -80,6 +85,8 @@ export function deployWorkflows({
         // `evaluateMetricAlertRules` cron silently bail every minute even
         // when the secret values below are wired in correctly.
         CLICKHOUSE: '1',
+        // Supergraph OCI images are written to the same buckets as the CDN artifacts.
+        S3_MIRROR: '1',
       },
       readinessProbe: '/_readiness',
       livenessProbe: '/_health',
@@ -118,6 +125,16 @@ export function deployWorkflows({
     // Same secret as the graphql and schema services, so `organizations.slack_token`
     // written by the API decrypts here when dispatching metric-alert notifications.
     .withSecret('ENCRYPTION_SECRET', environment.encryptionSecret, 'encryptionPrivateKey')
+    // S3 (supergraph OCI images)
+    .withSecret('S3_ACCESS_KEY_ID', s3.secret, 'accessKeyId')
+    .withSecret('S3_SECRET_ACCESS_KEY', s3.secret, 'secretAccessKey')
+    .withSecret('S3_BUCKET_NAME', s3.secret, 'bucket')
+    .withSecret('S3_ENDPOINT', s3.secret, 'endpoint')
+    // S3 Mirror
+    .withSecret('S3_MIRROR_ACCESS_KEY_ID', s3Mirror.readWriteSecret, 'accessKeyId')
+    .withSecret('S3_MIRROR_SECRET_ACCESS_KEY', s3Mirror.readWriteSecret, 'secretAccessKey')
+    .withSecret('S3_MIRROR_BUCKET_NAME', s3Mirror.readWriteSecret, 'bucket')
+    .withSecret('S3_MIRROR_ENDPOINT', s3Mirror.readWriteSecret, 'endpoint')
     .deploy();
 
   egressManager
@@ -128,6 +145,8 @@ export function deployWorkflows({
     )
     .allowExternal(deployment, clickhouse.secret.raw.host, clickhouse.secret.raw.port)
     .allowExternal(deployment, 'https://api.postmarkapp.com')
+    .allowExternal(deployment, s3.secret.raw.endpoint)
+    .allowExternal(deployment, s3Mirror.readWriteSecret.raw.endpoint)
     // Slack metric-alert notifications
     .allowExternal(deployment, 'https://slack.com')
     .allowExternal(deployment, heartbeat)

@@ -8,6 +8,7 @@ import { UnexpectedError } from './errors';
 import { createRequestHandler } from './handler';
 import { createIsAppDeploymentActive } from './is-app-deployment-active';
 import { createIsKeyValid } from './key-validation';
+import { createOciRequestHandler, isOciRequest } from './oci-handler';
 import { createResponse } from './tracked-response';
 
 type Env = {
@@ -49,6 +50,10 @@ type Env = {
    * @default https://key-cache.graphql-hive.com
    */
   KV_STORAGE_BASE_URL?: string;
+  /**
+   * Whether the OCI Distribution API (`/v2/`) for supergraph images is served. Set to `1` to enable.
+   */
+  OCI_SUPERGRAPH_ENABLED?: string;
 };
 
 const handler: ExportedHandler<Env> = {
@@ -204,6 +209,23 @@ const handler: ExportedHandler<Env> = {
         },
       },
     });
+
+    if (env.OCI_SUPERGRAPH_ENABLED === '1' && isOciRequest(request)) {
+      const handleOciRequest = createOciRequestHandler({
+        isKeyValid,
+        storage: artifactStorageReader,
+        analytics,
+        breadcrumb(message: string) {
+          sentry.addBreadcrumb({ message });
+        },
+      });
+
+      return handleOciRequest(request).catch(error => {
+        console.error(error);
+        sentry.captureException(error);
+        return new UnexpectedError(analytics, request);
+      });
+    }
 
     const { corsify, preflight } = itty.createCors();
 

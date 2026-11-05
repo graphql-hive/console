@@ -35,6 +35,7 @@
     "@graphql-tools/merge": "catalog:",
     "@hive/cdn-script": "workspace:*",
     "@hive/clickhouse": "workspace:*",
+    "@hive/oci": "workspace:*",
     "@hive/postgres": "workspace:*",
     "@hive/pubsub": "workspace:*",
     "@hive/schema": "workspace:*",

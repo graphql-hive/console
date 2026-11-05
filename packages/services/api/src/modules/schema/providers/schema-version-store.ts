@@ -15,11 +15,17 @@ import {
   SchemaCompositionErrorModel,
   toSerializableSchemaChange,
 } from '@hive/storage';
+import {
+  buildPublishSupergraphOciImageJobKey,
+  PUBLISH_SUPERGRAPH_OCI_IMAGE_MAX_ATTEMPTS,
+  PublishSupergraphOciImageTask,
+} from '@hive/workflows/tasks/publish-supergraph-oci-image';
 import type { Project, Target } from '../../../shared/entities';
 import { batch, batchBy, cache } from '../../../shared/helpers';
 import { Graph } from '../../graph/providers/graph-store';
 import { Logger, NoopLogger } from '../../shared/providers/logger';
 import { SchemaRevisionStore, SchemaRevisionUnavailableError } from './schema-revision-store';
+import { SupergraphOciImagesConfig } from './supergraph-oci-images-config';
 
 const DefaultGraphMetadataModel = z.object({
   type: z.literal('default'),
@@ -40,6 +46,30 @@ const GraphMetadataModel = z.discriminatedUnion('type', [
 
 type GraphMetadata = z.TypeOf<typeof GraphMetadataModel>;
 
+/**
+ * Enqueue publishing the supergraph OCI image of a schema version.
+ *
+ * Uses `graphile_worker.add_job` on the connection of the surrounding transaction, so the job
+ * commits or rolls back together with the schema version, and the worker can never observe a job
+ * for a schema version that does not exist (yet). Only the immutable version id is passed, the
+ * workflow loads the persisted supergraph itself.
+ */
+export async function enqueuePublishSupergraphOciImage(
+  trx: CommonQueryMethods,
+  graphVersionId: string,
+) {
+  await trx.query(psql`/* enqueuePublishSupergraphOciImage */
+    SELECT graphile_worker.add_job(
+      ${PublishSupergraphOciImageTask.name}::text
+      , payload => json_build_object(
+        'input', json_build_object('graphVersionId', ${graphVersionId}::text)
+      )
+      , max_attempts => ${PUBLISH_SUPERGRAPH_OCI_IMAGE_MAX_ATTEMPTS}::int
+      , job_key => ${buildPublishSupergraphOciImageJobKey(graphVersionId)}::text
+    )
+  `);
+}
+
 type GithubMeta = null | {
   sha: string;
   repository: string;
@@ -55,6 +85,9 @@ export class SchemaVersionStore {
   constructor(
     private pg: PostgresDatabasePool,
     logger: Logger = new NoopLogger(),
+    private supergraphOciImagesConfig: SupergraphOciImagesConfig = new SupergraphOciImagesConfig(
+      false,
+    ),
   ) {
     this.logger = logger.child({ module: 'SchemaVersionStore' });
   }
@@ -150,7 +183,17 @@ export class SchemaVersionStore {
         ${schemaVersionSQLFields()}
     `;
 
-    return await trx.maybeOne(query).then(SchemaVersionModel.parse);
+    const version = await trx.maybeOne(query).then(SchemaVersionModel.parse);
+
+    if (
+      this.supergraphOciImagesConfig.isEnabled &&
+      args.isComposable &&
+      args.supergraphSDL !== null
+    ) {
+      await enqueuePublishSupergraphOciImage(trx, version.id);
+    }
+
+    return version;
   }
 
   private async insertSchemaVersionChanges(

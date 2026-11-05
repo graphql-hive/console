@@ -27,6 +27,8 @@
     "paths": {
       "@hive/clickhouse": ["./packages/internal/clickhouse/src/index.ts"],
       "@hive/postgres": ["./packages/internal/postgres/src/index.ts"],
+      "@hive/oci": ["./packages/internal/oci/src/index.ts"],
+      "@hive/oci/node": ["./packages/internal/oci/src/node.ts"],
       "@hive/api": ["./packages/services/api/src/index.ts"],
       "@hive/api/*": ["./packages/services/api/src/*"],
       "@hive/service-common": ["./packages/services/service-common/src/index.ts"],
@@ -42,6 +44,7 @@
         "./packages/services/cdn-worker/src/is-app-deployment-active.ts"
       ],
       "@hive/cdn-script/aws": ["./packages/services/cdn-worker/src/aws.ts"],
+      "@hive/cdn-script/oci-handler": ["./packages/services/cdn-worker/src/oci-handler.ts"],
       "@hive/server/*": ["./packages/services/server/src/*"],
       "@hive/schema": ["./packages/services/schema/src/api.ts"],
       "@hive/schema/*": ["./packages/services/schema/src/*"],

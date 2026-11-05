@@ -175,6 +175,7 @@ services:
       CDN_AUTH_PRIVATE_KEY: 1e1064ef9cda8bf38936b77317e90dc3
       CDN_API: '1'
       CDN_API_BASE_URL: 'http://localhost:3001'
+      OCI_SUPERGRAPH_ENABLED: '1'
       REQUEST_BROKER: '1'
       REQUEST_BROKER_SIGNATURE: 'secretSignature'
       REQUEST_BROKER_ENDPOINT: 'http://local_broker:3013'

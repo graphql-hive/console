@@ -174,6 +174,8 @@ export function deployGraphQL({
             ? observability.tracingEndpoint
             : '',
         S3_MIRROR: '1',
+        // Publish supergraph OCI images (via the workflows service)
+        OCI_SUPERGRAPH_ENABLED: '1',
       },
       exposesMetrics: true,
       port: 4000,

@@ -10,6 +10,7 @@ import { env } from './dev-polyfill';
 import { createRequestHandler } from './handler';
 import { createIsAppDeploymentActive } from './is-app-deployment-active';
 import { createIsKeyValid } from './key-validation';
+import { createOciRequestHandler, isOciRequest } from './oci-handler';
 
 const s3 = {
   client: new AwsClient({
@@ -78,6 +79,21 @@ const handleArtifactRequest = createArtifactRequestHandler({
   artifactStorageReader,
 });
 
+const handleOciRequest = createOciRequestHandler({
+  isKeyValid: createIsKeyValid({
+    kvStorageBaseUrl: env.KV_STORAGE_BASE_URL,
+    artifactStorageReader,
+    getCache: null,
+    waitUntil: null,
+    analytics: null,
+    breadcrumb: null,
+    captureException(error) {
+      console.error(error);
+    },
+  }),
+  storage: artifactStorageReader,
+});
+
 function main() {
   const app = createServerAdapter(itty.Router());
 
@@ -95,7 +111,15 @@ function main() {
     // Legacy CDN Handlers
     .get('*', handleRequest);
 
-  app.get('*', (request: Request) => router.handle(request));
+  app.all('*', (request: Request) => {
+    if (env.OCI_SUPERGRAPH_ENABLED === '1' && isOciRequest(request)) {
+      return handleOciRequest(request);
+    }
+    if (request.method !== 'GET') {
+      return undefined;
+    }
+    return router.handle(request);
+  });
 
   const server = createServer(app);
 

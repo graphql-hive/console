@@ -14,11 +14,14 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@aws-sdk/credential-providers": "catalog:",
     "@graphql-hive/logger": "1.1.0",
     "@graphql-inspector/core": "8.0.0",
     "@graphql-inspector/patch": "catalog:",
     "@graphql-yoga/redis-event-target": "catalog:",
+    "@hive/cdn-script": "workspace:*",
     "@hive/clickhouse": "workspace:*",
+    "@hive/oci": "workspace:*",
     "@hive/postgres": "workspace:*",
     "@hive/pubsub": "workspace:*",
     "@hive/service-common": "workspace:*",

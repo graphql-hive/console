@@ -141,6 +141,36 @@ const LogModel = zod.object({
   ),
 });
 
+/**
+ * Artifact storage (same S3 compatible primary/mirror buckets as the API service).
+ * Used for publishing supergraph OCI images. Publishing is disabled when not configured.
+ */
+const S3Model = zod.object({
+  S3_ENDPOINT: emptyString(zod.url().optional()),
+  S3_ACCESS_KEY_ID: emptyString(zod.string().optional()),
+  S3_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
+  S3_SESSION_TOKEN: emptyString(zod.string().optional()),
+  S3_BUCKET_NAME: emptyString(zod.string().optional()),
+  S3_AWS_IAM_AUTH_ENABLED: emptyString(zod.union([zod.literal('0'), zod.literal('1')]).optional()),
+});
+
+const S3MirrorModel = zod.union([
+  zod.object({
+    S3_MIRROR: zod.union([zod.literal('0'), zod.literal('')]).optional(),
+  }),
+  zod.object({
+    S3_MIRROR: zod.literal('1'),
+    S3_MIRROR_ENDPOINT: zod.url(),
+    S3_MIRROR_ACCESS_KEY_ID: emptyString(zod.string().optional()),
+    S3_MIRROR_SECRET_ACCESS_KEY: emptyString(zod.string().optional()),
+    S3_MIRROR_SESSION_TOKEN: emptyString(zod.string().optional()),
+    S3_MIRROR_BUCKET_NAME: zod.string(),
+    S3_MIRROR_AWS_IAM_AUTH_ENABLED: emptyString(
+      zod.union([zod.literal('0'), zod.literal('1')]).optional(),
+    ),
+  }),
+]);
+
 const configs = {
   base: EnvironmentModel.safeParse(process.env),
   email: EmailProviderModel.safeParse(process.env),
@@ -150,6 +180,8 @@ const configs = {
   tracing: OpenTelemetryConfigurationModel.safeParse(process.env),
   clickhouse: ClickHouseModel.safeParse(process.env),
   requestBroker: RequestBrokerModel.safeParse(process.env),
+  s3: S3Model.safeParse(process.env),
+  s3Mirror: S3MirrorModel.safeParse(process.env),
 };
 
 const environmentErrors: Array<string> = [];
@@ -187,6 +219,36 @@ if (clickhouseConfigResult?.type === 'error') {
   environmentErrors.push(...clickhouseConfigResult.errors);
 }
 
+if (configs.s3.success && configs.s3.data.S3_ENDPOINT) {
+  const s3 = configs.s3.data;
+  const missing: Array<string> = [];
+  if (!s3.S3_BUCKET_NAME) missing.push('S3_BUCKET_NAME');
+  if (s3.S3_AWS_IAM_AUTH_ENABLED !== '1') {
+    if (!s3.S3_ACCESS_KEY_ID) missing.push('S3_ACCESS_KEY_ID');
+    if (!s3.S3_SECRET_ACCESS_KEY) missing.push('S3_SECRET_ACCESS_KEY');
+  }
+  if (missing.length) {
+    environmentErrors.push(
+      `S3_ENDPOINT is set, but required variables are missing: ${missing.join(', ')}`,
+    );
+  }
+}
+
+if (configs.s3Mirror.success && configs.s3Mirror.data.S3_MIRROR === '1') {
+  const mirror = configs.s3Mirror.data;
+  if (!configs.s3.success || !configs.s3.data.S3_ENDPOINT) {
+    environmentErrors.push('S3_MIRROR=1 requires S3_ENDPOINT to be configured.');
+  }
+  if (
+    mirror.S3_MIRROR_AWS_IAM_AUTH_ENABLED !== '1' &&
+    (!mirror.S3_MIRROR_ACCESS_KEY_ID || !mirror.S3_MIRROR_SECRET_ACCESS_KEY)
+  ) {
+    environmentErrors.push(
+      'S3_MIRROR_AWS_IAM_AUTH_ENABLED is not enabled so static credentials are required: S3_MIRROR_ACCESS_KEY_ID, S3_MIRROR_SECRET_ACCESS_KEY',
+    );
+  }
+}
+
 if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
@@ -201,6 +263,19 @@ const log = extractConfig(configs.log);
 const tracing = extractConfig(configs.tracing);
 const clickhouse = extractConfig(configs.clickhouse);
 const requestBroker = extractConfig(configs.requestBroker);
+const s3 = extractConfig(configs.s3);
+const s3Mirror = extractConfig(configs.s3Mirror);
+
+export type S3DestinationConfig = {
+  endpoint: string;
+  bucketName: string;
+  awsIamAuthEnabled: boolean;
+  credentials: {
+    accessKeyId: string | undefined;
+    secretAccessKey: string | undefined;
+    sessionToken: string | undefined;
+  };
+};
 
 const emailProviderConfig =
   email.EMAIL_PROVIDER === 'postmark'
@@ -293,6 +368,32 @@ export const env = {
           endpoint: requestBroker.REQUEST_BROKER_ENDPOINT,
           signature: requestBroker.REQUEST_BROKER_SIGNATURE,
         } satisfies RequestBroker)
+      : null,
+  s3:
+    s3.S3_ENDPOINT && s3.S3_BUCKET_NAME
+      ? ({
+          endpoint: s3.S3_ENDPOINT,
+          bucketName: s3.S3_BUCKET_NAME,
+          awsIamAuthEnabled: s3.S3_AWS_IAM_AUTH_ENABLED === '1',
+          credentials: {
+            accessKeyId: s3.S3_ACCESS_KEY_ID,
+            secretAccessKey: s3.S3_SECRET_ACCESS_KEY,
+            sessionToken: s3.S3_SESSION_TOKEN,
+          },
+        } satisfies S3DestinationConfig)
+      : null,
+  s3Mirror:
+    s3Mirror.S3_MIRROR === '1'
+      ? ({
+          endpoint: s3Mirror.S3_MIRROR_ENDPOINT,
+          bucketName: s3Mirror.S3_MIRROR_BUCKET_NAME,
+          awsIamAuthEnabled: s3Mirror.S3_MIRROR_AWS_IAM_AUTH_ENABLED === '1',
+          credentials: {
+            accessKeyId: s3Mirror.S3_MIRROR_ACCESS_KEY_ID,
+            secretAccessKey: s3Mirror.S3_MIRROR_SECRET_ACCESS_KEY,
+            sessionToken: s3Mirror.S3_MIRROR_SESSION_TOKEN,
+          },
+        } satisfies S3DestinationConfig)
       : null,
   httpHeartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
   metricAlertsHeartbeat: base.METRIC_ALERTS_HEARTBEAT_ENDPOINT

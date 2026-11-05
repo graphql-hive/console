@@ -14,6 +14,7 @@ import type {
   CreateProjectInput,
   CreateTargetInput,
   CreateTokenInput,
+  DeleteCdnAccessTokenInput,
   DeleteContractInput,
   DeleteMemberRoleInput,
   DeleteMetricAlertRulesInput,
@@ -2146,6 +2147,9 @@ export function createCdnAccess(
       mutation createCdnAccessToken($input: CreateCdnAccessTokenInput!) {
         createCdnAccessToken(input: $input) {
           ok {
+            createdCdnAccessToken {
+              id
+            }
             secretAccessToken
             cdnUrl
           }
@@ -2159,6 +2163,25 @@ export function createCdnAccess(
     variables: {
       input: { target: { bySelector: selector }, alias },
     },
+  });
+}
+
+export function deleteCdnAccessToken(input: DeleteCdnAccessTokenInput, token: string) {
+  return execute({
+    document: graphql(`
+      mutation TestKit_DeleteCdnAccessToken($input: DeleteCdnAccessTokenInput!) {
+        deleteCdnAccessToken(input: $input) {
+          ok {
+            deletedCdnAccessTokenId
+          }
+          error {
+            message
+          }
+        }
+      }
+    `),
+    token,
+    variables: { input },
   });
 }
 

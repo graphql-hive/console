@@ -62,6 +62,13 @@ export class CloudflareCDN {
           dataset: `hive_ha_cdn_response_${this.config.envName}`,
         },
       ],
+      plainTextBindings: [
+        {
+          // Serve supergraph OCI images via the OCI Distribution API (`/v2/`)
+          name: 'OCI_SUPERGRAPH_ENABLED',
+          text: '1',
+        },
+      ],
       secretTextBindings: [
         {
           name: 'SENTRY_DSN',

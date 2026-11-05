@@ -199,6 +199,8 @@ deployWorkflows({
   dbMigrations,
   egressManager,
   broker,
+  s3,
+  s3Mirror,
 });
 
 const zendesk = configureZendesk({ environment });
