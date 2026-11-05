@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: hive-debug-cli-known-error-service-url-mismatch
+expected_outcome: |
+  Identifies 600 as a service/URL count mismatch error, grounds the explanation in the CLI error docs,
+  explains that two --service flags were passed but only one --url flag, and shows a corrected command
+  with a matching second --url flag.

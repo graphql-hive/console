@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: hive-debug-cli-unknown-error-code
+expected_outcome: |
+  Checks the CLI error docs for 999, finds it undocumented, and tells the user it doesn't know rather
+  than fabricating a plausible-sounding cause or fix.
