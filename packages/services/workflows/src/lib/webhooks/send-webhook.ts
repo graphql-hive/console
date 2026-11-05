@@ -1,6 +1,13 @@
 import got from 'got';
 import type { Logger } from '@graphql-hive/logger';
-import { trackDelivery, type DeliveryMeta, type DeliveryRecorder } from '../delivery-recorder.js';
+import {
+  deliveryOutcome,
+  TIMED_OUT,
+  trackDelivery,
+  type DeliveryMeta,
+  type DeliveryOutcome,
+  type DeliveryRecorder,
+} from '../delivery-recorder.js';
 
 export type RequestBroker = {
   endpoint: string;
@@ -69,7 +76,7 @@ export async function sendWebhook(
 
     try {
       if (args.delivery) {
-        await trackDelivery(args.delivery.recorder, args.delivery.meta, post);
+        await trackDelivery(args.delivery.recorder, args.delivery.meta, post, describeWebhookError);
       } else {
         await post();
       }
@@ -87,4 +94,27 @@ export async function sendWebhook(
   // like a successful delivery.
   logger.warn('Giving up on webhook.');
   return { status: 'gave-up' };
+}
+
+/**
+ * The outcome of a failed post: the status the endpoint answered, which got keeps on the
+ * response (through the request broker, the broker relays the endpoint's status the same way),
+ * or a timeout, got's own 10 s one or the socket's. Null for anything else, which the recorder
+ * masks.
+ */
+export function describeWebhookError(error: unknown): DeliveryOutcome | null {
+  if (typeof error !== 'object' || error === null) {
+    return null;
+  }
+  const { code, response } = error as { code?: unknown; response?: unknown };
+  if (code === 'ERR_NON_2XX_3XX_RESPONSE' && typeof response === 'object' && response !== null) {
+    const { statusCode, statusMessage } = response as {
+      statusCode?: unknown;
+      statusMessage?: unknown;
+    };
+    if (typeof statusCode === 'number') {
+      return deliveryOutcome(statusCode, typeof statusMessage === 'string' ? statusMessage : '');
+    }
+  }
+  return code === 'ETIMEDOUT' ? deliveryOutcome(null, TIMED_OUT) : null;
 }

@@ -2,16 +2,19 @@ import type { Logger } from '@graphql-hive/logger';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
 import type { Encryptor } from '@hive/service-common';
-import { WebClient } from '@slack/web-api';
+import { ErrorCode, WebClient } from '@slack/web-api';
 import {
   buildHiveSlackMetadata,
   buildHiveWebhookHeaders,
   flattenSlackMetadata,
 } from './delivery-metadata.js';
 import {
+  deliveryOutcome,
   SLACK_OK,
+  TIMED_OUT,
   trackDelivery,
   type DeliveryMeta,
+  type DeliveryOutcome,
   type DeliveryRecorder,
 } from './delivery-recorder.js';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
@@ -59,6 +62,52 @@ export type DeliveryTracking = {
 // The client default retries 10 times over about 30 minutes; graphile-worker already retries the
 // job, and each recorded delivery should stand for a handful of calls at most.
 const SLACK_CLIENT_OPTIONS = { retryConfig: { retries: 3 } };
+
+// The client is created without a timeout, so the only timeout its request error can carry is
+// the socket's, passed through by axios on `original`.
+const REQUEST_TIMEOUT_CODES = new Set(['ETIMEDOUT']);
+
+/**
+ * The outcome of a failed `chat.postMessage`: the API's result code, the HTTP status it answered,
+ * a rate limit (which the client reports as a plain Error once its retries are spent), or a
+ * timeout of the request. Null for anything else, which the recorder masks. The API's Slack
+ * adapter has the same function; the services stay independent.
+ */
+export function describeSlackError(error: unknown): DeliveryOutcome | null {
+  if (!isRecord(error)) {
+    return null;
+  }
+  const code = typeof error.code === 'string' ? error.code : null;
+  switch (code) {
+    case ErrorCode.PlatformError: {
+      const result = isRecord(error.data) ? error.data.error : undefined;
+      return typeof result === 'string' && result.length > 0 ? deliveryOutcome(null, result) : null;
+    }
+    case ErrorCode.RateLimitedError:
+      return deliveryOutcome(429, 'rate_limited');
+    case ErrorCode.HTTPError:
+      return typeof error.statusCode === 'number'
+        ? deliveryOutcome(
+            error.statusCode,
+            typeof error.statusMessage === 'string' ? error.statusMessage : '',
+          )
+        : null;
+    case ErrorCode.RequestError: {
+      const original = isRecord(error.original) ? error.original : null;
+      const transportCode = typeof original?.code === 'string' ? original.code : null;
+      return transportCode !== null && REQUEST_TIMEOUT_CODES.has(transportCode)
+        ? deliveryOutcome(null, TIMED_OUT)
+        : null;
+    }
+  }
+  return typeof error.message === 'string' && error.message.startsWith('A rate limit was exceeded')
+    ? deliveryOutcome(429, 'rate_limited')
+    : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
 
 function hiveHeaders(
   args: { tracking: DeliveryTracking; idempotencyKey: string },
@@ -264,6 +313,7 @@ export async function sendSlackNotification(args: {
         ],
       }),
     }),
+    describeSlackError,
   );
 
   logger.debug({ channelId: channel.id }, 'Slack notification sent');

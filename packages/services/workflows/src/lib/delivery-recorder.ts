@@ -5,11 +5,31 @@ import type { AlertChannelDeliveryEvent } from './delivery-metadata.js';
 
 const MAX_STATUS_TEXT_LENGTH = 512;
 
+/** What the row says when nothing usable answered; the error itself goes to the job's log. */
+export const TIMED_OUT = 'Timed out';
+export const UNEXPECTED_ERROR = 'Unexpected error';
+
 export interface DeliveryOutcome {
   /** HTTP status of the response; null when there was none. */
   statusCode: number | null;
-  /** Reason phrase, Slack API result code, or `<error code>: <message>` when nothing answered. */
+  /**
+   * Reason phrase or Slack API result code when the destination answered; otherwise `Timed out`
+   * or `Unexpected error`, never an exception's message.
+   */
   statusText: string;
+}
+
+/**
+ * How a sender reads the errors of the client it uses: what the destination answered, or
+ * `Timed out` when nothing did. Null for anything it does not recognise, which `trackDelivery`
+ * masks as `Unexpected error`. Each sender exports its own, next to the client whose error shapes
+ * it knows.
+ */
+export type DescribeDeliveryError = (error: unknown) => DeliveryOutcome | null;
+
+/** An outcome whose text is bounded to what the column holds. */
+export function deliveryOutcome(statusCode: number | null, statusText: string): DeliveryOutcome {
+  return { statusCode, statusText: truncateStatusText(statusText) };
 }
 
 /** Slack's API answered `ok: true`; the SDK exposes no HTTP status on success. */
@@ -103,11 +123,16 @@ export function createDeliveryRecorder(
   };
 }
 
-/** Runs `send`, records exactly one attempt for it (success or failure) and rethrows its error. */
+/**
+ * Runs `send`, records exactly one attempt for it (success or failure) and rethrows its error.
+ * A failure is recorded as `describeError` reads it, or masked when it does not recognise it;
+ * the rethrown error reaches graphile-worker, which logs its message and stack.
+ */
 export async function trackDelivery<T>(
   recorder: DeliveryRecorder,
   meta: DeliveryMeta,
   send: () => Promise<{ outcome: DeliveryOutcome; value: T }>,
+  describeError: DescribeDeliveryError,
 ): Promise<T> {
   const startedAt = Date.now();
   try {
@@ -115,97 +140,10 @@ export async function trackDelivery<T>(
     await recorder.record({ ...meta, ...outcome, ok: true, durationMs: Date.now() - startedAt });
     return value;
   } catch (error) {
-    await recorder.record({
-      ...meta,
-      ...describeDeliveryError(error),
-      ok: false,
-      durationMs: Date.now() - startedAt,
-    });
+    const failure = describeError(error) ?? deliveryOutcome(null, UNEXPECTED_ERROR);
+    await recorder.record({ ...meta, ...failure, ok: false, durationMs: Date.now() - startedAt });
     throw error;
   }
-}
-
-/**
- * Status code and one-line status text for a failed delivery, from whatever the client threw.
- * When the destination answered, the HTTP status and reason phrase; for a Slack API answer, its
- * result code; when nothing answered, the transport error code and message.
- */
-export function describeDeliveryError(error: unknown): DeliveryOutcome {
-  if (isRecord(error)) {
-    const code = typeof error.code === 'string' ? error.code : null;
-
-    // @slack/web-api coded errors
-    if (code === 'slack_webapi_platform_error') {
-      const platformCode = isRecord(error.data) ? stringOrNull(error.data.error) : null;
-      return outcome(null, platformCode ?? messageOf(error));
-    }
-    if (code === 'slack_webapi_rate_limited_error') {
-      return outcome(429, 'rate_limited');
-    }
-    if (code === 'slack_webapi_request_error') {
-      return outcome(null, transportText(error.original) ?? messageOf(error));
-    }
-
-    // Slack HTTP errors carry the status themselves
-    const direct = statusOf(error);
-    if (direct) {
-      return direct;
-    }
-    // got HTTPError keeps it on the response
-    if (isRecord(error.response)) {
-      const fromResponse = statusOf(error.response);
-      if (fromResponse) {
-        return fromResponse;
-      }
-    }
-
-    // Nothing answered: got RequestError carries the code itself, a wrapped Node error in `cause`.
-    const transport = transportText(error.cause) ?? transportText(error);
-    if (transport) {
-      return outcome(null, transport);
-    }
-  }
-
-  return outcome(null, messageOf(error));
-}
-
-function outcome(statusCode: number | null, statusText: string): DeliveryOutcome {
-  return { statusCode, statusText: truncateStatusText(statusText) };
-}
-
-function statusOf(value: Record<string, unknown>): DeliveryOutcome | null {
-  if (typeof value.statusCode !== 'number') {
-    return null;
-  }
-  const text = stringOrNull(value.statusText) ?? stringOrNull(value.statusMessage) ?? '';
-  return outcome(value.statusCode, text);
-}
-
-function transportText(value: unknown): string | null {
-  if (
-    !isRecord(value) ||
-    typeof value.code !== 'string' ||
-    value.code === 'ERR_NON_2XX_3XX_RESPONSE'
-  ) {
-    return null;
-  }
-  const message = messageOf(value);
-  return message ? `${value.code}: ${message}` : value.code;
-}
-
-function messageOf(value: unknown): string {
-  if (isRecord(value) && typeof value.message === 'string') {
-    return value.message;
-  }
-  return typeof value === 'string' ? value : String(value);
-}
-
-function stringOrNull(value: unknown): string | null {
-  return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 function truncateStatusText(text: string): string {
