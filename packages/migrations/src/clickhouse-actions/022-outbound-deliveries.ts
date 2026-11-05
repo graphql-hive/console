@@ -27,7 +27,8 @@ export const action: Action = async exec => {
       "ok" UInt8 CODEC(T64, ZSTD(1)),
       -- what the destination answered: the HTTP status, or an SMTP reply code; 0 when nothing did
       "status_code" UInt16 CODEC(T64, ZSTD(1)),
-      -- reason phrase, Slack API result code, or "<error code>: <message>" when nothing answered
+      -- reason phrase, Slack API result code, or "Timed out" | "Unexpected error" when nothing
+      -- usable answered
       "status_text" String CODEC(ZSTD(1)),
       "duration_ms" UInt32 CODEC(T64, ZSTD(1)),
       -- what Hive sent to identify the call: the request headers, or the Slack message metadata

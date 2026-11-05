@@ -9,11 +9,31 @@ import type { AlertChannelDeliveryEvent, DeliveryMetadataInput } from '../lib/de
 
 const MAX_STATUS_TEXT_LENGTH = 512;
 
+/** What the row says when nothing usable answered; the error itself goes to the log. */
+export const TIMED_OUT = 'Timed out';
+export const UNEXPECTED_ERROR = 'Unexpected error';
+
 export interface DeliveryOutcome {
   /** HTTP status of the response; null when there was none. */
   statusCode: number | null;
-  /** Reason phrase, Slack API result code, or `<error code>: <message>` when nothing answered. */
+  /**
+   * Reason phrase or Slack API result code when the destination answered; otherwise `Timed out`
+   * or `Unexpected error`, never an exception's message.
+   */
   statusText: string;
+}
+
+/**
+ * How a sender reads the errors of the client it uses: what the destination answered, or
+ * `Timed out` when nothing did. Null for anything it does not recognise, which the recorder masks
+ * as `Unexpected error` and logs. Each adapter exports its own, next to the client whose error
+ * shapes it knows.
+ */
+export type DescribeDeliveryError = (error: unknown) => DeliveryOutcome | null;
+
+/** An outcome whose text is bounded to what the column holds. */
+export function deliveryOutcome(statusCode: number | null, statusText: string): DeliveryOutcome {
+  return { statusCode, statusText: truncateStatusText(statusText) };
 }
 
 /** Slack's API answered `ok: true`; the SDK exposes no HTTP status on success. */
@@ -58,10 +78,14 @@ export class DeliveryRecorder {
     return { requestId: getRequestId() ?? null, release: this.release, ...input };
   }
 
-  /** Runs `send`, records exactly one attempt for it (success or failure) and rethrows its error. */
+  /**
+   * Runs `send`, records exactly one attempt for it (success or failure) and rethrows its error.
+   * A failure is recorded as `describeError` reads it, or masked when it does not recognise it.
+   */
   async track<T>(
     meta: DeliveryMeta,
     send: () => Promise<{ outcome: DeliveryOutcome; value: T }>,
+    describeError: DescribeDeliveryError,
   ): Promise<T> {
     const startedAt = Date.now();
     try {
@@ -69,14 +93,22 @@ export class DeliveryRecorder {
       await this.record({ ...meta, ...outcome, ok: true, durationMs: Date.now() - startedAt });
       return value;
     } catch (error) {
-      await this.record({
-        ...meta,
-        ...describeDeliveryError(error),
-        ok: false,
-        durationMs: Date.now() - startedAt,
-      });
+      const failure = describeError(error) ?? this.maskUnexpectedError(meta, error);
+      await this.record({ ...meta, ...failure, ok: false, durationMs: Date.now() - startedAt });
       throw error;
     }
+  }
+
+  /** The row says nothing about an error the sender did not recognise, so the log and Sentry must. */
+  private maskUnexpectedError(meta: DeliveryMeta, error: unknown): DeliveryOutcome {
+    this.logger.error(
+      'Delivery failed unexpectedly (destination=%s, event=%s, error=%s)',
+      meta.destination,
+      meta.event,
+      describeForLog(error),
+    );
+    captureException(error, { extra: { destination: meta.destination, event: meta.event } });
+    return deliveryOutcome(null, UNEXPECTED_ERROR);
   }
 
   /**
@@ -137,74 +169,17 @@ export class DeliveryRecorder {
   }
 }
 
-/**
- * Status code and one-line status text for a failed delivery, from whatever the client threw.
- * When the destination answered, the HTTP status and reason phrase; for a Slack API answer, its
- * result code; when nothing answered, the transport error code and message.
- */
-export function describeDeliveryError(error: unknown): DeliveryOutcome {
-  if (isRecord(error)) {
-    const code = typeof error.code === 'string' ? error.code : null;
-
-    // @slack/web-api coded errors
-    if (code === 'slack_webapi_platform_error') {
-      const platformCode = isRecord(error.data) ? stringOrNull(error.data.error) : null;
-      return outcome(null, platformCode ?? messageOf(error));
-    }
-    if (code === 'slack_webapi_rate_limited_error') {
-      return outcome(429, 'rate_limited');
-    }
-    if (code === 'slack_webapi_request_error') {
-      return outcome(null, transportText(error.original) ?? messageOf(error));
-    }
-
-    // Errors carrying the response status themselves: Slack HTTP errors, HiveHttpClientError,
-    // TeamsWebhookError
-    const direct = statusOf(error);
-    if (direct) {
-      return direct;
-    }
-    // got HTTPError keeps it on the response
-    if (isRecord(error.response)) {
-      const fromResponse = statusOf(error.response);
-      if (fromResponse) {
-        return fromResponse;
-      }
-    }
-
-    // Nothing answered: undici `fetch failed` wraps the Node error in `cause`, got RequestError
-    // carries the code itself.
-    const transport = transportText(error.cause) ?? transportText(error);
-    if (transport) {
-      return outcome(null, transport);
-    }
+/** The message, and the wrapped cause's code and message, for the log line of a masked failure. */
+function describeForLog(error: unknown): string {
+  const text =
+    isRecord(error) && error.name ? `${String(error.name)}: ${messageOf(error)}` : messageOf(error);
+  if (!isRecord(error) || !isRecord(error.cause)) {
+    return text;
   }
-
-  return outcome(null, messageOf(error));
-}
-
-function outcome(statusCode: number | null, statusText: string): DeliveryOutcome {
-  return { statusCode, statusText: truncateStatusText(statusText) };
-}
-
-function statusOf(value: Record<string, unknown>): DeliveryOutcome | null {
-  if (typeof value.statusCode !== 'number') {
-    return null;
-  }
-  const text = stringOrNull(value.statusText) ?? stringOrNull(value.statusMessage) ?? '';
-  return outcome(value.statusCode, text);
-}
-
-function transportText(value: unknown): string | null {
-  if (
-    !isRecord(value) ||
-    typeof value.code !== 'string' ||
-    value.code === 'ERR_NON_2XX_3XX_RESPONSE'
-  ) {
-    return null;
-  }
-  const message = messageOf(value);
-  return message ? `${value.code}: ${message}` : value.code;
+  const cause = error.cause;
+  const causeText =
+    typeof cause.code === 'string' ? `${cause.code}: ${messageOf(cause)}` : messageOf(cause);
+  return `${text} (cause: ${causeText})`;
 }
 
 function messageOf(value: unknown): string {
@@ -212,10 +187,6 @@ function messageOf(value: unknown): string {
     return value.message;
   }
   return typeof value === 'string' ? value : String(value);
-}
-
-function stringOrNull(value: unknown): string | null {
-  return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

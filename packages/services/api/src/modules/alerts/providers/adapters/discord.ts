@@ -1,11 +1,16 @@
 import { Inject, Injectable } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { SchemaChangeType } from '@hive/storage';
-import { HttpClient } from '../../../shared/providers/http-client';
+import { HiveHttpClientError, HttpClient } from '../../../shared/providers/http-client';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
 import { buildHiveWebhookHeaders } from '../../lib/delivery-metadata';
-import { DeliveryRecorder, type DeliveryOutcome } from '../delivery-recorder';
+import {
+  deliveryOutcome,
+  DeliveryRecorder,
+  TIMED_OUT,
+  type DeliveryOutcome,
+} from '../delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -163,6 +168,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
           ),
           value: undefined,
         }),
+        describeDiscordError,
       );
     } catch (error) {
       this.logger.error('Failed to send Discord notification (error=%o)', error);
@@ -225,6 +231,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
           ),
           value: undefined,
         }),
+        describeDiscordError,
       );
     } catch (error) {
       this.logger.error('Failed to send Discord notification (error=%o)', error);
@@ -260,6 +267,21 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
 
     return { statusCode: response.statusCode, statusText: response.statusText };
   }
+}
+
+/**
+ * The outcome of a failed webhook call through the HTTP client: the status Discord answered, or
+ * a socket timeout, which the client keeps as its code (it sets no timeout of its own). Null for
+ * anything else, which the recorder masks.
+ */
+export function describeDiscordError(error: unknown): DeliveryOutcome | null {
+  if (!(error instanceof HiveHttpClientError)) {
+    return null;
+  }
+  if (error.statusCode !== undefined) {
+    return deliveryOutcome(error.statusCode, error.statusText ?? '');
+  }
+  return error.code === 'ETIMEDOUT' ? deliveryOutcome(null, TIMED_OUT) : null;
 }
 
 function createDetailsText(

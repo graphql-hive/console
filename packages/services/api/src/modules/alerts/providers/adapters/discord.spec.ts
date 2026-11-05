@@ -1,9 +1,10 @@
 import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { beforeEach, vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
+import { HiveHttpClientError } from '../../../shared/providers/http-client';
 import { DeliveryRecorder } from '../delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
-import { DiscordCommunicationAdapter } from './discord';
+import { describeDiscordError, DiscordCommunicationAdapter } from './discord';
 
 vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
 vi.mock('@hive/service-common', () => ({ getRequestId: () => 'req-1' }));
@@ -355,5 +356,31 @@ describe('DiscordCommunicationAdapter', () => {
         }),
       ).rejects.toThrow('Failed to send Discord message: Bad Request');
     });
+  });
+});
+
+describe('describeDiscordError', () => {
+  test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
+    [
+      'the webhook answered',
+      new HiveHttpClientError('Response code 404 (Not Found)', 'ERR_NON_2XX_3XX_RESPONSE', {
+        statusCode: 404,
+        statusText: 'Not Found',
+      }),
+      { statusCode: 404, statusText: 'Not Found' },
+    ],
+    [
+      'request timed out',
+      new HiveHttpClientError("Timeout awaiting 'request' for 10000ms", 'ETIMEDOUT'),
+      { statusCode: null, statusText: 'Timed out' },
+    ],
+    [
+      'connection refused',
+      new HiveHttpClientError('connect ECONNREFUSED 10.0.0.5:443', 'ECONNREFUSED'),
+      null,
+    ],
+    ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
+  ])('%s', (_name, error, expected) => {
+    expect(describeDiscordError(error)).toEqual(expected);
   });
 });

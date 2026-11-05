@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { DeliveryRecorder } from '../delivery-recorder';
 import type { ChannelConfirmationInput } from './common';
-import { SlackCommunicationAdapter } from './slack';
+import { describeSlackError, SlackCommunicationAdapter } from './slack';
 
 const postMessage = vi.fn(async (_args: Record<string, unknown>) => ({ ok: true }));
 let constructedWith: { token: string; options: Record<string, unknown> | undefined } | null = null;
@@ -116,5 +116,73 @@ describe('SlackCommunicationAdapter', () => {
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false, statusCode: null, statusText: 'channel_not_found' }),
     );
+  });
+});
+
+describe('describeSlackError', () => {
+  test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
+    [
+      'platform error',
+      Object.assign(new Error('An API error occurred: channel_not_found'), {
+        code: 'slack_webapi_platform_error',
+        data: { ok: false, error: 'channel_not_found' },
+      }),
+      { statusCode: null, statusText: 'channel_not_found' },
+    ],
+    [
+      'platform error without a result code',
+      Object.assign(new Error('An API error occurred: undefined'), {
+        code: 'slack_webapi_platform_error',
+        data: { ok: false },
+      }),
+      null,
+    ],
+    [
+      'HTTP error',
+      Object.assign(new Error('An HTTP protocol error occurred: statusCode = 500'), {
+        code: 'slack_webapi_http_error',
+        statusCode: 500,
+        statusMessage: 'Internal Server Error',
+      }),
+      { statusCode: 500, statusText: 'Internal Server Error' },
+    ],
+    [
+      'rate limit',
+      Object.assign(new Error('A rate-limit has been reached'), {
+        code: 'slack_webapi_rate_limited_error',
+      }),
+      { statusCode: 429, statusText: 'rate_limited' },
+    ],
+    [
+      'rate limit once the client gave up retrying',
+      new Error(
+        'A rate limit was exceeded (url: https://slack.com/api/chat.postMessage, retry-after: 3)',
+      ),
+      { statusCode: 429, statusText: 'rate_limited' },
+    ],
+    [
+      'request timed out on the socket',
+      Object.assign(new Error('A request error occurred: connect ETIMEDOUT 3.123.4.5:443'), {
+        code: 'slack_webapi_request_error',
+        original: Object.assign(new Error('connect ETIMEDOUT 3.123.4.5:443'), {
+          code: 'ETIMEDOUT',
+        }),
+      }),
+      { statusCode: null, statusText: 'Timed out' },
+    ],
+    [
+      'request failed on DNS',
+      Object.assign(new Error('A request error occurred: getaddrinfo ENOTFOUND slack.com'), {
+        code: 'slack_webapi_request_error',
+        original: Object.assign(new Error('getaddrinfo ENOTFOUND slack.com'), {
+          code: 'ENOTFOUND',
+        }),
+      }),
+      null,
+    ],
+    ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
+    ['not an error', 'nope', null],
+  ])('%s', (_name, error, expected) => {
+    expect(describeSlackError(error)).toEqual(expected);
   });
 });
