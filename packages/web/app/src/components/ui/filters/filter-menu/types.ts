@@ -3,7 +3,10 @@ export interface FilterItem {
   id?: string;
   name: string;
   values: string[];
-  /** When true, the item is not found in the current date range stats. */
+  /**
+   * When true, the item is selected but not among the options (not seen in the date range,
+   * not in the current schema, ...). Rendered struck through and sorted last.
+   */
   unavailable?: boolean;
 }
 
@@ -63,6 +66,11 @@ export type ItemsFilterDimension = FilterDimensionBase & {
    * at knowing what they want to type.
    */
   alwaysShowSearch?: boolean;
+  /**
+   * What "unavailable" means for this dimension, completing "Struck-through items are ...".
+   * Defaults to the date-range wording the usage-derived dimensions need.
+   */
+  unavailableNote?: string;
 };
 
 /** A free-text dimension. The value is rendered in a chip once non-empty. */

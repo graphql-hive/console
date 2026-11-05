@@ -67,6 +67,7 @@ export function FilterMenu({
         valuesLabel={d.valuesLabel}
         singleSelect={d.singleSelect}
         alwaysShowSearch={d.alwaysShowSearch}
+        unavailableNote={d.unavailableNote}
       />
     ),
   }));
@@ -156,6 +157,7 @@ export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
             onExcludeModeChange={d.onExcludeModeChange}
             singleSelect={d.singleSelect}
             alwaysShowSearch={d.alwaysShowSearch}
+            unavailableNote={d.unavailableNote}
           />
         ) : null;
       })}
