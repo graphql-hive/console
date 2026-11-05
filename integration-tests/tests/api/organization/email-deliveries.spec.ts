@@ -149,7 +149,8 @@ test.concurrent(
       event: 'organization_invitation',
       ok: 0,
       status_code: 422,
-      status_text: '406: You tried to send to a recipient that has been marked as inactive.',
+      status_text:
+        'You tried to send to a recipient that has been marked as inactive. (error code 406)',
       attempt: 1,
       max_attempts: 25,
       metadata: {
@@ -175,7 +176,8 @@ test.concurrent(
       delivery: {
         ok: false,
         statusCode: 422,
-        statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+        statusText:
+          'You tried to send to a recipient that has been marked as inactive. (error code 406)',
         attempt: expect.any(Number),
         maxAttempts: 25,
       },
