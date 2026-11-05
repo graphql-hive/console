@@ -11,7 +11,13 @@ import {
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
 import { buildHiveSlackMetadata, flattenSlackMetadata } from '../../lib/delivery-metadata';
-import { DeliveryRecorder, SLACK_OK } from '../delivery-recorder';
+import {
+  deliveryOutcome,
+  DeliveryRecorder,
+  SLACK_OK,
+  TIMED_OUT,
+  type DeliveryOutcome,
+} from '../delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -22,6 +28,51 @@ import {
 // The client default retries 10 times over about 30 minutes; a notification is not worth that, and
 // each recorded delivery should stand for a handful of calls at most.
 const SLACK_CLIENT_OPTIONS = { retryConfig: { retries: 3 } };
+
+// The client is created without a timeout, so the only timeout its request error can carry is
+// the socket's, passed through by axios on `original`.
+const REQUEST_TIMEOUT_CODES = new Set(['ETIMEDOUT']);
+
+/**
+ * The outcome of a failed `chat.postMessage`: the API's result code, the HTTP status it answered,
+ * a rate limit (which the client reports as a plain Error once its retries are spent), or a
+ * timeout of the request. Null for anything else, which the recorder masks.
+ */
+export function describeSlackError(error: unknown): DeliveryOutcome | null {
+  if (!isRecord(error)) {
+    return null;
+  }
+  const code = typeof error.code === 'string' ? error.code : null;
+  switch (code) {
+    case ErrorCode.PlatformError: {
+      const result = isRecord(error.data) ? error.data.error : undefined;
+      return typeof result === 'string' && result.length > 0 ? deliveryOutcome(null, result) : null;
+    }
+    case ErrorCode.RateLimitedError:
+      return deliveryOutcome(429, 'rate_limited');
+    case ErrorCode.HTTPError:
+      return typeof error.statusCode === 'number'
+        ? deliveryOutcome(
+            error.statusCode,
+            typeof error.statusMessage === 'string' ? error.statusMessage : '',
+          )
+        : null;
+    case ErrorCode.RequestError: {
+      const original = isRecord(error.original) ? error.original : null;
+      const transportCode = typeof original?.code === 'string' ? original.code : null;
+      return transportCode !== null && REQUEST_TIMEOUT_CODES.has(transportCode)
+        ? deliveryOutcome(null, TIMED_OUT)
+        : null;
+    }
+  }
+  return typeof error.message === 'string' && error.message.startsWith('A rate limit was exceeded')
+    ? deliveryOutcome(429, 'rate_limited')
+    : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
 
 @Injectable()
 export class SlackCommunicationAdapter implements CommunicationAdapter {
@@ -108,6 +159,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
           metadata: flattenSlackMetadata(metadata),
         },
         async () => ({ outcome: SLACK_OK, value: await client.chat.postMessage(message) }),
+        describeSlackError,
       );
     } catch (error: any) {
       this.handleSlackClientError(error);
@@ -170,6 +222,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
             metadata,
           }),
         }),
+        describeSlackError,
       );
     } catch (error) {
       this.handleSlackClientError(error);

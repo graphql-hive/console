@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
 import { DeliveryRecorder } from '../delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
-import { TeamsCommunicationAdapter } from './msteams';
+import { describeTeamsError, TeamsCommunicationAdapter, TeamsWebhookError } from './msteams';
 
 vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
 vi.mock('@hive/service-common', () => ({ getRequestId: () => 'req-1' }));
@@ -344,5 +344,45 @@ describe('sendChannelConfirmation', () => {
         adapter.sendTeamsMessage('http://example.com/webhook', 'Test message'),
       ).rejects.toThrow('Failed to send Microsoft Teams message: Bad Request');
     });
+  });
+});
+
+describe('describeTeamsError', () => {
+  test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
+    [
+      'the webhook answered',
+      new TeamsWebhookError(400, 'Bad Request'),
+      { statusCode: 400, statusText: 'Bad Request' },
+    ],
+    [
+      'connect timeout inside fetch',
+      Object.assign(new TypeError('fetch failed'), {
+        cause: Object.assign(new Error('Connect Timeout Error'), {
+          code: 'UND_ERR_CONNECT_TIMEOUT',
+        }),
+      }),
+      { statusCode: null, statusText: 'Timed out' },
+    ],
+    [
+      'headers timeout inside fetch',
+      Object.assign(new TypeError('fetch failed'), {
+        cause: Object.assign(new Error('Headers Timeout Error'), {
+          code: 'UND_ERR_HEADERS_TIMEOUT',
+        }),
+      }),
+      { statusCode: null, statusText: 'Timed out' },
+    ],
+    [
+      'connection refused inside fetch',
+      Object.assign(new TypeError('fetch failed'), {
+        cause: Object.assign(new Error('connect ECONNREFUSED 10.0.0.5:443'), {
+          code: 'ECONNREFUSED',
+        }),
+      }),
+      null,
+    ],
+    ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
+  ])('%s', (_name, error, expected) => {
+    expect(describeTeamsError(error)).toEqual(expected);
   });
 });

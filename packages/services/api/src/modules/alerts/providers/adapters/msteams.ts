@@ -4,7 +4,12 @@ import { SchemaChangeType } from '@hive/storage';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
 import { buildHiveWebhookHeaders } from '../../lib/delivery-metadata';
-import { DeliveryRecorder, type DeliveryOutcome } from '../delivery-recorder';
+import {
+  deliveryOutcome,
+  DeliveryRecorder,
+  TIMED_OUT,
+  type DeliveryOutcome,
+} from '../delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -95,6 +100,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
           ),
           value: undefined,
         }),
+        describeTeamsError,
       );
     } catch (error) {
       const errorText =
@@ -156,6 +162,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
           outcome: await this.sendTeamsMessage(webhookUrl, message, undefined, headers),
           value: undefined,
         }),
+        describeTeamsError,
       );
     } catch (error) {
       const errorText =
@@ -225,6 +232,32 @@ export class TeamsWebhookError extends Error {
     super(`Failed to send Microsoft Teams message: ${statusText}`);
     this.name = 'TeamsWebhookError';
   }
+}
+
+// With no signal on the call, a hung request ends only through undici's own timeouts: 10 s to
+// connect, 300 s for the headers. They arrive wrapped in `TypeError: fetch failed` as `cause`,
+// like a socket timeout; the body is never read, so its timeout cannot fire.
+const FETCH_TIMEOUT_CODES = new Set([
+  'ETIMEDOUT',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+]);
+
+/**
+ * The outcome of a failed webhook call: the status Teams answered, or a timeout of the request.
+ * Null for anything else, which the recorder masks.
+ */
+export function describeTeamsError(error: unknown): DeliveryOutcome | null {
+  if (error instanceof TeamsWebhookError) {
+    return deliveryOutcome(error.statusCode, error.statusText);
+  }
+  const cause = isRecord(error) && isRecord(error.cause) ? error.cause : null;
+  const code = typeof cause?.code === 'string' ? cause.code : null;
+  return code !== null && FETCH_TIMEOUT_CODES.has(code) ? deliveryOutcome(null, TIMED_OUT) : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
 function createAttachmentsText(
