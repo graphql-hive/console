@@ -1,6 +1,6 @@
 import {
   createDeliveryRecorder,
-  describeDeliveryError,
+  deliveryOutcome,
   trackDelivery,
   type DeliveryRecorder,
 } from './delivery-recorder.js';
@@ -20,62 +20,12 @@ function makeClient(command = vi.fn(async () => {})) {
   return { client: { command } as any, command };
 }
 
-describe('describeDeliveryError', () => {
-  test.each<[string, unknown, { statusCode: number | null; statusText: string }]>([
-    [
-      'got HTTP error',
-      Object.assign(new Error('Response code 404 (Not Found)'), {
-        code: 'ERR_NON_2XX_3XX_RESPONSE',
-        response: { statusCode: 404, statusMessage: 'Not Found' },
-      }),
-      { statusCode: 404, statusText: 'Not Found' },
-    ],
-    [
-      'got timeout',
-      Object.assign(new Error("Timeout awaiting 'request' for 10000ms"), { code: 'ETIMEDOUT' }),
-      { statusCode: null, statusText: "ETIMEDOUT: Timeout awaiting 'request' for 10000ms" },
-    ],
-    [
-      'Slack platform error',
-      {
-        code: 'slack_webapi_platform_error',
-        message: 'An API error occurred: channel_not_found',
-        data: { ok: false, error: 'channel_not_found' },
-      },
-      { statusCode: null, statusText: 'channel_not_found' },
-    ],
-    [
-      'Slack HTTP error',
-      {
-        code: 'slack_webapi_http_error',
-        message: 'An HTTP protocol error occurred: statusCode = 500',
-        statusCode: 500,
-        statusMessage: 'Internal Server Error',
-      },
-      { statusCode: 500, statusText: 'Internal Server Error' },
-    ],
-    [
-      'Slack rate limit',
-      { code: 'slack_webapi_rate_limited_error', message: 'A rate-limit has been reached' },
-      { statusCode: 429, statusText: 'rate_limited' },
-    ],
-    [
-      'Slack request error',
-      {
-        code: 'slack_webapi_request_error',
-        message: 'A request error occurred: ECONNRESET',
-        original: Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' }),
-      },
-      { statusCode: null, statusText: 'ECONNRESET: socket hang up' },
-    ],
-    ['plain error', new Error('boom'), { statusCode: null, statusText: 'boom' }],
-    ['non-error', 'nope', { statusCode: null, statusText: 'nope' }],
-  ])('%s', (_name, error, expected) => {
-    expect(describeDeliveryError(error)).toEqual(expected);
-  });
-
-  test('truncates long status text', () => {
-    expect(describeDeliveryError(new Error('x'.repeat(2000))).statusText).toHaveLength(512);
+describe('deliveryOutcome', () => {
+  test('bounds the text to what the column holds', () => {
+    expect(deliveryOutcome(400, 'x'.repeat(2000))).toEqual({
+      statusCode: 400,
+      statusText: 'x'.repeat(512),
+    });
   });
 });
 
@@ -85,10 +35,12 @@ describe('trackDelivery', () => {
     const recorder: DeliveryRecorder = { record };
 
     await expect(
-      trackDelivery(recorder, meta, async () => ({
-        outcome: { statusCode: 200, statusText: 'OK' },
-        value: 'sent',
-      })),
+      trackDelivery(
+        recorder,
+        meta,
+        async () => ({ outcome: { statusCode: 200, statusText: 'OK' }, value: 'sent' }),
+        () => null,
+      ),
     ).resolves.toBe('sent');
 
     expect(record).toHaveBeenCalledTimes(1);
@@ -97,16 +49,36 @@ describe('trackDelivery', () => {
     );
   });
 
-  test('records a failed attempt and rethrows so the job can retry', async () => {
+  test('records what the sender read from its error and rethrows so the job can retry', async () => {
     const record = vi.fn(async () => {});
-    const error = Object.assign(new Error('Response code 503 (Service Unavailable)'), {
-      response: { statusCode: 503, statusMessage: 'Service Unavailable' },
-    });
+    const error = new Error('Response code 503 (Service Unavailable)');
+    const describeError = vi.fn(() => deliveryOutcome(503, 'Service Unavailable'));
 
-    await expect(trackDelivery({ record }, meta, () => Promise.reject(error))).rejects.toBe(error);
+    await expect(
+      trackDelivery({ record }, meta, () => Promise.reject(error), describeError),
+    ).rejects.toBe(error);
 
+    expect(describeError).toHaveBeenCalledWith(error);
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({ ok: false, statusCode: 503, statusText: 'Service Unavailable' }),
+    );
+  });
+
+  test('masks an error the sender did not recognise', async () => {
+    const record = vi.fn(async () => {});
+    const error = new TypeError("Cannot read properties of undefined (reading 'id')");
+
+    await expect(
+      trackDelivery(
+        { record },
+        meta,
+        () => Promise.reject(error),
+        () => null,
+      ),
+    ).rejects.toBe(error);
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: false, statusCode: null, statusText: 'Unexpected error' }),
     );
   });
 });

@@ -1,5 +1,5 @@
 import { makeLogger } from '../metric-alert-test-utils.js';
-import { sendWebhook } from './send-webhook.js';
+import { describeWebhookError, sendWebhook } from './send-webhook.js';
 
 const gotPost = vi.fn(async (_url: string, _options: Record<string, any>) => ({
   statusCode: 200,
@@ -129,5 +129,37 @@ describe('sendWebhook', () => {
     expect(url).toBe('https://broker.example.com');
     expect(options.json.url).toBe('https://hooks.example.com/hive');
     expect(options.json.headers).toEqual(expect.objectContaining(headers));
+  });
+});
+
+describe('describeWebhookError', () => {
+  test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
+    [
+      'the endpoint answered',
+      Object.assign(new Error('Response code 404 (Not Found)'), {
+        code: 'ERR_NON_2XX_3XX_RESPONSE',
+        response: { statusCode: 404, statusMessage: 'Not Found' },
+      }),
+      { statusCode: 404, statusText: 'Not Found' },
+    ],
+    [
+      'the request timed out',
+      Object.assign(new Error("Timeout awaiting 'request' for 10000ms"), { code: 'ETIMEDOUT' }),
+      { statusCode: null, statusText: 'Timed out' },
+    ],
+    [
+      'the connection was refused',
+      Object.assign(new Error('connect ECONNREFUSED 10.0.0.5:443'), { code: 'ECONNREFUSED' }),
+      null,
+    ],
+    [
+      'the host did not resolve',
+      Object.assign(new Error('getaddrinfo ENOTFOUND hooks.example.com'), { code: 'ENOTFOUND' }),
+      null,
+    ],
+    ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
+    ['not an error', 'nope', null],
+  ])('%s', (_name, error, expected) => {
+    expect(describeWebhookError(error)).toEqual(expected);
   });
 });
