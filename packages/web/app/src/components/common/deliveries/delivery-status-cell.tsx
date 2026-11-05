@@ -8,8 +8,9 @@ export function statusLabel(delivery: { statusCode: number | null; statusText: s
     : delivery.statusText;
 }
 
-// Reason phrases and Slack result codes fit the column; a transport error such as
-// "ETIMEDOUT: Timeout awaiting 'request' for 10000ms" or a mail provider's refusal runs past it.
+// Reason phrases and Slack result codes fit the column; a mail provider's refusal such as
+// "422 You tried to send to a recipient that has been marked as inactive. (error code 406)" runs
+// past it.
 const LONG_STATUS_LENGTH = 32;
 
 /** The full status for a popover when the column is likely to truncate it. */

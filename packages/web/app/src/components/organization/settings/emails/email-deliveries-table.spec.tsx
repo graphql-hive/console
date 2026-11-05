@@ -38,7 +38,8 @@ describe('EmailDeliveriesTable', () => {
           delivery({
             ok: false,
             statusCode: 422,
-            statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+            statusText:
+              'You tried to send to a recipient that has been marked as inactive. (error code 406)',
             attempt: 3,
           }),
         ]}
@@ -49,7 +50,7 @@ describe('EmailDeliveriesTable', () => {
     expect(screen.getByText('Invitation')).toBeTruthy();
     expect(
       screen.getByText(
-        '422 406: You tried to send to a recipient that has been marked as inactive.',
+        '422 You tried to send to a recipient that has been marked as inactive. (error code 406)',
       ),
     ).toBeTruthy();
     expect(screen.getByText('3 of 25')).toBeTruthy();

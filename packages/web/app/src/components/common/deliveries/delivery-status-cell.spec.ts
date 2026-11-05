@@ -6,8 +6,12 @@ describe('statusPopover', () => {
     expect(statusPopover('431 Request Header Fields Too Large')).toBe(
       '431 Request Header Fields Too Large',
     );
-    expect(statusPopover("ETIMEDOUT: Timeout awaiting 'request' for 10000ms")).toBe(
-      "ETIMEDOUT: Timeout awaiting 'request' for 10000ms",
+    expect(
+      statusPopover(
+        '422 You tried to send to a recipient that has been marked as inactive. (error code 406)',
+      ),
+    ).toBe(
+      '422 You tried to send to a recipient that has been marked as inactive. (error code 406)',
     );
   });
 });
