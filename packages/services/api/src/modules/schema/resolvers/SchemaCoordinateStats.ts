@@ -1,5 +1,5 @@
+import { extractSuperGraphInformation } from '@hive/supergraph';
 import { GraphStore } from '../../graph/providers/graph-store';
-import { extractSuperGraphInformation } from '../lib/federation-super-graph';
 import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';
 import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/types';

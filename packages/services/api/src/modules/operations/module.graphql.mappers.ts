@@ -37,6 +37,8 @@ export interface OperationsStatsMapper {
   clientVersionFilters: readonly { clientName: string; versions: readonly string[] | null }[];
   excludeOperations?: boolean;
   excludeClientVersionFilters?: boolean;
+  /** Each scope is a coordinate list; operations must use one coordinate from every scope. */
+  coordinateScopes: ReadonlyArray<readonly string[]>;
 }
 export interface DurationValuesMapper {
   avg: number | null;

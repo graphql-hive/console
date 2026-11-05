@@ -38,9 +38,11 @@ service is dispatching.
 3. Starts the webhook receiver on port 9999.
 4. Creates a dedicated `live-alerts-demo-{timestamp}` org / project / target via GraphQL mutations.
 5. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`).
-6. Publishes a tiny schema (so the usage service will accept operations against the target).
+6. Publishes two tiny subgraphs, `products` and `orders`, to a Federation project (so the usage
+   service will accept operations against the target, and so a subgraph filter has something to
+   resolve), then creates a shared saved filter "Orders subgraph" (`subgraphNames: ['orders']`).
 7. Creates a webhook channel pointing at port 9999 (plus a preview-only `SLACK` channel — see
-   "Slack" below), and (unless started with `--no-rules`) 7 short-window alert rules each
+   "Slack" below), and (unless started with `--no-rules`) 8 short-window alert rules each
    `timeWindowMinutes: 1`.
 8. Pre-seeds ~60s of backdated breach-shaped data so the first evaluator tick after rule creation
    already sees a fully-formed breach window in `operations_minutely`. Cuts time-to-first-FIRING
@@ -51,7 +53,8 @@ service is dispatching.
 Alternates 3-minute BREACH and NORMAL phases:
 
 - **BREACH**: pushes one `Report` every 5 seconds (~20 ops with 50% errors, p95≈2000ms). Above the
-  thresholds of rules 1, 2, 3, 5, 6, 7. Above rule 4's BELOW-direction floor, so rule 4 recovers.
+  thresholds of rules 1, 2, 3, 5, 6, 7, 8. Above rule 4's BELOW-direction floor, so rule 4 recovers.
+  Every other op is `orders`, so rule 8 reads about half of rule 1's value.
 - **NORMAL**: pushes **nothing**. Silence is the breach for rule 4: with zero traffic, the
   evaluator's zero-window-synthesis path resolves TRAFFIC=0, below rule 4's `< 10/min` floor, so
   rule 4 fires. Rules 1, 2, 3, 5, 6, 7 recover during NORMAL because their thresholds resolve to 0
@@ -61,19 +64,20 @@ The workflows evaluator picks up each minute's data on its 60s cron and drives t
 the alerts pages refresh their queries every 15s so transitions are visible in the UI without manual
 refresh.
 
-## The 7 rules
+## The 8 rules
 
 The rule mix is intentionally varied so the demo exercises the feature surface:
 
-| #   | Type        | Direction | Threshold type            | Confirmation | Severity | What it demos                                                                                                                              |
-| --- | ----------- | --------- | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | TRAFFIC     | ABOVE     | FIXED_VALUE (50)          | 0 min        | INFO     | Baseline path; fastest state cycle                                                                                                         |
-| 2   | ERROR_RATE  | ABOVE     | PERCENTAGE_CHANGE (+200%) | 0 min        | WARNING  | PERCENTAGE_CHANGE thresholding. Fires transiently on the first BREACH then settles to 0% as the prior window itself becomes "high errors". |
-| 3   | LATENCY P95 | ABOVE     | FIXED_VALUE (1500ms)      | 1 min        | CRITICAL | Non-zero confirmation period: rule sits in PENDING for 1 evaluator tick before reaching FIRING.                                            |
-| 4   | TRAFFIC     | BELOW     | FIXED_VALUE (10)          | 0 min        | WARNING  | BELOW direction. Fires during NORMAL phases (silence) and recovers during BREACH. Exercises the zero-window-synthesis fix.                 |
-| 5   | ERROR_RATE  | ABOVE     | FIXED_VALUE (25%)         | 0 min        | CRITICAL | Absolute error-rate threshold (the steady-state firing counterpart to rule 2).                                                             |
-| 6   | LATENCY AVG | ABOVE     | FIXED_VALUE (800ms)       | 0 min        | WARNING  | Avg-latency variant; fires alongside P95 during BREACH.                                                                                    |
-| 7   | TRAFFIC     | ABOVE     | FIXED_VALUE (100)         | 0 min        | WARNING  | Higher traffic threshold so two different INFO/WARNING severities fire concurrently.                                                       |
+| #   | Type        | Direction | Threshold type            | Confirmation | Severity | What it demos                                                                                                                                    |
+| --- | ----------- | --------- | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | TRAFFIC     | ABOVE     | FIXED_VALUE (50)          | 0 min        | INFO     | Baseline path; fastest state cycle                                                                                                               |
+| 2   | ERROR_RATE  | ABOVE     | PERCENTAGE_CHANGE (+200%) | 0 min        | WARNING  | PERCENTAGE_CHANGE thresholding. Fires transiently on the first BREACH then settles to 0% as the prior window itself becomes "high errors".       |
+| 3   | LATENCY P95 | ABOVE     | FIXED_VALUE (1500ms)      | 1 min        | CRITICAL | Non-zero confirmation period: rule sits in PENDING for 1 evaluator tick before reaching FIRING.                                                  |
+| 4   | TRAFFIC     | BELOW     | FIXED_VALUE (10)          | 0 min        | WARNING  | BELOW direction. Fires during NORMAL phases (silence) and recovers during BREACH. Exercises the zero-window-synthesis fix.                       |
+| 5   | ERROR_RATE  | ABOVE     | FIXED_VALUE (25%)         | 0 min        | CRITICAL | Absolute error-rate threshold (the steady-state firing counterpart to rule 2).                                                                   |
+| 6   | LATENCY AVG | ABOVE     | FIXED_VALUE (800ms)       | 0 min        | WARNING  | Avg-latency variant; fires alongside P95 during BREACH.                                                                                          |
+| 7   | TRAFFIC     | ABOVE     | FIXED_VALUE (100)         | 0 min        | WARNING  | Higher traffic threshold so two different INFO/WARNING severities fire concurrently.                                                             |
+| 8   | TRAFFIC     | ABOVE     | FIXED_VALUE (20)          | 0 min        | INFO     | On the "Orders subgraph" saved filter. Reads only `orders` traffic (~120/min in BREACH) through the evaluator's `coordinates_minutely` subquery. |
 
 ## Prerequisites
 
@@ -143,7 +147,7 @@ switches to its NORMAL phase.
 | Within ~1–2 minutes         | Rules 1, 5, 6, 7 enter PENDING then FIRING. Rule 2 fires transiently then settles back to NORMAL. Rule 3 enters PENDING.                            |
 | Within ~2–3 minutes         | Rule 3 reaches FIRING (1-min confirmation elapsed). Script switches to NORMAL phase.                                                                |
 | Within ~4–5 minutes         | Rules 1, 3, 5, 6, 7 recover (RECOVERING → NORMAL). Rule 4 enters PENDING then FIRING (zero traffic during NORMAL falls below its `< 10/min` floor). |
-| Within ~6 minutes           | Script switches back to BREACH. Rule 4 recovers; rules 1, 5, 6, 7 fire again. Rule 2 fires transiently again.                                       |
+| Within ~6 minutes           | Script switches back to BREACH. Rule 4 recovers; rules 1, 5, 6, 7, 8 fire again. Rule 2 fires transiently again.                                    |
 | Every ~6 minutes thereafter | The cycle repeats.                                                                                                                                  |
 
 Webhook payloads from FIRING / RESOLVED notifications print in the script terminal as the workflows
@@ -171,6 +175,13 @@ running. Kill it (or any other process listening on 9999) and re-run.
 **Preflight fails: "API server unreachable" / "Usage service unreachable"** You haven't started
 `pnpm dev:hive`, or one of those services failed to come up. Check the `pnpm dev:hive` terminal
 output for errors.
+
+**Checking the subgraph filter end to end** Rule 8 should log `filter.applied=true` on its
+`evaluate-group` span and settle at roughly half of rule 1's value. To see the skip path, delete the
+`orders` service from the target (`hive schema:delete orders` with the demo's write token, or the
+registry UI): the next tick logs `Skipping metric alert group: its saved filter cannot be resolved`
+with `reason=unknown-subgraph`, rule 8's `last_evaluated_at` stops advancing while the other rules
+keep going, and `hive_metric_alert_groups_skipped{reason="unknown-subgraph"}` reads 1.
 
 **No state transitions happen after several minutes**
 
@@ -225,7 +236,7 @@ still empty, check that the usage service is healthy.
    ✓ Project: demo, target: production
    ✓ Schema published
    ✓ Webhook channel created
-   ✓ 7 rules created
+   ✓ 8 rules created
    ✓ Pre-seeded ~60s of breach data
 
 ┌─ Demo ready ───────────────────────────────────────
@@ -234,19 +245,19 @@ still empty, check that the usage service is healthy.
 │
 │ The alerts pages refresh every 15s. The cron evaluator
 │ runs every minute. Expect the first NORMAL → PENDING →
-│ FIRING transitions for rules 1, 5, 6, 7 within ~1-2 minutes
+│ FIRING transitions for rules 1, 5, 6, 7, 8 within ~1-2 minutes
 │ and rule 3 (with confirmationMinutes=1) within ~2 minutes.
 └────────────────────────────────────────────────────
 
 ▶ Starting main loop. Press Ctrl+C to stop.
 
 [14:23:01] ═══ injecting=BREACH for ~3min ════════════════════════════════════════════
-           expect: rules 1,5,6,7 → FIRING within ~2 ticks; rule 2 transient PENDING then NORMAL (PERCENTAGE_CHANGE settles to 0); rule 3 → PENDING then FIRING (confirm 1m); rule 4 → recovers
+           expect: rules 1,5,6,7,8 → FIRING within ~2 ticks (rule 8 reads only orders traffic, about half of rule 1); rule 2 transient PENDING then NORMAL (PERCENTAGE_CHANGE settles to 0); rule 3 → PENDING then FIRING (confirm 1m); rule 4 → recovers
 [14:23:01]   tick 0 — pushed 20 ops (50% errors, p95=2000ms)
 [14:23:06]   tick 1 — pushed 20 ops (50% errors, p95=2000ms)
 …
 [14:26:01] ═══ injecting=NORMAL for ~3min ════════════════════════════════════════════
-           expect: rules 1,5,6,7 → RECOVERING then NORMAL; rule 4 → FIRING (zero traffic falls below its 10/min floor); rule 3 → RECOVERING then NORMAL
+           expect: rules 1,5,6,7,8 → RECOVERING then NORMAL; rule 4 → FIRING (zero traffic falls below its 10/min floor); rule 3 → RECOVERING then NORMAL
 [14:26:01]   tick 0 — no traffic injected (silence is the breach for rule 4)
 [14:26:06]   tick 1 — no traffic injected (silence is the breach for rule 4)
 …

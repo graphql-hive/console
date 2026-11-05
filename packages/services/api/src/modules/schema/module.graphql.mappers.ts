@@ -5,11 +5,11 @@ import type {
   SchemaCheck,
   SchemaCheckApprovalMetadata,
 } from '@hive/storage';
+import type { SuperGraphInformation } from '@hive/supergraph';
 import type { SchemaError } from '../../__generated__/types';
 import type { DateRange, PushedCompositeSchema, SingleSchema } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import type { ContractGraph } from '../graph/providers/graph-store';
-import type { SuperGraphInformation } from './lib/federation-super-graph';
 import type {
   ContractCheck,
   ContractVersion,

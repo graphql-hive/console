@@ -1,19 +1,29 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
-import type { SqlValue } from '@hive/clickhouse';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask, type TaskImplementation } from '../kit.js';
 import {
-  buildSavedFilterConditions,
+  countSkippedByReason,
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
+  isFilteredFilter,
   isRuleDue,
+  parseSavedFilter,
+  pruneSkipState,
   queryClickHouseWindows,
+  resolveSavedFilter,
+  type ParsedSavedFilter,
+  type SavedFilterSkipReason,
 } from '../lib/metric-alert-evaluator.js';
-import { metricAlertEnabledRules, metricAlertRuleGroups } from '../metrics.js';
+import { createSupergraphOwnershipLoader } from '../lib/supergraph-ownership.js';
+import {
+  metricAlertEnabledRules,
+  metricAlertGroupsSkipped,
+  metricAlertRuleGroups,
+} from '../metrics.js';
 
 // How many groups to evaluate in parallel. Each group = 1 ClickHouse round-trip
 // plus a per-rule state-machine evaluation that holds a Postgres connection for
@@ -22,6 +32,17 @@ import { metricAlertEnabledRules, metricAlertRuleGroups } from '../metrics.js';
 const GROUP_CONCURRENCY = 5;
 
 const tracer = trace.getTracer('metric-alert-evaluator');
+
+// Why each group was skipped at its latest evaluation. Backs the gauge, which must hold
+// between a group's due ticks, and dedupes the warning so it fires when a reason appears
+// or changes rather than every tick. Pruned each tick to the groups that still exist.
+const lastSkipReasonByGroup = new Map<string, SavedFilterSkipReason>();
+
+function setSkippedGauge() {
+  for (const [reason, count] of countSkippedByReason(lastSkipReasonByGroup.values())) {
+    metricAlertGroupsSkipped.set({ reason }, count);
+  }
+}
 
 export const EvaluateMetricAlertRulesTask = defineTask({
   name: 'evaluateMetricAlertRules',
@@ -88,21 +109,23 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   // the API, not evaluation here; the per-rule `enabled` column is the gate.
   const rules = await fetchEnabledRules(context.pg);
   const groups = groupRulesByQuery(rules);
+  pruneSkipState(lastSkipReasonByGroup, groups);
 
   // Parse each group's saved filter once, reused by the gauges below and by
   // processGroup, so a filtered group isn't re-parsed within the same tick.
-  const groupFilters = [...groups.values()].map(group => ({
+  const groupFilters = [...groups.entries()].map(([key, group]) => ({
+    key,
     group,
-    filterConditions: buildSavedFilterConditions(group[0].savedFilterFilters, logger),
+    filter: parseSavedFilter(group[0].savedFilterFilters, logger),
   }));
 
   // Population gauges for the expensive with-filter rules. "Filtered" means the
-  // filter yields query conditions (the legacy-table path), not just that a
+  // filter narrows the query (the legacy-table path), not just that a
   // saved_filter_id is set. Both labels set each tick (incl. 0) to avoid staleness.
   let filteredGroups = 0;
   let filteredRules = 0;
-  for (const { group, filterConditions } of groupFilters) {
-    if (filterConditions.length > 0) {
+  for (const { group, filter } of groupFilters) {
+    if (isFilteredFilter(filter)) {
       filteredGroups += 1;
       filteredRules += group.length;
     }
@@ -113,11 +136,15 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   metricAlertEnabledRules.set({ filtered: 'false' }, rules.length - filteredRules);
 
   if (rules.length === 0) {
+    setSkippedGauge();
     logger.debug('No enabled metric alert rules found');
     return;
   }
 
   logger.info({ count: rules.length }, 'Evaluating metric alert rules');
+
+  // One loader per tick: concurrent groups on the same target share one version lookup.
+  const ownership = createSupergraphOwnershipLoader(context.pg, logger);
 
   // Evaluate only groups with at least one due member. Members of a group share
   // a window (so one cadence), and the batched UPDATE below keeps their
@@ -127,6 +154,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   );
 
   if (dueGroupList.length === 0) {
+    setSkippedGauge();
     logger.debug(
       { evaluationTime: evaluationTime.toISOString(), groups: groups.size, rules: rules.length },
       'No metric alert rule groups are due this tick',
@@ -135,10 +163,12 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   }
 
   async function processGroup(
+    groupKey: string,
     groupRules: (typeof rules)[number][],
-    filterConditions: SqlValue[],
+    parsedFilter: ParsedSavedFilter,
   ): Promise<{
     failed: boolean;
+    skipped: SavedFilterSkipReason | null;
     evaluatedIds: string[];
   }> {
     const representative = groupRules[0];
@@ -173,20 +203,49 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
           // true only when the filter yields the heavier legacy-table query.
           'metric.types': [...new Set(groupRules.map(r => r.type))],
           'threshold.types': [...new Set(groupRules.map(r => r.thresholdType))],
-          'filter.applied': filterConditions.length > 0,
+          'filter.applied': isFilteredFilter(parsedFilter),
           'window.needs_previous': needsPreviousWindow,
           'metric.needs_percentiles': needsPercentiles,
         },
       },
       async span => {
         try {
+          // Resolve subgraph names against the latest composable version before touching
+          // ClickHouse. A filter that cannot be resolved skips the whole group: its rules keep
+          // their state and `last_evaluated_at` stays put, so a FIRING rule stays FIRING with
+          // no resolution and a PENDING one never fires until the filter is fixed. The gauge
+          // and span attribute below are what make that visible.
+          const resolution = await resolveSavedFilter(parsedFilter, {
+            targetId: representative.targetId,
+            ownership,
+          });
+          if (resolution.kind === 'skip') {
+            span.setAttribute('filter.skipped_reason', resolution.reason);
+            span.setStatus({ code: SpanStatusCode.ERROR, message: 'saved filter unresolvable' });
+            if (lastSkipReasonByGroup.get(groupKey) !== resolution.reason) {
+              lastSkipReasonByGroup.set(groupKey, resolution.reason);
+              logger.warn(
+                {
+                  targetId: representative.targetId,
+                  savedFilterId: representative.savedFilterId,
+                  ruleIds: groupRules.map(r => r.id),
+                  reason: resolution.reason,
+                  details: resolution.details,
+                },
+                'Skipping metric alert group: its saved filter cannot be resolved',
+              );
+            }
+            return { failed: false, skipped: resolution.reason, evaluatedIds: [] };
+          }
+          lastSkipReasonByGroup.delete(groupKey);
+
           let windows;
           try {
             windows = await queryClickHouseWindows(
               clickhouse,
               representative.targetId,
               representative.timeWindowMinutes,
-              filterConditions,
+              resolution.filter,
               evaluationTime,
               needsPreviousWindow,
               needsAverage,
@@ -200,7 +259,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
             );
             span.setStatus({ code: SpanStatusCode.ERROR, message: 'clickhouse query failed' });
             span.setAttribute('error.type', error instanceof Error ? error.name : 'unknown');
-            return { failed: true, evaluatedIds: [] };
+            return { failed: true, skipped: null, evaluatedIds: [] };
           }
 
           // Treat a missing window as a zero-value window. Skipping evaluation
@@ -246,7 +305,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
             });
             evaluatedIds.push(rule.id);
           }
-          return { failed: false, evaluatedIds };
+          return { failed: false, skipped: null, evaluatedIds };
         } finally {
           span.end();
         }
@@ -279,10 +338,11 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
         // not via graphile-worker retries that would re-run already-committed work.
         const limit = pLimit(GROUP_CONCURRENCY);
         let groupsFailed = 0;
+        let groupsSkipped = 0;
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
-          dueGroupList.map(({ group, filterConditions }) =>
-            limit(() => processGroup(group, filterConditions)),
+          dueGroupList.map(({ key, group, filter }) =>
+            limit(() => processGroup(key, group, filter)),
           ),
         );
         for (const r of results) {
@@ -291,10 +351,13 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
             logger.error({ error: r.reason }, 'Group evaluation threw unexpectedly');
           } else if (r.value.failed) {
             groupsFailed++;
+          } else if (r.value.skipped) {
+            groupsSkipped++;
           } else {
             evaluatedRuleIds.push(...r.value.evaluatedIds);
           }
         }
+        setSkippedGauge();
 
         // One batched UPDATE for all successfully-evaluated rules'
         // last_evaluated_at, replacing what used to be N per-rule UPDATEs
@@ -311,6 +374,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
 
         span.setAttributes({
           'groups.failed': groupsFailed,
+          'groups.skipped': groupsSkipped,
           'rules.evaluated': evaluatedRuleIds.length,
         });
         if (groupsFailed > 0) {
@@ -324,6 +388,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
           {
             groupsAttempted: dueGroupList.length,
             groupsFailed,
+            groupsSkipped,
             rulesEvaluated: evaluatedRuleIds.length,
           },
           'Metric alert evaluation complete',

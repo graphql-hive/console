@@ -6,13 +6,19 @@ fixtures, and E2E preparation.
 
 What gets created:
 
-- An owner account, organization, project, and federated target.
-- Schema published with `seed-insights-and-alerts` schemas.
+- An owner account, organization, and a Federation project whose target is composed from three
+  subgraphs (`characters`, `starships`, `reviews`) built by splitting the Star Wars schema. See
+  "Fields and Subgraphs filters" below for who owns what.
+- A second, SINGLE project in the same org with one day of the same baseline traffic. It is the
+  negative case: the Subgraphs filter is hidden there and `subgraphNames` is rejected on save.
 - Per-minute baseline operations across the configured time range, plus per-rule "signal" operations
   engineered to make each alert rule's metric actually breach its threshold during the planned
   incident windows. The chart, status bar, and events table on the alert detail page all derive from
   this one shared timeline (metric-first signal generation).
-- ~10 saved filters with realistic view counts.
+- 13 saved filters with realistic view counts. Three of them use the Fields and Subgraphs
+  dimensions: "Reviews subgraph" (`subgraphNames: ['reviews']`), "Character names"
+  (`schemaCoordinates: ['Character.name', 'Human.name', 'Droid.name']`) and "Starships from the web
+  app" (`subgraphNames: ['starships']` ANDed with the `web-app` client).
 - Alert channels — a preview-only Slack destination plus a PagerDuty webhook. The Slack channel is a
   real `SLACK`-type row inserted straight into Postgres (no bot token needed, fixed name
   `#hive-alerts-testing`), so the alert form's Slack preview renders; it never delivers, since this
@@ -20,7 +26,30 @@ What gets created:
 - 7 metric alert rules covering every state in the evaluation state machine (NORMAL, PENDING,
   FIRING, RECOVERING) across the three rule types (latency, reliability, traffic) and both threshold
   modes (fixed value, percentage change). The seed deliberately leaves headroom inside the
-  per-target cap of 10 so a tester can exercise the create flow end-to-end.
+  per-target cap of 10 so a tester can exercise the create flow end-to-end. "P95 Latency Above
+  800ms - Last 30 Min" is attached to the "Reviews subgraph" saved filter, and its signal operations
+  are drawn from the `CreateReview*` mutations so the scoped chart agrees with its incident history.
+
+### Fields and Subgraphs filters
+
+The federated target's supergraph gives the Subgraphs filter this ownership (object and interface
+fields only; types, enum values and input fields never count):
+
+| Subgraph     | Owns                                                                                      |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `characters` | `Query.hero`, every `Character.*`, `Human.*` and `Droid.*` field except `Human.starships` |
+| `starships`  | `Starship.*`, `Human.starships`, `Human.id`                                               |
+| `reviews`    | `Mutation.createReview`, `Review.*`                                                       |
+
+`Human.id` is a shared `@key`, so it belongs to both `characters` and `starships`. That is the
+documented caveat of subgraph filters, left visible on purpose: an operation selecting only
+`... on Human { id }` matches the `starships` filter too.
+
+Things to try on `/insights` of the federated target: picking `reviews` under Subgraphs drops every
+`hero` query and keeps the `CreateReview*` mutations; picking `Character.name` under Fields keeps
+most `hero` queries; the three seeded filters apply from the saved-filters menu and show chips. On
+the SINGLE project's `/insights`, Fields is present and Subgraphs is absent. For the unavailable
+chip, open Insights with a hand-edited URL whose `fields` names a coordinate that does not exist.
 
 ### Usage limits
 

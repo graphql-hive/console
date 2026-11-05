@@ -50,6 +50,17 @@ export default gql`
     When true, the clientVersionFilters filter is negated — matching clients are excluded instead of included.
     """
     excludeClientVersionFilters: Boolean @tag(name: "public")
+    """
+    Filter based on schema coordinates (e.g. "Query.me"): only operations whose document uses
+    any of them. Combined with the other filters with AND.
+    """
+    schemaCoordinates: [String!] @tag(name: "public")
+    """
+    Filter based on Federation subgraphs: only operations that use an object field the subgraph
+    owns in the latest valid schema version. Only available on Federation projects. Combined with
+    the other filters with AND.
+    """
+    subgraphNames: [String!] @tag(name: "public")
   }
 
   extend type Target {

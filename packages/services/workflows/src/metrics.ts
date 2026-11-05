@@ -67,3 +67,14 @@ export const metricAlertRuleGroups = new metrics.Gauge({
   help: 'Metric alert query groups (one ClickHouse query each), by whether a saved filter is attached',
   labelNames: ['filtered'],
 });
+
+// Groups whose saved filter could not be resolved at their latest evaluation (a subgraph
+// the latest composable version does not have, no supergraph to resolve against, ...).
+// Held between a group's due ticks. A skipped group's rules keep their state and
+// `last_evaluated_at` stops advancing, so a non-zero value means alerts are frozen and
+// someone must fix the filter.
+export const metricAlertGroupsSkipped = new metrics.Gauge({
+  name: 'hive_metric_alert_groups_skipped',
+  help: 'Metric alert query groups skipped because their saved filter could not be resolved, by reason',
+  labelNames: ['reason'],
+});

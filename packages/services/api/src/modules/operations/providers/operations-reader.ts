@@ -2,7 +2,12 @@ import { addMinutes, format } from 'date-fns';
 import { Injectable } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
-import { buildOperationsFilterSQLConditions, RawValue, SqlValue } from '@hive/clickhouse';
+import {
+  buildCoordinateScopeCondition,
+  buildOperationsFilterSQLConditions,
+  RawValue,
+  SqlValue,
+} from '@hive/clickhouse';
 import { traceFn } from '@hive/service-common';
 import type { DateRange } from '../../../shared/entities';
 import { batch, batchBy } from '../../../shared/helpers';
@@ -87,6 +92,14 @@ function ensureNumber(value: number | string): number {
   }
 
   return parseFloat(value);
+}
+
+/** The single-coordinate Insights pages scope exactly like a one-coordinate Fields filter. */
+function withCoordinate(
+  scopes: ReadonlyArray<readonly string[]> | undefined,
+  schemaCoordinate: string | undefined,
+): ReadonlyArray<readonly string[]> {
+  return schemaCoordinate ? [...(scopes ?? []), [schemaCoordinate]] : (scopes ?? []);
 }
 
 @Injectable({
@@ -866,6 +879,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     target: string | readonly string[];
@@ -875,6 +889,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   }): Promise<{
     total: number;
@@ -898,17 +913,10 @@ export class OperationsReader {
             clientVersionFilters,
             excludeOperations,
             excludeClientVersionFilters,
-            extra: schemaCoordinate
-              ? [
-                  sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
-                    {
-                      target,
-                      period,
-                      extra: [sql`coordinate = ${schemaCoordinate}`],
-                    },
-                  )})`,
-                ]
-              : [],
+            coordinateScope: {
+              table: aggregationTableName('coordinates'),
+              scopes: withCoordinate(coordinateScopes, schemaCoordinate),
+            },
           },
         )}`,
       period,
@@ -937,6 +945,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     target: string;
     period: DateRange;
@@ -945,6 +954,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   }): Promise<number> {
     return this.countRequests({
       target,
@@ -954,6 +964,7 @@ export class OperationsReader {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     }).then(r => r.notOk);
   }
 
@@ -965,6 +976,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     target: string;
     period: DateRange;
@@ -973,6 +985,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   }): Promise<number> {
     const query = this.pickAggregationByPeriod({
       period,
@@ -991,6 +1004,10 @@ export class OperationsReader {
             clientVersionFilters,
             excludeOperations,
             excludeClientVersionFilters,
+            coordinateScope: {
+              table: aggregationTableName('coordinates'),
+              scopes: coordinateScopes ?? [],
+            },
           },
         )}`,
       queryId: aggregation => `count_unique_documents_${aggregation}`,
@@ -1011,6 +1028,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     target: string;
@@ -1020,6 +1038,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -1049,17 +1068,10 @@ export class OperationsReader {
           clientVersionFilters,
           excludeOperations,
           excludeClientVersionFilters,
-          extra: schemaCoordinate
-            ? [
-                sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
-                  {
-                    target,
-                    period,
-                    extra: [sql`coordinate = ${schemaCoordinate}`],
-                  },
-                )})`,
-              ]
-            : [],
+          coordinateScope: {
+            table: aggregationTableName('coordinates'),
+            scopes: withCoordinate(coordinateScopes, schemaCoordinate),
+          },
         })} GROUP BY hash`,
       queryId: aggregation => `read_unique_documents_${aggregation}`,
     });
@@ -1095,17 +1107,10 @@ export class OperationsReader {
                       clientVersionFilters,
                       excludeOperations,
                       excludeClientVersionFilters,
-                      extra: schemaCoordinate
-                        ? [
-                            sql`hash IN (SELECT hash FROM ${sql.raw('coordinates_' + query.queryType)} ${this.createFilter(
-                              {
-                                target,
-                                period,
-                                extra: [sql`coordinate = ${schemaCoordinate}`],
-                              },
-                            )})`,
-                          ]
-                        : [],
+                      coordinateScope: {
+                        table: sql.raw('coordinates_' + query.queryType),
+                        scopes: withCoordinate(coordinateScopes, schemaCoordinate),
+                      },
                     })}
                     GROUP BY hash
                   )
@@ -1251,6 +1256,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     target: string;
@@ -1260,6 +1266,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -1293,17 +1300,10 @@ export class OperationsReader {
                 clientVersionFilters,
                 excludeOperations,
                 excludeClientVersionFilters,
-                extra: schemaCoordinate
-                  ? [
-                      sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
-                        {
-                          target,
-                          period,
-                          extra: [sql`coordinate = ${schemaCoordinate}`],
-                        },
-                      )})`,
-                    ]
-                  : [],
+                coordinateScope: {
+                  table: aggregationTableName('coordinates'),
+                  scopes: withCoordinate(coordinateScopes, schemaCoordinate),
+                },
               })}
               GROUP BY client_name, client_version
               ORDER BY total DESC
@@ -2177,6 +2177,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     target: string;
@@ -2187,6 +2188,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   }) {
     const results = await this.getDurationAndCountOverTime({
@@ -2198,6 +2200,7 @@ export class OperationsReader {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
       schemaCoordinate,
     });
 
@@ -2216,6 +2219,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     target: string;
     period: DateRange;
@@ -2225,6 +2229,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   }) {
     const result = await this.getDurationAndCountOverTime({
       target,
@@ -2235,6 +2240,7 @@ export class OperationsReader {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
 
     return result.map(row => ({
@@ -2252,6 +2258,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     target: string;
     period: DateRange;
@@ -2259,6 +2266,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     operations?: readonly string[];
     clients?: readonly string[];
   }): Promise<
@@ -2276,6 +2284,7 @@ export class OperationsReader {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   }
 
@@ -2287,6 +2296,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     target: string;
     period: DateRange;
@@ -2295,6 +2305,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   }): Promise<DurationMetrics> {
     const result = await this.clickHouse.query<{
       percentiles: [number, number, number, number];
@@ -2306,7 +2317,7 @@ export class OperationsReader {
             avgMerge(duration_avg) as average,
             quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
           FROM ${aggregationTableName('operations')}
-            ${this.createFilter({ target, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters })}
+            ${this.createFilter({ target, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters, coordinateScope: { table: aggregationTableName('coordinates'), scopes: coordinateScopes ?? [] } })}
         `,
         queryId: aggregation => `general_duration_percentiles_${aggregation}`,
         timeout: 15_000,
@@ -2325,11 +2336,13 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     target: string;
     period: DateRange;
     operations?: readonly string[];
@@ -2356,17 +2369,10 @@ export class OperationsReader {
                 clientVersionFilters,
                 excludeOperations,
                 excludeClientVersionFilters,
-                extra: schemaCoordinate
-                  ? [
-                      sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
-                        {
-                          target,
-                          period,
-                          extra: [sql`coordinate = ${schemaCoordinate}`],
-                        },
-                      )})`,
-                    ]
-                  : [],
+                coordinateScope: {
+                  table: aggregationTableName('coordinates'),
+                  scopes: withCoordinate(coordinateScopes, schemaCoordinate),
+                },
               })}
               GROUP BY hash
             `,
@@ -2624,6 +2630,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     target: string;
@@ -2634,6 +2641,7 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   }) {
     const interval = calculateTimeWindow({ period, resolution });
@@ -2679,17 +2687,10 @@ export class OperationsReader {
             clientVersionFilters,
             excludeOperations,
             excludeClientVersionFilters,
-            extra: schemaCoordinate
-              ? [
-                  sql`hash IN (SELECT hash FROM ${aggregationTableName('coordinates')} ${this.createFilter(
-                    {
-                      target,
-                      period: roundedPeriod,
-                      extra: [sql`coordinate = ${schemaCoordinate}`],
-                    },
-                  )})`,
-                ]
-              : [],
+            coordinateScope: {
+              table: aggregationTableName('coordinates'),
+              scopes: withCoordinate(coordinateScopes, schemaCoordinate),
+            },
           })}
           GROUP BY date
           ORDER BY date
@@ -3228,6 +3229,7 @@ export class OperationsReader {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScope,
     extra = [],
     skipWhere = false,
     namespace,
@@ -3239,12 +3241,65 @@ export class OperationsReader {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    /**
+     * Restricts to operations whose document uses any coordinate of each scope (scopes are ANDed).
+     * `table` is the `coordinates_*` tier matching the outer query.
+     */
+    coordinateScope?: { table: RawValue; scopes: ReadonlyArray<readonly string[]> };
     extra?: SqlValue[];
     skipWhere?: boolean;
     namespace?: string;
   }): SqlValue {
-    const where: SqlValue[] = [];
+    const where: SqlValue[] = this.scopeConditions({ target, period, namespace });
 
+    // Operation-hash + client(/version) conditions are built by the shared
+    // `@hive/clickhouse` helper so the API and the metric-alert worker filter
+    // identically. `target`/`period`/`extra`/PREWHERE remain createFilter's concern.
+    where.push(
+      ...buildOperationsFilterSQLConditions({
+        operations,
+        clients,
+        clientVersionFilters,
+        excludeOperations,
+        excludeClientVersionFilters,
+        namespace,
+      }),
+    );
+
+    if (coordinateScope) {
+      for (const coordinates of coordinateScope.scopes) {
+        where.push(
+          buildCoordinateScopeCondition({
+            coordinatesTable: coordinateScope.table,
+            scopeConditions: this.scopeConditions({ target, period }),
+            coordinates,
+            namespace,
+          }),
+        );
+      }
+    }
+
+    if (extra.length) {
+      where.push(...extra);
+    }
+
+    const statement = where.length
+      ? sql` ${sql.raw(skipWhere ? '' : 'PREWHERE')} ${sql.join(where, ' AND ')} `
+      : sql``;
+
+    return statement;
+  }
+
+  private scopeConditions({
+    target,
+    period,
+    namespace,
+  }: {
+    target?: string | readonly string[];
+    period?: DateRange;
+    namespace?: string;
+  }): SqlValue[] {
+    const where: SqlValue[] = [];
     const columnPrefix = sql.raw(namespace ? `${namespace}.` : '');
 
     if (target) {
@@ -3262,29 +3317,7 @@ export class OperationsReader {
       );
     }
 
-    // Operation-hash + client(/version) conditions are built by the shared
-    // `@hive/clickhouse` helper so the API and the metric-alert worker filter
-    // identically. `target`/`period`/`extra`/PREWHERE remain createFilter's concern.
-    where.push(
-      ...buildOperationsFilterSQLConditions({
-        operations,
-        clients,
-        clientVersionFilters,
-        excludeOperations,
-        excludeClientVersionFilters,
-        namespace,
-      }),
-    );
-
-    if (extra.length) {
-      where.push(...extra);
-    }
-
-    const statement = where.length
-      ? sql` ${sql.raw(skipWhere ? '' : 'PREWHERE')} ${sql.join(where, ' AND ')} `
-      : sql``;
-
-    return statement;
+    return where;
   }
 
   private makeId({

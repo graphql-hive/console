@@ -4,3 +4,4 @@ export {
   buildOperationsFilterSQLConditions,
   type OperationsFilterInput,
 } from './operations-filter';
+export { buildCoordinateScopeCondition, type CoordinateScopeInput } from './coordinate-scope';

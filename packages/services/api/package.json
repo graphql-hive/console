@@ -40,6 +40,7 @@
     "@hive/schema": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
+    "@hive/supergraph": "workspace:*",
     "@hive/usage-common": "workspace:*",
     "@hive/usage-ingestor": "workspace:*",
     "@hive/workflows": "workspace:*",

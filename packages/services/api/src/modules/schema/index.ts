@@ -15,6 +15,7 @@ import { SchemaPusher } from './providers/schema-pusher';
 import { SchemaRevisionStore } from './providers/schema-revision-store';
 import { SchemaVersionHelper } from './providers/schema-version-helper';
 import { SchemaVersionStore } from './providers/schema-version-store';
+import { SubgraphOwnership } from './providers/subgraph-ownership';
 import { resolvers } from './resolvers.generated';
 import typeDefs from './module.graphql';
 
@@ -33,6 +34,7 @@ export const schemaModule = createModule({
     SchemaHelper,
     RegistryChecks,
     SchemaVersionHelper,
+    SubgraphOwnership,
     Contracts,
     ContractsManager,
     SchemaCheckManager,
