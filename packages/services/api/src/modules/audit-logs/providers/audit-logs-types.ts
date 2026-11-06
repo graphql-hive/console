@@ -23,6 +23,30 @@ export const AuditLogModel = z.union([
     }),
   }),
   z.object({
+    eventType: z.literal('USER_SIGNED_IN'),
+    metadata: z.object({
+      method: z.enum(['emailpassword', 'github', 'google', 'okta', 'oidc']),
+      oidcIntegrationId: z.string().nullable(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('USER_SIGN_IN_FAILED'),
+    metadata: z.object({
+      method: z.enum(['emailpassword', 'github', 'google', 'okta', 'oidc']),
+      reason: z.enum([
+        'UNKNOWN_USER',
+        'INVALID_CREDENTIALS',
+        'SSO_REQUIRED',
+        'USER_NOT_PROVISIONED',
+        'USER_DEACTIVATED',
+        'IDENTITY_PROVIDER_ERROR',
+        'NOT_ALLOWED',
+      ]),
+      email: z.string().nullable(),
+      oidcIntegrationId: z.string().nullable(),
+    }),
+  }),
+  z.object({
     eventType: z.literal('USER_SETTINGS_UPDATED'),
     metadata: z.object({
       updatedFields: z.string(),
@@ -426,6 +450,8 @@ const AuditLogClickhouseObjectModel = z.object({
   userId: z.string(),
   userEmail: z.string(),
   accessTokenId: z.string(),
+  ipAddress: z.string(),
+  userAgent: z.string(),
   metadata: z.string(),
 });
 
