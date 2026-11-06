@@ -1,5 +1,13 @@
 # @graphql-hive/yoga
 
+## 0.50.0
+
+### Minor Changes
+
+- [#8811](https://github.com/graphql-hive/console/pull/8811)
+  [`3eeea54`](https://github.com/graphql-hive/console/commit/3eeea54fe3177fc8b92a6ac1077674fe6fec8ce2)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support `graphql-yoga@^6.0.1` as a peer dependency.
+
 ## 0.49.10
 
 ### Patch Changes
