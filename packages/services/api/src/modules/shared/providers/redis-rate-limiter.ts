@@ -1,10 +1,11 @@
 import { timingSafeEqual } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { invariant, type FastifyRequest } from '@hive/service-common';
+import { resolveClientIP } from '../../../shared/resolve-client-ip';
 import { sha256 } from '../../auth/lib/supertokens-at-home/crypto';
 import { Logger } from './logger';
 import { REDIS_INSTANCE, type Redis } from './redis';
-import { RateLimitConfig } from './tokens';
+import { ClientIPHeaderName, RateLimitConfig } from './tokens';
 
 @Injectable({
   scope: Scope.Singleton,
@@ -16,6 +17,7 @@ export class RedisRateLimiter {
   constructor(
     @Inject(REDIS_INSTANCE) private redis: Redis,
     private config: RateLimitConfig,
+    private clientIPHeaderName: ClientIPHeaderName,
     logger: Logger,
   ) {
     this.logger = logger.child({ module: 'RateLimiter' });
@@ -38,17 +40,6 @@ export class RedisRateLimiter {
     }
 
     return false;
-  }
-
-  private resolveIP(req: FastifyRequest, config: Exclude<RateLimitConfig['config'], null>) {
-    let ip = req.ip;
-
-    if (config.ipHeaderName && req.headers[config.ipHeaderName]) {
-      this.logger.debug('rate limit based on forwarded ip header %s', config.ipHeaderName);
-      ip = req.headers[config.ipHeaderName] as string;
-    }
-
-    return ip;
   }
 
   private async applyRateLimit(
@@ -90,7 +81,7 @@ export class RedisRateLimiter {
       return false;
     }
 
-    const ip = this.resolveIP(req, this.config.config);
+    const ip = resolveClientIP(req, this.clientIPHeaderName.headerName);
     return await this.applyRateLimit(ip, actionName, timeWindowSeconds, maxActionsPerTimeWindow);
   }
 
@@ -145,7 +136,7 @@ export class RedisRateLimiter {
     }
 
     invariant(req.routeOptions.url, 'URL must exist.');
-    const ip = this.resolveIP(req, this.config.config);
+    const ip = resolveClientIP(req, this.clientIPHeaderName.headerName);
 
     return await this.applyRateLimit(
       ip,

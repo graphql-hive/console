@@ -61,7 +61,7 @@ export type OrganizationAccessTokenActor = {
   organizationAccessToken: CachedAccessToken;
 };
 
-type Actor = UserActor | OrganizationAccessTokenActor;
+export type Actor = UserActor | OrganizationAccessTokenActor;
 
 /**
  * Abstract session class that is implemented by various ways to identify a session.

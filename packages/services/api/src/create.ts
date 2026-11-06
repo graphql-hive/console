@@ -64,7 +64,11 @@ import { RedisRateLimiter } from './modules/shared/providers/redis-rate-limiter'
 import { S3Config } from './modules/shared/providers/s3-config';
 import { S3Writer } from './modules/shared/providers/s3-writer';
 import { Storage } from './modules/shared/providers/storage';
-import { RateLimitConfig, WEB_APP_URL } from './modules/shared/providers/tokens';
+import {
+  ClientIPHeaderName,
+  RateLimitConfig,
+  WEB_APP_URL,
+} from './modules/shared/providers/tokens';
 import { supportModule } from './modules/support';
 import { provideSupportConfig, SupportConfig } from './modules/support/providers/config';
 import { targetModule } from './modules/target';
@@ -121,6 +125,7 @@ export function createRegistry({
   metricAlertRulesEnabled,
   prometheus,
   taskScheduler,
+  clientIPHeaderName,
 }: {
   logger: Logger;
   storage: Storage;
@@ -150,7 +155,6 @@ export function createRegistry({
   app: {
     baseUrl: string;
     rateLimit: null | {
-      ipHeaderName: string;
       bypassKey: string | null;
     };
   } | null;
@@ -164,6 +168,7 @@ export function createRegistry({
   metricAlertRulesEnabled: boolean;
   prometheus: null | Record<string, unknown>;
   taskScheduler: TaskScheduler;
+  clientIPHeaderName: string | null;
 }) {
   const s3Config = new S3Config([
     {
@@ -292,6 +297,11 @@ export function createRegistry({
     {
       provide: WEB_APP_URL,
       useValue: app?.baseUrl.replace(/\/$/, '') ?? 'http://localhost:3000',
+      scope: Scope.Singleton,
+    },
+    {
+      provide: ClientIPHeaderName,
+      useValue: new ClientIPHeaderName(clientIPHeaderName),
       scope: Scope.Singleton,
     },
     {
