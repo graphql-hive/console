@@ -1655,6 +1655,127 @@ function runArtifactsCDNTests(
     );
 
     test.concurrent(
+      'deleting the contract that fails composition advances the manifest to the latest version',
+      async ({ expect }) => {
+        const { createOrg, ownerToken } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, createCdnAccess, target } = await createProject(
+          ProjectType.Federation,
+        );
+        const writeToken = await createTargetAccessToken({});
+
+        const createContract = async (
+          contractName: string,
+          tagFilter: { includeTags: string[] } | { excludeTags: string[] },
+        ) => {
+          const result = await execute({
+            document: CreateContractMutation,
+            variables: {
+              input: {
+                target: { byId: target.id },
+                contractName,
+                removeUnreachableTypesFromPublicApiSchema: true,
+                ...tagFilter,
+              },
+            },
+            authToken: ownerToken,
+          }).then(r => r.expectNoGraphQLErrors());
+          invariant(result.createContract.ok, 'Contract must be created');
+          return result.createContract.ok.createdContract.id;
+        };
+
+        const blockingContractId = await createContract('blocking-contract', {
+          excludeTags: ['internal'],
+        });
+        await createContract('retained-contract', { includeTags: ['internal'] });
+
+        await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String
+                internal: String @tag(name: "internal")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        const firstVersion = await writeToken.fetchLatestValidSchema();
+        const firstVersionId = firstVersion.latestValidVersion?.id;
+        invariant(firstVersionId, 'Version must exist');
+
+        const cdnAccessResult = await createCdnAccess();
+        const endpointBaseUrl = await getBaseEndpoint();
+        const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
+        const fetchManifest = async () => {
+          const response = await fetch(`${endpointBaseUrl}${target.id}/manifest.json`, { headers });
+          expect(response.status).toBe(200);
+          return GraphManifestModel.parse(await response.json());
+        };
+
+        const initialManifest = await fetchManifest();
+
+        // blocking-contract fails to compose because every field is excluded,
+        // so the manifest remains at the previous coherent snapshot.
+        await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String @tag(name: "internal")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        const secondVersion = await writeToken.fetchLatestValidSchema();
+        const secondVersionId = secondVersion.latestValidVersion?.id;
+        invariant(secondVersionId, 'Version must exist');
+        expect(secondVersionId).not.toBe(firstVersionId);
+        expect(await fetchManifest()).toEqual(initialManifest);
+
+        await deleteContract({ contract: { byId: blockingContractId } }, ownerToken).then(r =>
+          r.expectNoGraphQLErrors(),
+        );
+
+        // With the blocking contract gone, the latest version is fully composable.
+        const manifestAfterDelete = await fetchManifest();
+        expect(manifestAfterDelete).toEqual({
+          graphs: {
+            default: {
+              id: initialManifest.graphs['default'].id,
+              currentVersion: {
+                id: secondVersionId,
+                artifactPath: `/artifacts/v1/${target.id}/version/${secondVersionId}`,
+              },
+            },
+            'retained-contract': {
+              id: initialManifest.graphs['retained-contract'].id,
+              currentVersion: {
+                id: expect.any(String),
+                artifactPath: `/artifacts/v1/${target.id}/version/${secondVersionId}/contracts/retained-contract`,
+              },
+            },
+          },
+        });
+        expect(manifestAfterDelete.graphs['retained-contract'].currentVersion.id).not.toBe(
+          initialManifest.graphs['retained-contract'].currentVersion.id,
+        );
+      },
+    );
+
+    test.concurrent(
       'deleting a contract succeeds for a backfilled graph whose latest version has no graph metadata',
       async ({ expect }) => {
         const seed = initSeed();
