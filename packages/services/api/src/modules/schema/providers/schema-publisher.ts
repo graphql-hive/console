@@ -3444,8 +3444,14 @@ export class SchemaPublisher {
           }
 
           const defaultGraph = await this.graphStore.getDefaultGraphForTargetId(graph.targetId);
+          // The manifest points to the latest version for which the default graph and all contracts compose.
+          // Removing this contract might unblock a newer version (if this contract was failing composition),
+          // so we need to find the latest version for which all remaining contracts compose.
           const schemaVersion =
-            await this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(defaultGraph);
+            await this.schemaVersions.getMaybeLatestFullyComposableSchemaVersionForDefaultGraph({
+              graph: defaultGraph,
+              excludeContractGraphIds: [graph.id],
+            });
 
           const contractSchemaVersions = schemaVersion
             ? (

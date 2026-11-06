@@ -873,6 +873,37 @@ export class SchemaVersionStore {
     return SchemaVersionModel.nullable().parse(version);
   }
 
+  async getMaybeLatestFullyComposableSchemaVersionForDefaultGraph(args: {
+    graph: Graph;
+    excludeContractGraphIds: Array<string>;
+  }): Promise<SchemaVersion | null> {
+    const version = await this.pg.maybeOne(
+      psql`/* getMaybeLatestFullyComposableSchemaVersionForDefaultGraph */
+        SELECT
+          ${schemaVersionSQLFields(psql`"sv".`)}
+        FROM
+          "schema_versions" AS "sv"
+        WHERE
+          "sv"."graph_id" = ${args.graph.id}
+          AND "sv"."is_composable" IS TRUE
+          AND NOT EXISTS (
+            SELECT 1
+            FROM "schema_versions" AS "csv"
+            WHERE
+              "csv"."source_schema_version_id" = "sv"."id"
+              AND "csv"."graph_id" IS NOT NULL
+              AND NOT ("csv"."graph_id" = ANY(${psql.array(args.excludeContractGraphIds, 'uuid')}))
+              AND "csv"."is_composable" IS FALSE
+          )
+        ORDER BY
+          "sv"."created_at" DESC
+        LIMIT 1
+      `,
+    );
+
+    return SchemaVersionModel.nullable().parse(version);
+  }
+
   async getLatestValidSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion> {
     const version = await this.getMaybeLatestValidSchemaVersionForGraph(graph);
     invariant(version, 'Expected version to exist.');
