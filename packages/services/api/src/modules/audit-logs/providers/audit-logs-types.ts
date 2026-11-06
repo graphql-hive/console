@@ -426,6 +426,8 @@ const AuditLogClickhouseObjectModel = z.object({
   userId: z.string(),
   userEmail: z.string(),
   accessTokenId: z.string(),
+  ipAddress: z.string(),
+  userAgent: z.string(),
   metadata: z.string(),
 });
 

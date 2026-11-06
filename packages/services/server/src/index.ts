@@ -278,6 +278,7 @@ export async function main() {
     const logger = createGraphQLLogger();
     const registry = createRegistry({
       release: env.release,
+      clientIPHeaderName: env.clientIPHeaderName,
       app: env.hiveServices.webApp
         ? {
             baseUrl: env.hiveServices.webApp.url,
@@ -656,6 +657,7 @@ export async function main() {
       new ClickHouse(env.clickhouse, new HttpClient(), logger),
       env.graphql.origin + '/scim/v2',
       env.organizationSCIM,
+      env.clientIPHeaderName,
     );
     await server.register(scimPlugin, { prefix: '/scim/v2' });
 

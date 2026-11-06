@@ -194,6 +194,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/020-usage-coordinate-counts'),
     import('./clickhouse-actions/021-usage-coordinate-errors'),
     import('./clickhouse-actions/022-outbound-deliveries'),
+    import('./clickhouse-actions/023-audit-logs-client'),
   ]);
 
   async function actionRunner(action: Action, index: number) {

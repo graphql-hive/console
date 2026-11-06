@@ -53,6 +53,7 @@ const EnvironmentModel = zod.object({
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
   ENCRYPTION_SECRET: emptyString(zod.string()),
+  CLIENT_IP_HEADER_NAME: emptyString(zod.string().optional()),
   WEB_APP_URL: zod.url(),
   GRAPHQL_PUBLIC_ORIGIN: zod
     .string({
@@ -547,6 +548,12 @@ const commerce = extractConfig(configs.commerce);
 const sentry = extractConfig(configs.sentry);
 const clickhouseOptions = extractConfig(configs.clickhouseOptions);
 const supertokens = extractConfig(configs.supertokens);
+
+if (supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME) {
+  console.warn(
+    '⚠️ SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME is deprecated and will be removed in a future release. Please use CLIENT_IP_HEADER_NAME instead.',
+  );
+}
 const authGithub = extractConfig(configs.authGithub);
 const authGoogle = extractConfig(configs.authGoogle);
 const authOkta = extractConfig(configs.authOkta);
@@ -601,6 +608,8 @@ export const env = {
         }
       : null,
   encryptionSecret: base.ENCRYPTION_SECRET,
+  clientIPHeaderName:
+    base.CLIENT_IP_HEADER_NAME ?? supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? null,
   tracing: {
     enabled: !!tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT || hive.HIVE_TRACING === '1',
     collectorEndpoint: tracing.OPENTELEMETRY_COLLECTOR_ENDPOINT,
@@ -682,7 +691,6 @@ export const env = {
       supertokens.SUPERTOKENS_RATE_LIMIT === '0'
         ? null
         : {
-            ipHeaderName: supertokens.SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME ?? 'CF-Connecting-IP',
             bypassKey: supertokens.SUPERTOKENS_RATE_LIMIT_BYPASS_KEY ?? null,
           },
   },
