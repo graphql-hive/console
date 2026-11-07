@@ -12,10 +12,21 @@ export const MAX_DELIVERY_LOG_LIMIT = 200;
 /** A channel is failing once this many attempts in a row, the most recent ones, have failed. */
 export const FAILURE_STREAK_LENGTH = 10;
 
-/** The GraphQL `DeliveryEvent` member for a stored event name. */
-export type DeliveryEventName = 'SCHEMA_CHANGE' | 'METRIC_ALERT' | 'CHANNEL_CONFIRMATION';
+/** The GraphQL `DeliveryEvent` members; the stored event name is the lowercase form. */
+const DELIVERY_EVENT_NAMES = [
+  'SCHEMA_CHANGE',
+  'METRIC_ALERT',
+  'CHANNEL_CONFIRMATION',
+  'ORGANIZATION_INVITATION',
+  'ORGANIZATION_OWNERSHIP_TRANSFER',
+  'AUDIT_LOG_EXPORT',
+  'USAGE_RATE_LIMIT_WARNING',
+  'USAGE_RATE_LIMIT_EXCEEDED',
+] as const;
+export type DeliveryEventName = (typeof DELIVERY_EVENT_NAMES)[number];
 export type DeliveryHealthStatus = 'UNKNOWN' | 'HEALTHY' | 'FAILING';
-export type DeliveryType = AlertChannel['type'];
+/** An alert channel type, or EMAIL for mail sent through the configured provider. */
+export type DeliveryType = AlertChannel['type'] | 'EMAIL';
 
 export interface DeliveryTotals {
   total: number;
@@ -41,7 +52,7 @@ export interface DeliveryHealth {
 export interface Delivery {
   timestamp: Date;
   event: DeliveryEventName;
-  /** Where it went: the alert channel id. */
+  /** Where it went: the alert channel id, or the recipient address as it was sent. */
   destination: string;
   ok: boolean;
   statusCode: number | null;
@@ -94,7 +105,7 @@ const LogRowModel = z.object({
   metadata: z.record(z.string(), z.string()),
 });
 
-const DeliveryEventModel = z.enum(['SCHEMA_CHANGE', 'METRIC_ALERT', 'CHANNEL_CONFIRMATION']);
+const DeliveryEventModel = z.enum(DELIVERY_EVENT_NAMES);
 
 export type HealthRow = z.infer<typeof HealthRowModel>;
 export type LogRow = z.infer<typeof LogRowModel>;
@@ -290,6 +301,62 @@ export class DeliveryReader {
     });
 
     return result.data.map(row => toDelivery(LogRowModel.parse(row)));
+  }
+
+  /**
+   * The most recent attempt for each of the given destinations, for one event, since a point in
+   * time: one query for a page of recipients. Addresses are matched case-insensitively, and the
+   * result is keyed by the lowercased destination.
+   */
+  async getLatestByDestination(input: {
+    organizationId: string;
+    deliveryType: DeliveryType;
+    event: Lowercase<DeliveryEventName>;
+    destinations: string[];
+    since: Date;
+  }): Promise<Map<string, Delivery>> {
+    const destinations = [...new Set(input.destinations.map(value => value.toLowerCase()))];
+    if (destinations.length === 0) {
+      return new Map();
+    }
+
+    this.logger.debug(
+      'Reading latest deliveries by destination (event=%s, destinations=%s)',
+      input.event,
+      destinations.length,
+    );
+    const result = await this.clickHouse.query<unknown>({
+      query: sql`
+        SELECT
+          toUnixTimestamp("timestamp") AS unix_timestamp
+          , "event"
+          , "destination"
+          , "ok"
+          , "status_code"
+          , "status_text"
+          , "duration_ms"
+          , "attempt"
+          , "max_attempts"
+          , "metadata"
+        FROM "outbound_deliveries"
+        WHERE
+          ${this.whereSelector({ organizationId: input.organizationId, deliveryType: input.deliveryType })}
+          AND lower("destination") IN (${sql.array(destinations, 'String')})
+          AND "event" = ${input.event}
+          AND "timestamp" >= toDateTime(${formatDateTime(input.since)}, 'UTC')
+        ORDER BY "timestamp" DESC
+        LIMIT 1 BY lower("destination")
+      `,
+      queryId: 'latest_deliveries_by_destination',
+      timeout: 10_000,
+    });
+
+    return new Map(
+      result.data.map(row => {
+        const delivery = toDelivery(LogRowModel.parse(row));
+        return [delivery.destination.toLowerCase(), delivery];
+      }),
+    );
   }
 }
 

@@ -9,7 +9,10 @@ vi.mock('../../operations/providers/clickhouse-client', () => ({
       sql: strings.join('?'),
       values,
     }),
-    { raw: (value: string) => ({ sql: value, values: [] }) },
+    {
+      raw: (value: string) => ({ sql: value, values: [] }),
+      array: (values: unknown[], type: string) => ({ sql: `{${type}}`, values }),
+    },
   ),
 }));
 
@@ -212,5 +215,36 @@ describe('DeliveryReader', () => {
     ).resolves.toEqual([
       expect.objectContaining({ event: 'CHANNEL_CONFIRMATION', ok: true, statusCode: 200 }),
     ]);
+  });
+});
+
+describe('getLatestByDestination', () => {
+  const row = {
+    unix_timestamp: 1_762_171_205,
+    event: 'organization_invitation',
+    destination: 'Alice@Example.com',
+    ok: 1,
+    status_code: 200,
+    status_text: 'OK',
+    duration_ms: 120,
+    attempt: 1,
+    max_attempts: 25,
+    metadata: { subject: 'You have been invited to join Acme', message_id: 'pm-1' },
+  };
+
+  test('keys the newest attempt by the lowercased address', async () => {
+    const { reader } = createReader([row, { ...row, destination: 'bob@example.com', ok: 0 }]);
+
+    const latest = await reader.getLatestByDestination({
+      organizationId: 'o1',
+      deliveryType: 'EMAIL',
+      event: 'organization_invitation',
+      destinations: ['alice@example.com', 'bob@example.com'],
+      since: new Date('2026-11-03T10:00:00Z'),
+    });
+
+    expect([...latest.keys()]).toEqual(['alice@example.com', 'bob@example.com']);
+    expect(latest.get('alice@example.com')).toEqual(toDelivery(row));
+    expect(latest.get('bob@example.com')?.ok).toBe(false);
   });
 });

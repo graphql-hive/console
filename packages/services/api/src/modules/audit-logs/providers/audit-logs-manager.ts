@@ -2,7 +2,7 @@ import { stringify } from 'csv-stringify';
 import { endOfDay, startOfDay } from 'date-fns';
 import { Injectable, Scope } from 'graphql-modules';
 import { formatDateTime } from '@hive/clickhouse';
-import { traceFn } from '@hive/service-common';
+import { getRequestId, traceFn } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { AuditLogExportTask } from '@hive/workflows/tasks/audit-log-export';
 import { captureException } from '@sentry/node';
@@ -227,14 +227,18 @@ export class AuditLogManager {
         organizationId,
       });
 
-      await this.taskScheduler.scheduleTask(AuditLogExportTask, {
-        email: email,
-        organizationName: organization.name,
-        organizationId: organization.id,
-        formattedStartDate: cleanStartDate,
-        formattedEndDate: cleanEndDate,
-        url: getPresignedUrl.url,
-      });
+      await this.taskScheduler.scheduleTask(
+        AuditLogExportTask,
+        {
+          email: email,
+          organizationName: organization.name,
+          organizationId: organization.id,
+          formattedStartDate: cleanStartDate,
+          formattedEndDate: cleanEndDate,
+          url: getPresignedUrl.url,
+        },
+        { requestId: getRequestId() },
+      );
 
       return {
         ok: {
