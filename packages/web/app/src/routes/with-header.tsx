@@ -6,7 +6,7 @@ import { UserMenu } from '@/components/ui/user-menu';
 import { loadQuery } from '@/lib/route-utils';
 import { createRoute, Outlet, useMatch } from '@tanstack/react-router';
 import { authenticatedRoute } from './authenticated';
-import * as styles from './with-header.css';
+import { withHeaderStyles } from './with-header.css';
 
 // The viewer is revalidated at most this often.
 const VIEWER_MAX_AGE_MS = 60_000;
@@ -34,8 +34,8 @@ export const withHeaderRoute = createRoute({
     return (
       <>
         <Header>
-          <div className={styles.withHeaderRouteDiv}>
-            <HiveLink className={styles.withHeaderRouteHiveLink} />
+          <div className={withHeaderStyles.brand}>
+            <HiveLink className={withHeaderStyles.logo} />
             <ScopeSelector />
           </div>
           <UserMenu withOrganization={!interstitial} />

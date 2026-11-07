@@ -1,6 +1,6 @@
 import { GlobeIcon } from 'lucide-react';
 import { Editor, LaboratoryPlugin } from '@graphql-hive/laboratory';
-import * as styles from './target-env.css';
+import { targetEnvPluginStyles } from './target-env.css';
 
 export const TargetEnvPlugin = (props: {
   organizationSlug: string;
@@ -72,7 +72,7 @@ export const TargetEnvPlugin = (props: {
       {
         type: 'target-env',
         name: 'Target Environment Variables',
-        icon: <GlobeIcon className={styles.targetEnvPluginGlobeIcon} />,
+        icon: <GlobeIcon className={targetEnvPluginStyles.icon} />,
         component: (_tab, _laboratory, state, setState) => {
           return (
             <Editor

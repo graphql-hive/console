@@ -29,7 +29,7 @@ import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { useCollections } from './use-collections';
 import { useCurrentOperation } from './use-current-operation';
 import { useSyncOperationState } from './use-sync-operation-state';
-import * as styles from './use-operation-collections-plugin.css';
+import { operationCollectionsPluginStyles } from './use-operation-collections-plugin.css';
 
 // The accordion hands out no ref, so the operation opened from the URL is found by id instead.
 const targetRoute = getRouteApi(
@@ -303,11 +303,11 @@ export function Content() {
   const renderedCollections = collections.map(collection => ({
     value: collection.id,
     label: (
-      <span className={styles.contentSpan}>
+      <span className={operationCollectionsPluginStyles.collection}>
         {accordionValue.includes(collection.id) ? (
-          <FolderOpenIcon className={styles.contentFolderOpenIcon} />
+          <FolderOpenIcon className={operationCollectionsPluginStyles.icon} />
         ) : (
-          <FolderIcon className={styles.contentFolderIcon} />
+          <FolderIcon className={operationCollectionsPluginStyles.icon} />
         )}
         {collection.name}
       </span>
@@ -324,7 +324,7 @@ export function Content() {
             className="graphiql-toolbar-button"
             data-testid="collection-menu-trigger"
           >
-            <EllipsisIcon className={styles.contentEllipsisIcon} />
+            <EllipsisIcon className={operationCollectionsPluginStyles.icon} />
           </button>
         }
         sections={[
@@ -360,7 +360,7 @@ export function Content() {
       />
     ) : undefined,
     content: (
-      <div className={styles.contentDiv}>
+      <div className={operationCollectionsPluginStyles.operations}>
         {collection.operations.edges.length ? (
           collection.operations.edges.map(({ node }) => (
             <div key={node.id} className={shared.row.base}>
@@ -374,18 +374,17 @@ export function Content() {
                 search={{ operation: node.id }}
                 data-testid={`operation-${node.name}`}
                 className={cn(
-                  styles.contentLink,
-                  node.id === queryParamsOperationId && [
-                    styles.contentLink2,
-                    currentOperation &&
-                      node.id === currentOperation.id &&
-                      !isSame &&
-                      styles.contentLink3,
-                    'hive-badge-is-changed',
-                  ],
+                  operationCollectionsPluginStyles.operation({
+                    active: node.id === queryParamsOperationId,
+                    changed:
+                      node.id === queryParamsOperationId &&
+                      currentOperation?.id === node.id &&
+                      !isSame,
+                  }),
+                  node.id === queryParamsOperationId && 'hive-badge-is-changed',
                 )}
               >
-                <SquareTerminalIcon className={styles.contentSquareTerminalIcon} />
+                <SquareTerminalIcon className={operationCollectionsPluginStyles.icon} />
                 {node.name}
               </Link>
               <Menu
@@ -394,9 +393,12 @@ export function Content() {
                 trigger={
                   <button
                     type="button"
-                    className={cn(styles.contentButton, 'graphiql-toolbar-button')}
+                    className={cn(
+                      operationCollectionsPluginStyles.operationMenu,
+                      'graphiql-toolbar-button',
+                    )}
                   >
-                    <EllipsisIcon className={styles.contentEllipsisIcon2} />
+                    <EllipsisIcon className={operationCollectionsPluginStyles.icon} />
                   </button>
                 }
                 sections={[
@@ -433,7 +435,7 @@ export function Content() {
         ) : (
           <div className={shared.textCenter}>
             <Button variant="link" onClick={() => void addOperation(collection.id)}>
-              <PlusIcon className={styles.contentPlusIcon} /> Add Operation
+              <PlusIcon className={operationCollectionsPluginStyles.addIcon} /> Add Operation
             </Button>
           </div>
         )}
@@ -445,11 +447,11 @@ export function Content() {
 
   return (
     <>
-      <div className={styles.contentDiv4}>
+      <div className={operationCollectionsPluginStyles.header}>
         <div className="graphiql-doc-explorer-title">Operations</div>
         {target?.viewerCanModifyLaboratory && (
           // The flex item needs min-w-0 for the label inside to truncate; the button fills it.
-          <span className={styles.contentSpan2}>
+          <span className={operationCollectionsPluginStyles.headerTitle}>
             <Tooltip
               trigger={
                 <Button
@@ -463,8 +465,8 @@ export function Content() {
                     toggleCollectionModal();
                   }}
                 >
-                  <span className={styles.contentSpan3}>
-                    <PlusIcon className={styles.contentPlusIcon2} />
+                  <span className={operationCollectionsPluginStyles.newCollection}>
+                    <PlusIcon className={operationCollectionsPluginStyles.newCollectionIcon} />
                     <span className={shared.truncate}>New collection</span>
                   </span>
                 </Button>
@@ -475,7 +477,11 @@ export function Content() {
         )}
       </div>
       {loading ? (
-        <div role="status" aria-label="Loading collections" className={styles.contentDiv5}>
+        <div
+          role="status"
+          aria-label="Loading collections"
+          className={operationCollectionsPluginStyles.skeleton}
+        >
           <span className={shared.srOnly}>Loading collections</span>
           {[0, 1, 2].map(index => (
             <Skeleton key={index} variants={{ width: 'full' }} />
@@ -492,12 +498,14 @@ export function Content() {
           attrs={{ id: COLLECTIONS_ID }}
         />
       ) : (
-        <div className={styles.contentDiv6}>
-          <div className={styles.contentDiv7}>
+        <div className={operationCollectionsPluginStyles.empty}>
+          <div className={operationCollectionsPluginStyles.emptyBody}>
             <BookmarkIcon size={30} />
-            <div className={styles.contentDiv8}>There are no collections available.</div>
+            <div className={operationCollectionsPluginStyles.emptyText}>
+              There are no collections available.
+            </div>
             {canEdit && (
-              <div className={styles.contentDiv9}>
+              <div className={operationCollectionsPluginStyles.emptyAction}>
                 <Button
                   onClick={() => {
                     if (collectionId) {

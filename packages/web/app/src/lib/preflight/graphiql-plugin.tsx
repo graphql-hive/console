@@ -32,7 +32,7 @@ import { Kit } from '../kit';
 import { cn } from '../utils';
 import labApiDefinitionRaw from './lab-api-declaration?raw';
 import { IFrameEvents, LogMessage } from './shared-types';
-import * as styles from './graphiql-plugin.css';
+import { graphiqlPluginStyles } from './graphiql-plugin.css';
 
 export type PreflightResultData = Omit<IFrameEvents.Outgoing.EventData.Result, 'type' | 'runId'>;
 
@@ -60,13 +60,15 @@ const targetRoute = getRouteApi(
 );
 
 const classes = {
-  monaco: clsx(styles.class2),
-  monacoMini: clsx(styles.class3),
-  icon: clsx(styles.class4),
+  monaco: graphiqlPluginStyles.monaco,
+  monacoMini: graphiqlPluginStyles.monacoMini,
+  icon: graphiqlPluginStyles.pluginIcon,
 };
 
 function EditorTitle(props: { children: ReactNode; className?: string }) {
-  return <div className={cn(styles.editorTitleDiv, props.className)}>{props.children}</div>;
+  return (
+    <div className={cn(graphiqlPluginStyles.editorTitle, props.className)}>{props.children}</div>
+  );
 }
 
 const sharedMonacoProps = {
@@ -542,12 +544,12 @@ function PreflightContent() {
           onEnvValueChange={preflight.setEnvironmentVariables}
         />
       )}
-      <div className={clsx(styles.preflightContentDiv, 'graphiql-doc-explorer-title')}>
+      <div className={clsx(graphiqlPluginStyles.header, 'graphiql-doc-explorer-title')}>
         Preflight Script
         {preflight.viewerCanModifyPreflightScript && (
           <Button variant="link" onClick={toggleShowModal} data-testid="preflight-modal-button">
-            <span className={styles.preflightContentSpan}>
-              <PencilIcon className={styles.preflightContentPencilIcon} />
+            <span className={graphiqlPluginStyles.iconLabel}>
+              <PencilIcon className={graphiqlPluginStyles.icon} />
               Edit
             </span>
           </Button>
@@ -558,26 +560,28 @@ function PreflightContent() {
         handle authentication.
       </Subtitle>
 
-      <div className={styles.preflightContentDiv2}>
+      <div className={graphiqlPluginStyles.toggle}>
         <Button
           size="compact"
           variant="outline"
           onClick={() => preflight.setIsEnabled(!preflight.isEnabled)}
           data-testid="toggle-preflight"
         >
-          <PowerIcon className={styles.preflightContentPowerIcon} />
+          <PowerIcon className={graphiqlPluginStyles.toggleIcon} />
           {preflight.isEnabled ? 'On' : 'Off'}
         </Button>
       </div>
 
-      <EditorTitle className={styles.preflightContentEditorTitle}>
+      <EditorTitle className={graphiqlPluginStyles.previewTitle}>
         Script <Badge content="JavaScript" variants={{ variant: 'outline' }} />
       </EditorTitle>
-      <Subtitle className={styles.preflightContentSubtitle}>Read-only view of the script</Subtitle>
+      <Subtitle className={graphiqlPluginStyles.previewSubtitle}>
+        Read-only view of the script
+      </Subtitle>
       <div className={shared.relative}>
         {preflight.isEnabled ? null : (
-          <div className={styles.preflightContentDiv4}>
-            <div className={styles.preflightContentDiv5}>
+          <div className={graphiqlPluginStyles.previewNotice}>
+            <div className={graphiqlPluginStyles.previewNoticeText}>
               Preflight Script is disabled and will not be executed
             </div>
           </div>
@@ -587,7 +591,7 @@ function PreflightContent() {
           value={preflight.content}
           {...monacoProps.script}
           theme={monacoTheme}
-          className={cn(classes.monacoMini, styles.preflightContentMonacoEditor)}
+          className={cn(classes.monacoMini, graphiqlPluginStyles.previewEditor)}
           wrapperProps={{
             ['data-testid']: 'preflight-editor-mini',
           }}
@@ -603,10 +607,10 @@ function PreflightContent() {
         />
       </div>
 
-      <EditorTitle className={styles.preflightContentEditorTitle2}>
+      <EditorTitle className={graphiqlPluginStyles.envTitle}>
         Environment variables <Badge content="JSON" variants={{ variant: 'outline' }} />
       </EditorTitle>
-      <Subtitle className={styles.preflightContentSubtitle2}>
+      <Subtitle className={graphiqlPluginStyles.envSubtitle}>
         Declare variables that can be used by both the script and headers.
       </Subtitle>
       <MonacoEditor
@@ -728,8 +732,8 @@ function PreflightModal({
       }
       footer={
         <>
-          <p className={styles.preflightModalP}>
-            <InfoIcon className={styles.preflightModalInfoIcon} />
+          <p className={graphiqlPluginStyles.modalNote}>
+            <InfoIcon className={graphiqlPluginStyles.icon} />
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
           </p>
@@ -752,10 +756,10 @@ function PreflightModal({
         </>
       }
     >
-      <div className={styles.preflightModalDiv}>
-        <div className={styles.preflightModalDiv2}>
-          <div className={styles.preflightModalDiv3}>
-            <EditorTitle className={styles.preflightModalEditorTitle}>
+      <div className={graphiqlPluginStyles.modal}>
+        <div className={graphiqlPluginStyles.modalEditor}>
+          <div className={graphiqlPluginStyles.modalPaneHeader}>
+            <EditorTitle className={graphiqlPluginStyles.modalPaneTitle}>
               Script Editor
               <Badge content="JavaScript" variants={{ variant: 'outline' }} />
             </EditorTitle>
@@ -772,16 +776,16 @@ function PreflightModal({
               }}
               data-testid="run-preflight"
             >
-              <span className={styles.preflightModalSpan}>
+              <span className={graphiqlPluginStyles.iconLabel}>
                 {state === PreflightWorkerState.running && (
                   <>
-                    <XIcon className={styles.preflightModalXIcon} />
+                    <XIcon className={graphiqlPluginStyles.icon} />
                     Stop Script
                   </>
                 )}
                 {state === PreflightWorkerState.ready && (
                   <>
-                    <PlayIcon className={styles.preflightModalPlayIcon} />
+                    <PlayIcon className={graphiqlPluginStyles.icon} />
                     Run Script
                   </>
                 )}
@@ -803,30 +807,30 @@ function PreflightModal({
             }}
           />
         </div>
-        <div className={styles.preflightModalDiv4}>
-          <div className={styles.preflightModalDiv3}>
+        <div className={graphiqlPluginStyles.modalSide}>
+          <div className={graphiqlPluginStyles.modalPaneHeader}>
             <EditorTitle>Console Output</EditorTitle>
             <Button
               variant="link"
               onClick={clearLogs}
               disabled={state === PreflightWorkerState.running}
             >
-              <span className={styles.preflightModalSpan2}>
-                <XIcon className={styles.preflightModalXIcon2} />
+              <span className={graphiqlPluginStyles.iconLabel}>
+                <XIcon className={graphiqlPluginStyles.clearIcon} />
                 Clear Output
               </span>
             </Button>
           </div>
-          <div className={styles.preflightModalDiv5}>
+          <div className={graphiqlPluginStyles.console}>
             <ScrollArea fill ref={consoleRef} data-testid="console-output">
-              <section className={styles.preflightModalSection}>
+              <section className={graphiqlPluginStyles.consoleLog}>
                 {logs.map((log, index) => (
                   <LogLine key={index} log={log} />
                 ))}
               </section>
             </ScrollArea>
           </div>
-          <EditorTitle className={styles.preflightModalEditorTitle2}>
+          <EditorTitle className={graphiqlPluginStyles.envHeader}>
             Environment Variables
             <Badge content="JSON" variants={{ variant: 'outline' }} />
           </EditorTitle>
@@ -851,15 +855,15 @@ function PreflightModal({
 }
 
 const LOG_COLORS = {
-  error: styles.logColorsError,
-  info: styles.logColorsInfo,
-  warn: styles.logColorsWarn,
-  log: styles.logColorsLog,
+  error: graphiqlPluginStyles.logLevel.error,
+  info: graphiqlPluginStyles.logLevel.info,
+  warn: graphiqlPluginStyles.logLevel.warn,
+  log: graphiqlPluginStyles.logLevel.log,
 };
 
 export function LogLine({ log }: { log: LogRecord }) {
   if ('type' in log && log.type === 'separator') {
-    return <hr className={styles.logLineHr} />;
+    return <hr className={graphiqlPluginStyles.logSeparator} />;
   }
 
   if ('level' in log && log.level in LOG_COLORS) {
