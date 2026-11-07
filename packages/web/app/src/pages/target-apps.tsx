@@ -14,7 +14,7 @@ import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { getRouteApi } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './target-apps.css';
+import { targetAppsStyles } from './target-apps.css';
 
 const appsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/apps',
@@ -254,7 +254,7 @@ function TargetAppsView(props: { sorting: SortState }) {
   ];
 
   return (
-    <div className={styles.targetAppsViewDiv}>
+    <div className={targetAppsStyles.root}>
       <PageLead
         title="App Deployments"
         description="Group your GraphQL operations by app version for app version statistics and persisted operations."
@@ -263,7 +263,7 @@ function TargetAppsView(props: { sorting: SortState }) {
           text: 'Learn more about App Deployments',
         }}
       />
-      <div className={styles.targetAppsViewDiv2} />
+      <div className={targetAppsStyles.table} />
       {settled && !data.data?.target?.latestSchemaVersion ? (
         <NoSchemaVersion
           recommendedAction="publish"

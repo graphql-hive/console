@@ -21,7 +21,7 @@ import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import * as styles from './target-explorer.css';
+import { targetExplorerStyles } from './target-explorer.css';
 
 const ExplorerPage_SchemaExplorerFragment = graphql(`
   fragment ExplorerPage_SchemaExplorerFragment on SchemaExplorer {
@@ -188,8 +188,8 @@ function ExplorerPageContent() {
           {latestValidSchemaVersion?.explorer && latestSchemaVersion ? (
             <>
               {latestSchemaVersion.id !== latestValidSchemaVersion.id && (
-                <Alert className={styles.explorerPageContentAlert}>
-                  <AlertCircleIcon className={styles.explorerPageContentAlertCircleIcon} />
+                <Alert className={targetExplorerStyles.alert}>
+                  <AlertCircleIcon className={targetExplorerStyles.alertIcon} />
                   <AlertTitle>Outdated Schema</AlertTitle>
                   <AlertDescription>
                     The latest schema version is{' '}

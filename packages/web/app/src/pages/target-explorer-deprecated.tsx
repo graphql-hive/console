@@ -20,16 +20,14 @@ import { NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
-import { focusRingQuiet } from '@/components/ui/primitives/shared-styles';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
-import * as styles from './target-explorer-deprecated.css';
+import { targetExplorerDeprecatedStyles } from './target-explorer-deprecated.css';
 
 const DeprecatedSchemaView_DeprecatedSchemaExplorerFragment = graphql(`
   fragment DeprecatedSchemaView_DeprecatedSchemaExplorerFragment on DeprecatedSchemaExplorer {
@@ -107,12 +105,12 @@ function InternalDeprecatedSchemaView(props: {
 
   if (types.length === 0) {
     return (
-      <div className={styles.internalDeprecatedSchemaViewDiv}>
-        <div className={styles.internalDeprecatedSchemaViewDiv2}>
-          <PartyPopperIcon className={styles.internalDeprecatedSchemaViewPartyPopperIcon} />
+      <div className={targetExplorerDeprecatedStyles.empty}>
+        <div className={targetExplorerDeprecatedStyles.emptyBody}>
+          <PartyPopperIcon className={targetExplorerDeprecatedStyles.emptyIcon} />
 
-          <h3 className={styles.internalDeprecatedSchemaViewH3}>No deprecations found</h3>
-          <p className={styles.internalDeprecatedSchemaViewP}>
+          <h3 className={targetExplorerDeprecatedStyles.emptyTitle}>No deprecations found</h3>
+          <p className={targetExplorerDeprecatedStyles.emptyText}>
             It looks like you are maintaining your schema well, congratulations!
           </p>
         </div>
@@ -129,7 +127,7 @@ function InternalDeprecatedSchemaView(props: {
   }
 
   return (
-    <div className={styles.internalDeprecatedSchemaViewDiv3}>
+    <div className={targetExplorerDeprecatedStyles.sections}>
       <div>
         <>
           {letters.map(letter => (
@@ -139,13 +137,9 @@ function InternalDeprecatedSchemaView(props: {
                 <button
                   type="button"
                   onClick={() => setSelectedLetter(letter)}
-                  className={cn(
-                    styles.internalDeprecatedSchemaViewButton,
-                    focusRingQuiet,
-                    letter === activeLetter
-                      ? styles.internalDeprecatedSchemaViewButton2
-                      : styles.internalDeprecatedSchemaViewButton3,
-                  )}
+                  className={targetExplorerDeprecatedStyles.letter({
+                    active: letter === activeLetter,
+                  })}
                 >
                   {letter}
                 </button>
@@ -268,10 +262,10 @@ function DeprecatedSchemaExplorer() {
           {latestValidSchemaVersion?.deprecatedSchema && latestSchemaVersion ? (
             <>
               {latestSchemaVersion.id !== latestValidSchemaVersion.id && (
-                <Alert className={styles.deprecatedSchemaExplorerAlert}>
-                  <AlertCircleIcon className={styles.deprecatedSchemaExplorerAlertCircleIcon} />
+                <Alert className={targetExplorerDeprecatedStyles.alert}>
+                  <AlertCircleIcon className={targetExplorerDeprecatedStyles.alertIcon} />
                   <AlertTitle>Outdated Schema</AlertTitle>
-                  <AlertDescription className={styles.deprecatedSchemaExplorerAlertDescription}>
+                  <AlertDescription className={targetExplorerDeprecatedStyles.alertDescription}>
                     The latest schema version is{' '}
                     <span className={shared.weight.bold}>not valid</span> , thus the explorer might
                     not be accurate as it is showing the{' '}

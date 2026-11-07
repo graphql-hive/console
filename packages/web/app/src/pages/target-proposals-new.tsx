@@ -40,7 +40,7 @@ import * as shared from '@/styles/shared.css';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './target-proposals-new.css';
+import { targetProposalsNewStyles } from './target-proposals-new.css';
 
 const ProposeChangesMutation = graphql(`
   mutation ProposalsNew_ProposeChanges($input: CreateSchemaProposalInput!) {
@@ -109,7 +109,7 @@ export function TargetProposalsNewPage() {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className={styles.targetProposalsNewPageLayoutContent}>
+      <LayoutContent className={targetProposalsNewStyles.page}>
         <SaveProposalProvider>
           <ProposalsNewContent />
         </SaveProposalProvider>
@@ -121,14 +121,14 @@ export function TargetProposalsNewPage() {
 function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   return (
-    <div className={styles.proposalsNewHeadingDiv}>
+    <div className={targetProposalsNewStyles.heading}>
       <div className={shared.fill}>
         <SubPageLayoutHeader
           sideContent={props.sideContent}
           subPageTitle={
             <span className={shared.row.base}>
               <Link
-                className={styles.proposalsNewHeadingLink}
+                className={targetProposalsNewStyles.headingLink}
                 to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                 params={{
                   organizationSlug,
@@ -138,7 +138,7 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
               >
                 Schema Proposals
               </Link>{' '}
-              <span className={styles.proposalsNewHeadingSpan2}>/</span> New
+              <span className={targetProposalsNewStyles.headingSeparator}>/</span> New
             </span>
           }
           description="Collaborate on schema changes to reduce friction during development."
@@ -537,7 +537,7 @@ function ProposalsNewContent(props: { page?: string }) {
     return (
       <>
         <ProposalsNewHeading />
-        <Callout type="error" className={styles.proposalsNewContentCallout}>
+        <Callout type="error" className={targetProposalsNewStyles.error}>
           <b>Oops, something went wrong.</b>
           <br />
           {query.error.message}
@@ -583,7 +583,7 @@ function ProposalsNewContent(props: { page?: string }) {
                 setDescription={setDescription}
                 error={
                   overviewError.length > 0 && (
-                    <Callout type="error" className={styles.proposalsNewContentCallout2}>
+                    <Callout type="error" className={targetProposalsNewStyles.tabError}>
                       {overviewError}
                     </Callout>
                   )
@@ -605,7 +605,7 @@ function ProposalsNewContent(props: { page?: string }) {
                 selectFragment={query.data?.target ?? undefined}
                 error={
                   editorError.length > 0 && (
-                    <Callout type="error" className={styles.proposalsNewContentCallout3}>
+                    <Callout type="error" className={targetProposalsNewStyles.tabError}>
                       {editorError}
                     </Callout>
                   )
@@ -631,9 +631,9 @@ function ChangesTab(props: {
     <>
       {props.diffs === null && <Spinner />}
       {props.diffs?.length === 0 && (
-        <div className={styles.changesTabDiv}>
-          <Title className={styles.changesTabTitle}>No changes</Title>
-          <Subtitle className={styles.changesTabSubtitle}>
+        <div className={targetProposalsNewStyles.noChanges}>
+          <Title className={targetProposalsNewStyles.noChangesText}>No changes</Title>
+          <Subtitle className={targetProposalsNewStyles.noChangesText}>
             Use the "Editor" to make modifications to your schema(s)
           </Subtitle>
         </div>
@@ -647,15 +647,15 @@ function DiffService(props: { title: string; changes: Change<any>[]; error?: str
   return (
     <div>
       <Title>{props.title}</Title>
-      <div className={styles.diffServiceDiv}>
+      <div className={targetProposalsNewStyles.service}>
         {props.error ? (
-          <div className={styles.diffServiceDiv2}>
-            <TriangleAlert className={styles.diffServiceTriangleAlert} />
+          <div className={targetProposalsNewStyles.serviceError}>
+            <TriangleAlert className={targetProposalsNewStyles.serviceErrorIcon} />
             {props.error}
           </div>
         ) : (
           props.changes.length === 0 && (
-            <div className={styles.diffServiceDiv3}>No changes to schema yet.</div>
+            <div className={targetProposalsNewStyles.serviceEmpty}>No changes to schema yet.</div>
           )
         )}
         {props.changes.map((c, changeIndex) => {
@@ -674,11 +674,11 @@ function OverviewTab(props: {
   error?: false | ReactElement;
 }) {
   return (
-    <div className={styles.overviewTabDiv}>
+    <div className={targetProposalsNewStyles.overview}>
       {props.error}
-      <div className={styles.overviewTabDiv2}>
+      <div className={targetProposalsNewStyles.overviewSection}>
         <Label htmlFor="proposal-title" label="Title (required)" />
-        <div className={styles.overviewTabDiv3}>
+        <div className={targetProposalsNewStyles.overviewField}>
           <Input
             aria-label="title"
             id="proposal-title"
@@ -689,9 +689,9 @@ function OverviewTab(props: {
           />
         </div>
       </div>
-      <div className={styles.overviewTabDiv4}>
+      <div className={targetProposalsNewStyles.overviewSection}>
         <Label htmlFor="proposal-description" label="Description" />
-        <div className={styles.overviewTabDiv5}>
+        <div className={targetProposalsNewStyles.overviewField}>
           <Textarea
             aria-label="description"
             id="proposal-description"

@@ -8,7 +8,7 @@ import { graphql } from '@/gql';
 import { useSession } from '@/lib/auth/use-session';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
-import * as styles from './auth-verify-email.css';
+import { authVerifyEmailStyles } from './auth-verify-email.css';
 
 const verifyEmailRoute = getRouteApi('/anonymous/auth/verify-email');
 
@@ -184,8 +184,8 @@ function AuthVerifyEmail() {
         description="This should only take a few seconds."
         content={
           <AuthCardStack>
-            <div className={styles.authVerifyEmailDiv}>
-              <div className={styles.authVerifyEmailDiv2} />
+            <div className={authVerifyEmailStyles.spinnerRow}>
+              <div className={authVerifyEmailStyles.spinner} />
             </div>
           </AuthCardStack>
         }

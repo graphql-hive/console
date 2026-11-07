@@ -5,7 +5,7 @@ import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
-import * as styles from './target-proposal-checks.css';
+import { targetProposalChecksStyles } from './target-proposal-checks.css';
 
 export const ProposalOverview_ChecksFragment = graphql(/* GraphQL */ `
   fragment ProposalOverview_ChecksFragment on SchemaCheckConnection {
@@ -37,11 +37,11 @@ export function TargetProposalChecksPage(props: {
 }) {
   const checks = useFragment(ProposalOverview_ChecksFragment, props.checks);
   return (
-    <div className={styles.targetProposalChecksPageDiv}>
+    <div className={targetProposalChecksStyles.list}>
       {checks?.edges?.map(({ node }, index) => {
         return (
           <CheckItem
-            className={index % 2 === 1 ? styles.targetProposalChecksPageCheckItem : ''}
+            className={index % 2 === 1 ? targetProposalChecksStyles.striped : ''}
             key={node.id}
             {...props}
             {...node}
@@ -76,23 +76,23 @@ function CheckItem(props: {
         targetSlug,
         schemaCheckId: props.id,
       }}
-      className={cn(styles.checkItemLink, props.className)}
+      className={cn(targetProposalChecksStyles.check, props.className)}
     >
-      <div className={styles.checkItemDiv}>
+      <div className={targetProposalChecksStyles.checkStatus}>
         <SchemaCheckIcon {...props} />
       </div>
-      <div className={styles.checkItemDiv2}>
-        <div className={styles.checkItemDiv3}>
-          <Box className={styles.checkItemBox} />
+      <div className={targetProposalChecksStyles.checkService}>
+        <div className={targetProposalChecksStyles.checkServiceName}>
+          <Box className={targetProposalChecksStyles.checkServiceIcon} />
           <div className={shared.truncate}>{props.serviceName || 'single schema'}</div>
         </div>
       </div>
-      <div className={styles.checkItemDiv5}>{props.commit}</div>
-      <div className={styles.checkItemDiv6}>
-        <CalendarIcon className={styles.checkItemCalendarIcon} />
+      <div className={targetProposalChecksStyles.checkCommit}>{props.commit}</div>
+      <div className={targetProposalChecksStyles.checkDate}>
+        <CalendarIcon className={targetProposalChecksStyles.checkDateIcon} />
         <TimeAgo date={props.createdAt} />
       </div>
-      <div className={styles.checkItemDiv7}>{props.author ?? ''}</div>
+      <div className={targetProposalChecksStyles.checkAuthor}>{props.author ?? ''}</div>
     </Link>
   );
 }
@@ -104,22 +104,22 @@ function SchemaCheckIcon(props: {
 }) {
   if (props.hasSchemaCompositionErrors || props.hasUnapprovedBreakingChanges) {
     return (
-      <div className={styles.schemaCheckIconDiv}>
-        <XIcon className={styles.schemaCheckIconXIcon} />{' '}
+      <div className={targetProposalChecksStyles.statusFailed}>
+        <XIcon className={targetProposalChecksStyles.statusIcon} />{' '}
         {props.hasSchemaCompositionErrors ? 'ERROR' : 'FAILED'}
       </div>
     );
   }
   if (props.hasSchemaChanges) {
     return (
-      <div className={styles.schemaCheckIconDiv2}>
-        <CheckIcon className={styles.schemaCheckIconCheckIcon} /> PASS
+      <div className={targetProposalChecksStyles.statusPassed}>
+        <CheckIcon className={targetProposalChecksStyles.statusIcon} /> PASS
       </div>
     );
   }
   return (
-    <div className={styles.schemaCheckIconDiv3}>
-      <Diamond className={styles.schemaCheckIconDiamond} /> NO CHANGE
+    <div className={targetProposalChecksStyles.statusUnchanged}>
+      <Diamond className={targetProposalChecksStyles.statusUnchangedIcon} /> NO CHANGE
     </div>
   );
 }

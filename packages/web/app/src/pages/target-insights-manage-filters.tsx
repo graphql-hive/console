@@ -31,7 +31,7 @@ import * as shared from '@/styles/shared.css';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
-import * as styles from './target-insights-manage-filters.css';
+import { targetInsightsManageFiltersStyles } from './target-insights-manage-filters.css';
 
 export const ManageFilters_SavedFiltersQuery = graphql(`
   query ManageFilters_SavedFiltersQuery(
@@ -247,7 +247,7 @@ function NameCell({
 function VisibilityCell({ filter }: { filter: SavedFilterNode }) {
   const shared = filter.visibility === SavedFilterVisibilityType.Shared;
   return (
-    <span className={styles.visibilityCellSpan}>
+    <span className={targetInsightsManageFiltersStyles.visibility}>
       <DataTableCell
         kind="status"
         label={shared ? 'Shared' : 'Private'}
@@ -571,7 +571,7 @@ function SavedFilterRowFilters({
   const loading = opsQuery.fetching;
 
   return (
-    <div className={styles.savedFilterRowFiltersDiv}>
+    <div className={targetInsightsManageFiltersStyles.filterDetails}>
       <div className={shared.row.wrap2}>
         <DateRangePicker
           size="compact"
@@ -616,13 +616,13 @@ function SavedFilterRowFilters({
         )}
         {loading && <Spinner />}
         {opsQuery.error && !loading && (
-          <span className={styles.savedFilterRowFiltersSpan}>
+          <span className={targetInsightsManageFiltersStyles.filterError}>
             {opsQuery.error.graphQLErrors[0]?.message ?? opsQuery.error.message}
           </span>
         )}
       </div>
       {filter.viewerCanUpdate && (
-        <div className={styles.savedFilterRowFiltersDiv3}>
+        <div className={targetInsightsManageFiltersStyles.filterActions}>
           <Button
             variant={hasChanges ? 'primary' : 'default'}
             onClick={handleSave}
@@ -750,7 +750,7 @@ function ManageFiltersContent() {
 
   if (!loading && filters.length === 0) {
     return (
-      <div className={styles.manageFiltersContentDiv}>
+      <div className={targetInsightsManageFiltersStyles.content}>
         <EmptyList
           title="No saved filters"
           description="You haven't created any saved filters yet. Create filters from the Insights page to save and share them."
@@ -761,7 +761,7 @@ function ManageFiltersContent() {
 
   return (
     <>
-      <div className={styles.manageFiltersContentDiv2}>
+      <div className={targetInsightsManageFiltersStyles.stats}>
         <StatCard
           variants={{ tone: 'muted' }}
           title="Total Filters"
@@ -779,7 +779,7 @@ function ManageFiltersContent() {
         />
       </div>
 
-      <div className={styles.manageFiltersContentDiv3}>
+      <div className={targetInsightsManageFiltersStyles.table}>
         <DataTable
           loading={loading}
           data={filters}
@@ -801,7 +801,7 @@ function ManageFiltersContent() {
 // Sized to the stat's line box, so the card keeps its height while it loads.
 function StatSkeleton() {
   return (
-    <span className={styles.statSkeletonSpan}>
+    <span className={targetInsightsManageFiltersStyles.statSkeleton}>
       <Skeleton variants={{ size: 'xl', width: 'xs' }} />
     </span>
   );
@@ -813,7 +813,7 @@ export function TargetInsightsManageFiltersPage(): ReactElement {
     <>
       <Meta title="Manage saved filters" />
       <LayoutContent>
-        <div className={styles.targetInsightsManageFiltersPageDiv}>
+        <div className={targetInsightsManageFiltersStyles.root}>
           <BackLink
             copy="Back to Insights"
             link={{

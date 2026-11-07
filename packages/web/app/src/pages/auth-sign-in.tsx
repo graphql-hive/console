@@ -24,7 +24,7 @@ import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
-import * as styles from './auth-sign-in.css';
+import { authSignInStyles } from './auth-sign-in.css';
 
 export function SignInButton(props: {
   children: React.ReactElement;
@@ -33,9 +33,9 @@ export function SignInButton(props: {
 }) {
   if (props.previousSignIn) {
     return (
-      <span className={styles.signInButtonSpan}>
+      <span className={authSignInStyles.pendingButton}>
         <Tooltip trigger={props.children} content="You signed in with it last time." side="top" />
-        <span aria-hidden className={styles.signInButtonSpan2} />
+        <span aria-hidden className={authSignInStyles.shimmer} />
       </span>
     );
   }
@@ -177,7 +177,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                         email: email || undefined,
                         redirectToPath: props.redirectToPath,
                       }}
-                      className={styles.authSignInPageLink}
+                      className={authSignInStyles.forgotPassword}
                     >
                       Forgot your password?
                     </Link>
@@ -203,7 +203,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
-                      <GoogleIcon className={styles.authSignInPageGoogleIcon} /> Login with Google
+                      <GoogleIcon className={authSignInStyles.providerIcon} /> Login with Google
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -215,7 +215,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
-                      <GitHubIcon className={styles.authSignInPageGitHubIcon} /> Login with Github
+                      <GitHubIcon className={authSignInStyles.providerIcon} /> Login with Github
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -228,7 +228,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
-                      <OktaIcon className={styles.authSignInPageOktaIcon} /> Login with Okta
+                      <OktaIcon className={authSignInStyles.providerIcon} /> Login with Okta
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -257,7 +257,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                         )
                       }
                     >
-                      <CircleUserRound className={styles.authSignInPageCircleUserRound} />
+                      <CircleUserRound className={authSignInStyles.providerIcon} />
                       {ssoOrganization
                         ? `Login with SSO (${ssoOrganization.slug})`
                         : 'Login with SSO'}
@@ -266,7 +266,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                 ) : null}
               </>
             </AuthCardStack>
-            <div className={styles.authSignInPageDiv}>
+            <div className={authSignInStyles.footer}>
               <Text arrangement="block" align="center" size="small" color="secondary">
                 Don't have an account?{' '}
                 <Link
@@ -275,7 +275,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                     redirectToPath: props.redirectToPath,
                   }}
                   data-auth-link="sign-up"
-                  className={styles.authSignInPageLink2}
+                  className={authSignInStyles.footerLink}
                 >
                   Sign up
                 </Link>

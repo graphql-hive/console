@@ -16,11 +16,10 @@ import { graphql, type DocumentType } from '@/gql';
 import { AppDeploymentStatus } from '@/gql/graphql';
 import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './target-app-version.css';
+import { targetAppVersionStyles } from './target-app-version.css';
 
 export const TargetAppsVersionQuery = graphql(`
   query TargetAppsVersionQuery(
@@ -194,7 +193,7 @@ function TargetAppVersionContent(props: {
             tone="muted"
             value={
               <Tooltip
-                trigger={<span className={styles.targetAppVersionContentSpan}>anonymous</span>}
+                trigger={<span className={targetAppVersionStyles.anonymous}>anonymous</span>}
                 content="The operation within the document has no name."
               />
             }
@@ -278,7 +277,7 @@ function TargetAppVersionContent(props: {
   return (
     <>
       <Meta title={title} />
-      <div className={styles.targetAppVersionContentDiv}>
+      <div className={targetAppVersionStyles.content}>
         <div>
           <BackLink
             copy="Back to App Deployments"
@@ -291,7 +290,7 @@ function TargetAppVersionContent(props: {
               to: '/$organizationSlug/$projectSlug/$targetSlug/apps',
             }}
           />
-          <div className={styles.targetAppVersionContentDiv2}>
+          <div className={targetAppVersionStyles.header}>
             <PageLead
               title={title}
               description="Group your GraphQL operations by app version for app version statistics and persisted operations."
@@ -306,10 +305,10 @@ function TargetAppVersionContent(props: {
           </div>
         </div>
         {coordinates ? (
-          <div className={styles.targetAppVersionContentDiv4}>
+          <div className={targetAppVersionStyles.filterNotice}>
             <span>
               Showing operations affected by{' '}
-              <code className={styles.targetAppVersionContentCode}>{coordinates}</code>
+              <code className={targetAppVersionStyles.filterCode}>{coordinates}</code>
             </span>
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/apps/$appName/$appVersion"
@@ -320,13 +319,13 @@ function TargetAppVersionContent(props: {
                 appName: props.appName,
                 appVersion: props.appVersion,
               }}
-              className={styles.targetAppVersionContentLink}
+              className={targetAppVersionStyles.filterLink}
             >
               Clear filter
             </Link>
           </div>
         ) : null}
-        <div className={styles.targetAppVersionContentDiv5} />
+        <div className={targetAppVersionStyles.table} />
         {!settled && !refreshing ? (
           <DataTable loading data={[]} columns={columns} getRowId={document => document.hash} />
         ) : settled && !documents?.edges.length ? (
@@ -347,18 +346,19 @@ function TargetAppVersionContent(props: {
           />
         ) : (
           <>
-            <div className={styles.targetAppVersionContentDiv6}>
-              <div className={styles.targetAppVersionContentDiv7}>
+            <div className={targetAppVersionStyles.summary}>
+              <div className={targetAppVersionStyles.summaryGrid}>
                 <div className={shared.shrinkable}>
                   <div className={shared.text.xs}>Status</div>
                   <div
-                    className={cn(
-                      styles.targetAppVersionContentDiv10,
-                      appDeployment?.status === AppDeploymentStatus.Retired &&
-                        styles.targetAppVersionContentDiv11,
-                      appDeployment?.status === AppDeploymentStatus.Pending &&
-                        styles.targetAppVersionContentDiv12,
-                    )}
+                    className={targetAppVersionStyles.status({
+                      state:
+                        appDeployment?.status === AppDeploymentStatus.Retired
+                          ? 'retired'
+                          : appDeployment?.status === AppDeploymentStatus.Pending
+                            ? 'pending'
+                            : undefined,
+                    })}
                   >
                     {appDeployment?.status === AppDeploymentStatus.Retired &&
                     appDeployment?.retiredAt ? (
@@ -372,13 +372,13 @@ function TargetAppVersionContent(props: {
                 </div>
                 <div className={shared.shrinkable}>
                   <div className={shared.text.xs}>Total Documents</div>
-                  <div className={cn(styles.targetAppVersionContentDiv15)}>
+                  <div className={targetAppVersionStyles.valueCentered}>
                     {appDeployment?.totalDocumentCount ?? '...'}
                   </div>
                 </div>
                 <div className={shared.shrinkable}>
                   <div className={shared.text.xs}>Created</div>
-                  <div className={styles.targetAppVersionContentDiv18}>
+                  <div className={targetAppVersionStyles.value}>
                     {appDeployment?.createdAt ? (
                       <DateWithTimeAgo
                         date={appDeployment.createdAt}
@@ -391,20 +391,20 @@ function TargetAppVersionContent(props: {
                 </div>
                 <div className={shared.shrinkable}>
                   <div className={shared.text.xs}>Activated</div>
-                  <div className={styles.targetAppVersionContentDiv21}>
+                  <div className={targetAppVersionStyles.value}>
                     {appDeployment?.activatedAt ? (
                       <DateWithTimeAgo
                         date={appDeployment.activatedAt}
                         dateFormatStr="MMM d, yyyy HH:mm:ss"
                       />
                     ) : (
-                      <span className={styles.targetAppVersionContentSpan2}>—</span>
+                      <span className={targetAppVersionStyles.valueMuted}>—</span>
                     )}
                   </div>
                 </div>
                 <div className={shared.shrinkable}>
                   <div className={shared.text.xs}>Last Used</div>
-                  <div className={styles.targetAppVersionContentDiv24}>
+                  <div className={targetAppVersionStyles.value}>
                     {data.fetching ? (
                       '...'
                     ) : appDeployment?.lastUsed ? (
@@ -413,7 +413,7 @@ function TargetAppVersionContent(props: {
                         dateFormatStr="MMM d, yyyy HH:mm:ss"
                       />
                     ) : (
-                      <span className={styles.targetAppVersionContentSpan3}>No Usage Data</span>
+                      <span className={targetAppVersionStyles.valueMuted}>No Usage Data</span>
                     )}
                   </div>
                 </div>
@@ -441,7 +441,7 @@ export function TargetAppVersionPage(props: {
 }) {
   return (
     <>
-      <LayoutContent className={styles.targetAppVersionPageLayoutContent}>
+      <LayoutContent className={targetAppVersionStyles.page}>
         <TargetAppVersionContent {...props} />
       </LayoutContent>
     </>

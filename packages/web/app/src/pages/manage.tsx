@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import * as shared from '@/styles/shared.css';
-import * as styles from './manage.css';
+import { manageStyles } from './manage.css';
 
 type FilterKey = keyof Filters;
 
@@ -45,10 +45,10 @@ export function ManagePage() {
   );
 
   return (
-    <div className={styles.managePageDiv}>
-      <h2 className={styles.managePageH2}>Hive Stats</h2>
+    <div className={manageStyles.root}>
+      <h2 className={manageStyles.title}>Hive Stats</h2>
       <div className={shared.stack.base}>
-        <div className={styles.managePageDiv3}>
+        <div className={manageStyles.filters}>
           <DateRangePicker
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
@@ -77,14 +77,14 @@ export function ManagePage() {
                 {tooltip ? (
                   <Tooltip
                     trigger={
-                      <label htmlFor={value} className={styles.managePageLabel}>
+                      <label htmlFor={value} className={manageStyles.option}>
                         {label}
                       </label>
                     }
                     content={tooltip}
                   />
                 ) : (
-                  <label htmlFor={value} className={styles.managePageLabel2}>
+                  <label htmlFor={value} className={manageStyles.option}>
                     {label}
                   </label>
                 )}

@@ -16,7 +16,7 @@ import { useClipboard } from '@/lib/hooks';
 import { useTimed } from '@/lib/hooks/use-timed';
 import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './native-composition-diff.css';
+import { nativeCompositionDiffStyles } from './native-composition-diff.css';
 
 type NativeCompositionDiffProps = {
   projectId: string;
@@ -107,25 +107,25 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
   )[nativeFederationCompatibility.status];
 
   return (
-    <div className={styles.nativeCompositionDiffDiv}>
-      <Heading className={styles.nativeCompositionDiffHeading}>Native Composition Report</Heading>
+    <div className={nativeCompositionDiffStyles.root}>
+      <Heading className={nativeCompositionDiffStyles.heading}>Native Composition Report</Heading>
 
-      <div className={styles.nativeCompositionDiffDiv2}>
-        <MetaCell label="Project" className={styles.nativeCompositionDiffMetaCell}>
+      <div className={nativeCompositionDiffStyles.meta}>
+        <MetaCell label="Project" className={nativeCompositionDiffStyles.metaProject}>
           {project.slug}
         </MetaCell>
-        <MetaCell label="Status" className={styles.nativeCompositionDiffMetaCell2}>
+        <MetaCell label="Status" className={nativeCompositionDiffStyles.metaStatus}>
           <StatusDot color={statusColor} />
 
-          <span className={styles.nativeCompositionDiffSpan}>
+          <span className={nativeCompositionDiffStyles.metaStatusText}>
             {nativeFederationCompatibility.status}
           </span>
         </MetaCell>
-        <div className={styles.nativeCompositionDiffDiv3} />
+        <div className={nativeCompositionDiffStyles.metaSpacer} />
       </div>
       <PageLayout>
-        <div className={styles.nativeCompositionDiffDiv4}>
-          <div className={styles.nativeCompositionDiffDiv5}>View Target</div>
+        <div className={nativeCompositionDiffStyles.metaAction}>
+          <div className={nativeCompositionDiffStyles.metaActionLabel}>View Target</div>
           <Tabs
             orientation="vertical"
             value={String(page)}
@@ -135,7 +135,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
               label: (
                 <span className={shared.row.base}>
                   <StatusDot color={result?.compatible ? 'success' : 'critical'} />
-                  <span className={styles.nativeCompositionDiffSpan3}>
+                  <span className={nativeCompositionDiffStyles.targetName}>
                     {result?.target?.slug ?? `Target ${index}`}
                   </span>
                 </span>
@@ -146,11 +146,11 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
         <PageLayoutContent>
           {report?.nativeCompositionResult?.errors?.edges?.length ? (
             <>
-              <div className={styles.nativeCompositionDiffDiv6}>Composition Errors</div>
-              <ul className={styles.nativeCompositionDiffUl}>
+              <div className={nativeCompositionDiffStyles.errorsTitle}>Composition Errors</div>
+              <ul className={nativeCompositionDiffStyles.errors}>
                 {report?.nativeCompositionResult?.errors?.edges?.map((err, idx) => (
-                  <li key={idx} className={styles.nativeCompositionDiffLi}>
-                    <span className={styles.nativeCompositionDiffSpan4}>
+                  <li key={idx} className={nativeCompositionDiffStyles.error}>
+                    <span className={nativeCompositionDiffStyles.errorIndex}>
                       {String(idx + 1).padStart(2, '0')}
                     </span>
 
@@ -161,16 +161,16 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
             </>
           ) : null}
 
-          <div className={styles.nativeCompositionDiffDiv7}>
-            <div className={styles.nativeCompositionDiffDiv8}>
-              <div className={styles.nativeCompositionDiffDiv9}>Schema Comparison</div>
+          <div className={nativeCompositionDiffStyles.comparison}>
+            <div className={nativeCompositionDiffStyles.diff}>
+              <div className={nativeCompositionDiffStyles.diffTitle}>Schema Comparison</div>
               {report?.currentSupergraphSdl === report?.nativeCompositionResult?.supergraphSdl ? (
                 <div className={shared.fullWidth}>
                   {report?.schemaVersion?.schemas.edges.length ? (
                     <>
                       The generated supergraph SDL from your existing composition setup and our{' '}
                       <a
-                        className={styles.nativeCompositionDiffA}
+                        className={nativeCompositionDiffStyles.diffLink}
                         href="https://github.com/the-guild-org/federation"
                       >
                         Open Source composition library
@@ -182,11 +182,11 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                   )}
                   {nativeFederationCompatibility.status ===
                   NativeFederationCompatibilityStatusType.Compatible ? (
-                    <div className={styles.nativeCompositionDiffDiv11}>
+                    <div className={nativeCompositionDiffStyles.diffIntro}>
                       Review other targets to identify the cause of incompatibility
                     </div>
                   ) : null}
-                  <div className={styles.nativeCompositionDiffDiv12}>
+                  <div className={nativeCompositionDiffStyles.diffNote}>
                     <Button
                       variant="link"
                       anchor={{
@@ -204,7 +204,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                   </span>{' '}
                   between your existing composition setup and native composition. Review these
                   changes carefully to determine how they could impact your gateway.
-                  <div className={styles.nativeCompositionDiffDiv14}>
+                  <div className={nativeCompositionDiffStyles.diffEditor}>
                     <DiffEditor
                       before={report?.currentSupergraphSdl ?? ''}
                       downloadFileName={`latest_composable_supergraph_${report.target?.id ?? 'target'}.graphql`}
@@ -214,14 +214,14 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                 </div>
               )}
             </div>
-            <div className={styles.nativeCompositionDiffDiv15}>
+            <div className={nativeCompositionDiffStyles.summary}>
               <Tooltip
                 // show only for disabled buttons
                 open={!report?.schemaVersion?.schemas.edges.length && isTooltipOpen}
                 onOpenChange={setIsTooltipOpen}
                 maxWidth="screen"
                 trigger={
-                  <span className={styles.nativeCompositionDiffSpan6}>
+                  <span className={nativeCompositionDiffStyles.summaryValue}>
                     <Button
                       width="full"
                       variant="outline"
@@ -239,17 +239,17 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                       }}
                     >
                       {copied ? (
-                        <CheckIcon className={styles.nativeCompositionDiffCheckIcon} />
+                        <CheckIcon className={nativeCompositionDiffStyles.copyIcon} />
                       ) : (
-                        <CopyIcon className={styles.nativeCompositionDiffCopyIcon} />
+                        <CopyIcon className={nativeCompositionDiffStyles.copyIcon} />
                       )}{' '}
                       Copy services JSON
                     </Button>
                   </span>
                 }
                 content={
-                  <span className={styles.nativeCompositionDiffSpan7}>
-                    <XIcon className={styles.nativeCompositionDiffXIcon} />{' '}
+                  <span className={nativeCompositionDiffStyles.summaryError}>
+                    <XIcon className={nativeCompositionDiffStyles.summaryErrorIcon} />{' '}
                     <span>
                       Cannot copy services JSON because there are no services published for this
                       target.
@@ -288,9 +288,9 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
 
 function MetaCell(props: { label: string; children: ReactNode; className?: string }): ReactElement {
   return (
-    <div className={cn(styles.metaCellDiv, props.className)}>
-      <div className={styles.metaCellDiv2}>{props.label}</div>
-      <div className={styles.metaCellDiv3}>{props.children}</div>
+    <div className={cn(nativeCompositionDiffStyles.cell, props.className)}>
+      <div className={nativeCompositionDiffStyles.cellLabel}>{props.label}</div>
+      <div className={nativeCompositionDiffStyles.cellValue}>{props.children}</div>
     </div>
   );
 }

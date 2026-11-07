@@ -32,7 +32,7 @@ import { useSlugs, useToggle } from '@/lib/hooks';
 import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Outlet, useRouter } from '@tanstack/react-router';
-import * as styles from './organization-settings.css';
+import { organizationSettingsStyles } from './organization-settings.css';
 
 const DeleteSlackIntegrationMutation = graphql(`
   mutation Integrations_DeleteSlackIntegration($input: OrganizationSelectorInput!) {
@@ -74,7 +74,7 @@ function GitHubIntegrationSection(props: {
   );
 
   return organization.hasGitHubIntegration ? (
-    <div className={styles.gitHubIntegrationSectionDiv}>
+    <div className={organizationSettingsStyles.integrationActions}>
       <Button
         variant="destructive"
         disabled={deleteGitHubMutation.fetching}
@@ -86,7 +86,7 @@ function GitHubIntegrationSection(props: {
           });
         }}
       >
-        <GitHubIcon className={styles.gitHubIntegrationSectionGitHubIcon} />
+        <GitHubIcon className={organizationSettingsStyles.integrationIcon} />
         Disconnect GitHub
       </Button>
       <Button
@@ -98,7 +98,7 @@ function GitHubIntegrationSection(props: {
     </div>
   ) : (
     <Button anchor={{ href: `${env.graphqlPublicOrigin}/api/github/connect/${organization.slug}` }}>
-      <GitHubIcon className={styles.gitHubIntegrationSectionGitHubIcon} />
+      <GitHubIcon className={organizationSettingsStyles.integrationIcon} />
       Connect GitHub
     </Button>
   );
@@ -133,12 +133,12 @@ function SlackIntegrationSection(props: {
         });
       }}
     >
-      <SlackIcon className={styles.slackIntegrationSectionSlackIcon} />
+      <SlackIcon className={organizationSettingsStyles.integrationIcon} />
       Disconnect Slack
     </Button>
   ) : (
     <Button anchor={{ href: `${env.graphqlPublicOrigin}/api/slack/connect/${organization.slug}` }}>
-      <SlackIcon className={styles.slackIntegrationSectionSlackIcon2} />
+      <SlackIcon className={organizationSettingsStyles.integrationIcon} />
       Connect Slack
     </Button>
   );
@@ -245,7 +245,7 @@ const OrganizationSettingsContent = (props: {
   );
 
   return (
-    <div className={styles.organizationSettingsContentDiv}>
+    <div className={organizationSettingsStyles.sections}>
       <ResourceDetails id={organization.id} label="Organization ID" />
       {organization.viewerCanModifySlug && (
         <>
@@ -479,7 +479,7 @@ function OrganizationPolicySettings(props: {
         currentState={currentOrganization.schemaPolicy}
       >
         {({ allowOverrides, setAllowOverrides }) => (
-          <div className={styles.organizationPolicySettingsDiv}>
+          <div className={organizationSettingsStyles.policyOverride}>
             <Checkbox
               id="allowOverrides"
               checked={allowOverrides}
@@ -487,7 +487,10 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={setAllowOverrides}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className={styles.organizationPolicySettingsLabel}>
+            <label
+              htmlFor="allowOverrides"
+              className={organizationSettingsStyles.policyOverrideLabel}
+            >
               Allow projects to override or disable rules
             </label>
           </div>
@@ -579,7 +582,7 @@ export function OrganizationSettingsPage() {
     <>
       <Meta title="Organization settings" />
       {currentOrganization ? (
-        <LayoutContent className={styles.organizationSettingsPageLayoutContent}>
+        <LayoutContent className={organizationSettingsStyles.root}>
           <PageLayout>
             <Navigation
               aria-label="Settings"
@@ -593,7 +596,7 @@ export function OrganizationSettingsPage() {
               }))}
             />
             <PageLayoutContent>
-              <div className={styles.organizationSettingsPageDiv}>
+              <div className={organizationSettingsStyles.sections}>
                 <Outlet />
               </div>
             </PageLayoutContent>

@@ -14,10 +14,9 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
-import * as styles from './target-proposals.css';
+import { targetProposalsStyles } from './target-proposals.css';
 
 const proposalsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/proposals',
@@ -31,7 +30,7 @@ export function TargetProposalsPage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className={styles.targetProposalsPageLayoutContent}>
+      <LayoutContent className={targetProposalsStyles.page}>
         <ProposalsContent {...props} />
       </LayoutContent>
     </>
@@ -53,14 +52,14 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
   };
   return (
     <>
-      <div className={styles.proposalsContentDiv}>
+      <div className={targetProposalsStyles.header}>
         <div className={shared.fill}>
           <SubPageLayoutHeader
             subPageTitle={<span className={shared.row.base}>Schema Proposals</span>}
             description="Collaborate on schema changes to reduce friction during development."
           />
         </div>
-        <div className={styles.proposalsContentDiv3}>
+        <div className={targetProposalsStyles.headerEnd}>
           <Button onClick={proposeChange}>Propose a change</Button>
         </div>
       </div>
@@ -120,7 +119,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
 
   return (
     <>
-      <div className={styles.targetProposalsListDiv}>
+      <div className={targetProposalsStyles.layout}>
         <StageFilter selectedStages={props.filterStages ?? []} />
         {hasFilterSelection ? (
           <Button variant="outline" onClick={reset}>
@@ -129,7 +128,7 @@ function TargetProposalsList(props: Parameters<typeof TargetProposalsPage>[0]) {
         ) : null}
       </div>
 
-      <div className={styles.targetProposalsListDiv2}>
+      <div className={targetProposalsStyles.panel}>
         <ProposalsList {...props} />
       </div>
     </>
@@ -166,7 +165,7 @@ const ProposalsList = (props: {
         <div role="status" aria-label="Loading" className={shared.stack.base}>
           <span className={shared.srOnly}>Loading</span>
           {[0, 1, 2, 3].map(index => (
-            <div key={index} className={styles.proposalsListDiv2}>
+            <div key={index} className={targetProposalsStyles.skeleton}>
               <Skeleton variants={{ size: 'lg', width: 'lg' }} />
               <Skeleton variants={{ size: 'sm', width: 'md' }} />
             </div>
@@ -174,7 +173,7 @@ const ProposalsList = (props: {
         </div>
       ) : null}
       {query.data?.schemaProposals?.edges?.length === 0 && (
-        <div className={styles.proposalsListDiv3}>
+        <div className={targetProposalsStyles.empty}>
           <div className={shared.fullWidth}>
             <Title>
               No proposals {hasFilter ? 'match your search criteria' : 'have been created yet'}
@@ -187,10 +186,9 @@ const ProposalsList = (props: {
         return (
           <div
             key={proposal.id}
-            className={cn(
-              styles.proposalsListDiv5,
-              props.selectedProposalId === proposal.id && styles.proposalsListDiv6,
-            )}
+            className={targetProposalsStyles.proposal({
+              selected: props.selectedProposalId === proposal.id,
+            })}
           >
             <Link
               key={proposal.id}
@@ -207,16 +205,16 @@ const ProposalsList = (props: {
               }}
               variant="secondary"
             >
-              <div className={styles.proposalsListDiv7}>
-                <div className={styles.proposalsListDiv8}>
-                  <div className={styles.proposalsListDiv9}>
-                    <span className={styles.proposalsListSpan2}>{proposal.title}</span>
-                    <span className={styles.proposalsListSpan3}>
+              <div className={targetProposalsStyles.proposalRow}>
+                <div className={targetProposalsStyles.proposalBody}>
+                  <div className={targetProposalsStyles.proposalTitleRow}>
+                    <span className={targetProposalsStyles.proposalTitle}>{proposal.title}</span>
+                    <span className={targetProposalsStyles.proposalStatus}>
                       <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
                     <span className={shared.fg.secondary}>{proposal.stage}</span>
                   </div>
-                  <div className={styles.proposalsListDiv10}>
+                  <div className={targetProposalsStyles.proposalMeta}>
                     <div className={shared.truncate}>
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>

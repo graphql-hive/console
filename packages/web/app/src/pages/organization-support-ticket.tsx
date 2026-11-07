@@ -18,11 +18,10 @@ import { QueryError } from '@/components/ui/query-error';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-import * as styles from './organization-support-ticket.css';
+import { organizationSupportTicketStyles } from './organization-support-ticket.css';
 
 const ReplyTicketForm_SupportTicketReplyMutation = graphql(`
   mutation ReplyTicketForm_SupportTicketReplyMutation($input: SupportTicketReplyInput!) {
@@ -101,21 +100,34 @@ function Comment({ node }: { node: FragmentType<typeof Comment_SupportTicketComm
   const isSupport = comment.fromSupport;
 
   return (
-    <div className={cn(styles.commentDiv, isSupport ? styles.commentDiv2 : styles.commentDiv3)}>
-      {isSupport ? null : <UserIcon className={styles.commentUserIcon} />}
+    <div
+      className={organizationSupportTicketStyles.comment({ side: isSupport ? 'support' : 'user' })}
+    >
+      {isSupport ? null : <UserIcon className={organizationSupportTicketStyles.commentUserIcon} />}
       <Tooltip
         trigger={
           <div
-            className={cn(styles.commentDiv4, isSupport ? styles.commentDiv5 : styles.commentDiv6)}
+            className={organizationSupportTicketStyles.commentBubble({
+              side: isSupport ? 'support' : 'user',
+            })}
           >
             {comment.body}
           </div>
         }
-        content={<TimeAgo date={comment.createdAt} className={styles.commentTimeAgo} />}
+        content={
+          <TimeAgo
+            date={comment.createdAt}
+            className={organizationSupportTicketStyles.commentTime}
+          />
+        }
         side="bottom"
       />
       {isSupport ? (
-        <img className={styles.commentImg} src="/just-logo.svg" alt="Hive Console logo" />
+        <img
+          className={organizationSupportTicketStyles.commentLogo}
+          src="/just-logo.svg"
+          alt="Hive Console logo"
+        />
       ) : null}
     </div>
   );
@@ -159,59 +171,62 @@ function SupportTicket(props: {
 
   return (
     <>
-      <div className={styles.supportTicketDiv}>
-        <div className={styles.supportTicketDiv2}>
-          <div className={styles.supportTicketDiv3}>
-            <Title className={styles.supportTicketTitle}>
+      <div className={organizationSupportTicketStyles.root}>
+        <div className={organizationSupportTicketStyles.layout}>
+          <div className={organizationSupportTicketStyles.thread}>
+            <Title className={organizationSupportTicketStyles.title}>
               <Link
                 to="/$organizationSlug/view/support"
                 params={{
                   organizationSlug: organization.slug,
                 }}
-                className={styles.supportTicketLink}
+                className={organizationSupportTicketStyles.titleLink}
               >
                 Tickets
               </Link>
-              <span className={styles.supportTicketSpan}>
-                <ChevronRightIcon className={styles.supportTicketChevronRightIcon} />
+              <span className={organizationSupportTicketStyles.titleSubject}>
+                <ChevronRightIcon className={organizationSupportTicketStyles.titleChevron} />
               </span>
               <span>{ticket.subject}</span>
             </Title>
             <Subtitle>Support ticket detailed view</Subtitle>
-            <div className={styles.supportTicketDiv4}>
+            <div className={organizationSupportTicketStyles.comments}>
               {comments.map(comment => (
                 <Comment key={comment.node.id} node={comment.node} />
               ))}
 
-              <div className={styles.supportTicketDiv5}>
+              <div className={organizationSupportTicketStyles.reply}>
                 <ReplyTicket ticketId={ticket.id} onSubmit={props.refetch} />
               </div>
             </div>
           </div>
-          <div className={styles.supportTicketDiv6}>
-            <div className={styles.supportTicketDiv7}>
-              <div className={styles.supportTicketDiv8}>
-                <div className={styles.supportTicketDiv9}>Support Ticket ID</div>
+          <div className={organizationSupportTicketStyles.details}>
+            <div className={organizationSupportTicketStyles.detailsList}>
+              <div className={organizationSupportTicketStyles.detail}>
+                <div className={organizationSupportTicketStyles.detailLabel}>Support Ticket ID</div>
                 <div className={shared.fg.secondary}>{ticket.id}</div>
               </div>
-              <div className={styles.supportTicketDiv11}>
-                <div className={styles.supportTicketDiv12}>Status</div>
+              <div className={organizationSupportTicketStyles.detail}>
+                <div className={organizationSupportTicketStyles.detailLabel}>Status</div>
                 <div className={shared.fg.secondary}>
                   {ticket.status}
                   <div className={shared.text.xs}>{statusDescription[ticket.status]}</div>
                 </div>
               </div>
-              <div className={styles.supportTicketDiv15}>
-                <div className={styles.supportTicketDiv16}>Priority</div>
+              <div className={organizationSupportTicketStyles.detail}>
+                <div className={organizationSupportTicketStyles.detailLabel}>Priority</div>
                 <div className={shared.fg.secondary}>
                   {ticket.priority}
                   <div className={shared.text.xs}>{priorityDescription[ticket.priority]}</div>
                 </div>
               </div>
-              <div className={styles.supportTicketDiv19}>
-                <div className={styles.supportTicketDiv20}>Last updated</div>
+              <div className={organizationSupportTicketStyles.detail}>
+                <div className={organizationSupportTicketStyles.detailLabel}>Last updated</div>
                 <div>
-                  <TimeAgo date={ticket.updatedAt} className={styles.supportTicketTimeAgo} />
+                  <TimeAgo
+                    date={ticket.updatedAt}
+                    className={organizationSupportTicketStyles.detailTime}
+                  />
                 </div>
               </div>
             </div>
@@ -264,12 +279,12 @@ function SupportTicketPageContent(props: { ticketId: string }) {
   const ticket = currentOrganization?.supportTicket;
 
   return (
-    <LayoutContent className={styles.supportTicketPageContentLayoutContent}>
+    <LayoutContent className={organizationSupportTicketStyles.page}>
       {currentOrganization ? (
         ticket ? (
           <SupportTicket organization={currentOrganization} ticket={ticket} refetch={refetch} />
         ) : (
-          <div className={styles.supportTicketPageContentDiv}>
+          <div className={organizationSupportTicketStyles.pending}>
             <NotFound
               title="Support ticket not found."
               description="The support ticket you are looking for does not exist or you do not have access to it."

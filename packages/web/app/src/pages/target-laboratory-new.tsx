@@ -35,7 +35,7 @@ import {
   LaboratoryTab,
 } from '@graphql-hive/laboratory';
 import { getRouteApi, Link as RouterLink, useRouter } from '@tanstack/react-router';
-import * as styles from './target-laboratory-new.css';
+import { targetLaboratoryNewStyles } from './target-laboratory-new.css';
 
 function useApiTabValueState(graphqlEndpointUrl: string | null) {
   const [state, setState] = useResetState<'mockApi' | 'linkedApi'>(() => {
@@ -758,12 +758,12 @@ function LaboratoryPageContent(props: {
         isOpen={isConnectLabModalOpen}
         isCDNEnabled={query.data ?? null}
       />
-      <div className={styles.laboratoryPageContentDiv}>
+      <div className={targetLaboratoryNewStyles.root}>
         <div className={shared.flex}>
           <div className={shared.fill}>
             <div className={shared.row.gap2}>
               <Title>Laboratory</Title>
-              <div className={styles.laboratoryPageContentDiv5} />
+              <div className={targetLaboratoryNewStyles.divider} />
               <ToggleGroup
                 aria-label="Laboratory version"
                 value={props.defaultLaboratoryTab}
@@ -777,7 +777,7 @@ function LaboratoryPageContent(props: {
                     label: (
                       <>
                         Hive Laboratory
-                        <span className={styles.laboratoryPageContentSpan} />
+                        <span className={targetLaboratoryNewStyles.unsavedDot} />
                       </>
                     ),
                   },
@@ -791,7 +791,7 @@ function LaboratoryPageContent(props: {
               <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
             </p>
           </div>
-          <div className={styles.laboratoryPageContentDiv6}>
+          <div className={targetLaboratoryNewStyles.toolbarEnd}>
             <div>
               {query.data && !query.data.target?.graphqlEndpointUrl ? (
                 <RouterLink
@@ -811,8 +811,8 @@ function LaboratoryPageContent(props: {
                 Mock Data Endpoint
               </Button>
             </div>
-            <div className={styles.laboratoryPageContentDiv7}>
-              <span className={styles.laboratoryPageContentSpan2}>Query</span>
+            <div className={targetLaboratoryNewStyles.queryLabelRow}>
+              <span className={targetLaboratoryNewStyles.queryLabel}>Query</span>
               <ToggleGroup
                 options={[
                   {
@@ -837,7 +837,7 @@ function LaboratoryPageContent(props: {
             </div>
           </div>
         </div>
-        <div className={styles.laboratoryPageContentDiv8}>
+        <div className={targetLaboratoryNewStyles.editor}>
           <Laboratory
             key={url}
             defaultEndpoint={url}
@@ -894,12 +894,12 @@ export function TargetLaboratoryPage(props: {
           </Button>
         }
       >
-        <p className={styles.targetLaboratoryPageP}>
+        <p className={targetLaboratoryNewStyles.note}>
           You always can switch to the old GraphiQL based Laboratory by using the tab switcher in
           the top left cornder.
         </p>
       </Dialog>
-      <LayoutContent className={styles.targetLaboratoryPageLayoutContent}>
+      <LayoutContent className={targetLaboratoryNewStyles.page}>
         <LaboratoryPageContent {...props} />
       </LayoutContent>
     </>

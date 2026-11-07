@@ -16,12 +16,11 @@ import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Collapsible } from '@/components/ui/primitives/collapsible/collapsible';
 import { Input } from '@/components/ui/primitives/input/input';
 import { Separator } from '@/components/ui/primitives/separator/separator';
-import { focusRing } from '@/components/ui/primitives/shared-styles';
 import { Slider } from '@/components/ui/primitives/slider/slider';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './target-traces-filter.css';
+import { targetTracesFilterStyles } from './target-traces-filter.css';
 
 export function FilterLocalSearch(props: { value: string; onChange(value: string): void }) {
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,14 +28,14 @@ export function FilterLocalSearch(props: { value: string; onChange(value: string
   }, []);
 
   return (
-    <div className={styles.filterLocalSearchDiv}>
+    <div className={targetTracesFilterStyles.search}>
       <Input type="text" placeholder="Search values" value={props.value} onChange={handleChange} />
     </div>
   );
 }
 
 /** A row in a filter group. */
-const filterRowClass = cn(styles.class2, focusRing);
+const filterRowClass = targetTracesFilterStyles.row;
 
 export const MultiInputFilter = memo(
   (props: {
@@ -75,7 +74,7 @@ export const MultiInputFilter = memo(
         onReset={() => props.onChange([])}
       >
         <form
-          className={styles.form}
+          className={targetTracesFilterStyles.form}
           onSubmit={e => {
             e.preventDefault();
             addTraceId();
@@ -177,7 +176,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
         <FilterLocalSearch value={searchPhrase} onChange={setSearchPhrase} />
       )}
       {filteredOptions.length === 0 ? (
-        <div className={styles.multiSelectFilterDiv}>No option available</div>
+        <div className={targetTracesFilterStyles.empty}>No option available</div>
       ) : (
         filteredOptions.map((option, index) => (
           <FilterOption
@@ -214,9 +213,9 @@ export function FilterOption(props: {
     <button
       type="button"
       onClick={props.onClick}
-      className={cn(filterRowClass, styles.filterOptionButton)}
+      className={cn(filterRowClass, targetTracesFilterStyles.option)}
     >
-      <div className={styles.filterOptionDiv}>
+      <div className={targetTracesFilterStyles.optionLabel}>
         <Checkbox visual checked={props.selected} size="sm" />
         {props.children}
       </div>
@@ -239,7 +238,7 @@ export function Filter(props: {
 }) {
   return (
     <Fragment key={props.name}>
-      <div className={styles.filterDiv}>
+      <div className={targetTracesFilterStyles.filter}>
         <Collapsible
           trigger={props.name}
           actions={
@@ -247,16 +246,16 @@ export function Filter(props: {
               <button
                 type="button"
                 aria-label={`Reset ${props.name} filter`}
-                className={cn(styles.filterButton, 'group', focusRing)}
+                className={targetTracesFilterStyles.count}
                 onClick={props.onReset}
               >
-                <CircleXIcon className={styles.filterCircleXIcon} />
-                <span className={styles.filterSpan}>{props.changes}</span>
+                <CircleXIcon className={targetTracesFilterStyles.countClearIcon} />
+                <span className={targetTracesFilterStyles.countValue}>{props.changes}</span>
               </button>
             ) : null
           }
         >
-          <div className={styles.filterDiv2}>{props.children}</div>
+          <div className={targetTracesFilterStyles.filterBody}>{props.children}</div>
         </Collapsible>
       </div>
       <Separator />
@@ -321,28 +320,28 @@ export const DurationFilter = memo(
         changes={values[0] === minValue && values[1] === maxValue ? 0 : 1}
         onReset={() => props.onChange(defaultValues)}
       >
-        <div className={styles.div}>
-          <div className={styles.div2}>
-            <div className={styles.div3}>
-              <label className={styles.label}>MIN</label>
+        <div className={targetTracesFilterStyles.range}>
+          <div className={targetTracesFilterStyles.rangeFields}>
+            <div className={targetTracesFilterStyles.rangeField}>
+              <label className={targetTracesFilterStyles.rangeLabel}>MIN</label>
               <Input
                 type="number"
                 value={values[0]}
                 onChange={handleMinInputChange}
                 size="compact"
                 mono
-                trailing={<span className={styles.span}>ms</span>}
+                trailing={<span className={targetTracesFilterStyles.rangeLabel}>ms</span>}
               />
             </div>
-            <div className={styles.div4}>
-              <label className={styles.label2}>MAX</label>
+            <div className={targetTracesFilterStyles.rangeField}>
+              <label className={targetTracesFilterStyles.rangeLabel}>MAX</label>
               <Input
                 type="number"
                 value={values[1]}
                 onChange={handleMaxInputChange}
                 size="compact"
                 mono
-                trailing={<span className={styles.span2}>ms</span>}
+                trailing={<span className={targetTracesFilterStyles.rangeLabel}>ms</span>}
               />
             </div>
           </div>

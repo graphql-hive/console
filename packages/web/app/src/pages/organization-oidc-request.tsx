@@ -5,7 +5,7 @@ import { Meta } from '@/components/ui/meta';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Card } from '@/components/ui/primitives/card/card';
 import { useRouter } from '@tanstack/react-router';
-import * as styles from './organization-oidc-request.css';
+import { organizationOidcRequestStyles } from './organization-oidc-request.css';
 
 export function OrganizationOIDCRequestPage(props: {
   oidcId: string;
@@ -18,13 +18,13 @@ export function OrganizationOIDCRequestPage(props: {
     <>
       <Meta title="Single sign-on" />
       <LayoutContent>
-        <div className={styles.organizationOIDCRequestPageDiv}>
+        <div className={organizationOidcRequestStyles.root}>
           <Card variants={{ onSurface: 'raised' }}>
-            <div className={styles.organizationOIDCRequestPageDiv2}>
-              <Lock className={styles.organizationOIDCRequestPageLock} />
-              <div className={styles.organizationOIDCRequestPageDiv3}>
+            <div className={organizationOidcRequestStyles.body}>
+              <Lock className={organizationOidcRequestStyles.icon} />
+              <div className={organizationOidcRequestStyles.text}>
                 <Heading>Single sign-on</Heading>
-                <span className={styles.organizationOIDCRequestPageSpan}>
+                <span className={organizationOidcRequestStyles.hint}>
                   To access the organization's resources, authenticate your account with single
                   sign-on.
                 </span>

@@ -53,7 +53,7 @@ import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-grou
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { Kit } from '@/lib/kit';
 import * as shared from '@/styles/shared.css';
-import * as styles from './target-laboratory.css';
+import { targetLaboratoryStyles } from './target-laboratory.css';
 
 const explorer = explorerPlugin();
 
@@ -169,12 +169,12 @@ function Save(): ReactElement {
               data-testid="save-operation"
               className={cn(
                 'graphiql-toolbar-button',
-                currentOperation && !isSame && styles.saveGraphiQLButton,
+                currentOperation && !isSame && targetLaboratoryStyles.saveChanged,
                 'hive-badge-is-changed',
               )}
               aria-label={label}
             >
-              <SaveIcon className={cn(styles.saveSaveIcon, 'graphiql-toolbar-icon')} />
+              <SaveIcon className={cn(targetLaboratoryStyles.saveIcon, 'graphiql-toolbar-icon')} />
             </GraphiQLButton>
           </GraphiQLTooltip>
         )}
@@ -425,11 +425,11 @@ function LaboratoryPageContent(props: {
   return (
     <>
       {preflight.iframeElement}
-      <div className={styles.laboratoryPageContentDiv}>
+      <div className={targetLaboratoryStyles.toolbar}>
         <div className={shared.fill}>
           <div className={shared.row.gap2}>
             <Title>Laboratory</Title>
-            <div className={styles.laboratoryPageContentDiv4} />
+            <div className={targetLaboratoryStyles.divider} />
             <ToggleGroup
               aria-label="Laboratory version"
               value={props.defaultLaboratoryTab}
@@ -443,7 +443,7 @@ function LaboratoryPageContent(props: {
                   label: (
                     <>
                       Hive Laboratory
-                      <span className={styles.laboratoryPageContentSpan} />
+                      <span className={targetLaboratoryStyles.unsavedDot} />
                     </>
                   ),
                 },
@@ -455,7 +455,7 @@ function LaboratoryPageContent(props: {
             <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
           </p>
         </div>
-        <div className={styles.laboratoryPageContentDiv5}>
+        <div className={targetLaboratoryStyles.toolbarEnd}>
           <div>
             {query.data && !query.data.target?.graphqlEndpointUrl ? (
               <RouterLink
@@ -475,8 +475,8 @@ function LaboratoryPageContent(props: {
               Mock Data Endpoint
             </Button>
           </div>
-          <div className={styles.laboratoryPageContentDiv6}>
-            <span className={styles.laboratoryPageContentSpan2}>Query</span>
+          <div className={targetLaboratoryStyles.queryLabelRow}>
+            <span className={targetLaboratoryStyles.queryLabel}>Query</span>
             <ToggleGroup
               options={[
                 {
@@ -557,14 +557,14 @@ function LaboratoryPageContent(props: {
             visiblePlugin={operationCollectionsPlugin}
             schema={schema}
             forcedTheme={resolvedTheme}
-            className={isFullScreen ? styles.laboratoryPageContentGraphiQL : ''}
+            className={isFullScreen ? targetLaboratoryStyles.fullScreen : ''}
             onTabChange={handleTabChange}
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
             <GraphiQL.Logo>
               <Button onClick={() => setIsFullScreen(prev => !prev)} variant="link">
-                <span className={styles.laboratoryPageContentSpan3}>
-                  <FullScreenIcon className={styles.laboratoryPageContentFullScreenIcon} />
+                <span className={targetLaboratoryStyles.fullScreenToggle}>
+                  <FullScreenIcon className={targetLaboratoryStyles.fullScreenIcon} />
                   {isFullScreen ? 'Exit' : 'Enter'} Full Screen
                 </span>
               </Button>
@@ -609,7 +609,7 @@ export function TargetLaboratoryPage(props: {
   return (
     <>
       <Meta title="Schema laboratory" />
-      <LayoutContent className={styles.targetLaboratoryPageLayoutContent}>
+      <LayoutContent className={targetLaboratoryStyles.page}>
         <PromptProvider>
           <LaboratoryPageContent {...props} />
           <PromptManager />
@@ -654,7 +654,7 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   }, [props.logs, isOpen]);
 
   return (
-    <div id="preflight-logs" className={styles.preflightLogsDiv}>
+    <div id="preflight-logs" className={targetLaboratoryStyles.logs}>
       <Collapsible
         variant="panel"
         trigger="Preflight Script Logs"
@@ -675,9 +675,9 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
         panelDataTestId="logs"
       >
         <ScrollArea fill ref={consoleRef}>
-          <div className={styles.preflightLogsDiv2}>
+          <div className={targetLaboratoryStyles.logsBody}>
             {props.logs.length === 0 ? (
-              <div data-testid="empty-state" className={styles.preflightLogsDiv3}>
+              <div data-testid="empty-state" className={targetLaboratoryStyles.logsEmpty}>
                 <p>No logs available</p>
                 <p>Execute a query to see logs</p>
               </div>

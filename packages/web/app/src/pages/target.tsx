@@ -16,7 +16,7 @@ import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import * as styles from './target.css';
+import { targetStyles } from './target.css';
 
 const schemaRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/',
@@ -52,14 +52,14 @@ function serviceHeader(schema: CompositeSchema) {
       >
         {schema.service ?? 'SDL'}
       </div>
-      {schema.url ? <div className={styles.serviceHeaderDiv2}>{schema.url}</div> : null}
+      {schema.url ? <div className={targetStyles.serviceUrl}>{schema.url}</div> : null}
     </div>
   );
 }
 
 function serviceSchema(schema: CompositeSchema) {
   return (
-    <div className={styles.serviceSchemaDiv}>
+    <div className={targetStyles.serviceSchema}>
       <GraphQLHighlight code={schema.source} />
     </div>
   );
@@ -197,8 +197,8 @@ function SchemaView(props: {
 
   return (
     <>
-      <div className={styles.schemaViewDiv}>
-        <div className={styles.schemaViewDiv2}>
+      <div className={targetStyles.schemaHeader}>
+        <div className={targetStyles.schemaActions}>
           {isDistributed && schemas && schemas.length > 1 && (
             <>
               <Select
@@ -270,12 +270,12 @@ function TargetSchemaPage() {
 
   return (
     <LayoutContent>
-      <div className={styles.targetSchemaPageDiv}>
+      <div className={targetStyles.header}>
         <div>
           <Title>Schema</Title>
           <Subtitle>The latest published schema.</Subtitle>
         </div>
-        <div className={styles.targetSchemaPageDiv2}>
+        <div className={targetStyles.schemaActions}>
           <Button
             variant="outline"
             render={
@@ -291,7 +291,7 @@ function TargetSchemaPage() {
           >
             Unused schema
           </Button>
-          <span className={styles.targetSchemaPageSpan}>|</span>
+          <span className={targetStyles.separator}>|</span>
           <Button
             variant="outline"
             render={

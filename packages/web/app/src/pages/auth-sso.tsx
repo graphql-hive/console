@@ -11,7 +11,7 @@ import { useSession } from '@/lib/auth/use-session';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
-import * as styles from './auth-sso.css';
+import { authSsoStyles } from './auth-sso.css';
 
 export function AuthSSOPage(props: { redirectToPath: string; initialSlug: string }) {
   const session = useSession();
@@ -102,12 +102,12 @@ export function AuthSSOPage(props: { redirectToPath: string; initialSlug: string
                 }
               />
             </AuthCardStack>
-            <div className={styles.authSSOPageDiv}>
+            <div className={authSsoStyles.footer}>
               <Link
                 to="/auth/sign-in"
                 search={{ redirectToPath: props.redirectToPath }}
                 data-auth-link="sign-in"
-                className={styles.authSSOPageLink}
+                className={authSsoStyles.link}
               >
                 Back to other sign-in options
               </Link>

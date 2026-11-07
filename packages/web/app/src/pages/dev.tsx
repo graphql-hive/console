@@ -4,11 +4,11 @@ import { HiveLogo } from '@/components/ui/brand-icon';
 import { env } from '@/env/frontend';
 import { createGraphiQLFetcher } from '@graphiql/toolkit';
 import 'graphiql/style.css';
-import * as styles from './dev.css';
+import { devStyles } from './dev.css';
 
 export function DevPage() {
   return (
-    <div className={styles.devPageDiv}>
+    <div className={devStyles.root}>
       <Helmet>
         <style key="dev">
           {`
@@ -26,7 +26,7 @@ export function DevPage() {
         })}
       >
         <GraphiQL.Logo>
-          <HiveLogo className={styles.devPageHiveLogo} />
+          <HiveLogo className={devStyles.logo} />
         </GraphiQL.Logo>
       </GraphiQL>
     </div>

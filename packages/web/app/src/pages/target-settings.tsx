@@ -69,7 +69,7 @@ import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, Outlet, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './target-settings.css';
+import { targetSettingsStyles } from './target-settings.css';
 
 /**
  * We previously used a different character for token masking.
@@ -208,7 +208,7 @@ function RegistryAccessTokens() {
           </Button>
         }
       />
-      <div className={styles.registryAccessTokensDiv}>
+      <div className={targetSettingsStyles.tokensActions}>
         {checked.length === 0 ? null : (
           <Button
             data-testid="delete-button"
@@ -284,7 +284,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
           {mutation.error?.graphQLErrors[0]?.message ?? mutation.error.message}
         </div>
       )}
-      <div className={styles.extendBaseSchemaDiv2}>
+      <div className={targetSettingsStyles.baseSchemaActions}>
         <Button
           disabled={mutation.fetching}
           onClick={async () => {
@@ -318,7 +318,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         <Button variant="outline" onClick={() => setBaseSchema(props.baseSchema)}>
           Reset
         </Button>
-        {isUnsaved && <span className={styles.extendBaseSchemaSpan}>Unsaved changes!</span>}
+        {isUnsaved && <span className={targetSettingsStyles.unsaved}>Unsaved changes!</span>}
       </div>
     </SubPageLayout>
   );
@@ -427,7 +427,7 @@ function AppDeploymentExclusion(
 
   if (availableAppDeploymentNamesQuery.error) {
     return (
-      <div className={styles.appDeploymentExclusionDiv}>
+      <div className={targetSettingsStyles.exclusionError}>
         Failed to load app deployments. Please try again.
       </div>
     );
@@ -749,7 +749,7 @@ export const BreakingChanges = () => {
         />
 
         {dangerousAsBreaking.error && (
-          <span className={styles.breakingChangesSpan}>
+          <span className={targetSettingsStyles.breakingChangesError}>
             {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
               dangerousAsBreaking.error.message}
           </span>
@@ -935,9 +935,8 @@ export const AppDeploymentProtection = () => {
                 specified period or exceeds the traffic threshold.
               </p>
               <p>
-                Use{' '}
-                <code className={styles.appDeploymentProtectionCode}>hive app:retire --force</code>{' '}
-                to bypass protection.
+                Use <code className={targetSettingsStyles.command}>hive app:retire --force</code> to
+                bypass protection.
               </p>
             </>
           }
@@ -1366,7 +1365,7 @@ export function TargetSettingsPage() {
               }))}
             />
             <PageLayoutContent>
-              <div className={styles.targetSettingsPageDiv}>
+              <div className={targetSettingsStyles.sections}>
                 <Outlet />
               </div>
             </PageLayoutContent>

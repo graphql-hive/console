@@ -19,7 +19,7 @@ import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { pick } from '@/lib/object';
 import { getRouteApi, Link } from '@tanstack/react-router';
-import * as styles from './target-insights-client.css';
+import { targetInsightsClientStyles } from './target-insights-client.css';
 
 const clientRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name',
@@ -105,12 +105,12 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
 
   return (
     <>
-      <div className={styles.clientViewDiv}>
+      <div className={targetInsightsClientStyles.header}>
         <div>
           <Title>{props.clientName}</Title>
           <Subtitle>GraphQL API consumer insights</Subtitle>
         </div>
-        <div className={styles.clientViewDiv2}>
+        <div className={targetInsightsClientStyles.headerActions}>
           <DateRangePicker
             selectedRange={dateRangeController.selectedPreset.range}
             startDate={dateRangeController.startDate}
@@ -126,10 +126,10 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
           <RefreshButton onClick={() => dateRangeController.refreshResolvedRange()} />
         </div>
       </div>
-      <div className={styles.clientViewDiv3}>
-        <div className={styles.clientViewDiv4}>
-          <div className={styles.clientViewDiv5}>
-            <div className={styles.clientViewDiv6}>
+      <div className={targetInsightsClientStyles.sections}>
+        <div className={targetInsightsClientStyles.statsRow}>
+          <div className={targetInsightsClientStyles.statsHalf}>
+            <div className={targetInsightsClientStyles.stats}>
               <StatCard
                 title="Total calls"
                 icon={GlobeIcon}
@@ -163,7 +163,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
               />
             </div>
           </div>
-          <div className={styles.clientViewDiv7}>
+          <div className={targetInsightsClientStyles.statsHalf}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Activity"
@@ -177,8 +177,8 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
             </Card>
           </div>
         </div>
-        <div className={styles.clientViewDiv8}>
-          <div className={styles.clientViewDiv9}>
+        <div className={targetInsightsClientStyles.listsRow}>
+          <div className={targetInsightsClientStyles.operations}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Operations"
@@ -196,7 +196,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                   : query.data?.target?.clientStats.operations.edges.map(({ node: operation }) => (
                       <Link
                         key={operation.id}
-                        className={styles.clientViewLink}
+                        className={targetInsightsClientStyles.operation}
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash"
                         params={{
                           organizationSlug,
@@ -207,10 +207,10 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                         }}
                         search={searchParams => pick(searchParams, ['from', 'to'])}
                       >
-                        <p className={styles.clientViewP}>{operation.name}</p>
-                        <div className={styles.clientViewDiv10}>
+                        <p className={targetInsightsClientStyles.name}>{operation.name}</p>
+                        <div className={targetInsightsClientStyles.figures}>
                           <div>{formatNumber(operation.count)}</div>{' '}
-                          <div className={styles.clientViewDiv11}>
+                          <div className={targetInsightsClientStyles.figure}>
                             {toDecimal((operation.count * 100) / totalRequests)}%
                           </div>
                         </div>
@@ -220,7 +220,7 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
             </Card>
           </div>
 
-          <div className={styles.clientViewDiv12}>
+          <div className={targetInsightsClientStyles.versions}>
             <Card
               variants={{ onSurface: 'raised', titleSize: 'large' }}
               title="Versions"
@@ -239,11 +239,11 @@ function ClientView(props: { clientName: string; dataRetentionInDays: number }) 
                 {isLoading
                   ? null
                   : query.data?.target?.clientStats.versions.map(version => (
-                      <div key={version.version} className={styles.clientViewDiv13}>
-                        <p className={styles.clientViewP2}>{version.version}</p>
-                        <div className={styles.clientViewDiv14}>
+                      <div key={version.version} className={targetInsightsClientStyles.version}>
+                        <p className={targetInsightsClientStyles.name}>{version.version}</p>
+                        <div className={targetInsightsClientStyles.figures}>
                           <div>{formatNumber(version.count)}</div>
-                          <div className={styles.clientViewDiv15}>
+                          <div className={targetInsightsClientStyles.figure}>
                             {toDecimal((version.count * 100) / totalRequests)}%
                           </div>
                         </div>
@@ -308,7 +308,7 @@ function ClientInsightsPageContent(props: { name: string }) {
 
   if (!query.data?.hasCollectedOperations) {
     return (
-      <div className={styles.clientInsightsPageContentDiv}>
+      <div className={targetInsightsClientStyles.pending}>
         <EmptyList
           title="Hive is waiting for your first collected operation"
           description="You can collect usage of your GraphQL API with Hive Client"

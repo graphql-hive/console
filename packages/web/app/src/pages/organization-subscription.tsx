@@ -19,7 +19,7 @@ import { graphql, useFragment } from '@/gql';
 import { formatNumber, useSlugs } from '@/lib/hooks';
 import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
-import * as styles from './organization-subscription.css';
+import { organizationSubscriptionStyles } from './organization-subscription.css';
 
 const DateFormatter = Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -110,9 +110,9 @@ function SubscriptionPageContent() {
   const end = endOfMonth(today);
 
   return (
-    <LayoutContent className={styles.subscriptionPageContentLayoutContent}>
+    <LayoutContent className={organizationSubscriptionStyles.root}>
       <div className={shared.grow}>
-        <div className={styles.subscriptionPageContentDiv2}>
+        <div className={organizationSubscriptionStyles.header}>
           <PageLead title="Your subscription" description="Explore your current plan and usage." />
           {organization.viewerCanModifyBilling && (
             <div>
@@ -151,20 +151,20 @@ function SubscriptionPageContent() {
               </BillingView>
             </div>
           </Card>
-          <div className={styles.subscriptionPageContentDiv3}>
+          <div className={organizationSubscriptionStyles.section}>
             <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Current Usage">
-              <p className={styles.subscriptionPageContentP}>
+              <p className={organizationSubscriptionStyles.sectionNote}>
                 {DateFormatter.format(start)} — {DateFormatter.format(end)}
               </p>
-              <div className={styles.subscriptionPageContentDiv4}>
+              <div className={organizationSubscriptionStyles.sectionBody}>
                 <OrganizationUsageEstimationView organization={organization} />
               </div>
             </Card>
           </div>
           {monthlyUsagePoints.length ? (
-            <div className={styles.subscriptionPageContentDiv5}>
+            <div className={organizationSubscriptionStyles.section}>
               <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Historical Usage">
-                <div className={styles.subscriptionPageContentDiv6}>
+                <div className={organizationSubscriptionStyles.sectionBody}>
                   <TimeSeriesChart
                     kind="bar"
                     height={400}
@@ -176,10 +176,10 @@ function SubscriptionPageContent() {
             </div>
           ) : null}
           {organization.billingConfiguration?.invoices?.length ? (
-            <div className={styles.subscriptionPageContentDiv7}>
+            <div className={organizationSubscriptionStyles.section}>
               <Card variants={{ onSurface: 'base' }}>
                 <Heading>Invoices</Heading>
-                <div className={styles.subscriptionPageContentDiv8}>
+                <div className={organizationSubscriptionStyles.sectionBody}>
                   <InvoicesList organization={organization} />
                 </div>
               </Card>

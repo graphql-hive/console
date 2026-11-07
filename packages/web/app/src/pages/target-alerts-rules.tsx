@@ -18,7 +18,7 @@ import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import * as shared from '@/styles/shared.css';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
-import * as styles from './target-alerts-rules.css';
+import { targetAlertsRulesStyles } from './target-alerts-rules.css';
 
 export const TargetAlertsRulesPage_Query = graphql(`
   query TargetAlertsRulesPage_Query(
@@ -222,23 +222,25 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
                 <button
                   type="button"
                   aria-label="Destinations"
-                  className={styles.button}
+                  className={targetAlertsRulesStyles.conditionsHint}
                   // The row opens the rule; a click on the icon only means the popover.
                   onClick={event => event.stopPropagation()}
                 >
-                  <Info className={styles.info} />
+                  <Info className={targetAlertsRulesStyles.conditionsHintIcon} />
                 </button>
               }
               openOnHover
               width="auto"
               content={
-                <div className={styles.div}>
+                <div className={targetAlertsRulesStyles.conditions}>
                   {channels.map(c => (
                     <div key={c.id} className={shared.row.gap2}>
                       <span className={shared.fg.secondary}>
                         {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
                       </span>
-                      <span className={styles.span2}>{c.detail ?? c.name}</span>
+                      <span className={targetAlertsRulesStyles.conditionValue}>
+                        {c.detail ?? c.name}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -266,14 +268,18 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
 function UsageChip({ used, limit }: { used: number; limit: number }) {
   const ratio = limit > 0 ? used / limit : 0;
   const color =
-    used >= limit ? styles.colorClass : ratio >= 0.8 ? styles.colorClass2 : styles.colorClass3;
+    used >= limit
+      ? targetAlertsRulesStyles.usageTone.critical
+      : ratio >= 0.8
+        ? targetAlertsRulesStyles.usageTone.warning
+        : targetAlertsRulesStyles.usageTone.neutral;
   const label = `${used} / ${limit} rules`;
   const title =
     used >= limit
       ? 'Limit reached. Delete a rule to free a slot.'
       : `${used} of ${limit} configured rules used.`;
   return (
-    <span title={title} className={`${styles.usageChipSpan} ${color}`}>
+    <span title={title} className={`${targetAlertsRulesStyles.usageChip} ${color}`}>
       {label}
     </span>
   );
@@ -332,7 +338,7 @@ export function TargetAlertsRulesPage() {
       />
 
       {result.error && !data ? (
-        <div className={styles.targetAlertsRulesPageDiv}>
+        <div className={targetAlertsRulesStyles.error}>
           Failed to load alert rules: {result.error.message}
         </div>
       ) : (

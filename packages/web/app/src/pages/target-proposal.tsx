@@ -43,7 +43,7 @@ import {
 import { TargetProposalSchemaPage } from './target-proposal-schema';
 import { TargetProposalSupergraphPage } from './target-proposal-supergraph';
 import { ServiceProposalDetails } from './target-proposal-types';
-import * as styles from './target-proposal.css';
+import { targetProposalStyles } from './target-proposal.css';
 
 enum Tab {
   SCHEMA = 'schema',
@@ -163,7 +163,7 @@ export function TargetProposalsSinglePage(props: {
   return (
     <>
       <Meta title="Schema proposals" />
-      <LayoutContent className={styles.targetProposalsSinglePageLayoutContent}>
+      <LayoutContent className={targetProposalStyles.page}>
         <ProposalsContent {...props} />
       </LayoutContent>
     </>
@@ -334,8 +334,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     if (changesQuery.error) {
       return (
         <>
-          <Title className={styles.proposalsContentTitle}>Unexpected Error</Title>
-          <Subtitle className={styles.proposalsContentSubtitle}>
+          <Title className={targetProposalStyles.centered}>Unexpected Error</Title>
+          <Subtitle className={targetProposalStyles.centered}>
             An unexpected error occurred when requesting the schema proposal.
             <br />
             We've been notified of this issue. Try again later.
@@ -347,8 +347,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     if (!services.length) {
       return (
         <>
-          <Title className={styles.proposalsContentTitle2}>No changes found</Title>
-          <Subtitle className={styles.proposalsContentSubtitle2}>
+          <Title className={targetProposalStyles.centered}>No changes found</Title>
+          <Subtitle className={targetProposalStyles.centered}>
             This proposed version would result in no changes to the latest schemas.
           </Subtitle>
         </>
@@ -357,8 +357,8 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
     if (!proposal || !query.data?.target) {
       return (
         <>
-          <Title className={styles.proposalsContentTitle3}>Error loading data</Title>
-          <Subtitle className={styles.proposalsContentSubtitle3}>
+          <Title className={targetProposalStyles.centered}>Error loading data</Title>
+          <Subtitle className={targetProposalStyles.centered}>
             Proposal details could not be loaded.
           </Subtitle>
         </>
@@ -389,13 +389,13 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
 
   return (
     <>
-      <div className={styles.proposalsContentDiv}>
+      <div className={targetProposalStyles.header}>
         <div className={shared.fill}>
           <SubPageLayoutHeader
             subPageTitle={
               <span className={shared.row.base}>
                 <Link
-                  className={styles.proposalsContentLink}
+                  className={targetProposalStyles.headerLink}
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
                   params={{
                     organizationSlug,
@@ -405,12 +405,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                 >
                   Schema Proposals
                 </Link>{' '}
-                <span className={styles.proposalsContentSpan2}>/</span>{' '}
+                <span className={targetProposalStyles.headerSeparator}>/</span>{' '}
                 {/* @todo use query data to show loading */}
                 {props.proposalId ? (
                   `${props.proposalId}`
                 ) : (
-                  <span className={styles.proposalsContentSpan3}>
+                  <span className={targetProposalStyles.headerSkeleton}>
                     <Skeleton variants={{ size: 'lg', width: 'full' }} />
                   </span>
                 )}
@@ -420,15 +420,15 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
           />
         </div>
       </div>
-      <div className={styles.proposalsContentDiv3}>
+      <div className={targetProposalStyles.body}>
         {query.fetching ? (
           <Spinner />
         ) : (
           proposal && (
             <>
-              <div className={styles.proposalsContentDiv4}>
+              <div className={targetProposalStyles.titleRow}>
                 {/* <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} /> */}
-                <Title className={styles.proposalsContentTitle4}>
+                <Title className={targetProposalStyles.title}>
                   <div className={shared.truncate}>{proposal.title}</div>
                   <Tooltip
                     align="start"
@@ -436,10 +436,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                     trigger={
                       <span className={shared.inlineFlex}>
                         {proposal?.compositionStatus === 'ERROR' ? (
-                          <XIcon className={styles.proposalsContentXIcon} />
+                          <XIcon className={targetProposalStyles.failedIcon} />
                         ) : null}
                         {proposal?.compositionStatus === 'SUCCESS' ? (
-                          <CheckIcon className={styles.proposalsContentCheckIcon} />
+                          <CheckIcon className={targetProposalStyles.passedIcon} />
                         ) : null}
                       </span>
                     }
@@ -463,7 +463,7 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                     }
                   />
                 </Title>
-                <div className={styles.proposalsContentDiv6}>
+                <div className={targetProposalStyles.actions}>
                   <StageTransitionSelect
                     stage={proposal.stage}
                     onSelect={async stage => {
@@ -481,11 +481,11 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
                   />
                 </div>
               </div>
-              <div className={styles.proposalsContentDiv7}>
+              <div className={targetProposalStyles.description}>
                 {proposal.description ? (
-                  <div className={styles.proposalsContentDiv8}>{proposal.description}</div>
+                  <div className={targetProposalStyles.descriptionText}>{proposal.description}</div>
                 ) : null}
-                <div className={styles.proposalsContentDiv9}>
+                <div className={targetProposalStyles.meta}>
                   proposed <TimeAgo date={proposal.createdAt} /> by {proposal.author}
                 </div>
               </div>
@@ -556,10 +556,10 @@ function TabbedContent(props: {
 
   return (
     <div className={shared.fullWidth}>
-      <div className={styles.tabbedContentDiv2}>
+      <div className={targetProposalStyles.tabs}>
         <Navigation aria-label="Proposal" items={sections} size="sm" />
       </div>
-      <div className={styles.tabbedContentDiv3}>
+      <div className={targetProposalStyles.tabBody}>
         {page === Tab.DETAILS && <TargetProposalDetailsPage {...props} />}
         {page === Tab.SCHEMA && <TargetProposalSchemaPage {...props} />}
         {page === Tab.SUPERGRAPH && <TargetProposalSupergraphPage {...props} />}

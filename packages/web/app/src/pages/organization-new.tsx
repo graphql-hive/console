@@ -15,16 +15,16 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from '@tanstack/react-router';
-import * as styles from './organization-new.css';
+import { organizationNewStyles } from './organization-new.css';
 
 export function NewOrgPage(): ReactElement {
   const router = useRouter();
   return (
     <>
       <Meta title="Create Organization" />
-      <DottedBackground className={styles.newOrgPageDottedBackground}>
-        <div className={styles.newOrgPageDiv}>
-          <div className={styles.newOrgPageDiv2}>
+      <DottedBackground className={organizationNewStyles.background}>
+        <div className={organizationNewStyles.root}>
+          <div className={organizationNewStyles.signOut}>
             <Button
               variant="outline"
               onClick={() =>
@@ -33,11 +33,11 @@ export function NewOrgPage(): ReactElement {
                 })
               }
             >
-              <LogOutIcon className={styles.newOrgPageLogOutIcon} /> Sign out
+              <LogOutIcon className={organizationNewStyles.signOutIcon} /> Sign out
             </Button>
           </div>
-          <Link to="/" className={styles.newOrgPageLink}>
-            <HiveLogo className={styles.newOrgPageHiveLogo} />
+          <Link to="/" className={organizationNewStyles.home}>
+            <HiveLogo className={organizationNewStyles.logo} />
           </Link>
           <CreateOrganization />
         </div>

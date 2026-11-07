@@ -13,10 +13,9 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { Link, Outlet, useParams } from '@tanstack/react-router';
-import * as styles from './target-history.css';
+import { targetHistoryStyles } from './target-history.css';
 
 export const HistoryPage_VersionsPageQuery = graphql(`
   query HistoryPage_VersionsPageQuery(
@@ -112,11 +111,7 @@ function VersionsList(props: { versionId?: string }): ReactElement {
       {edges?.map(({ node: version }) => (
         <Link
           key={version.id}
-          className={cn(
-            styles.versionsListLink,
-            styles.versionsListLink2,
-            versionId === version.id && styles.versionsListLink3,
-          )}
+          className={targetHistoryStyles.version({ selected: versionId === version.id })}
           to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
           params={{
             organizationSlug,
@@ -125,37 +120,37 @@ function VersionsList(props: { versionId?: string }): ReactElement {
             versionId: version.id,
           }}
         >
-          <div className={styles.versionsListDiv}>
+          <div className={targetHistoryStyles.versionStatus}>
             <StatusDot
               color={version.isValid ? 'success' : 'critical'}
               label={version.isValid ? 'Composable' : 'Failed'}
             />
           </div>
           <div className={shared.fillShrinkable}>
-            <div className={styles.versionsListDiv3}>
-              <div className={styles.versionsListDiv4}>
+            <div className={targetHistoryStyles.versionTitle}>
+              <div className={targetHistoryStyles.versionId}>
                 {version.origin.__typename === 'SchemaVersionPublishOrigin' &&
                 version.origin.revision
                   ? version.origin.revision
                   : version.id.substring(0, 8)}
               </div>
               {version.origin.__typename === 'SchemaVersionPublishOrigin' && (
-                <span className={styles.versionsListSpan}>Published</span>
+                <span className={targetHistoryStyles.published}>Published</span>
               )}
               {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
-                <span className={styles.versionsListSpan2}>Removed</span>
+                <span className={targetHistoryStyles.removed}>Removed</span>
               )}
               {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-                <span className={styles.versionsListSpan3}>Promoted</span>
+                <span className={targetHistoryStyles.promoted}>Promoted</span>
               )}
             </div>
 
             {version.origin.__typename === 'SchemaVersionPublishOrigin' &&
               version.origin.publishedSubgraphs && (
-                <div className={styles.versionsListDiv5}>
+                <div className={targetHistoryStyles.services}>
                   {version.origin.publishedSubgraphs.map((service, idx) => (
                     <span key={idx} className={shared.text.xs}>
-                      <PackageIcon className={styles.versionsListPackageIcon} />
+                      <PackageIcon className={targetHistoryStyles.serviceIcon} />
                       <span className={shared.mono}>
                         {service.name}@{service.revision ?? service.versionId.substring(0, 8)}
                       </span>
@@ -164,10 +159,10 @@ function VersionsList(props: { versionId?: string }): ReactElement {
                 </div>
               )}
             {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
-              <div className={styles.versionsListDiv6}>
+              <div className={targetHistoryStyles.services}>
                 {version.origin.removedSubgraphs.map((service, idx) => (
                   <span key={idx} className={shared.text.xs}>
-                    <PackageIcon className={styles.versionsListPackageIcon2} />
+                    <PackageIcon className={targetHistoryStyles.serviceIcon} />
                     <span className={shared.mono}>
                       {service.name}@{service.versionId.substring(0, 8)}
                     </span>
@@ -176,8 +171,8 @@ function VersionsList(props: { versionId?: string }): ReactElement {
               </div>
             )}
             {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
-              <p className={styles.versionsListP}>
-                <FileSymlinkIcon className={styles.versionsListFileSymlinkIcon} />
+              <p className={targetHistoryStyles.source}>
+                <FileSymlinkIcon className={targetHistoryStyles.sourceIcon} />
                 <span className={shared.mono}>
                   {version.origin.targetSlug}@{version.origin.schemaVersionId.substring(0, 8)}
                 </span>
@@ -185,19 +180,16 @@ function VersionsList(props: { versionId?: string }): ReactElement {
             )}
           </div>
 
-          <div className={styles.versionsListDiv7}>
-            <div className={styles.versionsListDiv8}>
+          <div className={targetHistoryStyles.versionMeta}>
+            <div className={targetHistoryStyles.versionMetaRow}>
               {version.meta?.commit && (
-                <code className={styles.versionsListCode}>
-                  <GitCommitVerticalIcon
-                    size="14"
-                    className={styles.versionsListGitCommitVerticalIcon}
-                  />
+                <code className={targetHistoryStyles.commit}>
+                  <GitCommitVerticalIcon size="14" className={targetHistoryStyles.commitIcon} />
                   {version.meta.commit.slice(0, 7)}
                 </code>
               )}
             </div>
-            <div className={styles.versionsListDiv9}>
+            <div className={targetHistoryStyles.versionDate}>
               <TimeAgo date={version.date} />
             </div>
           </div>
@@ -303,15 +295,15 @@ function HistoryPageContent() {
     return (
       <>
         {/* Pinned and capped to the viewport, so the list scrolls inside the column. */}
-        <div className={styles.historyPageContentDiv}>
-          <div className={styles.historyPageContentDiv2}>
+        <div className={targetHistoryStyles.sidebar}>
+          <div className={targetHistoryStyles.sidebarHeader}>
             <Title>Versions</Title>
             <Subtitle>Recently published versions.</Subtitle>
           </div>
-          <div className={styles.historyPageContentDiv3}>
-            <div className={styles.historyPageContentDiv4}>
+          <div className={targetHistoryStyles.sidebarBody}>
+            <div className={targetHistoryStyles.list}>
               <ScrollArea fill>
-                <div className={styles.historyPageContentDiv5}>
+                <div className={targetHistoryStyles.listBody}>
                   <VersionsList versionId={versionId} />
                 </div>
               </ScrollArea>
@@ -325,7 +317,7 @@ function HistoryPageContent() {
 
   return (
     <div className={shared.fullWidth}>
-      <div className={styles.historyPageContentDiv7}>
+      <div className={targetHistoryStyles.content}>
         <Title>Versions</Title>
         <Subtitle>Recently published versions.</Subtitle>
       </div>
@@ -343,7 +335,7 @@ export function TargetHistoryPage() {
   return (
     <>
       <Meta title="History" />
-      <LayoutContent className={styles.targetHistoryPageLayoutContent}>
+      <LayoutContent className={targetHistoryStyles.page}>
         <HistoryPageContent />
       </LayoutContent>
     </>

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
-import * as styles from './target-proposal-edit.css';
+import { targetProposalEditStyles } from './target-proposal-edit.css';
 
 export const Proposals_EditProposalProposalFragment = graphql(`
   fragment Proposals_EditProposalProposalFragment on SchemaProposal {
@@ -122,8 +122,8 @@ export function TargetProposalEditPage(props: {
   return (
     <>
       <SaveProposalModal />
-      <div className={styles.targetProposalEditPageDiv}>
-        <div className={styles.targetProposalEditPageDiv2}>
+      <div className={targetProposalEditStyles.root}>
+        <div className={targetProposalEditStyles.actions}>
           <Button
             disabled={isSaving}
             variant="outline"
@@ -139,11 +139,11 @@ export function TargetProposalEditPage(props: {
             }}
           >
             {isSaving ? (
-              <span className={styles.targetProposalEditPageSpan}>
+              <span className={targetProposalEditStyles.status}>
                 <Spinner variants={{ size: 'sm', tone: 'current' }} />
               </span>
             ) : (
-              <SaveIcon className={styles.targetProposalEditPageSaveIcon} />
+              <SaveIcon className={targetProposalEditStyles.saveIcon} />
             )}
             Save Changes
           </Button>

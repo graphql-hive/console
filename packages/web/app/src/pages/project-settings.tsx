@@ -28,7 +28,7 @@ import { useSlugs, useToggle } from '@/lib/hooks';
 import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Outlet, useRouter } from '@tanstack/react-router';
-import * as styles from './project-settings.css';
+import { projectSettingsStyles } from './project-settings.css';
 
 export const GithubIntegration_GithubIntegrationDetailsQuery = graphql(`
   query getGitHubIntegrationDetails($organizationSlug: String!) {
@@ -95,28 +95,28 @@ function GitHubIntegration(): ReactElement | null {
         }}
       />
       <div>
-        <div className={styles.gitHubIntegrationDiv}>
+        <div className={projectSettingsStyles.github}>
           <div>Here's how it will look like in your CI pipeline.</div>
-          <div className={styles.gitHubIntegrationDiv2}>
-            <div className={styles.gitHubIntegrationDiv3}>
-              <CheckIcon className={styles.gitHubIntegrationCheckIcon} />
-              <div className={styles.gitHubIntegrationDiv4}>
-                <HiveLogo className={styles.gitHubIntegrationHiveLogo} />
+          <div className={projectSettingsStyles.githubSteps}>
+            <div className={projectSettingsStyles.githubStep}>
+              <CheckIcon className={projectSettingsStyles.githubStepCheck} />
+              <div className={projectSettingsStyles.githubStepLogo}>
+                <HiveLogo className={projectSettingsStyles.githubStepLogoIcon} />
               </div>
 
-              <div className={styles.gitHubIntegrationDiv5}>
+              <div className={projectSettingsStyles.githubStepText}>
                 {organizationSlug} &gt; schema:check &gt; staging
               </div>
               <div className={shared.fg.secondary}>— No changes</div>
             </div>
-            <ArrowBigDownDashIcon className={styles.gitHubIntegrationArrowBigDownDashIcon} />
-            <div className={styles.gitHubIntegrationDiv7}>
-              <CheckIcon className={styles.gitHubIntegrationCheckIcon2} />
-              <div className={styles.gitHubIntegrationDiv8}>
-                <HiveLogo className={styles.gitHubIntegrationHiveLogo2} />
+            <ArrowBigDownDashIcon className={projectSettingsStyles.githubStepArrow} />
+            <div className={projectSettingsStyles.githubStep}>
+              <CheckIcon className={projectSettingsStyles.githubStepCheck} />
+              <div className={projectSettingsStyles.githubStepLogo}>
+                <HiveLogo className={projectSettingsStyles.githubStepLogoIcon} />
               </div>
 
-              <div className={styles.gitHubIntegrationDiv9}>
+              <div className={projectSettingsStyles.githubStepText}>
                 {organizationSlug} &gt; schema:check &gt; {projectSlug} &gt; staging
               </div>
               <div className={shared.fg.secondary}>— No changes</div>
@@ -384,8 +384,8 @@ function ProjectPolicySettings(props: {
           currentState={currentProject.schemaPolicy}
         />
       ) : (
-        <div className={styles.projectPolicySettingsDiv}>
-          <p className={styles.projectPolicySettingsP}>!</p>
+        <div className={projectSettingsStyles.policyOverride}>
+          <p className={projectSettingsStyles.policyOverrideMark}>!</p>
           Organization settings does not allow projects to override policy. Please consult your
           organization administrator.
         </div>
@@ -519,7 +519,7 @@ export function ProjectSettingsPage() {
   return (
     <>
       <Meta title="Project settings" />
-      <LayoutContent className={styles.projectSettingsPageLayoutContent}>
+      <LayoutContent className={projectSettingsStyles.root}>
         {project ? (
           <PageLayout>
             <Navigation
@@ -533,7 +533,7 @@ export function ProjectSettingsPage() {
               }))}
             />
             <PageLayoutContent>
-              <div className={styles.projectSettingsPageDiv}>
+              <div className={projectSettingsStyles.sections}>
                 <Outlet />
               </div>
             </PageLayoutContent>

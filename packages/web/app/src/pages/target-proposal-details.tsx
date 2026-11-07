@@ -7,7 +7,7 @@ import { FragmentType } from '@/gql';
 import * as shared from '@/styles/shared.css';
 import { Change, CriticalityLevel } from '@graphql-inspector/core';
 import type { ServiceProposalDetails } from './target-proposal-types';
-import * as styles from './target-proposal-details.css';
+import { targetProposalDetailsStyles } from './target-proposal-details.css';
 
 export enum MergeStatus {
   CONFLICT,
@@ -112,7 +112,7 @@ export function TargetProposalDetailsPage(props: {
           return (
             <Fragment key={serviceName}>
               <ServiceHeading serviceName={serviceName} type={type} />
-              <div className={styles.targetProposalDetailsPageDiv2}>
+              <div className={targetProposalDetailsStyles.changes}>
                 <ChangeBlock
                   changes={breaking}
                   title="Breaking Changes"
@@ -139,7 +139,7 @@ export function TargetProposalDetailsPage(props: {
         },
       )}
       {!mappedServices.some(s => s.hasChanges) ? (
-        <div className={styles.targetProposalDetailsPageDiv3}>No changes found</div>
+        <div className={targetProposalDetailsStyles.empty}>No changes found</div>
       ) : null}
     </div>
   );

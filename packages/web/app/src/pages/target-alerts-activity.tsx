@@ -18,7 +18,7 @@ import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useInterval } from '@/lib/hooks/use-interval';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
-import * as styles from './target-alerts-activity.css';
+import { targetAlertsActivityStyles } from './target-alerts-activity.css';
 
 export const TargetAlertsActivityPage_RetentionQuery = graphql(`
   query TargetAlertsActivityPage_RetentionQuery(
@@ -211,7 +211,7 @@ function ActivityView(props: { retentionInDays: number }) {
         description="Monitor alert firings, recoveries, and state changes."
       />
 
-      <div className={styles.activityViewDiv}>
+      <div className={targetAlertsActivityStyles.section}>
         <Filters
           dimensions={dimensions}
           pinnedControls={
@@ -232,11 +232,11 @@ function ActivityView(props: { retentionInDays: number }) {
         />
       </div>
 
-      <div className={styles.activityViewDiv2}>
+      <div className={targetAlertsActivityStyles.section}>
         <AlertActivityChart events={visibleEvents} from={period.from} to={period.to} />
       </div>
 
-      <div className={styles.activityViewDiv3}>
+      <div className={targetAlertsActivityStyles.section}>
         <AlertActivityTable
           key={tableResetKey}
           events={visibleEvents}

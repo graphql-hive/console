@@ -19,7 +19,7 @@ import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate } from '@tanstack/react-router';
-import * as styles from './auth-reset-password.css';
+import { authResetPasswordStyles } from './auth-reset-password.css';
 
 function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: string }) {
   const initialEmail = props.email ?? '';
@@ -94,11 +94,11 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
               <span className={shared.weight.semibold}>{form.getValues().email}</span>, if it exists
               in our system.
             </p>
-            <p className={styles.authResetPasswordEmailP}>
+            <p className={authResetPasswordStyles.sentNote}>
               If you don't receive an email, try to{' '}
               <button
                 type="button"
-                className={styles.authResetPasswordEmailButton}
+                className={authResetPasswordStyles.resend}
                 onClick={resetEmail.reset}
               >
                 reset your password again
@@ -131,14 +131,14 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
             }
           />
 
-          <div className={styles.authResetPasswordEmailDiv}>
+          <div className={authResetPasswordStyles.footer}>
             <Link
               to="/auth/sign-in"
               search={{
                 redirectToPath: props.redirectToPath,
               }}
               data-auth-link="sign-up"
-              className={styles.authResetPasswordEmailLink}
+              className={authResetPasswordStyles.footerLink}
             >
               Back to login
             </Link>
@@ -259,14 +259,14 @@ function AuthPasswordNew(props: { token: string; redirectToPath: string }) {
             }
           />
 
-          <div className={styles.authPasswordNewDiv}>
+          <div className={authResetPasswordStyles.footer}>
             <Link
               to="/auth/sign-in"
               search={{
                 redirectToPath: props.redirectToPath,
               }}
               data-auth-link="sign-up"
-              className={styles.authPasswordNewLink}
+              className={authResetPasswordStyles.footerLink}
             >
               Back to login
             </Link>

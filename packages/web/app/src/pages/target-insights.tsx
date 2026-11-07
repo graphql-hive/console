@@ -25,7 +25,7 @@ import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/grap
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
-import * as styles from './target-insights.css';
+import { targetInsightsStyles } from './target-insights.css';
 
 const insightsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights',
@@ -274,12 +274,12 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
 
   return (
     <>
-      <div className={styles.operationsViewDiv}>
+      <div className={targetInsightsStyles.root}>
         <div>
           <Title>Insights</Title>
           <Subtitle>Observe GraphQL requests and see how the API is consumed.</Subtitle>
         </div>
-        <div className={styles.operationsViewDiv2}>
+        <div className={targetInsightsStyles.toolbar}>
           <Filters
             dimensions={dimensions}
             extraSections={extraSections}
@@ -332,7 +332,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
               ) : null
             }
           />
-          <div className={styles.operationsViewDiv3}>
+          <div className={targetInsightsStyles.toolbarActions}>
             <RefreshButton
               size="compact"
               onClick={() => dateRangeController.refreshResolvedRange()}
@@ -405,7 +405,7 @@ function TargetOperationsPageContent() {
 
   if (!hasCollectedOperations) {
     return (
-      <div className={styles.targetOperationsPageContentDiv}>
+      <div className={targetInsightsStyles.pending}>
         <EmptyList
           title="Hive is waiting for your first collected operation"
           description="You can collect usage of your GraphQL API with Hive Client"

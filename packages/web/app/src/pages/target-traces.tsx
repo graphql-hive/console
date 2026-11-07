@@ -32,7 +32,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
-import * as styles from './target-traces.css';
+import { targetTracesStyles } from './target-traces.css';
 
 const tracesRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
@@ -175,13 +175,13 @@ const TracesList = memo(function TracesList(
                 <Tooltip
                   side="bottom"
                   trigger={
-                    <span className={styles.tracesListSpan}>
+                    <span className={targetTracesStyles.method}>
                       {formatDate(timestamp, 'MMM dd HH:mm:ss')}
                     </span>
                   }
                   content={
                     <div
-                      className={styles.tracesListDiv}
+                      className={targetTracesStyles.cellStatic}
                       onClick={e => {
                         // Prevent the click event from bubbling up to the row,
                         // which would trigger the sheet with trace details to open
@@ -242,7 +242,7 @@ const TracesList = memo(function TracesList(
                 maxWidth="md"
                 trigger={
                   <span className={shared.inlineRow.gap2}>
-                    <span className={styles.tracesListSpan3}>
+                    <span className={targetTracesStyles.kind}>
                       {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                     </span>
                     {row.original.operationName ?? (
@@ -251,7 +251,7 @@ const TracesList = memo(function TracesList(
                   </span>
                 }
                 content={
-                  <div className={styles.tracesListDiv2}>
+                  <div className={targetTracesStyles.cell}>
                     <DescriptionList
                       rows={[
                         {
@@ -320,7 +320,7 @@ const TracesList = memo(function TracesList(
                   disableHoverablePopup
                   trigger={<span>{subgraphs.length}</span>}
                   content={
-                    <div className={styles.tracesListDiv3}>
+                    <div className={targetTracesStyles.cell}>
                       <DescriptionList
                         rows={[
                           {
@@ -390,8 +390,8 @@ const TracesList = memo(function TracesList(
 
 function LabelWithColor(props: { className: string; children: ReactNode }) {
   return (
-    <div className={styles.labelWithColorDiv}>
-      <div className={cn(styles.labelWithColorDiv2, props.className)} />
+    <div className={targetTracesStyles.label}>
+      <div className={cn(targetTracesStyles.labelColor, props.className)} />
       <div>{props.children}</div>
     </div>
   );
@@ -516,11 +516,11 @@ function Filters(
 
   return (
     <>
-      <div className={styles.filtersDiv}>
+      <div className={targetTracesStyles.filtersHeader}>
         <div>Filters</div>
         {hasChanges ? (
           <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
-            <XIcon className={styles.filtersXIcon} />
+            <XIcon className={targetTracesStyles.filtersClearIcon} />
           </Button>
         ) : null}
       </div>
@@ -539,7 +539,9 @@ function Filters(
           label: (
             <LabelWithColor
               className={
-                option.value === 'ok' ? styles.filtersLabelWithColor : styles.filtersLabelWithColor2
+                option.value === 'ok'
+                  ? targetTracesStyles.labelTone.ok
+                  : targetTracesStyles.labelTone.error
               }
             >
               {option.label}
@@ -556,7 +558,7 @@ function Filters(
         options={filterOptions['graphql.errorCode'].map(option => ({
           ...option,
           label: (
-            <LabelWithColor className={styles.filtersLabelWithColor3}>
+            <LabelWithColor className={targetTracesStyles.labelTone.error}>
               {option.label}
             </LabelWithColor>
           ),
@@ -685,10 +687,10 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
         trace ? (
           <>
             {trace.operationName ?? <span className={shared.fg.secondary}>{'<unknown>'}</span>}
-            <span className={styles.selectedTraceSheetSpan2}>{trace.id.substring(0, 4)}</span>
+            <span className={targetTracesStyles.sheetId}>{trace.id.substring(0, 4)}</span>
           </>
         ) : (
-          <span className={styles.selectedTraceSheetSpan3}>
+          <span className={targetTracesStyles.sheetTitleSkeleton}>
             <Skeleton variants={{ size: 'lg', width: 'full' }} />
           </span>
         )
@@ -702,35 +704,35 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
               <CopyIconButton value={trace.id} label="Copy Trace ID" />
             </>
           ) : (
-            <span className={styles.selectedTraceSheetSpan5}>
+            <span className={targetTracesStyles.sheetSubtitleSkeleton}>
               <Skeleton variants={{ width: 'full' }} />
             </span>
           )}
         </>
       }
     >
-      <div className={styles.selectedTraceSheetDiv}>
+      <div className={targetTracesStyles.sheetMeta}>
         {trace ? (
           <>
             <div className={shared.row.gap1}>
-              <Clock className={styles.selectedTraceSheetClock} />
+              <Clock className={targetTracesStyles.sheetMetaIcon} />
               <span className={shared.fg.default}>{formatNanoseconds(BigInt(trace.duration))}</span>
             </div>
             <Badge
               content={trace.success ? 'Ok' : 'Error'}
               variants={{ variant: trace.success ? 'success' : 'critical' }}
             />
-            <span className={styles.selectedTraceSheetSpan7}>
+            <span className={targetTracesStyles.sheetMethod}>
               {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
             </span>
           </>
         ) : (
-          <span className={styles.selectedTraceSheetSpan8}>
+          <span className={targetTracesStyles.sheetMetaSkeleton}>
             <Skeleton variants={{ width: 'full' }} />
           </span>
         )}
         {props.traceId ? (
-          <div className={styles.selectedTraceSheetDiv3}>
+          <div className={targetTracesStyles.sheetMetaEnd}>
             <Button
               variant="outline"
               size="compact"
@@ -746,7 +748,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
                 />
               }
             >
-              <ExternalLinkIcon className={styles.selectedTraceSheetExternalLinkIcon} />
+              <ExternalLinkIcon className={targetTracesStyles.sheetLinkIcon} />
               Full Trace
             </Button>
           </div>
@@ -1049,12 +1051,12 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
   const isLoading = query.stale || query.fetching;
 
   return (
-    <div className={styles.targetTracesPageContentDiv}>
+    <div className={targetTracesStyles.header}>
       <SubPageLayoutHeader
         subPageTitle="Traces"
         description="Insights into the requests made to your GraphQL API."
         sideContent={
-          <div className={styles.targetTracesPageContentDiv2}>
+          <div className={targetTracesStyles.headerActions}>
             <DateRangePicker
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
@@ -1068,14 +1070,14 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
           </div>
         }
       />
-      <div className={styles.targetTracesPageContentDiv3}>
-        <aside className={styles.targetTracesPageContentAside}>
-          <div className={styles.targetTracesPageContentDiv4}>
+      <div className={targetTracesStyles.layout}>
+        <aside className={targetTracesStyles.sidebar}>
+          <div className={targetTracesStyles.sidebarBody}>
             <Filters filter={props.filter} options={filterOptions} />
           </div>
         </aside>
-        <main className={styles.targetTracesPageContentMain}>
-          <div className={styles.targetTracesPageContentDiv5}>
+        <main className={targetTracesStyles.main}>
+          <div className={targetTracesStyles.mainBody}>
             <div>
               <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
             </div>

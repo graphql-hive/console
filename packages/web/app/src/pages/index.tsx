@@ -9,7 +9,7 @@ import {
   useLastVisitedOrganizationWriter,
 } from '@/lib/last-visited-org';
 import { useRouter } from '@tanstack/react-router';
-import * as styles from './index.css';
+import { indexStyles } from './index.css';
 
 const DefaultOrganizationQuery = graphql(`
   query myDefaultOrganization($previouslyVisitedOrganizationId: ID) {
@@ -56,8 +56,8 @@ export function IndexPage() {
   return (
     <>
       <Meta title="Welcome" />
-      <div className={styles.indexPageDiv}>
-        <HiveLogo animated={false} className={styles.indexPageHiveLogo} />
+      <div className={indexStyles.root}>
+        <HiveLogo animated={false} className={indexStyles.logo} />
       </div>
     </>
   );

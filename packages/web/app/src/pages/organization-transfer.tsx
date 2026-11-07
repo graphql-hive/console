@@ -7,14 +7,13 @@ import { Meta } from '@/components/ui/meta';
 import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
-import { cn } from '@/lib/utils';
 import { Link, useRouter } from '@tanstack/react-router';
-import * as styles from './organization-transfer.css';
+import { organizationTransferStyles } from './organization-transfer.css';
 
 const classes = {
-  title: cn(styles.class2),
-  description: cn(styles.class3),
-  actions: cn(styles.class4),
+  title: organizationTransferStyles.title,
+  description: organizationTransferStyles.description,
+  actions: organizationTransferStyles.actions,
 };
 
 const OrganizationTransferPage_GetRequest = graphql(`
@@ -103,9 +102,9 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
   return (
     <>
       <Meta title="Organization Transfer" />
-      <DottedBackground className={styles.organizationTransferPageDottedBackground}>
-        <div className={styles.organizationTransferPageDiv}>
-          <div className={styles.organizationTransferPageDiv2}>
+      <DottedBackground className={organizationTransferStyles.background}>
+        <div className={organizationTransferStyles.root}>
+          <div className={organizationTransferStyles.signOut}>
             <Button
               variant="outline"
               onClick={() =>
@@ -114,17 +113,17 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
                 })
               }
             >
-              <LogOutIcon className={styles.organizationTransferPageLogOutIcon} /> Sign out
+              <LogOutIcon className={organizationTransferStyles.signOutIcon} /> Sign out
             </Button>
           </div>
-          <Link to="/" className={styles.organizationTransferPageLink}>
-            <HiveLogo className={styles.organizationTransferPageHiveLogo} />
+          <Link to="/" className={organizationTransferStyles.home}>
+            <HiveLogo className={organizationTransferStyles.logo} />
           </Link>
-          <div className={styles.organizationTransferPageDiv3}>
-            <div className={styles.organizationTransferPageDiv4}>
+          <div className={organizationTransferStyles.body}>
+            <div className={organizationTransferStyles.content}>
               {query.stale || query.fetching ? (
                 <div>
-                  <LoaderCircleIcon className={styles.organizationTransferPageLoaderCircleIcon} />
+                  <LoaderCircleIcon className={organizationTransferStyles.spinner} />
                   Loading
                 </div>
               ) : query.error ? (

@@ -19,7 +19,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard, usePrettify, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
-import * as styles from './target-insights-operation.css';
+import { targetInsightsOperationStyles } from './target-insights-operation.css';
 
 const operationRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
@@ -38,10 +38,7 @@ function GraphQLOperationBody(props: {
 
   if (operation?.body) {
     return (
-      <GraphQLHighlight
-        className={styles.graphQLOperationBodyGraphQLHighlight}
-        code={operation.body}
-      />
+      <GraphQLHighlight className={targetInsightsOperationStyles.body} code={operation.body} />
     );
   }
 
@@ -67,7 +64,7 @@ export function CopyOperationButton(props: {
         }
       }}
     >
-      <CopyIcon className={styles.copyOperationButtonCopyIcon} />
+      <CopyIcon className={targetInsightsOperationStyles.copyIcon} />
       Copy operation
     </Button>
   );
@@ -120,13 +117,13 @@ function OperationView({
 
   return (
     <>
-      <div className={styles.operationViewDiv}>
+      <div className={targetInsightsOperationStyles.header}>
         <div>
           <Title>{operationName}</Title>
           <Subtitle>Insights of individual GraphQL operation</Subtitle>
         </div>
         {!result.fetching && isNotNoQueryOrMutation === false && (
-          <div className={styles.operationViewDiv2}>
+          <div className={targetInsightsOperationStyles.headerActions}>
             <DateRangePicker
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
@@ -153,7 +150,7 @@ function OperationView({
         />
       ) : (
         <Alert>
-          <AlertCircleIcon className={styles.operationViewAlertCircleIcon} />
+          <AlertCircleIcon className={targetInsightsOperationStyles.alertIcon} />
           <AlertTitle>No Subscription insights available yet.</AlertTitle>
           <AlertDescription>
             Hive is currently only collecting usage data for this operation. We are currently
@@ -165,7 +162,7 @@ function OperationView({
           </AlertDescription>
         </Alert>
       )}
-      <div className={styles.operationViewDiv3}>
+      <div className={targetInsightsOperationStyles.stats}>
         <Card
           variants={{ onSurface: 'raised', titleSize: 'large' }}
           title="Operation body"
@@ -232,7 +229,7 @@ function OperationInsightsContent(props: { operationHash: string; operationName:
 
   if (!query.data?.hasCollectedOperations) {
     return (
-      <div className={styles.operationInsightsContentDiv}>
+      <div className={targetInsightsOperationStyles.pending}>
         <EmptyList
           title="Hive is waiting for your first collected operation"
           description="You can collect usage of your GraphQL API with Hive Client"

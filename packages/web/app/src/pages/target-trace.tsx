@@ -39,11 +39,10 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useClipboard, useSlugs } from '@/lib/hooks';
 import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
-import * as styles from './target-trace.css';
+import { targetTraceStyles } from './target-trace.css';
 
 const rootTraceColor = 'rgb(244, 183, 64)';
 
@@ -64,27 +63,37 @@ function TraceView(props: {
   const timestamps = splitNanosecondsToMsIntervals(props.totalTraceDuration);
 
   return (
-    <div className={styles.traceViewDiv}>
-      <div className={styles.traceViewDiv2}>
-        <div className={styles.traceViewDiv3}>
-          <div className={styles.traceViewDiv4} style={{ width }}>
-            <div className={styles.traceViewDiv5}>
+    <div className={targetTraceStyles.root}>
+      <div className={targetTraceStyles.timeline}>
+        <div className={targetTraceStyles.timelineRow}>
+          <div className={targetTraceStyles.timelineLeft} style={{ width }}>
+            <div className={targetTraceStyles.timelineLeftLabel}>
               <div className={shared.weight.medium}>Timeline</div>
-              <div className={styles.traceViewDiv7}>Spans and details</div>
+              <div className={targetTraceStyles.timelineHint}>Spans and details</div>
             </div>
           </div>
-          <div className={styles.traceViewDiv8}>
-            <div className={styles.traceViewDiv9}>
-              <div className={styles.traceViewDiv10}>{formatMsTimestamp(timestamps[0])}</div>
-              <div className={styles.traceViewDiv11} />
-              <div className={styles.traceViewDiv12}>{formatMsTimestamp(timestamps[1])}</div>
-              <div className={styles.traceViewDiv13} />
-              <div className={styles.traceViewDiv14}>{formatMsTimestamp(timestamps[2])}</div>
-              <div className={styles.traceViewDiv15} />
-              <div className={styles.traceViewDiv16}>{formatMsTimestamp(timestamps[3])}</div>
-              <div className={styles.traceViewDiv17} />
-              <div className={styles.traceViewDiv18}>{formatMsTimestamp(timestamps[4])}</div>
-              <div className={styles.traceViewDiv19} />
+          <div className={targetTraceStyles.timelineAxis}>
+            <div className={targetTraceStyles.axis}>
+              <div className={targetTraceStyles.axisLabel[0]}>
+                {formatMsTimestamp(timestamps[0])}
+              </div>
+              <div className={targetTraceStyles.axisTick[0]} />
+              <div className={targetTraceStyles.axisLabel[25]}>
+                {formatMsTimestamp(timestamps[1])}
+              </div>
+              <div className={targetTraceStyles.axisTick[25]} />
+              <div className={targetTraceStyles.axisLabel[50]}>
+                {formatMsTimestamp(timestamps[2])}
+              </div>
+              <div className={targetTraceStyles.axisTick[50]} />
+              <div className={targetTraceStyles.axisLabel[75]}>
+                {formatMsTimestamp(timestamps[3])}
+              </div>
+              <div className={targetTraceStyles.axisTick[75]} />
+              <div className={targetTraceStyles.axisLabel[100]}>
+                {formatMsTimestamp(timestamps[4])}
+              </div>
+              <div className={targetTraceStyles.axisTick[100]} />
             </div>
           </div>
         </div>
@@ -101,17 +110,17 @@ function TraceView(props: {
         </div>
       </ScrollArea>
       {props.serviceNames && (
-        <div className={styles.traceViewDiv20}>
-          <div className={styles.traceViewDiv21}>
+        <div className={targetTraceStyles.legend}>
+          <div className={targetTraceStyles.legendItems}>
             {props.serviceNames.map(serviceName => (
               <div
                 key={serviceName}
-                className={styles.traceViewDiv22}
+                className={targetTraceStyles.legendItem}
                 onMouseEnter={() => setHighlightedServiceName(serviceName)}
                 onMouseLeave={() => setHighlightedServiceName(null)}
               >
                 <div
-                  className={styles.traceViewDiv23}
+                  className={targetTraceStyles.legendSwatch}
                   style={{
                     backgroundColor: stringToHSL(serviceName),
                   }}
@@ -159,7 +168,7 @@ function TreeIcon(props: {
       width={width}
       height="100%"
       preserveAspectRatio="xMidYMid meet"
-      className={styles.treeIconSvg}
+      className={targetTraceStyles.treeIcon}
       onClick={props.onClick}
     >
       {/* left-side line */}
@@ -303,7 +312,7 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
 
   return (
     <div
-      className={styles.traceResizeDiv}
+      className={targetTraceStyles.resizeHandle}
       style={{ left: width - 2 }} // Position 2px to the left of the center
       ref={handleRef}
       onPointerDown={handlePointerDown}
@@ -311,12 +320,7 @@ function TraceResize(props: { minWidth: number; maxWidth: number }) {
       onPointerUp={handlePointerUp}
     >
       {/* Invisible wider hit area */}
-      <div
-        className={cn(
-          styles.traceResizeDiv2,
-          isDragging ? styles.traceResizeDiv3 : styles.traceResizeDiv4,
-        )}
-      />
+      <div className={targetTraceStyles.resizeLine({ dragging: isDragging })} />
     </div>
   );
 }
@@ -388,7 +392,7 @@ type NodeElementProps = {
 function NodeElement(props: NodeElementProps) {
   return (
     <div
-      className={cn(styles.nodeElementDiv)}
+      className={targetTraceStyles.node}
       style={{
         left: `min(${props.leftPositionPercentage}%, 100% - 1px)`,
         width: `${props.widthPercentage}%`,
@@ -396,7 +400,7 @@ function NodeElement(props: NodeElementProps) {
       }}
     >
       <div
-        className={styles.nodeElementDiv2}
+        className={targetTraceStyles.nodeLabel}
         style={{
           fontSize: '11px',
           ...(props.isNearRightEdge ? { right: '6px' } : { left: 'calc(100% + 6px)' }),
@@ -448,15 +452,17 @@ function SpanNode(props: SpanNodeProps) {
   return (
     <>
       <div
-        className={cn(
-          styles.spanNodeDiv,
-          hasException && styles.spanNodeDiv2,
-          highlightedEvent && highlightedEvent.spanId === span.id && styles.spanNodeDiv3,
-        )}
+        className={targetTraceStyles.span({
+          exception: hasException,
+          highlighted: highlightedEvent?.spanId === span.id,
+        })}
       >
-        <div className={styles.spanNodeDiv4}>
-          <div className={styles.spanNodeDiv5} style={{ width: `${props.leftPanelWidth}px` }}>
-            <div className={cn(styles.spanNodeDiv6, canBeCollapsed && styles.spanNodeDiv7)}>
+        <div className={targetTraceStyles.spanRow}>
+          <div
+            className={targetTraceStyles.spanLeft}
+            style={{ width: `${props.leftPanelWidth}px` }}
+          >
+            <div className={targetTraceStyles.spanToggle({ collapsible: canBeCollapsed })}>
               <TreeIcon
                 key={`tree-icon-${span.id}`}
                 isLeaf={props.span.children.length === 0}
@@ -469,34 +475,27 @@ function SpanNode(props: SpanNodeProps) {
                 onClick={canBeCollapsed ? () => setCollapsed(collapsed => !collapsed) : undefined}
               />
             </div>
-            <div
-              className={cn(styles.spanNodeDiv8, isDimmed ? shared.fg.secondary : shared.fg.strong)}
-            >
-              <span className={styles.spanNodeSpan}>{span.name}</span>
+            <div className={targetTraceStyles.spanName({ dimmed: !!isDimmed })}>
+              <span className={targetTraceStyles.spanNameText}>{span.name}</span>
               {hasException && (
-                <span className={styles.spanNodeSpan2}>
+                <span className={targetTraceStyles.spanBadge}>
                   <Badge content="Error" variants={{ variant: 'critical', mono: true }} />
                 </span>
               )}
             </div>
             {span.spanAttributes['hive.gateway.upstream.subgraph.name'] ? (
-              <div
-                className={cn(
-                  styles.spanNodeDiv11,
-                  isDimmed ? shared.fg.subtle : shared.fg.secondary,
-                )}
-              >
+              <div className={targetTraceStyles.spanSubgraph({ dimmed: !!isDimmed })}>
                 {span.spanAttributes['hive.gateway.upstream.subgraph.name'] as ReactNode}
               </div>
             ) : null}
           </div>
-          <div className={styles.spanNodeDiv14}>
+          <div className={targetTraceStyles.spanBar}>
             <Tooltip
               disableHoverablePopup
               side="bottom"
               trigger={
                 <Link
-                  className={cn(styles.spanNodeLink, isDimmed ? styles.spanNodeLink2 : '')}
+                  className={targetTraceStyles.spanBarLink({ dimmed: !!isDimmed })}
                   to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                   params={{
                     organizationSlug,
@@ -516,27 +515,29 @@ function SpanNode(props: SpanNodeProps) {
                 </Link>
               }
               content={
-                <div className={styles.spanNodeDiv15}>
-                  <div className={styles.spanNodeDiv16}>
+                <div className={targetTraceStyles.spanPopover}>
+                  <div className={targetTraceStyles.spanStats}>
                     <div className={shared.fg.secondary}>Duration</div>
-                    <div className={styles.spanNodeDiv18}>
+                    <div className={targetTraceStyles.statValue}>
                       <span>{formatNanoseconds(props.span.durationNs)}</span>
                     </div>
 
                     <div className={shared.fg.secondary}>Started At</div>
-                    <div className={styles.spanNodeDiv20}>
+                    <div className={targetTraceStyles.statValue}>
                       {formatNanoseconds(props.span.startNs)}
                     </div>
 
                     <div className={shared.fg.secondary}>% of Total</div>
-                    <div className={styles.spanNodeDiv22}>{props.span.percentageOfTotal}%</div>
+                    <div className={targetTraceStyles.statValue}>
+                      {props.span.percentageOfTotal}%
+                    </div>
 
-                    <div className={styles.spanNodeDiv23}>
+                    <div className={targetTraceStyles.statWide}>
                       {/* Timeline visualization */}
                       <div>
-                        <div className={styles.spanNodeDiv24}>
+                        <div className={targetTraceStyles.statBar}>
                           <div
-                            className={styles.spanNodeDiv25}
+                            className={targetTraceStyles.statBarFill}
                             style={{
                               width: `${props.span.percentageOfTotal}%`,
                               backgroundColor: rootTraceColor,
@@ -549,16 +550,16 @@ function SpanNode(props: SpanNodeProps) {
                     {props.span.percentageOfParentSpan === null ? null : (
                       <>
                         <div className={shared.fg.secondary}>% of Parent</div>
-                        <div className={styles.spanNodeDiv27}>
+                        <div className={targetTraceStyles.statValue}>
                           {props.span.percentageOfParentSpan}%
                         </div>
 
-                        <div className={styles.spanNodeDiv28}>
+                        <div className={targetTraceStyles.statWide}>
                           {/* Timeline visualization */}
                           <div>
-                            <div className={styles.spanNodeDiv29}>
+                            <div className={targetTraceStyles.statBar}>
                               <div
-                                className={styles.spanNodeDiv30}
+                                className={targetTraceStyles.statBarFill}
                                 style={{
                                   width: `${props.span.percentageOfParentSpan}%`,
                                   backgroundColor: parentColor,
@@ -593,7 +594,7 @@ function SpanNode(props: SpanNodeProps) {
                   maxWidth="lg"
                   trigger={
                     <Link
-                      className={cn(styles.spanNodeLink3)}
+                      className={targetTraceStyles.eventMarker}
                       style={{ left: `${leftPercentage}%` }}
                       to="/$organizationSlug/$projectSlug/$targetSlug/traces/$traceId"
                       params={{
@@ -608,25 +609,23 @@ function SpanNode(props: SpanNodeProps) {
                         activeSpanTab: 'events',
                       })}
                     >
-                      <div className={styles.spanNodeDiv31}>
+                      <div className={targetTraceStyles.eventMarkerBody}>
                         <div
-                          className={cn(
-                            styles.spanNodeDiv32,
-                            isError ? styles.spanNodeDiv33 : styles.spanNodeDiv34,
-                          )}
+                          className={targetTraceStyles.eventLine({
+                            tone: isError ? 'error' : 'warning',
+                          })}
                         >
                           <div
-                            className={cn(
-                              styles.spanNodeDiv35,
-                              isError ? styles.spanNodeDiv36 : styles.spanNodeDiv37,
-                            )}
+                            className={targetTraceStyles.eventDot({
+                              tone: isError ? 'error' : 'warning',
+                            })}
                           />
                         </div>
                       </div>
                     </Link>
                   }
                   content={
-                    <div className={styles.spanNodeDiv38}>
+                    <div className={targetTraceStyles.spanPopoverPlain}>
                       <ExceptionTeaser
                         type={String(event.attributes['exception.type'] ?? '')}
                         message={String(event.attributes['exception.message'] ?? '')}
@@ -749,7 +748,7 @@ export function TraceSheet(props: TraceSheetProps) {
   });
 
   return (
-    <div className={styles.traceSheetDiv}>
+    <div className={targetTraceStyles.sheet}>
       <>
         <ResizablePanelGroup orientation="vertical">
           <ResizablePanel defaultSize="70%" minSize="20%" maxSize="80%">
@@ -768,8 +767,8 @@ export function TraceSheet(props: TraceSheetProps) {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize="30%" minSize="10%" maxSize="80%">
-            <div className={styles.traceSheetDiv2}>
-              <div className={styles.traceSheetDiv3}>
+            <div className={targetTraceStyles.sheetBody}>
+              <div className={targetTraceStyles.sheetHeader}>
                 <Tabs
                   size="sm"
                   value={activeView}
@@ -797,7 +796,7 @@ export function TraceSheet(props: TraceSheetProps) {
                 />
               </div>
               <ScrollArea fill>
-                <div className={styles.traceSheetDiv4}>
+                <div className={targetTraceStyles.sheetTab}>
                   {activeView === 'span-attributes' ? (
                     <div>
                       {spanAttributes.length > 0 ? (
@@ -809,9 +808,11 @@ export function TraceSheet(props: TraceSheetProps) {
                           />
                         ))
                       ) : (
-                        <div className={styles.traceSheetDiv5}>
-                          <AlertTriangle className={styles.traceSheetAlertTriangle} />
-                          <p className={styles.traceSheetP}>No attributes found for this trace</p>
+                        <div className={targetTraceStyles.empty}>
+                          <AlertTriangle className={targetTraceStyles.emptyIcon} />
+                          <p className={targetTraceStyles.emptyText}>
+                            No attributes found for this trace
+                          </p>
                         </div>
                       )}
                     </div>
@@ -827,9 +828,9 @@ export function TraceSheet(props: TraceSheetProps) {
                           />
                         ))
                       ) : (
-                        <div className={styles.traceSheetDiv6}>
-                          <AlertTriangle className={styles.traceSheetAlertTriangle2} />
-                          <p className={styles.traceSheetP2}>
+                        <div className={targetTraceStyles.empty}>
+                          <AlertTriangle className={targetTraceStyles.emptyIcon} />
+                          <p className={targetTraceStyles.emptyText}>
                             No resource attributes found for this trace
                           </p>
                         </div>
@@ -837,10 +838,10 @@ export function TraceSheet(props: TraceSheetProps) {
                     </div>
                   ) : null}
                   {activeView === 'events' ? (
-                    <div className={styles.traceSheetDiv7}>
-                      <div className={styles.traceSheetDiv8}>
+                    <div className={targetTraceStyles.sheetErrors}>
+                      <div className={targetTraceStyles.sheetErrorList}>
                         {!events.length ? (
-                          <div className={styles.traceSheetDiv9}>
+                          <div className={targetTraceStyles.sheetErrorText}>
                             No events occurred during this trace.
                           </div>
                         ) : (
@@ -867,7 +868,7 @@ export function TraceSheet(props: TraceSheetProps) {
                               onMouseLeave={() => {
                                 setHighlightedEvent(null);
                               }}
-                              className={styles.traceSheetLink}
+                              className={targetTraceStyles.sheetErrorLink}
                               key={event.id}
                             >
                               <ExceptionTeaser
@@ -883,9 +884,9 @@ export function TraceSheet(props: TraceSheetProps) {
                     </div>
                   ) : null}
                   {activeView === 'operation' ? (
-                    <div className={styles.traceSheetDiv10}>
+                    <div className={targetTraceStyles.sheetDocument}>
                       <GraphQLHighlight
-                        className={styles.traceSheetGraphQLHighlight}
+                        className={targetTraceStyles.document}
                         code={rootSpanUnmasked.spanAttributes['graphql.document'] as string}
                       />
                     </div>
@@ -983,7 +984,7 @@ function TargetInsightsNewPageContent(props: {
   }
 
   return (
-    <div className={styles.targetInsightsNewPageContentDiv}>
+    <div className={targetTraceStyles.pageHeader}>
       <Meta title={`Trace ${props.traceId}`} />
       <SubPageLayoutHeader
         subPageTitle={
@@ -999,16 +1000,14 @@ function TargetInsightsNewPageContent(props: {
             >
               Traces
             </Link>{' '}
-            <span className={styles.targetInsightsNewPageContentSpan2}>/</span>{' '}
+            <span className={targetTraceStyles.headerSeparator}>/</span>{' '}
             {trace ? (
               <>
                 {trace.operationName ?? <span className={shared.fg.secondary}>{'<unknown>'}</span>}
-                <span className={styles.targetInsightsNewPageContentSpan4}>
-                  {trace.id.substring(0, 4)}
-                </span>
+                <span className={targetTraceStyles.headerId}>{trace.id.substring(0, 4)}</span>
               </>
             ) : (
-              <span className={styles.targetInsightsNewPageContentSpan5}>
+              <span className={targetTraceStyles.headerSkeletonShort}>
                 <Skeleton variants={{ size: 'lg', width: 'full' }} />
               </span>
             )}
@@ -1024,15 +1023,15 @@ function TargetInsightsNewPageContent(props: {
                   <CopyIconButton value={trace.id} label="Copy Trace ID" />
                 </>
               ) : (
-                <span className={styles.targetInsightsNewPageContentSpan7}>
+                <span className={targetTraceStyles.headerSkeletonLong}>
                   <Skeleton variants={{ width: 'full' }} />
                 </span>
               )}
             </p>
             {trace && (
-              <div className={styles.targetInsightsNewPageContentDiv2}>
+              <div className={targetTraceStyles.headerMeta}>
                 <div className={shared.row.gap1}>
-                  <Clock className={styles.targetInsightsNewPageContentClock} />
+                  <Clock className={targetTraceStyles.headerMetaIcon} />
                   <span className={shared.fg.default}>
                     {formatNanoseconds(BigInt(trace.duration))}
                   </span>
@@ -1041,7 +1040,7 @@ function TargetInsightsNewPageContent(props: {
                   content={trace.success ? 'Ok' : 'Error'}
                   variants={{ variant: trace.success ? 'success' : 'critical' }}
                 />
-                <span className={styles.targetInsightsNewPageContentSpan9}>
+                <span className={targetTraceStyles.headerMethod}>
                   {formatDate(trace.timestamp, 'MMM dd HH:mm:ss')}
                 </span>
               </div>
@@ -1072,8 +1071,8 @@ export function TargetTracePage(props: {
   activeSpanTab: string | null;
 }) {
   return (
-    <LayoutContent className={styles.targetTracePageLayoutContent}>
-      <div className={styles.targetTracePageDiv}>
+    <LayoutContent className={targetTraceStyles.page}>
+      <div className={targetTraceStyles.pageBody}>
         <TargetInsightsNewPageContent {...props} />
       </div>
     </LayoutContent>
@@ -1385,8 +1384,8 @@ function SpanSheet(props: SpanSheetProps) {
       title={
         <>
           {!span.parentId && 'Root '}Span Details
-          <span className={styles.spanSheetSpan}>{span.id.substring(0, 4)}</span>
-          <span className={styles.spanSheetSpan2}>{span.name}</span>
+          <span className={targetTraceStyles.headerId}>{span.id.substring(0, 4)}</span>
+          <span className={targetTraceStyles.spanSheetName}>{span.name}</span>
         </>
       }
       description={
@@ -1417,23 +1416,23 @@ function SpanSheet(props: SpanSheetProps) {
                 />
               }
             >
-              <ArrowUp className={styles.spanSheetArrowUp} /> Show Parent Span
+              <ArrowUp className={targetTraceStyles.sheetActionIcon} /> Show Parent Span
             </Button>
           )}
           <Button variant="ghost" size="compact" onClick={() => clipboard(window.location.href)}>
-            <LinkLucide className={styles.spanSheetLinkLucide} /> Share Link
+            <LinkLucide className={targetTraceStyles.sheetActionIcon} /> Share Link
           </Button>
         </>
       }
     >
       {computedSpanMetrics && (
-        <div className={styles.spanSheetDiv}>
+        <div className={targetTraceStyles.metrics}>
           {/* Duration */}
-          <div className={styles.spanSheetDiv2}>
-            <Clock className={styles.spanSheetClock} />
+          <div className={targetTraceStyles.metric}>
+            <Clock className={targetTraceStyles.metricIconInfo} />
             <div>
-              <p className={styles.spanSheetP}>Duration</p>
-              <p className={styles.spanSheetP2}>
+              <p className={targetTraceStyles.metricLabel}>Duration</p>
+              <p className={targetTraceStyles.metricValue}>
                 {' '}
                 {formatNanoseconds(computedSpanMetrics.durationNs)}
               </p>
@@ -1442,11 +1441,11 @@ function SpanSheet(props: SpanSheetProps) {
 
           {/* Start Time */}
           {computedSpanMetrics.startNs !== 0n && (
-            <div className={styles.spanSheetDiv3}>
-              <Play className={styles.spanSheetPlay} />
+            <div className={targetTraceStyles.metric}>
+              <Play className={targetTraceStyles.metricIconSuccess} />
               <div>
-                <p className={styles.spanSheetP3}>Start</p>
-                <p className={styles.spanSheetP4}>
+                <p className={targetTraceStyles.metricLabel}>Start</p>
+                <p className={targetTraceStyles.metricValue}>
                   {' '}
                   {formatNanoseconds(computedSpanMetrics.startNs)}
                 </p>
@@ -1456,29 +1455,35 @@ function SpanSheet(props: SpanSheetProps) {
 
           {/* Percentage of Total */}
           {computedSpanMetrics.percentageOfTotal && (
-            <div className={styles.spanSheetDiv4}>
-              <PieChart className={styles.spanSheetPieChart} />
+            <div className={targetTraceStyles.metric}>
+              <PieChart className={targetTraceStyles.metricIconAccent} />
               <div>
-                <p className={styles.spanSheetP5}>% of Total</p>
-                <p className={styles.spanSheetP6}> {computedSpanMetrics.percentageOfTotal}%</p>
+                <p className={targetTraceStyles.metricLabel}>% of Total</p>
+                <p className={targetTraceStyles.metricValue}>
+                  {' '}
+                  {computedSpanMetrics.percentageOfTotal}%
+                </p>
               </div>
             </div>
           )}
 
           {/* Percentage of Parent */}
           {computedSpanMetrics.percentageOfParentSpan && (
-            <div className={styles.spanSheetDiv5}>
-              <TreePine className={styles.spanSheetTreePine} />
+            <div className={targetTraceStyles.metric}>
+              <TreePine className={targetTraceStyles.metricIconAccent} />
               <div>
-                <p className={styles.spanSheetP7}>% of Parent</p>
-                <p className={styles.spanSheetP8}> {computedSpanMetrics.percentageOfParentSpan}%</p>
+                <p className={targetTraceStyles.metricLabel}>% of Parent</p>
+                <p className={targetTraceStyles.metricValue}>
+                  {' '}
+                  {computedSpanMetrics.percentageOfParentSpan}%
+                </p>
               </div>
             </div>
           )}
         </div>
       )}
-      <div className={styles.spanSheetDiv6}>
-        <div className={styles.spanSheetDiv7}>
+      <div className={targetTraceStyles.sheetTabs}>
+        <div className={targetTraceStyles.sheetTabsBorder}>
           <Tabs
             size="sm"
             value={activeView}
@@ -1523,9 +1528,11 @@ function SpanSheet(props: SpanSheetProps) {
                   ))}
                 </div>
               ) : (
-                <div className={styles.spanSheetDiv8}>
-                  <AlertTriangle className={styles.spanSheetAlertTriangle} />
-                  <p className={styles.spanSheetP9}>No span attributes found for this span.</p>
+                <div className={targetTraceStyles.empty}>
+                  <AlertTriangle className={targetTraceStyles.emptyIcon} />
+                  <p className={targetTraceStyles.emptyText}>
+                    No span attributes found for this span.
+                  </p>
                 </div>
               )}
             </div>
@@ -1543,9 +1550,11 @@ function SpanSheet(props: SpanSheetProps) {
                   ))}
                 </div>
               ) : (
-                <div className={styles.spanSheetDiv9}>
-                  <AlertTriangle className={styles.spanSheetAlertTriangle2} />
-                  <p className={styles.spanSheetP10}>No resource attributes found for this span.</p>
+                <div className={targetTraceStyles.empty}>
+                  <AlertTriangle className={targetTraceStyles.emptyIcon} />
+                  <p className={targetTraceStyles.emptyText}>
+                    No resource attributes found for this span.
+                  </p>
                 </div>
               )}
             </div>
@@ -1553,11 +1562,11 @@ function SpanSheet(props: SpanSheetProps) {
           {activeView === 'events' && (
             <div>
               {span.events.length > 0 ? (
-                <div className={styles.spanSheetDiv10}>
+                <div className={targetTraceStyles.events}>
                   {span.events.map((event, index) => {
                     return (
                       <div
-                        className={styles.spanSheetDiv11}
+                        className={targetTraceStyles.event}
                         key={`${event.name}_${event.date}_${index}`}
                       >
                         <ExceptionTeaser
@@ -1575,16 +1584,16 @@ function SpanSheet(props: SpanSheetProps) {
                   })}
                 </div>
               ) : (
-                <div className={styles.spanSheetDiv12}>
-                  <AlertTriangle className={styles.spanSheetAlertTriangle3} />
-                  <p className={styles.spanSheetP11}>No events found for this span.</p>
+                <div className={targetTraceStyles.empty}>
+                  <AlertTriangle className={targetTraceStyles.emptyIcon} />
+                  <p className={targetTraceStyles.emptyText}>No events found for this span.</p>
                 </div>
               )}
             </div>
           )}
           {activeView === 'operation' && (
             <GraphQLHighlight
-              className={styles.spanSheetGraphQLHighlight}
+              className={targetTraceStyles.document}
               code={span.spanAttributes['graphql.document'] as string}
             />
           )}
@@ -1603,7 +1612,7 @@ function AttributeRow(props: AttributeRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const actionsNode = (
-    <span className={styles.attributeRowSpan}>
+    <span className={targetTraceStyles.attributeCopy}>
       <CopyIconButton value={props.value} label="Copy attribute value" />
       <Tooltip
         trigger={
@@ -1618,15 +1627,12 @@ function AttributeRow(props: AttributeRowProps) {
   );
 
   return (
-    <div
-      key={props.attributeKey}
-      className={cn(styles.attributeRowDiv, isExpanded && styles.attributeRowDiv2)}
-    >
-      <div className={cn(styles.attributeRowDiv3, isExpanded && styles.attributeRowDiv4)}>
+    <div key={props.attributeKey} className={targetTraceStyles.attribute({ expanded: isExpanded })}>
+      <div className={targetTraceStyles.attributeKey({ expanded: isExpanded })}>
         {props.attributeKey}
         {isExpanded && actionsNode}
       </div>
-      <div className={cn(styles.attributeRowDiv5, !isExpanded && styles.attributeRowDiv6)}>
+      <div className={targetTraceStyles.attributeValue({ collapsed: !isExpanded })}>
         {props.value}
       </div>
       {!isExpanded && actionsNode}
@@ -1641,17 +1647,17 @@ function ExceptionTeaser(props: {
   type: string;
 }) {
   return (
-    <div className={styles.exceptionTeaserDiv}>
-      <div className={styles.exceptionTeaserDiv2}>
-        <span className={styles.exceptionTeaserSpan}>{props.type}</span>
+    <div className={targetTraceStyles.exception}>
+      <div className={targetTraceStyles.exceptionHeader}>
+        <span className={targetTraceStyles.exceptionType}>{props.type}</span>
         <Badge content={props.name} variants={{ variant: 'critical', size: 'sm', mono: true }} />
       </div>
-      <div className={styles.exceptionTeaserDiv3}>
+      <div className={targetTraceStyles.exceptionBody}>
         <p className={shared.fg.default}>{props.message}</p>
         {props.stacktrace && (
-          <div className={styles.exceptionTeaserDiv4}>
+          <div className={targetTraceStyles.exceptionStack}>
             <ScrollArea axis="horizontal">
-              <pre className={styles.exceptionTeaserPre}>{props.stacktrace}</pre>
+              <pre className={targetTraceStyles.exceptionStackText}>{props.stacktrace}</pre>
             </ScrollArea>
           </div>
         )}

@@ -14,7 +14,7 @@ import { useSession } from '@/lib/auth/use-session';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
 import * as shared from '@/styles/shared.css';
 import { Link, useRouter } from '@tanstack/react-router';
-import * as styles from './organization-join.css';
+import { organizationJoinStyles } from './organization-join.css';
 
 export const JoinOrganizationPage_JoinOrganizationMutation = graphql(`
   mutation JoinOrganizationPage_JoinOrganizationMutation($code: String!) {
@@ -114,7 +114,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
   if (session.loading) {
     return (
-      <div className={styles.joinOrganizationPageDiv}>
+      <div className={organizationJoinStyles.pending}>
         <Spinner />
       </div>
     );
@@ -127,16 +127,16 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
   return (
     <HiveStripeWrapper>
       <Meta title={orgName ? `Invitation to ${orgName}` : 'Invitation'} />
-      <DottedBackground className={styles.joinOrganizationPageDottedBackground}>
-        <div className={styles.joinOrganizationPageDiv2}>
+      <DottedBackground className={organizationJoinStyles.background}>
+        <div className={organizationJoinStyles.signOut}>
           <Button variant="outline" onClick={() => router.navigate({ to: '/logout' })}>
-            <LogOutIcon className={styles.joinOrganizationPageLogOutIcon} /> Sign out
+            <LogOutIcon className={organizationJoinStyles.signOutIcon} /> Sign out
           </Button>
         </div>
-        <Link to="/" className={styles.joinOrganizationPageLink}>
-          <HiveLogo className={styles.joinOrganizationPageHiveLogo} />
+        <Link to="/" className={organizationJoinStyles.home}>
+          <HiveLogo className={organizationJoinStyles.logo} />
         </Link>
-        <div className={styles.joinOrganizationPageDiv3}>
+        <div className={organizationJoinStyles.container}>
           <DataWrapper query={query} organizationSlug={null}>
             {({ data }) => {
               if (data.organizationByInviteCode == null) {
@@ -146,13 +146,13 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
 
               if (invitation.__typename === 'OrganizationInvitationError') {
                 return (
-                  <div className={styles.joinOrganizationPageDiv4}>
+                  <div className={organizationJoinStyles.card}>
                     <Card
                       variants={{ onSurface: 'raised', titleSize: 'large' }}
                       title="Invitation Error"
                     >
                       {invitation.message}
-                      <div className={styles.joinOrganizationPageDiv5}>
+                      <div className={organizationJoinStyles.cardActions}>
                         <Button width="full" onSurface="raised" onClick={goBack}>
                           Back to Hive
                         </Button>
@@ -163,7 +163,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
               }
 
               return (
-                <div className={styles.joinOrganizationPageDiv4}>
+                <div className={organizationJoinStyles.card}>
                   <Card
                     variants={{ onSurface: 'raised', titleSize: 'large' }}
                     title={`Join "${invitation.name}" organization`}
@@ -172,11 +172,11 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                       You've been invited to become a member of{' '}
                       <span className={shared.weight.semibold}>{invitation.name}</span>.
                     </p>
-                    <p className={styles.joinOrganizationPageP}>
+                    <p className={organizationJoinStyles.description}>
                       By accepting the invitation, you will be able to collaborate with other
                       members of this organization.
                     </p>
-                    <div className={styles.joinOrganizationPageDiv6}>
+                    <div className={organizationJoinStyles.choices}>
                       <Button
                         variant="outline"
                         width="full"

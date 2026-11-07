@@ -16,7 +16,7 @@ import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
-import * as styles from './organization.css';
+import { organizationStyles } from './organization.css';
 
 const organizationIndexRoute = getRouteApi('/authenticated/with-header/$organizationSlug/');
 
@@ -180,17 +180,17 @@ function OrganizationPageContent(props: {} & RouteSearchProps) {
   }
 
   return (
-    <LayoutContent className={styles.organizationPageContentLayoutContent}>
+    <LayoutContent className={organizationStyles.root}>
       <>
         <div className={shared.grow}>
-          <div className={styles.organizationPageContentDiv2}>
+          <div className={organizationStyles.header}>
             <div>
               <Title>Projects</Title>
               <Subtitle>A list of available project in your organization.</Subtitle>
             </div>
             <div>
-              <div className={styles.organizationPageContentDiv3}>
-                <div className={styles.organizationPageContentDiv4}>
+              <div className={organizationStyles.headerControls}>
+                <div className={organizationStyles.search}>
                   <Input
                     type="search"
                     placeholder="Search..."
@@ -236,7 +236,7 @@ function OrganizationPageContent(props: {} & RouteSearchProps) {
                 docsUrl="/schema-registry/management/projects#create-a-new-project"
               />
             ) : (
-              <div className={styles.organizationPageContentDiv5}>
+              <div className={organizationStyles.grid}>
                 {projects.map(project => (
                   <ProjectCard
                     key={project.id}
@@ -251,7 +251,7 @@ function OrganizationPageContent(props: {} & RouteSearchProps) {
               </div>
             )
           ) : (
-            <div className={styles.organizationPageContentDiv6}>
+            <div className={organizationStyles.grid}>
               {Array.from({ length: 4 }).map((_, index) => (
                 <ProjectCard
                   key={index}

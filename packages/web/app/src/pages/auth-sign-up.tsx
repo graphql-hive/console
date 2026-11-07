@@ -22,7 +22,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 import { SignInButton } from './auth-sign-in';
-import * as styles from './auth-sign-up.css';
+import { authSignUpStyles } from './auth-sign-up.css';
 
 export function AuthSignUpPage(props: { redirectToPath: string }) {
   const [lastAuthMethod] = useLastAuthMethod();
@@ -158,7 +158,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
-                      <GoogleIcon className={styles.authSignUpPageGoogleIcon} /> Sign up with Google
+                      <GoogleIcon className={authSignUpStyles.providerIcon} /> Sign up with Google
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -170,7 +170,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
-                      <GitHubIcon className={styles.authSignUpPageGitHubIcon} /> Sign up with Github
+                      <GitHubIcon className={authSignUpStyles.providerIcon} /> Sign up with Github
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -182,7 +182,7 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
-                      <OktaIcon className={styles.authSignUpPageOktaIcon} /> Sign up with Okta
+                      <OktaIcon className={authSignUpStyles.providerIcon} /> Sign up with Okta
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -196,20 +196,19 @@ export function AuthSignUpPage(props: { redirectToPath: string }) {
                         <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
                       }
                     >
-                      <CircleUserRound className={styles.authSignUpPageCircleUserRound} /> Sign up
-                      with SSO
+                      <CircleUserRound className={authSignUpStyles.providerIcon} /> Sign up with SSO
                     </Button>
                   </SignInButton>
                 ) : null}
               </>
             </AuthCardStack>
-            <div className={styles.authSignUpPageDiv}>
+            <div className={authSignUpStyles.footer}>
               Already have an account?{' '}
               <Link
                 to="/auth/sign-in"
                 search={{ redirectToPath: props.redirectToPath }}
                 data-auth-link="sign-in"
-                className={styles.authSignUpPageLink}
+                className={authSignUpStyles.footerLink}
               >
                 Sign in
               </Link>

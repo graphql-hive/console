@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useNavigate } from '@tanstack/react-router';
-import * as styles from './target-alerts-create.css';
+import { targetAlertsCreateStyles } from './target-alerts-create.css';
 
 export const TargetAlertsCreatePage_CapQuery = graphql(`
   query TargetAlertsCreatePage_CapQuery(
@@ -59,10 +59,10 @@ export function TargetAlertsCreatePage(props: { savedFilterId?: string }) {
 
   if (isAtLimit) {
     return (
-      <div className={styles.targetAlertsCreatePageDiv}>
-        <CircleAlert className={styles.targetAlertsCreatePageCircleAlert} />
-        <h2 className={styles.targetAlertsCreatePageH2}>You're at the rule limit</h2>
-        <p className={styles.targetAlertsCreatePageP}>
+      <div className={targetAlertsCreateStyles.limit}>
+        <CircleAlert className={targetAlertsCreateStyles.limitIcon} />
+        <h2 className={targetAlertsCreateStyles.limitTitle}>You're at the rule limit</h2>
+        <p className={targetAlertsCreateStyles.limitText}>
           This target has {limit} of {limit} configured alert rules. Delete one from the rules list
           to free a slot, then come back to create another.
         </p>

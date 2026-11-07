@@ -23,7 +23,7 @@ import { SupportTicketPriority, SupportTicketStatus } from '@/gql/graphql';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './organization-support.css';
+import { organizationSupportStyles } from './organization-support.css';
 
 const NewTicketForm_SupportTicketCreateMutation = graphql(`
   mutation NewTicketForm_SupportTicketCreateMutation($input: SupportTicketCreateInput!) {
@@ -234,20 +234,20 @@ function Support(props: {
   return (
     <>
       <div>
-        <div className={styles.supportDiv}>
+        <div className={organizationSupportStyles.header}>
           <div>
             <Title>Support</Title>
             <Subtitle>A list of support requests</Subtitle>
           </div>
           <div>
             <Button variant="outline" onClick={toggle}>
-              <PencilIcon className={styles.supportPencilIcon} />
+              <PencilIcon className={organizationSupportStyles.newTicketIcon} />
               New ticket
             </Button>
             <NewTicketSheet isOpen={isOpen} onClose={toggle} onSubmit={onSubmit} />
           </div>
         </div>
-        <div className={styles.supportDiv2}>
+        <div className={organizationSupportStyles.tickets}>
           <DataTable
             data={tickets}
             columns={columns}
@@ -293,7 +293,7 @@ function SupportPageContent() {
   const currentOrganization = query.data?.organization;
 
   return (
-    <LayoutContent className={styles.supportPageContentLayoutContent}>
+    <LayoutContent className={organizationSupportStyles.root}>
       {currentOrganization ? (
         <Support organization={currentOrganization} refetch={refetch} />
       ) : null}

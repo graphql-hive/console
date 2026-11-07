@@ -2,9 +2,8 @@ import { Fragment, useState } from 'react';
 import { Proposal, Proposal_ReviewsFragment } from '@/components/target/proposals';
 import { ServiceHeading, ServiceHeadingType } from '@/components/target/proposals/service-heading';
 import { FragmentType } from '@/gql';
-import { cn } from '@/lib/utils';
 import { ServiceProposalDetails } from './target-proposal-types';
-import * as styles from './target-proposal-schema.css';
+import { targetProposalSchemaStyles } from './target-proposal-schema.css';
 
 export function TargetProposalSchemaPage(props: {
   proposalId: string; // @todo pass to proposal for commenting etc
@@ -13,7 +12,7 @@ export function TargetProposalSchemaPage(props: {
 }) {
   if (props.services.length) {
     return (
-      <div className={styles.targetProposalSchemaPageDiv}>
+      <div className={targetProposalSchemaStyles.root}>
         {props.services.map(proposed => (
           <Fragment key={proposed.serviceName}>
             <Schema details={proposed} reviews={props.reviews} />
@@ -51,7 +50,7 @@ function Schema({
       <Proposal
         {...details}
         reviews={reviews}
-        className={cn(!isVisible && styles.schemaProposal)}
+        className={targetProposalSchemaStyles.schema({ hidden: !isVisible })}
       />
     </>
   );

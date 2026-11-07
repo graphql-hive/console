@@ -17,7 +17,7 @@ import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
-import * as styles from './project.css';
+import { projectStyles } from './project.css';
 
 const projectIndexRoute = getRouteApi('/authenticated/with-header/$organizationSlug/$projectSlug/');
 
@@ -48,7 +48,7 @@ const TargetCard = (props: {
       days={props.days}
       renderLink={children => (
         <Link
-          className={styles.targetCardLink}
+          className={projectStyles.targetLink}
           to="/$organizationSlug/$projectSlug/$targetSlug"
           disabled={organizationSlug == null || projectSlug == null || target?.slug == null}
           params={{
@@ -198,14 +198,14 @@ const ProjectsPageContent = (props: RouteSearchProps) => {
 
   return (
     <div className={shared.grow}>
-      <div className={styles.projectsPageContentDiv2}>
+      <div className={projectStyles.header}>
         <div>
           <Title>Targets</Title>
           <Subtitle>A list of available targets in your project.</Subtitle>
         </div>
         <div>
-          <div className={styles.projectsPageContentDiv3}>
-            <div className={styles.projectsPageContentDiv4}>
+          <div className={projectStyles.headerControls}>
+            <div className={projectStyles.search}>
               <Input
                 type="search"
                 placeholder="Search..."
@@ -243,12 +243,7 @@ const ProjectsPageContent = (props: RouteSearchProps) => {
           </div>
         </div>
       </div>
-      <div
-        className={cn(
-          shared.grow,
-          targetConnection?.edges.length === 0 ? '' : styles.projectsPageContentDiv6,
-        )}
-      >
+      <div className={cn(shared.grow, targetConnection?.edges.length !== 0 && projectStyles.grid)}>
         {targetConnection ? (
           targetConnection?.edges.length === 0 ? (
             <EmptyList
@@ -316,7 +311,7 @@ export function ProjectPage(props: RouteSearchProps): ReactElement {
   return (
     <>
       <Meta title="Targets" />
-      <LayoutContent className={styles.projectPageLayoutContent}>
+      <LayoutContent className={projectStyles.root}>
         <ProjectsPageContent
           search={props.search}
           sortBy={props.sortBy}

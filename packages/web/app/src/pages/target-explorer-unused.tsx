@@ -20,16 +20,14 @@ import { EmptyList, NoSchemaVersion } from '@/components/ui/empty-list';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
-import { focusRingQuiet } from '@/components/ui/primitives/shared-styles';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
-import * as styles from './target-explorer-unused.css';
+import { targetExplorerUnusedStyles } from './target-explorer-unused.css';
 
 const UnusedSchemaView_UnusedSchemaExplorerFragment = graphql(`
   fragment UnusedSchemaView_UnusedSchemaExplorerFragment on UnusedSchemaExplorer {
@@ -154,12 +152,12 @@ function InternalUnusedSchemaView(props: {
 
   if (types.length === 0) {
     return (
-      <div className={styles.internalUnusedSchemaViewDiv}>
-        <div className={styles.internalUnusedSchemaViewDiv2}>
-          <PartyPopperIcon className={styles.internalUnusedSchemaViewPartyPopperIcon} />
+      <div className={targetExplorerUnusedStyles.empty}>
+        <div className={targetExplorerUnusedStyles.emptyBody}>
+          <PartyPopperIcon className={targetExplorerUnusedStyles.emptyIcon} />
 
-          <h3 className={styles.internalUnusedSchemaViewH3}>No unused types</h3>
-          <p className={styles.internalUnusedSchemaViewP}>
+          <h3 className={targetExplorerUnusedStyles.emptyTitle}>No unused types</h3>
+          <p className={targetExplorerUnusedStyles.emptyText}>
             It looks like you are using all typea in your schema, congratulations!
           </p>
         </div>
@@ -183,10 +181,10 @@ function InternalUnusedSchemaView(props: {
     .join(' and ');
 
   return (
-    <div className={styles.internalUnusedSchemaViewDiv3}>
+    <div className={targetExplorerUnusedStyles.sections}>
       {unusedFieldsMessage.length ? (
         <div>
-          <p className={styles.internalUnusedSchemaViewP2}>
+          <p className={targetExplorerUnusedStyles.hint}>
             You have a total of {unusedFieldsMessage} within {unused.types} different types in the
             selected time period
           </p>
@@ -201,13 +199,7 @@ function InternalUnusedSchemaView(props: {
                 <button
                   type="button"
                   onClick={() => setSelectedLetter(letter)}
-                  className={cn(
-                    styles.internalUnusedSchemaViewButton,
-                    focusRingQuiet,
-                    letter === activeLetter
-                      ? styles.internalUnusedSchemaViewButton2
-                      : styles.internalUnusedSchemaViewButton3,
-                  )}
+                  className={targetExplorerUnusedStyles.letter({ active: letter === activeLetter })}
                 >
                   {letter}
                 </button>
@@ -327,7 +319,7 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
       />
 
       {!hasCollectedOperations ? (
-        <div className={styles.unusedSchemaExplorerDiv}>
+        <div className={targetExplorerUnusedStyles.content}>
           <EmptyList
             title="Hive is waiting for your first collected operation"
             description="You can collect usage of your GraphQL API with Hive Client"
@@ -339,10 +331,10 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
           {latestValidSchemaVersion?.unusedSchema && latestSchemaVersion ? (
             <>
               {latestSchemaVersion.id !== latestValidSchemaVersion.id && (
-                <Alert className={styles.unusedSchemaExplorerAlert}>
-                  <AlertCircleIcon className={styles.unusedSchemaExplorerAlertCircleIcon} />
+                <Alert className={targetExplorerUnusedStyles.alert}>
+                  <AlertCircleIcon className={targetExplorerUnusedStyles.alertIcon} />
                   <AlertTitle>Outdated Schema</AlertTitle>
-                  <AlertDescription className={styles.unusedSchemaExplorerAlertDescription}>
+                  <AlertDescription className={targetExplorerUnusedStyles.alertDescription}>
                     The latest schema version is{' '}
                     <span className={shared.weight.bold}>not valid</span> , thus the explorer might
                     not be accurate as it is showing the{' '}

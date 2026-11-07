@@ -23,7 +23,7 @@ import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, Outlet, useParams, useRouter } from '@tanstack/react-router';
-import * as styles from './target-checks.css';
+import { targetChecksStyles } from './target-checks.css';
 
 const checksRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/checks',
@@ -111,7 +111,7 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
   const schemaChecks = query.data?.target?.schemaChecks;
   if (!schemaChecks) {
     return query.fetching ? (
-      <div className={styles.schemaChecksListDiv}>
+      <div className={targetChecksStyles.pending}>
         <Spinner />
       </div>
     ) : null;
@@ -119,23 +119,22 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
 
   if (schemaChecks.edges.length === 0) {
     return (
-      <div className={styles.schemaChecksListDiv2}>
+      <div className={targetChecksStyles.empty}>
         No schema checks found with the current filters
       </div>
     );
   }
 
   return (
-    <div className={styles.schemaChecksListDiv3}>
+    <div className={targetChecksStyles.list}>
       <ScrollArea fill>
-        <div className={styles.schemaChecksListDiv4}>
+        <div className={targetChecksStyles.listBody}>
           {schemaChecks.edges.map(edge => (
             <div
               key={edge.node.id}
-              className={cn(
-                styles.schemaChecksListDiv5,
-                edge.node.id === props.schemaCheckId ? styles.schemaChecksListDiv6 : null,
-              )}
+              className={targetChecksStyles.check({
+                selected: edge.node.id === props.schemaCheckId,
+              })}
             >
               {/* A pointer moving down the list would run a loader per row it crossed. */}
               {/* The overlay keeps the whole row clickable while the service name and the commit
@@ -145,23 +144,22 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
                 preload={false}
                 params={{ organizationSlug, projectSlug, targetSlug, schemaCheckId: edge.node.id }}
                 search={search}
-                className={styles.schemaChecksListLink}
+                className={targetChecksStyles.checkLink}
               >
-                <h3 className={styles.schemaChecksListH3}>
+                <h3 className={targetChecksStyles.checkTitle}>
                   {edge.node.meta?.commit ?? edge.node.id}
                 </h3>
                 {edge.node.meta?.author ? (
-                  <div className={styles.schemaChecksListDiv7}>
+                  <div className={targetChecksStyles.checkSubtitle}>
                     <span className={shared.truncate}>{edge.node.meta.author}</span>
                   </div>
                 ) : null}
               </Link>
-              <div className={styles.schemaChecksListDiv8}>
+              <div className={targetChecksStyles.checkMeta}>
                 <div
-                  className={cn(
-                    edge.node.__typename === 'FailedSchemaCheck' ? shared.fg.critical : null,
-                    styles.schemaChecksListDiv10,
-                  )}
+                  className={targetChecksStyles.checkStatus({
+                    failed: edge.node.__typename === 'FailedSchemaCheck',
+                  })}
                 >
                   <StatusDot
                     color={edge.node.__typename === 'FailedSchemaCheck' ? 'critical' : 'success'}
@@ -173,19 +171,19 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
                 {edge.node.serviceName ? (
                   <ServiceFilterButton
                     serviceName={edge.node.serviceName}
-                    className={styles.schemaChecksListServiceFilterButton}
+                    className={targetChecksStyles.checkService}
                   />
                 ) : null}
               </div>
               {edge.node.githubRepository && edge.node.meta ? (
                 <a
-                  className={styles.schemaChecksListA}
+                  className={targetChecksStyles.checkGitLink}
                   target="_blank"
                   rel="noreferrer"
                   href={`https://github.com/${edge.node.githubRepository}/commit/${edge.node.meta.commit}`}
                 >
-                  <ExternalLink className={styles.schemaChecksListExternalLink} /> associated with
-                  Git commit
+                  <ExternalLink className={targetChecksStyles.checkGitIcon} /> associated with Git
+                  commit
                 </a>
               ) : null}
             </div>
@@ -282,7 +280,7 @@ function ChecksPageContent() {
   return (
     <>
       <div className={cn(!hasSchemaChecks && shared.fullWidth)}>
-        <div className={styles.checksPageContentDiv2}>
+        <div className={targetChecksStyles.sidebar}>
           <Title>Schema Checks</Title>
           <Subtitle>Recently checked schemas.</Subtitle>
         </div>
@@ -300,14 +298,14 @@ function ChecksPageContent() {
           <NoSchemaChecks projectType={target?.project.type ?? null} />
         )}
         {renderLoading && (
-          <div className={styles.checksPageContentDiv3}>
+          <div className={targetChecksStyles.sidebarPending}>
             <Spinner />
           </div>
         )}
       </div>
       {hasSchemaChecks && <Outlet />}
       {hasSchemaChecks && !hasActiveSchemaCheck && (
-        <div className={styles.checksPageContentDiv4}>
+        <div className={targetChecksStyles.content}>
           <EmptyList
             title="Select a schema check"
             description="A list of your schema checks is available on the left."
@@ -321,7 +319,7 @@ function ChecksPageContent() {
 function NoSchemaChecks(props: { projectType: ProjectType | null }) {
   return (
     <>
-      <div className={styles.noSchemaChecksDiv}>
+      <div className={targetChecksStyles.noChecks}>
         <NoSchemaVersion projectType={props.projectType} recommendedAction="check" />
       </div>
       <DocsLink
@@ -369,10 +367,10 @@ function SchemaChecksSideNav(props: {
   return (
     // Pinned and capped to the viewport, so the list scrolls inside the column rather than
     // stretching the page when there are more checks than fit.
-    <div className={styles.schemaChecksSideNavDiv}>
+    <div className={targetChecksStyles.sideNav}>
       <div>
         {props.serviceNames ? (
-          <div className={styles.schemaChecksSideNavDiv2}>
+          <div className={targetChecksStyles.sideNavRow}>
             <Label variant="inline" htmlFor="filter-service" label="Service" />
             <Select
               id="filter-service"
@@ -387,7 +385,7 @@ function SchemaChecksSideNav(props: {
             />
           </div>
         ) : null}
-        <div className={styles.schemaChecksSideNavDiv3}>
+        <div className={targetChecksStyles.sideNavRow}>
           <Label
             variant="inline"
             htmlFor="filter-toggle-has-changes"
@@ -399,7 +397,7 @@ function SchemaChecksSideNav(props: {
             id="filter-toggle-has-changes"
           />
         </div>
-        <div className={styles.schemaChecksSideNavDiv4}>
+        <div className={targetChecksStyles.sideNavRow}>
           <Label
             variant="inline"
             htmlFor="filter-toggle-status-failed"
@@ -421,7 +419,7 @@ export function TargetChecksPage() {
   return (
     <>
       <Meta title="Schema Checks" />
-      <LayoutContent className={styles.targetChecksPageLayoutContent}>
+      <LayoutContent className={targetChecksStyles.page}>
         <ChecksPageContent />
       </LayoutContent>
     </>
