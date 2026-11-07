@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { SearchIcon } from 'lucide-react';
 import { Input } from '@/components/ui/primitives/input/input';
 import { useRouter } from '@tanstack/react-router';
-import * as styles from './app-filter.css';
+import { appFilterStyles } from './app-filter.css';
 
 // The URL carries the settled term, so the route loader runs once per pause, not per keystroke.
 export function AppFilter(props: { search: string }) {
@@ -32,7 +32,7 @@ export function AppFilter(props: { search: string }) {
   }, [value, router]);
 
   return (
-    <div className={styles.appFilterDiv}>
+    <div className={appFilterStyles.root}>
       <Input
         placeholder="Search by operation name..."
         leadingIcon={SearchIcon}

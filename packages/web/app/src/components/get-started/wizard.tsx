@@ -1,8 +1,7 @@
 import { ReactElement } from 'react';
 import { Circle, CircleCheck } from 'lucide-react';
 import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
-import { cn } from '@/lib/utils';
-import * as styles from './wizard.css';
+import { getStartedWizardStyles } from './wizard.css';
 
 export function GetStartedWizard({
   isOpen,
@@ -29,7 +28,7 @@ export function GetStartedWizard({
       title="Get Started"
       description="Follow the steps to set up your organization and experience the full power of GraphQL Hive"
     >
-      <div className={styles.getStartedWizardDiv}>
+      <div className={getStartedWizardStyles.tasks}>
         <Task
           link={docsUrl('/schema-registry/management/projects#create-a-new-project')}
           completed={tasks.creatingProject}
@@ -92,17 +91,17 @@ function Task({
       href={link ?? undefined}
       target="_blank"
       rel="noreferrer"
-      className={cn(styles.taskA, completed ? styles.taskA2 : null)}
+      className={getStartedWizardStyles.task({ completed })}
     >
-      <div className={styles.taskDiv}>
+      <div className={getStartedWizardStyles.taskBody}>
         {completed ? (
-          <CircleCheck className={styles.taskCircleCheck} />
+          <CircleCheck className={getStartedWizardStyles.taskIcon} />
         ) : (
-          <Circle className={styles.taskCircle} />
+          <Circle className={getStartedWizardStyles.taskIcon} />
         )}
-        <div className={styles.taskDiv2}>
-          <p className={styles.taskP}>{title}</p>
-          <p className={styles.taskP2}>{description}</p>
+        <div className={getStartedWizardStyles.taskText}>
+          <p className={getStartedWizardStyles.taskTitle}>{title}</p>
+          <p className={getStartedWizardStyles.taskDescription}>{description}</p>
         </div>
       </div>
     </a>

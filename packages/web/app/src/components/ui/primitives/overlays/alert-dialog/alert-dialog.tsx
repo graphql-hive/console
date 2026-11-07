@@ -1,24 +1,11 @@
 import { type ReactElement, type ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog';
 import { Button } from '../../button/button';
 import type { FloatingProps } from '../../floating/shared-styles';
-import {
-  backdropClass,
-  OverlayBody,
-  OverlayFooter,
-  OverlayHeader,
-  popupSurfaceClass,
-} from '../overlay-parts';
-import * as styles from './alert-dialog.css';
+import { backdropClass, OverlayBody, OverlayFooter, OverlayHeader } from '../overlay-parts';
+import { alertDialogStyles } from './alert-dialog.css';
 
-const popupClass = cn(
-  popupSurfaceClass,
-  styles.class2,
-  styles.class3,
-  styles.class4,
-  styles.class5,
-);
+const popupClass = alertDialogStyles.popup;
 
 export type AlertDialogProps = {
   open?: boolean;

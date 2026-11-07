@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { ErrorComponent } from './error';
-import * as styles from './error.css';
+import { errorStyles } from './error.css';
 
 vi.mock('@sentry/react', () => ({ captureException: () => {}, flush: async () => true }));
 vi.mock('@/lib/auth/use-session', () => ({
@@ -26,9 +26,9 @@ describe('ErrorComponent', () => {
     // The sign-out corner is absolutely positioned, and the error block is the positioned
     // ancestor it is placed against: the error renders inside a layout, so without one the button
     // would land on top of the header.
-    const absolute = closestWith(button, styles.errorComponentDiv2);
+    const absolute = closestWith(button, errorStyles.signOut);
     expect(absolute).toBeTruthy();
-    const positioned = closestWith(absolute!.parentElement!, styles.errorComponentDiv);
+    const positioned = closestWith(absolute!.parentElement!, errorStyles.root);
     expect(positioned).toBeTruthy();
     expect(positioned!.contains(screen.getByText('Oops, something went wrong.'))).toBe(true);
   });

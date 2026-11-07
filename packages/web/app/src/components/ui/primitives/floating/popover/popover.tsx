@@ -4,16 +4,16 @@ import { cn } from '@/lib/utils';
 import { Popover as BasePopover } from '@base-ui/react/popover';
 import { useFloatingPortalContainer } from '../floating-portal-container';
 import { floatingVariants, type FloatingProps } from '../shared-styles';
-import * as styles from './popover.css';
+import { popoverStyles } from './popover.css';
 
 // One scale for both modes. `sm` is what the legacy popover defaulted to; `lg` and `xl` round
 // the two widest raw panels in the app (450 and 550px) to the rem grid.
 const widthClass = {
   auto: '',
-  sm: styles.widthClassSm,
-  md: styles.widthClassMd,
-  lg: styles.widthClassLg,
-  xl: styles.widthClassXl,
+  sm: popoverStyles.width.sm,
+  md: popoverStyles.width.md,
+  lg: popoverStyles.width.lg,
+  xl: popoverStyles.width.xl,
 } as const;
 
 type PopoverCommonProps = Omit<FloatingProps, 'trigger'> & {
@@ -102,26 +102,23 @@ export function Popover(props: PopoverProps) {
 
   if (isStructured(props)) {
     inner = (
-      <div className={cn(widthClass[width ?? 'md'], styles.popoverDiv)}>
-        <div className={styles.popoverDiv2}>
-          <span className={styles.popoverSpan}>{props.title}</span>
+      <div className={cn(widthClass[width ?? 'md'], popoverStyles.structured)}>
+        <div className={popoverStyles.header}>
+          <span className={popoverStyles.title}>{props.title}</span>
           {!props.hideCloseButton && (
-            <BasePopover.Close className={styles.popoverClose} aria-label="Close">
-              <X className={styles.popoverX} />
+            <BasePopover.Close className={popoverStyles.close} aria-label="Close">
+              <X className={popoverStyles.closeIcon} />
             </BasePopover.Close>
           )}
         </div>
-        {props.description && <p className={styles.popoverP}>{props.description}</p>}
+        {props.description && <p className={popoverStyles.description}>{props.description}</p>}
         {props.content}
       </div>
     );
   } else {
     inner = (
       <div
-        className={cn(
-          widthClass[width ?? 'sm'],
-          props.padding === 'none' ? '' : styles.popoverDiv3,
-        )}
+        className={cn(widthClass[width ?? 'sm'], props.padding !== 'none' && popoverStyles.padded)}
       >
         {props.content}
       </div>
@@ -140,7 +137,7 @@ export function Popover(props: PopoverProps) {
           align={align}
           sideOffset={sideOffset}
           collisionPadding={collisionPadding}
-          className={styles.popoverPositioner}
+          className={popoverStyles.positioner}
         >
           <BasePopover.Popup
             className={floatingVariants({ padding: 'none' })}
@@ -157,34 +154,21 @@ export function Popover(props: PopoverProps) {
 
 function PopoverArrow() {
   return (
-    <BasePopover.Arrow
-      className={cn(
-        'group',
-        styles.popoverArrowArrow,
-        styles.popoverArrowArrow2,
-        styles.popoverArrowArrow3,
-        styles.popoverArrowArrow4,
-      )}
-    >
+    <BasePopover.Arrow className={popoverStyles.arrow}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="20"
         height="8"
         fill="none"
         viewBox="0 0 20 8"
-        className={cn(
-          styles.popoverArrowSvg,
-          styles.popoverArrowSvg2,
-          styles.popoverArrowSvg3,
-          styles.popoverArrowSvg4,
-        )}
+        className={popoverStyles.arrowGraphic}
       >
         <path
-          className={styles.popoverArrowPath}
+          className={popoverStyles.arrowFill}
           d="M9.664.602 4.808 4.973A4 4 0 0 1 2.132 6H0v2h20V6h-1.465a4 4 0 0 1-2.676-1.027L11.002.603a1 1 0 0 0-1.338 0"
         />
         <path
-          className={styles.popoverArrowPath2}
+          className={popoverStyles.arrowStroke}
           d="M10.333 1.345 5.477 5.716A5 5 0 0 1 2.132 7H0V6h2.132a4 4 0 0 0 2.676-1.027L9.664.603a1 1 0 0 1 1.338 0l4.857 4.37A4 4 0 0 0 18.535 6H20v1h-1.465a5 5 0 0 1-3.345-1.284z"
         />
       </svg>

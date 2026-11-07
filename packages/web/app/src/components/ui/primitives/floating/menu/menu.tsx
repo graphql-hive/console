@@ -15,7 +15,7 @@ import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { useFloatingPortalContainer } from '../floating-portal-container';
 import { floatingVariants, itemVariants, type FloatingProps } from '../shared-styles';
 import { Tooltip } from '../tooltip/tooltip';
-import * as styles from './menu.css';
+import { menuStyles } from './menu.css';
 
 type ItemVariant = NonNullable<Parameters<typeof itemVariants>[0]>['variant'];
 
@@ -179,7 +179,7 @@ function menuItemClassName(
       selected: state.checked ?? selected ?? false,
       disabled: state.disabled,
     }),
-    styles.menuItemClassNameClass,
+    menuStyles.item,
   );
 }
 
@@ -201,10 +201,10 @@ function ActionRow({
       {...attrs}
       {...rest}
     >
-      {Icon ? <Icon className={styles.actionRowIcon} /> : null}
+      {Icon ? <Icon className={menuStyles.icon} /> : null}
       {label}
-      {TrailingIcon ? <TrailingIcon className={styles.actionRowTrailingIcon} /> : null}
-      {variant === 'navigationLink' ? <ArrowRight className={styles.actionRowArrowRight} /> : null}
+      {TrailingIcon ? <TrailingIcon className={menuStyles.trailingIcon} /> : null}
+      {variant === 'navigationLink' ? <ArrowRight className={menuStyles.navigationArrow} /> : null}
     </BaseMenu.Item>
   );
 
@@ -214,7 +214,7 @@ function ActionRow({
 
   return (
     <Tooltip
-      trigger={<span className={styles.actionRowSpan}>{row}</span>}
+      trigger={<span className={menuStyles.tooltipTrigger}>{row}</span>}
       content={tooltip}
       side="right"
     />
@@ -238,13 +238,13 @@ function CheckboxRow({
       disabled={disabled}
       closeOnClick={closeOnClick}
     >
-      {Icon ? <Icon className={styles.checkboxRowIcon} /> : null}
+      {Icon ? <Icon className={menuStyles.icon} /> : null}
       <span className={shared.fill}>{label}</span>
       {indicator === 'switch' ? (
         <Switch checked={checked} size="small" decorative />
       ) : (
-        <BaseMenu.CheckboxItemIndicator className={styles.checkboxRowCheckboxItemIndicator}>
-          <Check className={styles.checkboxRowCheck} />
+        <BaseMenu.CheckboxItemIndicator className={menuStyles.indicator}>
+          <Check className={menuStyles.indicatorIcon} />
         </BaseMenu.CheckboxItemIndicator>
       )}
     </BaseMenu.CheckboxItem>
@@ -275,18 +275,18 @@ function LinkRow({
         </a>
       )}
     >
-      {Icon ? <Icon className={styles.linkRowIcon} /> : null}
+      {Icon ? <Icon className={menuStyles.icon} /> : null}
       {label}
-      {TrailingIcon ? <TrailingIcon className={styles.linkRowTrailingIcon} /> : null}
+      {TrailingIcon ? <TrailingIcon className={menuStyles.trailingIcon} /> : null}
     </BaseMenu.Item>
   );
 }
 
 function HeaderRow({ title, subtitle }: MenuHeader) {
   return (
-    <div className={styles.headerRowDiv}>
-      <span className={styles.headerRowSpan}>{title}</span>
-      {subtitle ? <span className={styles.headerRowSpan2}>{subtitle}</span> : null}
+    <div className={menuStyles.header}>
+      <span className={menuStyles.headerTitle}>{title}</span>
+      {subtitle ? <span className={menuStyles.headerSubtitle}>{subtitle}</span> : null}
     </div>
   );
 }
@@ -307,7 +307,7 @@ function ToggleRow({
       disabled={disabled}
       closeOnClick={closeOnClick}
     >
-      {Icon ? <Icon className={styles.toggleRowIcon} /> : null}
+      {Icon ? <Icon className={menuStyles.icon} /> : null}
       <span className={shared.fill}>{label}</span>
       <Switch checked={checked} size="small" decorative />
     </BaseMenu.CheckboxItem>
@@ -324,10 +324,10 @@ function RadioRows({ value, onValueChange, options }: MenuRadio) {
           disabled={option.disabled}
           className={(state: BaseMenu.RadioItem.State) => menuItemClassName(state, {})}
         >
-          {option.icon ? <option.icon className={styles.radioRowsIcon} /> : null}
+          {option.icon ? <option.icon className={menuStyles.icon} /> : null}
           {option.label}
-          <BaseMenu.RadioItemIndicator className={styles.radioRowsRadioItemIndicator}>
-            <Check className={styles.radioRowsCheck} />
+          <BaseMenu.RadioItemIndicator className={menuStyles.indicator}>
+            <Check className={menuStyles.indicatorIcon} />
           </BaseMenu.RadioItemIndicator>
         </BaseMenu.RadioItem>
       ))}
@@ -358,16 +358,16 @@ function SubmenuRow({
         delay={delay}
         closeDelay={closeDelay}
       >
-        {Icon ? <Icon className={styles.submenuRowIcon} /> : null}
+        {Icon ? <Icon className={menuStyles.icon} /> : null}
         {label}
-        <ChevronRight className={styles.submenuRowChevronRight} />
+        <ChevronRight className={menuStyles.submenuChevron} />
       </BaseMenu.SubmenuTrigger>
       <BaseMenu.Portal container={portalContainer ?? undefined}>
         <BaseMenu.Positioner
           side="right"
           align="start"
           sideOffset={6}
-          className={styles.submenuRowPositioner}
+          className={menuStyles.positioner}
         >
           <BaseMenu.Popup
             className={floatingVariants({
@@ -428,14 +428,14 @@ function renderSections(sections: MenuSection[]): ReactNode {
 
     if (result.length > 0) {
       result.push(
-        <div key={`sep-${result.length}`} role="separator" className={styles.renderSectionsDiv} />,
+        <div key={`sep-${result.length}`} role="separator" className={menuStyles.separator} />,
       );
     }
 
     if (labelled) {
       result.push(
         <BaseMenu.Group key={`group-${result.length}`}>
-          <BaseMenu.GroupLabel className={styles.renderSectionsGroupLabel}>
+          <BaseMenu.GroupLabel className={menuStyles.groupLabel}>
             {section.label}
           </BaseMenu.GroupLabel>
           {entries.map(renderEntry)}
@@ -536,7 +536,7 @@ function Menu(props: MenuProps) {
         side={resolvedSide}
         align={resolvedAlign}
         sideOffset={resolvedSideOffset}
-        className={styles.menuPositioner}
+        className={menuStyles.positioner}
       >
         <BaseMenu.Popup
           className={floatingVariants({
@@ -593,7 +593,7 @@ function MenuItem({ variant, selected, children, ...props }: MenuItemProps) {
       {...(props as Omit<BaseMenu.Item.Props, 'className'>)}
     >
       {children}
-      {variant === 'navigationLink' ? <ArrowRight className={styles.menuItemArrowRight} /> : null}
+      {variant === 'navigationLink' ? <ArrowRight className={menuStyles.navigationArrow} /> : null}
     </BaseMenu.Item>
   );
 }

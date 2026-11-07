@@ -10,23 +10,16 @@ import {
   OverlayFooter,
   OverlayHeader,
   OverlayPortalMount,
-  popupSurfaceClass,
 } from '../overlay-parts';
-import * as styles from './sheet.css';
+import { sheetStyles } from './sheet.css';
 
 const widthClass = {
-  md: styles.widthClassMd,
-  lg: styles.widthClassLg,
-  half: styles.widthClassHalf,
+  md: sheetStyles.width.md,
+  lg: sheetStyles.width.lg,
+  half: sheetStyles.width.half,
 } as const;
 
-const popupClass = cn(
-  popupSurfaceClass,
-  styles.class2,
-  styles.class3,
-  styles.class4,
-  styles.class5,
-);
+const popupClass = sheetStyles.popup;
 
 export type SheetProps = {
   open?: boolean;

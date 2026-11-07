@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Sheet } from './sheet';
 import { overlayPartsStyles } from '../overlay-parts.css';
-import * as styles from './sheet.css';
+import { sheetStyles } from './sheet.css';
 
 describe('Sheet', () => {
   it('anchors to the right edge, caps at the requested width and pads the body by default', () => {
@@ -17,8 +17,8 @@ describe('Sheet', () => {
       </Sheet>,
     );
     const sheet = screen.getByRole('dialog');
-    expect(sheet.className).toContain(styles.class2);
-    expect(sheet.className).toContain(styles.widthClassLg);
+    expect(sheet.className).toContain(sheetStyles.popup);
+    expect(sheet.className).toContain(sheetStyles.width.lg);
     expect(screen.getByText('Body').parentElement?.className).toContain(
       overlayPartsStyles.body.classNames.base,
     );

@@ -8,7 +8,7 @@ import Stat from '@/components/ui/stat';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './admin-stats.css';
+import { adminStatsStyles } from './admin-stats.css';
 
 interface Organization {
   id: string;
@@ -247,7 +247,7 @@ export function AdminStats({
     <DataWrapper query={query} organizationSlug={null}>
       {({ data }) => (
         <div className={shared.stack.gap6}>
-          <div className={styles.adminStatsDiv2}>
+          <div className={adminStatsStyles.filters}>
             <OverallStat label="Users" value={overall.users} />
             <OverallStat label="Organizations" value={overall.organizations} />
             <OverallStat label="Projects" value={overall.projects} />

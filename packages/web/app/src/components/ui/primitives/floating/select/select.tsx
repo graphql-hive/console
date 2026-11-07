@@ -15,7 +15,7 @@ import {
   type FloatingProps,
 } from '../shared-styles';
 import { Tooltip } from '../tooltip/tooltip';
-import * as styles from './select.css';
+import { selectStyles } from './select.css';
 
 export type SelectOption = {
   value: string;
@@ -46,11 +46,11 @@ export type SelectOption = {
 // Select owns its trigger widths. Button only knows `auto | full`, because full-width is the
 // only width buttons ask for; the fixed steps here are what select triggers ask for.
 const widthClass = {
-  auto: styles.widthClassAuto,
-  sm: styles.widthClassSm,
-  md: styles.widthClassMd,
-  lg: styles.widthClassLg,
-  full: styles.widthClassFull,
+  auto: selectStyles.width.auto,
+  sm: selectStyles.width.sm,
+  md: selectStyles.width.md,
+  lg: selectStyles.width.lg,
+  full: selectStyles.width.full,
 } as const;
 
 type SelectProps = Partial<
@@ -201,12 +201,12 @@ export function Select({
             align={align}
             sideOffset={sideOffset}
             alignItemWithTrigger={false}
-            className={styles.selectPositioner}
+            className={selectStyles.positioner}
           >
             <BaseSelect.Popup
               className={clsx(
                 floatingVariants({ padding: 'sm' }),
-                matchTriggerWidth ? styles.selectPopup : undefined,
+                matchTriggerWidth && selectStyles.matchTriggerWidth,
               )}
               data-testid={popupDataTestId}
             >
@@ -218,7 +218,7 @@ export function Select({
                   placeholder={searchPlaceholder}
                 />
               )}
-              <div className={searchable ? `${floatingScrollArea} ${styles.selectDiv}` : ''}>
+              <div className={searchable ? `${floatingScrollArea} ${selectStyles.list}` : ''}>
                 {displayedOptions.length === 0 ? (
                   <div className={floatingEmptyState}>No matches</div>
                 ) : (
@@ -236,12 +236,12 @@ export function Select({
                               selected: state.selected,
                               disabled: state.disabled,
                             }),
-                            option.description ? styles.selectClass : styles.selectClass2,
+                            selectStyles.item({ described: !!option.description }),
                           )
                         }
                       >
-                        <BaseSelect.ItemIndicator className={styles.selectItemIndicator}>
-                          <Check className={styles.selectCheck} />
+                        <BaseSelect.ItemIndicator className={selectStyles.indicator}>
+                          <Check className={selectStyles.indicatorIcon} />
                         </BaseSelect.ItemIndicator>
                         <BaseSelect.ItemText>
                           <span className={shared.row.gap1_5}>
@@ -249,11 +249,11 @@ export function Select({
                             {option.label}
                           </span>
                           {option.description ? (
-                            <span className={styles.selectSpan3}>{option.description}</span>
+                            <span className={selectStyles.description}>{option.description}</span>
                           ) : null}
                         </BaseSelect.ItemText>
                         {option.trailing ? (
-                          <span className={styles.selectSpan4}>{option.trailing}</span>
+                          <span className={selectStyles.trailing}>{option.trailing}</span>
                         ) : null}
                       </BaseSelect.Item>
                     );
@@ -262,7 +262,7 @@ export function Select({
                     return option.tooltip ? (
                       <Tooltip
                         key={option.value}
-                        trigger={<span className={styles.selectSpan5}>{item}</span>}
+                        trigger={<span className={selectStyles.tooltipTrigger}>{item}</span>}
                         content={option.tooltip}
                         side="right"
                       />

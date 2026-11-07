@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { Select } from '../../floating/select/select';
 import { Dialog } from './dialog';
 import { overlayPartsStyles } from '../overlay-parts.css';
-import * as styles from './dialog.css';
+import { dialogStyles } from './dialog.css';
 
 describe('Dialog', () => {
   it('renders the title, description, body and footer when open, capped at the requested width', () => {
@@ -21,7 +21,7 @@ describe('Dialog', () => {
     );
     const dialog = screen.getByRole('dialog');
     expect(dialog.getAttribute('data-testid')).toBe('create-collection');
-    expect(dialog.className).toContain(styles.widthClassLg);
+    expect(dialog.className).toContain(dialogStyles.width.lg);
     expect(screen.getByRole('heading', { name: 'Create collection' })).toBeTruthy();
     expect(screen.getByText('Keeps operations together.')).toBeTruthy();
     expect(screen.getByText('Body')).toBeTruthy();

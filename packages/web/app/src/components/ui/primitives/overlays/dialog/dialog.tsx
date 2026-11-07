@@ -10,24 +10,17 @@ import {
   OverlayFooter,
   OverlayHeader,
   OverlayPortalMount,
-  popupSurfaceClass,
 } from '../overlay-parts';
-import * as styles from './dialog.css';
+import { dialogStyles } from './dialog.css';
 
 const widthClass = {
-  sm: styles.widthClassSm,
-  md: styles.widthClassMd,
-  lg: styles.widthClassLg,
-  xl: styles.widthClassXl,
+  sm: dialogStyles.width.sm,
+  md: dialogStyles.width.md,
+  lg: dialogStyles.width.lg,
+  xl: dialogStyles.width.xl,
 } as const;
 
-const popupClass = cn(
-  popupSurfaceClass,
-  styles.class2,
-  styles.class3,
-  styles.class4,
-  styles.class5,
-);
+const popupClass = dialogStyles.popup;
 
 /** Why the dialog is opening or closing, with `cancel()` to keep it where it is. */
 export type DialogChangeEventDetails = BaseDialog.Root.ChangeEventDetails;

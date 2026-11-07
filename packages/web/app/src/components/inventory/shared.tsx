@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import * as shared from '@/styles/shared.css';
-import * as styles from './shared.css';
+import { inventorySharedStyles } from './shared.css';
 
 /**
  * Shared furniture for the inventory previews in this folder.
@@ -33,11 +33,11 @@ export function CallSite(props: {
   return (
     <div className={shared.stack.gap3}>
       <div className={shared.stack.gap1}>
-        <span className={styles.callSiteSpan}>
+        <span className={inventorySharedStyles.source}>
           <OriginTag origin={props.origin} />
-          <code className={styles.callSiteCode}>{props.source}</code>
+          <code className={inventorySharedStyles.sourcePath}>{props.source}</code>
         </span>
-        {props.note ? <p className={styles.callSiteP}>{props.note}</p> : null}
+        {props.note ? <p className={inventorySharedStyles.note}>{props.note}</p> : null}
       </div>
       {props.children}
     </div>
@@ -48,7 +48,7 @@ export function CallSite(props: {
 export function CallSiteGroup(props: { label: string; children: ReactNode }) {
   return (
     <section className={shared.stack.gap6}>
-      <h3 className={styles.callSiteGroupH3}>{props.label}</h3>
+      <h3 className={inventorySharedStyles.groupTitle}>{props.label}</h3>
       {props.children}
     </section>
   );
@@ -82,9 +82,9 @@ export function OriginTag(props: { origin: Origin }) {
     <span
       className={
         {
-          ui: styles.originTagUi,
-          base: styles.originTagBase,
-          raw: styles.originTagRaw,
+          ui: inventorySharedStyles.origin.ui,
+          base: inventorySharedStyles.origin.base,
+          raw: inventorySharedStyles.origin.raw,
         }[props.origin]
       }
     >
@@ -104,20 +104,20 @@ export function InventoryList(props: {
   entries: readonly InventoryEntry[];
 }) {
   return (
-    <div className={styles.inventoryListDiv}>
-      <div className={styles.inventoryListDiv2}>
-        <h3 className={styles.inventoryListH3}>{props.component}</h3>
-        <p className={styles.inventoryListP}>{props.entries.length} call sites</p>
-        {props.summary ? <div className={styles.inventoryListDiv3}>{props.summary}</div> : null}
+    <div className={inventorySharedStyles.list}>
+      <div className={inventorySharedStyles.listHeader}>
+        <h3 className={inventorySharedStyles.groupTitle}>{props.component}</h3>
+        <p className={inventorySharedStyles.listCount}>{props.entries.length} call sites</p>
+        {props.summary ? <div className={inventorySharedStyles.note}>{props.summary}</div> : null}
       </div>
       <ul className={shared.stack.base}>
         {props.entries.map(entry => (
-          <li key={entry.source} className={styles.inventoryListLi}>
-            <span className={styles.inventoryListSpan}>
+          <li key={entry.source} className={inventorySharedStyles.entry}>
+            <span className={inventorySharedStyles.source}>
               <OriginTag origin={entry.origin} />
-              <code className={styles.inventoryListCode}>{entry.source}</code>
+              <code className={inventorySharedStyles.entryPath}>{entry.source}</code>
             </span>
-            <span className={styles.inventoryListSpan2}>
+            <span className={inventorySharedStyles.entryNote}>
               {entry.what}
               {entry.coveredBy ? ` — covered by "${entry.coveredBy}"` : null}
             </span>

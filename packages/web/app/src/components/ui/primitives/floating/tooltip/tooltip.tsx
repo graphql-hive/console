@@ -4,7 +4,7 @@ import * as shared from '@/styles/shared.css';
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
 import { useFloatingPortalContainer } from '../floating-portal-container';
 import { type FloatingProps } from '../shared-styles';
-import * as styles from './tooltip.css';
+import { tooltipStyles } from './tooltip.css';
 
 const TOOLTIP_DELAY = 300;
 
@@ -12,20 +12,9 @@ export function TooltipProvider({ children }: { children: ReactNode }) {
   return <BaseTooltip.Provider delay={TOOLTIP_DELAY}>{children}</BaseTooltip.Provider>;
 }
 
-const popupClass = styles.popupClass;
+const maxWidthClass = tooltipStyles.maxWidth;
 
-const maxWidthClass = {
-  default: styles.maxWidthClassDefault,
-  md: styles.maxWidthClassMd,
-  lg: styles.maxWidthClassLg,
-  screen: styles.maxWidthClassScreen,
-} as const;
-
-const paddingClass = {
-  default: styles.paddingClassDefault,
-  /** For a paragraph rather than a label. */
-  lg: styles.paddingClassLg,
-} as const;
+const paddingClass = tooltipStyles.padding;
 
 type TooltipProps = Omit<FloatingProps, 'trigger'> & {
   /**
@@ -94,14 +83,12 @@ export function Tooltip({
           side={side}
           align={align}
           sideOffset={sideOffset}
-          // z-index goes here, not on the popup: the positioner is transformed for placement,
-          // which makes it a stacking context that would trap a z-index set inside it.
-          className={styles.tooltipPositioner}
+          className={tooltipStyles.positioner}
         >
           <BaseTooltip.Popup
-            className={cn(popupClass, maxWidthClass[maxWidth], paddingClass[padding])}
+            className={cn(tooltipStyles.popup, maxWidthClass[maxWidth], paddingClass[padding])}
           >
-            {arrow ? <BaseTooltip.Arrow className={styles.tooltipArrow} /> : null}
+            {arrow ? <BaseTooltip.Arrow className={tooltipStyles.arrow} /> : null}
             {content}
           </BaseTooltip.Popup>
         </BaseTooltip.Positioner>
