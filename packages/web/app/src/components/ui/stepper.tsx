@@ -2,12 +2,11 @@
  * @source https://github.com/shadcn-ui/ui/pull/318
  */
 import React from 'react';
-import { focusRing } from '@/components/ui/primitives/shared-styles';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import * as Stepperize from '@stepperize/react/headless';
-import * as styles from './stepper.css';
+import { stepperStyles } from './stepper.css';
 
 //#region Types
 type StepperVariant = 'horizontal' | 'vertical' | 'circle';
@@ -148,9 +147,9 @@ const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
 
       if (variant === 'circle') {
         return (
-          <li className={cn(styles.defineStepperLi, className)}>
+          <li className={cn(stepperStyles.circleStep, className)}>
             <CircleStepIndicator currentStep={stepIndex + 1} totalSteps={steps.length} />
-            <div className={styles.defineStepperDiv}>
+            <div className={stepperStyles.circleStepText}>
               {title}
               {description}
             </div>
@@ -161,14 +160,7 @@ const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
       return (
         <>
           <li
-            className={cn([
-              styles.defineStepperLi2,
-              'group peer',
-              styles.defineStepperLi3,
-              styles.defineStepperLi4,
-              styles.defineStepperLi5,
-              styles.defineStepperLi6,
-            ])}
+            className={stepperStyles.step}
             data-variant={variant}
             data-label-orientation={labelOrientation}
             data-state={dataState}
@@ -179,14 +171,10 @@ const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
               type="button"
               role="tab"
               tabIndex={dataState !== 'inactive' ? 0 : -1}
-              className={cn(
-                styles.defineStepperButton,
-                focusRing,
-                dataState !== 'inactive'
-                  ? styles.defineStepperButton2
-                  : styles.defineStepperButton3,
-                clickable === false && styles.defineStepperButton4,
-              )}
+              className={stepperStyles.stepButton({
+                reached: dataState !== 'inactive',
+                static: clickable === false,
+              })}
               aria-controls={`step-panel-${props.of}`}
               aria-current={isActive ? 'step' : undefined}
               aria-posinset={stepIndex + 1}
@@ -206,7 +194,7 @@ const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
                 disabled={props.disabled}
               />
             )}
-            <div className={styles.defineStepperDiv2}>
+            <div className={stepperStyles.stepText}>
               {title}
               {description}
             </div>
@@ -224,7 +212,7 @@ const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
           {variant === 'vertical' && (
             <div>
               {!isLast && (
-                <div className={styles.defineStepperDiv3}>
+                <div className={stepperStyles.verticalSeparator}>
                   <StepperSeparator
                     orientation="vertical"
                     isLast={isLast}
@@ -233,7 +221,7 @@ const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
                   />
                 </div>
               )}
-              <div className={styles.defineStepperDiv4}>{panel}</div>
+              <div className={stepperStyles.verticalPanel}>{panel}</div>
             </div>
           )}
         </>
@@ -252,7 +240,7 @@ const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
     },
     StepperControls: ({ children, className, ...props }) => {
       return (
-        <div className={cn(styles.defineStepperDiv5, className)} {...props}>
+        <div className={cn(stepperStyles.controls, className)} {...props}>
           {children}
         </div>
       );
@@ -266,7 +254,7 @@ const defineStepper = <const Steps extends readonly Stepperize.Step[]>(
 
 const StepperTitle = ({ children, className, ...props }: React.ComponentProps<'h4'>) => {
   return (
-    <h4 className={cn(styles.stepperTitleH4, className)} {...props}>
+    <h4 className={cn(stepperStyles.title, className)} {...props}>
       {children}
     </h4>
   );
@@ -278,7 +266,7 @@ const StepperTitle = ({ children, className, ...props }: React.ComponentProps<'h
 
 const StepperDescription = ({ children, className, ...props }: React.ComponentProps<'p'>) => {
   return (
-    <p className={cn(styles.stepperDescriptionP, className)} {...props}>
+    <p className={cn(stepperStyles.description, className)} {...props}>
       {children}
     </p>
   );
@@ -335,7 +323,7 @@ const CircleStepIndicator = ({
       aria-valuemin={1}
       aria-valuemax={totalSteps}
       tabIndex={-1}
-      className={styles.circleStepIndicatorDiv}
+      className={stepperStyles.indicator}
     >
       <svg width={size} height={size}>
         <title>Step Indicator</title>
@@ -357,12 +345,12 @@ const CircleStepIndicator = ({
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
-          className={styles.circleStepIndicatorCircle2}
+          className={stepperStyles.indicatorFill}
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <div className={styles.circleStepIndicatorDiv2}>
-        <span className={styles.circleStepIndicatorSpan} aria-live="polite">
+      <div className={stepperStyles.indicatorLabel}>
+        <span className={stepperStyles.indicatorText} aria-live="polite">
           {currentStep} of {totalSteps}
         </span>
       </div>
@@ -374,9 +362,9 @@ const CircleStepIndicator = ({
 
 //#region Styles
 
-const listVariants = lenient(styles.listVariants);
+const listVariants = lenient(stepperStyles.list);
 
-const classForSeparator = lenient(styles.classForSeparator);
+const classForSeparator = lenient(stepperStyles.separator);
 
 //#endregion Styles
 

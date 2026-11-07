@@ -3,19 +3,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as shared from '@/styles/shared.css';
 import { Input } from '../primitives/input/input';
 import { Spinner } from '../primitives/spinner/spinner';
-import * as styles from './data-table-pagination.css';
+import { dataTablePaginationStyles } from './data-table-pagination.css';
 
 export type DataTablePaginationProps = {
   pageIndex: number;
   pageCount: number;
   onPageChange: (page: number) => void;
 };
-
-const barClass = styles.barClass;
-
-const arrowClass = styles.arrowClass;
-
-const wordClass = styles.wordClass;
 
 /**
  * First, previous, next and last with the page position between them and a field to jump to a
@@ -46,16 +40,12 @@ export function DataTablePagination({
   };
 
   return (
-    <nav
-      role="navigation"
-      aria-label="Pagination"
-      className={`${barClass} ${styles.dataTablePaginationNav}`}
-    >
+    <nav role="navigation" aria-label="Pagination" className={dataTablePaginationStyles.pageNav}>
       <button
         type="button"
         disabled={!canPrev}
         onClick={() => onPageChange(0)}
-        className={wordClass}
+        className={dataTablePaginationStyles.word}
       >
         First
       </button>
@@ -64,11 +54,11 @@ export function DataTablePagination({
         aria-label="Previous page"
         disabled={!canPrev}
         onClick={() => onPageChange(pageIndex - 1)}
-        className={arrowClass}
+        className={dataTablePaginationStyles.arrow}
       >
-        <ChevronLeft className={styles.dataTablePaginationChevronLeft} />
+        <ChevronLeft className={dataTablePaginationStyles.icon} />
       </button>
-      <span className={styles.dataTablePaginationSpan} aria-live="polite">
+      <span className={dataTablePaginationStyles.page} aria-live="polite">
         {pageIndex + 1} / {pageCount}
       </span>
       <button
@@ -76,19 +66,19 @@ export function DataTablePagination({
         aria-label="Next page"
         disabled={!canNext}
         onClick={() => onPageChange(pageIndex + 1)}
-        className={arrowClass}
+        className={dataTablePaginationStyles.arrow}
       >
-        <ChevronRight className={styles.dataTablePaginationChevronRight} />
+        <ChevronRight className={dataTablePaginationStyles.icon} />
       </button>
       <button
         type="button"
         disabled={!canNext}
         onClick={() => onPageChange(pageCount - 1)}
-        className={wordClass}
+        className={dataTablePaginationStyles.word}
       >
         Last
       </button>
-      <label className={styles.dataTablePaginationLabel}>
+      <label className={dataTablePaginationStyles.pageSize}>
         Go to
         <Input
           size="compact"
@@ -136,12 +126,8 @@ export function DataTableCursorPagination({
   loading = false,
 }: DataTableCursorPaginationProps) {
   return (
-    <nav
-      role="navigation"
-      aria-label="Pagination"
-      className={`${barClass} ${styles.dataTableCursorPaginationNav}`}
-    >
-      <span className={styles.dataTableCursorPaginationSpan}>{summary}</span>
+    <nav role="navigation" aria-label="Pagination" className={dataTablePaginationStyles.cursorNav}>
+      <span className={dataTablePaginationStyles.cursorSummary}>{summary}</span>
       <span className={shared.inlineRow.gap1}>
         {loading ? <Spinner variants={{ size: 'sm' }} /> : null}
         <button
@@ -149,18 +135,18 @@ export function DataTableCursorPagination({
           aria-label="Previous page"
           disabled={!hasPreviousPage || loading}
           onClick={onPrevious}
-          className={arrowClass}
+          className={dataTablePaginationStyles.arrow}
         >
-          <ChevronLeft className={styles.dataTableCursorPaginationChevronLeft} />
+          <ChevronLeft className={dataTablePaginationStyles.icon} />
         </button>
         <button
           type="button"
           aria-label="Next page"
           disabled={!hasNextPage || loading}
           onClick={onNext}
-          className={arrowClass}
+          className={dataTablePaginationStyles.arrow}
         >
-          <ChevronRight className={styles.dataTableCursorPaginationChevronRight} />
+          <ChevronRight className={dataTablePaginationStyles.icon} />
         </button>
       </span>
     </nav>

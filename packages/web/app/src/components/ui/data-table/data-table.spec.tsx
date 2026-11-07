@@ -5,9 +5,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { DataTable } from './data-table';
 import { DataTableCell, formatAbsolute, formatRelative } from './data-table-cell';
 import { badgeStyles } from '../primitives/badge/badge.css';
-import * as cellStyles from './data-table-cell.css';
+import { dataTableCellStyles } from './data-table-cell.css';
 import * as partStyles from './data-table-components.css';
-import * as tableStyles from './data-table.css';
+import { dataTableStyles } from './data-table.css';
 
 type Row = { id: string; name: string; count: number; status: 'open' | 'solved' };
 
@@ -56,11 +56,11 @@ describe('DataTable', () => {
       [...container.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
     expect(names()).toEqual(['alpha', 'beta', 'gamma']);
     const arrow = () => screen.getByText('Count').querySelector('svg')?.getAttribute('class');
-    expect(arrow()).not.toContain(tableStyles.sortHeaderArrowDown2);
+    expect(arrow()).not.toContain(dataTableStyles.sortArrow.classNames.variants.sorted.true);
     // A numeric column sorts descending first, so the biggest count leads.
     fireEvent.click(screen.getByText('Count'));
     expect(names()).toEqual(['alpha', 'gamma', 'beta']);
-    expect(arrow()).toContain(tableStyles.sortHeaderArrowDown2);
+    expect(arrow()).toContain(dataTableStyles.sortArrow.classNames.variants.sorted.true);
     fireEvent.click(screen.getByText('Count'));
     expect(names()).toEqual(['beta', 'gamma', 'alpha']);
   });
@@ -78,7 +78,7 @@ describe('DataTable', () => {
       [...container.querySelectorAll('tbody td:first-child')].map(td => td.textContent);
     const arrow = () => screen.getByText('Count').querySelector('svg')?.getAttribute('class');
     expect(names()).toEqual(['alpha', 'gamma', 'beta']);
-    expect(arrow()).toContain(tableStyles.sortHeaderArrowDown2);
+    expect(arrow()).toContain(dataTableStyles.sortArrow.classNames.variants.sorted.true);
     fireEvent.click(screen.getByText('Count'));
     expect(names()).toEqual(['beta', 'gamma', 'alpha']);
   });
@@ -265,7 +265,7 @@ describe('DataTable', () => {
     const cell = container.querySelector('tbody td') as HTMLElement;
     expect(cell.className).toContain(partStyles.widthClassFill);
     const link = cell.querySelector('a') as HTMLElement;
-    expect(link.className).toContain(cellStyles.dataTableCellDestination2);
+    expect(link.className).toContain(dataTableCellStyles.link.classNames.variants.truncate.true);
     expect(link.title).toBe('alpha');
   });
 
@@ -682,7 +682,7 @@ describe('DataTableCell', () => {
   it('lights at least one bar segment for any share above zero', () => {
     const lit = (container: HTMLElement) =>
       [...container.querySelectorAll('[role="meter"] span')].filter(segment =>
-        segment.className.includes(cellStyles.dataTableCellSpan22),
+        segment.className.includes(dataTableCellStyles.barSegment.classNames.variants.filled.true),
       ).length;
     const { container, rerender } = render(<DataTableCell kind="bar" value={0.09} max={100} />);
     expect(lit(container)).toBe(1);

@@ -2,7 +2,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { RouterAt } from '../../../../foundry.router';
 import { Navigation, type NavigationItem } from './navigation';
-import * as styles from './navigation.css';
+import { navigationStyles } from './navigation.css';
 
 const TARGET = { organizationSlug: 'a', projectSlug: 'b', targetSlug: 'c' };
 
@@ -92,12 +92,12 @@ describe('Navigation', () => {
     renderAt('/a/b/c/checks', <Navigation aria-label="Target" items={TARGET_ITEMS} />);
     await current();
     const checks = screen.getByRole('link', { name: 'Checks' });
-    expect(checks.classList.contains(styles.activeClassesUnderline)).toBe(true);
-    expect(checks.classList.contains(styles.inactiveClassesUnderline)).toBe(false);
+    expect(checks.classList.contains(navigationStyles.active.underline)).toBe(true);
+    expect(checks.classList.contains(navigationStyles.inactive.underline)).toBe(false);
     // The underline is the link's own border, so any radius would round its ends.
     expect([...checks.classList].some(name => /^rounded/.test(name))).toBe(false);
     const schema = screen.getByRole('link', { name: 'Schema' });
-    expect(schema.classList.contains(styles.inactiveClassesUnderline)).toBe(true);
+    expect(schema.classList.contains(navigationStyles.inactive.underline)).toBe(true);
   });
 
   it('renders the list variant as a column with the sub-page classes', async () => {
@@ -108,13 +108,13 @@ describe('Navigation', () => {
     await current();
     const nav = screen.getByRole('navigation', { name: 'Sections' });
     expect(nav.querySelector('ul')?.className).toContain(
-      styles.listVariants.classNames.variants.variant.list,
+      navigationStyles.list.classNames.variants.variant.list,
     );
     expect(
-      screen.getByRole('link', { name: 'Checks' }).classList.contains(styles.activeClassesList),
+      screen.getByRole('link', { name: 'Checks' }).classList.contains(navigationStyles.active.list),
     ).toBe(true);
     expect(
-      screen.getByRole('link', { name: 'Schema' }).classList.contains(styles.activeClassesList),
+      screen.getByRole('link', { name: 'Schema' }).classList.contains(navigationStyles.active.list),
     ).toBe(false);
   });
 

@@ -3,7 +3,7 @@ import { lenient } from '@/lib/recipe';
 import * as shared from '@/styles/shared.css';
 import { Link, type LinkOptions } from '@tanstack/react-router';
 import { Tooltip } from '../primitives/floating/tooltip/tooltip';
-import * as styles from './navigation.css';
+import { navigationStyles } from './navigation.css';
 
 export type NavigationVariant = 'underline' | 'pill' | 'list';
 export type NavigationSize = 'default' | 'sm';
@@ -45,21 +45,13 @@ type NavigationProps = {
   attrs?: Record<string, string>;
 };
 
-const listVariants = lenient(styles.listVariants);
+const listVariants = lenient(navigationStyles.list);
 
-const itemVariants = lenient(styles.itemVariants);
+const itemVariants = lenient(navigationStyles.item);
 
-const activeClasses: Record<NavigationVariant, string> = {
-  underline: styles.activeClassesUnderline,
-  pill: styles.activeClassesPill,
-  list: styles.activeClassesList,
-};
+const activeClasses: Record<NavigationVariant, string> = navigationStyles.active;
 
-const inactiveClasses: Record<NavigationVariant, string> = {
-  underline: styles.inactiveClassesUnderline,
-  pill: styles.inactiveClassesPill,
-  list: styles.inactiveClassesList,
-};
+const inactiveClasses: Record<NavigationVariant, string> = navigationStyles.inactive;
 
 export function Navigation({
   items,
@@ -71,9 +63,9 @@ export function Navigation({
   attrs,
 }: NavigationProps) {
   const links = loading ? (
-    <div className={variant === 'list' ? styles.navigationDiv : styles.navigationDiv2}>
+    <div className={navigationStyles.skeleton[variant === 'list' ? 'list' : 'row']}>
       {[0, 1, 2].map(index => (
-        <div key={index} className={styles.navigationDiv3} />
+        <div key={index} className={navigationStyles.skeletonItem} />
       ))}
     </div>
   ) : (
@@ -106,7 +98,7 @@ export function Navigation({
                   inactiveProps={{ className: inactiveClasses[variant] }}
                   {...itemAttrs}
                 >
-                  {Icon ? <Icon className={styles.navigationIcon} /> : null}
+                  {Icon ? <Icon className={navigationStyles.icon} /> : null}
                   {label}
                 </Link>
               );

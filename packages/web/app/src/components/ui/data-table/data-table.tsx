@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { ArrowDown, ChevronDown, ChevronRight, Info, type LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import {
   flexRender,
@@ -38,7 +37,7 @@ import {
   DataTablePagination,
   type DataTableCursorPaginationProps,
 } from './data-table-pagination';
-import * as styles from './data-table.css';
+import { dataTableStyles } from './data-table.css';
 
 declare module '@tanstack/react-table' {
   // The generics are TanStack's; an augmentation has to repeat them to merge.
@@ -143,24 +142,23 @@ function SortHeader<TData>({
           // server-sorted column has no reason to carry one. Shift stacks a tiebreaker
           // the way the handler would.
           onClick={event => column.toggleSorting(undefined, event.shiftKey)}
-          className={styles.sortHeaderButton}
+          className={dataTableStyles.sortButton}
         >
           {label}
           {sorted && loading ? (
-            <span className={styles.sortHeaderSpan}>
+            <span className={dataTableStyles.sortSpinner}>
               <Spinner label="Sorting" variants={{ size: 'xs', tone: 'current' }} />
             </span>
           ) : (
             <ArrowDown
-              className={cn(
-                styles.sortHeaderArrowDown,
-                sorted ? styles.sortHeaderArrowDown2 : styles.sortHeaderArrowDown3,
-                sorted === 'asc' && styles.sortHeaderArrowDown4,
-              )}
+              className={dataTableStyles.sortArrow({
+                sorted: !!sorted,
+                ascending: sorted === 'asc',
+              })}
             />
           )}
           {sorted && sorting.length > 1 ? (
-            <span className={styles.sortHeaderSpan2} aria-label="Sort priority">
+            <span className={dataTableStyles.sortPriority} aria-label="Sort priority">
               {column.getSortIndex() + 1}
             </span>
           ) : null}
@@ -240,8 +238,8 @@ export function DataTable<TData>({
       {title ? (
         <DataTableTitleBar label={title.label} icon={title.icon} aside={title.aside} tone={tone} />
       ) : null}
-      <div className={styles.dataTableDiv}>
-        <table className={styles.dataTableTable} aria-busy={busy || undefined}>
+      <div className={dataTableStyles.root}>
+        <table className={dataTableStyles.table} aria-busy={busy || undefined}>
           {hasHeader ? (
             <DataTableHeader>
               {table.getHeaderGroups().map(headerGroup => (
@@ -267,8 +265,8 @@ export function DataTable<TData>({
                           {meta?.tooltip ? (
                             <Tooltip
                               trigger={
-                                <span className={styles.dataTableSpan2}>
-                                  <Info className={styles.dataTableInfo} />
+                                <span className={dataTableStyles.headerHint}>
+                                  <Info className={dataTableStyles.headerHintIcon} />
                                 </span>
                               }
                               content={meta.tooltip}
@@ -301,13 +299,10 @@ export function DataTable<TData>({
                           Loading
                         </span>
                       ) : null}
-                      {/* Fills the column up to a cap without widening it; inline, so the
-                          column's alignment places it. */}
                       <span
-                        className={cn(
-                          styles.dataTableSpan4,
-                          columnIndex === 0 ? styles.dataTableSpan5 : styles.dataTableSpan6,
-                        )}
+                        className={dataTableStyles.loadingCell({
+                          column: columnIndex === 0 ? 'first' : 'other',
+                        })}
                       >
                         <Skeleton variants={{ width: 'full' }} />
                       </span>
@@ -353,13 +348,12 @@ export function DataTable<TData>({
                         <DataTableCellSlot variant="compact">
                           {renderSubComponent ? (
                             <ChevronDown
-                              className={cn(
-                                styles.dataTableChevronDown,
-                                row.getIsExpanded() && styles.dataTableChevronDown2,
-                              )}
+                              className={dataTableStyles.expandChevron({
+                                expanded: row.getIsExpanded(),
+                              })}
                             />
                           ) : (
-                            <ChevronRight className={styles.dataTableChevronRight} />
+                            <ChevronRight className={dataTableStyles.linkChevron} />
                           )}
                         </DataTableCellSlot>
                       ) : null}
