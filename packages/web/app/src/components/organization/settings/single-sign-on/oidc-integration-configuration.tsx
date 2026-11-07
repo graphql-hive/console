@@ -18,7 +18,6 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -27,7 +26,7 @@ import { DebugOIDCIntegrationModal } from './debug-oidc-integration-modal';
 import { OIDCDefaultResourceSelector } from './oidc-default-resource-selector';
 import { OIDCDefaultRoleSelector } from './oidc-default-role-selector';
 import { OIDCRegisteredDomainSheet } from './oidc-registered-domain-sheet';
-import * as styles from './oidc-integration-configuration.css';
+import { oidcIntegrationConfigurationStyles } from './oidc-integration-configuration.css';
 
 const UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation = graphql(`
   mutation UpdateOIDCIntegrationForm_UpdateOIDCRestrictionsMutation(
@@ -209,9 +208,9 @@ export function OIDCIntegrationConfiguration(props: {
   };
 
   return (
-    <div className={styles.oIDCIntegrationConfigurationDiv}>
-      <div className={styles.oIDCIntegrationConfigurationDiv2}>
-        <div className={styles.oIDCIntegrationConfigurationDiv3}>
+    <div className={oidcIntegrationConfigurationStyles.root}>
+      <div className={oidcIntegrationConfigurationStyles.section}>
+        <div className={oidcIntegrationConfigurationStyles.sectionHeader}>
           <Heading size="lg">Overview</Heading>
           <Tooltip
             trigger={
@@ -261,8 +260,8 @@ export function OIDCIntegrationConfiguration(props: {
           ]}
         />
       </div>
-      <div className={styles.oIDCIntegrationConfigurationDiv4}>
-        <div className={styles.oIDCIntegrationConfigurationDiv5}>
+      <div className={oidcIntegrationConfigurationStyles.section}>
+        <div className={oidcIntegrationConfigurationStyles.sectionHeader}>
           <Heading size="lg">OIDC Configuration</Heading>
           <Tooltip
             trigger={
@@ -342,7 +341,7 @@ export function OIDCIntegrationConfiguration(props: {
         organization={organization}
         onRestrictionChange={onOidcRestrictionChange}
       />
-      <div className={styles.oIDCIntegrationConfigurationDiv6}>
+      <div className={oidcIntegrationConfigurationStyles.section}>
         <Heading size="lg">Remove OIDC Provider</Heading>
         <p>Completly disconnect the OIDC provider and all configuration.</p>
         <Button variant="destructive" onClick={() => setModalState(ModalState.openDelete)}>
@@ -508,9 +507,9 @@ function OIDCDomainConfiguration(props: {
   );
 
   return (
-    <div className={styles.oIDCDomainConfigurationDiv}>
-      <div className={styles.oIDCDomainConfigurationDiv2}>
-        <div className={styles.oIDCDomainConfigurationDiv3}>
+    <div className={oidcIntegrationConfigurationStyles.domains}>
+      <div className={oidcIntegrationConfigurationStyles.section}>
+        <div className={oidcIntegrationConfigurationStyles.sectionHeader}>
           <Heading size="lg">Registered Domains</Heading>
           <Tooltip
             trigger={
@@ -537,10 +536,10 @@ function OIDCDomainConfiguration(props: {
         />
       </div>
       <Card title="Domain Settings" description="Settings for the verified domains.">
-        <div className={styles.oIDCDomainConfigurationDiv4}>
-          <div className={styles.oIDCDomainConfigurationDiv5}>
+        <div className={oidcIntegrationConfigurationStyles.setting}>
+          <div className={oidcIntegrationConfigurationStyles.settingText}>
             <p>Require OIDC Login</p>
-            <p className={styles.oIDCDomainConfigurationP}>
+            <p className={oidcIntegrationConfigurationStyles.domainHint}>
               Enforce sign in/up through OIDC for verified domains. Any other login method will be
               blocked. The organization owner is excluded from this restriction.
             </p>
@@ -698,7 +697,7 @@ function OIDCAccessSettings(props: {
     <div>
       <Heading>User Provisioning</Heading>
       <p>Configure how users should be provisioned by your identity provider.</p>
-      <div className={styles.oIDCAccessSettingsDiv}>
+      <div className={oidcIntegrationConfigurationStyles.provisioning}>
         <RadioGroup
           variant="as-card"
           orientation="horizontal"
@@ -750,11 +749,11 @@ function OIDCAccessSettings(props: {
         {isSCIMProvisioningEnabled ? (
           <>
             <Card title="SCIM Provision Defaults">
-              <div className={styles.oIDCAccessSettingsDiv2}>
-                <div className={styles.oIDCAccessSettingsDiv3}>
-                  <div className={styles.oIDCAccessSettingsDiv4}>
+              <div className={oidcIntegrationConfigurationStyles.settings}>
+                <div className={oidcIntegrationConfigurationStyles.setting}>
+                  <div className={oidcIntegrationConfigurationStyles.settingText}>
                     <p>Organization access restricted to (active) provisioned users</p>
-                    <p className={styles.oIDCAccessSettingsP}>
+                    <p className={oidcIntegrationConfigurationStyles.settingHintNarrow}>
                       Only (active) users provisioned via SCIM can access the organization.
                       <br />
                       <span className={shared.weight.bold}>
@@ -763,30 +762,30 @@ function OIDCAccessSettings(props: {
                     </p>
                   </div>
                 </div>
-                <div className={styles.oIDCAccessSettingsDiv5}>
-                  <div className={styles.oIDCAccessSettingsDiv6}>
+                <div className={oidcIntegrationConfigurationStyles.setting}>
+                  <div className={oidcIntegrationConfigurationStyles.settingText}>
                     <p>Sync groups via SCIM</p>
-                    <p className={styles.oIDCAccessSettingsP2}>
+                    <p className={oidcIntegrationConfigurationStyles.settingHintNarrow}>
                       Groups are provisioned and updated via SCIM.{' '}
                       <Link
                         to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        className={styles.oIDCAccessSettingsLink}
+                        className={oidcIntegrationConfigurationStyles.link}
                       >
                         Manage Groups
                       </Link>
                     </p>
                   </div>
                 </div>
-                <div className={styles.oIDCAccessSettingsDiv7}>
-                  <div className={styles.oIDCAccessSettingsDiv8}>
+                <div className={oidcIntegrationConfigurationStyles.setting}>
+                  <div className={oidcIntegrationConfigurationStyles.settingText}>
                     <p>Sync users via SCIM</p>
-                    <p className={styles.oIDCAccessSettingsP3}>
+                    <p className={oidcIntegrationConfigurationStyles.settingHintNarrow}>
                       Users are provisioned and updated via SCIM.{' '}
                       <Link
                         to="/$organizationSlug/view/members"
                         params={{ organizationSlug: organization.slug }}
-                        className={styles.oIDCAccessSettingsLink2}
+                        className={oidcIntegrationConfigurationStyles.link}
                       >
                         Manage Users
                       </Link>
@@ -796,7 +795,10 @@ function OIDCAccessSettings(props: {
                     <div>
                       <Popover
                         trigger={
-                          <button type="button" className={styles.oIDCAccessSettingsButton}>
+                          <button
+                            type="button"
+                            className={oidcIntegrationConfigurationStyles.conflicts}
+                          >
                             {organization.pendingSCIMManagementConfirmationsCount} SCIM provisioning
                             conflict
                             {organization.pendingSCIMManagementConfirmationsCount === 1 ? '' : 's'}
@@ -804,7 +806,7 @@ function OIDCAccessSettings(props: {
                         }
                         openOnHover
                         content={
-                          <div className={styles.oIDCAccessSettingsDiv9}>
+                          <div className={oidcIntegrationConfigurationStyles.conflictsPopover}>
                             <p>
                               SCIM provisioning matched existing organization members. Review each
                               match before allowing SCIM to manage the account.
@@ -813,7 +815,7 @@ function OIDCAccessSettings(props: {
                               to="/$organizationSlug/view/members"
                               params={{ organizationSlug: organization.slug }}
                               search={{ showPendingSCIMManagementConfirmations: true }}
-                              className={styles.oIDCAccessSettingsLink3}
+                              className={oidcIntegrationConfigurationStyles.link}
                             >
                               Review conflicts
                             </Link>
@@ -823,15 +825,15 @@ function OIDCAccessSettings(props: {
                     </div>
                   )}
                 </div>
-                <div className={styles.oIDCAccessSettingsDiv10}>
-                  <div className={styles.oIDCAccessSettingsDiv11}>
+                <div className={oidcIntegrationConfigurationStyles.setting}>
+                  <div className={oidcIntegrationConfigurationStyles.settingText}>
                     <p>Assign permissions via groups</p>
-                    <p className={styles.oIDCAccessSettingsP4}>
+                    <p className={oidcIntegrationConfigurationStyles.settingHintNarrow}>
                       Assign role mappings to groups to grant permissions to group members.{' '}
                       <Link
                         to="/$organizationSlug/view/members/groups"
                         params={{ organizationSlug: organization.slug }}
-                        className={styles.oIDCAccessSettingsLink4}
+                        className={oidcIntegrationConfigurationStyles.link}
                       >
                         Manage Groups
                       </Link>
@@ -846,11 +848,11 @@ function OIDCAccessSettings(props: {
             title="OIDC Provision Settings"
             description="Customize the provision behaviour vor OIDC."
           >
-            <div className={styles.oIDCAccessSettingsDiv12}>
-              <div className={styles.oIDCAccessSettingsDiv13}>
-                <div className={styles.oIDCAccessSettingsDiv14}>
+            <div className={oidcIntegrationConfigurationStyles.settings}>
+              <div className={oidcIntegrationConfigurationStyles.setting}>
+                <div className={oidcIntegrationConfigurationStyles.settingText}>
                   <p>Require OIDC to Join</p>
-                  <p className={styles.oIDCAccessSettingsP5}>
+                  <p className={oidcIntegrationConfigurationStyles.settingHint}>
                     Restricts new accounts joining the organization to be authenticated via OIDC.
                     <br />
                     <span className={shared.weight.bold}>
@@ -865,10 +867,10 @@ function OIDCAccessSettings(props: {
                   }
                 />
               </div>
-              <div className={styles.oIDCAccessSettingsDiv15}>
-                <div className={styles.oIDCAccessSettingsDiv16}>
+              <div className={oidcIntegrationConfigurationStyles.setting}>
+                <div className={oidcIntegrationConfigurationStyles.settingText}>
                   <p>Require OIDC to Access</p>
-                  <p className={styles.oIDCAccessSettingsP6}>
+                  <p className={oidcIntegrationConfigurationStyles.settingHint}>
                     Prompt users to authenticate with OIDC before accessing the organization.
                     <br />
                     <span className={shared.weight.bold}>
@@ -884,10 +886,10 @@ function OIDCAccessSettings(props: {
                   }
                 />
               </div>
-              <div className={styles.oIDCAccessSettingsDiv17}>
-                <div className={styles.oIDCAccessSettingsDiv18}>
+              <div className={oidcIntegrationConfigurationStyles.setting}>
+                <div className={oidcIntegrationConfigurationStyles.settingText}>
                   <p>Require Invitation to Join</p>
-                  <p className={styles.oIDCAccessSettingsP7}>
+                  <p className={oidcIntegrationConfigurationStyles.settingHint}>
                     Restricts only invited OIDC accounts to join the organization.
                   </p>
                 </div>
@@ -899,23 +901,18 @@ function OIDCAccessSettings(props: {
                   }
                 />
               </div>
-              <div
-                className={cn(
-                  styles.oIDCAccessSettingsDiv19,
-                  isAdmin ? null : styles.oIDCAccessSettingsDiv20,
-                )}
-              >
+              <div className={oidcIntegrationConfigurationStyles.defaultRole({ locked: !isAdmin })}>
                 <p>Default Member Role</p>
-                <div className={styles.oIDCAccessSettingsDiv21}>
-                  <div className={styles.oIDCAccessSettingsDiv22}>
-                    <p className={styles.oIDCAccessSettingsP8}>
+                <div className={oidcIntegrationConfigurationStyles.defaultRoleRow}>
+                  <div className={oidcIntegrationConfigurationStyles.defaultRoleText}>
+                    <p className={oidcIntegrationConfigurationStyles.settingHint}>
                       This role is assigned to new members who sign in via OIDC.{' '}
                       <span className={shared.weight.medium}>
                         Only members with the Admin role can modify it.
                       </span>
                     </p>
                   </div>
-                  <div className={styles.oIDCAccessSettingsDiv23}>
+                  <div className={oidcIntegrationConfigurationStyles.defaultRoleSelect}>
                     <OIDCDefaultRoleSelector
                       width="full"
                       disabled={!isAdmin}
@@ -927,7 +924,7 @@ function OIDCAccessSettings(props: {
                 </div>
               </div>
             </div>
-            <div className={styles.oIDCAccessSettingsDiv24}>
+            <div className={oidcIntegrationConfigurationStyles.defaultResources}>
               <OIDCDefaultResourceSelector
                 oidcIntegrationId={oidcIntegration.id}
                 organization={organization}
