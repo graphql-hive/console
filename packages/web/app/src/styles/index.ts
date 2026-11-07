@@ -9,8 +9,9 @@
  *    they win their ties with it.
  * 4. `tailwind-defaults.css` holds the default scale the generated styles reference (spacing,
  *    text sizes, weights, …) and the `@property` registrations for their variables.
- * 5. `utilities.css` and `patterns.css` export classes for call sites; importing them here
- *    only fixes their position in the bundle.
+ * 5. `utilities.css`, `patterns.css` and `shared.css` export classes for components and call
+ *    sites to compose; importing them here puts them before every component stylesheet, so a
+ *    component's own style wins a tie with a primitive it composes.
  */
 import '@fontsource-variable/instrument-sans/wght.css';
 import '@fontsource-variable/instrument-sans/wght-italic.css';
@@ -22,3 +23,4 @@ import './animations.css';
 import './global.css';
 import './utilities.css';
 import './patterns.css';
+import './shared.css';

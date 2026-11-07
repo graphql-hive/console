@@ -29,6 +29,36 @@ pre-migration commit and `main`: once a directory is converted its source holds 
 and the defaults would otherwise lose the `@property` registrations the converted styles rely on (an
 unregistered `--tw-leading` inherits into children, for one).
 
+## Second pass: `normalize.ts`
+
+```sh
+pnpm tsx scripts/tailwind-to-ve/normalize.ts --scope components/ui [--dry] [--verbose]
+```
+
+Turns the generated output into what a person would write, one directory at a time, without changing
+what renders:
+
+- every `{ '@layer': { [layer]: {...} } }` block becomes `layered.components({...})` (or
+  `layered.utilities`), with typed tokens: `vars.color.fg.muted`, `space(4)`, `palette.neutral[4]`,
+  `animate.spin`;
+- Tailwind's `--tw-*` bookkeeping is resolved to the value it produced: `line-height` from
+  `var(--tw-leading, X)`, `border-style: solid`, a `box-shadow` assembled from its ring and shadow
+  parts, `translate`/`scale` from their axes, `space-y` margins with the reverse factor applied. A
+  variable is looked up in the rule, then its enclosing rules, then Tailwind's `@property` default;
+  a `@supports` branch that only overrode a variable gets the property it fed re-emitted;
+- an exported `style()` is composed from the shared primitives in `src/styles/shared.css.ts` where
+  its declarations allow: `style([shared.row.gap2, shared.fg.muted, layered.components({...})])`,
+  with whatever the primitives do not cover kept local. A style that is exactly one primitive goes,
+  and its call sites reference the primitive. A composition has to cover at least two declarations,
+  so a lone `display: flex` is not pulled out of an otherwise local style. The primitives live in
+  the `components` layer, so this is only done where the cascade cannot differ: the style is on
+  plain JSX elements and no sibling in the same `cn(...)` sets the same properties;
+- a recipe's variants are resolved with the base in scope, since they apply together; variants that
+  pass a variable between each other are reported for a look by hand.
+
+A file is skipped once it no longer has the `as layer` import, so the pass is safe to re-run. Names
+of the styles that stay local are left alone: the hand pass after this names them by role.
+
 ## After the removal
 
 The app no longer depends on Tailwind, so the codemod keeps what it needs here: `index.css` and

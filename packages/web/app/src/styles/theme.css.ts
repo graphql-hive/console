@@ -291,16 +291,61 @@ export const vars = createGlobalThemeContract({
     fontFamily: 'default-font-family',
     monoFontFamily: 'default-mono-font-family',
   },
-  // Tailwind defaults the global rules lean on; the rest of Tailwind's default scale arrives
-  // with the codemod, generated from what the app actually uses.
+  // The scale: Tailwind's defaults the app used, under Tailwind's names, plus the two extra text
+  // steps. `tailwind-defaults.css` carries the same values for the generated styles that still
+  // spell them as raw variables; it goes when they do.
   spacing: 'spacing',
   text: {
-    sm: 'text-sm',
-    smLineHeight: 'text-sm--line-height',
     '2xs': 'text-2xs',
     '2xsLineHeight': 'text-2xs--line-height',
+    xs: 'text-xs',
+    xsLineHeight: 'text-xs--line-height',
     control: 'text-control',
     controlLineHeight: 'text-control--line-height',
+    sm: 'text-sm',
+    smLineHeight: 'text-sm--line-height',
+    base: 'text-base',
+    baseLineHeight: 'text-base--line-height',
+    lg: 'text-lg',
+    lgLineHeight: 'text-lg--line-height',
+    xl: 'text-xl',
+    xlLineHeight: 'text-xl--line-height',
+    '2xl': 'text-2xl',
+    '2xlLineHeight': 'text-2xl--line-height',
+    '3xl': 'text-3xl',
+    '3xlLineHeight': 'text-3xl--line-height',
+    '4xl': 'text-4xl',
+    '4xlLineHeight': 'text-4xl--line-height',
+  },
+  weight: {
+    light: 'font-weight-light',
+    normal: 'font-weight-normal',
+    medium: 'font-weight-medium',
+    semibold: 'font-weight-semibold',
+    bold: 'font-weight-bold',
+    extrabold: 'font-weight-extrabold',
+  },
+  tracking: {
+    tight: 'tracking-tight',
+    wide: 'tracking-wide',
+    wider: 'tracking-wider',
+  },
+  leading: {
+    tight: 'leading-tight',
+    snug: 'leading-snug',
+    relaxed: 'leading-relaxed',
+  },
+  container: {
+    xs: 'container-xs',
+    sm: 'container-sm',
+    md: 'container-md',
+    xl: 'container-xl',
+    '2xl': 'container-2xl',
+    '3xl': 'container-3xl',
+    '4xl': 'container-4xl',
+  },
+  blur: {
+    sm: 'blur-sm',
   },
   color: {
     transparent: 'color-transparent',
@@ -370,6 +415,7 @@ export const vars = createGlobalThemeContract({
   },
   radius: {
     DEFAULT: 'radius',
+    xl: 'radius-xl',
     lg: 'radius-lg',
     md: 'radius-md',
     sm: 'radius-sm',
@@ -377,6 +423,12 @@ export const vars = createGlobalThemeContract({
   },
   ease: {
     authentic: 'ease-authentic',
+    out: 'ease-out',
+    inOut: 'ease-in-out',
+  },
+  transition: {
+    duration: 'default-transition-duration',
+    timing: 'default-transition-timing-function',
   },
   minH: {
     content: 'min-h-content',
@@ -409,12 +461,56 @@ globalStyle(':root, :host', {
         // labels) below xs, and UI control text (buttons, inputs, menus) between xs and sm.
         spacing: '0.25rem',
         text: {
-          sm: '0.875rem',
-          smLineHeight: 'calc(1.25 / 0.875)',
           '2xs': '0.625rem',
           '2xsLineHeight': 'calc(0.875 / 0.625)',
+          xs: '0.75rem',
+          xsLineHeight: 'calc(1 / 0.75)',
           control: '0.8125rem',
           controlLineHeight: 'calc(1.125 / 0.8125)',
+          sm: '0.875rem',
+          smLineHeight: 'calc(1.25 / 0.875)',
+          base: '1rem',
+          baseLineHeight: 'calc(1.5 / 1)',
+          lg: '1.125rem',
+          lgLineHeight: 'calc(1.75 / 1.125)',
+          xl: '1.25rem',
+          xlLineHeight: 'calc(1.75 / 1.25)',
+          '2xl': '1.5rem',
+          '2xlLineHeight': 'calc(2 / 1.5)',
+          '3xl': '1.875rem',
+          '3xlLineHeight': 'calc(2.25 / 1.875)',
+          '4xl': '2.25rem',
+          '4xlLineHeight': 'calc(2.5 / 2.25)',
+        },
+        weight: {
+          light: '300',
+          normal: '400',
+          medium: '500',
+          semibold: '600',
+          bold: '700',
+          extrabold: '800',
+        },
+        tracking: {
+          tight: '-0.025em',
+          wide: '0.025em',
+          wider: '0.05em',
+        },
+        leading: {
+          tight: '1.25',
+          snug: '1.375',
+          relaxed: '1.625',
+        },
+        container: {
+          xs: '20rem',
+          sm: '24rem',
+          md: '28rem',
+          xl: '36rem',
+          '2xl': '42rem',
+          '3xl': '48rem',
+          '4xl': '56rem',
+        },
+        blur: {
+          sm: '8px',
         },
         color: {
           transparent: 'transparent',
@@ -484,6 +580,7 @@ globalStyle(':root, :host', {
         },
         radius: {
           DEFAULT: '0.5rem',
+          xl: '0.75rem',
           lg: vars.radius.DEFAULT,
           md: `calc(${vars.radius.DEFAULT} - 2px)`,
           sm: `calc(${vars.radius.DEFAULT} - 4px)`,
@@ -491,6 +588,12 @@ globalStyle(':root, :host', {
         },
         ease: {
           authentic: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          out: 'cubic-bezier(0, 0, 0.2, 1)',
+          inOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        },
+        transition: {
+          duration: '150ms',
+          timing: 'cubic-bezier(0.4, 0, 0.2, 1)',
         },
         minH: {
           content: palette.layout.contentHeight,
