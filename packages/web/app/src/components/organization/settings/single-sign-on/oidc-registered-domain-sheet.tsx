@@ -9,11 +9,10 @@ import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterDomainForm, RegisterDomainFormSchema } from './register-domain-form';
-import * as styles from './oidc-registered-domain-sheet.css';
+import { oidcRegisteredDomainSheetStyles } from './oidc-registered-domain-sheet.css';
 
 const OIDCRegisteredDomainSheet_RegisteredDomain = graphql(`
   fragment OIDCRegisteredDomainSheet_RegisteredDomain on OIDCIntegrationDomain {
@@ -255,7 +254,9 @@ export function OIDCRegisteredDomainSheet(props: {
               <>
                 {isInStepperProcess ? stepper.current.title : 'Domain Settings'}{' '}
                 {domain?.domainName && (
-                  <span className={styles.oIDCRegisteredDomainSheetSpan}>{domain?.domainName}</span>
+                  <span className={oidcRegisteredDomainSheetStyles.domainName}>
+                    {domain?.domainName}
+                  </span>
                 )}
               </>
             }
@@ -286,7 +287,7 @@ export function OIDCRegisteredDomainSheet(props: {
                   >
                     Delete Domain
                   </Button>
-                  <div className={styles.oIDCRegisteredDomainSheetDiv}>
+                  <div className={oidcRegisteredDomainSheetStyles.footerActions}>
                     <Button variant="outline" onClick={props.onClose}>
                       Close
                     </Button>
@@ -314,7 +315,7 @@ export function OIDCRegisteredDomainSheet(props: {
                   >
                     Delete Domain
                   </Button>
-                  <div className={styles.oIDCRegisteredDomainSheetDiv2}>
+                  <div className={oidcRegisteredDomainSheetStyles.footerClose}>
                     <Button variant="primary" onClick={props.onClose}>
                       Close
                     </Button>
@@ -324,9 +325,7 @@ export function OIDCRegisteredDomainSheet(props: {
             })}
           >
             {isInStepperProcess && (
-              <Stepper.StepperNavigation
-                className={styles.oIDCRegisteredDomainSheetStepperNavigation}
-              >
+              <Stepper.StepperNavigation className={oidcRegisteredDomainSheetStyles.steps}>
                 {stepper.steps.map(step => (
                   <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>
                     <Stepper.StepperTitle>{step.title}</Stepper.StepperTitle>
@@ -343,7 +342,11 @@ export function OIDCRegisteredDomainSheet(props: {
                     challenge.
                   </p>
                   <p>Within your hosted zone create the following DNS record.</p>
-                  <div className={cn(!domain?.challenge && styles.oIDCRegisteredDomainSheetDiv3)}>
+                  <div
+                    className={oidcRegisteredDomainSheetStyles.challenge({
+                      pending: !domain?.challenge,
+                    })}
+                  >
                     <DescriptionList
                       rows={[
                         {
@@ -406,7 +409,7 @@ export function OIDCRegisteredDomainSheet(props: {
               ),
             })}
             {stepper.current.id === 'step-2-challenge' && challengeError ? (
-              <p className={styles.oIDCRegisteredDomainSheetP}>{challengeError}</p>
+              <p className={oidcRegisteredDomainSheetStyles.challengeError}>{challengeError}</p>
             ) : null}
           </Sheet>
         )}

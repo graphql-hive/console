@@ -15,7 +15,7 @@ import {
   OIDCMetadataUrlFormSchema,
   type OIDCMetadataUrlFormValues,
 } from './connect-provider-form';
-import * as styles from './connect-single-sign-on-provider-sheet.css';
+import { connectSingleSignOnProviderSheetStyles } from './connect-single-sign-on-provider-sheet.css';
 
 type ConnectSingleSignOnProviderSheetProps = {
   open: boolean;
@@ -159,7 +159,7 @@ export function ConnectSingleSignOnProviderSheet(
         </>
       }
     >
-      <div className={styles.connectSingleSignOnProviderSheetDiv}>
+      <div className={connectSingleSignOnProviderSheetStyles.body}>
         <Tabs
           value={state}
           onValueChange={value => setState(value === 'manual' ? 'manual' : 'discovery')}

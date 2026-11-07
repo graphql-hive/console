@@ -11,7 +11,7 @@ import {
   ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
 } from '../../members/resource-selector';
-import * as styles from './oidc-default-resource-selector.css';
+import { oidcDefaultResourceSelectorStyles } from './oidc-default-resource-selector.css';
 
 const OIDCDefaultResourceSelector_UpdateMutation = graphql(`
   mutation OIDCDefaultResourceSelector_UpdateMutation(
@@ -90,18 +90,18 @@ export function OIDCDefaultResourceSelector(props: {
   function MutateState() {
     if (debouncedMutate.isPending() || mutateState === 'loading') {
       return (
-        <span className={styles.mutateStateSpan}>
+        <span className={oidcDefaultResourceSelectorStyles.pending}>
           <Spinner />
         </span>
       );
     }
 
     if (mutateState === 'error') {
-      return <XIcon className={styles.mutateStateXIcon} />;
+      return <XIcon className={oidcDefaultResourceSelectorStyles.failed} />;
     }
 
     if (mutateState === 'success') {
-      return <CheckIcon className={styles.mutateStateCheckIcon} />;
+      return <CheckIcon className={oidcDefaultResourceSelectorStyles.saved} />;
     }
 
     return null;

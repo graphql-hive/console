@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
 import * as shared from '@/styles/shared.css';
-import * as styles from './connect-provider-form.css';
+import { connectProviderFormStyles } from './connect-provider-form.css';
 
 /** The endpoints a discovery document must carry, and the only client-side validated fields. */
 export const OIDCMetadataSchema = z.object({
@@ -209,7 +209,7 @@ export function OIDCMetadataUrlForm(props: {
               label="Metadata URL"
               tooltip="Provide the OIDC metadata URL to automatically fill in the fields below."
             />
-            <div className={styles.oIDCMetadataUrlFormDiv}>
+            <div className={connectProviderFormStyles.metadataUrlRow}>
               <FormControl>
                 <Input
                   onSurface="raised"

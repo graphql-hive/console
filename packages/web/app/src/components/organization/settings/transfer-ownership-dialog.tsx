@@ -13,7 +13,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as styles from './transfer-ownership-dialog.css';
+import { transferOwnershipDialogStyles } from './transfer-ownership-dialog.css';
 
 const TransferOrganizationOwnership_Request = graphql(`
   mutation TransferOrganizationOwnership_Request($input: RequestOrganizationTransferInput!) {
@@ -156,22 +156,22 @@ export const TransferOrganizationOwnershipModal = ({
         </>
       }
     >
-      <div className={styles.transferOrganizationOwnershipModalDiv}>
+      <div className={transferOwnershipDialogStyles.body}>
         <TransferOwnershipForm form={form} onSubmit={onSubmit} members={members} />
 
-        <div className={styles.transferOrganizationOwnershipModalDiv2} />
+        <div className={transferOwnershipDialogStyles.rule} />
 
         <div className={shared.weight.medium}>About the ownership transfer</div>
-        <ul className={styles.transferOrganizationOwnershipModalUl}>
+        <ul className={transferOwnershipDialogStyles.notes}>
           <li>
             The new owner will receive a confirmation email. If the new owner doesn't accept the
             transfer within 24 hours, the invitation will expire.
           </li>
-          <li className={styles.transferOrganizationOwnershipModalLi}>
+          <li className={transferOwnershipDialogStyles.note}>
             When you transfer an organization to one of the members, the new owner will get access
             to organization's contents, projects, members, and settings.
           </li>
-          <li className={styles.transferOrganizationOwnershipModalLi2}>
+          <li className={transferOwnershipDialogStyles.note}>
             You will keep your access to the organization's contents, projects, members, and
             settings, except you won't be able to remove the organization.
           </li>

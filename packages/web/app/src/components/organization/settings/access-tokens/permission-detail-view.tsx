@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/primitives/badge/badge';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as shared from '@/styles/shared.css';
 import { permissionLevelToResourceName } from './shared-helpers';
-import * as styles from './permission-detail-view.css';
+import { permissionDetailViewStyles } from './permission-detail-view.css';
 
 const PermissionDetailView_ResolvedResourcePermissionGroup = graphql(`
   fragment PermissionDetailView_ResolvedResourcePermissionGroup on ResolvedResourcePermissionGroup {
@@ -52,9 +52,9 @@ export function PermissionDetailView(props: {
           label: group.title,
           trailing: <span>{totalAllowedCount} allowed</span>,
           content: (
-            <div className={styles.permissionDetailViewDiv}>
+            <div className={permissionDetailViewStyles.groups}>
               {group.resolvedPermissionGroups.map(group => (
-                <div className={styles.permissionDetailViewDiv2} key={group.title}>
+                <div className={permissionDetailViewStyles.group} key={group.title}>
                   <PermissionTable
                     title={group.title}
                     permissions={group.permissions.map(permission => ({
@@ -66,7 +66,7 @@ export function PermissionDetailView(props: {
                   />
                 </div>
               ))}
-              <div className={styles.permissionDetailViewDiv3}>
+              <div className={permissionDetailViewStyles.resources}>
                 {group.resolvedResourceIds == null ? (
                   <p className={shared.fg.critical}>
                     Not granted on any {permissionLevelToResourceName(group.level).slice(0, -1)}.
@@ -76,7 +76,7 @@ export function PermissionDetailView(props: {
                     <p className={shared.fg.secondary}>
                       Granted on {permissionLevelToResourceName(group.level)}:
                     </p>
-                    <ul className={styles.permissionDetailViewUl}>
+                    <ul className={permissionDetailViewStyles.resourceList}>
                       {group.resolvedResourceIds.map(id => (
                         <li key={id}>
                           <Badge content={id} variants={{ variant: 'outline', mono: true }} />

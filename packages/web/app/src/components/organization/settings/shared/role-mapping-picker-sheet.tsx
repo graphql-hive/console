@@ -5,7 +5,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { MemberRoleSelector } from '../../members/member-role-selector';
 import { ResourceSelection, ResourceSelector } from '../../members/resource-selector';
 import { SelectedPermissionOverview } from '../../members/selected-permission-overview';
-import * as styles from './role-mapping-picker-sheet.css';
+import { roleMappingPickerSheetStyles } from './role-mapping-picker-sheet.css';
 
 const RoleMappingPickerSheet_OrganizationFragment = graphql(`
   fragment RoleMappingPickerSheet_OrganizationFragment on Organization {
@@ -63,8 +63,8 @@ export function RoleMappingPickerSheet(props: {
       description={props.description}
       footer={props.actions}
     >
-      <div className={styles.roleMappingPickerSheetDiv}>
-        <Heading size="lg" className={styles.roleMappingPickerSheetHeading}>
+      <div className={roleMappingPickerSheetStyles.roleSection}>
+        <Heading size="lg" className={roleMappingPickerSheetStyles.sectionTitle}>
           Assigned Member Role
         </Heading>
         <MemberRoleSelector
@@ -74,7 +74,7 @@ export function RoleMappingPickerSheet(props: {
           selectedRoleId={props.selectedRoleId}
           onSelectRoleId={props.onSelectedRoleIdChange}
         />
-        <p className={styles.roleMappingPickerSheetP}>
+        <p className={roleMappingPickerSheetStyles.sectionHint}>
           The role assigned to the user that will grant permissions.
         </p>
         {selectedRole && (
@@ -86,11 +86,11 @@ export function RoleMappingPickerSheet(props: {
           />
         )}
       </div>
-      <div className={styles.roleMappingPickerSheetDiv2}>
-        <Heading size="lg" className={styles.roleMappingPickerSheetHeading2}>
+      <div className={roleMappingPickerSheetStyles.resourcesSection}>
+        <Heading size="lg" className={roleMappingPickerSheetStyles.sectionTitle}>
           Assigned Resources
         </Heading>
-        <p className={styles.roleMappingPickerSheetP2}>
+        <p className={roleMappingPickerSheetStyles.sectionHint}>
           Specify the resources on which the permissions will be granted.
         </p>
         <ResourceSelector

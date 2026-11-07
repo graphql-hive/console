@@ -4,7 +4,7 @@ import { InputCopy } from '@/components/ui/input-copy';
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
 import * as shared from '@/styles/shared.css';
-import * as styles from './access-token-created-dialog.css';
+import { accessTokenCreatedDialogStyles } from './access-token-created-dialog.css';
 
 /** Shows a freshly created token once, and only lets go once the user says they stored it. */
 export function AccessTokenCreatedDialog(props: {
@@ -34,7 +34,7 @@ export function AccessTokenCreatedDialog(props: {
           This is your unique API key and it is non-recoverable. If you lose this key, you will need
           to create a new one.
         </Callout>
-        <div className={styles.accessTokenCreatedDialogDiv2}>
+        <div className={accessTokenCreatedDialogStyles.confirm}>
           <Checkbox
             id="AccessTokenCreatedDialog-isConfirmed"
             checked={isConfirmed}
@@ -42,7 +42,7 @@ export function AccessTokenCreatedDialog(props: {
           />
           <label
             htmlFor="AccessTokenCreatedDialog-isConfirmed"
-            className={styles.accessTokenCreatedDialogLabel}
+            className={accessTokenCreatedDialogStyles.confirmLabel}
           >
             I stored the access token somewhere safe
           </label>
