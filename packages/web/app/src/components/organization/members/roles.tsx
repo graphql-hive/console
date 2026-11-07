@@ -24,7 +24,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { PermissionSelector } from './permission-selector';
 import { RoleFields, RoleForm, RoleFormSchema, type RoleFormValues } from './role-form';
 import { SelectedPermissionOverview } from './selected-permission-overview';
-import * as styles from './roles.css';
+import { rolesStyles } from './roles.css';
 
 const OrganizationMemberRoleEditor_UpdateMemberRoleMutation = graphql(`
   mutation OrganizationMemberRoleEditor_UpdateMemberRoleMutation($input: UpdateMemberRoleInput!) {
@@ -205,7 +205,7 @@ function OrganizationMemberRoleView(props: {
 
   return (
     <div className={shared.stack.gap4}>
-      <div className={styles.organizationMemberRoleViewDiv2}>
+      <div className={rolesStyles.permissions}>
         <ScrollArea fill>
           <SelectedPermissionOverview
             showOnlyAllowedPermissions={showOnlyGrantedPermissions}
@@ -214,17 +214,14 @@ function OrganizationMemberRoleView(props: {
           />
         </ScrollArea>
       </div>
-      <div className={styles.organizationMemberRoleViewDiv3}>
-        <div className={styles.organizationMemberRoleViewDiv4}>
+      <div className={rolesStyles.footer}>
+        <div className={rolesStyles.toggle}>
           <Checkbox
             id="show-only-granted-permissions"
             checked={showOnlyGrantedPermissions}
             onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
           />
-          <label
-            htmlFor="show-only-granted-permissions"
-            className={styles.organizationMemberRoleViewLabel}
-          >
+          <label htmlFor="show-only-granted-permissions" className={rolesStyles.toggleLabel}>
             Show only granted permissions
           </label>
         </div>
@@ -388,16 +385,13 @@ function OrganizationMemberRoleCreator(props: {
           </>
         ) : (
           <>
-            <div className={styles.organizationMemberRoleCreatorDiv}>
+            <div className={rolesStyles.toggle}>
               <Checkbox
                 id="show-only-granted-permissions"
                 checked={showOnlyGrantedPermissions}
                 onCheckedChange={value => setShowOnlyGrantedPermissions(!!value)}
               />
-              <label
-                htmlFor="show-only-granted-permissions"
-                className={styles.organizationMemberRoleCreatorLabel}
-              >
+              <label htmlFor="show-only-granted-permissions" className={rolesStyles.toggleLabel}>
                 Show only granted permissions
               </label>
             </div>
@@ -431,7 +425,7 @@ function OrganizationMemberRoleCreator(props: {
           }
         />
       ) : (
-        <div className={styles.organizationMemberRoleCreatorDiv2}>
+        <div className={rolesStyles.creatorPermissions}>
           <ScrollArea fill>
             <SelectedPermissionOverview
               activePermissionIds={Array.from(selectedPermissions)}
@@ -504,14 +498,14 @@ function RoleNameCell(props: {
           <Tooltip
             trigger={
               <span className={shared.inlineFlex}>
-                <LockIcon className={styles.roleNameCellLockIcon} />
+                <LockIcon className={rolesStyles.lockIcon} />
               </span>
             }
             side="right"
             content={
-              <div className={styles.roleNameCellDiv}>
-                <div className={styles.roleNameCellDiv2}>This role is locked</div>
-                <div className={styles.roleNameCellDiv3}>
+              <div className={rolesStyles.lockedNote}>
+                <div className={rolesStyles.lockedTitle}>This role is locked</div>
+                <div className={rolesStyles.lockedText}>
                   Locked roles are created by the system and cannot be modified or deleted.
                 </div>
               </div>
@@ -528,9 +522,9 @@ function RoleNameCell(props: {
             openOnHover
             side="right"
             content={
-              <div className={styles.roleNameCellDiv4}>
+              <div className={rolesStyles.defaultNote}>
                 <div className={shared.weight.medium}>Default role for new members</div>
-                <div className={styles.roleNameCellDiv6}>
+                <div className={rolesStyles.defaultText}>
                   <p>New members will be assigned to this role by default.</p>
                   {props.canChangeOIDCDefaultRole ? (
                     <p>
@@ -541,7 +535,7 @@ function RoleNameCell(props: {
                         params={{
                           organizationSlug,
                         }}
-                        className={styles.roleNameCellLink}
+                        className={rolesStyles.link}
                       >
                         OIDC settings
                       </Link>

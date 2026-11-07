@@ -25,7 +25,7 @@ import {
   ResourceSelector,
   resourceSlectionToGraphQLSchemaResourceAssignmentInput,
 } from './resource-selector';
-import * as styles from './invitations.css';
+import { invitationsStyles } from './invitations.css';
 
 const MemberInvitationForm_InviteByEmail = graphql(`
   mutation MemberInvitationForm_InviteByEmail($input: InviteToOrganizationByEmailInput!) {
@@ -180,7 +180,7 @@ export function MemberInvitationButton(props: {
       onOpenChange={setOpen}
       trigger={
         <Button data-testid="send-invite-trigger">
-          <MailIcon size={14} className={styles.memberInvitationButtonMailIcon} /> Send Invite
+          <MailIcon size={14} className={invitationsStyles.inviteIcon} /> Send Invite
         </Button>
       }
       width="xl"
@@ -432,12 +432,12 @@ export function OrganizationInvitations(props: {
           pagination={{ kind: 'none' }}
         />
       ) : (
-        <div className={styles.organizationInvitationsDiv}>
-          <div className={styles.organizationInvitationsDiv2}>
-            <MailQuestionIcon className={styles.organizationInvitationsMailQuestionIcon} />
+        <div className={invitationsStyles.empty}>
+          <div className={invitationsStyles.emptyBody}>
+            <MailQuestionIcon className={invitationsStyles.emptyIcon} />
 
-            <h3 className={styles.organizationInvitationsH3}>No invitations</h3>
-            <p className={styles.organizationInvitationsP}>
+            <h3 className={invitationsStyles.emptyTitle}>No invitations</h3>
+            <p className={invitationsStyles.emptyText}>
               Invitations to join this organization will appear here.
             </p>
           </div>

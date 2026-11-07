@@ -4,7 +4,7 @@ import { Accordion } from '@/components/ui/primitives/accordion/accordion';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { PermissionLevelType } from '@/gql/graphql';
 import { ResultOf } from '@graphql-typed-document-node/core';
-import * as styles from './selected-permission-overview.css';
+import { selectedPermissionOverviewStyles } from './selected-permission-overview.css';
 
 export const SelectedPermissionOverview_PermissionGroupFragment = graphql(`
   fragment SelectedPermissionOverview_PermissionGroupFragment on PermissionGroup {
@@ -152,10 +152,10 @@ function PermissionLevelGroup(props: {
           label: props.title,
           trailing: <span>{totalAllowedCount} allowed</span>,
           content: (
-            <div className={styles.permissionLevelGroupDiv}>
+            <div className={selectedPermissionOverviewStyles.groups}>
               {filteredGroups.map(group =>
                 props.showOnlyAllowedPermissions && group.totalAllowedCount === 0 ? null : (
-                  <div className={styles.permissionLevelGroupDiv2} key={group.id}>
+                  <div className={selectedPermissionOverviewStyles.group} key={group.id}>
                     <PermissionTable
                       title={group.title}
                       permissions={group.permissions.flatMap(permission => {

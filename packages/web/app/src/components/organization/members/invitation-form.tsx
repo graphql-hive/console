@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/primitives/input/input';
 import * as shared from '@/styles/shared.css';
 import { RoleSelector } from './common';
-import * as styles from './invitation-form.css';
+import { invitationFormStyles } from './invitation-form.css';
 
 export const MemberInvitationFormSchema = z.object({
   email: z
@@ -54,7 +54,7 @@ export function MemberInvitationForm(props: {
   const { form } = props;
   return (
     <Form form={form} onSubmit={props.onSubmit}>
-      <div className={styles.memberInvitationFormDiv}>
+      <div className={invitationFormStyles.fields}>
         <div className={shared.grow}>
           <FormField
             control={form.control}
@@ -95,7 +95,7 @@ export function MemberInvitationForm(props: {
         />
       </div>
       {props.resources}
-      <div className={styles.memberInvitationFormDiv3}>
+      <div className={invitationFormStyles.actions}>
         <Button
           type="submit"
           onSurface="raised"

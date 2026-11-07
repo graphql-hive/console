@@ -6,10 +6,9 @@ import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Select } from '@/components/ui/primitives/floating/select/select';
 import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { ResultOf } from '@graphql-typed-document-node/core';
-import * as styles from './permission-selector.css';
+import { permissionSelectorStyles } from './permission-selector.css';
 
 // PermissionSelector_OrganizationFragment
 
@@ -107,7 +106,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
             <span>{group.selectedPermissionCount} selected</span>
           ) : undefined,
         content: (
-          <div className={styles.permissionSelectorDiv}>
+          <div className={permissionSelectorStyles.list}>
             {group.permissions.map(permission => {
               const needsDependency =
                 !!permission.dependsOnId &&
@@ -116,7 +115,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
               return (
                 <div className={shared.relative} key={permission.id}>
                   <div
-                    className={cn(styles.permissionSelectorDiv3)}
+                    className={permissionSelectorStyles.row}
                     data-permission-id={permission.id}
                     ref={ref => {
                       if (ref) {
@@ -125,16 +124,17 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                     }}
                   >
                     <div
-                      className={cn(
-                        (needsDependency || !permission.isAssignableByViewer) &&
-                          styles.permissionSelectorDiv4,
-                      )}
+                      className={permissionSelectorStyles.rowText({
+                        dimmed: needsDependency || !permission.isAssignableByViewer,
+                      })}
                     >
-                      <div className={styles.permissionSelectorDiv5}>{permission.title}</div>
-                      <div className={styles.permissionSelectorDiv6}>{permission.description}</div>
+                      <div className={permissionSelectorStyles.title}>{permission.title}</div>
+                      <div className={permissionSelectorStyles.description}>
+                        {permission.description}
+                      </div>
                     </div>
                     {permission.isAssignableByViewer === false ? (
-                      <div className={styles.permissionSelectorDiv7}>
+                      <div className={permissionSelectorStyles.aside}>
                         <Popover
                           trigger={
                             <button type="button" aria-label="Why this cannot be assigned">
@@ -143,7 +143,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                           }
                           openOnHover
                           content={
-                            <p className={styles.permissionSelectorP}>
+                            <p className={permissionSelectorStyles.note}>
                               Your membership has insufficient authority for assigning this
                               permission.
                             </p>
@@ -151,23 +151,23 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                         />
                       </div>
                     ) : permission.warning && props.selectedPermissionIds.has(permission.id) ? (
-                      <div className={styles.permissionSelectorDiv8}>
+                      <div className={permissionSelectorStyles.aside}>
                         <Popover
                           trigger={
                             <button type="button" aria-label="Warning">
-                              <TriangleAlert className={styles.permissionSelectorTriangleAlert} />
+                              <TriangleAlert className={permissionSelectorStyles.warningIcon} />
                             </button>
                           }
                           openOnHover
                           content={
-                            <p className={styles.permissionSelectorP2}>{permission.warning}</p>
+                            <p className={permissionSelectorStyles.note}>{permission.warning}</p>
                           }
                         />
                       </div>
                     ) : (
                       !!permission.dependsOnId &&
                       permissionToGroupTitleMapping.has(permission.dependsOnId) && (
-                        <div className={styles.permissionSelectorDiv9}>
+                        <div className={permissionSelectorStyles.aside}>
                           <Popover
                             trigger={
                               <button type="button" aria-label="Depends on another permission">
@@ -176,7 +176,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                             }
                             openOnHover
                             content={
-                              <p className={styles.permissionSelectorP3}>
+                              <p className={permissionSelectorStyles.note}>
                                 This permission depends on another permission.{' '}
                                 <Button
                                   variant="link"
@@ -253,7 +253,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                     />
                   </div>
                   {focusedPermission === permission.id && (
-                    <div className={styles.permissionSelectorDiv10} />
+                    <div className={permissionSelectorStyles.focusRing} />
                   )}
                 </div>
               );

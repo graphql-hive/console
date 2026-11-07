@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/primitives/input/input';
 import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import * as shared from '@/styles/shared.css';
-import * as styles from './role-form.css';
+import { roleFormStyles } from './role-form.css';
 
 export const RoleFormSchema = z.object({
   name: z
@@ -53,7 +53,7 @@ export function RoleForm(props: {
   return (
     <Form form={props.form} onSubmit={props.onSubmit}>
       {props.children}
-      <div className={styles.roleFormDiv}>{props.footer}</div>
+      <div className={roleFormStyles.footer}>{props.footer}</div>
     </Form>
   );
 }
@@ -62,8 +62,8 @@ export function RoleForm(props: {
 export function RoleFields(props: { form: UseFormReturn<RoleFormValues>; permissions: ReactNode }) {
   const { form } = props;
   return (
-    <div className={styles.roleFieldsDiv}>
-      <div className={styles.roleFieldsDiv2}>
+    <div className={roleFormStyles.fields}>
+      <div className={roleFormStyles.fieldsColumn}>
         <FormField
           control={form.control}
           name="name"
@@ -109,7 +109,7 @@ export function RoleFields(props: { form: UseFormReturn<RoleFormValues>; permiss
           render={() => (
             <FormItem group>
               <FormLabel label="Permissions" />
-              <div className={styles.roleFieldsDiv4}>
+              <div className={roleFormStyles.permissions}>
                 <ScrollArea fill>{props.permissions}</ScrollArea>
               </div>
             </FormItem>

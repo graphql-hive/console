@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as shared from '@/styles/shared.css';
-import * as styles from './member-groups.css';
+import { memberGroupsStyles } from './member-groups.css';
 
 export const MemberGroups_GroupFragment = graphql(`
   fragment MemberGroups_GroupFragment on Group {
@@ -29,8 +29,8 @@ export function MemberGroups(props: {
     return (
       <Tooltip
         trigger={
-          <div className={styles.memberGroupsDiv5}>
-            <UsersIcon className={styles.memberGroupsUsersIcon2} />
+          <div className={memberGroupsStyles.none}>
+            <UsersIcon className={memberGroupsStyles.icon} />
             <span className={shared.text.xs}>Groups: none</span>
           </div>
         }
@@ -40,9 +40,9 @@ export function MemberGroups(props: {
   }
 
   return (
-    <div className={layout === 'all' ? shared.row.wrap2 : styles.memberGroupsDiv7}>
+    <div className={layout === 'all' ? shared.row.wrap2 : memberGroupsStyles.row}>
       <div className={shared.row.gap1_5}>
-        <UsersIcon className={styles.memberGroupsUsersIcon2} />
+        <UsersIcon className={memberGroupsStyles.icon} />
         <span className={shared.text.xs}>Groups:</span>
       </div>
 

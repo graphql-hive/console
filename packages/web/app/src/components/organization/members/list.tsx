@@ -26,14 +26,13 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { MemberInvitationButton } from './invitations';
 import { MemberGroups } from './member-groups';
 import { MemberRolePicker } from './member-role-picker';
-import * as styles from './list.css';
+import { listStyles } from './list.css';
 
 const membersRoute = getRouteApi('/authenticated/with-header/$organizationSlug/view/members/');
 
@@ -129,15 +128,15 @@ function MemberStatusIcon({ member }: { member: MemberRow }) {
   const info = member.user.provisionInfo;
   if (info?.provisioningStatus === GraphQLSchema.ProvisioningStatus.Active && info.isDisabled) {
     return (
-      <span className={styles.memberStatusIconSpan} aria-label="Disabled user">
-        <UserRoundX className={styles.memberStatusIconUserRoundX} />
+      <span className={listStyles.statusDisabled} aria-label="Disabled user">
+        <UserRoundX className={listStyles.statusIcon} />
       </span>
     );
   }
   const Icon = info ? UserLock : UserRound;
   return (
-    <span className={styles.memberStatusIconSpan2} aria-label={info ? 'Provisioned user' : 'User'}>
-      <Icon className={styles.memberStatusIconIcon} />
+    <span className={listStyles.status} aria-label={info ? 'Provisioned user' : 'User'}>
+      <Icon className={listStyles.statusIcon} />
     </span>
   );
 }
@@ -156,15 +155,15 @@ function MemberNameCell({ member }: { member: MemberRow }) {
                 <button
                   type="button"
                   aria-label="Provisioning details"
-                  className={styles.memberNameCellButton}
+                  className={listStyles.inline}
                 >
-                  <ShieldCheck className={styles.memberNameCellShieldCheck} />
+                  <ShieldCheck className={listStyles.icon} />
                 </button>
               }
               openOnHover
               width="auto"
               content={
-                <div className={styles.memberNameCellDiv}>
+                <div className={listStyles.provisionInfo}>
                   <div>Provisioned via SCIM</div>
                   <div>
                     External ID:{' '}
@@ -182,12 +181,9 @@ function MemberNameCell({ member }: { member: MemberRow }) {
               <Tooltip
                 key={provider.type}
                 trigger={
-                  <span className={styles.memberNameCellSpan3}>
+                  <span className={listStyles.inline}>
                     <providerDisplay.Icon
-                      className={cn(
-                        styles.memberNameCellIcon,
-                        provider.disabledReason && styles.memberNameCellIcon2,
-                      )}
+                      className={listStyles.providerIcon({ disabled: !!provider.disabledReason })}
                     />
                   </span>
                 }
@@ -229,9 +225,9 @@ function MemberRoleCell(props: {
               <button
                 type="button"
                 aria-label="About the owner role"
-                className={styles.memberRoleCellButton}
+                className={listStyles.roleInfo}
               >
-                <Info className={styles.memberRoleCellInfo} />
+                <Info className={listStyles.smallIcon} />
               </button>
             }
             content="The organization owner has full access to everything within the organization. The role of the owner can not be changed."
@@ -245,14 +241,14 @@ function MemberRoleCell(props: {
     return member.user.provisionInfo.isDisabled ? (
       <Tooltip
         trigger={
-          <span className={styles.memberRoleCellSpan}>
+          <span className={listStyles.inline}>
             <DataTableCell kind="badge" items={{ content: 'Disabled', variant: 'critical' }} />
           </span>
         }
         content="This user is disabled."
       />
     ) : (
-      <div className={styles.memberRoleCellDiv}>
+      <div className={listStyles.groups}>
         <MemberGroups groups={member.groups ?? []} />
       </div>
     );
@@ -268,7 +264,7 @@ function MemberRoleCell(props: {
             onOpenChange={setScimOpen}
             trigger={
               <Button type="button" variant="link">
-                <TriangleAlert className={styles.memberRoleCellTriangleAlert} />
+                <TriangleAlert className={listStyles.conflictIcon} />
                 SCIM matched this existing account
               </Button>
             }
@@ -324,16 +320,16 @@ function MemberRoleCell(props: {
             }}
             cancel={{ disabled: confirmManagementState.fetching }}
           >
-            <p className={styles.memberRoleCellP}>
+            <p className={listStyles.confirmText}>
               After confirmation, your identity provider will control this user's status and
               group-based access. Review the pending SCIM values below to avoid removing access
               unintentionally.
             </p>
-            <div className={styles.memberRoleCellDiv2}>
+            <div className={listStyles.pending}>
               <div className={shared.text.sm}>Pending SCIM values</div>
-              <div className={styles.memberRoleCellDiv4}>
+              <div className={listStyles.pendingRow}>
                 <div className={shared.row.gap1_5}>
-                  <KeyIcon className={styles.memberRoleCellKeyIcon} />
+                  <KeyIcon className={listStyles.smallIcon} />
                   <span className={shared.text.xs}>
                     User status: {member.user.provisionInfo.isDisabled ? 'Disabled' : 'Active'}
                   </span>
@@ -367,11 +363,11 @@ function MemberActionsCell(props: {
 
   if (isProvisioned) {
     return member.viewerCanRemove ? (
-      <span className={styles.memberActionsCellSpan}>
+      <span className={listStyles.actions}>
         <Tooltip
           trigger={
-            <span className={styles.memberActionsCellSpan2}>
-              <ShieldCheck size={16} className={styles.memberActionsCellShieldCheck} />
+            <span className={listStyles.inline}>
+              <ShieldCheck size={16} className={listStyles.subtleIcon} />
             </span>
           }
           content="Provisioned users can only be updated via the SCIM endpoints."
@@ -674,13 +670,13 @@ export function OrganizationMembers(props: {
           <Link
             to="/$organizationSlug/view/members"
             params={{ organizationSlug: organization.slug }}
-            className={styles.organizationMembersLink}
+            className={listStyles.calloutLink}
           >
             Show all members
           </Link>
         </Callout>
       )}
-      <div className={styles.organizationMembersDiv}>
+      <div className={listStyles.table}>
         <DataTable
           data={[...members]}
           columns={columns}
@@ -690,12 +686,12 @@ export function OrganizationMembers(props: {
           }
           emptyMessage={
             search.showPendingSCIMManagementConfirmations ? (
-              <span className={styles.organizationMembersSpan}>
+              <span className={listStyles.empty}>
                 No members with provisioning conflict found
                 <Link
                   to="/$organizationSlug/view/members"
                   params={{ organizationSlug: organization.slug }}
-                  className={styles.organizationMembersLink2}
+                  className={listStyles.emptyLink}
                 >
                   Show all members
                 </Link>
