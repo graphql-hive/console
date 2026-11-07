@@ -3,11 +3,11 @@ import { lenient } from '@/lib/recipe';
 import { Toggle } from '@base-ui/react/toggle';
 import { ToggleGroup as BaseToggleGroup } from '@base-ui/react/toggle-group';
 import { Tooltip } from '../floating/tooltip/tooltip';
-import * as styles from './toggle-group.css';
+import { toggleGroupStyles } from './toggle-group.css';
 
-const groupVariants = lenient(styles.groupVariants);
+const groupVariants = lenient(toggleGroupStyles.group);
 
-const itemVariants = lenient(styles.itemVariants);
+const itemVariants = lenient(toggleGroupStyles.item);
 
 export type ToggleGroupOption = {
   value: string;

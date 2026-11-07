@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { DescriptionList } from './description-list';
-import * as styles from './description-list.css';
+import { descriptionListStyles } from './description-list.css';
 
 describe('DescriptionList', () => {
   it('renders a copyable value as a chip carrying the attrs', () => {
@@ -25,7 +25,9 @@ describe('DescriptionList', () => {
     const value = document.querySelector('span[data-oidc-property-sign-in-url]') as HTMLElement;
     expect(value.textContent).toBe('https://app.example.com/auth/oidc?id=1');
     expect(value.closest('button')).not.toBeNull();
-    expect(value.closest('div')?.className).toContain(styles.descriptionListItemDiv2);
+    expect(value.closest('div')?.className).toContain(
+      descriptionListStyles.value.classNames.variants.mono.true,
+    );
   });
 
   it('puts the attrs on a plain value and an info icon on a term with a tooltip', () => {
@@ -59,10 +61,10 @@ describe('DescriptionList', () => {
       },
     ];
     const { rerender } = render(<DescriptionList rows={rows} />);
-    const { label, title } = styles.termVariants.classNames.variants.termStyle;
+    const { label, title } = descriptionListStyles.term.classNames.variants.termStyle;
     expect(screen.getByText('Status').className).toContain(label);
     expect(screen.getByText('Failed').parentElement!.parentElement!.className).toContain(
-      styles.colsClass2,
+      descriptionListStyles.columns[2],
     );
 
     rerender(<DescriptionList rows={rows} variants={{ termStyle: 'title', columns: 'auto' }} />);
@@ -70,7 +72,7 @@ describe('DescriptionList', () => {
     expect(term.className).not.toContain(label);
     expect(term.className).toContain(title);
     const row = screen.getByText('Failed').parentElement!.parentElement!;
-    expect(row.className).toContain(styles.rowVariants.classNames.variants.columns.auto);
-    expect(row.className).not.toContain(styles.colsClass2);
+    expect(row.className).toContain(descriptionListStyles.row.classNames.variants.columns.auto);
+    expect(row.className).not.toContain(descriptionListStyles.columns[2]);
   });
 });

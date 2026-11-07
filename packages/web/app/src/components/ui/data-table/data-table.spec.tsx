@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DataTable } from './data-table';
 import { DataTableCell, formatAbsolute, formatRelative } from './data-table-cell';
-import * as badgeStyles from '../primitives/badge/badge.css';
+import { badgeStyles } from '../primitives/badge/badge.css';
 import * as cellStyles from './data-table-cell.css';
 import * as partStyles from './data-table-components.css';
 import * as tableStyles from './data-table.css';
@@ -651,9 +651,9 @@ describe('DataTableCell', () => {
     const { container } = render(<DataTableCell kind="badge" items={items} maxLength={16} />);
     const badges = [...container.querySelectorAll('span > span')];
     expect(badges.map(badge => badge.textContent)).toEqual(['Guild Members', 'Handcrafted Gran…']);
-    expect(
-      badges.every(badge => badge.className.includes(badgeStyles.badgeVariants.classNames.base)),
-    ).toBe(true);
+    expect(badges.every(badge => badge.className.includes(badgeStyles.root.classNames.base))).toBe(
+      true,
+    );
   });
 
   it('cuts by code point and drops a trailing space before the ellipsis', () => {

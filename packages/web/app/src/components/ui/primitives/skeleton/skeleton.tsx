@@ -1,9 +1,7 @@
 import { lenient } from '@/lib/recipe';
-import * as styles from './skeleton.css';
+import { skeletonStyles } from './skeleton.css';
 
-// bg-fixed pins the gradient to the viewport, so every skeleton on the page shares one shimmer
-// instead of each running its own.
-const skeletonVariants = lenient(styles.skeletonVariants);
+const skeletonVariants = lenient(skeletonStyles.root);
 
 type SkeletonProps = {
   variants?: NonNullable<Parameters<typeof skeletonVariants>[0]>;

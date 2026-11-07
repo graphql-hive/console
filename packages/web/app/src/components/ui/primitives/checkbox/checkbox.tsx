@@ -1,14 +1,9 @@
 import { Check, Minus } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox';
-import * as styles from './checkbox.css';
+import { checkboxStyles } from './checkbox.css';
 
-const checkboxVariants = lenient(styles.checkboxVariants);
-
-const iconSizeMap = {
-  sm: styles.iconSizeMapSm,
-  md: styles.iconSizeMapMd,
-} as const;
+const checkboxVariants = lenient(checkboxStyles.root);
 
 export function Checkbox({
   size = 'md',
@@ -20,7 +15,7 @@ export function Checkbox({
     /** When true, the checkbox is a non-interactive visual indicator (preserves hover styles, sets tabIndex: -1, aria-hidden) */
     visual?: boolean;
   }) {
-  const iconClass = iconSizeMap[size ?? 'md'];
+  const iconClass = checkboxStyles.icon[size ?? 'md'];
   return (
     <BaseCheckbox.Root
       className={checkboxVariants({ size, variant })}
@@ -34,7 +29,7 @@ export function Checkbox({
         : {})}
       {...props}
     >
-      <BaseCheckbox.Indicator className={styles.checkboxIndicator}>
+      <BaseCheckbox.Indicator className={checkboxStyles.indicator}>
         {props.indeterminate ? (
           <Minus className={iconClass} strokeWidth={3} />
         ) : (

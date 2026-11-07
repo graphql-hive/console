@@ -1,14 +1,17 @@
 import { Info } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
-import * as shared from '@/styles/shared.css';
 import { CopyChip } from '../copy-chip/copy-chip';
 import { Tooltip } from '../floating/tooltip/tooltip';
-import * as styles from './description-list.css';
+import { descriptionListStyles } from './description-list.css';
 
-const termVariants = lenient(styles.termVariants);
+const termVariants = lenient(descriptionListStyles.term);
 
-const rowVariants = lenient(styles.rowVariants);
+const rowVariants = lenient(descriptionListStyles.row);
+
+const cellVariants = lenient(descriptionListStyles.cell);
+
+const valueVariants = lenient(descriptionListStyles.value);
 
 type DescriptionListVariants = NonNullable<Parameters<typeof termVariants>[0]> &
   NonNullable<Parameters<typeof rowVariants>[0]>;
@@ -35,15 +38,11 @@ type DescriptionListProps = {
   variants?: DescriptionListVariants;
 };
 
-// One style per column count, so the count stays a lookup rather than a computed class.
-const COLS_CLASS: Record<number, string> = {
-  1: styles.colsClass1,
-  2: styles.colsClass2,
-  3: styles.colsClass3,
-  4: styles.colsClass4,
-  5: styles.colsClass5,
-  6: styles.colsClass6,
-};
+/** The grid for a row's item count; a longer row folds to one column rather than squeezing. */
+function columnsFor(count: number) {
+  const { columns } = descriptionListStyles;
+  return columns[count as keyof typeof columns] ?? columns[1];
+}
 
 function DescriptionListItem({
   term,
@@ -69,17 +68,16 @@ function DescriptionListItem({
         {tooltip ? (
           <Tooltip
             trigger={
-              <span className={styles.descriptionListItemSpan}>
-                <Info className={styles.descriptionListItemInfo} />
+              <span className={descriptionListStyles.termHint}>
+                <Info className={descriptionListStyles.termHintIcon} />
               </span>
             }
             content={tooltip}
           />
         ) : null}
       </div>
-      {/* An identifier has no spaces to wrap at, so it breaks anywhere rather than overflowing. */}
       <div
-        className={cn(styles.descriptionListItemDiv, mono && styles.descriptionListItemDiv2)}
+        className={valueVariants({ mono })}
         // A value that gets clipped by a narrow column can still be read on hover.
         title={typeof description === 'string' ? description : undefined}
       >
@@ -90,26 +88,19 @@ function DescriptionListItem({
 }
 
 export function DescriptionList({ rows, variants }: DescriptionListProps) {
+  const columns = variants?.columns;
   return (
-    <div className={styles.descriptionListDiv}>
+    <div className={descriptionListStyles.list}>
       {rows.map((row, rowIndex) => (
         <div
           key={rowIndex}
           className={cn(
-            rowVariants({ columns: variants?.columns }),
-            variants?.columns !== 'auto' &&
-              (COLS_CLASS[row.items.length] ?? styles.descriptionListDiv2),
+            rowVariants({ columns }),
+            columns !== 'auto' && columnsFor(row.items.length),
           )}
         >
           {row.items.map((item, itemIndex) => (
-            <div
-              key={itemIndex}
-              // A long value (a commit, an email) truncates or wraps instead of pushing the row.
-              className={cn(
-                shared.shrinkable,
-                variants?.columns === 'auto' && styles.descriptionListDiv4,
-              )}
-            >
+            <div key={itemIndex} className={cellVariants({ columns })}>
               <DescriptionListItem {...item} termStyle={variants?.termStyle} />
             </div>
           ))}

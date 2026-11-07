@@ -1,10 +1,10 @@
 import { lenient } from '@/lib/recipe';
 import { Switch as BaseSwitch } from '@base-ui/react/switch';
-import * as styles from './switch.css';
+import { switchStyles } from './switch.css';
 
-const switchRootVariants = lenient(styles.switchRootVariants);
+const switchRootVariants = lenient(switchStyles.root);
 
-const switchThumbVariants = lenient(styles.switchThumbVariants);
+const switchThumbVariants = lenient(switchStyles.thumb);
 
 type SwitchProps = NonNullable<Parameters<typeof switchRootVariants>[0]> & {
   checked?: boolean;

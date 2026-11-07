@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render } from '@testing-library/react';
 import { Badge } from './badge';
-import * as styles from './badge.css';
+import { badgeStyles } from './badge.css';
 
 describe('Badge', () => {
   it.each(['success', 'warning', 'critical', 'info'] as const)(
@@ -9,7 +9,7 @@ describe('Badge', () => {
     variant => {
       const { container } = render(<Badge content="label" variants={{ variant }} />);
       const className = container.firstElementChild!.className;
-      expect(className).toContain(styles.badgeVariants.classNames.variants.variant[variant]);
+      expect(className).toContain(badgeStyles.root.classNames.variants.variant[variant]);
     },
   );
 
@@ -23,7 +23,7 @@ describe('Badge', () => {
     );
     const badge = container.firstElementChild!;
     expect(badge.tagName).toBe('SPAN');
-    expect(badge.className).toContain(styles.badgeVariants.classNames.variants.variant.critical);
+    expect(badge.className).toContain(badgeStyles.root.classNames.variants.variant.critical);
     expect(badge.textContent).toBe('2 clients');
     expect(container.children).toHaveLength(1);
   });

@@ -1,18 +1,16 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
-import { cn } from '@/lib/utils';
 import { Tooltip } from '../floating/tooltip/tooltip';
-import { focusRingQuiet } from '../shared-styles';
-import * as styles from './badge.css';
+import { badgeStyles } from './badge.css';
 
-const badgeVariants = lenient(styles.badgeVariants);
+const badgeVariants = lenient(badgeStyles.root);
 
 type BadgeProps = {
   content: string;
   /** Leads the text, in the text's colour. */
   icon?: LucideIcon;
-  variants?: NonNullable<Parameters<typeof badgeVariants>[0]>;
+  variants?: Omit<NonNullable<Parameters<typeof badgeVariants>[0]>, 'focusable'>;
   // The sentence a short badge stands for.
   tooltip?: ReactNode;
 };
@@ -20,12 +18,7 @@ type BadgeProps = {
 export function Badge({ content, icon: Icon, variants, tooltip }: BadgeProps) {
   const children = (
     <>
-      {Icon ? (
-        <Icon
-          aria-hidden
-          className={variants?.size === 'sm' ? styles.badgeIcon : styles.badgeIcon2}
-        />
-      ) : null}
+      {Icon ? <Icon aria-hidden className={badgeStyles.icon[variants?.size ?? 'default']} /> : null}
       {content}
     </>
   );
@@ -38,7 +31,7 @@ export function Badge({ content, icon: Icon, variants, tooltip }: BadgeProps) {
         // The focus stop is what lets a keyboard user reach the tooltip; a span is the right
         // element because the badge is a label, not a control.
         // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-        <span tabIndex={0} className={cn(badgeVariants({ ...variants }), focusRingQuiet)}>
+        <span tabIndex={0} className={badgeVariants({ ...variants, focusable: true })}>
           {children}
         </span>
       }

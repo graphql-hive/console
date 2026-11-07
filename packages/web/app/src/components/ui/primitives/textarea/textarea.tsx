@@ -1,8 +1,8 @@
 import { forwardRef, type CSSProperties } from 'react';
 import { lenient } from '@/lib/recipe';
-import * as styles from './textarea.css';
+import { textareaStyles } from './textarea.css';
 
-const textareaVariants = lenient(styles.textareaVariants);
+const textareaVariants = lenient(textareaStyles.root);
 
 // `field-sizing` is not in React's CSSProperties yet. It makes the textarea grow with its text
 // natively where the browser supports it; elsewhere the field keeps its rows and scrolls.

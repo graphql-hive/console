@@ -1,13 +1,12 @@
 import { type ReactNode, type Ref } from 'react';
-import { clsx } from 'clsx';
 import { ChevronRight } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import { Collapsible as BaseCollapsible } from '@base-ui/react/collapsible';
-import * as styles from './collapsible.css';
+import { collapsibleStyles } from './collapsible.css';
 
-const headerVariants = lenient(styles.headerVariants);
+const headerVariants = lenient(collapsibleStyles.header);
 
-const triggerVariants = lenient(styles.triggerVariants);
+const triggerVariants = lenient(collapsibleStyles.trigger);
 
 type CollapsibleProps = {
   /**
@@ -47,19 +46,19 @@ export function Collapsible({
       open={open}
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange ? next => onOpenChange(next) : undefined}
-      className={clsx(styles.collapsibleRoot, 'group/collapsible')}
+      className={collapsibleStyles.root}
     >
       <div className={headerVariants({ variant })}>
         <BaseCollapsible.Trigger className={triggerVariants({ variant })}>
-          <ChevronRight className={styles.collapsibleChevronRight} />
-          <span className={styles.collapsibleSpan}>{trigger}</span>
+          <ChevronRight className={collapsibleStyles.chevron} />
+          <span className={collapsibleStyles.title}>{trigger}</span>
         </BaseCollapsible.Trigger>
         {actions}
       </div>
       <BaseCollapsible.Panel
         ref={panelRef}
         data-testid={panelDataTestId}
-        className={styles.collapsiblePanel}
+        className={collapsibleStyles.panel}
       >
         {children}
       </BaseCollapsible.Panel>

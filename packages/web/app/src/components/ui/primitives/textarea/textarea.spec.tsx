@@ -12,7 +12,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Textarea } from './textarea';
 import * as inputStyles from '../input/input.css';
 import * as shared from '../shared-styles.css';
-import * as styles from './textarea.css';
+import { textareaStyles } from './textarea.css';
 
 function ReactHookFormField(props: { onSubmit: (values: { description: string }) => void }) {
   const form = useForm<{ description: string }>({ defaultValues: { description: '' } });
@@ -45,7 +45,7 @@ describe('Textarea', () => {
     expect(textarea.getAttribute('rows')).toBe('3');
     expect(textarea.getAttribute('maxlength')).toBe('5000');
     expect(textarea.className).toContain(inputStyles.fieldClass);
-    expect(textarea.className).toContain(styles.textareaVariants.classNames.base);
+    expect(textarea.className).toContain(textareaStyles.root.classNames.base);
   });
 
   it('keeps its own classes under a FormControl and reports an error', async () => {
@@ -79,7 +79,7 @@ describe('Textarea', () => {
     render(<Textarea placeholder="Description" onSurface="raised" />);
     const textarea = screen.getByPlaceholderText('Description');
     expect(textarea.className).toContain(shared.controlSurfaceRaised);
-    const { onSurface } = styles.textareaVariants.classNames.variants;
+    const { onSurface } = textareaStyles.root.classNames.variants;
     expect(textarea.className).toContain(onSurface.raised);
     expect(textarea.className).not.toContain(onSurface.base);
   });
@@ -88,7 +88,7 @@ describe('Textarea', () => {
     render(<Textarea placeholder="Description" autoSize mono />);
     const textarea = screen.getByPlaceholderText('Description') as HTMLTextAreaElement;
     expect(textarea.style.getPropertyValue('field-sizing')).toBe('content');
-    const { autoSize, mono } = styles.textareaVariants.classNames.variants;
+    const { autoSize, mono } = textareaStyles.root.classNames.variants;
     expect(textarea.className).toContain(autoSize.true);
     expect(textarea.className).not.toContain(autoSize.false);
     expect(textarea.className).toContain(mono.true);
