@@ -17,7 +17,7 @@ import * as styles from './role-form.css';
 export const RoleFormSchema = z.object({
   name: z
     .string({
-      required_error: 'Required',
+      error: issue => (issue.input === undefined ? 'Required' : undefined),
     })
     .trim()
     .min(2, 'Too short')
@@ -29,7 +29,7 @@ export const RoleFormSchema = z.object({
     .refine(val => val !== 'Viewer' && val !== 'Admin', 'Viewer and Admin are reserved'),
   description: z
     .string({
-      required_error: 'Please enter role description',
+      error: issue => (issue.input === undefined ? 'Please enter role description' : undefined),
     })
     .trim()
     .min(2, 'Too short')

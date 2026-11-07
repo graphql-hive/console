@@ -58,22 +58,22 @@ import {
 const TitleInputModel = z
   .string()
   .trim()
-  .regex(/^[ a-zA-Z0-9_-]+$/, 'Can only contain letters, numbers, " ", "_", and "-".')
-  .min(2, 'Minimum length is 2 characters.')
-  .max(100, 'Maximum length is 100 characters.');
+  .regex(/^[ a-zA-Z0-9_-]+$/, 'Can only contain letters, numbers, " ", "_", and "-"')
+  .min(2, 'Minimum length is 2 characters')
+  .max(100, 'Maximum length is 100 characters');
 
 const DescriptionInputModel = z
   .string()
   .trim()
-  .max(248, 'Maximum length is 248 characters.')
+  .max(248, 'Maximum length is 248 characters')
   .nullable();
 
 const OrganizationAccessTokenModel = z
   .object({
-    id: z.string().uuid(),
-    organizationId: z.string().uuid(),
-    projectId: z.string().uuid().nullable(),
-    userId: z.string().uuid().nullable(),
+    id: z.uuid(),
+    organizationId: z.uuid(),
+    projectId: z.uuid().nullable(),
+    userId: z.uuid().nullable(),
     createdAt: z.string(),
     title: z.string(),
     description: z.string().nullable(),

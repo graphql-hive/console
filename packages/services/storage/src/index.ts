@@ -20,6 +20,7 @@ import {
   SchemaCheckModel,
   SchemaPolicyWarningModel,
   type SchemaChangeType,
+  type SchemaCheck,
   type SchemaCheckApprovalMetadata,
 } from './schema-change-model';
 
@@ -992,7 +993,7 @@ export async function createStorage(
           .then(
             z.object({
               roleId: z.string(),
-              assignedResources: z.record(z.any()).nullable(),
+              assignedResources: z.record(z.string(), z.any()).nullable(),
             }).parse,
           );
 
@@ -1605,6 +1606,11 @@ export async function createStorage(
     },
 
     async getOIDCIntegrationById(args) {
+      // Postgres throws on malformed uuids, so treat them as "not found".
+      if (!z.uuid().safeParse(args.oidcIntegrationId).success) {
+        return null;
+      }
+
       return shared.getOIDCIntegrationById(args, pool);
     },
 
@@ -2596,29 +2602,57 @@ export async function createStorage(
 
       return check;
     },
-    async findSchemaCheck(args) {
-      const result = await pool.maybeOne(psql`/* findSchemaCheck */
+    findSchemaCheck: batchBy<
+      {
+        targetId: string;
+        schemaCheckId: string;
+        withSDL?: boolean;
+        withChanges?: boolean;
+      },
+      SchemaCheck | null
+    >(
+      args => `${args.targetId}:${args.withSDL ?? true}:${args.withChanges ?? true}`,
+      async args => {
+        const withSDL = args[0].withSDL ?? true;
+        const withChanges = args[0].withChanges ?? true;
+        const schemaCheckIds = args
+          .map(arg => arg.schemaCheckId)
+          .filter(schemaCheckId => z.uuid().safeParse(schemaCheckId).success);
+
+        if (schemaCheckIds.length === 0) {
+          return args.map(() => null);
+        }
+
+        const result = await pool.any(psql`/* findSchemaChecks */
         SELECT
-          ${schemaCheckSQLFields()}
+          ${schemaCheckSQLFields({ sdl: withSDL, changes: withChanges })}
         FROM
           "schema_checks" as c
-        LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
-        LEFT JOIN "sdl_store" as s_baseline_schema       ON s_baseline_schema."id" = c."baseline_schema_sdl_store_id"
-        LEFT JOIN "sdl_store" as s_baseline_public       ON s_baseline_public."id" = c."baseline_composite_schema_sdl_store_id"
-        LEFT JOIN "sdl_store" as s_baseline_supergraph   ON s_baseline_supergraph."id" = c."baseline_supergraph_sdl_store_id"
-        LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
-        LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
+        ${
+          withSDL
+            ? psql`
+              LEFT JOIN "sdl_store" as s_schema            ON s_schema."id" = c."schema_sdl_store_id"
+              LEFT JOIN "sdl_store" as s_baseline_schema       ON s_baseline_schema."id" = c."baseline_schema_sdl_store_id"
+              LEFT JOIN "sdl_store" as s_baseline_public       ON s_baseline_public."id" = c."baseline_composite_schema_sdl_store_id"
+              LEFT JOIN "sdl_store" as s_baseline_supergraph   ON s_baseline_supergraph."id" = c."baseline_supergraph_sdl_store_id"
+              LEFT JOIN "sdl_store" as s_composite_schema  ON s_composite_schema."id" = c."composite_schema_sdl_store_id"
+              LEFT JOIN "sdl_store" as s_supergraph        ON s_supergraph."id" = c."supergraph_sdl_store_id"
+            `
+            : psql``
+        }
         WHERE
-          c."id" = ${args.schemaCheckId}
-          AND c."target_id" = ${args.targetId}
+          c."id" = ANY(${psql.array(schemaCheckIds, 'uuid')})
+          AND c."target_id" = ${args[0].targetId}
       `);
 
-      if (result == null) {
-        return null;
-      }
+        const schemaChecks = z.array(SchemaCheckModel).parse(result);
+        const schemaChecksById = new Map(
+          schemaChecks.map(schemaCheck => [schemaCheck.id, schemaCheck]),
+        );
 
-      return SchemaCheckModel.parse(result);
-    },
+        return args.map(arg => schemaChecksById.get(arg.schemaCheckId) ?? null);
+      },
+    ),
     async approveFailedSchemaCheck(args) {
       const schemaCheck = await this.findSchemaCheck({
         targetId: args.targetId,
@@ -3346,8 +3380,8 @@ export function decodeCreatedAtAndHashBasedCursor(cursor: string) {
 const OIDCIntegrationBaseModel = z.object({
   id: z.string(),
   linkedOrganizationId: z.string(),
-  clientId: z.string(),
-  clientSecret: z.string(),
+  clientId: z.string().trim(),
+  clientSecret: z.string().trim(),
   additionalScopes: z
     .array(z.string())
     .nullable()
@@ -3357,7 +3391,7 @@ const OIDCIntegrationBaseModel = z.object({
   defaultRoleId: z.string().nullable(),
   defaultAssignedResources: z.any().nullable(),
   requireInvitation: z.boolean(),
-  userIdClaim: z.string().nullable(),
+  userIdClaim: z.string().trim().nullable(),
   /** Whether a user needs to be provisioned before login. */
   userProvisioningRequired: z.boolean(),
   /** Whether a user with a verified domain needs to log in through the OIDC flow. */
@@ -3365,7 +3399,7 @@ const OIDCIntegrationBaseModel = z.object({
 });
 
 const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
-  oauthApiUrl: z.string().url(),
+  oauthApiUrl: z.string().trim().url(),
 }).transform(record => ({
   id: record.id,
   clientId: record.clientId,
@@ -3387,9 +3421,9 @@ const OIDCIntegrationLegacyModel = OIDCIntegrationBaseModel.extend({
 
 const LatestOIDCIntegrationModel = OIDCIntegrationBaseModel.extend({
   oauthApiUrl: z.null(),
-  tokenEndpoint: z.string().url(),
-  userinfoEndpoint: z.string().url(),
-  authorizationEndpoint: z.string().url(),
+  tokenEndpoint: z.string().trim().url(),
+  userinfoEndpoint: z.string().trim().url(),
+  authorizationEndpoint: z.string().trim().url(),
 }).transform(record => ({
   id: record.id,
   clientId: record.clientId,
@@ -3436,7 +3470,7 @@ export const FeatureFlagsModel = z
   })
   .optional()
   .nullable()
-  .default({})
+  .prefault({})
   .transform(
     val =>
       val ?? {
@@ -3536,6 +3570,7 @@ const schemaCheckSQLFields = (include?: { sdl?: boolean; changes?: boolean }) =>
       `
   }
   , c."service_name" as "serviceName"
+  , c."baseline_schema_sdl_store_id" IS NOT NULL as "hasBaselineSchemaSDL"
   , c."baseline_schema_hash" as "baselineSchemaHash"
   , c."baseline_schema_composition_errors" as "baselineCompositionErrors"
   , c."service_url" as "serviceUrl"
@@ -3612,7 +3647,7 @@ const OrganizationInvitationModel = z
   .object({
     organizationId: z.string(),
     code: z.string(),
-    email: z.string().email(),
+    email: z.email(),
     createdAt: z.string().transform(v => new Date(v).toISOString()),
     expiresAt: z.string().transform(v => new Date(v).toISOString()),
     roleId: z.string(),
@@ -3942,7 +3977,7 @@ const UserBase = z.object({
 
 export const UserModel = z.union([
   UserBase.extend({
-    provisionedByOrganizationId: z.string().uuid(),
+    provisionedByOrganizationId: z.uuid(),
     provisioningStatus: z.enum(['pendingConfirmation', 'active']),
     externalId: z.string(),
   }),

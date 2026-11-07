@@ -16,7 +16,6 @@ import {
   type MembersSectionId,
 } from '@/pages/organization-members';
 import { createRoute, redirect } from '@tanstack/react-router';
-import { zodValidator } from '@tanstack/zod-adapter';
 import { legacySearch, legacySearchRedirect } from '../legacy';
 import { organizationRoute } from './route';
 
@@ -52,13 +51,11 @@ export const organizationMembersRoute = createRoute({
 export const organizationMembersIndexRoute = createRoute({
   getParentRoute: () => organizationMembersRoute,
   path: '/',
-  validateSearch: zodValidator(
-    z.object({
-      page: legacySearch.organizationMembers.values.optional().catch(undefined),
-      search: z.string().optional(),
-      showPendingSCIMManagementConfirmations: z.boolean().optional(),
-    }),
-  ),
+  validateSearch: z.object({
+    page: legacySearch.organizationMembers.values.optional().catch(undefined),
+    search: z.string().optional(),
+    showPendingSCIMManagementConfirmations: z.boolean().optional(),
+  }),
   beforeLoad: ({ search }) => legacySearchRedirect(legacySearch.organizationMembers, search),
   loaderDeps: ({ search }) => ({
     searchTerm: search.search || undefined,
@@ -86,7 +83,7 @@ export const organizationMembersRolesRoute = createRoute({
 export const organizationMembersGroupsRoute = createRoute({
   getParentRoute: () => organizationMembersRoute,
   path: 'groups',
-  validateSearch: zodValidator(z.object({ search: z.string().optional() })),
+  validateSearch: z.object({ search: z.string().optional() }),
   loaderDeps: ({ search }) => ({ search: search.search || null }),
   preloadStaleTime: 0,
   loader: loader => {

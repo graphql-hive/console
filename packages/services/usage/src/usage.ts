@@ -244,12 +244,13 @@ export function createUsage(config: {
         if (meta[0].errorCode) {
           rawOperationFailures.inc(numOfOperations);
           logger.error(`Failed to flush (id=%s, errorCode=%s)`, batchId, meta[0].errorCode);
-          Sentry.setTags({
-            batchId,
-            errorCode: meta[0].errorCode,
-            numOfOperations,
+          Sentry.captureException(new Error(`Failed to flush usage reports to Kafka`), {
+            tags: {
+              batchId,
+              errorCode: meta[0].errorCode,
+              numOfOperations,
+            },
           });
-          Sentry.captureException(new Error(`Failed to flush usage reports to Kafka`));
         } else {
           rawOperationWrites.inc(numOfOperations);
           logger.info(`Flushed (id=%s, operations=%s)`, batchId, numOfOperations);

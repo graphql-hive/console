@@ -4,7 +4,7 @@ import type {
   SuccessfulSchemaCheckMapper,
 } from '../module.graphql.mappers';
 import stringify from 'fast-json-stable-stringify';
-import { GraphQLError, parse, print } from 'graphql';
+import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import promClient from 'prom-client';
@@ -18,7 +18,15 @@ import type {
 } from '@hive/storage';
 import * as Sentry from '@sentry/node';
 import * as Types from '../../../__generated__/types';
-import { Organization, Project, ProjectType, Schema, Target } from '../../../shared/entities';
+import {
+  createSchemaObject,
+  GraphQLDocumentStringInvalidError,
+  Organization,
+  Project,
+  ProjectType,
+  Schema,
+  Target,
+} from '../../../shared/entities';
 import { HiveError } from '../../../shared/errors';
 import { createPeriod } from '../../../shared/helpers';
 import { isGitHubRepositoryString } from '../../../shared/is-github-repository-string';
@@ -575,7 +583,7 @@ export class SchemaPublisher {
           warnings: [],
           errors: [
             {
-              message: result.error.errors[0].message,
+              message: result.error.issues[0].message,
             },
           ],
         } as const;
@@ -1374,10 +1382,24 @@ export class SchemaPublisher {
       }),
     ]);
 
+    const invalidInputResult = (message: string): PublishResult => {
+      schemaPublishCount.inc({
+        model: 'modern',
+        projectType: project.type,
+        conclusion: 'rejected',
+      });
+      return {
+        __typename: 'SchemaPublishError',
+        valid: false,
+        changes: [],
+        errors: [{ message }],
+      };
+    };
+    const schemaSourceMessage =
+      "Provide exactly one schema source: 'PublishInput.sdl' or 'PublishInput.schema'.";
+
     if (input.sdl != null && input.schema != null) {
-      throw new GraphQLError(
-        "Provide exactly one schema source: 'PublishInput.sdl' or 'PublishInput.schema'.",
-      );
+      return invalidInputResult(schemaSourceMessage);
     }
 
     if (project.type !== Types.ProjectType.SINGLE && !input.service) {
@@ -1385,6 +1407,10 @@ export class SchemaPublisher {
         __typename: 'SchemaPublishMissingServiceError' as const,
         message: 'Missing service name',
       } as const;
+    }
+
+    if (input.sdl == null && input.schema == null) {
+      return invalidInputResult(schemaSourceMessage);
     }
 
     let revisionId: string | null = null;
@@ -1446,6 +1472,18 @@ export class SchemaPublisher {
             },
           ],
         };
+      }
+    }
+
+    const inputSdl = input.sdl ?? input.schema?.sdl ?? null;
+    if (inputSdl !== null) {
+      try {
+        createSchemaObject({ sdl: inputSdl });
+      } catch (error) {
+        if (error instanceof GraphQLDocumentStringInvalidError) {
+          return invalidInputResult(error.message);
+        }
+        throw error;
       }
     }
 
@@ -4047,10 +4085,10 @@ const millisecondsPerDay = 60 * 60 * 24 * 1000;
 const SchemaCheckContextIdModel = z
   .string()
   .min(1, {
-    message: 'Context ID must be at least 1 character long.',
+    error: 'Context ID must be at least 1 character long',
   })
   .max(200, {
-    message: 'Context ID cannot exceed length of 200 characters.',
+    error: 'Context ID cannot exceed length of 200 characters',
   });
 
 export function isValidServiceName(service: string): boolean {

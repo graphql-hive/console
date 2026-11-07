@@ -51,7 +51,7 @@ describe('CreateOrganizationForm', () => {
     await act(async () => {
       fireEvent.change(slugInput(), { target: { value: 'a'.repeat(51) } });
     });
-    expect(screen.getByText('Slug must be less than 50 characters')).toBeTruthy();
+    expect(screen.getByText('Slug must be at most 50 characters long')).toBeTruthy();
     expect(submitButton().disabled).toBe(true);
   });
 

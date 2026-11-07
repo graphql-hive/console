@@ -5,7 +5,6 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Button } from '../primitives/button/button';
 import { DataTable } from './data-table';
 import { DataTableCell } from './data-table-cell';
-import * as styles from './data-table.preview.css';
 
 export const nav: NavPath = 'Components/DataTable';
 
@@ -78,7 +77,7 @@ const COLUMNS: ColumnDef<Check, any>[] = [
 
 /** Striped by default, every cell a DataTableCell. */
 export const Default = createPreview(() => (
-  <div className={styles.div}>
+  <div className="w-[52rem]">
     <DataTable data={CHECKS.slice(0, 6)} columns={COLUMNS} getRowId={row => row.id} />
   </div>
 ));
@@ -88,7 +87,7 @@ export const Default = createPreview(() => (
  * dialog or raised card. The block behind it here is that surface.
  */
 export const OnSurface = createPreview(() => (
-  <div className={styles.div2}>
+  <div className="w-[56rem] rounded-md border border-line bg-surface-overlay p-6">
     <DataTable
       data={CHECKS.slice(0, 4)}
       columns={COLUMNS}
@@ -99,7 +98,7 @@ export const OnSurface = createPreview(() => (
 ));
 
 export const Unstriped = createPreview(() => (
-  <div className={styles.div3}>
+  <div className="w-[52rem]">
     <DataTable
       data={CHECKS.slice(0, 6)}
       columns={COLUMNS}
@@ -111,7 +110,7 @@ export const Unstriped = createPreview(() => (
 
 /** Without the border and fill, for a table that sits inside a panel that already has both. */
 export const Borderless = createPreview(() => (
-  <div className={styles.div4}>
+  <div className="w-[52rem]">
     <DataTable
       data={CHECKS.slice(0, 4)}
       columns={COLUMNS}
@@ -127,7 +126,7 @@ export const Borderless = createPreview(() => (
  * `sorting` hands it to the page.
  */
 export const Sortable = createPreview(() => (
-  <div className={styles.div5}>
+  <div className="w-[52rem]">
     <DataTable data={CHECKS.slice(0, 8)} columns={COLUMNS} getRowId={row => row.id} />
   </div>
 ));
@@ -145,7 +144,7 @@ const MULTI_SORT_COLUMNS: ColumnDef<Check, any>[] = COLUMNS.map(column =>
  * rows that arrive in a known order.
  */
 export const MultiSort = createPreview(() => (
-  <div className={styles.div6}>
+  <div className="w-[52rem]">
     <DataTable
       data={CHECKS.slice(0, 12)}
       columns={MULTI_SORT_COLUMNS}
@@ -164,8 +163,8 @@ function ServerSortedTable() {
     sorting[0]?.desc ? b.changes - a.changes : a.changes - b.changes,
   );
   return (
-    <div className={styles.serverSortedTableDiv}>
-      <p className={styles.serverSortedTableP}>
+    <div className="w-[52rem]">
+      <p className="mb-3 text-xs text-fg-secondary">
         Sorted by {sorting[0]?.id ?? 'nothing'} {sorting[0]?.desc ? 'descending' : 'ascending'},
         outside the table.
       </p>
@@ -188,7 +187,7 @@ function SortLoadingTable() {
   const [rows, setRows] = useState(() => sortChecks(sorting));
 
   return (
-    <div className={styles.sortLoadingTableDiv}>
+    <div className="w-[52rem]">
       <DataTable
         data={rows}
         columns={COLUMNS}
@@ -223,7 +222,7 @@ function sortChecks(sorting: SortingState) {
 
 /** A search or filter is in flight: the last settled rows stay, dimmed and inert. */
 export const Refreshing = createPreview(() => (
-  <div className={styles.div7}>
+  <div className="w-[52rem]">
     <DataTable data={CHECKS.slice(0, 5)} columns={COLUMNS} getRowId={row => row.id} refreshing />
   </div>
 ));
@@ -267,7 +266,7 @@ function HeaderlessList() {
     },
   ];
   return (
-    <div className={styles.headerlessListDiv}>
+    <div className="w-[44rem]">
       <DataTable data={CHECKS.slice(0, 5)} columns={columns} getRowId={row => row.id} />
     </div>
   );
@@ -302,7 +301,7 @@ export const ColumnLayout = createPreview(() => {
     },
   ];
   return (
-    <div className={styles.div8}>
+    <div className="w-[52rem]">
       <DataTable data={CHECKS.slice(0, 4)} columns={columns} getRowId={row => row.id} />
     </div>
   );
@@ -310,7 +309,7 @@ export const ColumnLayout = createPreview(() => {
 
 /** Client pagination: numbered pages once the rows exceed the page size. */
 export const Paginated = createPreview(() => (
-  <div className={styles.div9}>
+  <div className="w-[52rem]">
     <DataTable
       data={CHECKS}
       columns={COLUMNS}
@@ -340,7 +339,7 @@ function CursorPaginatedTable() {
     }, 400);
   };
   return (
-    <div className={styles.cursorPaginatedTableDiv}>
+    <div className="w-[52rem]">
       <DataTable
         data={rows}
         columns={COLUMNS}
@@ -360,7 +359,7 @@ function CursorPaginatedTable() {
 }
 
 export const TitleBar = createPreview(() => (
-  <div className={styles.div10}>
+  <div className="flex w-[52rem] flex-col gap-6">
     <DataTable
       data={CHECKS.slice(0, 3)}
       columns={COLUMNS}
@@ -387,7 +386,7 @@ export const TitleBar = createPreview(() => (
 ));
 
 export const Toned = createPreview(() => (
-  <div className={styles.div11}>
+  <div className="flex w-[52rem] flex-col gap-6">
     {(['critical', 'warning'] as const).map(tone => (
       <DataTable
         key={tone}
@@ -419,7 +418,7 @@ export const Toned = createPreview(() => (
 
 /** A closing row for a total. */
 export const Footer = createPreview(() => (
-  <div className={styles.div12}>
+  <div className="w-[52rem]">
     <DataTable
       data={CHECKS.slice(0, 4)}
       columns={COLUMNS}
@@ -434,13 +433,13 @@ export const Footer = createPreview(() => (
 ));
 
 export const Loading = createPreview(() => (
-  <div className={styles.div13}>
+  <div className="w-[52rem]">
     <DataTable data={[]} columns={COLUMNS} getRowId={row => row.id} loading />
   </div>
 ));
 
 export const Empty = createPreview(() => (
-  <div className={styles.div14}>
+  <div className="w-[52rem]">
     <DataTable
       data={[]}
       columns={COLUMNS}
@@ -459,7 +458,7 @@ export const RowStates = createPreview(() => <RowStatesTable />);
 function RowStatesTable() {
   const [selected, setSelected] = useState<string | undefined>(CHECKS[1].id);
   return (
-    <div className={styles.rowStatesTableDiv}>
+    <div className="w-[52rem]">
       <DataTable
         data={CHECKS.slice(0, 6)}
         columns={COLUMNS}
@@ -481,18 +480,18 @@ function RowStatesTable() {
 
 /** `renderSubComponent` makes rows expandable and adds the trailing chevron. */
 export const Expandable = createPreview(() => (
-  <div className={styles.div15}>
+  <div className="w-[52rem]">
     <DataTable
       data={CHECKS.slice(0, 6)}
       columns={COLUMNS}
       getRowId={row => row.id}
       renderSubComponent={row => (
-        <div className={styles.div16}>
+        <div className="space-y-1 p-4 text-control text-fg-default">
           <div>
-            Composition for <span className={styles.span}>{row.original.service}</span> produced{' '}
+            Composition for <span className="text-fg">{row.original.service}</span> produced{' '}
             {row.original.changes} schema changes.
           </div>
-          <div className={styles.div17}>Check id: {row.original.id}</div>
+          <div className="text-fg-muted">Check id: {row.original.id}</div>
         </div>
       )}
     />
@@ -500,7 +499,7 @@ export const Expandable = createPreview(() => (
 ));
 
 export const Clickable = createPreview(() => (
-  <div className={styles.div18}>
+  <div className="w-[52rem]">
     <DataTable
       data={CHECKS.slice(0, 6)}
       columns={COLUMNS}
@@ -566,7 +565,7 @@ const CELL_ROWS: CellRow[] = [
     id: 'number-percent',
     kind: 'number, format=percent / currency',
     sample: (
-      <span className={styles.span2}>
+      <span className="flex flex-col">
         <DataTableCell kind="number" value={38.2} format="percent" />
         <DataTableCell kind="number" value={130} format="currency" />
       </span>
@@ -621,7 +620,7 @@ const CELL_ROWS: CellRow[] = [
     id: 'truncate',
     kind: 'text / link, truncate',
     sample: (
-      <span className={styles.span3}>
+      <span className="flex w-40 flex-col">
         <DataTableCell kind="text" value="hive-schema-registry-worker" truncate />
         <DataTableCell kind="link" label="hive-schema-registry-worker" href="#" truncate />
       </span>
@@ -693,10 +692,22 @@ const CELL_ROWS: CellRow[] = [
     note: 'The rest collapse into a +N badge that lists them.',
   },
   {
+    id: 'badge-max-length',
+    kind: 'badge, maxLength=16',
+    sample: (
+      <DataTableCell
+        kind="badge"
+        maxLength={16}
+        items={[{ content: 'Guild Members' }, { content: 'Handcrafted Granite Chair' }]}
+      />
+    ),
+    note: 'A long label is cut; hover for the full one.',
+  },
+  {
     id: 'boolean',
     kind: 'boolean',
     sample: (
-      <span className={styles.span4}>
+      <span className="flex gap-3">
         <DataTableCell kind="boolean" value />
         <DataTableCell kind="boolean" value={false} />
       </span>
@@ -713,7 +724,7 @@ const CELL_ROWS: CellRow[] = [
     id: 'status-icon',
     kind: 'status, icon',
     sample: (
-      <span className={styles.span5}>
+      <span className="flex flex-col gap-1">
         <DataTableCell kind="status" label="Verified" icon={Check} iconTone="success" />
         <DataTableCell
           kind="status"
@@ -828,7 +839,7 @@ const CELL_COLUMNS: ColumnDef<CellRow, any>[] = [
 
 /** Every cell kind, in a table, so the row height and alignment are the real ones. */
 export const Cells = createPreview(() => (
-  <div className={styles.div19}>
+  <div className="w-[60rem]">
     <DataTable
       data={CELL_ROWS}
       columns={CELL_COLUMNS}
@@ -852,7 +863,13 @@ export const Playground = createPreview({
   render: v => {
     const data = CHECKS.slice(0, v.rows);
     return (
-      <div className={v.onSurface === 'raised' ? styles.div20 : styles.div21}>
+      <div
+        className={
+          v.onSurface === 'raised'
+            ? 'w-[56rem] rounded-md border border-line bg-surface-overlay p-6'
+            : 'w-[52rem]'
+        }
+      >
         <DataTable
           data={data}
           columns={COLUMNS}

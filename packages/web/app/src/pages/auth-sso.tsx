@@ -1,60 +1,30 @@
 import { useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
 import { AuthCard, AuthCardStack } from '@/components/auth';
 import { SSOForm, SSOFormSchema, type SSOFormValues } from '@/components/auth/sso-form';
 import { Meta } from '@/components/ui/meta';
 import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import { env } from '@/env/frontend';
-import { isProviderEnabled } from '@/lib/supertokens/thirdparty';
+import { resolveOidcId } from '@/lib/auth/oidc-lookup';
+import { isProviderEnabled } from '@/lib/auth/providers';
+import { useSession } from '@/lib/auth/use-session';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
 import * as styles from './auth-sso.css';
 
-async function fetchOidcId(input: { slug: string }) {
-  const response = await fetch(`${env.graphqlPublicOrigin}/auth-api/oidc-id-lookup`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      slug: input.slug,
-    }),
-  });
-
-  if (response.status >= 500) {
-    throw new Error('Server error');
-  }
-
-  const data = (await response.json()) as Promise<
-    | {
-        ok: true;
-        id: string;
-      }
-    | {
-        ok: false;
-        title: string;
-        description: string;
-        status: number;
-      }
-  >;
-
-  return data;
-}
-
-export function AuthSSOPage(props: { redirectToPath: string }) {
-  const session = useSessionContext();
+export function AuthSSOPage(props: { redirectToPath: string; initialSlug: string }) {
+  const session = useSession();
   const router = useRouter();
   const sso = useMutation({
-    mutationFn: fetchOidcId,
-    onSuccess(data) {
+    mutationFn: resolveOidcId,
+    onSuccess(data, slug) {
       if (data.ok) {
         void router.navigate({
           to: '/auth/oidc',
           search: {
             id: data.id,
+            slug,
             redirectToPath: props.redirectToPath,
           },
         });
@@ -78,7 +48,7 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
     mode: 'onSubmit',
     resolver: zodResolver(SSOFormSchema),
     defaultValues: {
-      slug: '',
+      slug: props.initialSlug,
     },
     disabled: sso.isPending,
   });
@@ -90,9 +60,7 @@ export function AuthSSOPage(props: { redirectToPath: string }) {
 
   const onSubmit = useCallback(
     (data: SSOFormValues) => {
-      sso.mutate({
-        slug: data.slug,
-      });
+      sso.mutate(data.slug);
     },
     [sso.mutate],
   );

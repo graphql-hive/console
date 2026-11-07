@@ -1,5 +1,9 @@
 import { ProjectType } from 'testkit/gql/graphql';
-import { updateTargetSlug } from '../../../testkit/flow';
+import {
+  createTarget,
+  updateTargetGraphQLEndpointUrl,
+  updateTargetSlug,
+} from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(`changing a target's slug should result changing its name`, async ({ expect }) => {
@@ -189,4 +193,93 @@ test.concurrent('organization member user can create a target', async ({ expect 
   }).then(r => r.expectNoGraphQLErrors());
   expect(createTargetResult.createTarget.error).toEqual(null);
   expect(createTargetResult.createTarget.ok).not.toBeNull();
+});
+
+test.concurrent('Mutation.createTarget: slug with invalid characters', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { project } = await createProject(ProjectType.Single);
+  const result = await createTarget(
+    { project: { byId: project.id }, slug: 'Invalid Slug!' },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createTarget.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        slug: Slug can only contain lowercase letters, numbers and dashes,
+      },
+      message: Check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.createTarget: slug too long', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { project } = await createProject(ProjectType.Single);
+  const result = await createTarget(
+    { project: { byId: project.id }, slug: 'a'.repeat(51) },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createTarget.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        slug: Slug must be at most 50 characters long,
+      },
+      message: Check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.updateTargetSlug: slug with invalid characters', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target } = await createProject(ProjectType.Single);
+  const result = await updateTargetSlug(
+    { target: { byId: target.id }, slug: 'Invalid Slug!' },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.updateTargetSlug.error).toMatchInlineSnapshot(`
+    {
+      message: Slug can only contain lowercase letters, numbers and dashes,
+    }
+  `);
+});
+
+test.concurrent('Mutation.updateTargetGraphQLEndpointUrl: invalid url', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target } = await createProject(ProjectType.Single);
+  const result = await updateTargetGraphQLEndpointUrl(
+    { target: { byId: target.id }, graphqlEndpointUrl: 'not-a-url' },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.updateTargetGraphQLEndpointUrl.error).toMatchInlineSnapshot(`
+    {
+      message: Must be a valid URL, e.g. https://api.example.com/graphql,
+    }
+  `);
+});
+
+test.concurrent('Mutation.updateTargetGraphQLEndpointUrl: url too long', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target } = await createProject(ProjectType.Single);
+  const result = await updateTargetGraphQLEndpointUrl(
+    {
+      target: { byId: target.id },
+      graphqlEndpointUrl: `https://example.com/${'a'.repeat(300)}`,
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.updateTargetGraphQLEndpointUrl.error).toMatchInlineSnapshot(`
+    {
+      message: Must be at most 300 characters long,
+    }
+  `);
 });

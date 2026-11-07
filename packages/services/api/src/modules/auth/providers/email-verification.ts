@@ -5,15 +5,18 @@ import zod from 'zod';
 import { PostgresDatabasePool, psql, TaggedTemplateLiteralInvocation } from '@hive/postgres';
 import { FastifyRequest } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
-import { EmailVerificationTask } from '@hive/workflows/tasks/email-verification';
+import {
+  EMAIL_VERIFICATION_LINK_VALID_MINUTES,
+  EmailVerificationTask,
+} from '@hive/workflows/tasks/email-verification';
 import { HiveError } from '../../../shared/errors';
 import { RedisRateLimiter } from '../../shared/providers/redis-rate-limiter';
 import { WEB_APP_URL } from '../../shared/providers/tokens';
 
 const EmailVerificationModelBase = zod.object({
-  id: zod.string().uuid(),
+  id: zod.uuid(),
   userIdentityId: zod.string(),
-  email: zod.string().email(),
+  email: zod.email(),
   createdAt: zod.number().transform(v => new Date(v)),
 });
 
@@ -127,7 +130,7 @@ export class EmailVerification {
           WHERE "saaru"."user_id" = ${input.userIdentityId}
         `,
       )
-      .then(v => zod.object({ email: zod.string().email() }).nullable().parse(v));
+      .then(v => zod.object({ email: zod.email() }).nullable().parse(v));
 
     if (!superTokensUser) {
       throw new HiveError('User identity not found.');
@@ -175,7 +178,7 @@ export class EmailVerification {
             ${input.userIdentityId}
             , ${superTokensUser.email}
             , ${tokenHash}
-            , now() + INTERVAL '30 minutes'
+            , now() + make_interval(mins => ${EMAIL_VERIFICATION_LINK_VALID_MINUTES})
           )
           ON CONFLICT ("user_identity_id", "email") DO UPDATE SET
             "token_hash" = EXCLUDED.token_hash

@@ -123,11 +123,11 @@ describe('Navigation', () => {
       '/a/b/c',
       <Navigation
         aria-label="Target"
-        items={[{ ...TARGET_ITEMS[1], attrs: { 'data-cy': 'checks-link' } }]}
+        items={[{ ...TARGET_ITEMS[1], attrs: { 'data-testid': 'checks-link' } }]}
       />,
     );
     await current();
-    expect(document.querySelector('a[data-cy="checks-link"]')?.textContent).toBe('Checks');
+    expect(document.querySelector('a[data-testid="checks-link"]')?.textContent).toBe('Checks');
   });
 
   it('keeps an item with a tooltip a link', async () => {
@@ -141,9 +141,9 @@ describe('Navigation', () => {
   it('draws placeholders instead of links while loading', async () => {
     renderAt(
       '/a/b/c',
-      <Navigation items={TARGET_ITEMS} loading attrs={{ 'data-cy': 'target-nav' }} />,
+      <Navigation items={TARGET_ITEMS} loading attrs={{ 'data-testid': 'target-nav' }} />,
     );
-    await waitFor(() => expect(document.querySelector('[data-cy="target-nav"]')).toBeTruthy());
+    await waitFor(() => expect(document.querySelector('[data-testid="target-nav"]')).toBeTruthy());
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.queryByRole('navigation')).toBeNull();
   });
@@ -154,11 +154,11 @@ describe('Navigation', () => {
       <Navigation
         items={TARGET_ITEMS}
         actions={<button type="button">Connect to CDN</button>}
-        attrs={{ 'data-cy': 'target-nav' }}
+        attrs={{ 'data-testid': 'target-nav' }}
       />,
     );
     await screen.findByRole('navigation');
-    const bar = document.querySelector('[data-cy="target-nav"]')!;
+    const bar = document.querySelector('[data-testid="target-nav"]')!;
     expect(bar.lastElementChild?.textContent).toBe('Connect to CDN');
     expect(screen.getByRole('navigation').textContent).not.toContain('Connect to CDN');
   });

@@ -48,7 +48,7 @@ function makeLargeSchemaSDL(existingSchema: string, targetBytes: number, variant
   return parts.join('\n');
 }
 
-describe.sequential('Memory Leak tests (sequential)', { concurrent: false }, () => {
+describe('Memory Leak tests (sequential)', { concurrent: false }, () => {
   test(
     'Should not retain memory when SINGLE schema check fails',
     async () => {

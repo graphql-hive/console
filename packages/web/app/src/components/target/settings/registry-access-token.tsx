@@ -124,9 +124,9 @@ export function ModalContent(props: {
         onOpenChangeComplete={props.onOpenChangeComplete}
         width="lg"
         title="Token successfully created!"
-        attrs={{ 'data-cy': 'registry-token-created' }}
+        attrs={{ 'data-testid': 'registry-token-created' }}
         footer={
-          <Button data-cy="close" onSurface="raised" onClick={props.toggleModalOpen}>
+          <Button data-testid="close" onSurface="raised" onClick={props.toggleModalOpen}>
             Ok, got it!
           </Button>
         }
@@ -152,7 +152,7 @@ export function ModalContent(props: {
         onCancel={props.toggleModalOpen}
         permissions={
           <PermissionScopeItem
-            dataCy="registry-access-scope"
+            dataTestId="registry-access-scope"
             onSurface="raised"
             key={selectedScope}
             scope={RegistryAccessScope}

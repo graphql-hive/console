@@ -325,7 +325,7 @@ export class SuperTokensUserAuthNStrategy extends AuthNStrategy<SuperTokensCooki
       args.req.log.debug('SuperTokens session payload: %s', session.sessionData);
       args.req.log.debug(
         'SuperTokens session parsing errors: %s',
-        JSON.stringify(result.error.flatten().fieldErrors),
+        JSON.stringify(zod.flattenError(result.error).fieldErrors),
       );
       throw new HiveError('Invalid access token provided', {
         extensions: {

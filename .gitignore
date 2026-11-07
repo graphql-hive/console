@@ -118,8 +118,6 @@ npm-shrinkwrap.json
 .hive-dev
 .volumes
 
-!cypress/local.sh
-
 packages/web/app/next.config.mjs
 packages/web/app/environment-*.mjs
 packages/web/app/src/gql/*.ts

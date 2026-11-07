@@ -1,6 +1,5 @@
 import { defineConfig } from 'react-foundry';
 import type { Plugin } from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 
@@ -105,7 +104,7 @@ export default defineConfig({
     // coverage checklist to migrate through. Entries are deleted as their component lands.
     {
       label: 'Inventory',
-      children: [{ label: 'Presentational' }, { label: 'V2Leftovers' }],
+      children: [{ label: 'Presentational' }],
     },
     // Composites and app components, built from the primitives above. Each preview reproduces
     // real call sites so a primitive change can be judged against the compositions that ship.
@@ -126,6 +125,7 @@ export default defineConfig({
         { label: 'PagePending' },
         { label: 'RefreshButton' },
         { label: 'Resizable' },
+        { label: 'SchemaChangePaging' },
         { label: 'ScopeBar' },
         { label: 'StatCard' },
         { label: 'Stepper' },
@@ -142,14 +142,9 @@ export default defineConfig({
     },
   },
   viteConfig: {
-    // Foundry's vite root is inside node_modules and this config is bundled to a cache
-    // dir before it runs, so neither location can anchor tsconfig discovery. cwd is the
-    // app directory, which is where `foundry dev` is invoked from.
-    plugins: [
-      tsconfigPaths({ root: process.cwd() }),
-      tailwindcss(),
-      vanillaExtractPlugin(),
-      previewEnv,
-    ],
+    // Vite finds the nearest tsconfig per imported file, so previews resolve `@/` through
+    // the app's tsconfig even though foundry's vite root is inside node_modules.
+    resolve: { tsconfigPaths: true },
+    plugins: [tailwindcss(), vanillaExtractPlugin(), previewEnv],
   },
 });

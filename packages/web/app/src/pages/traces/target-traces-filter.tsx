@@ -203,7 +203,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
   );
 };
 
-function FilterOption(props: {
+export function FilterOption(props: {
   onClick(): void;
   selected: boolean;
   children: ReactNode;
@@ -230,7 +230,12 @@ function FilterOption(props: {
 }
 
 /** One collapsible group of the filter column, with a reset count at its trailing edge. */
-function Filter(props: { name: string; changes?: number; onReset(): void; children: ReactNode }) {
+export function Filter(props: {
+  name: string;
+  changes?: number;
+  onReset(): void;
+  children: ReactNode;
+}) {
   return (
     <Fragment key={props.name}>
       <div className={styles.filterDiv}>

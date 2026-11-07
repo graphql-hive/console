@@ -1,5 +1,26 @@
 # @graphql-hive/core
 
+## 0.23.3
+
+### Patch Changes
+
+- [#8864](https://github.com/graphql-hive/console/pull/8864)
+  [`0bb0a5c`](https://github.com/graphql-hive/console/commit/0bb0a5c3c017cf469b4bcbe63f1cdc52e3e4095b)
+  Thanks [@nyxs1874](https://github.com/nyxs1874)! - Stop retrying HTTP requests after a 4xx
+  response or an abort by the caller.
+
+## 0.23.2
+
+### Patch Changes
+
+- [#8726](https://github.com/graphql-hive/console/pull/8726)
+  [`e085b8e`](https://github.com/graphql-hive/console/commit/e085b8e1ef7a9197d285b2f3b4264fb47bf1a963)
+  Thanks [@jdolle](https://github.com/jdolle)! - Surface the registry's request id on HTTP errors.
+  `HTTPResponseError` thrown by the core HTTP client now carries the `x-request-id` the server
+  returned, and the CLI prints it as `Request ID` on HTTP error responses (for example a request
+  rejected because its body is too large), the same way it already does for GraphQL errors.
+  Previously only the client-generated id was visible, which does not match anything on the server.
+
 ## 0.23.1
 
 ### Patch Changes

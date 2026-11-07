@@ -18,6 +18,7 @@ interface CustomMatchers<R = unknown> {
 }
 
 declare module 'vitest' {
-  interface Assertion<T = any> extends CustomMatchers<T> {}
-  interface AsymmetricMatchersContaining extends CustomMatchers {}
+  // Vitest 5 reads custom matchers from Matchers<R, T>, which both Assertion and
+  // AsymmetricMatchersContaining extend.
+  interface Matchers<R, T> extends CustomMatchers<R> {}
 }

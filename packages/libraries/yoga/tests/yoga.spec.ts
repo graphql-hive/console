@@ -2,9 +2,10 @@ import { createServer } from 'node:http';
 import { GraphQLError, type GraphQLResolveInfo, type ValidationRule } from 'graphql';
 import { createClient } from 'graphql-ws';
 import { useServer as useWSServer } from 'graphql-ws/use/ws';
-import { createLogger, createSchema, createYoga, type Plugin } from 'graphql-yoga';
+import { createSchema, createYoga, type Plugin } from 'graphql-yoga';
 import { describe, expect, test, vi } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
+import { Logger } from '@graphql-hive/logger';
 import { useDeferStream } from '@graphql-yoga/plugin-defer-stream';
 import { useDisableIntrospection } from '@graphql-yoga/plugin-disable-introspection';
 import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
@@ -12,6 +13,8 @@ import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Response } from '@whatwg-node/fetch';
 import { createHiveTestingLogger } from '../../core/tests/test-utils';
 import { createHive, useHive } from '../src/index.js';
+
+const createLogger = () => new Logger({ level: false });
 
 function waitFor(ms: number) {
   return new Promise<void>(resolve => {

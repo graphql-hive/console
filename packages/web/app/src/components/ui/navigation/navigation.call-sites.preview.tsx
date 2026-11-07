@@ -1,13 +1,12 @@
-import { type ReactNode } from 'react';
 import { ChartPieIcon, FileDiffIcon, LinkIcon, ListIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { CallSite, CallSiteGroup, InventoryList } from '@/components/inventory/shared';
+import { SecondaryNavigation } from '@/components/navigation/secondary-navigation';
 import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { Button } from '@/components/ui/primitives/button/button';
 import { RouterAt } from '../../../../foundry.router';
 import { Navigation, type NavigationItem } from './navigation';
-import * as styles from './navigation.call-sites.preview.css';
 
 export const nav: NavPath = 'Components/Navigation/Component Examples';
 
@@ -20,7 +19,7 @@ export const nav: NavPath = 'Components/Navigation/Component Examples';
 
 const ENTRIES = [
   {
-    source: 'components/navigation/secondary-navigation.tsx:22',
+    source: 'components/navigation/secondary-navigation.tsx:5',
     origin: 'base',
     what: 'The bar under the organization, project and target headers, mounted by the three layouts',
     coveredBy: 'Bars',
@@ -38,32 +37,32 @@ const ENTRIES = [
     coveredBy: 'Proposal sections',
   },
   {
-    source: 'pages/target-alerts.tsx:90',
-    origin: 'raw',
-    what: 'Activity, Rules and Create beside the alerts page: router links styled as a list',
+    source: 'pages/target-alerts.tsx:25',
+    origin: 'base',
+    what: 'Activity, Rules and Create beside the alerts page, as a list',
     coveredBy: 'Alerts sections',
   },
   {
-    source: 'pages/target-settings.tsx:1418',
-    origin: 'raw',
+    source: 'pages/target-settings.tsx:1350',
+    origin: 'base',
     what: 'The settings sections of a target, gated on permissions and project type',
     coveredBy: 'Settings sections',
   },
   {
-    source: 'pages/organization-settings.tsx:614',
-    origin: 'raw',
+    source: 'pages/organization-settings.tsx:581',
+    origin: 'base',
     what: 'The settings sections of an organization',
     coveredBy: 'Settings sections',
   },
   {
-    source: 'pages/project-settings.tsx:530',
-    origin: 'raw',
+    source: 'pages/project-settings.tsx:523',
+    origin: 'base',
     what: 'The settings sections of a project',
     coveredBy: 'Settings sections',
   },
   {
-    source: 'pages/organization-members.tsx:83',
-    origin: 'raw',
+    source: 'pages/organization-members.tsx:120',
+    origin: 'base',
     what: 'Members, Roles, Groups and Invitations of an organization',
     coveredBy: 'Members sections',
   },
@@ -76,10 +75,9 @@ export const Inventory = createPreview({
       component="base/navigation/navigation"
       summary={
         <>
-          Eight mounts in three shapes: the three layout bars and the explorer filter that already
-          use the base bar, the proposal sections driven by a search param, and the four vertical
-          lists (alerts, three settings pages, members) that today are buttons or hand-styled links
-          switching a <code>?page=</code> param.
+          Eight mounts in three shapes, all on the base component: the three layout bars and the
+          explorer filter, the proposal sections driven by a search param, and the five vertical
+          lists (alerts, three settings pages, members) on <code>variant="list"</code>.
         </>
       }
       entries={ENTRIES}
@@ -91,15 +89,6 @@ const ORGANIZATION = { organizationSlug: 'the-guild' };
 const PROJECT = { ...ORGANIZATION, projectSlug: 'gateway' };
 const TARGET = { ...PROJECT, targetSlug: 'production' };
 const TARGET_PATH = '/the-guild/gateway/production';
-
-/** The chrome from components/navigation/secondary-navigation.tsx, which mounts the base nav. */
-function ChromeBar(props: { children: ReactNode }) {
-  return (
-    <div className={styles.chromeBarDiv}>
-      <div className={styles.chromeBarDiv2}>{props.children}</div>
-    </div>
-  );
-}
 
 const ORGANIZATION_LINKS: NavigationItem[] = [
   {
@@ -204,26 +193,24 @@ const TARGET_LINKS: NavigationItem[] = [
 export const Bars = createPreview({
   label: 'Bars',
   render: () => (
-    <div className={styles.div}>
+    <div className="-mx-6 flex flex-col gap-8">
       <CallSite
         source="components/layouts/organization.tsx:115"
         origin="base"
         note="On /the-guild/view/members?page=roles. Members, Settings, Support and Subscription are each gated on a permission; the action is gated on creating projects. Members no longer carries search={{ page: 'list' }}: the router would count it current only on that exact page."
       >
         <RouterAt path="/the-guild/view/members?page=roles">
-          <ChromeBar>
-            <Navigation
-              items={ORGANIZATION_LINKS}
-              actions={
-                <Button variant="link">
-                  <span className={styles.span}>
-                    <PlusIcon size={16} className={styles.plusIcon} />
-                    New project
-                  </span>
-                </Button>
-              }
-            />
-          </ChromeBar>
+          <SecondaryNavigation
+            links={ORGANIZATION_LINKS}
+            actions={
+              <Button variant="link">
+                <span className="flex items-center">
+                  <PlusIcon size={16} className="mr-2" />
+                  New project
+                </span>
+              </Button>
+            }
+          />
         </RouterAt>
       </CallSite>
       <CallSite
@@ -232,19 +219,17 @@ export const Bars = createPreview({
         note="On /the-guild/gateway?search=prod, the project root with a search param: Targets is current because it is exact on the path only. Alerts and Settings gated; the action is gated on creating targets."
       >
         <RouterAt path="/the-guild/gateway?search=prod">
-          <ChromeBar>
-            <Navigation
-              items={PROJECT_LINKS}
-              actions={
-                <Button variant="link">
-                  <span className={styles.span2}>
-                    <PlusIcon size={16} className={styles.plusIcon2} />
-                    New target
-                  </span>
-                </Button>
-              }
-            />
-          </ChromeBar>
+          <SecondaryNavigation
+            links={PROJECT_LINKS}
+            actions={
+              <Button variant="link">
+                <span className="flex items-center">
+                  <PlusIcon size={16} className="mr-2" />
+                  New target
+                </span>
+              </Button>
+            }
+          />
         </RouterAt>
       </CallSite>
       <CallSite
@@ -253,21 +238,19 @@ export const Bars = createPreview({
         note="On a single check. Eleven pages, six of them gated. History still links to the latest version's URL, so it is current only there; it moves to the bare /history path with the URL changes. Connect to CDN shows when the CDN is enabled and hides below md."
       >
         <RouterAt path={`${TARGET_PATH}/checks/abc123`}>
-          <ChromeBar>
-            <Navigation
-              items={TARGET_LINKS}
-              actions={
-                <div className={styles.div2}>
-                  <Button variant="link">
-                    <span className={styles.span3}>
-                      <LinkIcon size={16} className={styles.linkIcon} />
-                      Connect to CDN
-                    </span>
-                  </Button>
-                </div>
-              }
-            />
-          </ChromeBar>
+          <SecondaryNavigation
+            links={TARGET_LINKS}
+            actions={
+              <div className="hidden md:block">
+                <Button variant="link">
+                  <span className="flex items-center whitespace-nowrap">
+                    <LinkIcon size={16} className="mr-2" />
+                    Connect to CDN
+                  </span>
+                </Button>
+              </div>
+            }
+          />
         </RouterAt>
       </CallSite>
       <CallSite
@@ -275,9 +258,7 @@ export const Bars = createPreview({
         origin="base"
         note="Placeholders hold the bar's height until the organization, project and target resolve."
       >
-        <ChromeBar>
-          <Navigation loading items={[]} />
-        </ChromeBar>
+        <SecondaryNavigation loading links={[]} />
       </CallSite>
     </div>
   ),
@@ -326,7 +307,7 @@ export const ExplorerFilter = createPreview({
   ),
 });
 
-const PROPOSAL = { ...TARGET, proposalId: styles.proposalProposalId };
+const PROPOSAL = { ...TARGET, proposalId: 'pr-7' };
 const proposalLink = {
   to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
   params: PROPOSAL,
@@ -367,15 +348,15 @@ const PROPOSAL_SECTIONS: NavigationItem[] = [
 export const ProposalSections = createPreview({
   label: 'Proposal sections',
   render: () => (
-    <div className={styles.div3}>
+    <div className="flex flex-col gap-8">
       <CallSite
         source="pages/target-proposal.tsx:564"
         origin="base"
         note="On /proposals/pr-7?version=v3: the default section has no page param, so Details links to page: undefined and is current only while the URL has none. Supergraph Preview only on a distributed graph. The page draws the 1px row line under it."
       >
         <RouterAt path={`${TARGET_PATH}/proposals/pr-7?version=v3`}>
-          <div className={styles.div4}>
-            <div className={styles.div5}>
+          <div className="w-full">
+            <div className="border-b border-line">
               <Navigation aria-label="Proposal" items={PROPOSAL_SECTIONS} size="sm" />
             </div>
           </div>
@@ -383,8 +364,8 @@ export const ProposalSections = createPreview({
       </CallSite>
       <CallSite source="the same" origin="base" note="On ?page=checks&version=v3.">
         <RouterAt path={`${TARGET_PATH}/proposals/pr-7?page=checks&version=v3`}>
-          <div className={styles.div6}>
-            <div className={styles.div7}>
+          <div className="w-full">
+            <div className="border-b border-line">
               <Navigation aria-label="Proposal" items={PROPOSAL_SECTIONS} size="sm" />
             </div>
           </div>
@@ -400,7 +381,7 @@ function SectionsPage(props: { path: string; items: NavigationItem[]; label: str
       <PageLayout>
         <Navigation aria-label={props.label} variant="list" items={props.items} />
         <PageLayoutContent>
-          <div className={styles.sectionsPageDiv} />
+          <div className="h-40 rounded-md bg-neutral-3" />
         </PageLayoutContent>
       </PageLayout>
     </RouterAt>
@@ -412,7 +393,7 @@ export const AlertsSections = createPreview({
   render: () => (
     <CallSite
       source="pages/target-alerts.tsx"
-      origin="raw"
+      origin="base"
       note="On /alerts/rules. Activity is the bare alerts URL, so it is exact."
     >
       <SectionsPage
@@ -447,37 +428,37 @@ const TARGET_SETTINGS: NavigationItem[] = [
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings',
     params: TARGET,
     exact: true,
-    attrs: { 'data-cy': 'target-settings-general-link' },
+    attrs: { 'data-testid': 'target-settings-general-link' },
   },
   {
     label: 'Base Schema',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/base-schema',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-base-schema-link' },
+    attrs: { 'data-testid': 'target-settings-base-schema-link' },
   },
   {
     label: 'Breaking Changes',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/breaking-changes',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-breaking-changes-link' },
+    attrs: { 'data-testid': 'target-settings-breaking-changes-link' },
   },
   {
     label: 'Schema Contracts',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/schema-contracts',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-schema-contracts-link' },
+    attrs: { 'data-testid': 'target-settings-schema-contracts-link' },
   },
   {
     label: 'Registry Tokens',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/registry-token',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-registry-token-link' },
+    attrs: { 'data-testid': 'target-settings-registry-token-link' },
   },
   {
     label: 'CDN Tokens',
     to: '/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
     params: TARGET,
-    attrs: { 'data-cy': 'target-settings-cdn-link' },
+    attrs: { 'data-testid': 'target-settings-cdn-link' },
   },
 ];
 
@@ -537,12 +518,12 @@ const PROJECT_SETTINGS: NavigationItem[] = [
 export const SettingsSections = createPreview({
   label: 'Settings sections',
   render: () => (
-    <div className={styles.div8}>
+    <div className="flex flex-col gap-8">
       <CallSiteGroup label="Sections become child routes; the bare settings URL is General, so General is exact.">
         <CallSite
-          source="pages/target-settings.tsx:1418"
-          origin="raw"
-          note="On /settings/cdn. Base Schema on non-federation projects, Schema Contracts on federation; Registry and CDN Tokens gated. Each link keeps its data-cy, which the usage e2e clicks."
+          source="pages/target-settings.tsx:1350"
+          origin="base"
+          note="On /settings/cdn. Base Schema on non-federation projects, Schema Contracts on federation; Registry and CDN Tokens gated. Each link keeps its data-testid, which the usage e2e clicks."
         >
           <SectionsPage
             label="Settings"
@@ -551,8 +532,8 @@ export const SettingsSections = createPreview({
           />
         </CallSite>
         <CallSite
-          source="pages/organization-settings.tsx:614"
-          origin="raw"
+          source="pages/organization-settings.tsx:581"
+          origin="base"
           note="On the bare /view/settings: General is current and no other item is, despite sharing its prefix."
         >
           <SectionsPage
@@ -562,8 +543,8 @@ export const SettingsSections = createPreview({
           />
         </CallSite>
         <CallSite
-          source="pages/project-settings.tsx:530"
-          origin="raw"
+          source="pages/project-settings.tsx:523"
+          origin="base"
           note="On /view/settings/composition."
         >
           <SectionsPage
@@ -581,8 +562,8 @@ export const MembersSections = createPreview({
   label: 'Members sections',
   render: () => (
     <CallSite
-      source="pages/organization-members.tsx:83"
-      origin="raw"
+      source="pages/organization-members.tsx:120"
+      origin="base"
       note="On /view/members/roles. Roles and Invitations gated; the list is the bare URL and keeps its search filter, which is why Members is exact on the path only."
     >
       <SectionsPage

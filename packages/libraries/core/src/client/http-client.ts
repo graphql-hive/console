@@ -182,8 +182,7 @@ export async function makeFetchCall(
 
       if (config.signal?.aborted === true) {
         const error = config.signal.reason ?? new Error('Request aborted externally.');
-        bail(error);
-        throw error;
+        return bail(error) as never;
       }
 
       if (isRequestOk(response)) {
@@ -211,13 +210,14 @@ export async function makeFetchCall(
         `${config.method} ${endpoint} (x-request-id=${requestId}) failed with status ${response.status}.`,
         response.status,
         response.statusText,
+        response.headers.get('x-request-id') ?? undefined,
       );
 
       if (response.status >= 400 && response.status < 500) {
         if (retries > 0) {
           logger.error(`Abort retry because of status code ${response.status}.`);
         }
-        bail(error);
+        return bail(error) as never;
       }
 
       throw error;
@@ -237,6 +237,8 @@ export class HTTPResponseError extends Error {
     message: string,
     public readonly status: number,
     public readonly statusText: string,
+    /** The request id the server returned in its `x-request-id` response header, if any. */
+    public readonly requestId?: string,
   ) {
     super(message);
     this.name = 'HTTPResponseError';

@@ -2,21 +2,26 @@ import { z } from 'zod';
 import { NameModel } from '../../shared/entities';
 import { reservedOrganizationSlugs } from './providers/organization-config';
 
-export const OrganizationNameModel = NameModel.min(2).max(50);
+export const OrganizationNameModel = NameModel.min(
+  2,
+  'Name must contain at least 2 characters',
+).max(50, 'Name must contain less than 50 characters');
+
 export const OrganizationSlugModel = z
   .string({
-    required_error: 'Organization slug is required',
+    error: issue => (issue.input === undefined ? 'Organization slug is required' : undefined),
   })
   .min(1, 'Organization slug is required')
-  .max(50, 'Slug must be less than 50 characters')
+  .max(50, 'Slug must be at most 50 characters long')
   .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers and dashes')
   .refine(slug => !reservedOrganizationSlugs.includes(slug), {
-    message: "Slug can't be one of the reserved names",
+    error: "Slug can't be one of the reserved names",
   });
+
 export const CreateOrUpdateMemberRoleModel = z.object({
   name: z
     .string({
-      required_error: 'Please enter role name',
+      error: issue => (issue.input === undefined ? 'Please enter role name' : undefined),
     })
     .trim()
     .min(2, 'Role name must be at least 2 characters long')
@@ -28,9 +33,15 @@ export const CreateOrUpdateMemberRoleModel = z.object({
     .refine(val => val !== 'Viewer' && val !== 'Admin', 'Viewer and Admin are reserved'),
   description: z
     .string({
-      required_error: 'Please enter role description',
+      error: issue => (issue.input === undefined ? 'Please enter role description' : undefined),
     })
     .trim()
     .min(2, 'Role description must be at least 2 characters long')
     .max(256, 'Role description must be at most 256 characters long'),
+});
+
+export const InviteByEmailInputModel = z.object({
+  email: z
+    .email('Must be a valid email address, e.g. jane@example.com')
+    .max(128, 'Email must be at most 128 characters long'),
 });

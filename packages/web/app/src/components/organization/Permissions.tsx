@@ -26,7 +26,7 @@ export const PermissionScopeItem = <
   canManageScope: boolean;
   noDowngrade?: boolean;
   possibleScope: T[];
-  dataCy?: string;
+  dataTestId?: string;
   onSurface?: OnSurface;
 }): React.ReactElement => {
   const initialScope = props.initialScope ?? NoAccess;
@@ -38,7 +38,7 @@ export const PermissionScopeItem = <
         styles.permissionScopeItemDiv,
         props.canManageScope === false ? styles.permissionScopeItemDiv2 : null,
       )}
-      data-cy={props.dataCy}
+      data-testid={props.dataTestId}
     >
       <div>
         <div className={styles.permissionScopeItemDiv3}>{props.scope.name}</div>
@@ -75,7 +75,7 @@ export const PermissionScopeItem = <
               label: item.label,
               disabled: isDisabled,
               description: isDisabled ? "Can't downgrade" : undefined,
-              'data-cy': `select-option-${item.value}`,
+              'data-testid': `select-option-${item.value}`,
             };
           })}
         disabled={!props.canManageScope || props.disabled}
@@ -85,8 +85,8 @@ export const PermissionScopeItem = <
         }}
         width="sm"
         onSurface={props.onSurface}
-        data-cy="select-trigger"
-        popupDataCy={props.dataCy ? `${props.dataCy}-select-content` : undefined}
+        data-testid="select-trigger"
+        popupDataTestId={props.dataTestId ? `${props.dataTestId}-select-content` : undefined}
       />
     </div>
   );

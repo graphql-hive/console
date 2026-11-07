@@ -1,5 +1,65 @@
 # @graphql-hive/cli
 
+## 0.68.3
+
+### Patch Changes
+
+- [#8806](https://github.com/graphql-hive/console/pull/8806)
+  [`f79adf8`](https://github.com/graphql-hive/console/commit/f79adf86449dea0d827a704722b6ef11fd99eea8)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerabilities
+  [AIKIDO-2026-143019](https://intel.aikido.dev/cve/AIKIDO-2026-143019),
+  [AIKIDO-2026-10707](https://intel.aikido.dev/cve/AIKIDO-2026-10707),
+  [AIKIDO-2026-10706](https://intel.aikido.dev/cve/AIKIDO-2026-10706),
+  [AIKIDO-2026-970919](https://intel.aikido.dev/cve/AIKIDO-2026-970919), and
+  [AIKIDO-2026-161437](https://intel.aikido.dev/cve/AIKIDO-2026-161437).
+
+- Updated dependencies
+  [[`0bb0a5c`](https://github.com/graphql-hive/console/commit/0bb0a5c3c017cf469b4bcbe63f1cdc52e3e4095b)]:
+  - @graphql-hive/core@0.23.3
+
+## 0.68.2
+
+### Patch Changes
+
+- [#8661](https://github.com/graphql-hive/console/pull/8661)
+  [`fa47253`](https://github.com/graphql-hive/console/commit/fa4725362777cbb5b2fc588987fdfcadac27eb4e)
+  Thanks [@klippx](https://github.com/klippx)! - Publish SHA-256 checksums, standalone archives, and
+  stable-version metadata with CLI releases, and provide a safe one-time checksum backfill for
+  retained historical archives.
+
+## 0.68.1
+
+### Patch Changes
+
+- [#8756](https://github.com/graphql-hive/console/pull/8756)
+  [`2f51407`](https://github.com/graphql-hive/console/commit/2f51407d2c819103d8c238c424834262ee144738)
+  Thanks [@jdolle](https://github.com/jdolle)! - `app:create` retries a failed document upload batch
+  at most twice (three attempts in total) instead of five times.
+
+## 0.68.0
+
+### Minor Changes
+
+- [#8734](https://github.com/graphql-hive/console/pull/8734)
+  [`a6eaf2e`](https://github.com/graphql-hive/console/commit/a6eaf2e857ccb2a1d6f9293d3cd26b2d4e3bf79e)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Validate and preprocess app deployment documents in
+  the CLI before uploading them, reducing server-side processing and rejecting invalid operations
+  earlier.
+
+### Patch Changes
+
+- [#8726](https://github.com/graphql-hive/console/pull/8726)
+  [`e085b8e`](https://github.com/graphql-hive/console/commit/e085b8e1ef7a9197d285b2f3b4264fb47bf1a963)
+  Thanks [@jdolle](https://github.com/jdolle)! - Surface the registry's request id on HTTP errors.
+  `HTTPResponseError` thrown by the core HTTP client now carries the `x-request-id` the server
+  returned, and the CLI prints it as `Request ID` on HTTP error responses (for example a request
+  rejected because its body is too large), the same way it already does for GraphQL errors.
+  Previously only the client-generated id was visible, which does not match anything on the server.
+
+- Updated dependencies
+  [[`e085b8e`](https://github.com/graphql-hive/console/commit/e085b8e1ef7a9197d285b2f3b4264fb47bf1a963)]:
+  - @graphql-hive/core@0.23.2
+
 ## 0.67.1
 
 ### Patch Changes

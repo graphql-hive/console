@@ -4,7 +4,12 @@ import { Accordion } from './accordion';
 import * as styles from './accordion.css';
 
 const ITEMS = [
-  { value: 'a', label: 'Breaking', content: <p>Breaking panel</p>, attrs: { 'data-cy': 'row-a' } },
+  {
+    value: 'a',
+    label: 'Breaking',
+    content: <p>Breaking panel</p>,
+    attrs: { 'data-testid': 'row-a' },
+  },
   { value: 'b', label: 'Safe', content: <p>Safe panel</p> },
   { value: 'c', label: 'Locked', content: <p>Locked panel</p>, disabled: true },
 ];
@@ -44,17 +49,17 @@ describe('Accordion', () => {
             ...ITEMS[0],
             trailing: <span>3 selected</span>,
             action: <button type="button">More</button>,
-            triggerAttrs: { 'data-cy': 'row-a-trigger' },
+            triggerAttrs: { 'data-testid': 'row-a-trigger' },
           },
         ]}
       />,
     );
     const trigger = screen.getByRole('button', { name: /Breaking/ });
     expect(trigger.textContent).toContain('3 selected');
-    expect(trigger.getAttribute('data-cy')).toBe('row-a-trigger');
+    expect(trigger.getAttribute('data-testid')).toBe('row-a-trigger');
     const more = screen.getByRole('button', { name: 'More' });
     expect(trigger.contains(more)).toBe(false);
-    expect(document.querySelector('[data-cy="row-a"]')!.contains(more)).toBe(true);
+    expect(document.querySelector('[data-testid="row-a"]')!.contains(more)).toBe(true);
   });
 
   it('will not open a disabled item', () => {
@@ -79,5 +84,43 @@ describe('Accordion', () => {
 
     rerender(<Accordion items={ITEMS} variant="list" />);
     expect(header().className).not.toContain(boxedHeader);
+  });
+
+  it('renders an item without content as a static row: no button, no chevron, same heading', () => {
+    render(
+      <Accordion
+        items={[
+          ITEMS[0],
+          {
+            value: 'static',
+            label: 'Type removed',
+            trailing: <span>Not tracked</span>,
+            attrs: { 'data-testid': 'row-static' },
+          },
+        ]}
+      />,
+    );
+    const row = document.querySelector('[data-testid="row-static"]')!;
+    expect(row.querySelector('button')).toBeNull();
+    expect(row.querySelector('svg')).toBeNull();
+    expect(screen.getByRole('heading', { name: /Type removed/ }).textContent).toContain(
+      'Not tracked',
+    );
+
+    // Its neighbour still opens.
+    fireEvent.click(screen.getByRole('button', { name: 'Breaking' }));
+    expect(screen.getByText('Breaking panel')).toBeTruthy();
+  });
+
+  it('treats null content as no content, even on a disabled item', () => {
+    render(
+      <Accordion
+        items={[{ value: 'x', label: 'Nothing here', content: null, disabled: true }]}
+        variant="boxed"
+      />,
+    );
+    expect(screen.queryByRole('button')).toBeNull();
+    const heading = screen.getByRole('heading', { name: 'Nothing here' });
+    expect(heading.parentElement!.className).not.toContain('bg-surface-hover');
   });
 });

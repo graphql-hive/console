@@ -8,12 +8,12 @@ export namespace Json {
   export const isPrimitive = ZodHelpers.createTypeGuard(Primitive);
 
   export const Value: z.ZodType<Value> = z.lazy(() =>
-    z.union([Primitive, z.array(Value), z.record(Value)]),
+    z.union([Primitive, z.array(Value), z.record(z.string(), Value)]),
   );
   export type Value = Primitive | { [key: string]: Value } | Value[];
   export const isValue = ZodHelpers.createTypeGuard(Value);
 
-  export const Object: z.ZodType<Object> = z.record(Value);
+  export const Object: z.ZodType<Object> = z.record(z.string(), Value);
   export type Object = { [key: string]: Value };
   export const isObject = ZodHelpers.createTypeGuard(Object);
 }

@@ -13,7 +13,7 @@
     "@graphql-tools/merge": "catalog:",
     "@graphql-tools/stitch": "10.3.2",
     "@graphql-tools/stitching-directives": "4.1.1",
-    "@graphql-tools/utils": "12.0.3",
+    "@graphql-tools/utils": "catalog:",
     "@hive/service-common": "workspace:*",
     "@sentry/node": "catalog:",
     "@theguild/federation-composition": "catalog:",
@@ -30,6 +30,6 @@
     "nock": "catalog:",
     "pino-pretty": "catalog:",
     "reflect-metadata": "catalog:",
-    "zod": "3.25.76"
+    "zod": "catalog:"
   }
 }

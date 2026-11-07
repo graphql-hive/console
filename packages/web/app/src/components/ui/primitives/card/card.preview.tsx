@@ -1,4 +1,6 @@
+import { CopyIcon } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { Button } from '../button/button';
 import { Card } from './card';
 import * as styles from './card.preview.css';
 
@@ -48,6 +50,33 @@ export const ContentOnly = createPreview(() => (
       Padding is even on all four sides here, since there is no heading block above to supply it.
     </p>
   </Card>
+));
+
+/** `actions` sit at the trailing edge of the title row; the description runs full width under both. */
+export const WithActions = createPreview(() => (
+  <div className="flex w-[36rem] flex-col gap-4">
+    <Card
+      variants={{ onSurface: 'raised', titleSize: 'large' }}
+      title="Operation body"
+      actions={
+        <Button variant="outline" size="compact">
+          <CopyIcon className="size-3.5" />
+          Copy
+        </Button>
+      }
+    >
+      <pre className="text-xs text-fg-default">{'query Me {\n  me {\n    id\n  }\n}'}</pre>
+    </Card>
+    <Card
+      title="Members"
+      description="Everyone with access to this organization."
+      actions={
+        <Button variant="outline" size="compact">
+          Invite
+        </Button>
+      }
+    />
+  </div>
 ));
 
 /**

@@ -37,7 +37,7 @@ export function OrganizationSelector(props: { currentOrganizationSlug: string })
           },
         });
       }}
-      data-cy="organization-picker-trigger"
+      data-testid="organization-picker-trigger"
     />
   );
 }

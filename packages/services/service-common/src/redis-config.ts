@@ -86,7 +86,7 @@ export function parseRedisConfigFromEnvironment(
   if (!parseResult.success) {
     return {
       type: 'error',
-      errors: [JSON.stringify(parseResult.error.format(), null, 4)],
+      errors: [zod.prettifyError(parseResult.error)],
     };
   }
 

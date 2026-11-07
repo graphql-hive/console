@@ -16,13 +16,13 @@ import * as styles from './invitation-form.css';
 export const MemberInvitationFormSchema = z.object({
   email: z
     .string({
-      required_error: 'Please enter email address',
+      error: issue => (issue.input === undefined ? 'Please enter email address' : undefined),
     })
     .max(128, 'Email address is too long')
     .email('Please enter valid email address'),
   role: z
     .string({
-      required_error: 'Please select a role',
+      error: issue => (issue.input === undefined ? 'Please select a role' : undefined),
     })
     .min(1, 'Please select a role'),
 });

@@ -1,0 +1,100 @@
+diff --git a/dist/create-node-ponyfill.js b/dist/create-node-ponyfill.js
+index 8f2ec225b3d44471c82b1a12e3059c65577c7c7b..6c88c6972b46f5ba6951972f648ec9857ef8d939 100644
+--- a/dist/create-node-ponyfill.js
++++ b/dist/create-node-ponyfill.js
+@@ -28,6 +28,7 @@ module.exports = function createNodePonyfill(opts = {}) {
+       TextEncoderStream: globalThis.TextEncoderStream,
+       Blob: globalThis.Blob,
+       File: globalThis.File,
++      crypto: globalThis.crypto,
+       btoa: globalThis.btoa,
+       TextEncoder: globalThis.TextEncoder,
+       TextDecoder: globalThis.TextDecoder,
+@@ -58,6 +59,7 @@ module.exports = function createNodePonyfill(opts = {}) {
+ 
+   ponyfills.Blob = newNodeFetch.Blob;
+   ponyfills.File = newNodeFetch.File;
++  ponyfills.crypto = globalThis.crypto;
+   ponyfills.btoa = newNodeFetch.btoa;
+   ponyfills.TextEncoder = newNodeFetch.TextEncoder;
+   ponyfills.TextDecoder = newNodeFetch.TextDecoder;
+diff --git a/dist/esm-ponyfill.js b/dist/esm-ponyfill.js
+index 809ae99c81b0aa71c7e41b7f492a3ca63054997a..e1c9e0c8721a11ee57103f6f5028b118175afc7d 100644
+--- a/dist/esm-ponyfill.js
++++ b/dist/esm-ponyfill.js
+@@ -12,6 +12,7 @@ const TextDecoderStream = globalThis.TextDecoderStream;
+ const TextEncoderStream = globalThis.TextEncoderStream;
+ const Blob = globalThis.Blob;
+ const File = globalThis.File;
++const crypto = globalThis.crypto;
+ const btoa = globalThis.btoa;
+ const TextEncoder = globalThis.TextEncoder;
+ const TextDecoder = globalThis.TextDecoder;
+@@ -34,6 +35,7 @@ export {
+     TextEncoderStream,
+     Blob,
+     File,
++    crypto,
+     btoa,
+     TextEncoder,
+     TextDecoder,
+@@ -58,6 +60,7 @@ export function createFetch() {
+     TextEncoderStream,
+     Blob,
+     File,
++    crypto,
+     btoa,
+     TextEncoder,
+     TextDecoder,
+diff --git a/dist/global-ponyfill.js b/dist/global-ponyfill.js
+index b9709a04a51aed82179fb645aa791d2c91163487..72f3fb137935a7ab2491335d83de3529527cd7e1 100644
+--- a/dist/global-ponyfill.js
++++ b/dist/global-ponyfill.js
+@@ -12,6 +12,7 @@ module.exports.TextDecoderStream = globalThis.TextDecoderStream;
+ module.exports.TextEncoderStream = globalThis.TextEncoderStream;
+ module.exports.Blob = globalThis.Blob;
+ module.exports.File = globalThis.File;
++module.exports.crypto = globalThis.crypto;
+ module.exports.btoa = globalThis.btoa;
+ module.exports.TextEncoder = globalThis.TextEncoder;
+ module.exports.TextDecoder = globalThis.TextDecoder;
+@@ -33,6 +34,7 @@ module.exports.createFetch = () => ({
+   TextEncoderStream: globalThis.TextEncoderStream,
+   Blob: globalThis.Blob,
+   File: globalThis.File,
++  crypto: globalThis.crypto,
+   btoa: globalThis.btoa,
+   TextEncoder: globalThis.TextEncoder,
+   TextDecoder: globalThis.TextDecoder,
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 5b4aeb04435a37f28ee6cb69f3ed3eb10e4d5ace..eba84980615b309226865d71c8b3b8ea5d9649a4 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -20,6 +20,7 @@ declare module '@whatwg-node/fetch' {
+   export const TextEncoderStream: typeof globalThis.TextEncoderStream;
+   export const Blob: typeof globalThis.Blob;
+   export const File: typeof globalThis.File;
++  export const crypto: typeof globalThis.crypto;
+   export const btoa: typeof globalThis.btoa;
+   export const TextDecoder: typeof globalThis.TextDecoder;
+   export const TextEncoder: typeof globalThis.TextEncoder;
+@@ -61,6 +62,7 @@ declare module '@whatwg-node/fetch' {
+     TextEncoderStream: typeof TextEncoderStream;
+     Blob: typeof Blob;
+     File: typeof File;
++    crypto: typeof crypto;
+     btoa: typeof btoa;
+     TextEncoder: typeof TextEncoder;
+     TextDecoder: typeof TextDecoder;
+diff --git a/dist/node-ponyfill.js b/dist/node-ponyfill.js
+index b0c02764ff98caeeded52a904713524d97737cb6..daa7e58e40709d2213386e4f1cc86559c4f8e9eb 100644
+--- a/dist/node-ponyfill.js
++++ b/dist/node-ponyfill.js
+@@ -16,6 +16,7 @@ module.exports.TextDecoderStream = ponyfills.TextDecoderStream;
+ module.exports.TextEncoderStream = ponyfills.TextEncoderStream;
+ module.exports.Blob = ponyfills.Blob;
+ module.exports.File = ponyfills.File;
++module.exports.crypto = ponyfills.crypto;
+ module.exports.btoa = ponyfills.btoa;
+ module.exports.TextEncoder = ponyfills.TextEncoder;
+ module.exports.TextDecoder = ponyfills.TextDecoder;

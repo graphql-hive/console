@@ -15,7 +15,7 @@ type SwitchProps = NonNullable<Parameters<typeof switchRootVariants>[0]> & {
   id?: string;
   /** For a switch with no visible label, such as one in a table row. */
   'aria-label'?: string;
-  'data-cy'?: string;
+  'data-testid'?: string;
   /**
    * Draws the switch as a read-out of state rather than as a control: not focusable, hidden from
    * assistive tech, and taking the cursor of whatever owns the click. Example: a switch inside a
@@ -34,7 +34,7 @@ export function Switch({
   disabled,
   id,
   'aria-label': ariaLabel,
-  'data-cy': dataCy,
+  'data-testid': dataTestId,
 }: SwitchProps) {
   return (
     <BaseSwitch.Root
@@ -47,7 +47,7 @@ export function Switch({
       aria-label={ariaLabel}
       aria-hidden={decorative || undefined}
       tabIndex={decorative ? -1 : undefined}
-      data-cy={dataCy}
+      data-testid={dataTestId}
       // A toggle's click never means "also activate whatever I am sitting in", so it is stopped
       // here rather than at each call site that puts a switch inside a clickable row.
       onClick={event => event.stopPropagation()}

@@ -8,7 +8,6 @@ import {
   useState,
 } from 'react';
 import { formatISO } from 'date-fns';
-import { Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from 'urql';
 import { SlugForm, slugFormSchema, type SlugFormValues } from '@/components/common/slug-form';
@@ -27,7 +26,9 @@ import {
 import {
   DangerousChangesForm,
   DangerousChangesFormSchema,
-  PendingIndicator,
+  JustSavedLabel,
+  SavedLabel,
+  UnsavedChangesLabel,
   type DangerousChangesFormValues,
 } from '@/components/target/settings/dangerous-changes-form';
 import {
@@ -67,7 +68,6 @@ import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, Outlet, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './target-settings.css';
 
 /**
  * We previously used a different character for token masking.
@@ -192,7 +192,7 @@ function RegistryAccessTokens() {
   ];
 
   return (
-    <SubPageLayout data-cy="target-settings-registry-token">
+    <SubPageLayout data-testid="target-settings-registry-token">
       <SubPageLayoutHeader
         subPageTitle="Registry Access Tokens"
         description="Registry Access Tokens are used to access to Hive Registry and perform actions on your targets/projects. In most cases, this token is used from the Hive CLI."
@@ -201,15 +201,15 @@ function RegistryAccessTokens() {
           text: 'Learn more about Registry Access Tokens',
         }}
         sideContent={
-          <Button data-cy="new-button" onClick={toggleModalOpen}>
+          <Button data-testid="new-button" onClick={toggleModalOpen}>
             Create new registry token
           </Button>
         }
       />
-      <div className={styles.registryAccessTokensDiv}>
+      <div className="my-3.5 flex justify-end">
         {checked.length === 0 ? null : (
           <Button
-            data-cy="delete-button"
+            data-testid="delete-button"
             variant="destructive"
             disabled={deleting}
             onClick={deleteTokens}
@@ -251,6 +251,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [mutation, mutate] = useMutation(Settings_UpdateBaseSchemaMutation);
   const [baseSchema, setBaseSchema] = useState(props.baseSchema);
+  const [syntaxError, setSyntaxError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const isUnsaved = baseSchema?.trim() !== props.baseSchema?.trim();
@@ -270,18 +271,18 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         value={baseSchema}
         height={300}
         onChange={value => setBaseSchema(value ?? '')}
+        onSyntaxErrors={markers => setSyntaxError(markers[0]?.message ?? null)}
       />
+      {syntaxError && <div className="text-critical">{syntaxError}</div>}
       {mutation.data?.updateBaseSchema.error && (
-        <div className={styles.extendBaseSchemaDiv}>
-          {mutation.data.updateBaseSchema.error.message}
-        </div>
+        <div className="text-critical">{mutation.data.updateBaseSchema.error.message}</div>
       )}
       {mutation.error && (
-        <div className={styles.extendBaseSchemaDiv2}>
+        <div className="text-critical">
           {mutation.error?.graphQLErrors[0]?.message ?? mutation.error.message}
         </div>
       )}
-      <div className={styles.extendBaseSchemaDiv3}>
+      <div className="flex items-center gap-x-3">
         <Button
           disabled={mutation.fetching}
           onClick={async () => {
@@ -315,7 +316,7 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         <Button variant="outline" onClick={() => setBaseSchema(props.baseSchema)}>
           Reset
         </Button>
-        {isUnsaved && <span className={styles.extendBaseSchemaSpan}>Unsaved changes!</span>}
+        {isUnsaved && <span className="text-sm text-success">Unsaved changes!</span>}
       </div>
     </SubPageLayout>
   );
@@ -424,9 +425,7 @@ function AppDeploymentExclusion(
 
   if (availableAppDeploymentNamesQuery.error) {
     return (
-      <div className={styles.appDeploymentExclusionDiv}>
-        Failed to load app deployments. Please try again.
-      </div>
+      <div className="text-sm text-critical">Failed to load app deployments. Please try again.</div>
     );
   }
 
@@ -746,7 +745,7 @@ export const BreakingChanges = () => {
         />
 
         {dangerousAsBreaking.error && (
-          <span className={styles.breakingChangesSpan}>
+          <span className="ml-2 text-critical">
             {dangerousAsBreaking.error?.graphQLErrors[0]?.message ??
               dangerousAsBreaking.error.message}
           </span>
@@ -933,7 +932,9 @@ export const AppDeploymentProtection = () => {
               </p>
               <p>
                 Use{' '}
-                <code className={styles.appDeploymentProtectionCode}>hive app:retire --force</code>{' '}
+                <code className="rounded-sm bg-surface-code px-1 py-0.5 text-xs">
+                  hive app:retire --force
+                </code>{' '}
                 to bypass protection.
               </p>
             </>
@@ -1048,8 +1049,7 @@ function TargetSlug() {
         description={
           <p>
             This is your target's URL namespace on Hive. Changing it{' '}
-            <span className={styles.targetSlugSpan}>will</span> invalidate any existing links to
-            your target.
+            <span className="font-bold">will</span> invalidate any existing links to your target.
           </p>
         }
         docsLink={{
@@ -1359,11 +1359,11 @@ export function TargetSettingsPage() {
                 to: section.to,
                 params: slugs,
                 exact: section.exact,
-                attrs: { 'data-cy': `target-settings-${section.id}-link` },
+                attrs: { 'data-testid': `target-settings-${section.id}-link` },
               }))}
             />
             <PageLayoutContent>
-              <div className={styles.targetSettingsPageDiv}>
+              <div className="space-y-12">
                 <Outlet />
               </div>
             </PageLayoutContent>
@@ -1593,41 +1593,6 @@ export function DangerousChangeTypeForm({
       }
       error={error}
     />
-  );
-}
-
-function JustSavedLabel() {
-  return (
-    <div className={styles.justSavedLabelDiv}>
-      <JustSavedIndicator />
-      <span>Saved just now</span>
-    </div>
-  );
-}
-
-function JustSavedIndicator() {
-  return <Check className={styles.justSavedIndicatorCheck} />;
-}
-
-function SavedLabel() {
-  return (
-    <div className={styles.savedLabelDiv}>
-      <SavedIndicator />
-      <span>All changes saved</span>
-    </div>
-  );
-}
-
-function SavedIndicator() {
-  return <Check className={styles.savedIndicatorCheck} />;
-}
-
-function UnsavedChangesLabel() {
-  return (
-    <div className={styles.unsavedChangesLabelDiv}>
-      <PendingIndicator />
-      <span>Unsaved changes</span>
-    </div>
   );
 }
 

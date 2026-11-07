@@ -451,6 +451,91 @@ test.concurrent('check usage from two selected targets', async ({ expect }) => {
   expect(usedCheckResult.schemaCheck.valid).toEqual(true);
 });
 
+test.concurrent(
+  'cannot use a target from another organization for conditional breaking change detection',
+  async ({ expect }) => {
+    // Victim organization with usage data for Query.ping
+    const victim = await initSeed().createOwner();
+    const victimOrg = await victim.createOrg();
+    const {
+      target: victimTarget,
+      createTargetAccessToken: createVictimTargetAccessToken,
+      waitForRequestsCollected: waitForVictimRequestsCollected,
+    } = await victimOrg.createProject(ProjectType.Single);
+    const victimToken = await createVictimTargetAccessToken({});
+
+    const collectResult = await victimToken.collectLegacyOperations([
+      {
+        timestamp: Date.now(),
+        operation: 'query ping { ping }',
+        operationName: 'ping',
+        fields: ['Query', 'Query.ping'],
+        execution: {
+          ok: true,
+          duration: 200_000_000,
+          errorsTotal: 0,
+        },
+      },
+    ]);
+    expect(collectResult.status).toEqual(200);
+    await waitForVictimRequestsCollected(1);
+
+    // Attacker organization
+    const attacker = await initSeed().createOwner();
+    const attackerOrg = await attacker.createOrg();
+    const {
+      project: attackerProject,
+      target: attackerTarget,
+      createTargetAccessToken: createAttackerTargetAccessToken,
+      toggleTargetValidation,
+    } = await attackerOrg.createProject(ProjectType.Single);
+    const attackerToken = await createAttackerTargetAccessToken({});
+
+    await attackerToken
+      .publishSchema({
+        author: 'attacker',
+        commit: 'init',
+        sdl: `type Query { ping: String me: String }`,
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const targetValidationResult = await toggleTargetValidation(true);
+    expect(targetValidationResult.isEnabled).toEqual(true);
+
+    const updateResult = await updateTargetValidationSettings(
+      {
+        target: {
+          bySelector: {
+            organizationSlug: attackerOrg.organization.slug,
+            projectSlug: attackerProject.slug,
+            targetSlug: attackerTarget.slug,
+          },
+        },
+        conditionalBreakingChangeConfiguration: {
+          percentage: 0,
+          period: 2,
+          targetIds: [attackerTarget.id, victimTarget.id],
+        },
+      },
+      {
+        authToken: attacker.ownerToken,
+      },
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(updateResult.updateTargetConditionalBreakingChangeConfiguration.ok).toBeNull();
+    expect(
+      updateResult.updateTargetConditionalBreakingChangeConfiguration.error?.inputErrors.targetIds,
+    ).toBeDefined();
+
+    // Query.ping has no usage on the attacker target, so removing it must be safe.
+    // If the victim target were used, the victim's usage would make this check fail.
+    const checkResult = await attackerToken
+      .checkSchema(`type Query { me: String }`)
+      .then(r => r.expectNoGraphQLErrors());
+    expect(checkResult.schemaCheck.__typename).toEqual('SchemaCheckSuccess');
+  },
+);
+
 const BreakingChangeAffectedTargetsQuery = graphql(`
   query BreakingChangeAffectedTargets($target: TargetReferenceInput!, $id: ID!) {
     target(reference: $target) {
@@ -4228,3 +4313,98 @@ describe('exclude filters', () => {
     },
   );
 });
+
+test.concurrent(
+  'Mutation.updateTargetConditionalBreakingChangeConfiguration: values below minimum',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+    const result = await updateTargetValidationSettings(
+      {
+        target: { byId: target.id },
+        conditionalBreakingChangeConfiguration: {
+          period: 0,
+          percentage: -1,
+          requestCount: 0,
+          targetIds: [],
+        },
+      },
+      { authToken: ownerToken },
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.updateTargetConditionalBreakingChangeConfiguration.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          percentage: Percentage must be at least 0,
+          period: Period must be at least 1 day,
+          requestCount: Request count must be at least 1,
+          targetIds: At least one target must be provided,
+        },
+        message: Please check your input.,
+      }
+    `);
+  },
+);
+
+test.concurrent(
+  'Mutation.updateTargetConditionalBreakingChangeConfiguration: values above maximum',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+    const result = await updateTargetValidationSettings(
+      {
+        target: { byId: target.id },
+        conditionalBreakingChangeConfiguration: {
+          period: 1000,
+          percentage: 101,
+          targetIds: ['not-a-uuid'],
+        },
+      },
+      { authToken: ownerToken },
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.updateTargetConditionalBreakingChangeConfiguration.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          percentage: Percentage must be at most 100,
+          period: Period must be at most 7 days, the data retention period of your organization,
+          requestCount: null,
+          targetIds: Incorrect UUID provided,
+        },
+        message: Please check your input.,
+      }
+    `);
+  },
+);
+
+test.concurrent(
+  'Mutation.updateTargetConditionalBreakingChangeConfiguration: percentage with too many decimals',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+    const result = await updateTargetValidationSettings(
+      {
+        target: { byId: target.id },
+        conditionalBreakingChangeConfiguration: {
+          percentage: 1.234,
+        },
+      },
+      { authToken: ownerToken },
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.updateTargetConditionalBreakingChangeConfiguration.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          percentage: Percentage can have at most 2 decimal places, e.g. 0.25,
+          period: null,
+          requestCount: null,
+          targetIds: null,
+        },
+        message: Please check your input.,
+      }
+    `);
+  },
+);

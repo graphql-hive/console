@@ -43,7 +43,7 @@ type ScrollAreaProps = {
   maxHeight?: keyof typeof maxHeightClass;
   /** Take the remaining height of a flex column, for a panel that fills what is left of a page or a card. */
   fill?: boolean;
-  'data-cy'?: string;
+  'data-testid'?: string;
 };
 
 /**
@@ -51,12 +51,12 @@ type ScrollAreaProps = {
  * log pane that follows its tail).
  */
 export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(function ScrollArea(
-  { children, axis = 'vertical', height, maxHeight, fill, 'data-cy': dataCy },
+  { children, axis = 'vertical', height, maxHeight, fill, 'data-testid': dataTestId },
   ref,
 ) {
   return (
     <BaseScrollArea.Root
-      data-cy={dataCy}
+      data-testid={dataTestId}
       // A flex column so a max-height on the root constrains the viewport, which a percentage
       // height on the viewport would not. `contain-inline-size` stops the content's width from
       // counting as the area's own: a grid or flex parent sizing its track to min-content would

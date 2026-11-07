@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import zod from 'zod';
 import {
+  extractConfig,
   parseClickHouseConfigFromEnvironment,
   resolveServerListenOptions,
 } from '@hive/service-common';
@@ -32,7 +33,7 @@ const EnvironmentModel = zod.object({
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
-  HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
+  HEARTBEAT_ENDPOINT: emptyString(zod.url().optional()),
   AWS_REGION: emptyString(zod.string().optional()),
 });
 
@@ -63,7 +64,7 @@ const KafkaBaseModel = zod.object({
 
 const KafkaModel = zod.union([
   KafkaBaseModel.extend({
-    KAFKA_SASL_MECHANISM: zod.void(),
+    KAFKA_SASL_MECHANISM: zod.never().optional(),
   }),
   KafkaBaseModel.extend({
     KAFKA_SASL_MECHANISM: zod.union([
@@ -147,7 +148,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+    environmentErrors.push(zod.prettifyError(config.error));
   }
 }
 
@@ -174,13 +175,6 @@ if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
   process.exit(1);
-}
-
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
-  if (!config.success) {
-    throw new Error('Something went wrong.');
-  }
-  return config.data;
 }
 
 const base = extractConfig(configs.base);
@@ -264,7 +258,7 @@ export const env = {
           labels: {
             instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'usage-ingestor-service',
           },
-          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
+          port: prometheus.PROMETHEUS_METRICS_PORT,
         }
       : null,
   migration: {

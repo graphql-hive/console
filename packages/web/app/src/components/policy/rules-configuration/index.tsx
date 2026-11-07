@@ -15,9 +15,10 @@ import * as styles from './index.css';
 export const PolicyFormSchema = z.object({
   allowOverrides: z.boolean(),
   rules: z.record(
+    z.string(),
     z.object({
       enabled: z.boolean(),
-      severity: z.nativeEnum(RuleInstanceSeverityLevel),
+      severity: z.enum(RuleInstanceSeverityLevel),
       config: z.unknown(),
     }),
   ),

@@ -31,7 +31,6 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Outlet, useRouter } from '@tanstack/react-router';
-import * as styles from './organization-settings.css';
 
 const DeleteSlackIntegrationMutation = graphql(`
   mutation Integrations_DeleteSlackIntegration($input: OrganizationSelectorInput!) {
@@ -73,7 +72,7 @@ function GitHubIntegrationSection(props: {
   );
 
   return organization.hasGitHubIntegration ? (
-    <div className={styles.gitHubIntegrationSectionDiv}>
+    <div className="flex flex-row justify-start gap-3">
       <Button
         variant="destructive"
         disabled={deleteGitHubMutation.fetching}
@@ -85,16 +84,19 @@ function GitHubIntegrationSection(props: {
           });
         }}
       >
-        <GitHubIcon className={styles.gitHubIntegrationSectionGitHubIcon} />
+        <GitHubIcon className="mr-2" />
         Disconnect GitHub
       </Button>
-      <Button variant="destructive" anchor={{ href: `/api/github/connect/${organization.slug}` }}>
+      <Button
+        variant="destructive"
+        anchor={{ href: `${env.graphqlPublicOrigin}/api/github/connect/${organization.slug}` }}
+      >
         Adjust permissions
       </Button>
     </div>
   ) : (
-    <Button anchor={{ href: `/api/github/connect/${organization.slug}` }}>
-      <GitHubIcon className={styles.gitHubIntegrationSectionGitHubIcon2} />
+    <Button anchor={{ href: `${env.graphqlPublicOrigin}/api/github/connect/${organization.slug}` }}>
+      <GitHubIcon className="mr-2" />
       Connect GitHub
     </Button>
   );
@@ -129,12 +131,12 @@ function SlackIntegrationSection(props: {
         });
       }}
     >
-      <SlackIcon className={styles.slackIntegrationSectionSlackIcon} />
+      <SlackIcon className="mr-2" />
       Disconnect Slack
     </Button>
   ) : (
-    <Button anchor={{ href: `/api/slack/connect/${organization.slug}` }}>
-      <SlackIcon className={styles.slackIntegrationSectionSlackIcon2} />
+    <Button anchor={{ href: `${env.graphqlPublicOrigin}/api/slack/connect/${organization.slug}` }}>
+      <SlackIcon className="mr-2" />
       Connect Slack
     </Button>
   );
@@ -241,7 +243,7 @@ const OrganizationSettingsContent = (props: {
   );
 
   return (
-    <div className={styles.organizationSettingsContentDiv}>
+    <div className="space-y-12">
       <ResourceDetails id={organization.id} label="Organization ID" />
       {organization.viewerCanModifySlug && (
         <>
@@ -250,8 +252,8 @@ const OrganizationSettingsContent = (props: {
             description={
               <p>
                 This is your organization's URL namespace on Hive Console. Changing it{' '}
-                <span className={styles.organizationSettingsContentSpan}>will invalidate</span> any
-                existing links to your organization.
+                <span className="font-bold">will invalidate</span> any existing links to your
+                organization.
               </p>
             }
             docsLink={{
@@ -475,7 +477,7 @@ function OrganizationPolicySettings(props: {
         currentState={currentOrganization.schemaPolicy}
       >
         {({ allowOverrides, setAllowOverrides }) => (
-          <div className={styles.organizationPolicySettingsDiv}>
+          <div className="flex items-center pt-2 pl-1">
             <Checkbox
               id="allowOverrides"
               checked={allowOverrides}
@@ -483,7 +485,7 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={setAllowOverrides}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className={styles.organizationPolicySettingsLabel}>
+            <label htmlFor="allowOverrides" className="ml-2 inline-block text-sm text-fg-default">
               Allow projects to override or disable rules
             </label>
           </div>
@@ -575,7 +577,7 @@ export function OrganizationSettingsPage() {
     <>
       <Meta title="Organization settings" />
       {currentOrganization ? (
-        <LayoutContent className={styles.organizationSettingsPageLayoutContent}>
+        <LayoutContent className="flex flex-col gap-y-10">
           <PageLayout>
             <Navigation
               aria-label="Settings"
@@ -585,11 +587,11 @@ export function OrganizationSettingsPage() {
                 to: section.to,
                 params: slugs,
                 exact: section.exact,
-                attrs: { 'data-cy': `link-${section.id}` },
+                attrs: { 'data-testid': `link-${section.id}` },
               }))}
             />
             <PageLayoutContent>
-              <div className={styles.organizationSettingsPageDiv}>
+              <div className="space-y-12">
                 <Outlet />
               </div>
             </PageLayoutContent>

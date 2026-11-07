@@ -52,8 +52,16 @@ export function deployProxy({
         requestTimeout: '60s',
       },
       {
-        name: 'server',
-        path: '/server',
+        name: 'github-integration',
+        path: '/api/github',
+        customRewrite: '/api/github',
+        service: graphql.service,
+        requestTimeout: '60s',
+      },
+      {
+        name: 'slack-integration',
+        path: '/api/slack',
+        customRewrite: '/api/slack',
         service: graphql.service,
         requestTimeout: '60s',
       },

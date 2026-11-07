@@ -371,5 +371,5 @@ export class CdnProvider {
 
 const AliasStringModel = z
   .string()
-  .min(3, 'Must be at least 3 characters long.')
-  .max(100, 'Can not be longer than 100 characters.');
+  .min(3, 'Must be at least 3 characters long')
+  .max(100, 'Can not be longer than 100 characters');

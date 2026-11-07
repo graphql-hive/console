@@ -3,13 +3,12 @@ import { KeyIcon } from 'lucide-react';
 import { useMutation, useQuery } from 'urql';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Button } from '@/components/ui/primitives/button/button';
-import { Skeleton } from '@/components/ui/primitives/skeleton/skeleton';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { OIDCIntegrationConfiguration } from './oidc-integration-configuration';
-import * as styles from './single-sign-on-subpage.css';
+import { SingleSignOnLoadingSkeleton } from './single-sign-on-loading-skeleton';
 
 export const SingleSignOnSubpageQuery = graphql(`
   query SingleSignOnSubpageQuery($organizationSlug: String!) {
@@ -86,9 +85,9 @@ export function SingleSignOnSubpage(): React.ReactNode {
           text: 'Documentation',
         }}
       />
-      <div className={styles.singleSignOnSubpageDiv}>
+      <div className="max-w-[800px] space-y-4 text-fg-secondary">
         {(query.fetching || query.stale) && !oidcIntegration ? (
-          <LoadingSkeleton />
+          <SingleSignOnLoadingSkeleton />
         ) : oidcIntegration ? (
           <OIDCIntegrationConfiguration
             oidcIntegration={oidcIntegration}
@@ -96,12 +95,12 @@ export function SingleSignOnSubpage(): React.ReactNode {
           />
         ) : (
           <>
-            <div className={styles.singleSignOnSubpageDiv2}>
+            <div className="mt-5">
               <Button
                 onClick={() => setModalState(ConnectSingleSignOnProviderState.open)}
                 data-button-connect-open-id-provider
               >
-                <KeyIcon className={styles.singleSignOnSubpageKeyIcon} />
+                <KeyIcon className="mr-2" />
                 Connect Open ID Connect Provider
               </Button>
             </div>
@@ -160,92 +159,5 @@ export function SingleSignOnSubpage(): React.ReactNode {
         )}
       </div>
     </SubPageLayout>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <>
-      {/* Overview Section */}
-      <section className={styles.loadingSkeletonSection}>
-        <span className={styles.loadingSkeletonSpan}>
-          <Skeleton variants={{ size: 'xl', width: 'full' }} />
-        </span>
-        <span className={styles.loadingSkeletonSpan2}>
-          <Skeleton variants={{ width: 'full' }} />
-        </span>
-        <div className={styles.loadingSkeletonDiv}>
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className={styles.loadingSkeletonDiv2}>
-              <span className={styles.loadingSkeletonSpan3}>
-                <Skeleton variants={{ width: 'full' }} />
-              </span>
-              <span className={styles.loadingSkeletonSpan4}>
-                <Skeleton variants={{ width: 'full' }} />
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* OIDC Configuration Section */}
-      <section className={styles.loadingSkeletonSection2}>
-        <span className={styles.loadingSkeletonSpan5}>
-          <Skeleton variants={{ size: 'xl', width: 'full' }} />
-        </span>
-        <div className={styles.loadingSkeletonDiv3}>
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className={styles.loadingSkeletonDiv4}>
-              <span className={styles.loadingSkeletonSpan6}>
-                <Skeleton variants={{ width: 'full' }} />
-              </span>
-              <span className={styles.loadingSkeletonSpan7}>
-                <Skeleton variants={{ width: 'full' }} />
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Registered Domains Section */}
-      <section className={styles.loadingSkeletonSection3}>
-        <span className={styles.loadingSkeletonSpan8}>
-          <Skeleton variants={{ size: 'xl', width: 'full' }} />
-        </span>
-        <span className={styles.loadingSkeletonSpan9}>
-          <Skeleton variants={{ width: 'full' }} />
-        </span>
-        <div className={styles.loadingSkeletonDiv5}>
-          <span className={styles.loadingSkeletonSpan10}>
-            <Skeleton variants={{ width: 'full' }} />
-          </span>
-          <span className={styles.loadingSkeletonSpan11}>
-            <Skeleton variants={{ width: 'full' }} />
-          </span>
-        </div>
-      </section>
-
-      {/* Access Settings Section */}
-      <section className={styles.loadingSkeletonSection4}>
-        <span className={styles.loadingSkeletonSpan12}>
-          <Skeleton variants={{ size: 'xl', width: 'full' }} />
-        </span>
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className={styles.loadingSkeletonDiv6}>
-            <div className={styles.loadingSkeletonDiv7}>
-              <span className={styles.loadingSkeletonSpan13}>
-                <Skeleton variants={{ width: 'full' }} />
-              </span>
-              <span className={styles.loadingSkeletonSpan14}>
-                <Skeleton variants={{ size: 'sm', width: 'full' }} />
-              </span>
-            </div>
-            <span className={styles.loadingSkeletonSpan15}>
-              <Skeleton variants={{ shape: 'block' }} />
-            </span>
-          </div>
-        ))}
-      </section>
-    </>
   );
 }

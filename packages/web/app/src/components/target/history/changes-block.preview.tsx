@@ -7,163 +7,19 @@ import { DescriptionList } from '@/components/ui/primitives/description-list/des
 import { Select } from '@/components/ui/primitives/floating/select/select';
 import { ScopeBar } from '@/components/ui/scope-bar/scope-bar';
 import { TabbedView } from '@/components/ui/tabbed-view/tabbed-view';
-import { makeFragmentData } from '@/gql';
-import { SeverityLevelType } from '@/gql/graphql';
+import { makeFragmentData, type DocumentType } from '@/gql';
+import { SchemaChangeKind, SeverityLevelType } from '@/gql/graphql';
 import { RouterAt } from '../../../../foundry.router';
+import { buildChanges, metadata, PATH } from './changes-block.fixtures';
 import {
   ChangesBlock,
+  ChangesBlock_SchemaChangeApprovalFragment,
+  ChangesBlock_SchemaChangeFragment,
   ChangesBlock_SchemaChangeWithUsageFragment,
-  ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment,
 } from './errors-and-changes';
 import * as styles from './changes-block.preview.css';
 
 export const nav: NavPath = 'Components/ChangesBlock';
-
-const PATH = '/the-guild/graphql-hive/staging';
-const PERIOD = { from: '2026-10-01T10:00:00.000Z', to: '2026-10-08T10:00:00.000Z' };
-
-type PreviewTarget = { id: string; slug: string; target: { id: string; slug: string } | null };
-
-const TARGET_SLUGS = [
-  'production-eu',
-  'production-us',
-  'staging',
-  'app-web',
-  'app-ios',
-  'app-android',
-  'partner-api',
-  'internal-tools',
-  'sandbox',
-  'canary',
-  'legacy',
-];
-
-const TARGETS: PreviewTarget[] = TARGET_SLUGS.map((slug, index) => ({
-  id: `target-${index + 1}`,
-  slug,
-  target: { id: `target-${index + 1}`, slug },
-}));
-
-const CLIENTS = [{ name: 'webapp', countFormatted: '255.2M', percentageFormatted: '44.06%' }];
-
-const CHANGES = [
-  { type: 'FunnelMetrics_ClosedWon', operation: 'FunnelMetricsClosedWon', hash: 'a0ec' },
-  { type: 'FunnelMetrics_Created', operation: 'FunnelMetricsCreated', hash: 'bdd1' },
-  { type: 'ProspectsContacted', operation: 'ProspectsContacted', hash: 'fb2a' },
-  { type: 'ProspectsContactedActivity', operation: 'ProspectsContactedActivity', hash: '49ce' },
-];
-
-const hashOf = (prefix: string, index: number) => `${prefix}${index}`.padEnd(40, prefix);
-
-const metadata = (targets: PreviewTarget[]) =>
-  makeFragmentData(
-    {
-      __typename: 'SchemaCheckConditionalBreakingChangeMetadata' as const,
-      period: { __typename: 'DateRange' as const, ...PERIOD },
-      settings: {
-        __typename: 'SchemaCheckConditionalBreakingChangeMetadataSettings' as const,
-        retentionInDays: 7,
-        targets: targets.map(target => ({
-          __typename: 'BreakingChangeMetadataTarget' as const,
-          id: target.id,
-          slug: target.slug,
-          target: target.target ? { __typename: 'Target' as const, ...target.target } : null,
-        })),
-      },
-    },
-    ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment,
-  );
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-const targetUsage = (target: PreviewTarget, count: number) => ({
-  __typename: 'SchemaChangeUsageStatisticsAffectedTarget' as const,
-  target: {
-    __typename: 'BreakingChangeMetadataTarget' as const,
-    id: target.id,
-    slug: target.slug,
-    target: target.target ? { __typename: 'Target' as const, ...target.target } : null,
-  },
-  count,
-  countFormatted: String(count),
-});
-
-// Later operations reach fewer targets, so their "Seen in" differs from the change's.
-function buildChanges(args: {
-  usedTargets: number;
-  unusedTargets: number;
-  operations: number;
-  legacy: boolean;
-}) {
-  const usedCount = clamp(args.usedTargets, 1, 3);
-  const targets = TARGETS.slice(
-    0,
-    usedCount + clamp(args.unusedTargets, 0, TARGETS.length - usedCount),
-  );
-  const used = targets.slice(0, usedCount);
-  const spread = (index: number) =>
-    index === 0 ? used : index === 1 ? used.slice(0, 1) : used.slice(-1);
-
-  const changes = CHANGES.map(change => {
-    const operations = Array.from({ length: clamp(args.operations, 1, 3) }, (_, index) => ({
-      targets: spread(index),
-      name: index === 0 ? change.operation : `${change.operation}${index + 1}`,
-      hash: hashOf(change.hash, index),
-    }));
-    const countFor = (target: PreviewTarget) =>
-      operations.filter(operation => operation.targets.includes(target)).length;
-    const total = operations.reduce((sum, operation) => sum + operation.targets.length, 0);
-
-    return makeFragmentData(
-      {
-        __typename: 'SchemaChange' as const,
-        path: [change.type],
-        message: `Type '${change.type}' was removed`,
-        severityLevel: SeverityLevelType.Breaking,
-        severityReason:
-          'Removing a type is a breaking change. It is preferable to deprecate and remove all references to this type first.',
-        isSafeBasedOnUsage: false,
-        approval: null,
-        usageStatistics: {
-          __typename: 'SchemaChangeUsageStatistics' as const,
-          topAffectedOperations: operations.map(operation => ({
-            __typename: 'SchemaChangeUsageStatisticsAffectedOperation' as const,
-            hash: operation.hash,
-            name: operation.name,
-            countFormatted: String(operation.targets.length),
-            percentageFormatted: '<0.01%',
-            affectedTargets: args.legacy
-              ? null
-              : operation.targets.map(target => ({
-                  __typename: 'SchemaChangeUsageStatisticsAffectedTarget' as const,
-                  target: {
-                    __typename: 'BreakingChangeMetadataTarget' as const,
-                    id: target.id,
-                    slug: target.slug,
-                  },
-                })),
-          })),
-          topAffectedClients: CLIENTS.map(client => ({
-            __typename: 'SchemaChangeUsageStatisticsAffectedClient' as const,
-            ...client,
-            countFormatted: args.legacy ? client.countFormatted : String(total),
-          })),
-          affectedTargets: args.legacy
-            ? null
-            : used.map(target => ({
-                ...targetUsage(target, countFor(target)),
-                operationCount: countFor(target),
-              })),
-          schemaCoordinate: args.legacy ? null : change.type,
-        },
-        affectedAppDeployments: null,
-      },
-      ChangesBlock_SchemaChangeWithUsageFragment,
-    );
-  });
-
-  return { targets, changes };
-}
 
 function ChangesView(props: {
   usedTargets: number;
@@ -327,3 +183,204 @@ export const OnTheCheckPage = createPreview({
   controls: controlsFor(CheckPageView, countControls),
   render: v => <CheckPageView {...v} />,
 });
+
+type UsageLabelChange = DocumentType<typeof ChangesBlock_SchemaChangeWithUsageFragment>;
+
+const APPROVAL = {
+  __typename: 'SchemaChangeApproval' as const,
+  ...makeFragmentData(
+    {
+      __typename: 'SchemaChangeApproval' as const,
+      approvedBy: { __typename: 'User' as const, id: 'user-1', displayName: 'User' },
+      cliApprovalMetadata: null,
+      approvedAt: '2026-10-20T10:00:00.000Z',
+      schemaCheckId: 'check-1',
+    },
+    ChangesBlock_SchemaChangeApprovalFragment,
+  ),
+};
+
+function usageLabelChange(
+  change: Pick<
+    UsageLabelChange,
+    'path' | 'message' | 'severityReason' | 'isUsageTracked' | 'kind'
+  > &
+    Partial<Pick<UsageLabelChange, 'approval' | 'affectedAppDeployments'>>,
+) {
+  return makeFragmentData(
+    {
+      __typename: 'SchemaChange' as const,
+      severityLevel: SeverityLevelType.Breaking,
+      isSafeBasedOnUsage: true,
+      approval: null,
+      usageStatistics: null,
+      affectedAppDeployments: null,
+      ...change,
+    },
+    ChangesBlock_SchemaChangeWithUsageFragment,
+  );
+}
+
+// Inspector's messages and reasons, verbatim. A change marked safe based on usage whose usage is
+// never recorded gets an honest label, and a change with nothing to show is a static row.
+const USAGE_LABEL_CHANGES = [
+  {
+    path: ['Currency'],
+    message: "Type 'Currency' was removed",
+    severityReason: null,
+    isUsageTracked: false,
+    kind: SchemaChangeKind.TypeRemoved,
+  },
+  {
+    // Reached only through an interface, so no field change on the check points at it.
+    path: ['Dog'],
+    message: "Type 'Dog' was removed",
+    severityReason: null,
+    isUsageTracked: false,
+    kind: SchemaChangeKind.TypeRemoved,
+  },
+  {
+    path: ['SearchResult'],
+    message: "Member 'Movie' was removed from Union type 'SearchResult'",
+    severityReason:
+      'Removing a union member from a union can cause existing queries that use this union member in a fragment spread to error.',
+    isUsageTracked: false,
+    kind: SchemaChangeKind.UnionMemberRemoved,
+  },
+  {
+    path: ['Status'],
+    message: "'Status' kind changed from 'EnumTypeDefinition' to 'ScalarTypeDefinition'",
+    severityReason:
+      'Changing the kind of a type is a breaking change because it can cause existing queries to error. For example, turning an object type to a scalar type would break queries that define a selection set for this type.',
+    isUsageTracked: false,
+    kind: SchemaChangeKind.TypeKindChanged,
+    approval: APPROVAL,
+  },
+  {
+    path: ['Query', 'products', 'region'],
+    message: "Argument 'region: String!' added to field 'Query.products'",
+    severityReason: null,
+    isUsageTracked: false,
+    kind: SchemaChangeKind.FieldArgumentAdded,
+  },
+  {
+    // Usage is recorded for fields, so "safe based on usage" holds here.
+    path: ['User', 'legacyId'],
+    message: "Field 'legacyId' was removed from object type 'User'",
+    severityReason:
+      'Removing a field is a breaking change. It is preferable to deprecate the field before removing it. This applies to removed union fields as well, since removal breaks client operations that contain fragments that reference the removed type through direct (... on RemovedType) or indirect means such as __typename in the consumers.',
+    isUsageTracked: true,
+    kind: SchemaChangeKind.FieldRemoved,
+    approval: APPROVAL,
+    affectedAppDeployments: {
+      __typename: 'SchemaChangeAffectedAppDeploymentsConnection' as const,
+      totalCount: 101,
+      edges: [],
+    },
+  },
+].map(usageLabelChange);
+
+/** Breaking changes the check found no usage for, labelled by whether usage is recorded at all. */
+export const UsageLabels = createPreview(() => (
+  <RouterAt path={PATH}>
+    <div className="w-[72rem]">
+      <ChangesBlock
+        schemaCheckId="check-1"
+        title="Breaking Changes"
+        changesWithUsage={USAGE_LABEL_CHANGES}
+        conditionBreakingChangeMetadata={null}
+      />
+    </div>
+  </RouterAt>
+));
+
+// Inspector's messages, verbatim, as a safe-change group and a version list render them.
+function plainChange(change: {
+  path: string[];
+  message: string;
+  kind: SchemaChangeKind;
+  breaking?: boolean;
+}) {
+  return makeFragmentData(
+    {
+      __typename: 'SchemaChange' as const,
+      path: change.path,
+      message: change.message,
+      kind: change.kind,
+      severityLevel: change.breaking ? SeverityLevelType.Breaking : SeverityLevelType.Safe,
+      severityReason: null,
+      approval: null,
+      isSafeBasedOnUsage: false,
+      isUsageTracked: false,
+    },
+    ChangesBlock_SchemaChangeFragment,
+  );
+}
+
+const CHECK_SAFE_CHANGES = [
+  plainChange({
+    path: ['NewThing'],
+    message: "Type 'NewThing' was added",
+    kind: SchemaChangeKind.TypeAdded,
+  }),
+  plainChange({
+    path: ['User', 'email'],
+    message: "Field 'email' was added to object type 'User'",
+    kind: SchemaChangeKind.FieldAdded,
+  }),
+  plainChange({
+    path: ['User'],
+    message: "Description 'old' on type 'User' has changed to 'new'",
+    kind: SchemaChangeKind.TypeDescriptionChanged,
+  }),
+];
+
+const VERSION_CHANGES = [
+  plainChange({
+    path: ['User', 'email'],
+    message: "Field 'email' was added to object type 'User'",
+    kind: SchemaChangeKind.FieldAdded,
+  }),
+  plainChange({
+    path: ['User', 'legacyId'],
+    message: "Field 'legacyId' was removed from object type 'User'",
+    kind: SchemaChangeKind.FieldRemoved,
+    breaking: true,
+  }),
+  plainChange({
+    path: ['Status'],
+    message: "'Status' kind changed from 'EnumTypeDefinition' to 'ScalarTypeDefinition'",
+    kind: SchemaChangeKind.TypeKindChanged,
+    breaking: true,
+  }),
+  plainChange({
+    path: ['@cacheControl'],
+    message: "Directive 'cacheControl' was removed",
+    kind: SchemaChangeKind.DirectiveRemoved,
+    breaking: true,
+  }),
+];
+
+/**
+ * An Explorer link beside each change whose coordinate the latest version has. A check hides its
+ * additions; a version hides its removals; directives never link.
+ */
+export const ExplorerLinks = createPreview(() => (
+  <RouterAt path={PATH}>
+    <div className="w-[72rem] space-y-8">
+      <ChangesBlock
+        schemaCheckId="check-1"
+        title="Breaking Changes"
+        explorerLinks="check"
+        changesWithUsage={USAGE_LABEL_CHANGES}
+        conditionBreakingChangeMetadata={null}
+      />
+      <ChangesBlock schemaCheckId="check-1" explorerLinks="check" changes={CHECK_SAFE_CHANGES} />
+      <ChangesBlock
+        title="Changes in this version"
+        explorerLinks="version"
+        changes={VERSION_CHANGES}
+      />
+    </div>
+  </RouterAt>
+));

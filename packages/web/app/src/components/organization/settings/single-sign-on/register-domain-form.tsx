@@ -14,7 +14,7 @@ const FQDNModel = z
   .string()
   .min(3, 'Must be at least 3 characters long')
   .max(255, 'Must be at most 255 characters long.')
-  .regex(/^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]+$/, 'Invalid domain provided.');
+  .regex(/^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]+$/, 'Invalid domain provided');
 
 export const RegisterDomainFormSchema = z.object({
   domainName: FQDNModel,

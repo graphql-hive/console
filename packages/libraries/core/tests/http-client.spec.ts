@@ -1,5 +1,5 @@
 import { HTTPResponseError, makeFetchCall } from '../src/client/http-client';
-import { createHiveTestingLogger, fastFetchError } from './test-utils';
+import { createHiveTestingLogger, fastFetchError, waitFor } from './test-utils';
 
 test('HTTP call without retries and system level error', async () => {
   const logger = createHiveTestingLogger();
@@ -163,4 +163,74 @@ test('HTTP error for an unaccepted status code exposes the status', async () => 
 
   expect(error).toBeInstanceOf(HTTPResponseError);
   expect(error).toMatchObject({ status: 403, statusText: 'Forbidden' });
+});
+
+test('HTTP error carries the request id returned by the server', async () => {
+  const error = await makeFetchCall('https://ap.localhost.noop', {
+    method: 'POST',
+    retry: false,
+    headers: {},
+    logger: createHiveTestingLogger(),
+    fetchImplementation: async () =>
+      new Response('too large', {
+        status: 413,
+        statusText: 'Payload Too Large',
+        headers: { 'x-request-id': 'server-request-id' },
+      }),
+  }).then(
+    () => null,
+    (error: unknown) => error,
+  );
+
+  expect(error).toBeInstanceOf(HTTPResponseError);
+  expect((error as HTTPResponseError).requestId).toBe('server-request-id');
+});
+
+test('HTTP with 4xx status code sends only one request', async () => {
+  let requests = 0;
+  await makeFetchCall('https://ap.localhost.noop', {
+    method: 'GET',
+    retry: {
+      retries: 3,
+      minTimeout: 1,
+      maxTimeout: 1,
+    },
+    headers: {},
+    logger: createHiveTestingLogger(),
+    fetchImplementation: async () => {
+      requests++;
+      return new Response('Unauthorized', {
+        status: 401,
+        statusText: 'Unauthorized',
+      });
+    },
+  }).catch(_ => {});
+
+  // Retries that run after the promise settled would show up here.
+  await waitFor(50);
+  expect(requests).toBe(1);
+});
+
+test('HTTP call aborted by the caller sends only one request', async () => {
+  const controller = new AbortController();
+  let requests = 0;
+  await makeFetchCall('https://ap.localhost.noop', {
+    method: 'GET',
+    retry: {
+      retries: 3,
+      minTimeout: 1,
+      maxTimeout: 1,
+    },
+    headers: {},
+    logger: createHiveTestingLogger(),
+    signal: controller.signal,
+    fetchImplementation: async () => {
+      requests++;
+      controller.abort();
+      return new Response('OK', { status: 200 });
+    },
+  }).catch(_ => {});
+
+  await waitFor(50);
+  expect(requests).toBe(1);
 });

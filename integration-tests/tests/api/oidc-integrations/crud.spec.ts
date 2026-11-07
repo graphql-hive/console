@@ -133,7 +133,7 @@ describe('create', () => {
               details: {
                 additionalScopes: null,
                 authorizationEndpoint: null,
-                clientId: Must be at least 3 characters long.,
+                clientId: Must be at least 3 characters long,
                 clientSecret: null,
                 tokenEndpoint: null,
                 userinfoEndpoint: null,
@@ -170,7 +170,7 @@ describe('create', () => {
               details: {
                 additionalScopes: null,
                 authorizationEndpoint: null,
-                clientId: Can not be longer than 100 characters.,
+                clientId: Can not be longer than 100 characters,
                 clientSecret: null,
                 tokenEndpoint: null,
                 userinfoEndpoint: null,
@@ -208,7 +208,7 @@ describe('create', () => {
                 additionalScopes: null,
                 authorizationEndpoint: null,
                 clientId: null,
-                clientSecret: Must be at least 3 characters long.,
+                clientSecret: Must be at least 3 characters long,
                 tokenEndpoint: null,
                 userinfoEndpoint: null,
               },
@@ -245,7 +245,7 @@ describe('create', () => {
                 additionalScopes: null,
                 authorizationEndpoint: null,
                 clientId: null,
-                clientSecret: Can not be longer than 200 characters.,
+                clientSecret: Can not be longer than 200 characters,
                 tokenEndpoint: null,
                 userinfoEndpoint: null,
               },
@@ -280,11 +280,11 @@ describe('create', () => {
             error: {
               details: {
                 additionalScopes: null,
-                authorizationEndpoint: Must be a valid OAuth API url.,
+                authorizationEndpoint: Must be a valid OAuth API url,
                 clientId: null,
                 clientSecret: null,
-                tokenEndpoint: Must be a valid OAuth API url.,
-                userinfoEndpoint: Must be a valid OAuth API url.,
+                tokenEndpoint: Must be a valid OAuth API url,
+                userinfoEndpoint: Must be a valid OAuth API url,
               },
               message: Failed to create OIDC Integration.,
             },
@@ -448,6 +448,29 @@ describe('delete', () => {
         organization: {
           id: organization.id,
           oidcIntegration: null,
+        },
+      });
+    });
+
+    test.concurrent('error: malformed integration id', async ({ expect }) => {
+      const { ownerToken } = await initSeed().createOwner();
+
+      const result = await execute({
+        document: DeleteOIDCIntegrationMutation,
+        variables: {
+          input: {
+            oidcIntegrationId: 'i-do-not-exist',
+          },
+        },
+        authToken: ownerToken,
+      }).then(r => r.expectNoGraphQLErrors());
+
+      expect(result).toEqual({
+        deleteOIDCIntegration: {
+          error: {
+            message: 'Integration not found.',
+          },
+          ok: null,
         },
       });
     });

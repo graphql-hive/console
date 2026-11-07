@@ -1,8 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { CircleUserRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useSessionContext } from 'supertokens-auth-react/recipe/session';
-import { emailPasswordSignIn as superEmailPasswordSignIn } from 'supertokens-auth-react/recipe/thirdpartyemailpassword';
 import { AuthCard, AuthCardStack, AuthOrSeparator } from '@/components/auth';
 import {
   SignInForm,
@@ -15,14 +13,17 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { Text } from '@/components/ui/text';
-import { useLastAuthMethod } from '@/lib/supertokens/last-auth-method';
-import { startAuthFlowForProvider } from '@/lib/supertokens/start-auth-flow-for-provider';
-import { enabledProviders, isProviderEnabled } from '@/lib/supertokens/thirdparty';
+import { signIn } from '@/lib/auth/api';
+import { useLastAuthMethod } from '@/lib/auth/last-auth-method';
+import { resolveOidcId } from '@/lib/auth/oidc-lookup';
+import { enabledProviders, isProviderEnabled } from '@/lib/auth/providers';
+import { startThirdPartyAuth } from '@/lib/auth/third-party';
+import { useSession } from '@/lib/auth/use-session';
+import { organizationSlugFromPath } from '@/lib/route-utils';
 import { exhaustiveGuard } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, Navigate, useRouter } from '@tanstack/react-router';
-import * as styles from './auth-sign-in.css';
 
 export function SignInButton(props: {
   children: React.ReactElement;
@@ -31,9 +32,12 @@ export function SignInButton(props: {
 }) {
   if (props.previousSignIn) {
     return (
-      <span className={styles.signInButtonSpan}>
+      <span className="relative inline-flex w-full">
         <Tooltip trigger={props.children} content="You signed in with it last time." side="top" />
-        <span aria-hidden className={styles.signInButtonSpan2} />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 animate-shimmer rounded-sm bg-[linear-gradient(110deg,transparent,30%,hsl(var(--line-strong)/0.35),70%,transparent)] bg-size-[200%_100%]"
+        />
       </span>
     );
   }
@@ -42,13 +46,13 @@ export function SignInButton(props: {
 }
 
 export function AuthSignInPage(props: { redirectToPath: string }) {
-  const session = useSessionContext();
+  const session = useSession();
   const [lastAuthMethod, setLastAuthMethod] = useLastAuthMethod();
   const router = useRouter();
   const { toast } = useToast();
 
   const emailPasswordSignIn = useMutation({
-    mutationFn: superEmailPasswordSignIn,
+    mutationFn: signIn,
     onSuccess(data) {
       const status = data.status;
 
@@ -66,15 +70,6 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
             description: 'Please check your email and password and try again.',
             variant: 'destructive',
           });
-          break;
-        }
-        case 'FIELD_ERROR': {
-          for (const field of data.formFields) {
-            form.setError(field.id as keyof SignInFormValues, {
-              type: 'manual',
-              message: field.error,
-            });
-          }
           break;
         }
         case 'SIGN_IN_NOT_ALLOWED': {
@@ -102,7 +97,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
 
   const thirdPartySignIn = useMutation({
     async mutationFn(provider: 'github' | 'google' | 'okta') {
-      await startAuthFlowForProvider(provider, props.redirectToPath);
+      await startThirdPartyAuth(provider, props.redirectToPath);
     },
     onError(error) {
       console.error(error);
@@ -115,6 +110,18 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
   });
 
   const isPending = emailPasswordSignIn.isPending || thirdPartySignIn.isPending;
+
+  const ssoSlug = organizationSlugFromPath(props.redirectToPath);
+  const ssoLookup = useQuery({
+    queryKey: ['oidc-lookup', ssoSlug],
+    queryFn: () => resolveOidcId(ssoSlug!),
+    enabled:
+      !!ssoSlug && isProviderEnabled('oidc') && !session.loading && !session.doesSessionExist,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const ssoOrganization =
+    ssoSlug && ssoLookup.data?.ok ? { slug: ssoSlug, id: ssoLookup.data.id } : undefined;
 
   const form = useForm({
     mode: 'onSubmit',
@@ -135,18 +142,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
   const onSubmit = useCallback(
     (data: SignInFormValues) => {
       emailPasswordSignIn.reset();
-      emailPasswordSignIn.mutate({
-        formFields: [
-          {
-            id: 'email',
-            value: data.email,
-          },
-          {
-            id: 'password',
-            value: data.password,
-          },
-        ],
-      });
+      emailPasswordSignIn.mutate(data);
     },
     [emailPasswordSignIn.mutate],
   );
@@ -156,8 +152,9 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
     return null;
   }
 
-  if (session.doesSessionExist) {
-    // Redirect to the home page if the user is already signed in
+  if (session.doesSessionExist && emailPasswordSignIn.isIdle && thirdPartySignIn.isIdle) {
+    // Already signed in on arrival. Once a sign-in started here, onSuccess owns the navigation
+    // (the store flips before the request resolves, and the page is still mounted afterwards).
     return <Navigate to="/" />;
   }
 
@@ -182,7 +179,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                         email: email || undefined,
                         redirectToPath: props.redirectToPath,
                       }}
-                      className={styles.authSignInPageLink}
+                      className="ml-auto inline-block text-sm underline"
                     >
                       Forgot your password?
                     </Link>
@@ -208,7 +205,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('google')}
                       disabled={isPending}
                     >
-                      <GoogleIcon className={styles.authSignInPageGoogleIcon} /> Login with Google
+                      <GoogleIcon className="mr-4 size-4" /> Login with Google
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -220,7 +217,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('github')}
                       disabled={isPending}
                     >
-                      <GitHubIcon className={styles.authSignInPageGitHubIcon} /> Login with Github
+                      <GitHubIcon className="mr-4 size-4" /> Login with Github
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -233,7 +230,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       onClick={() => thirdPartySignIn.mutate('okta')}
                       disabled={isPending}
                     >
-                      <OktaIcon className={styles.authSignInPageOktaIcon} /> Login with Okta
+                      <OktaIcon className="mr-4 size-4" /> Login with Okta
                     </Button>
                   </SignInButton>
                 ) : null}
@@ -244,17 +241,34 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                       width="full"
                       disabled={isPending}
                       render={
-                        <Link to="/auth/sso" search={{ redirectToPath: props.redirectToPath }} />
+                        ssoOrganization ? (
+                          <Link
+                            to="/auth/oidc"
+                            search={{
+                              id: ssoOrganization.id,
+                              slug: ssoOrganization.slug,
+                              redirectToPath: props.redirectToPath,
+                            }}
+                          />
+                        ) : (
+                          <Link
+                            to="/auth/sso"
+                            search={{ redirectToPath: props.redirectToPath }}
+                            preload={false}
+                          />
+                        )
                       }
                     >
-                      <CircleUserRound className={styles.authSignInPageCircleUserRound} /> Login
-                      with SSO
+                      <CircleUserRound className="mr-4 size-4" />
+                      {ssoOrganization
+                        ? `Login with SSO (${ssoOrganization.slug})`
+                        : 'Login with SSO'}
                     </Button>
                   </SignInButton>
                 ) : null}
               </>
             </AuthCardStack>
-            <div className={styles.authSignInPageDiv}>
+            <div className="mt-4">
               <Text arrangement="block" align="center" size="small" color="secondary">
                 Don't have an account?{' '}
                 <Link
@@ -263,7 +277,7 @@ export function AuthSignInPage(props: { redirectToPath: string }) {
                     redirectToPath: props.redirectToPath,
                   }}
                   data-auth-link="sign-up"
-                  className={styles.authSignInPageLink2}
+                  className="underline"
                 >
                   Sign up
                 </Link>

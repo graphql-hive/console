@@ -37,6 +37,8 @@ export function graphqlRequest(config: {
         operation: TypedDocumentNode<TResult, TVariables>;
         /** timeout in milliseconds */
         timeout?: number;
+        /** Retry configuration. Set to `false` for having no retries. */
+        retry?: Parameters<typeof http.post>[2]['retry'];
       } & (TVariables extends Record<string, never>
         ? {
             variables?: never;
@@ -57,11 +59,12 @@ export function graphqlRequest(config: {
             logger: config.logger,
             headers: requestHeaders,
             timeout: args.timeout,
+            retry: args.retry,
           },
         );
       } catch (e: any) {
         if (typeof e?.status === 'number') {
-          throw new HTTPError(config.endpoint, e.status, e.statusText || e.message);
+          throw new HTTPError(config.endpoint, e.status, e.statusText || e.message, e.requestId);
         }
         if (config.isHiveRegistry && isTimeoutError(e)) {
           throw new RequestTimeoutError(config.endpoint, e?.cause ?? e);
@@ -79,6 +82,7 @@ export function graphqlRequest(config: {
           config.endpoint,
           response.status,
           response.statusText ?? 'Invalid status code for HTTP call',
+          response.headers.get('x-request-id') ?? undefined,
         );
       }
 

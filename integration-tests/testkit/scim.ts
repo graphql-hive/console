@@ -1,82 +1,66 @@
 import { z } from 'zod';
 
 const createMetaModel = <TResourceType extends 'User' | 'Group'>(resourceType: TResourceType) =>
-  z
-    .object({
-      resourceType: z.literal(resourceType),
-      created: z.string(),
-      lastModified: z.string(),
-      location: z.string(),
-    })
-    .strict();
+  z.strictObject({
+    resourceType: z.literal(resourceType),
+    created: z.string(),
+    lastModified: z.string(),
+    location: z.string(),
+  });
 
-const ReferenceModel = z
-  .object({
-    value: z.string(),
-    $ref: z.string(),
-    display: z.string().nullable().optional(),
-  })
-  .strict();
+const ReferenceModel = z.strictObject({
+  value: z.string(),
+  $ref: z.string(),
+  display: z.string().nullable().optional(),
+});
 
-const EmailModel = z
-  .object({
-    primary: z.boolean(),
-    value: z.string(),
-    type: z.string(),
-  })
-  .strict();
+const EmailModel = z.strictObject({
+  primary: z.boolean(),
+  value: z.string(),
+  type: z.string(),
+});
 
-export const SCIMUserModel = z
-  .object({
-    schemas: z.tuple([z.literal('urn:ietf:params:scim:schemas:core:2.0:User')]),
-    id: z.string(),
-    userName: z.string(),
-    emails: z.array(EmailModel),
-    externalId: z.string(),
-    active: z.boolean(),
-    groups: z.array(ReferenceModel),
-    meta: createMetaModel('User'),
-  })
-  .strict();
+export const SCIMUserModel = z.strictObject({
+  schemas: z.tuple([z.literal('urn:ietf:params:scim:schemas:core:2.0:User')]),
+  id: z.string(),
+  userName: z.string(),
+  emails: z.array(EmailModel),
+  externalId: z.string(),
+  active: z.boolean(),
+  groups: z.array(ReferenceModel),
+  meta: createMetaModel('User'),
+});
 
-export const SCIMGroupModel = z
-  .object({
-    schemas: z.tuple([z.literal('urn:ietf:params:scim:schemas:core:2.0:Group')]),
-    id: z.string(),
-    displayName: z.string(),
-    externalId: z.string().optional(),
-    members: z.array(ReferenceModel).optional(),
-    meta: createMetaModel('Group'),
-  })
-  .strict();
+export const SCIMGroupModel = z.strictObject({
+  schemas: z.tuple([z.literal('urn:ietf:params:scim:schemas:core:2.0:Group')]),
+  id: z.string(),
+  displayName: z.string(),
+  externalId: z.string().optional(),
+  members: z.array(ReferenceModel).optional(),
+  meta: createMetaModel('Group'),
+});
 
-export const SCIMResourceTypeModel = z
-  .object({
-    schemas: z.tuple([z.literal('urn:ietf:params:scim:schemas:core:2.0:ResourceType')]),
-    id: z.enum(['User', 'Group']),
-    name: z.enum(['User', 'Group']),
-    endpoint: z.enum(['/Users', '/Groups']),
-    description: z.string(),
-    schema: z.enum([
-      'urn:ietf:params:scim:schemas:core:2.0:User',
-      'urn:ietf:params:scim:schemas:core:2.0:Group',
-    ]),
-    meta: z
-      .object({
-        resourceType: z.literal('ResourceType'),
-        location: z.string(),
-      })
-      .strict(),
-  })
-  .strict();
+export const SCIMResourceTypeModel = z.strictObject({
+  schemas: z.tuple([z.literal('urn:ietf:params:scim:schemas:core:2.0:ResourceType')]),
+  id: z.enum(['User', 'Group']),
+  name: z.enum(['User', 'Group']),
+  endpoint: z.enum(['/Users', '/Groups']),
+  description: z.string(),
+  schema: z.enum([
+    'urn:ietf:params:scim:schemas:core:2.0:User',
+    'urn:ietf:params:scim:schemas:core:2.0:Group',
+  ]),
+  meta: z.strictObject({
+    resourceType: z.literal('ResourceType'),
+    location: z.string(),
+  }),
+});
 
-export const SCIMErrorModel = z
-  .object({
-    schemas: z.tuple([z.literal('urn:ietf:params:scim:api:messages:2.0:Error')]),
-    status: z.number(),
-    detail: z.string(),
-  })
-  .strict();
+export const SCIMErrorModel = z.strictObject({
+  schemas: z.tuple([z.literal('urn:ietf:params:scim:api:messages:2.0:Error')]),
+  status: z.number(),
+  detail: z.string(),
+});
 
 const ListModel = z.object({
   schemas: z.tuple([z.literal('urn:ietf:params:scim:api:messages:2.0:ListResponse')]),
@@ -85,20 +69,23 @@ const ListModel = z.object({
   totalResults: z.number(),
 });
 
-export const SCIMUserListModel = ListModel.extend({
+export const SCIMUserListModel = z.strictObject({
+  ...ListModel.shape,
   Resources: z.array(SCIMUserModel),
-}).strict();
+});
 
-export const SCIMGroupListModel = ListModel.extend({
+export const SCIMGroupListModel = z.strictObject({
+  ...ListModel.shape,
   Resources: z.array(SCIMGroupModel),
-}).strict();
+});
 
-export const SCIMResourceTypeListModel = ListModel.extend({
+export const SCIMResourceTypeListModel = z.strictObject({
+  ...ListModel.shape,
   Resources: z.array(SCIMResourceTypeModel),
-}).strict();
+});
 
 type SCIMError = z.infer<typeof SCIMErrorModel>;
-type SchemaOutput<TSchema extends z.ZodTypeAny | undefined> = TSchema extends z.ZodTypeAny
+type SchemaOutput<TSchema extends z.ZodType | undefined> = TSchema extends z.ZodType
   ? z.output<TSchema>
   : undefined;
 type ExpectedResponse<TBody, TExpectedStatus extends number, TSuccessStatus extends number> = {
@@ -124,7 +111,7 @@ export function createScimTestkit({ baseUrl, headers }: { baseUrl: string; heade
   async function request<
     TExpectedStatus extends number,
     TSuccessStatus extends number,
-    TSchema extends z.ZodTypeAny | undefined = undefined,
+    TSchema extends z.ZodType | undefined = undefined,
   >({
     method,
     path,

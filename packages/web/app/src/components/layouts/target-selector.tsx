@@ -107,7 +107,7 @@ export function TargetSelector(props: {
           options={targetEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}
           value={props.currentTargetSlug}
           onValueChange={onTargetChange}
-          data-cy="target-picker-trigger"
+          data-testid="target-picker-trigger"
         />
       ) : (
         <div className={styles.targetSelectorDiv5} />

@@ -1,24 +1,17 @@
 import { useState } from 'react';
-import {
-  AlertTriangle,
-  BookOpen,
-  Check,
-  ChevronDown,
-  ExternalLink,
-  GitCompare,
-  Info,
-  List,
-  Scale,
-} from 'lucide-react';
+import { AlertTriangle, Check, GitCompare, List, Scale } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { ContractFailuresTable } from '@/components/target/checks/contract-failures-table';
-import { Badge } from '../primitives/badge/badge';
+import { buildChanges, metadata, PATH } from '@/components/target/history/changes-block.fixtures';
+import { ChangesBlock } from '@/components/target/history/errors-and-changes';
+import { Subtitle, Title } from '@/components/ui/page';
+import { RouterAt } from '../../../../foundry.router';
 import { Button } from '../primitives/button/button';
+import { DescriptionList } from '../primitives/description-list/description-list';
 import { Select } from '../primitives/floating/select/select';
 import { Tooltip } from '../primitives/floating/tooltip/tooltip';
 import { ScopeBar } from '../scope-bar/scope-bar';
 import { TabbedView, type TabbedViewItem } from './tabbed-view';
-import * as styles from './tabbed-view.preview.css';
 
 export const nav: NavPath = 'Components/TabbedView';
 
@@ -44,9 +37,9 @@ const STATUS_LABEL: Record<ContractStatus, string> = {
 };
 
 function StatusGlyph({ status }: { status: ContractStatus }) {
-  if (status === 'failed') return <AlertTriangle className={styles.statusGlyphAlertTriangle} />;
-  if (status === 'changed') return <GitCompare className={styles.statusGlyphGitCompare} />;
-  return <Check className={styles.statusGlyphCheck} />;
+  if (status === 'failed') return <AlertTriangle className="size-3.5 shrink-0 text-critical" />;
+  if (status === 'changed') return <GitCompare className="size-3.5 shrink-0" />;
+  return <Check className="size-3.5 shrink-0 text-success" />;
 }
 
 /** The picker as the pages build it: the contract's name, its status in words at the far end, the reason on hover. */
@@ -60,7 +53,7 @@ function ContractSelect(props: { value: string; onValueChange: (value: string) =
         trailing: (
           <Tooltip
             trigger={
-              <span className={styles.contractSelectSpan}>
+              <span className="inline-flex items-center gap-1.5 text-xs text-fg-muted">
                 <StatusGlyph status={entry.status} />
                 {STATUS_STATE[entry.status]}
               </span>
@@ -77,54 +70,36 @@ function ContractSelect(props: { value: string; onValueChange: (value: string) =
   );
 }
 
-function DetailsView({ contract }: { contract: string }) {
+const FIXTURE = buildChanges({ usedTargets: 2, unusedTargets: 3, operations: 2, legacy: false });
+
+function DetailsView() {
   return (
-    <div className={styles.detailsViewDiv}>
-      <div>
-        <div className={styles.detailsViewDiv2}>
-          Breaking Changes
-          <Info className={styles.detailsViewInfo} />
-        </div>
-        <div className={styles.detailsViewDiv3}>
-          <span className={styles.detailsViewSpan}>
-            Field <Badge content="Node.id" variants={{ variant: 'secondary', mono: true }} />{' '}
-            changed type from{' '}
-            <Badge content="ID!" variants={{ variant: 'secondary', mono: true }} /> to{' '}
-            <Badge content="ID" variants={{ variant: 'secondary', mono: true }} /> in {contract}
-          </span>
-          <ChevronDown className={styles.detailsViewChevronDown} />
-        </div>
-      </div>
-      <div className={styles.detailsViewDiv4}>
-        <p>
-          Get more out of schema checks by enabling conditional breaking changes based on usage
-          data.
-        </p>
-        <a href="#" className={styles.detailsViewA}>
-          <BookOpen className={styles.detailsViewBookOpen} />
-          Learn more about conditional breaking changes.
-          <ExternalLink className={styles.detailsViewExternalLink} />
-        </a>
-      </div>
-    </div>
+    <RouterAt path={PATH}>
+      <ChangesBlock
+        schemaCheckId="check-1"
+        title="Breaking Changes"
+        changesWithUsage={FIXTURE.changes}
+        conditionBreakingChangeMetadata={metadata(FIXTURE.targets)}
+      />
+    </RouterAt>
   );
 }
 
 function SchemaView() {
   return (
-    <pre className={styles.schemaViewPre}>
+    <pre className="font-mono text-xs leading-relaxed text-fg-default">
       {'type Query {\n  node(id: ID!): Node\n  viewer: User\n}\n\ninterface Node {\n  id: ID\n}'}
     </pre>
   );
 }
 
-function checkViews(contract: string): TabbedViewItem[] {
+function checkViews(): TabbedViewItem[] {
   return [
     {
       value: 'details',
       label: 'Details',
       icon: List,
-      content: <DetailsView contract={contract} />,
+      content: <DetailsView />,
     },
     { value: 'schema', label: 'Public Schema', icon: GitCompare, content: <SchemaView /> },
     {
@@ -140,7 +115,9 @@ function checkViews(contract: string): TabbedViewItem[] {
 }
 
 export const Default = createPreview(() => (
-  <TabbedView items={checkViews('Default Graph')} defaultValue="details" />
+  <div className="w-[72rem]">
+    <TabbedView items={checkViews()} defaultValue="details" />
+  </div>
 ));
 
 /** The contract failures table lists contracts only: the default graph's failure is the view the page opens on. */
@@ -148,26 +125,29 @@ export const ChecksPage = createPreview(() => {
   const [contract, setContract] = useState('default');
   const failed = CONTRACTS.filter(entry => entry.value !== 'default' && entry.status === 'failed');
   return (
-    <div className={styles.div}>
-      <div>
-        <h2 className={styles.h2}>Check 5843350d-f323-4ff3-8dcf-a30bd48f451f</h2>
-        <p className={styles.p}>Detailed view of the schema check</p>
+    <div className="flex w-[72rem] flex-col">
+      <div className="py-6">
+        <Title>Check 5843350d-f323-4ff3-8dcf-a30bd48f451f</Title>
+        <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
-      <div className={styles.div2}>
-        <div className={styles.div3}>
-          <div>
-            <div className={styles.div4}>Status</div>
-            <div className={styles.div5}>Failed</div>
-          </div>
-          <div>
-            <div className={styles.div6}>Triggered 3d ago</div>
-            <div className={styles.div7}>by User</div>
-          </div>
+      <div className="mb-3 flex items-center gap-4 rounded-md border bg-surface-card px-5 py-4">
+        <div className="min-w-0 flex-1">
+          <DescriptionList
+            variants={{ termStyle: 'title', columns: 'auto' }}
+            rows={[
+              {
+                items: [
+                  { term: 'Status', description: <span className="text-critical">Failed</span> },
+                  { term: 'Triggered', description: '3d ago by User' },
+                ],
+              },
+            ]}
+          />
         </div>
         <Button variant="destructive">Approve</Button>
       </div>
-      <div className={styles.div8}>
-        <div className={styles.div9}>
+      <div className="mt-3 flex flex-col gap-3">
+        <div className="mb-3">
           <ContractFailuresTable
             title={`${failed.length} of ${CONTRACTS.length - 1} contracts failed`}
             aside={`${CONTRACTS.length - 1 - failed.length} passed`}
@@ -181,7 +161,7 @@ export const ChecksPage = createPreview(() => {
           />
         </div>
         <ScopeBar picker={<ContractSelect value={contract} onValueChange={setContract} />} />
-        <TabbedView items={checkViews(contract)} defaultValue="details" />
+        <TabbedView items={checkViews()} defaultValue="details" />
       </div>
     </div>
   );
@@ -202,14 +182,14 @@ const SERVICES = [
 export const ManyTabs = createPreview(() => {
   const [view, setView] = useState(SERVICES[0]);
   return (
-    <div className={styles.div10}>
+    <div className="flex w-[32rem] flex-col">
       <TabbedView
         value={view}
         onValueChange={setView}
         items={SERVICES.map(name => ({
           value: name,
           label: name,
-          content: <p className={styles.p2}>The {name} view.</p>,
+          content: <p className="text-sm text-fg-default">The {name} view.</p>,
         }))}
       />
     </div>
@@ -229,9 +209,9 @@ export const Playground = createPreview({
           value: 'changes',
           label: 'Changes',
           content: (
-            <div className={styles.div11}>
-              <div className={styles.div12}>Field Node.id changed type from ID! to ID</div>
-              <div className={styles.div13}>Field User.email was removed</div>
+            <div className="divide-y divide-line text-sm text-fg-default">
+              <div className="px-5 py-3">Field Node.id changed type from ID! to ID</div>
+              <div className="px-5 py-3">Field User.email was removed</div>
             </div>
           ),
         },

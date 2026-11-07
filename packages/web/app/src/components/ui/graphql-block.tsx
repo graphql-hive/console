@@ -1,45 +1,31 @@
 import { ReactElement, ReactNode } from 'react';
-import { SchemaEditor, SchemaEditorProps } from '@/components/schema-editor';
+import { CodeScrollArea, File } from '@/components/ui/diffs';
 import { Card } from '@/components/ui/primitives/card/card';
 import { usePrettify } from '@/lib/hooks';
 import { Heading } from './heading';
-import * as styles from './graphql-block.css';
 
-export function GraphQLHighlight({
-  code,
-  ...props
-}: Omit<SchemaEditorProps, 'schema'> & {
-  code: string;
-}): ReactElement {
-  const pretty = usePrettify(code);
+/** A read-only, highlighted GraphQL document: SDL or an operation. */
+export function GraphQLHighlight(props: { code: string; className?: string }): ReactElement {
+  const pretty = usePrettify(props.code);
 
   return (
-    <div
-      style={{
-        height: '60vh',
-      }}
-    >
-      <SchemaEditor
-        options={{
-          readOnly: true,
-          lineNumbers: 'on',
-        }}
-        height="60vh"
-        {...props}
-        schema={pretty ?? ''}
-      />
-    </div>
+    <CodeScrollArea className={props.className}>
+      <div className="max-w-[inherit]">
+        <File
+          file={{ name: 'document.graphql', contents: pretty ?? '' }}
+          options={{ disableFileHeader: true }}
+        />
+      </div>
+    </CodeScrollArea>
   );
 }
 
 export function GraphQLBlock({
-  editorProps = {},
   sdl,
   title,
   url,
   className,
 }: {
-  editorProps?: SchemaEditorProps;
   sdl: string;
   title?: string | ReactNode;
   url?: string;
@@ -48,12 +34,12 @@ export function GraphQLBlock({
   return (
     <div className={className}>
       <Card variants={{ onSurface: 'base' }}>
-        <Heading className={styles.graphQLBlockHeading}>
+        <Heading className="mb-4">
           {title ?? 'SDL'}
-          {url && <span className={styles.graphQLBlockSpan}>{url}</span>}
+          {url && <span className="ml-3 text-sm italic">{url}</span>}
         </Heading>
-        <div className={styles.graphQLBlockDiv}>
-          <GraphQLHighlight {...editorProps} code={sdl} />
+        <div className="pb-2">
+          <GraphQLHighlight code={sdl} />
         </div>
       </Card>
     </div>

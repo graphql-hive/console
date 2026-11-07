@@ -4,7 +4,8 @@ import { defineTask, implementTask } from '../kit.js';
 
 export const PurgeExpiredAlertStateLogTask = defineTask({
   name: 'purgeExpiredAlertStateLog',
-  schema: z.unknown(),
+  // A cron job's payload carries no `input`; under zod v4 an `unknown` key is still required.
+  schema: z.unknown().optional(),
 });
 
 // No env-var gate: with OR-style enrollment, opted-in orgs accumulate state

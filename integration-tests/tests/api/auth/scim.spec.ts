@@ -3683,7 +3683,7 @@ describe.concurrent('provider flows', () => {
           .then(
             z.object({
               deactivatedAt: z.string().nullable(),
-              id: z.string().uuid(),
+              id: z.uuid(),
             }).parse,
           );
         expect(user.deactivatedAt).not.toBeNull();

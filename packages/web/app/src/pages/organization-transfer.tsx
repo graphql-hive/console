@@ -23,14 +23,8 @@ const OrganizationTransferPage_GetRequest = graphql(`
       organization {
         id
         slug
-        owner {
-          id
-          user {
-            id
-            displayName
-          }
-        }
       }
+      ownerName
     }
   }
 `);
@@ -161,8 +155,7 @@ export function OrganizationTransferPage(props: { organizationSlug: string; code
                 <>
                   <h1 className={classes.title}>Accept the transfer?</h1>
                   <p className={classes.description}>
-                    {query.data.organizationTransferRequest.organization.owner.user.displayName}{' '}
-                    wants to transfer the "
+                    {query.data.organizationTransferRequest.ownerName} wants to transfer the "
                     {query.data.organizationTransferRequest.organization.slug}" organization to you.
                   </p>
 

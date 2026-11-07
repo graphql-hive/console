@@ -363,7 +363,7 @@ export class CollectionProvider {
     if (validationResult.error) {
       return {
         type: 'error' as const,
-        message: validationResult.error.errors[0].message,
+        message: validationResult.error.issues[0].message,
       };
     }
 
@@ -471,7 +471,7 @@ export class CollectionProvider {
     if (validationResult.error) {
       return {
         type: 'error' as const,
-        message: validationResult.error.errors[0].message,
+        message: validationResult.error.issues[0].message,
       };
     }
 
@@ -606,32 +606,46 @@ export class CollectionProvider {
 const MAX_INPUT_LENGTH = 10_000;
 
 // The following validates the length and the validity of the JSON object incoming as string.
-const inputObjectSchema = zod
-  .string()
-  .max(MAX_INPUT_LENGTH)
-  .refine(v => {
-    if (!v) {
-      return true;
-    }
+const createJSONInputModel = (label: string) =>
+  zod
+    .string()
+    .max(MAX_INPUT_LENGTH, `${label} must be at most ${MAX_INPUT_LENGTH} characters long`)
+    .refine(v => {
+      if (!v) {
+        return true;
+      }
 
-    try {
-      JSON.parse(v);
-      return true;
-    } catch {
-      return false;
-    }
-  });
+      try {
+        JSON.parse(v);
+        return true;
+      } catch {
+        return false;
+      }
+    }, `${label} must be valid JSON, e.g. {"key": "value"}`);
+
+const VariablesInputModel = createJSONInputModel('Variables');
+const HeadersInputModel = createJSONInputModel('Headers');
+
+const OperationNameModel = zod
+  .string()
+  .min(1, 'Name is required')
+  .max(100, 'Name must be at most 100 characters long');
+
+const OperationQueryModel = zod
+  .string()
+  .min(1, 'Query is required')
+  .max(MAX_INPUT_LENGTH, `Query must be at most ${MAX_INPUT_LENGTH} characters long`);
 
 const OperationCreateModel = zod.object({
-  name: zod.string().min(1).max(100),
-  query: zod.string().min(1).max(MAX_INPUT_LENGTH),
-  variables: inputObjectSchema.nullable(),
-  headers: inputObjectSchema.nullable(),
+  name: OperationNameModel,
+  query: OperationQueryModel,
+  variables: VariablesInputModel.nullable(),
+  headers: HeadersInputModel.nullable(),
 });
 
 const OperationUpdateModel = zod.object({
-  name: zod.string().min(1).max(100).nullable(),
-  query: zod.string().min(1).max(MAX_INPUT_LENGTH).nullable(),
-  variables: inputObjectSchema.nullable(),
-  headers: inputObjectSchema.nullable(),
+  name: OperationNameModel.nullable(),
+  query: OperationQueryModel.nullable(),
+  variables: VariablesInputModel.nullable(),
+  headers: HeadersInputModel.nullable(),
 });

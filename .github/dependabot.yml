@@ -38,17 +38,11 @@ updates:
           - 'urql'
       sentry:
         patterns:
-          - '@sentry/'
-          - 'sentry'
+          - '@sentry/*'
       trpc:
         patterns:
           - '@trpc/'
           - 'trpc'
-      supertokens:
-        patterns:
-          - 'supertokens'
-          - '@supertokens/*'
-          - 'supertokens-*'
       graphql-codegen:
         patterns:
           - '@graphql-codegen/*'

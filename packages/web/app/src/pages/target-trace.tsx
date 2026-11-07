@@ -20,9 +20,9 @@ import {
   TreePine,
 } from 'lucide-react';
 import { useQuery } from 'urql';
-import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { CopyIconButton } from '@/components/ui/copy-icon-button';
+import { GraphQLHighlight } from '@/components/ui/graphql-block';
 import { Meta } from '@/components/ui/meta';
 import { NotFound } from '@/components/ui/not-found/not-found';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
@@ -887,11 +887,7 @@ export function TraceSheet(props: TraceSheetProps) {
                   {activeView === 'operation' ? (
                     <div className={styles.traceSheetDiv10}>
                       <GraphQLHighlight
-                        height="100%"
-                        options={{
-                          fontSize: 10,
-                          minimap: { enabled: false },
-                        }}
+                        className="h-full max-h-none [--diffs-font-size:10px]"
                         code={rootSpanUnmasked.spanAttributes['graphql.document'] as string}
                       />
                     </div>
@@ -1592,11 +1588,7 @@ function SpanSheet(props: SpanSheetProps) {
           )}
           {activeView === 'operation' && (
             <GraphQLHighlight
-              height="100%"
-              options={{
-                fontSize: 10,
-                minimap: { enabled: false },
-              }}
+              className="h-full max-h-none [--diffs-font-size:10px]"
               code={span.spanAttributes['graphql.document'] as string}
             />
           )}

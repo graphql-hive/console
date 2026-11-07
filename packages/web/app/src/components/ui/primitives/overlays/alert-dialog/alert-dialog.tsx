@@ -40,10 +40,12 @@ export type AlertDialogProps = {
     onClick: () => void;
     disabled?: boolean;
     variant?: 'primary' | 'destructive';
-    'data-cy'?: string;
+    'data-testid'?: string;
   };
   /** The way out. Closes the dialog; `false` for a question with no way out but an answer. */
-  cancel?: { label?: string; onClick?: () => void; disabled?: boolean; 'data-cy'?: string } | false;
+  cancel?:
+    | { label?: string; onClick?: () => void; disabled?: boolean; 'data-testid'?: string }
+    | false;
   attrs?: Record<string, string>;
 };
 
@@ -87,7 +89,7 @@ export function AlertDialog({
                     variant="outline"
                     onClick={cancel.onClick}
                     disabled={cancel.disabled}
-                    data-cy={cancel['data-cy']}
+                    data-testid={cancel['data-testid']}
                   >
                     {cancel.label ?? 'Cancel'}
                   </Button>
@@ -98,7 +100,7 @@ export function AlertDialog({
               variant={confirm.variant ?? 'primary'}
               onClick={confirm.onClick}
               disabled={confirm.disabled}
-              data-cy={confirm['data-cy']}
+              data-testid={confirm['data-testid']}
             >
               {confirm.label}
             </Button>

@@ -14,8 +14,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
-import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
-import * as styles from './target.css';
+import { getRouteApi, Link } from '@tanstack/react-router';
 
 const schemaRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/',
@@ -45,20 +44,19 @@ function isCompositeSchema(
 function serviceHeader(schema: CompositeSchema) {
   return (
     <div>
-      <div
-        className={styles.serviceHeaderDiv}
-        id={schema.service ? `service-${schema.service}` : undefined}
-      >
+      <div className="text-base" id={schema.service ? `service-${schema.service}` : undefined}>
         {schema.service ?? 'SDL'}
       </div>
-      {schema.url ? <div className={styles.serviceHeaderDiv2}>{schema.url}</div> : null}
+      {schema.url ? (
+        <div className="text-xs font-normal text-fg-secondary">{schema.url}</div>
+      ) : null}
     </div>
   );
 }
 
 function serviceSchema(schema: CompositeSchema) {
   return (
-    <div className={styles.serviceSchemaDiv}>
+    <div className="p-2">
       <GraphQLHighlight code={schema.source} />
     </div>
   );
@@ -159,13 +157,9 @@ function SchemaView(props: {
 }): ReactElement | null {
   const project = useFragment(SchemaView_ProjectFragment, props.project);
   const target = useFragment(SchemaView_TargetFragment, props.target);
-  const router = useRouter();
+  const { service } = schemaRoute.useSearch();
   const navigate = schemaRoute.useNavigate();
-  const selectedServiceName =
-    'service' in router.latestLocation.search &&
-    typeof router.latestLocation.search.service === 'string'
-      ? router.latestLocation.search.service
-      : null;
+  const selectedServiceName = service ?? null;
 
   const reset = () => {
     void navigate({
@@ -200,8 +194,8 @@ function SchemaView(props: {
 
   return (
     <>
-      <div className={styles.schemaViewDiv}>
-        <div className={styles.schemaViewDiv2}>
+      <div className="mb-5 flex flex-row items-center justify-between">
+        <div className="flex flex-row items-center gap-x-4">
           {isDistributed && schemas && schemas.length > 1 && (
             <>
               <Select
@@ -223,7 +217,7 @@ function SchemaView(props: {
                 width="lg"
               />
               {selectedServiceName ? (
-                <Button variant="outline" onClick={reset}>
+                <Button variant="outline" onClick={reset} aria-label="Clear service">
                   <XIcon width={16} height={16} />
                 </Button>
               ) : null}
@@ -273,12 +267,12 @@ function TargetSchemaPage() {
 
   return (
     <LayoutContent>
-      <div className={styles.targetSchemaPageDiv}>
+      <div className="flex flex-row items-center justify-between py-6">
         <div>
           <Title>Schema</Title>
           <Subtitle>The latest published schema.</Subtitle>
         </div>
-        <div className={styles.targetSchemaPageDiv2}>
+        <div className="flex flex-row items-center gap-x-4">
           <Button
             variant="outline"
             render={
@@ -294,7 +288,7 @@ function TargetSchemaPage() {
           >
             Unused schema
           </Button>
-          <span className={styles.targetSchemaPageSpan}>|</span>
+          <span className="italic">|</span>
           <Button
             variant="outline"
             render={

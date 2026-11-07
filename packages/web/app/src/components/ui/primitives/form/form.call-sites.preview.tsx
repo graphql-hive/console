@@ -127,6 +127,7 @@ import {
 import {
   DangerousChangesForm,
   DangerousChangesFormSchema,
+  SavedLabel,
   type DangerousChangesFormValues,
 } from '@/components/target/settings/dangerous-changes-form';
 import {
@@ -140,6 +141,7 @@ import {
   type RegistryTokenFormValues,
 } from '@/components/target/settings/registry-token-form';
 import { Button } from '@/components/ui/primitives/button/button';
+import { Card } from '@/components/ui/primitives/card/card';
 import { Form } from '@/components/ui/primitives/form/form';
 import {
   UserSettingsForm,
@@ -156,7 +158,6 @@ import {
 } from '@/gql/graphql';
 import type { DocumentCollectionOperation } from '@/lib/hooks/laboratory/use-collections';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as styles from './form.call-sites.preview.css';
 
 export const nav: NavPath = 'Primitives/FormControls/Form/Component Examples';
 
@@ -338,14 +339,14 @@ export const Inventory = createPreview({
 
 function Submitted(props: { values: unknown }) {
   return props.values ? (
-    <pre className={styles.submittedPre}>{JSON.stringify(props.values, null, 2)}</pre>
+    <pre className="mt-4 text-xs text-fg-default">{JSON.stringify(props.values, null, 2)}</pre>
   ) : null;
 }
 
 /** A slot the page fills with a component that runs its own query. */
 function QueryBacked(props: { name: string }) {
   return (
-    <div className={styles.queryBackedDiv}>
+    <div className="rounded-sm border border-dashed border-line-strong p-3 text-xs text-fg-secondary">
       {props.name} runs its own query, so the page supplies it.
     </div>
   );
@@ -353,16 +354,29 @@ function QueryBacked(props: { name: string }) {
 
 /** The overlay widths, so a form is seen at the width it ships at. */
 const panelWidth = {
-  card: styles.panelWidthCard,
-  dialog: styles.panelWidthDialog,
-  'dialog-lg': styles.panelWidthDialogLg,
-  'dialog-xl': styles.panelWidthDialogXl,
-  sheet: styles.panelWidthSheet,
+  card: 'w-[28rem]',
+  dialog: 'w-[520px]',
+  'dialog-lg': 'w-[640px]',
+  'dialog-xl': 'w-[960px]',
+  sheet: 'w-[700px]',
 } as const;
 
 /** The raised panel a dialog, sheet or card puts the form on, at that overlay's width. */
 function Raised(props: { children: ReactNode; width: keyof typeof panelWidth }) {
-  return <div className={`${styles.raisedDiv} ${panelWidth[props.width]}`}>{props.children}</div>;
+  if (props.width === 'card') {
+    return (
+      <div className={panelWidth.card}>
+        <Card variants={{ onSurface: 'raised' }}>{props.children}</Card>
+      </div>
+    );
+  }
+  return (
+    <div
+      className={`rounded-md border border-line bg-surface-overlay p-6 ${panelWidth[props.width]}`}
+    >
+      {props.children}
+    </div>
+  );
 }
 
 const Submit = (label: string) => (
@@ -394,7 +408,7 @@ function SignInExample() {
           onSubmit={setSubmitted}
           submit={Submit('Sign in')}
           forgotPasswordLink={() => (
-            <a href="#" tabIndex={-1} className={styles.signInExampleA}>
+            <a href="#" tabIndex={-1} className="ml-auto inline-block text-sm underline">
               Forgot your password?
             </a>
           )}
@@ -441,7 +455,7 @@ function ResetPasswordExample() {
       origin="base"
       note="Two steps on the same page: the email that gets the link, then the new password once the link is followed."
     >
-      <div className={styles.resetPasswordExampleDiv}>
+      <div className="flex flex-wrap gap-8">
         <Raised width="card">
           <ResetPasswordEmailForm
             form={emailForm}
@@ -487,7 +501,7 @@ function SSOExample() {
 export const Auth = createPreview({
   label: 'Auth',
   render: () => (
-    <div className={styles.div}>
+    <div className="flex flex-col gap-8">
       <SignInExample />
       <SignUpExample />
       <ResetPasswordExample />
@@ -513,7 +527,7 @@ function CreateOrganizationExample() {
       origin="base"
       note="Centered on the page, on a card of its own; the form brings its container."
     >
-      <div className={styles.createOrganizationExampleDiv}>
+      <div className="w-[56rem]">
         <CreateOrganizationForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </div>
@@ -614,7 +628,7 @@ function OperationExample() {
 export const Create = createPreview({
   label: 'Create',
   render: () => (
-    <div className={styles.div2}>
+    <div className="flex flex-col gap-8">
       <CreateOrganizationExample />
       <CreateProjectExample />
       <CreateTargetExample />
@@ -642,7 +656,7 @@ function SlugExample(props: {
   });
   return (
     <CallSite source={props.source} origin="base">
-      <div className={styles.slugExampleDiv}>
+      <div className="w-[36rem]">
         <SlugForm form={form} onSubmit={setSubmitted} prefixText={props.prefixText} />
         <Submitted values={submitted} />
       </div>
@@ -653,7 +667,7 @@ function SlugExample(props: {
 export const Slugs = createPreview({
   label: 'Slugs',
   render: () => (
-    <div className={styles.div3}>
+    <div className="flex flex-col gap-8">
       <SlugExample
         noun="Organization"
         slug="the-guild"
@@ -693,7 +707,7 @@ function AuditLogsExample() {
   });
   return (
     <CallSite source="pages/organization-settings.tsx" origin="base">
-      <div className={styles.auditLogsExampleDiv}>
+      <div className="w-[36rem]">
         <AuditLogsForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </div>
@@ -750,7 +764,7 @@ function TransferOwnershipExample() {
 export const OrganizationSettings = createPreview({
   label: 'Organization settings',
   render: () => (
-    <div className={styles.div4}>
+    <div className="flex flex-col gap-8">
       <AuditLogsExample />
       <UserSettingsExample />
       <TransferOwnershipExample />
@@ -845,7 +859,7 @@ function RoleExample() {
 export const Members = createPreview({
   label: 'Members',
   render: () => (
-    <div className={styles.div5}>
+    <div className="flex flex-col gap-8">
       <InvitationExample />
       <RoleExample />
     </div>
@@ -982,7 +996,7 @@ function RegisterDomainExample() {
 export const SingleSignOn = createPreview({
   label: 'Single sign-on',
   render: () => (
-    <div className={styles.div6}>
+    <div className="flex flex-col gap-8">
       <MetadataUrlExample />
       <ConnectProviderExample editing={false} />
       <ConnectProviderExample editing />
@@ -1008,7 +1022,7 @@ function ExternalCompositionExample() {
       origin="base"
       note="The reachability check sits beside the endpoint until the fields are edited. The submit label follows the composition mode."
     >
-      <div className={styles.externalCompositionExampleDiv}>
+      <div className="w-[36rem]">
         <ExternalCompositionForm
           form={form}
           onSubmit={setSubmitted}
@@ -1082,7 +1096,7 @@ function AlertExample() {
 export const ProjectSettings = createPreview({
   label: 'Project settings',
   render: () => (
-    <div className={styles.div7}>
+    <div className="flex flex-col gap-8">
       <ExternalCompositionExample />
       <ChannelExample />
       <AlertExample />
@@ -1103,7 +1117,7 @@ function GraphqlEndpointExample() {
   });
   return (
     <CallSite source="pages/target-settings.tsx (GraphQLEndpointUrl)" origin="base">
-      <div className={styles.graphqlEndpointExampleDiv}>
+      <div className="w-[36rem]">
         <GraphqlEndpointForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </div>
@@ -1123,13 +1137,8 @@ function DangerousChangesExample() {
       origin="base"
       note="A changed row gets a pending dot until it is saved. The status beside the button is the page's own saved / just saved / unsaved label."
     >
-      <div className={styles.dangerousChangesExampleDiv}>
-        <DangerousChangesForm
-          form={form}
-          onSubmit={setSubmitted}
-          enabled
-          status={<span className={styles.dangerousChangesExampleSpan}>Saved</span>}
-        />
+      <div className="w-[36rem]">
+        <DangerousChangesForm form={form} onSubmit={setSubmitted} enabled status={<SavedLabel />} />
         <Submitted values={submitted} />
       </div>
     </CallSite>
@@ -1155,7 +1164,7 @@ function AppDeploymentProtectionExample() {
       origin="base"
       note="Numbers inside sentences, so their messages are listed under the rules instead of under each field."
     >
-      <div className={styles.appDeploymentProtectionExampleDiv}>
+      <div className="w-[36rem]">
         <AppDeploymentProtectionForm form={form} onSubmit={setSubmitted} enabled />
         <Submitted values={submitted} />
       </div>
@@ -1189,7 +1198,7 @@ function BreakingChangesExample() {
       origin="base"
       note="The period is capped by the organization's retention, so the schema is built per page. The two exclusion pickers run their own queries."
     >
-      <div className={styles.breakingChangesExampleDiv}>
+      <div className="w-[48rem]">
         <BreakingChangesForm
           form={form}
           onSubmit={setSubmitted}
@@ -1208,7 +1217,7 @@ function BreakingChangesExample() {
 export const TargetSettings = createPreview({
   label: 'Target settings',
   render: () => (
-    <div className={styles.div8}>
+    <div className="flex flex-col gap-8">
       <GraphqlEndpointExample />
       <DangerousChangesExample />
       <AppDeploymentProtectionExample />
@@ -1300,7 +1309,7 @@ function RegistryTokenExample() {
 export const TargetTokensAndContracts = createPreview({
   label: 'Target tokens and contracts',
   render: () => (
-    <div className={styles.div9}>
+    <div className="flex flex-col gap-8">
       <ContractExample />
       <CdnTokenExample />
       <RegistryTokenExample />

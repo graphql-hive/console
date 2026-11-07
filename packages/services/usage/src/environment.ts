@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import zod from 'zod';
 import {
+  extractConfig,
   OpenTelemetryConfigurationModel,
   parsePostgresConfigFromEnvironment,
   parseRedisConfigFromEnvironment,
@@ -32,7 +33,7 @@ const EnvironmentModel = zod.object({
   PORT: emptyString(NumberFromString.optional()),
   SERVER_HOST: emptyString(zod.string().optional()),
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
-  COMMERCE_ENDPOINT: emptyString(zod.string().url().optional()),
+  COMMERCE_ENDPOINT: emptyString(zod.url().optional()),
   RATE_LIMIT_TTL: emptyString(NumberFromString.optional()).default(30_000),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
@@ -67,7 +68,7 @@ const KafkaBaseModel = zod.object({
 
 const KafkaModel = zod.union([
   KafkaBaseModel.extend({
-    KAFKA_SASL_MECHANISM: zod.void().optional(),
+    KAFKA_SASL_MECHANISM: zod.never().optional(),
   }),
   KafkaBaseModel.extend({
     KAFKA_SASL_MECHANISM: zod.union([
@@ -118,7 +119,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+    environmentErrors.push(zod.prettifyError(config.error));
   }
 }
 
@@ -155,13 +156,6 @@ if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
   process.exit(1);
-}
-
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
-  if (!config.success) {
-    throw new Error('Something went wrong.');
-  }
-  return config.data;
 }
 
 const base = extractConfig(configs.base);
@@ -253,7 +247,7 @@ export const env = {
           labels: {
             instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'usage-service',
           },
-          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
+          port: prometheus.PROMETHEUS_METRICS_PORT,
         }
       : null,
 } as const;

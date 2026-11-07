@@ -1,22 +1,18 @@
 import { AuthCard } from '@/components/auth';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
-import { env } from '@/env/frontend';
-import { startAuthFlowForOIDCProvider } from '@/lib/supertokens/third-party-email-password-react-oidc-provider';
+import { startThirdPartyAuth } from '@/lib/auth/third-party';
 import { useQuery } from '@tanstack/react-query';
 import * as styles from './auth-oidc.css';
 
-function AuthOIDC(props: { oidcId: string; redirectToPath: string }) {
+function AuthOIDC(props: { oidcId: string; slug: string | undefined; redirectToPath: string }) {
   const auth = useQuery({
     queryKey: ['oidc', props.oidcId],
     refetchOnWindowFocus: false,
     retry: false,
     retryOnMount: false,
     async queryFn() {
-      if (!env.auth.oidc) {
-        throw new Error('OIDC provider is not configured');
-      }
-      await startAuthFlowForOIDCProvider(props.oidcId);
+      await startThirdPartyAuth('oidc', props.redirectToPath, props.oidcId);
       // we need to return something, otherwise react-query will throw an error
       return true;
     },
@@ -29,7 +25,11 @@ function AuthOIDC(props: { oidcId: string; redirectToPath: string }) {
   return (
     <AuthCard
       title="Starting OIDC Login Flow"
-      description="You are being redirected to your OIDC provider."
+      description={
+        props.slug
+          ? `You are being redirected to the identity provider for ${props.slug}.`
+          : 'You are being redirected to your OIDC provider.'
+      }
     />
   );
 }
@@ -51,14 +51,18 @@ function MissingOIDCId() {
   );
 }
 
-export function AuthOIDCPage(props: { oidcId: string | undefined; redirectToPath: string }) {
+export function AuthOIDCPage(props: {
+  oidcId: string | undefined;
+  slug: string | undefined;
+  redirectToPath: string;
+}) {
   const oidcId = props.oidcId;
 
   return (
     <>
       <Meta title="OIDC Login" />
       {oidcId ? (
-        <AuthOIDC oidcId={oidcId} redirectToPath={props.redirectToPath} />
+        <AuthOIDC oidcId={oidcId} slug={props.slug} redirectToPath={props.redirectToPath} />
       ) : (
         <MissingOIDCId />
       )}

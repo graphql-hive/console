@@ -6,6 +6,7 @@ import {
   INVALID_RULE_POLICY,
   LONGER_VALID_POLICY,
   OrganizationAndProjectsWithSchemaPolicy,
+  UNEXPECTED_RULE_CONFIG_POLICY,
   VALID_POLICY,
 } from '../../../testkit/schema-policy';
 import { initSeed } from '../../../testkit/seed';
@@ -136,8 +137,24 @@ describe('Policy CRUD', () => {
       const upsertResult = await setOrganizationSchemaPolicy(INVALID_RULE_POLICY, true);
       expect(upsertResult.ok).toBeNull();
       expect(upsertResult.error).toBeDefined();
-      expect(upsertResult.error?.message).toContain('Unknown rule name passed');
+      expect(upsertResult.error?.message).toBe('Unknown rule name passed at "config"');
     });
+
+    test.concurrent(
+      'config for a rule without configuration is rejected with an error',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject, setOrganizationSchemaPolicy } = await createOrg();
+        await createProject(ProjectType.Single);
+
+        const upsertResult = await setOrganizationSchemaPolicy(UNEXPECTED_RULE_CONFIG_POLICY, true);
+        expect(upsertResult.ok).toBeNull();
+        expect(upsertResult.error).toBeDefined();
+        expect(upsertResult.error?.message).toBe(
+          'This rule does not accept any configuration at "config.require-nullable-result-in-root"',
+        );
+      },
+    );
 
     test.concurrent('invalid rule config is rejected with an error', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();

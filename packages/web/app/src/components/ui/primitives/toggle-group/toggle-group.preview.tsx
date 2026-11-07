@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { CircleMinus, CircleX, TriangleAlert } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { cn } from '@/lib/utils';
+import { Card } from '../card/card';
+import { floatingVariants } from '../floating/shared-styles';
 import { ToggleGroup } from './toggle-group';
-import * as styles from './toggle-group.preview.css';
 
 export const nav: NavPath = 'Primitives/FormControls/ToggleGroup';
 
@@ -19,8 +21,8 @@ const ENDPOINTS = [
 export const Text = createPreview(() => {
   const [value, setValue] = useState('mockApi');
   return (
-    <div className={styles.div}>
-      <span className={styles.span}>Query</span>
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-bold">Query</span>
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} aria-label="Query" />
     </div>
   );
@@ -37,9 +39,7 @@ export const IconOnly = createPreview(() => {
       value: 'off',
       tooltip: 'Disables a rule defined at the organization level',
       label: (
-        <CircleMinus
-          className={`${styles.circleMinus} ${value === 'off' ? styles.circleMinus2 : styles.circleMinus3}`}
-        />
+        <CircleMinus className={`size-[15px] ${value === 'off' ? 'text-fg' : 'text-fg-subtle'}`} />
       ),
     },
     {
@@ -47,7 +47,7 @@ export const IconOnly = createPreview(() => {
       tooltip: 'Warning',
       label: (
         <TriangleAlert
-          className={`${styles.triangleAlert} ${value === 'warning' ? styles.triangleAlert2 : styles.triangleAlert3}`}
+          className={`size-[15px] ${value === 'warning' ? 'text-warning' : 'text-fg-subtle'}`}
         />
       ),
     },
@@ -56,7 +56,7 @@ export const IconOnly = createPreview(() => {
       tooltip: 'Error',
       label: (
         <CircleX
-          className={`${styles.circleX} ${value === 'error' ? styles.circleX2 : styles.circleX3}`}
+          className={`size-[15px] ${value === 'error' ? 'text-critical' : 'text-fg-subtle'}`}
         />
       ),
     },
@@ -70,7 +70,7 @@ export const IconOnly = createPreview(() => {
 export const Disabled = createPreview(() => {
   const [value, setValue] = useState('mockApi');
   return (
-    <div className={styles.div2}>
+    <div className="flex items-center gap-6">
       <ToggleGroup
         options={[ENDPOINTS[0], { ...ENDPOINTS[1], disabled: true }]}
         value={value}
@@ -91,7 +91,7 @@ export const Disabled = createPreview(() => {
 export const Sizes = createPreview(() => {
   const [value, setValue] = useState('mockApi');
   return (
-    <div className={styles.div3}>
+    <div className="flex items-center gap-4">
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} size="compact" />
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} size="default" />
     </div>
@@ -107,13 +107,22 @@ export const OnSurface = createPreview(() => {
     </>
   );
   return (
-    <div className={styles.div4}>
-      <div className={styles.div5}>
-        <span className={styles.span2}>A card</span>
-        {pair}
+    <div className="flex flex-wrap gap-6">
+      <div className="w-[20rem]">
+        <Card variants={{ onSurface: 'raised' }}>
+          <div className="flex flex-col items-start gap-3">
+            <span className="text-xs text-fg-default">A card</span>
+            {pair}
+          </div>
+        </Card>
       </div>
-      <div className={styles.div6}>
-        <span className={styles.span3}>A floating panel</span>
+      <div
+        className={cn(
+          floatingVariants({ padding: 'md' }),
+          'flex w-[20rem] flex-col items-start gap-3 p-4',
+        )}
+      >
+        <span className="text-xs text-fg-default">A floating panel</span>
         {pair}
       </div>
     </div>

@@ -68,11 +68,12 @@ export function createFallbackQueue(config: {
         queue.map(msgValue =>
           limit(() =>
             config.send(msgValue[0], msgValue[1]).catch(error => {
-              Sentry.setTags({
-                message: 'Failed to flush message before stopping',
-                numOfOperations: msgValue[1],
+              Sentry.captureException(error, {
+                tags: {
+                  message: 'Failed to flush message before stopping',
+                  numOfOperations: msgValue[1],
+                },
               });
-              Sentry.captureException(error);
               config.logger.error(
                 {
                   error: error instanceof Error ? error.message : String(error),

@@ -26,16 +26,12 @@ import {
   Plus,
   ShieldAlertIcon,
   TriangleAlertIcon,
-  XCircleIcon,
 } from 'lucide-react';
 import { useQuery } from 'urql';
 import { ContractFailuresTable } from '@/components/target/checks/contract-failures-table';
-import { CompositionErrorMessage } from '@/components/target/history/composition-error-message';
-import { CompositionErrorsPopover } from '@/components/target/history/composition-errors-popover';
-import {
-  ChangesBlock,
-  CompositionErrorsSection_SchemaErrorConnection,
-} from '@/components/target/history/errors-and-changes';
+import { changeSafetyStats } from '@/components/target/history/change-safety-stats';
+import { CompositionErrorsCard } from '@/components/target/history/composition-errors-card';
+import { ChangesBlock } from '@/components/target/history/errors-and-changes';
 import { CodeScrollArea, File, FileDiff } from '@/components/ui/diffs';
 import { Link } from '@/components/ui/link';
 import { NotFound } from '@/components/ui/not-found/not-found';
@@ -56,15 +52,11 @@ import { SeverityLevelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn, formatCount } from '@/lib/utils';
-import * as styles from './target-history-schema-version.css';
 
 /** A status icon inside a tab, explained on hover. */
 function StatusTooltip(props: { icon: React.ReactNode; label: string }) {
   return (
-    <Tooltip
-      trigger={<span className={styles.statusTooltipSpan}>{props.icon}</span>}
-      content={props.label}
-    />
+    <Tooltip trigger={<span className="inline-flex">{props.icon}</span>} content={props.label} />
   );
 }
 
@@ -107,8 +99,8 @@ export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string 
 
   if (isLoading) {
     return (
-      <div className={styles.targetHistorySchemaVersionPageDiv}>
-        <span className={styles.targetHistorySchemaVersionPageSpan}>
+      <div className="flex size-full flex-col items-center justify-center self-center text-sm text-fg-secondary">
+        <span className="mb-3">
           <Spinner variants={{ size: 'lg' }} />
         </span>
         Loading schema version...
@@ -125,7 +117,7 @@ export function TargetHistorySchemaVersionPage(props: { schemaVersionId: string 
         error={query.error}
         showError
         showLogoutButton={false}
-        className={styles.targetHistorySchemaVersionPageQueryError}
+        className="mt-20"
       />
     );
   }
@@ -273,7 +265,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
   const contractPicker = !contractVersions.length ? (
     schemaVersion.contractVersions?.edges ? (
-      <span className={styles.schemaVersionViewSpan}>
+      <span className="inline-flex items-center gap-1.5 px-2 text-xs text-fg-default">
         {versionStatusIcon(schemaVersion, DEFAULT_GRAPH_LABELS)}
         Default Graph
       </span>
@@ -284,7 +276,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
       value={selectedItem}
       onValueChange={setSelectedItem}
       label={
-        <span className={styles.schemaVersionViewSpan2}>
+        <span className="inline-flex items-center gap-1.5">
           {contractVersionNode
             ? versionStatus(contractVersionNode, CONTRACT_LABELS).icon
             : versionStatus(schemaVersion, DEFAULT_GRAPH_LABELS).icon}
@@ -331,7 +323,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
     ) : (
       <>
         {contractOrVersion.schemaCompositionErrors && (
-          <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+          <CompositionErrorsCard compositionErrors={contractOrVersion.schemaCompositionErrors} />
         )}
         <SchemaVersionSummary schemaVersion={schemaVersion} contractVersion={contractVersionNode} />
         {!schemaVersion.subgraphDiffs && (
@@ -354,7 +346,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
 
   const publicSchema = contractOrVersion.schemaCompositionErrors ? (
     <>
-      <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+      <CompositionErrorsCard compositionErrors={contractOrVersion.schemaCompositionErrors} />
       <p>No schema available as the composition did not succeed.</p>
     </>
   ) : (
@@ -375,7 +367,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
 
   const supergraph = contractOrVersion.schemaCompositionErrors ? (
     <>
-      <CompositionErrors compositionErrors={contractOrVersion.schemaCompositionErrors} />
+      <CompositionErrorsCard compositionErrors={contractOrVersion.schemaCompositionErrors} />
       <p>No supergraph available as the composition did not succeed.</p>
     </>
   ) : (
@@ -395,15 +387,15 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
   );
 
   return (
-    <div className={styles.schemaVersionViewDiv}>
-      <div className={styles.schemaVersionViewDiv2}>
+    <div className="flex w-full min-w-0 flex-1 flex-col py-6">
+      <div className="mb-3">
         <SchemaVersionHeader schemaVersion={schemaVersion} />
       </div>
       {/* A monolithic schema has no subgraphs, so its summary sits on the page without tabs. */}
       {schemaVersion.subgraphDiffs ? (
-        <div className={styles.schemaVersionViewDiv3}>
+        <div className="mt-3 flex flex-col gap-3">
           {failures.length ? (
-            <div className={styles.schemaVersionViewDiv4}>
+            <div className="mb-3">
               <ContractFailuresTable
                 title={`${failures.length} of ${contractVersions.length} contracts failed`}
                 aside={`${contractVersions.length - failures.length} passed`}
@@ -420,26 +412,26 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
                 value: 'details',
                 label: 'Summary',
                 icon: ListIcon,
-                content: <div className={styles.schemaVersionViewDiv5}>{summary}</div>,
+                content: <div className="space-y-8">{summary}</div>,
               },
               {
                 value: 'full-schema',
                 label: 'Schema',
                 icon: FileCode2,
-                content: <div className={styles.schemaVersionViewDiv6}>{publicSchema}</div>,
+                content: <div className="space-y-8">{publicSchema}</div>,
               },
               {
                 value: 'supergraph',
                 label: 'Supergraph',
                 icon: Layers,
-                content: <div className={styles.schemaVersionViewDiv7}>{supergraph}</div>,
+                content: <div className="space-y-8">{supergraph}</div>,
               },
               {
                 value: 'service-schema',
                 label: 'Subgraphs',
                 icon: BoxIcon,
                 content: (
-                  <div className={styles.schemaVersionViewDiv8}>
+                  <div className="space-y-8">
                     <GraphVersionSubgraphView subgraphDiffs={schemaVersion.subgraphDiffs} />
                   </div>
                 ),
@@ -448,7 +440,7 @@ function SchemaVersionView(props: SchemaVersionViewProps) {
           />
         </div>
       ) : (
-        <div className={styles.schemaVersionViewDiv9}>{summary}</div>
+        <div className="mt-4 space-y-8">{summary}</div>
       )}
     </div>
   );
@@ -461,20 +453,20 @@ type VersionStatusLabels = { changed: string; succeeded: string; failed: string 
 function versionStatus(version: VersionStatusFlags, labels: VersionStatusLabels) {
   if (version.hasSchemaChanges) {
     return {
-      icon: <GitCompareIcon className={styles.versionStatusGitCompareIcon} />,
+      icon: <GitCompareIcon className="size-3.5" />,
       label: labels.changed,
       state: 'Schema changed',
     };
   }
   if (version.isComposable) {
     return {
-      icon: <CheckIcon className={styles.versionStatusCheckIcon} />,
+      icon: <CheckIcon className="size-3.5 text-success" />,
       label: labels.succeeded,
       state: 'No changes',
     };
   }
   return {
-    icon: <TriangleAlertIcon className={styles.versionStatusTriangleAlertIcon} />,
+    icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
     label: labels.failed,
     state: 'Failed',
   };
@@ -491,7 +483,7 @@ function versionStatusTrailing(version: VersionStatusFlags, labels: VersionStatu
   return (
     <StatusTooltip
       icon={
-        <span className={styles.versionStatusTrailingSpan}>
+        <span className="inline-flex items-center gap-1.5 text-xs text-fg-muted">
           {status.icon}
           {status.state}
         </span>
@@ -530,11 +522,11 @@ function GraphQLSchemaView(props: {
   }, [props.previousSdl, props.currentSdl]);
 
   const titleNode = (
-    <span className={styles.graphQLSchemaViewSpan}>
+    <span className="flex items-center gap-1">
       {props.fromName && (
         <>
           {props.fromName}
-          <ArrowRightIcon className={styles.graphQLSchemaViewArrowRightIcon} />
+          <ArrowRightIcon className="inline size-3" />
         </>
       )}
       {props.toName}
@@ -543,7 +535,7 @@ function GraphQLSchemaView(props: {
 
   return (
     <>
-      <div className={styles.graphQLSchemaViewDiv}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeader title={props.title} subtitle={props.subtitle} />
         {props.previousSdl && <ViewModeToggle active={viewMode} onChange={setViewMode} />}
       </div>
@@ -555,19 +547,25 @@ function GraphQLSchemaView(props: {
         />
       )}
       {viewMode === 'diff' && (
-        <GenericGraphCard title={titleNode}>
-          {(props.previousSdl ?? '') === props.currentSdl ? (
-            <div className={styles.graphQLSchemaViewDiv2}>
-              <NoGraphChanges />
-            </div>
-          ) : (
-            <SDLDiffView
-              before={props.previousSdl ?? ''}
-              after={props.currentSdl}
-              sorted
-              tooLargeHint="Switch to View to see the full schema."
-            />
-          )}
+        <GenericGraphCard
+          title={titleNode}
+          actions={<span className="text-xs text-fg-muted">Sorted by kind and name</span>}
+        >
+          {/* Fills the viewport below the tab strip and the two headers (11rem), as SdlPane does. */}
+          <div className="flex min-h-[var(--code-max-h)] flex-col [--code-max-h:calc(100vh-11rem)]">
+            {(props.previousSdl ?? '') === props.currentSdl ? (
+              <div className="px-5 py-3">
+                <NoGraphChanges />
+              </div>
+            ) : (
+              <SDLDiffView
+                before={props.previousSdl ?? ''}
+                after={props.currentSdl}
+                sorted
+                tooLargeMessage="Every change is listed under Changes. To browse the full schema, switch to View."
+              />
+            )}
+          </div>
         </GenericGraphCard>
       )}
       {viewMode === 'raw' && props.currentSdl && (
@@ -606,7 +604,7 @@ function DownloadButton(props: { contents: string; fileName: string }) {
             document.body.removeChild(element);
           }}
         >
-          <DownloadIcon className={styles.downloadButtonDownloadIcon} /> Download
+          <DownloadIcon className="mr-1 size-3" /> Download
         </Button>
       }
       content={`Download ${props.fileName}`}
@@ -638,26 +636,22 @@ function FilterableSchemaChangeBlock(props: {
   }, [changes, selectedChangeType]);
 
   return (
-    <div className={styles.filterableSchemaChangeBlockDiv}>
+    <div className="space-y-3">
       <ChangeTypeToggle selectedChangeType={selectedChangeType} onChange={setSelectedChangeType} />
       <GenericGraphCard title={props.title}>
-        <div className={styles.filterableSchemaChangeBlockDiv2}>
+        <div className="px-5">
           {filteredChanges?.length ? (
-            <div className={styles.filterableSchemaChangeBlockDiv3}>
-              <ChangesBlock changes={filteredChanges} />
+            <div className="pt-2 pb-8">
+              <ChangesBlock explorerLinks="version" changes={filteredChanges} />
             </div>
           ) : selectedChangeType !== null ? (
-            <div className={styles.filterableSchemaChangeBlockDiv4}>
-              No changes of this change type.
-            </div>
+            <div className="py-3 text-xs">No changes of this change type.</div>
           ) : props.hasPreviousVersion ? (
-            <div className={styles.filterableSchemaChangeBlockDiv5}>
+            <div className="py-3">
               <NoGraphChanges />
             </div>
           ) : (
-            <div className={styles.filterableSchemaChangeBlockDiv6}>
-              This is the initial version! No changes available.{' '}
-            </div>
+            <div className="py-3 text-xs">This is the initial version! No changes available. </div>
           )}
         </div>
       </GenericGraphCard>
@@ -719,8 +713,8 @@ function SubgraphCard(props: {
 }) {
   const [isCollapsed, setIsCollapsed] = useState(props.isInitiallyCollapsed ?? false);
   return (
-    <div className={styles.subgraphCardDiv}>
-      <SubgraphRow subgraphDiff={props.diff} className={styles.subgraphCardSubgraphRow}>
+    <div className="divide-y overflow-hidden rounded-xl border">
+      <SubgraphRow subgraphDiff={props.diff} className="bg-surface-card">
         <Button
           size="icon-sm"
           variant="ghost"
@@ -731,7 +725,7 @@ function SubgraphCard(props: {
         </Button>
       </SubgraphRow>
       {props.renderChildren && !isCollapsed && (
-        <div className={styles.subgraphCardDiv2}>{props.renderChildren()}</div>
+        <div className="bg-surface-inset">{props.renderChildren()}</div>
       )}
     </div>
   );
@@ -752,7 +746,7 @@ function GraphVersionSubgraphView(props: {
       function Component(props: { children: ReactNode }) {
         return (
           <>
-            <div className={styles.componentDiv}>
+            <div className="flex flex-wrap items-end justify-between gap-4">
               <SectionHeader
                 title="Subgraphs"
                 subtitle="Per-subgraph state and changes introduced by this version."
@@ -786,7 +780,7 @@ function GraphVersionSubgraphView(props: {
                 renderChildren={
                   diff.previousSubgraphVersion.sdl === diff.subgraphVersion.sdl
                     ? () => (
-                        <p className={styles.graphVersionSubgraphViewP}>
+                        <p className="max-w-[600px] p-5 text-xs">
                           The SDL did not change. This can happen if only the service url has
                           changed or the subgraph was manually published or force published to
                           multiple targets instead of being promoted.
@@ -908,19 +902,18 @@ function GraphVersionSubgraphChangesView(props: {
               key={diff.__typename + diff.subgraphVersion.id}
               diff={diff}
               renderChildren={() => (
-                <div className={styles.graphVersionSubgraphChangesViewDiv}>
+                <div className="px-5">
                   {edges?.length ? (
-                    <div className={styles.graphVersionSubgraphChangesViewDiv2}>
-                      <ChangesBlock changes={edges?.map(edge => edge.node) ?? []} />
+                    <div className="mb-8 pt-2">
+                      <ChangesBlock
+                        explorerLinks="version"
+                        changes={edges?.map(edge => edge.node) ?? []}
+                      />
                     </div>
                   ) : selectedChangeType === null ? (
-                    <div className={styles.graphVersionSubgraphChangesViewDiv3}>
-                      No changes available.
-                    </div>
+                    <div className="py-5 text-xs">No changes available.</div>
                   ) : (
-                    <div className={styles.graphVersionSubgraphChangesViewDiv4}>
-                      No Changes available for this type.
-                    </div>
+                    <div className="py-5 text-xs">No Changes available for this type.</div>
                   )}
                 </div>
               )}
@@ -934,7 +927,7 @@ function GraphVersionSubgraphChangesView(props: {
               key={diff.__typename + diff.removedSubgraphVersion.id}
               diff={diff}
               renderChildren={() => (
-                <div className={styles.graphVersionSubgraphChangesViewDiv5}>
+                <div className="px-5 py-5 text-xs">
                   Subgraph removed in this version. Its types are no longer part of the supergraph.
                 </div>
               )}
@@ -948,7 +941,7 @@ function GraphVersionSubgraphChangesView(props: {
               key={diff.__typename + diff.subgraphVersion.id}
               diff={diff}
               renderChildren={() => (
-                <div className={styles.graphVersionSubgraphChangesViewDiv6}>
+                <div className="px-5 py-5 text-xs">
                   New subgraph introduced in this version. No prior schema to diff against.
                 </div>
               )}
@@ -962,11 +955,9 @@ function GraphVersionSubgraphChangesView(props: {
   );
 
   return (
-    <div className={styles.graphVersionSubgraphChangesViewDiv7}>
+    <div className="space-y-3">
       <ChangeTypeToggle selectedChangeType={selectedChangeType} onChange={setSelectedChangeType} />
-      <div className={styles.graphVersionSubgraphChangesViewDiv8}>
-        {nodes.some(node => node !== null) ? nodes : <>No Changes</>}
-      </div>
+      <div className="space-y-4">{nodes.some(node => node !== null) ? nodes : <>No Changes</>}</div>
     </div>
   );
 }
@@ -976,14 +967,14 @@ export function SDLDiffView(props: {
   after: string;
   /** Compare sorted copies, for composed schemas whose definition order carries no meaning. */
   sorted?: boolean;
-  /** Where to see the full schema when the diff is too large to show. */
-  tooLargeHint?: ReactNode;
+  /** What to read instead when the diff is too large to show: where the changes and the schema are. */
+  tooLargeMessage?: ReactNode;
 }) {
   const result = useSdlDiff(props.before, props.after, props.sorted ?? false);
 
   if (result === null) {
     return (
-      <div className={styles.sDLDiffViewDiv}>
+      <div className="flex items-center gap-2 px-5 py-3 text-xs text-fg-secondary">
         <Spinner variants={{ size: 'sm' }} label="Preparing diff" />
         Preparing diff…
       </div>
@@ -997,7 +988,7 @@ export function SDLDiffView(props: {
       return (
         <>
           <SDLDiffNotice
-            icon={<CircleCheckIcon className={styles.sDLDiffViewCircleCheckIcon} />}
+            icon={<CircleCheckIcon className="size-4 text-success" />}
             title="No changes apart from order"
           >
             Both schemas have the same definitions. Only their order or formatting differs.
@@ -1008,38 +999,35 @@ export function SDLDiffView(props: {
     case 'too-large':
       return (
         <SDLDiffNotice
-          icon={<InfoIcon className={styles.sDLDiffViewInfoIcon} />}
+          icon={<InfoIcon className="size-4 text-fg-muted" />}
           title="Diff too large to display"
         >
-          The schemas differ in too many lines to compare here. {props.tooLargeHint}
+          {props.tooLargeMessage ?? 'The schemas differ in too many lines to compare here.'}
         </SDLDiffNotice>
       );
     case 'diff':
       return (
-        <>
-          {props.sorted && <div className={styles.sDLDiffViewDiv2}>Sorted by kind and name</div>}
-          <CodeScrollArea>
-            <FileDiff
-              fileDiff={result.fileDiff}
-              options={{
-                disableFileHeader: true,
-                diffStyle: 'unified',
-              }}
-            />
-          </CodeScrollArea>
-        </>
+        <CodeScrollArea>
+          <FileDiff
+            fileDiff={result.fileDiff}
+            options={{
+              disableFileHeader: true,
+              diffStyle: 'unified',
+            }}
+          />
+        </CodeScrollArea>
       );
   }
 }
 
 function SDLDiffNotice(props: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
-    <div className={styles.sDLDiffNoticeDiv}>
-      <div className={styles.sDLDiffNoticeDiv2}>
+    <div className="cursor-default border-b border-line-subtle px-5 py-3">
+      <div className="mb-1 flex items-center gap-3">
         {props.icon}
-        <h2 className={styles.sDLDiffNoticeH2}>{props.title}</h2>
+        <h2 className="text-sm font-medium text-fg">{props.title}</h2>
       </div>
-      <p className={styles.sDLDiffNoticeP}>{props.children}</p>
+      <p className="text-xs text-fg-secondary">{props.children}</p>
     </div>
   );
 }
@@ -1047,7 +1035,7 @@ function SDLDiffNotice(props: { icon: ReactNode; title: string; children: ReactN
 export function SDLView(props: { sdl: string }) {
   return (
     <CodeScrollArea>
-      <div className={styles.sDLViewDiv}>
+      <div className="max-w-[inherit]">
         <File
           file={{
             name: 'schema.graphql',
@@ -1064,12 +1052,12 @@ export function SDLView(props: { sdl: string }) {
 
 function FirstComposableGraphVersion() {
   return (
-    <div className={styles.firstComposableGraphVersionDiv}>
-      <div className={styles.firstComposableGraphVersionDiv2}>
-        <CircleCheckIcon className={styles.firstComposableGraphVersionCircleCheckIcon} />
-        <h2 className={styles.firstComposableGraphVersionH2}>First composable graph</h2>
+    <div className="cursor-default">
+      <div className="mb-3 flex items-center gap-3">
+        <CircleCheckIcon className="size-4 text-success" />
+        <h2 className="text-base font-medium text-fg">First composable graph</h2>
       </div>
-      <p className={styles.firstComposableGraphVersionP}>
+      <p className="text-xs text-fg-secondary">
         Congratulations! This is the first version of the graph that is composable.
       </p>
     </div>
@@ -1078,12 +1066,12 @@ function FirstComposableGraphVersion() {
 
 function NoGraphChanges() {
   return (
-    <div className={styles.noGraphChangesDiv}>
-      <div className={styles.noGraphChangesDiv2}>
-        <CircleCheckIcon className={styles.noGraphChangesCircleCheckIcon} />
-        <h2 className={styles.noGraphChangesH2}>No Graph Changes</h2>
+    <div className="cursor-default">
+      <div className="mb-3 flex items-center gap-3">
+        <CircleCheckIcon className="size-4 text-success" />
+        <h2 className="text-base font-medium text-fg">No Graph Changes</h2>
       </div>
-      <p className={styles.noGraphChangesP}>There are no public facing changes in the graph.</p>
+      <p className="text-xs text-fg-secondary">There are no public facing changes in the graph.</p>
     </div>
   );
 }
@@ -1149,11 +1137,11 @@ function SchemaVersionPromotionOriginContents(props: {
 
   return (
     <>
-      <span className={styles.schemaVersionPromotionOriginContentsSpan}>
-        <GitCommit className={styles.schemaVersionPromotionOriginContentsGitCommit} />
+      <span className="inline-flex items-center gap-1.5">
+        <GitCommit className="h-3.5 w-3.5" />
         {origin.targetSlug === targetSlug ? (
           <Link
-            className={styles.schemaVersionPromotionOriginContentsLink}
+            className="font-mono"
             to="/$organizationSlug/$projectSlug/$targetSlug/history/$versionId"
             params={{
               organizationSlug,
@@ -1187,10 +1175,10 @@ function SchemaVersionHeader(props: {
         <>
           {schemaVersion.origin.publishedSubgraphs?.map(subgraph => (
             <span
-              className={styles.schemaVersionHeaderSpan}
+              className="inline-flex items-center gap-1.5"
               key={subgraph.name + '|' + subgraph.versionId}
             >
-              <GitCommit className={styles.schemaVersionHeaderGitCommit} />
+              <GitCommit className="h-3.5 w-3.5" />
               <CopyChip
                 value={subgraph.versionId}
                 label={`${subgraph.name}@${subgraph.revision ?? subgraph.versionId.substring(0, 8)}`}
@@ -1210,10 +1198,10 @@ function SchemaVersionHeader(props: {
         <>
           {schemaVersion.origin.removedSubgraphs.map(subgraph => (
             <span
-              className={styles.schemaVersionHeaderSpan2}
+              className="inline-flex items-center gap-1.5"
               key={subgraph.name + '|' + subgraph.versionId}
             >
-              <GitCommit className={styles.schemaVersionHeaderGitCommit2} />
+              <GitCommit className="h-3.5 w-3.5" />
               <CopyChip
                 value={subgraph.versionId}
                 label={`${subgraph.name}@${subgraph.versionId.substring(0, 8)}`}
@@ -1227,28 +1215,28 @@ function SchemaVersionHeader(props: {
   );
 
   const sourceControl = schemaVersion.githubMetadata ? (
-    <span className={styles.schemaVersionHeaderSpan3}>
-      <GitCommit className={styles.schemaVersionHeaderGitCommit3} />
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      <GitCommit className="h-3.5 w-3.5" />
       <CopyChip
         value={schemaVersion.githubMetadata.commit}
         label={schemaVersion.githubMetadata.commit.slice(0, 7)}
       />
-      <span className={styles.schemaVersionHeaderSpan4}>
-        <GitBranch className={styles.schemaVersionHeaderGitBranch} />
+      <span className="ml-1 inline-flex items-center gap-1">
+        <GitBranch className="h-3 w-3" />
         {schemaVersion.githubMetadata.repository}
       </span>
     </span>
   ) : schemaVersion.meta?.commit ? (
-    <span className={styles.schemaVersionHeaderSpan5}>
-      <GitCommit className={styles.schemaVersionHeaderGitCommit4} />
+    <span className="inline-flex items-center gap-1.5">
+      <GitCommit className="h-3.5 w-3.5" />
       <CopyChip value={schemaVersion.meta.commit} label={schemaVersion.meta.commit.slice(0, 7)} />
     </span>
   ) : null;
 
   return (
     <header>
-      <div className={styles.schemaVersionHeaderDiv}>
-        <h1 className={styles.schemaVersionHeaderH1}>Graph Version</h1>
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        <h1 className="text-xl leading-tight font-semibold text-fg">Graph Version</h1>
         <CopyChip
           value={schemaVersion.id}
           label={
@@ -1259,8 +1247,10 @@ function SchemaVersionHeader(props: {
           }
         />
       </div>
-      <p className={styles.schemaVersionHeaderP}>Detailed view of the graph version changes.</p>
-      <div className={styles.schemaVersionHeaderDiv2}>
+      <p className="mt-1.5 text-sm text-fg-secondary">
+        Detailed view of the graph version changes.
+      </p>
+      <div className="mt-6 rounded-md border bg-surface-card px-5 py-4">
         <DescriptionList
           variants={{ termStyle: 'title', columns: 'auto' }}
           rows={[
@@ -1269,7 +1259,7 @@ function SchemaVersionHeader(props: {
                 {
                   term: 'Status',
                   description: (
-                    <span className={styles.schemaVersionHeaderSpan6}>
+                    <span className="inline-flex items-center gap-1.5">
                       <StatusDot color={schemaVersion.isValid ? 'success' : 'critical'} />
                       {schemaVersion.isValid ? 'Composable' : 'Failed'}
                     </span>
@@ -1281,12 +1271,12 @@ function SchemaVersionHeader(props: {
                   term: 'Created at',
                   description: (
                     <>
-                      <span className={styles.schemaVersionHeaderSpan7}>
-                        <Clock className={styles.schemaVersionHeaderClock} />
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="size-3" />
                         <TimeAgo date={schemaVersion.date} />
                       </span>
                       {schemaVersion.meta?.author && (
-                        <span className={styles.schemaVersionHeaderSpan8}>
+                        <span className="mt-0.5 block truncate">
                           by {schemaVersion.meta.author}
                         </span>
                       )}
@@ -1312,7 +1302,7 @@ const schemaViewModes: { id: SchemaViewMode; label: string; Icon: typeof ListTre
 
 function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaViewMode) => void }) {
   return (
-    <div className={styles.viewModeToggleDiv}>
+    <div className="inline-flex items-center gap-1 rounded-lg border p-1">
       {schemaViewModes.map(m => {
         const isActive = m.id === props.active;
         const Icon = m.Icon;
@@ -1320,9 +1310,12 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
           <button
             key={m.id}
             onClick={() => props.onChange(m.id)}
-            className={cn(styles.viewModeToggleButton, isActive && styles.viewModeToggleButton2)}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] transition-colors hover:bg-surface-hover',
+              isActive ? 'bg-surface-selected' : 'hover:',
+            )}
           >
-            <Icon className={styles.viewModeToggleIcon} />
+            <Icon className="h-3.5 w-3.5" />
             {m.label}
           </button>
         );
@@ -1332,17 +1325,9 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
 }
 
 const breakingChangeTypeModes: { id: SeverityLevelType; label: string; dotColor: string }[] = [
-  {
-    id: SeverityLevelType.Breaking,
-    label: 'Breaking',
-    dotColor: styles.breakingChangeTypeModesDotColor,
-  },
-  {
-    id: SeverityLevelType.Dangerous,
-    label: 'Dangerous',
-    dotColor: styles.breakingChangeTypeModesDotColor2,
-  },
-  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: styles.breakingChangeTypeModesDotColor3 },
+  { id: SeverityLevelType.Breaking, label: 'Breaking', dotColor: 'bg-critical' },
+  { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-warning' },
+  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-info' },
 ];
 
 function ChangeTypeToggle(props: {
@@ -1350,15 +1335,15 @@ function ChangeTypeToggle(props: {
   onChange: (selectedChangeType: SeverityLevelType | null) => void;
 }) {
   return (
-    <div className={styles.changeTypeToggleDiv}>
+    <div className="inline-flex items-center gap-1 rounded-lg border p-1">
       <button
         onClick={() => props.onChange(null)}
         className={cn(
-          styles.changeTypeToggleButton,
-          props.selectedChangeType === null && styles.changeTypeToggleButton2,
+          'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs hover:bg-surface-hover',
+          props.selectedChangeType === null ? 'bg-surface-selected' : 'hover:',
         )}
       >
-        <span className={cn(styles.changeTypeToggleSpan, styles.changeTypeToggleSpan2)} />
+        <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', 'bg-fg-muted')} />
         All
       </button>
       {breakingChangeTypeModes.map(m => {
@@ -1368,11 +1353,11 @@ function ChangeTypeToggle(props: {
             key={m.id}
             onClick={() => props.onChange(m.id)}
             className={cn(
-              styles.changeTypeToggleButton3,
-              isActive && styles.changeTypeToggleButton4,
+              'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs hover:bg-surface-hover',
+              isActive ? 'bg-surface-selected' : 'hover:',
             )}
           >
-            <span className={cn(styles.changeTypeToggleSpan3, m.dotColor)} />
+            <span className={cn('h-1.5 w-1.5 translate-y-[-1px] rounded-full', m.dotColor)} />
             {m.label}
           </button>
         );
@@ -1380,55 +1365,6 @@ function ChangeTypeToggle(props: {
     </div>
   );
 }
-
-const CompositionErrors = (props: {
-  compositionErrors: FragmentType<typeof CompositionErrorsSection_SchemaErrorConnection>;
-}) => {
-  const compositionErrors = useFragment(
-    CompositionErrorsSection_SchemaErrorConnection,
-    props.compositionErrors,
-  );
-
-  return (
-    <div className={styles.compositionErrorsDiv}>
-      <div className={styles.compositionErrorsDiv2}>
-        <div className={styles.compositionErrorsDiv3}>
-          <XCircleIcon className={styles.compositionErrorsXCircleIcon} />
-        </div>
-
-        <div className={styles.compositionErrorsDiv4}>
-          <h3 className={styles.compositionErrorsH3}>Supergraph not composable</h3>
-          <p className={styles.compositionErrorsP}>
-            Errors occurred while attempting to compose the supergraph from its subgraphs.
-          </p>
-        </div>
-
-        <span className={styles.compositionErrorsSpan}>
-          <span className={styles.compositionErrorsSpan2} />
-          {compositionErrors.edges.length} error
-          {compositionErrors.edges.length === 1 ? '' : 's'}
-        </span>
-      </div>
-
-      <div className={styles.compositionErrorsDiv5}>
-        <span className={styles.compositionErrorsSpan3}>Composition errors</span>
-        <CompositionErrorsPopover />
-      </div>
-
-      <ul className={styles.compositionErrorsUl}>
-        {compositionErrors.edges.map((err, idx) => (
-          <li key={idx} className={styles.compositionErrorsLi}>
-            <span className={styles.compositionErrorsSpan4}>
-              {String(idx + 1).padStart(2, '0')}
-            </span>
-
-            <CompositionErrorMessage message={err.node.message} />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
 
 const SchemaVersionSummary_SchemaVersionFragment = graphql(`
   fragment SchemaVersionSummary_SchemaVersionFragment on SchemaVersion {
@@ -1478,6 +1414,7 @@ const SchemaVersionSummary_SchemaVersionFragment = graphql(`
         node {
           isSafeBasedOnUsage
           severityLevel
+          isUsageTracked
         }
       }
     }
@@ -1492,6 +1429,7 @@ const SchemaVersionSummary_ContractVersionFragment = graphql(`
         node {
           isSafeBasedOnUsage
           severityLevel
+          isUsageTracked
         }
       }
     }
@@ -1501,8 +1439,8 @@ const SchemaVersionSummary_ContractVersionFragment = graphql(`
 function SectionHeader(props: { title: string; subtitle: string }) {
   return (
     <div>
-      <h2 className={styles.sectionHeaderH2}>{props.title}</h2>
-      <p className={styles.sectionHeaderP}>{props.subtitle}</p>
+      <h2 className="text-base font-semibold text-fg">{props.title}</h2>
+      <p className="mt-0.5 text-sm text-fg-secondary">{props.subtitle}</p>
     </div>
   );
 }
@@ -1548,56 +1486,39 @@ export const SchemaVersionSummary = (props: {
     return data;
   }, [schemaVersion.subgraphDiffs]);
 
-  const publicChangeStats = useMemo(() => {
-    const data = {
-      totalChanges: (contractVersion ?? schemaVersion).sdlChanges?.edges.length ?? 0,
-      breakingChanges: 0,
-      notSafeChanges: 0,
-    };
-
-    for (const change of (contractVersion ?? schemaVersion).sdlChanges?.edges ?? []) {
-      if (change.node.severityLevel === SeverityLevelType.Breaking) {
-        data.breakingChanges++;
-
-        if (!change.node.isSafeBasedOnUsage) {
-          console.log(change.node);
-          data.notSafeChanges++;
-        }
-      }
-    }
-
-    return data;
-  }, [schemaVersion.sdlChanges, contractVersion?.sdlChanges]);
+  const publicChangeStats = useMemo(
+    () =>
+      changeSafetyStats(
+        (contractVersion ?? schemaVersion).sdlChanges?.edges.map(edge => edge.node) ?? [],
+      ),
+    [schemaVersion.sdlChanges, contractVersion?.sdlChanges],
+  );
 
   return (
-    <div className={styles.schemaVersionSummaryDiv}>
+    <div className="flex flex-col gap-6">
       <SectionHeader title="Summary" subtitle="Changes introduced by this version." />
-      <div className={styles.schemaVersionSummaryDiv2}>
+      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl border bg-surface-card 2xl:grid-cols-6">
         <Stat label="Schema changes" value={publicChangeStats.totalChanges} />
         <Stat
           label="Breaking changes"
           value={publicChangeStats.breakingChanges}
           additionalValue={
             publicChangeStats.breakingChanges && schemaVersion.isComposable ? (
-              publicChangeStats.notSafeChanges ? (
+              publicChangeStats.notSafe ? (
                 <Tooltip
                   trigger={
-                    <span className={styles.schemaVersionSummarySpan}>
-                      <ShieldAlertIcon
-                        size="14"
-                        className={styles.schemaVersionSummaryShieldAlertIcon}
-                      />
-                      {publicChangeStats.notSafeChanges} not safe
+                    <span className="ml-2 flex items-center gap-0.5 text-xs text-critical lg:text-sm">
+                      <ShieldAlertIcon size="14" className="inline" />
+                      {publicChangeStats.notSafe} not safe
                     </span>
                   }
-                  content="Some changes are not safe based on usage data."
+                  content="Some changes are in use, or usage isn't recorded for what they touch."
                 />
               ) : (
                 <Tooltip
                   trigger={
-                    <span className={styles.schemaVersionSummarySpan2}>
-                      <CheckIcon size="14" className={styles.schemaVersionSummaryCheckIcon} /> All
-                      safe
+                    <span className="pl-2 text-base text-success">
+                      <CheckIcon size="14" className="inline" /> All safe
                     </span>
                   }
                   content="All these changes are safe based on usage reporting data."
@@ -1607,36 +1528,32 @@ export const SchemaVersionSummary = (props: {
           }
         />
         <Stat label="Total Subgraphs" value={subgraphStats.total} />
-        <Stat
-          label="Added subgraphs"
-          value={subgraphStats.added}
-          className={styles.schemaVersionSummaryStat}
-        />
+        <Stat label="Added subgraphs" value={subgraphStats.added} className="hidden 2xl:flex" />
         <Stat
           label="Removed Subgraphs "
           value={subgraphStats.removed}
-          className={styles.schemaVersionSummaryStat2}
+          className="hidden 2xl:flex"
         />
         <Stat
           label="Updated Subgraphs "
           value={subgraphStats.updated}
-          className={styles.schemaVersionSummaryStat3}
+          className="hidden 2xl:flex"
         />
       </div>
 
       {schemaVersion.subgraphDiffs && (
-        <div className={styles.schemaVersionSummaryDiv3}>
-          <div className={styles.schemaVersionSummaryDiv4}>
-            <div className={styles.schemaVersionSummaryDiv5}>Subgraph Overview</div>
+        <div className="overflow-hidden rounded-xl border">
+          <div className="flex items-center justify-between border-b bg-surface-card px-5 py-3">
+            <div className="flex items-center gap-2 text-xs font-bold capitalize">
+              Subgraph Overview
+            </div>
           </div>
-          <ul className={styles.schemaVersionSummaryUl}>
+          <ul className="divide-y bg-surface-inset">
             {schemaVersion.subgraphDiffs
               .sort(diff => (diff.__typename === 'SubgraphDiffUnchanged' ? 1 : -1))
               .map((diff, index) => (
                 <li
-                  className={cn(
-                    diff.__typename === 'SubgraphDiffUnchanged' && styles.schemaVersionSummaryLi,
-                  )}
+                  className={cn(diff.__typename === 'SubgraphDiffUnchanged' && 'opacity-50')}
                   key={`${schemaVersion.id}_${index}`}
                 >
                   <SubgraphRow subgraphDiff={diff} />
@@ -1656,10 +1573,12 @@ const Stat = (props: {
   className?: string;
 }) => {
   return (
-    <div className={cn(styles.statDiv, props.className)}>
-      <span className={styles.statSpan}>{props.label}</span>
+    <div className={cn('flex flex-col gap-1.5 px-5 py-4', props.className)}>
+      <span className="text-xs font-bold capitalize">{props.label}</span>
       <span>
-        <span className={styles.statSpan2}>{props.value === 0 ? '-' : props.value}</span>
+        <span className="text-xl leading-none tracking-tight">
+          {props.value === 0 ? '-' : props.value}
+        </span>
         {props.additionalValue && <> {props.additionalValue}</>}
       </span>
     </div>
@@ -1670,34 +1589,34 @@ const kindMeta = {
   SubgraphDiffAdded: {
     label: 'Added',
     Icon: Plus,
-    text: styles.kindMetaText,
-    bg: styles.kindMetaBg,
-    ring: styles.kindMetaRing,
-    dot: styles.kindMetaDot,
+    text: 'text-warning',
+    bg: 'bg-warning-tint-strong',
+    ring: 'ring-warning-line',
+    dot: 'bg-warning',
   },
   SubgraphDiffRemoved: {
     label: 'Removed',
     Icon: Minus,
-    text: styles.kindMetaText2,
-    bg: styles.kindMetaBg2,
-    ring: styles.kindMetaRing2,
-    dot: styles.kindMetaDot2,
+    text: 'text-critical',
+    bg: 'bg-critical-tint-strong',
+    ring: 'ring-critical-line',
+    dot: 'bg-critical',
   },
   SubgraphDiffChanged: {
     label: 'Updated',
     Icon: GitCompareArrows,
-    text: styles.kindMetaText3,
-    bg: styles.kindMetaBg3,
-    ring: styles.kindMetaRing3,
-    dot: styles.kindMetaDot3,
+    text: 'text-info',
+    bg: 'bg-info-tint-strong',
+    ring: 'ring-info-line',
+    dot: 'bg-info',
   },
   SubgraphDiffUnchanged: {
     label: 'Unchanged',
     Icon: CircleIcon,
-    text: styles.kindMetaText4,
-    bg: styles.kindMetaBg4,
-    ring: styles.kindMetaRing4,
-    dot: styles.kindMetaDot4,
+    text: 'text-fg-secondary',
+    bg: 'bg-surface-page',
+    ring: 'ring-line-strong',
+    dot: 'bg-line',
   },
 } as const;
 
@@ -1758,22 +1677,28 @@ function SubgraphRow(props: {
   const Icon = meta.Icon;
 
   return (
-    <div className={cn(styles.subgraphRowDiv, props.className)}>
-      <span className={cn(styles.subgraphRowSpan, meta.bg, meta.ring)}>
-        <Icon className={cn(styles.subgraphRowIcon, meta.text)} />
+    <div className={cn('flex items-center gap-4 px-5 py-3.5', props.className)}>
+      <span
+        className={cn(
+          'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1',
+          meta.bg,
+          meta.ring,
+        )}
+      >
+        <Icon className={cn('h-3.5 w-3.5', meta.text)} />
       </span>
 
-      <div className={styles.subgraphRowDiv2}>
-        <div className={styles.subgraphRowDiv3}>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex flex-wrap items-center gap-x-1">
           {subgraphDiff.__typename === 'SubgraphDiffUnchanged' && (
-            <code className={styles.subgraphRowCode}>
+            <code className="py-0.5 text-sm">
               {subgraphDiff.subgraphVersion.serviceName}@
               {subgraphDiff.subgraphVersion.revision ??
                 subgraphDiff.subgraphVersion.id.substring(0, 8)}
             </code>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffAdded' && (
-            <code className={styles.subgraphRowCode2}>
+            <code className="py-0.5 text-sm">
               {subgraphDiff.subgraphVersion.serviceName}@
               {subgraphDiff.subgraphVersion.revision ??
                 subgraphDiff.subgraphVersion.id.substring(0, 8)}
@@ -1781,13 +1706,13 @@ function SubgraphRow(props: {
           )}
           {subgraphDiff.__typename === 'SubgraphDiffChanged' && (
             <>
-              <code className={styles.subgraphRowCode3}>
+              <code className="py-0.5 text-sm">
                 {subgraphDiff.subgraphVersion.serviceName}@
                 {subgraphDiff.previousSubgraphVersion.revision ??
                   subgraphDiff.previousSubgraphVersion.id.substring(0, 8)}
               </code>
-              <ArrowRight className={styles.subgraphRowArrowRight} />
-              <code className={styles.subgraphRowCode4}>
+              <ArrowRight className="h-3 w-3" />
+              <code className="py-0.5 text-sm">
                 {subgraphDiff.subgraphVersion.serviceName}@
                 {subgraphDiff.subgraphVersion.revision ??
                   subgraphDiff.subgraphVersion.id.substring(0, 8)}
@@ -1795,7 +1720,7 @@ function SubgraphRow(props: {
             </>
           )}
           {subgraphDiff.__typename === 'SubgraphDiffRemoved' && (
-            <code className={styles.subgraphRowCode5}>
+            <code className="py-0.5 text-sm">
               {subgraphDiff.removedSubgraphVersion.serviceName}@
               {subgraphDiff.removedSubgraphVersion.revision ??
                 subgraphDiff.removedSubgraphVersion.id.substring(0, 8)}
@@ -1816,15 +1741,15 @@ function SubgraphRow(props: {
         )}
       </div>
 
-      <span className={cn(styles.subgraphRowSpan2, meta.text)}>
+      <span className={cn('inline-flex items-center gap-1.5 text-xs', meta.text)}>
         {subgraphDiff.__typename === 'SubgraphDiffChanged' && subgraphDiff.changes && (
-          <span className={styles.subgraphRowSpan3}>
+          <span className="mr-2">
             {subgraphDiff.changes.edges.length} change
             {subgraphDiff.changes.edges.length === 1 ? null : 's'}
           </span>
         )}
-        <span className={cn(styles.subgraphRowSpan4, meta.dot)} />
-        <span className={styles.subgraphRowSpan5}>{meta.label}</span>
+        <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
+        <span className="font-medium">{meta.label}</span>
         {props.children}
       </span>
     </div>
@@ -1833,34 +1758,39 @@ function SubgraphRow(props: {
 
 function SubgraphLink(props: { url: string }) {
   return (
-    <a href={props.url} target="_blank" rel="noreferrer" className={styles.subgraphLinkA}>
+    <a
+      href={props.url}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex w-fit items-center gap-1 text-xs text-fg-default"
+    >
       {props.url}
-      <ExternalLink className={styles.subgraphLinkExternalLink} />
+      <ExternalLink className="h-2.5 w-2.5" />
     </a>
   );
 }
 
 function GenericGraphCard(props: { title: ReactNode; children?: ReactNode; actions?: ReactNode }) {
   return (
-    <div className={styles.genericGraphCardDiv}>
-      <div className={styles.genericGraphCardDiv2}>
+    <div className="divide-y overflow-hidden rounded-xl border">
+      <div className="flex items-center gap-4 bg-surface-card px-5 py-3.5">
         <span
           className={cn(
-            styles.genericGraphCardSpan,
-            styles.genericGraphCardSpan2,
-            styles.genericGraphCardSpan3,
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1',
+            'bg-surface-page',
+            'ring-line-strong',
           )}
         >
-          <BoxIcon className={cn(styles.genericGraphCardBoxIcon)} />
+          <BoxIcon className={cn('h-3.5 w-3.5')} />
         </span>
-        <div className={styles.genericGraphCardDiv3}>
-          <div className={styles.genericGraphCardDiv4}>
-            <code className={styles.genericGraphCardCode}>{props.title}</code>
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
+            <code className="py-0.5 text-sm">{props.title}</code>
           </div>
         </div>
         {props.actions ? <>{props.actions}</> : null}
       </div>
-      {props.children && <div className={styles.genericGraphCardDiv5}>{props.children}</div>}
+      {props.children && <div className="bg-surface-inset">{props.children}</div>}
     </div>
   );
 }

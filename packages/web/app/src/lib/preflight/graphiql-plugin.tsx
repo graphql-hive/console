@@ -31,7 +31,6 @@ import { Kit } from '../kit';
 import { cn } from '../utils';
 import labApiDefinitionRaw from './lab-api-declaration?raw';
 import { IFrameEvents, LogMessage } from './shared-types';
-import * as styles from './graphiql-plugin.css';
 
 export type PreflightResultData = Omit<IFrameEvents.Outgoing.EventData.Result, 'type' | 'runId'>;
 
@@ -59,13 +58,17 @@ const targetRoute = getRouteApi(
 );
 
 const classes = {
-  monaco: clsx(styles.class2),
-  monacoMini: clsx(styles.class3),
-  icon: clsx(styles.class4),
+  monaco: clsx('*:bg-editor'),
+  monacoMini: clsx('h-32 *:rounded-md *:bg-editor'),
+  icon: clsx('absolute -left-5 top-px'),
 };
 
 function EditorTitle(props: { children: ReactNode; className?: string }) {
-  return <div className={cn(styles.editorTitleDiv, props.className)}>{props.children}</div>;
+  return (
+    <div className={cn('cursor-default text-base font-semibold tracking-tight', props.className)}>
+      {props.children}
+    </div>
+  );
 }
 
 const sharedMonacoProps = {
@@ -456,8 +459,8 @@ export function usePreflight(args: {
       <iframe
         src="/__preflight-embed"
         title="preflight-worker"
-        className={styles.usePreflightIframe}
-        data-cy="preflight-embed-iframe"
+        className="hidden"
+        data-testid="preflight-embed-iframe"
         /**
          * In DEV we need to use "allow-same-origin", as otherwise the embed can not instantiate the webworker (which is loaded from an URL).
          * In PROD the webworker is not
@@ -541,12 +544,12 @@ function PreflightContent() {
           onEnvValueChange={preflight.setEnvironmentVariables}
         />
       )}
-      <div className={clsx(styles.preflightContentDiv, 'graphiql-doc-explorer-title')}>
+      <div className="graphiql-doc-explorer-title flex items-center justify-between gap-4">
         Preflight Script
         {preflight.viewerCanModifyPreflightScript && (
-          <Button variant="link" onClick={toggleShowModal} data-cy="preflight-modal-button">
-            <span className={styles.preflightContentSpan}>
-              <PencilIcon className={styles.preflightContentPencilIcon} />
+          <Button variant="link" onClick={toggleShowModal} data-testid="preflight-modal-button">
+            <span className="flex items-center gap-1">
+              <PencilIcon className="size-4 shrink-0" />
               Edit
             </span>
           </Button>
@@ -557,26 +560,26 @@ function PreflightContent() {
         handle authentication.
       </Subtitle>
 
-      <div className={styles.preflightContentDiv2}>
+      <div className="mt-3">
         <Button
           size="compact"
           variant="outline"
           onClick={() => preflight.setIsEnabled(!preflight.isEnabled)}
-          data-cy="toggle-preflight"
+          data-testid="toggle-preflight"
         >
-          <PowerIcon className={styles.preflightContentPowerIcon} />
+          <PowerIcon className="mr-2 size-4" />
           {preflight.isEnabled ? 'On' : 'Off'}
         </Button>
       </div>
 
-      <EditorTitle className={styles.preflightContentEditorTitle}>
+      <EditorTitle className="mt-6 flex cursor-not-allowed items-center gap-2">
         Script <Badge content="JavaScript" variants={{ variant: 'outline' }} />
       </EditorTitle>
-      <Subtitle className={styles.preflightContentSubtitle}>Read-only view of the script</Subtitle>
-      <div className={styles.preflightContentDiv3}>
+      <Subtitle className="mb-3 cursor-not-allowed">Read-only view of the script</Subtitle>
+      <div className="relative">
         {preflight.isEnabled ? null : (
-          <div className={styles.preflightContentDiv4}>
-            <div className={styles.preflightContentDiv5}>
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-editor-backdrop/90 p-4 text-fg">
+            <div className="rounded-md bg-editor p-4 text-sm">
               Preflight Script is disabled and will not be executed
             </div>
           </div>
@@ -586,9 +589,9 @@ function PreflightContent() {
           value={preflight.content}
           {...monacoProps.script}
           theme={monacoTheme}
-          className={cn(classes.monacoMini, styles.preflightContentMonacoEditor)}
+          className={cn(classes.monacoMini, 'z-10')}
           wrapperProps={{
-            ['data-cy']: 'preflight-editor-mini',
+            ['data-testid']: 'preflight-editor-mini',
           }}
           options={{
             ...monacoProps.script.options,
@@ -602,10 +605,10 @@ function PreflightContent() {
         />
       </div>
 
-      <EditorTitle className={styles.preflightContentEditorTitle2}>
+      <EditorTitle className="mt-6 flex items-center gap-2">
         Environment variables <Badge content="JSON" variants={{ variant: 'outline' }} />
       </EditorTitle>
-      <Subtitle className={styles.preflightContentSubtitle2}>
+      <Subtitle className="mb-3">
         Declare variables that can be used by both the script and headers.
       </Subtitle>
       <MonacoEditor
@@ -617,7 +620,7 @@ function PreflightContent() {
         theme={monacoTheme}
         className={classes.monacoMini}
         wrapperProps={{
-          ['data-cy']: 'env-editor-mini',
+          ['data-testid']: 'env-editor-mini',
         }}
       />
     </>
@@ -727,29 +730,34 @@ function PreflightModal({
       }
       footer={
         <>
-          <p className={styles.preflightModalP}>
-            <InfoIcon className={styles.preflightModalInfoIcon} />
+          <p className="me-auto flex items-center gap-2 text-sm text-fg-default">
+            <InfoIcon className="size-4 shrink-0" />
             Changes made to this Preflight Script will apply to all users on your team using this
             target.
           </p>
-          <Button type="button" variant="outline" onClick={toggle} data-cy="preflight-modal-cancel">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={toggle}
+            data-testid="preflight-modal-cancel"
+          >
             Close
           </Button>
           <Button
             type="button"
             variant="primary"
             onClick={handleSubmit}
-            data-cy="preflight-modal-submit"
+            data-testid="preflight-modal-submit"
           >
             Save
           </Button>
         </>
       }
     >
-      <div className={styles.preflightModalDiv}>
-        <div className={styles.preflightModalDiv2}>
-          <div className={styles.preflightModalDiv3}>
-            <EditorTitle className={styles.preflightModalEditorTitle}>
+      <div className="grid h-[60vh] grid-cols-2 [&_section]:grow">
+        <div className="mr-4 flex flex-col">
+          <div className="flex justify-between p-2">
+            <EditorTitle className="flex gap-2">
               Script Editor
               <Badge content="JavaScript" variants={{ variant: 'outline' }} />
             </EditorTitle>
@@ -764,18 +772,18 @@ function PreflightModal({
 
                 execute(scriptEditorRef.current?.getValue() ?? '');
               }}
-              data-cy="run-preflight"
+              data-testid="run-preflight"
             >
-              <span className={styles.preflightModalSpan}>
+              <span className="flex items-center gap-1">
                 {state === PreflightWorkerState.running && (
                   <>
-                    <XIcon className={styles.preflightModalXIcon} />
+                    <XIcon className="size-4 shrink-0" />
                     Stop Script
                   </>
                 )}
                 {state === PreflightWorkerState.ready && (
                   <>
-                    <PlayIcon className={styles.preflightModalPlayIcon} />
+                    <PlayIcon className="size-4 shrink-0" />
                     Run Script
                   </>
                 )}
@@ -793,34 +801,34 @@ function PreflightModal({
               wordWrap: 'wordWrapColumn',
             }}
             wrapperProps={{
-              ['data-cy']: 'preflight-editor',
+              ['data-testid']: 'preflight-editor',
             }}
           />
         </div>
-        <div className={styles.preflightModalDiv4}>
-          <div className={styles.preflightModalDiv5}>
+        <div className="flex h-[inherit] flex-col">
+          <div className="flex justify-between p-2">
             <EditorTitle>Console Output</EditorTitle>
             <Button
               variant="link"
               onClick={clearLogs}
               disabled={state === PreflightWorkerState.running}
             >
-              <span className={styles.preflightModalSpan2}>
-                <XIcon className={styles.preflightModalXIcon2} />
+              <span className="flex items-center gap-1">
+                <XIcon className="size-3 shrink-0" />
                 Clear Output
               </span>
             </Button>
           </div>
-          <div className={styles.preflightModalDiv6}>
-            <ScrollArea fill ref={consoleRef} data-cy="console-output">
-              <section className={styles.preflightModalSection}>
+          <div className="flex h-1/2 flex-col bg-editor">
+            <ScrollArea fill ref={consoleRef} data-testid="console-output">
+              <section className="py-2.5 pr-2.5 pl-[26px] font-mono text-xs/[18px]">
                 {logs.map((log, index) => (
                   <LogLine key={index} log={log} />
                 ))}
               </section>
             </ScrollArea>
           </div>
-          <EditorTitle className={styles.preflightModalEditorTitle2}>
+          <EditorTitle className="flex gap-2 p-2">
             Environment Variables
             <Badge content="JSON" variants={{ variant: 'outline' }} />
           </EditorTitle>
@@ -835,7 +843,7 @@ function PreflightModal({
               wordWrap: 'wordWrapColumn',
             }}
             wrapperProps={{
-              ['data-cy']: 'env-editor',
+              ['data-testid']: 'env-editor',
             }}
           />
         </div>
@@ -845,15 +853,15 @@ function PreflightModal({
 }
 
 const LOG_COLORS = {
-  error: styles.logColorsError,
-  info: styles.logColorsInfo,
-  warn: styles.logColorsWarn,
-  log: styles.logColorsLog,
+  error: 'text-critical',
+  info: 'text-success',
+  warn: 'text-warning',
+  log: 'text-fg-secondary',
 };
 
 export function LogLine({ log }: { log: LogRecord }) {
   if ('type' in log && log.type === 'separator') {
-    return <hr className={styles.logLineHr} />;
+    return <hr className="my-2 border-dashed border-current" />;
   }
 
   if ('level' in log && log.level in LOG_COLORS) {

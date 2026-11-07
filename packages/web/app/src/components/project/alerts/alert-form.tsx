@@ -19,7 +19,7 @@ export const ALERT_FORM_ID = 'create-alert-form';
 export function alertFormSchema(options: { channelIds: string[]; targetSlugs: string[] }) {
   return z.object({
     type: z.literal(AlertType.SchemaChangeNotifications, {
-      errorMap: () => ({ message: 'Must select type' }),
+      error: 'Must select type',
     }),
     channel: z.string().refine(value => options.channelIds.includes(value), 'Must select channel'),
     target: z.string().refine(value => options.targetSlugs.includes(value), 'Must select target'),

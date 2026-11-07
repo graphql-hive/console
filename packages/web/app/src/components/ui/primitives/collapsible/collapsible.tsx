@@ -1,13 +1,34 @@
 import { type ReactNode, type Ref } from 'react';
-import { clsx } from 'clsx';
+import { cva } from 'class-variance-authority';
 import { ChevronRight } from 'lucide-react';
-import { lenient } from '@/lib/recipe';
 import { Collapsible as BaseCollapsible } from '@base-ui/react/collapsible';
-import * as styles from './collapsible.css';
+import { focusRing } from '../shared-styles';
 
-const headerVariants = lenient(styles.headerVariants);
+const headerVariants = cva('flex items-center', {
+  variants: {
+    variant: {
+      section: '',
+      // The border only shows while open, so a closed panel reads as one bar.
+      panel: 'border-line group-data-[open]/collapsible:border-b pr-4',
+    },
+  },
+});
 
-const triggerVariants = lenient(styles.triggerVariants);
+const triggerVariants = cva(
+  [
+    'group/trigger flex min-w-0 grow items-center gap-2 text-left text-sm font-medium transition-colors',
+    'text-fg-default hover:text-fg data-[panel-open]:text-fg',
+    focusRing,
+  ],
+  {
+    variants: {
+      variant: {
+        section: 'h-8 rounded-md px-2 hover:bg-neutral-5',
+        panel: 'px-4 py-3',
+      },
+    },
+  },
+);
 
 type CollapsibleProps = {
   /**
@@ -26,7 +47,7 @@ type CollapsibleProps = {
   id?: string;
   /** The panel element, for code that scrolls it. */
   panelRef?: Ref<HTMLDivElement>;
-  panelDataCy?: string;
+  panelDataTestId?: string;
 };
 
 export function Collapsible({
@@ -39,7 +60,7 @@ export function Collapsible({
   onOpenChange,
   id,
   panelRef,
-  panelDataCy,
+  panelDataTestId,
 }: CollapsibleProps) {
   return (
     <BaseCollapsible.Root
@@ -47,19 +68,19 @@ export function Collapsible({
       open={open}
       defaultOpen={defaultOpen}
       onOpenChange={onOpenChange ? next => onOpenChange(next) : undefined}
-      className={clsx(styles.collapsibleRoot, 'group/collapsible')}
+      className="group/collapsible flex min-h-0 flex-col"
     >
       <div className={headerVariants({ variant })}>
         <BaseCollapsible.Trigger className={triggerVariants({ variant })}>
-          <ChevronRight className={styles.collapsibleChevronRight} />
-          <span className={styles.collapsibleSpan}>{trigger}</span>
+          <ChevronRight className="size-4 shrink-0 text-fg-secondary transition-transform group-data-[panel-open]/trigger:rotate-90" />
+          <span className="min-w-0 grow">{trigger}</span>
         </BaseCollapsible.Trigger>
         {actions}
       </div>
       <BaseCollapsible.Panel
         ref={panelRef}
-        data-cy={panelDataCy}
-        className={styles.collapsiblePanel}
+        data-testid={panelDataTestId}
+        className="flex min-h-0 flex-col"
       >
         {children}
       </BaseCollapsible.Panel>

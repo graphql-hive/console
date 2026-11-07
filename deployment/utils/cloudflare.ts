@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import * as cf from '@pulumi/cloudflare';
 import * as pulumi from '@pulumi/pulumi';
-import { S3 } from '../services/s3';
+import { S3, S3Mirror } from '../services/s3';
 
 export class CloudflareCDN {
   constructor(
@@ -13,14 +13,19 @@ export class CloudflareCDN {
       sentryDsn: string | pulumi.Output<string>;
       release: string;
       s3: S3;
-      s3Mirror: S3;
+      s3Mirror: S3Mirror;
     },
   ) {}
 
   deploy() {
-    const kvStorage = new cf.WorkersKvNamespace('hive-ha-storage', {
-      title: `hive-ha-cdn-${this.config.envName}`,
-    });
+    // Legacy CDN storage, unused since the legacy CDN was retired (#3298). No longer bound to the
+    // worker. Retained so Pulumi drops it from state without deleting it when the resource is
+    // removed in a follow-up; the namespace is then deleted manually.
+    new cf.WorkersKvNamespace(
+      'hive-ha-storage',
+      { title: `hive-ha-cdn-${this.config.envName}` },
+      { retainOnDelete: true },
+    );
 
     const script = new cf.WorkerScript('hive-ha-worker', {
       content: readFileSync(
@@ -31,13 +36,6 @@ export class CloudflareCDN {
       ),
       name: `hive-storage-cdn-${this.config.envName}`,
       module: true,
-      kvNamespaceBindings: [
-        {
-          // HIVE_DATA is in use in cdn-script.js as well, its the name of the global variable
-          name: 'HIVE_DATA',
-          namespaceId: kvStorage.id,
-        },
-      ],
       analyticsEngineBindings: [
         {
           name: 'USAGE_ANALYTICS',
@@ -95,19 +93,19 @@ export class CloudflareCDN {
         },
         {
           name: 'S3_MIRROR_ENDPOINT',
-          text: this.config.s3Mirror.secret.raw.endpoint,
+          text: this.config.s3Mirror.readOnlySecret.raw.endpoint,
         },
         {
           name: 'S3_MIRROR_ACCESS_KEY_ID',
-          text: this.config.s3Mirror.secret.raw.accessKeyId,
+          text: this.config.s3Mirror.readOnlySecret.raw.accessKeyId,
         },
         {
           name: 'S3_MIRROR_SECRET_ACCESS_KEY',
-          text: this.config.s3Mirror.secret.raw.secretAccessKey,
+          text: this.config.s3Mirror.readOnlySecret.raw.secretAccessKey,
         },
         {
           name: 'S3_MIRROR_BUCKET_NAME',
-          text: this.config.s3Mirror.secret.raw.bucket,
+          text: this.config.s3Mirror.readOnlySecret.raw.bucket,
         },
       ],
     });
@@ -123,7 +121,6 @@ export class CloudflareCDN {
 
     return {
       workerBaseUrl: workerUrl,
-      cfStorageNamespaceId: kvStorage.id,
     };
   }
 }

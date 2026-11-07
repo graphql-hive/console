@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
-import { explorerFixtures } from '@/lib/testing/fixtures/explorer';
+import { explorerFixtures, explorerTypeMissing } from '@/lib/testing/fixtures/explorer';
 import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
@@ -21,8 +21,7 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
   SchemaEditor: () => null,
 }));
-vi.mock('supertokens-auth-react', () => import('@/lib/testing/mocks/supertokens'));
-vi.mock('supertokens-auth-react/recipe/session', () => import('@/lib/testing/mocks/session'));
+vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 // Stripe is off unless a case turns it on; the picker's retention note needs it.
 const stripe = vi.hoisted(() => ({ enabled: false }));
 vi.mock('@/lib/billing/stripe-public-key', () => ({
@@ -311,4 +310,38 @@ describe('explorer period', () => {
       expect(Date.parse(periods().at(-1)!)).toBeLessThan(weekAgo);
     },
   );
+});
+
+describe('explorer type not found', () => {
+  function missingTypeClient(hasVersion: boolean) {
+    const fixtures = new Map([...layoutFixtures(), ...explorerFixtures()]);
+    fixtures.set('TargetExplorerTypenamePageQuery', explorerTypeMissing({ hasVersion }));
+    if (!hasVersion) {
+      fixtures.set('TargetLayoutQuery', targetLayout({ latestSchemaVersion: null }));
+    }
+    return createTestClient(fixtures);
+  }
+
+  it(
+    'names the type and links back to every type, keeping the range',
+    { timeout: 30_000 },
+    async () => {
+      renderAtUrl(`${EXPLORER}/Missing?from=now-30d&to=now`, { client: missingTypeClient(true) });
+
+      expect(await screen.findByText("Type 'Missing' not found")).toBeTruthy();
+      expect(
+        screen.getByText("There's no type with this name in the latest version."),
+      ).toBeTruthy();
+      expect(screen.getByRole('link', { name: 'Browse all types' }).getAttribute('href')).toBe(
+        `${EXPLORER}?from=now-30d&to=now`,
+      );
+    },
+  );
+
+  it('asks for a first schema when the target has no version', { timeout: 30_000 }, async () => {
+    renderAtUrl(`${EXPLORER}/Missing?from=now-7d&to=now`, { client: missingTypeClient(false) });
+
+    expect(await screen.findByText('Hive is waiting for your first schema')).toBeTruthy();
+    expect(screen.queryByText("Type 'Missing' not found")).toBeNull();
+  });
 });

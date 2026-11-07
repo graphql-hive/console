@@ -28,7 +28,7 @@ export type NavigationItem = LinkAttributes & {
    * section of a proposal): current only while the URL has no such key at all.
    */
   explicitUndefined?: boolean;
-  /** Extra attributes for the anchor, `data-cy` for one. */
+  /** Extra attributes for the anchor, `data-testid` for one. */
   attrs?: Record<string, string>;
 };
 

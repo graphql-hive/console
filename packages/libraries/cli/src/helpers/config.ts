@@ -11,14 +11,14 @@ const LegacyConfigModel = z.object({
 const ConfigModel = z.object({
   registry: z
     .object({
-      endpoint: z.string().url().optional(),
+      endpoint: z.url().optional(),
       accessToken: z.string().optional(),
-      headers: z.record(z.string()).optional(),
+      headers: z.record(z.string(), z.string()).optional(),
     })
     .optional(),
   cdn: z
     .object({
-      endpoint: z.string().url().optional(),
+      endpoint: z.url().optional(),
       accessToken: z.string().optional(),
     })
     .optional(),

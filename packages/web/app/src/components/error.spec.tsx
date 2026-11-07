@@ -4,8 +4,8 @@ import { ErrorComponent } from './error';
 import * as styles from './error.css';
 
 vi.mock('@sentry/react', () => ({ captureException: () => {}, flush: async () => true }));
-vi.mock('supertokens-auth-react/recipe/session', () => ({
-  useSessionContext: () => ({ loading: false, doesSessionExist: true }),
+vi.mock('@/lib/auth/use-session', () => ({
+  useSession: () => ({ loading: false, doesSessionExist: true, userId: 'user-1' }),
 }));
 vi.mock('@tanstack/react-router', () => ({ useRouter: () => ({ navigate: () => {} }) }));
 

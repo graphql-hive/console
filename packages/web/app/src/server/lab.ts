@@ -17,24 +17,30 @@ const LabEndpoint_GetLab = graphql(/* GraphQL */ `
 
 const LabParams = z.object({
   organizationSlug: z.string({
-    required_error:
-      'Missing organizationSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)',
+    error: issue =>
+      issue.input === undefined
+        ? 'Missing organizationSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)'
+        : undefined,
   }),
   projectSlug: z.string({
-    required_error:
-      'Missing projectSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)',
+    error: issue =>
+      issue.input === undefined
+        ? 'Missing projectSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)'
+        : undefined,
   }),
   targetSlug: z.string({
-    required_error:
-      'Missing targetSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)',
+    error: issue =>
+      issue.input === undefined
+        ? 'Missing targetSlug (format /api/lab/:organizationSlug/:projectSlug/:targetSlug)'
+        : undefined,
   }),
 });
 
 const LabBody = z.object({
   query: z.string({
-    required_error: 'Missing query',
+    error: issue => (issue.input === undefined ? 'Missing query' : undefined),
   }),
-  variables: z.record(z.unknown()).optional(),
+  variables: z.record(z.string(), z.unknown()).optional(),
   operationName: z.string().optional(),
 });
 
@@ -45,7 +51,7 @@ export function connectLab(server: FastifyInstance) {
     const labParamsResult = LabParams.safeParse(req.params);
 
     if (!labParamsResult.success) {
-      void res.status(400).send(labParamsResult.error.flatten().fieldErrors);
+      void res.status(400).send(z.flattenError(labParamsResult.error).fieldErrors);
       return;
     }
 

@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { Plan, planCollection } from '@/components/organization/billing/BillingPlanPicker';
+import { BillingPlanType } from '@/gql/graphql';
+import { StatusDot } from '../status-dot/status-dot';
 import { RadioGroup } from './radio-group';
-import * as styles from './radio-group.preview.css';
 
 export const nav: NavPath = 'Primitives/FormControls/RadioGroup';
 
@@ -39,7 +40,7 @@ export const WithIndicators = createPreview(() => {
           value: 'breaking',
           content: (
             <>
-              <span className={styles.span} />
+              <StatusDot color="critical" />
               Breaking
             </>
           ),
@@ -48,7 +49,7 @@ export const WithIndicators = createPreview(() => {
           value: 'dangerous',
           content: (
             <>
-              <span className={styles.span2} />
+              <StatusDot color="warning" />
               Dangerous
             </>
           ),
@@ -57,7 +58,7 @@ export const WithIndicators = createPreview(() => {
           value: 'safe',
           content: (
             <>
-              <span className={styles.span3} />
+              <StatusDot color="success" />
               Safe
             </>
           ),
@@ -108,7 +109,7 @@ export const AsCard = createPreview(() => {
   const [value, setValue] = useState('normal');
 
   return (
-    <div className={styles.div}>
+    <div className="w-[493px]">
       <RadioGroup
         variant="as-card"
         onSurface="base"
@@ -126,8 +127,8 @@ export const Orientations = createPreview(() => {
   const [buttons, setButtons] = useState('7d');
 
   return (
-    <div className={styles.div2}>
-      <div className={styles.div3}>
+    <div className="flex flex-col gap-8">
+      <div className="w-[760px]">
         <RadioGroup
           variant="as-card"
           orientation="vertical"
@@ -156,7 +157,7 @@ export const AsCardFloating = createPreview(() => {
   const [value, setValue] = useState('high');
 
   return (
-    <div className={styles.div4}>
+    <div className="w-[533px] rounded-md border border-line bg-surface-overlay p-5">
       <RadioGroup
         variant="as-card"
         onSurface="raised"
@@ -178,7 +179,13 @@ export const Playground = createPreview({
   render: v => {
     const [value, setValue] = useState('normal');
     return (
-      <div className={v.onSurface === 'raised' ? styles.div5 : styles.div6}>
+      <div
+        className={
+          v.onSurface === 'raised'
+            ? 'w-[46rem] rounded-md border border-line bg-surface-overlay p-5'
+            : 'w-[46rem]'
+        }
+      >
         <RadioGroup
           variant={v.variant}
           onSurface={v.onSurface}
@@ -193,42 +200,6 @@ export const Playground = createPreview({
   },
 });
 
-function PlanBody(props: {
-  name: string;
-  price: string;
-  description: string;
-  features: string[];
-  isCurrent?: boolean;
-  footer?: ReactNode;
-}) {
-  return (
-    <div className={styles.planBodyDiv}>
-      <div>
-        <div className={styles.planBodyDiv2}>
-          <span className={styles.planBodySpan}>{props.name}</span>
-          {props.isCurrent ? <span className={styles.planBodySpan2}>CURRENT PLAN</span> : null}
-        </div>
-        <div className={styles.planBodyDiv3}>{props.price}</div>
-        <div className={styles.planBodyDiv4}>{props.description}</div>
-        <div className={styles.planBodyDiv5}>
-          {props.features.map(feature => (
-            <div key={feature} className={styles.planBodyDiv6}>
-              <Check className={styles.planBodyCheck} />
-              {feature}
-            </div>
-          ))}
-        </div>
-      </div>
-      {props.footer ? (
-        <div>
-          <div className={styles.planBodyDiv7} />
-          <div className={styles.planBodyDiv8}>{props.footer}</div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 /**
  * `content` carrying a whole card body, which is what the billing plan picker needs: no radio dot,
  * selection shown by the card border alone. Three cards in a row also exercise equal-height stretch.
@@ -237,7 +208,7 @@ export const PlanCards = createPreview(() => {
   const [value, setValue] = useState('pro');
 
   return (
-    <div className={styles.div7}>
+    <div className="w-[62rem]">
       <RadioGroup
         variant="as-card"
         orientation="horizontal"
@@ -247,54 +218,28 @@ export const PlanCards = createPreview(() => {
           {
             value: 'hobby',
             content: (
-              <PlanBody
-                isCurrent
-                name="Hobby"
-                price="Free"
-                description="For personal or small projects"
-                features={[
-                  'Unlimited seats, projects and organizations',
-                  'Unlimited schema pushes & checks',
-                  'Full access to all features (including SSO)',
-                  'Limit of 1M operations per month',
-                  '7 days of usage data retention',
-                ]}
-              />
+              <Plan isActive name="Hobby" price="Free" {...planCollection[BillingPlanType.Hobby]} />
             ),
           },
           {
             value: 'pro',
             content: (
-              <PlanBody
+              <Plan
+                isActive={false}
                 name="Pro"
-                price="$10"
-                description="For scaling APIs and teams"
-                features={[
-                  '+ $10 per 1M operations',
-                  'Change your plan at any time',
-                  'Everything in Hobby plan, and:',
-                  '90 days of usage data retention',
-                ]}
-                footer={<span className={styles.span4}>Free 30 days trial period</span>}
+                price={10}
+                {...planCollection[BillingPlanType.Pro]}
               />
             ),
           },
           {
             value: 'enterprise',
             content: (
-              <PlanBody
+              <Plan
+                isActive={false}
                 name="Enterprise"
                 price="Contact Us"
-                description="Custom plan for large companies"
-                features={[
-                  'Unlimited seats',
-                  'Unlimited operations',
-                  'Unlimited schema pushes',
-                  'Change your plan at any time',
-                  'Improved pricing as you scale',
-                  '12 months of usage data retention',
-                ]}
-                footer="Shape a custom plan for your business"
+                {...planCollection[BillingPlanType.Enterprise]}
               />
             ),
           },

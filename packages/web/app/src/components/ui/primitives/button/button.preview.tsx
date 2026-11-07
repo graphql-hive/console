@@ -1,12 +1,12 @@
 import { ChevronDown, Copy, ListFilter, Plus, RefreshCw, X } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { Card } from '../card/card';
 import { Button } from './button';
-import * as styles from './button.preview.css';
 
 export const nav: NavPath = 'Primitives/Button';
 
 export const Variants = createPreview(() => (
-  <div className={styles.div}>
+  <div className="flex flex-wrap items-center gap-4">
     <Button variant="primary">Save alert</Button>
     <Button variant="outline">Add destination</Button>
     <Button variant="ghost">Cancel</Button>
@@ -15,7 +15,7 @@ export const Variants = createPreview(() => (
 ));
 
 export const TriggerVariants = createPreview(() => (
-  <div className={styles.div2}>
+  <div className="flex flex-wrap items-center gap-4">
     <Button label="Default" />
     <Button label="Active" variant="active" />
     <Button label="Save this filter view" variant="action" />
@@ -30,15 +30,15 @@ export const TriggerVariants = createPreview(() => (
  * `controlSize`.
  */
 export const Sizes = createPreview(() => (
-  <div className={styles.div3}>
-    <div className={styles.div4}>
-      <span className={styles.span}>default</span>
+  <div className="flex flex-col gap-4">
+    <div className="flex items-center gap-4">
+      <span className="w-16 text-xs text-fg-muted">default</span>
       <Button variant="primary">Save alert</Button>
       <Button label="Last 7 days" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
       <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />
     </div>
-    <div className={styles.div5}>
-      <span className={styles.span2}>compact</span>
+    <div className="flex items-center gap-4">
+      <span className="w-16 text-xs text-fg-muted">compact</span>
       <Button variant="primary" size="compact">
         Save alert
       </Button>
@@ -49,17 +49,17 @@ export const Sizes = createPreview(() => (
       />
       <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" size="compact" />
     </div>
-    <div className={styles.div6}>
-      <span className={styles.span3}>icon-sm</span>
+    <div className="flex items-center gap-4">
+      <span className="w-16 text-xs text-fg-muted">icon-sm</span>
       <Button variant="ghost" size="icon-sm">
-        <X className={styles.x} />
+        <X className="size-4" />
       </Button>
     </div>
   </div>
 ));
 
 export const Segmented = createPreview(() => (
-  <div className={styles.div7}>
+  <div className="flex flex-wrap items-center gap-4">
     <Button label="Last 7 days" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
     <Button label="Filter" rightIcon={{ icon: ListFilter, withSeparator: false }} />
     <Button label="Copy JSON Schema" rightIcon={{ icon: Copy, withSeparator: true }} />
@@ -72,7 +72,7 @@ export const Segmented = createPreview(() => (
 ));
 
 export const IconOnly = createPreview(() => (
-  <div className={styles.div8}>
+  <div className="flex items-center gap-4">
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" variant="active" />
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" variant="action" />
@@ -81,14 +81,14 @@ export const IconOnly = createPreview(() => (
 
 export const WithIcon = createPreview(() => (
   <Button variant="outline">
-    <Plus className={styles.plus} />
+    <Plus className="mr-1 size-3.5" />
     Add another destination
   </Button>
 ));
 
 /** Text that acts, inline with the copy around it: no box, accent, underlined on hover. */
 export const Link = createPreview(() => (
-  <p className={styles.p}>
+  <p className="max-w-md text-sm text-fg-default">
     The schema check failed on a breaking change.{' '}
     <Button variant="link">See the affected deployments</Button> before approving it, or{' '}
     <Button variant="link" disabled>
@@ -104,7 +104,7 @@ export const Link = createPreview(() => (
  * Anchors stand in for the router here.
  */
 export const AsLink = createPreview(() => (
-  <div className={styles.div9}>
+  <div className="flex w-96 flex-col gap-3">
     <Button width="full" anchor={{ href: '#' }}>
       Go to your organization
     </Button>
@@ -120,7 +120,7 @@ export const AsLink = createPreview(() => (
 ));
 
 export const Disabled = createPreview(() => (
-  <div className={styles.div10}>
+  <div className="flex items-center gap-4">
     <Button variant="primary" disabled>
       Saving...
     </Button>
@@ -133,11 +133,11 @@ export const Disabled = createPreview(() => (
  * row.
  */
 export const FullWidth = createPreview(() => (
-  <div className={styles.div11}>
+  <div className="flex w-96 flex-col gap-3">
     <Button variant="primary" width="full">
       Create organization
     </Button>
-    <div className={styles.div12}>
+    <div className="flex gap-2">
       <Button variant="outline" width="full">
         Cancel
       </Button>
@@ -150,21 +150,25 @@ export const FullWidth = createPreview(() => (
 
 /** Without `raised`, the default fill disappears into a dialog or sheet in dark mode. */
 export const OnRaisedSurface = createPreview(() => (
-  <div className={styles.div13}>
-    <div className={styles.div14}>
-      <Button type="submit" width="full" onSurface="raised">
-        Sign in
-      </Button>
-      <Button variant="outline" width="full">
-        Login with GitHub
-      </Button>
+  <div className="flex flex-wrap gap-6">
+    <div className="w-[24rem]">
+      <Card variants={{ onSurface: 'raised' }}>
+        <div className="flex flex-col gap-3">
+          <Button type="submit" width="full" onSurface="raised">
+            Sign in
+          </Button>
+          <Button variant="outline" width="full">
+            Login with GitHub
+          </Button>
+        </div>
+      </Card>
     </div>
-    <div className={styles.div15}>
-      <div className={styles.div16}>
+    <div className="flex w-[28rem] flex-col gap-6 rounded-md border border-line bg-surface-overlay p-6">
+      <div className="flex justify-end gap-2">
         <Button variant="outline">Cancel</Button>
         <Button onSurface="raised">Transfer this organization</Button>
       </div>
-      <div className={styles.div17}>
+      <div className="flex gap-2">
         <Button variant="outline" width="full">
           Cancel
         </Button>
@@ -200,7 +204,7 @@ export const Playground = createPreview({
     disabled: { type: 'boolean', default: false },
   }),
   render: v => (
-    <div className={styles.div18}>
+    <div className="w-80">
       <Button
         variant={v.variant}
         size={v.size}

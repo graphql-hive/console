@@ -1,30 +1,30 @@
 import { ReactElement, useMemo } from 'react';
-import { AlertCircleIcon } from 'lucide-react';
+import { AlertCircleIcon, CopyIcon } from 'lucide-react';
 import { useQuery } from 'urql';
-import { GraphQLHighlight } from '@/components/common/GraphQLSDLBlock';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { RetentionNote } from '@/components/organization/billing/retention-note';
 import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
+import { GraphQLHighlight } from '@/components/ui/graphql-block';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
 import { Card } from '@/components/ui/primitives/card/card';
 import { QueryError } from '@/components/ui/query-error';
 import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useSlugs } from '@/lib/hooks';
+import { useClipboard, usePrettify, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
-import * as styles from './target-insights-operation.css';
 
 const operationRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
 );
 
-const GraphQLOperationBody_OperationFragment = graphql(`
+export const GraphQLOperationBody_OperationFragment = graphql(`
   fragment GraphQLOperationBody_OperationFragment on Operation {
     body
   }
@@ -36,15 +36,35 @@ function GraphQLOperationBody(props: {
   const operation = useFragment(GraphQLOperationBody_OperationFragment, props.operation);
 
   if (operation?.body) {
-    return (
-      <GraphQLHighlight
-        className={styles.graphQLOperationBodyGraphQLHighlight}
-        code={operation.body}
-      />
-    );
+    return <GraphQLHighlight className="pt-6" code={operation.body} />;
   }
 
   return <div>Operation not found.</div>;
+}
+
+// The body view is virtualized, so select-all only reaches the mounted lines.
+export function CopyOperationButton(props: {
+  operation: FragmentType<typeof GraphQLOperationBody_OperationFragment> | null;
+}) {
+  const operation = useFragment(GraphQLOperationBody_OperationFragment, props.operation);
+  const body = usePrettify(operation?.body ?? null);
+  const copy = useClipboard();
+
+  return (
+    <Button
+      variant="outline"
+      size="compact"
+      disabled={!body}
+      onClick={() => {
+        if (body) {
+          void copy(body);
+        }
+      }}
+    >
+      <CopyIcon className="size-3.5" />
+      Copy operation
+    </Button>
+  );
 }
 
 export const Operation_View_OperationBodyQuery = graphql(`
@@ -94,13 +114,13 @@ function OperationView({
 
   return (
     <>
-      <div className={styles.operationViewDiv}>
+      <div className="flex flex-row items-center justify-between py-6">
         <div>
           <Title>{operationName}</Title>
           <Subtitle>Insights of individual GraphQL operation</Subtitle>
         </div>
         {!result.fetching && isNotNoQueryOrMutation === false && (
-          <div className={styles.operationViewDiv2}>
+          <div className="flex justify-end gap-x-2">
             <DateRangePicker
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
@@ -127,7 +147,7 @@ function OperationView({
         />
       ) : (
         <Alert>
-          <AlertCircleIcon className={styles.operationViewAlertCircleIcon} />
+          <AlertCircleIcon className="size-4" />
           <AlertTitle>No Subscription insights available yet.</AlertTitle>
           <AlertDescription>
             Hive is currently only collecting usage data for this operation. We are currently
@@ -139,8 +159,12 @@ function OperationView({
           </AlertDescription>
         </Alert>
       )}
-      <div className={styles.operationViewDiv3}>
-        <Card variants={{ onSurface: 'raised', titleSize: 'large' }} title="Operation body">
+      <div className="mt-12 w-full">
+        <Card
+          variants={{ onSurface: 'raised', titleSize: 'large' }}
+          title="Operation body"
+          actions={<CopyOperationButton operation={result.data?.target?.operation ?? null} />}
+        >
           {result.fetching ? (
             <div>Loading...</div>
           ) : (
@@ -202,7 +226,7 @@ function OperationInsightsContent(props: { operationHash: string; operationName:
 
   if (!query.data?.hasCollectedOperations) {
     return (
-      <div className={styles.operationInsightsContentDiv}>
+      <div className="py-8">
         <EmptyList
           title="Hive is waiting for your first collected operation"
           description="You can collect usage of your GraphQL API with Hive Client"

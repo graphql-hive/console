@@ -7,7 +7,11 @@ import { Card } from '@/components/ui/primitives/card/card';
 import { useRouter } from '@tanstack/react-router';
 import * as styles from './organization-oidc-request.css';
 
-export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToPath: string }) {
+export function OrganizationOIDCRequestPage(props: {
+  oidcId: string;
+  slug: string;
+  redirectToPath: string;
+}) {
   const router = useRouter();
 
   return (
@@ -32,6 +36,7 @@ export function OrganizationOIDCRequestPage(props: { oidcId: string; redirectToP
                     to: '/auth/oidc',
                     search: {
                       id: props.oidcId,
+                      slug: props.slug,
                       redirectToPath: props.redirectToPath,
                     },
                   });

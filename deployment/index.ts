@@ -9,6 +9,7 @@ import { deployCommerce } from './services/commerce';
 import { deployDatabaseCleanupJob } from './services/database-cleanup';
 import { deployDbMigrations } from './services/db-migrations';
 import { configureDocker } from './services/docker';
+import { initEgressPolicy } from './services/egress-policy';
 import { prepareEnvironment } from './services/environment';
 import { configureGithubApp } from './services/github';
 import { deployGraphQL } from './services/graphql';
@@ -60,7 +61,7 @@ if (!hiveAppPersistedDocumentsAbsolutePath) {
 }
 
 optimizeAzureCluster();
-
+const egressManager = initEgressPolicy();
 const docker = configureDocker();
 const envName = pulumi.getStack();
 const heartbeatsConfig = new pulumi.Config('heartbeats');
@@ -84,7 +85,7 @@ const postgres = deployPostgres();
 const redis = deployRedis({ environment });
 const kafka = deployKafka();
 const s3 = deployS3();
-const s3Mirror = deployS3Mirror();
+const s3Mirror = deployS3Mirror(envName);
 const s3AuditLog = deployS3AuditLog();
 
 const cdn = deployCFCDN({
@@ -95,8 +96,9 @@ const cdn = deployCFCDN({
 });
 
 const lambdaFunction = deployAWSArtifactsLambdaFunction({
-  s3Mirror,
+  s3Mirror: { secret: s3Mirror.readWriteSecret },
   environment,
+  awsIamAuthEnabled: true,
 });
 
 const broker = deployCFBroker({
@@ -132,6 +134,7 @@ const commerce = deployCommerce({
   sentry,
   observability,
   postgres,
+  egressManager,
 });
 
 const usage = deployUsage({
@@ -145,6 +148,7 @@ const usage = deployUsage({
   commerce,
   sentry,
   observability,
+  egressManager,
 });
 
 const usageIngestor = deployUsageIngestor({
@@ -156,6 +160,7 @@ const usageIngestor = deployUsageIngestor({
   dbMigrations,
   heartbeat: heartbeatsConfig.get('usageIngestor'),
   sentry,
+  egressManager,
 });
 
 const schema = deploySchema({
@@ -166,6 +171,7 @@ const schema = deploySchema({
   broker,
   sentry,
   observability,
+  egressManager,
 });
 
 const schemaPolicy = deploySchemaPolicy({
@@ -174,6 +180,7 @@ const schemaPolicy = deploySchemaPolicy({
   environment,
   sentry,
   observability,
+  egressManager,
 });
 
 deployWorkflows({
@@ -185,10 +192,13 @@ deployWorkflows({
   observability,
   sentry,
   heartbeat: heartbeatsConfig.get('webhooks'),
+  metricAlertsHeartbeat: heartbeatsConfig.get('metricAlertsEvaluator'),
   schema,
   redis,
   clickhouse,
   dbMigrations,
+  egressManager,
+  broker,
 });
 
 const zendesk = configureZendesk({ environment });
@@ -213,8 +223,11 @@ const graphql = deployGraphQL({
   s3AuditLog,
   zendesk,
   githubApp,
+  slackApp,
   sentry,
   observability,
+  broker,
+  egressManager,
 });
 
 const hiveConfig = new pulumi.Config('hive');
@@ -274,6 +287,7 @@ const otelCollector = deployOTELCollector({
   clickhouse,
   image: docker.factory.getImageId('otel-collector', imagesTag),
   docker,
+  egressManager,
 });
 
 const app = deployApp({
@@ -285,9 +299,8 @@ const app = deployApp({
   docker,
   zendesk,
   commerce,
-  github: githubApp,
-  slackApp,
   sentry,
+  egressManager,
 });
 
 const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
@@ -296,6 +309,7 @@ const publicGraphQLAPIGateway = deployPublicGraphQLAPIGateway({
   docker,
   observability,
   otelCollector,
+  egressManager,
 });
 
 const proxy = deployProxy({
@@ -318,11 +332,14 @@ deployCloudFlareSecurityTransform({
     '/usage',
     '/graphql',
     '/registry',
-    '/server',
     '/api/github',
     '/api/slack',
   ],
 });
+
+// Redis doesn't call anything, so it only gets DNS once policies are enforced.
+egressManager?.register(redis.deployment);
+egressManager?.deploy();
 
 export const graphqlApiServiceId = graphql.service.id;
 export const usageApiServiceId = usage.service.id;
@@ -333,3 +350,5 @@ export const appId = app.deployment.id;
 export const otelCollectorId = otelCollector.deployment.id;
 export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
 export const awsLambdaArtifactsFunctionUrl = lambdaFunction;
+export const s3ReadWriteAccessKeyId = s3Mirror.accessKeys.readWriteId;
+export const s3ReadOnlyAccessKeyId = s3Mirror.accessKeys.readOnlyId;

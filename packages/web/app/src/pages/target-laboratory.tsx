@@ -52,7 +52,6 @@ import { Menu } from '@/components/ui/primitives/floating/menu/menu';
 import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-group';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { Kit } from '@/lib/kit';
-import * as styles from './target-laboratory.css';
 
 const explorer = explorerPlugin();
 
@@ -165,15 +164,14 @@ function Save(): ReactElement {
           <GraphiQLTooltip label={label}>
             <GraphiQLButton
               {...props}
-              data-cy="save-operation"
+              data-testid="save-operation"
               className={cn(
                 'graphiql-toolbar-button',
-                currentOperation && !isSame && styles.saveGraphiQLButton,
-                'hive-badge-is-changed',
+                currentOperation && !isSame && 'hive-badge-is-changed relative after:top-1',
               )}
               aria-label={label}
             >
-              <SaveIcon className={cn(styles.saveSaveIcon, 'graphiql-toolbar-icon')} />
+              <SaveIcon className="graphiql-toolbar-icon h-5" />
             </GraphiQLButton>
           </GraphiQLTooltip>
         )}
@@ -230,7 +228,7 @@ function Save(): ReactElement {
                 }
                 toggleOperationModal();
               },
-              attrs: { 'data-cy': 'save-operation-as' },
+              attrs: { 'data-testid': 'save-operation-as' },
             },
           ],
         ]}
@@ -424,11 +422,11 @@ function LaboratoryPageContent(props: {
   return (
     <>
       {preflight.iframeElement}
-      <div className={styles.laboratoryPageContentDiv}>
-        <div className={styles.laboratoryPageContentDiv2}>
-          <div className={styles.laboratoryPageContentDiv3}>
+      <div className="flex py-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
             <Title>Laboratory</Title>
-            <div className={styles.laboratoryPageContentDiv4} />
+            <div className="h-4 w-px bg-line" />
             <ToggleGroup
               aria-label="Laboratory version"
               value={props.defaultLaboratoryTab}
@@ -442,7 +440,7 @@ function LaboratoryPageContent(props: {
                   label: (
                     <>
                       Hive Laboratory
-                      <span className={styles.laboratoryPageContentSpan} />
+                      <span className="ml-1 size-2 rounded-full bg-accent" />
                     </>
                   ),
                 },
@@ -454,7 +452,7 @@ function LaboratoryPageContent(props: {
             <DocsLink href="/schema-registry/laboratory" text="Learn more about the Laboratory" />
           </p>
         </div>
-        <div className={styles.laboratoryPageContentDiv5}>
+        <div className="mr-0 ml-auto flex flex-col justify-center">
           <div>
             {query.data && !query.data.target?.graphqlEndpointUrl ? (
               <RouterLink
@@ -474,8 +472,8 @@ function LaboratoryPageContent(props: {
               Mock Data Endpoint
             </Button>
           </div>
-          <div className={styles.laboratoryPageContentDiv6}>
-            <span className={styles.laboratoryPageContentSpan2}>Query</span>
+          <div className="self-end pt-2">
+            <span className="mr-2 text-xs font-bold">Query</span>
             <ToggleGroup
               options={[
                 {
@@ -556,14 +554,14 @@ function LaboratoryPageContent(props: {
             visiblePlugin={operationCollectionsPlugin}
             schema={schema}
             forcedTheme={resolvedTheme}
-            className={isFullScreen ? styles.laboratoryPageContentGraphiQL : ''}
+            className={isFullScreen ? 'fixed inset-0 bg-editor-backdrop' : ''}
             onTabChange={handleTabChange}
             readOnly={!!props.selectedOperationId && target?.viewerCanModifyLaboratory === false}
           >
             <GraphiQL.Logo>
               <Button onClick={() => setIsFullScreen(prev => !prev)} variant="link">
-                <span className={styles.laboratoryPageContentSpan3}>
-                  <FullScreenIcon className={styles.laboratoryPageContentFullScreenIcon} />
+                <span className="flex items-center gap-2 whitespace-nowrap">
+                  <FullScreenIcon className="size-4" />
                   {isFullScreen ? 'Exit' : 'Enter'} Full Screen
                 </span>
               </Button>
@@ -608,7 +606,7 @@ export function TargetLaboratoryPage(props: {
   return (
     <>
       <Meta title="Schema laboratory" />
-      <LayoutContent className={styles.targetLaboratoryPageLayoutContent}>
+      <LayoutContent className="flex h-(--content-height) flex-col pb-0">
         <PromptProvider>
           <LaboratoryPageContent {...props} />
           <PromptManager />
@@ -653,7 +651,10 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
   }, [props.logs, isOpen]);
 
   return (
-    <div id="preflight-logs" className={styles.preflightLogsDiv}>
+    <div
+      id="preflight-logs"
+      className="flex max-h-[200px] w-full flex-col overflow-hidden bg-editor-backdrop"
+    >
       <Collapsible
         variant="panel"
         trigger="Preflight Script Logs"
@@ -666,17 +667,20 @@ function PreflightLogs(props: { logs: LogRecord[]; onClear: () => void }) {
               icon={EraserIcon}
               aria-label="Clear logs"
               variant="ghost"
-              data-cy="erase-logs"
+              data-testid="erase-logs"
               onClick={props.onClear}
             />
           ) : null
         }
-        panelDataCy="logs"
+        panelDataTestId="logs"
       >
         <ScrollArea fill ref={consoleRef}>
-          <div className={styles.preflightLogsDiv2}>
+          <div className="p-4 font-mono text-xs/[18px]">
             {props.logs.length === 0 ? (
-              <div data-cy="empty-state" className={styles.preflightLogsDiv3}>
+              <div
+                data-testid="empty-state"
+                className="flex flex-col items-center justify-center text-fg-secondary"
+              >
                 <p>No logs available</p>
                 <p>Execute a query to see logs</p>
               </div>

@@ -3,23 +3,26 @@ import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TokenManager } from '../../providers/token-manager';
 import type { MutationResolvers } from './../../../../__generated__/types';
 
-const TokenNameModel = z.string().min(2).max(50);
+const TokenNameModel = z
+  .string()
+  .min(2, 'Name must contain at least 2 characters')
+  .max(50, 'Name must contain at most 50 characters');
+
+const CreateTokenInputModel = z.object({
+  name: TokenNameModel,
+});
 
 export const createToken: NonNullable<MutationResolvers['createToken']> = async (
   _parent,
   { input },
   { injector },
 ) => {
-  const CreateTokenInputModel = z.object({
-    name: TokenNameModel,
-  });
-
   const result = CreateTokenInputModel.safeParse(input);
 
   if (!result.success) {
     return {
       error: {
-        message: result.error.formErrors.fieldErrors.name?.[0] ?? 'Please check your input.',
+        message: z.flattenError(result.error).fieldErrors.name?.[0] ?? 'Please check your input.',
       },
     };
   }

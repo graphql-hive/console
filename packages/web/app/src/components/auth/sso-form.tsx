@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/primitives/input/input';
 export const SSOFormSchema = z.object({
   slug: z
     .string({
-      required_error: 'Slug is required',
+      error: issue => (issue.input === undefined ? 'Slug is required' : undefined),
     })
     .toLowerCase(),
 });

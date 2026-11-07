@@ -47,8 +47,8 @@ import {
 } from './schema-version-store';
 
 const ENABLE_EXTERNAL_COMPOSITION_SCHEMA = z.object({
-  endpoint: z.string().url().nonempty(),
-  secret: z.string().nonempty(),
+  endpoint: z.url('Must be a valid URL, e.g. https://example.com/compose'),
+  secret: z.string().min(1, 'Secret is required'),
 });
 
 const externalSchemaCompositionTestSdl = /* GraphQL */ `
@@ -277,10 +277,11 @@ export class SchemaManager {
       'hive.version.id': input.id,
     }),
   })
-  @atomic(stringifySelector)
-  async getMaybeSchemasOfVersion(schemaVersion: SchemaVersion) {
+  async getMaybeSchemasOfVersion(schemaVersion: SchemaVersion, options = { withSDL: true }) {
     this.logger.debug('Fetching schemas (schemaVersionId=%s)', schemaVersion.id);
-    return this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id);
+    return options.withSDL
+      ? this.schemaVersions.getSchemasBySchemaVersionId(schemaVersion.id)
+      : this.schemaVersions.getSchemasWithoutSDLBySchemaVersionId(schemaVersion.id);
   }
 
   async getMatchingServiceSchemaOfVersions(versions: { before: string | null; after: string }) {
@@ -454,12 +455,16 @@ export class SchemaManager {
     args: {
       first: number | null;
       cursor: null | string;
+      withSDL: boolean;
+      withChanges: boolean;
     },
   ) {
     const first = args.first ? (args.first > 0 ? Math.min(args.first, 20) : 20) : 20;
     const connection = await this.schemaVersions.getPaginatedSchemaVersionsForGraph(graph, {
       first,
       cursor: args.cursor,
+      withSDL: args.withSDL,
+      withChanges: args.withChanges,
     });
 
     return {
@@ -682,10 +687,10 @@ export class SchemaManager {
           return {
             error: {
               __typename: 'UpdateSchemaCompositionExternalError' as const,
-              message: parseResult.error.message,
+              message: 'Please check your input.',
               inputErrors: {
-                endpoint: parseResult.error.formErrors.fieldErrors.endpoint?.[0],
-                secret: parseResult.error.formErrors.fieldErrors.secret?.[0],
+                endpoint: z.flattenError(parseResult.error).fieldErrors.endpoint?.[0],
+                secret: z.flattenError(parseResult.error).fieldErrors.secret?.[0],
               },
             },
           };
@@ -743,7 +748,11 @@ export class SchemaManager {
     return this.storage.getSchemaCheckServiceNamesForTarget({ targetId: target.id });
   }
 
-  async findSchemaCheckForTarget(target: Target, schemaCheckId: string) {
+  async findSchemaCheckForTarget(
+    target: Target,
+    schemaCheckId: string,
+    options: { withSDL?: boolean; withChanges?: boolean } = {},
+  ) {
     this.logger.debug(
       'Find schema check (targetId=%s, schemaCheckId=%s)',
       target.id,
@@ -763,6 +772,8 @@ export class SchemaManager {
     const schemaCheck = await this.storage.findSchemaCheck({
       targetId: target.id,
       schemaCheckId,
+      withSDL: options.withSDL,
+      withChanges: options.withChanges,
     });
 
     if (schemaCheck == null) {

@@ -16,14 +16,14 @@ import * as styles from './external-composition-form.css';
 export const ExternalCompositionFormSchema = z.object({
   endpoint: z
     .string({
-      required_error: 'Please provide an endpoint',
+      error: issue => (issue.input === undefined ? 'Please provide an endpoint' : undefined),
     })
     .url({
-      message: 'Invalid URL',
+      error: 'Invalid URL',
     }),
   secret: z
     .string({
-      required_error: 'Please provide a secret',
+      error: issue => (issue.input === undefined ? 'Please provide a secret' : undefined),
     })
     .min(2, 'Too short')
     .max(256, 'Max 256 characters long'),

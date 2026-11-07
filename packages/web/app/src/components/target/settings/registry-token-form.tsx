@@ -16,13 +16,13 @@ import * as styles from './registry-token-form.css';
 export const RegistryTokenFormSchema = z.object({
   tokenDescription: z
     .string({
-      required_error: 'Token description is required',
+      error: issue => (issue.input === undefined ? 'Token description is required' : undefined),
     })
     .min(2, {
-      message: 'Token description must be at least 2 characters long',
+      error: 'Token description must be at least 2 characters long',
     })
     .max(50, {
-      message: 'Token description must be at most 50 characters long',
+      error: 'Token description must be at most 50 characters long',
     })
     .regex(
       /^([a-z]|[0-9]|\s|\.|,|_|-|\/|&)+$/i,
@@ -47,7 +47,11 @@ export function RegistryTokenForm(props: {
   const { form } = props;
   return (
     // The buttons stay inside the form: the e2e helper selects the submit through it.
-    <Form form={form} onSubmit={props.onSubmit} attrs={{ 'data-cy': 'create-registry-token-form' }}>
+    <Form
+      form={form}
+      onSubmit={props.onSubmit}
+      attrs={{ 'data-testid': 'create-registry-token-form' }}
+    >
       <FormField
         control={form.control}
         name="tokenDescription"
@@ -57,7 +61,7 @@ export function RegistryTokenForm(props: {
               <Input
                 placeholder="Token description"
                 aria-label="Token description"
-                data-cy="description"
+                data-testid="description"
                 autoComplete="off"
                 onSurface="raised"
                 {...field}
@@ -84,7 +88,7 @@ export function RegistryTokenForm(props: {
         </Button>
         <Button
           type="submit"
-          data-cy="submit"
+          data-testid="submit"
           onSurface="raised"
           disabled={
             !form.formState.isValid || props.noPermissionsSelected || form.formState.isSubmitting

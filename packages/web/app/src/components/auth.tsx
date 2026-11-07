@@ -31,7 +31,7 @@ export function AuthCard({
         title={title}
         description={
           description ? (
-            <span data-cy="auth-card-header-description">{description}</span>
+            <span data-testid="auth-card-header-description">{description}</span>
           ) : undefined
         }
       >

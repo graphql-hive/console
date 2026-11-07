@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { presetLast7Days } from '@/components/ui/date-range-picker';
+import { DiffsWorkerPoolProvider } from '@/components/ui/diffs';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
 import {
   defaultRange,
@@ -19,7 +20,6 @@ import {
   tracesPageVariables,
 } from '@/pages/target-traces';
 import { createRoute } from '@tanstack/react-router';
-import { zodValidator } from '@tanstack/zod-adapter';
 import { targetRoute } from './route';
 
 const TargetTracesRouteSearch = z.object({
@@ -37,7 +37,7 @@ const traces: RangeBounds = {
 export const targetTracesRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'traces',
-  validateSearch: zodValidator(TargetTracesRouteSearch),
+  validateSearch: TargetTracesRouteSearch,
   beforeLoad: defaultRange(traces),
   loaderDeps: ({ search }) => ({
     filter: search.filter ?? defaultTracesFilter,
@@ -95,11 +95,13 @@ export const targetTraceRoute = createRoute({
     const { traceId } = targetTraceRoute.useParams();
     const { activeSpanId, activeSpanTab } = targetTraceRoute.useSearch();
     return (
-      <TargetTracePage
-        traceId={traceId}
-        activeSpanId={activeSpanId ?? null}
-        activeSpanTab={activeSpanTab ?? null}
-      />
+      <DiffsWorkerPoolProvider>
+        <TargetTracePage
+          traceId={traceId}
+          activeSpanId={activeSpanId ?? null}
+          activeSpanTab={activeSpanTab ?? null}
+        />
+      </DiffsWorkerPoolProvider>
     );
   },
 });

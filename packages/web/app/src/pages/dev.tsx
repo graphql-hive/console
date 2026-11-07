@@ -18,7 +18,13 @@ export function DevPage() {
           `}
         </style>
       </Helmet>
-      <GraphiQL fetcher={createGraphiQLFetcher({ url: env.graphqlPublicEndpoint })}>
+      <GraphiQL
+        fetcher={createGraphiQLFetcher({
+          url: env.graphqlPublicEndpoint,
+          // The session is cookies on the API origin; the playground's requests must carry them.
+          fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),
+        })}
+      >
         <GraphiQL.Logo>
           <HiveLogo className={styles.devPageHiveLogo} />
         </GraphiQL.Logo>

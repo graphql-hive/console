@@ -12,4 +12,26 @@ describe('Badge', () => {
       expect(className).toContain(styles.badgeVariants.classNames.variants.variant[variant]);
     },
   );
+
+  it('stays the outermost element when it carries a tooltip, so it sits in a row like any other', () => {
+    const { container } = render(
+      <Badge
+        content="2 clients"
+        tooltip="10 operations by 2 clients affected"
+        variants={{ variant: 'critical' }}
+      />,
+    );
+    const badge = container.firstElementChild!;
+    expect(badge.tagName).toBe('SPAN');
+    expect(badge.className).toContain('bg-critical-tint');
+    expect(badge.textContent).toBe('2 clients');
+    expect(container.children).toHaveLength(1);
+  });
+
+  it('is a focus stop only when it carries a tooltip, so the hint is reachable by keyboard', () => {
+    const { container, rerender } = render(<Badge content="2 clients" tooltip="10 operations" />);
+    expect(container.firstElementChild!.getAttribute('tabindex')).toBe('0');
+    rerender(<Badge content="2 clients" />);
+    expect(container.firstElementChild!.hasAttribute('tabindex')).toBe(false);
+  });
 });

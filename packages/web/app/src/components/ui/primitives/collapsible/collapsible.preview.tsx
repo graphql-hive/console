@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { Eraser } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import { Filter, FilterOption } from '@/pages/traces/target-traces-filter';
 import { Button } from '../button/button';
-import { Checkbox } from '../checkbox/checkbox';
 import { ScrollArea } from '../scroll-area/scroll-area';
-import { Separator } from '../separator/separator';
 import { Collapsible } from './collapsible';
-import * as styles from './collapsible.preview.css';
 
 export const nav: NavPath = 'Primitives/Collapsible';
 
@@ -21,42 +19,63 @@ const ERROR_CODES = [
 ];
 
 function FilterRows(props: { rows: { label: string; count: number }[] }) {
+  const [selected, setSelected] = useState(['ok']);
   return (
-    <ul className={styles.filterRowsUl}>
+    <div className="flex w-full min-w-0 flex-col gap-1 text-sm">
       {props.rows.map(row => (
-        <li key={row.label}>
-          <button type="button" className={styles.filterRowsButton}>
-            <span className={styles.filterRowsSpan}>
-              <Checkbox visual checked={row.label === 'ok'} size="sm" />
-              {row.label}
-            </span>
-            <span className={styles.filterRowsSpan2}>{row.count}</span>
-          </button>
-        </li>
+        <FilterOption
+          key={row.label}
+          selected={selected.includes(row.label)}
+          count={row.count}
+          onClick={() =>
+            setSelected(prev =>
+              prev.includes(row.label) ? prev.filter(l => l !== row.label) : [...prev, row.label],
+            )
+          }
+        >
+          {row.label}
+        </FilterOption>
       ))}
-    </ul>
+    </div>
   );
 }
 
-/**
- * `section`: a heading row that toggles the list beneath it, as in the traces filter column.
- * The count at the trailing edge is an `actions` slot, outside the button.
- */
-export const Section = createPreview(() => (
-  <div className={styles.div}>
-    <div className={styles.div2}>
-      <Collapsible trigger="Status" defaultOpen actions={<span className={styles.span}>1</span>}>
-        <FilterRows rows={STATUS} />
-      </Collapsible>
+// `section` as the traces filter column ships it: `Filter` owns the trigger, the reset count in
+// `actions`, and the separator beneath.
+export const Section = createPreview(() => {
+  const [status, setStatus] = useState(['ok']);
+  const [codes, setCodes] = useState<string[]>([]);
+  const toggle = (set: typeof setStatus) => (label: string) =>
+    set(prev => (prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]));
+  return (
+    <div className="flex w-64 flex-col text-fg-default">
+      <Filter name="Status" changes={status.length} onReset={() => setStatus([])}>
+        {STATUS.map(row => (
+          <FilterOption
+            key={row.label}
+            selected={status.includes(row.label)}
+            count={row.count}
+            onClick={() => toggle(setStatus)(row.label)}
+          >
+            {row.label}
+          </FilterOption>
+        ))}
+      </Filter>
+      <Filter name="Error Code" changes={codes.length} onReset={() => setCodes([])}>
+        {ERROR_CODES.map(row => (
+          <FilterOption
+            key={row.label}
+            selected={codes.includes(row.label)}
+            count={row.count}
+            onClick={() => toggle(setCodes)(row.label)}
+          >
+            {row.label}
+          </FilterOption>
+        ))}
+      </Filter>
     </div>
-    <Separator />
-    <div className={styles.div3}>
-      <Collapsible trigger="Error Code">
-        <FilterRows rows={ERROR_CODES} />
-      </Collapsible>
-    </div>
-  </div>
-));
+  );
+});
 
 const LOGS = [
   'info: 1',
@@ -69,15 +88,11 @@ const LOGS = [
   'info: done',
 ];
 
-/**
- * `panel`: the header bar of a titled panel, as in the laboratory's preflight logs. The clear
- * button is an `actions` slot and shows only while open. The panel's own content decides how
- * it scrolls: here a `fill` ScrollArea inside a wrapper with a max height.
- */
+// `panel` as the laboratory's preflight logs use it: the clear button shows only while open.
 export const Panel = createPreview(() => {
   const [open, setOpen] = useState(true);
   return (
-    <div className={styles.div4}>
+    <div className="flex max-h-[200px] w-[36rem] flex-col overflow-hidden rounded-md border border-line bg-neutral-1">
       <Collapsible
         variant="panel"
         trigger="Preflight Script Logs"
@@ -90,7 +105,7 @@ export const Panel = createPreview(() => {
         }
       >
         <ScrollArea fill>
-          <div className={styles.div5}>
+          <div className="p-4 font-mono text-xs/[18px] text-fg-default">
             {LOGS.map((line, index) => (
               <div key={index}>{line}</div>
             ))}
@@ -104,7 +119,7 @@ export const Panel = createPreview(() => {
 export const Controlled = createPreview(() => {
   const [open, setOpen] = useState(false);
   return (
-    <div className={styles.div6}>
+    <div className="flex w-64 flex-col gap-3 text-sm text-fg-default">
       <Button variant="outline" onClick={() => setOpen(prev => !prev)}>
         {open ? 'Collapse' : 'Expand'} from outside
       </Button>
@@ -121,19 +136,23 @@ export const Playground = createPreview({
     trigger: { type: 'text', default: 'Status' },
     actions: {
       type: 'radio',
-      options: ['none', 'count', 'clear'],
-      default: 'count',
+      options: ['none', 'clear'],
+      default: 'none',
       derive: kind =>
-        kind === 'count' ? (
-          <span className={styles.span2}>1</span>
-        ) : kind === 'clear' ? (
+        kind === 'clear' ? (
           <Button layout="iconOnly" icon={Eraser} aria-label="Clear" variant="ghost" />
         ) : undefined,
     },
     defaultOpen: { type: 'boolean', default: true },
   }),
   render: v => (
-    <div className={v.variant === 'panel' ? styles.div7 : styles.div8}>
+    <div
+      className={
+        v.variant === 'panel'
+          ? 'w-[36rem] overflow-hidden rounded-md border border-line bg-neutral-1'
+          : 'w-64 p-2 text-fg-default'
+      }
+    >
       {/* `defaultOpen` is read once at mount, so the key remounts on a change. */}
       <Collapsible
         key={String(v.defaultOpen)}
@@ -142,7 +161,7 @@ export const Playground = createPreview({
         actions={v.actions}
         defaultOpen={v.defaultOpen}
       >
-        <div className={v.variant === 'panel' ? styles.div9 : undefined}>
+        <div className={v.variant === 'panel' ? 'p-2' : undefined}>
           <FilterRows rows={STATUS} />
         </div>
       </Collapsible>

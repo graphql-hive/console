@@ -15,9 +15,38 @@ import {
 } from '@hive/api/modules/organization/providers/provisioned-users-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
 import { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
+import { invariant, metrics } from '@hive/service-common';
+import * as Sentry from '@sentry/node';
+
+const scimRequestLabelNames = ['route', 'status_code'] as const;
+
+export const scimRequestCount = new metrics.Counter({
+  name: 'api_scim_request_count',
+  help: 'Number of completed SCIM requests',
+  labelNames: scimRequestLabelNames,
+});
+
+export const scimRequestDuration = new metrics.Histogram({
+  name: 'api_scim_request_duration_seconds',
+  help: 'Duration of completed SCIM requests in seconds',
+  labelNames: scimRequestLabelNames,
+});
+
+export function getSCIMRequestMetricLabels(
+  method: string,
+  route: string | undefined,
+  statusCode: number,
+) {
+  const normalizedRoute = `${method} ${route}`;
+
+  return {
+    route: route ? normalizedRoute : 'unknown',
+    status_code: statusCode,
+  };
+}
 
 const EmailSchemaModel = z.object({
-  value: z.string().email(),
+  value: z.email(),
   type: z.string().optional(),
   primary: z.boolean().optional(),
 });
@@ -91,10 +120,13 @@ const GetGroupQueryModel = z.object({
   excludedAttributes: z.literal('members').optional(),
 });
 
-const GetGroupsQueryModel = QuerySchemaModel.merge(GetGroupQueryModel);
+const GetGroupsQueryModel = z.object({
+  ...QuerySchemaModel.shape,
+  ...GetGroupQueryModel.shape,
+});
 
 const SharedUserRouteParams = z.object({
-  userId: z.string().uuid(),
+  userId: z.uuid(),
 });
 
 const SharedGroupRouteParams = z.object({
@@ -102,7 +134,7 @@ const SharedGroupRouteParams = z.object({
 });
 
 const GroupMemberSchema = z.object({
-  value: z.string().uuid(),
+  value: z.uuid(),
 });
 
 const PostGroupsBodyModel = z.object({
@@ -130,7 +162,7 @@ const RemoveOperationSchema = z.union([
           const [, userId] = path.match(/^members\[value eq "([^"]+)"\]$/)!;
           return userId;
         })
-        .pipe(z.string().uuid()),
+        .pipe(z.uuid()),
     })
     .transform(value => ({
       op: value.op,
@@ -200,6 +232,27 @@ export const createSCIMPlugin =
     isSCIMEnabled: boolean,
   ): FastifyPluginAsync =>
   async server => {
+    const requestStartTimeMap = new WeakMap<FastifyRequest, bigint>();
+    server.addHook('onRequest', (request, _reply, done) => {
+      requestStartTimeMap.set(request, process.hrtime.bigint());
+      done();
+    });
+
+    server.addHook('onResponse', (request, reply, done) => {
+      const labels = getSCIMRequestMetricLabels(
+        request.method,
+        request.routeOptions.url,
+        reply.statusCode,
+      );
+      const duration = requestStartTimeMap.get(request);
+      invariant(duration, 'Duration must have been set.');
+      const durationSeconds = Number(process.hrtime.bigint() - duration) / 1e9;
+
+      scimRequestCount.inc(labels);
+      scimRequestDuration.observe(labels, durationSeconds);
+      done();
+    });
+
     async function authenticateAuthorizeAndResolveOrganizationFromRequest(
       req: FastifyRequest,
       reply: FastifyReply,
@@ -581,6 +634,16 @@ export const createSCIMPlugin =
 
     server.setErrorHandler(async (error, request, reply) => {
       request.log.error(error);
+
+      Sentry.withScope(scope => {
+        scope.setUser({ ip_address: request.ip });
+        scope.setTag('feature', 'scim');
+        scope.setTag('request_id', request.id);
+        scope.setTag('path', request.raw.url);
+        scope.setTag('method', request.raw.method);
+        Sentry.captureException(error);
+      });
+
       return reply.status(500).send(
         createSCIMError({
           status: 500,
@@ -730,7 +793,7 @@ export const createSCIMPlugin =
         )?.toLowerCase() ?? null;
 
       if (!rawEmail) {
-        if (z.string().email().safeParse(bodyParse.data.userName).success) {
+        if (z.email().safeParse(bodyParse.data.userName).success) {
           rawEmail = bodyParse.data.userName.toLowerCase();
         }
       }
@@ -1001,7 +1064,7 @@ export const createSCIMPlugin =
         }
 
         if (operation.path === 'emails[type eq "work"].value') {
-          const email = z.string().email().safeParse(operation.value);
+          const email = z.email().safeParse(operation.value);
           if (!email.success) {
             hasParseError = true;
             break;
@@ -1117,7 +1180,7 @@ export const createSCIMPlugin =
             break;
           }
           case 'id': {
-            if (!z.string().uuid().safeParse(value).success) {
+            if (!z.uuid().safeParse(value).success) {
               break;
             }
             user = await usersStore.findUserProvisionedByOrganizationIdAndId(
@@ -1237,7 +1300,7 @@ export const createSCIMPlugin =
             break;
           }
           case 'id': {
-            if (!z.string().uuid().safeParse(value).success) {
+            if (!z.uuid().safeParse(value).success) {
               break;
             }
             group = await groupStore.getGroupByOrganizationIdAndGroupId(

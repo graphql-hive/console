@@ -6,7 +6,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import * as styles from './BillingPlanPicker.css';
 
-const planCollection: {
+export const planCollection: {
   [key in BillingPlanType]: {
     description: string;
     features: (ReactNode | string)[];
@@ -59,7 +59,7 @@ const planCollection: {
   },
 };
 
-function Plan(plan: {
+export function Plan(plan: {
   isActive: boolean;
   name: string;
   price: string | number;
