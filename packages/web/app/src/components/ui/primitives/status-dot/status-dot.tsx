@@ -1,7 +1,7 @@
 import { lenient } from '@/lib/recipe';
-import * as styles from './status-dot.css';
+import { statusDotStyles } from './status-dot.css';
 
-const statusDotVariants = lenient(styles.statusDotVariants);
+const statusDotVariants = lenient(statusDotStyles.root);
 
 type StatusDotProps = NonNullable<Parameters<typeof statusDotVariants>[0]> & {
   /**

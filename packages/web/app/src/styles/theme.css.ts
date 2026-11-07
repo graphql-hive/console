@@ -422,6 +422,7 @@ export const vars = createGlobalThemeContract({
     md: 'radius-md',
     sm: 'radius-sm',
     xs: 'radius-xs',
+    full: 'radius-full',
   },
   ease: {
     authentic: 'ease-authentic',
@@ -590,6 +591,7 @@ globalStyle(':root, :host', {
           md: `calc(${vars.radius.DEFAULT} - 2px)`,
           sm: `calc(${vars.radius.DEFAULT} - 4px)`,
           xs: `calc(${vars.radius.DEFAULT} - 6px)`,
+          full: 'calc(infinity * 1px)',
         },
         ease: {
           authentic: 'cubic-bezier(0.4, 0, 0.2, 1)',

@@ -3,9 +3,9 @@ import { Info, type LucideIcon } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import * as shared from '@/styles/shared.css';
 import { Tooltip } from '../floating/tooltip/tooltip';
-import * as styles from './label.css';
+import { labelStyles } from './label.css';
 
-const labelVariants = lenient(styles.labelVariants);
+const labelVariants = lenient(labelStyles.root);
 
 export type LabelHintProps = {
   /** What the control is for, behind an icon beside the label. */
@@ -30,8 +30,8 @@ export function LabelHint({ tooltip, icon: Icon = Info, name }: LabelHintProps &
   return (
     <Tooltip
       trigger={
-        <button type="button" aria-label={`About ${name}`} className={styles.labelHintButton}>
-          <Icon className={styles.labelHintIcon} />
+        <button type="button" aria-label={`About ${name}`} className={labelStyles.hint}>
+          <Icon className={labelStyles.hintIcon} />
         </button>
       }
       content={tooltip}

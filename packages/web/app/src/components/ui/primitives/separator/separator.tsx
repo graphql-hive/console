@@ -1,8 +1,8 @@
 import { lenient } from '@/lib/recipe';
 import { Separator as BaseSeparator } from '@base-ui/react/separator';
-import * as styles from './separator.css';
+import { separatorStyles } from './separator.css';
 
-const separatorVariants = lenient(styles.separatorVariants);
+const separatorVariants = lenient(separatorStyles.root);
 
 type SeparatorProps = {
   orientation?: 'horizontal' | 'vertical';

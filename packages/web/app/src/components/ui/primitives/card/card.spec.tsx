@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { Card } from './card';
-import * as styles from './card.css';
+import { cardStyles } from './card.css';
 
 describe('Card', () => {
   it('puts actions in the title row, with the description running under both', () => {
@@ -18,7 +18,7 @@ describe('Card', () => {
     const action = screen.getByRole('button', { name: 'Copy' });
     const row = title.parentElement!;
     expect(row.contains(action)).toBe(true);
-    expect(row.className).toContain(styles.cardDiv2);
+    expect(row.className).toContain(cardStyles.titleRow);
     expect(row.contains(screen.getByText('Fetched 2 minutes ago'))).toBe(false);
   });
 
@@ -29,7 +29,9 @@ describe('Card', () => {
       </Card>,
     );
     expect(screen.getByRole('button', { name: 'Refresh' })).toBeTruthy();
-    expect(screen.getByText('body').parentElement!.className).toContain(styles.cardDiv4);
+    expect(screen.getByText('body').parentElement!.className).toContain(
+      cardStyles.body.classNames.variants.afterHeader.true,
+    );
     expect(screen.queryByRole('heading')).toBeNull();
   });
 

@@ -6,3 +6,6 @@ import { vars } from './theme.css';
  * export styles and tokens.
  */
 export const space = (steps: number) => `calc(${vars.spacing} * ${steps})`;
+
+/** A square of that many spacing steps: icons, dots, avatars. */
+export const square = (steps: number) => ({ width: space(steps), height: space(steps) });

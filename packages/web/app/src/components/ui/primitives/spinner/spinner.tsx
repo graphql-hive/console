@@ -1,9 +1,9 @@
 import { LoaderCircle } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import * as shared from '@/styles/shared.css';
-import * as styles from './spinner.css';
+import { spinnerStyles } from './spinner.css';
 
-const spinnerVariants = lenient(styles.spinnerVariants);
+const spinnerVariants = lenient(spinnerStyles.root);
 
 type SpinnerProps = {
   /** What assistive tech announces; the icon itself is decorative. */

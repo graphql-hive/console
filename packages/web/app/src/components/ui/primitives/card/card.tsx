@@ -1,13 +1,12 @@
 import { type ReactElement, type ReactNode } from 'react';
 import { lenient } from '@/lib/recipe';
-import { cn } from '@/lib/utils';
-import * as styles from './card.css';
+import { cardStyles } from './card.css';
 
-export const cardVariants = lenient(styles.cardVariants);
+export const cardVariants = lenient(cardStyles.root);
 
-const cardBodyVariants = lenient(styles.cardBodyVariants);
+const cardTitleVariants = lenient(cardStyles.title);
 
-const cardTitleVariants = lenient(styles.cardTitleVariants);
+const cardBodyVariants = lenient(cardStyles.body);
 
 type CardProps = {
   title?: string;
@@ -16,7 +15,7 @@ type CardProps = {
   children?: ReactNode;
   variants?: NonNullable<Parameters<typeof cardVariants>[0]> &
     NonNullable<Parameters<typeof cardTitleVariants>[0]> &
-    NonNullable<Parameters<typeof cardBodyVariants>[0]>;
+    Omit<NonNullable<Parameters<typeof cardBodyVariants>[0]>, 'afterHeader'>;
 };
 
 export function Card({ children, title, description, actions, variants }: CardProps) {
@@ -25,20 +24,18 @@ export function Card({ children, title, description, actions, variants }: CardPr
   return (
     <div className={cardVariants({ ...variants })}>
       {hasHeader ? (
-        <div className={styles.cardDiv}>
+        <div className={cardStyles.header}>
           {title || actions ? (
-            <div className={styles.cardDiv2}>
+            <div className={cardStyles.titleRow}>
               {title ? <h3 className={cardTitleVariants({ ...variants })}>{title}</h3> : null}
-              {actions ? <div className={styles.cardDiv3}>{actions}</div> : null}
+              {actions ? <div className={cardStyles.actions}>{actions}</div> : null}
             </div>
           ) : null}
-          {description ? <p className={styles.cardP}>{description}</p> : null}
+          {description ? <p className={cardStyles.description}>{description}</p> : null}
         </div>
       ) : null}
       {children ? (
-        <div className={cn(cardBodyVariants({ ...variants }), hasHeader && styles.cardDiv4)}>
-          {children}
-        </div>
+        <div className={cardBodyVariants({ ...variants, afterHeader: hasHeader })}>{children}</div>
       ) : null}
     </div>
   );

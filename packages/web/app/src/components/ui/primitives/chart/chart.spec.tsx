@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, render } from '@testing-library/react';
 import { Chart } from './chart';
-import * as styles from './chart.css';
+import { chartStyles } from './chart.css';
 
 const instance = {
   setOption: vi.fn(),
@@ -60,10 +60,10 @@ describe('Chart', () => {
     const { container } = render(<Chart option={{}} height={200} />);
     const host = container.firstChild as HTMLElement;
     const mount = (init.mock.calls[0] as unknown[])[0] as HTMLElement;
-    expect(host.className).toContain(styles.chartDiv);
+    expect(host.className).toContain(chartStyles.host);
     expect(host.style.height).toBe('200px');
     expect(mount.parentElement).toBe(host);
-    expect(mount.className).toContain(styles.chartDiv2);
+    expect(mount.className).toContain(chartStyles.mount);
   });
 
   it('keeps the instance across re-renders and sets only a changed option', () => {

@@ -19,7 +19,7 @@ import {
 } from 'react-hook-form';
 import * as shared from '@/styles/shared.css';
 import { Label, LabelHint, labelVariants, type LabelHintProps } from '../label/label';
-import * as styles from './form.css';
+import { formStyles } from './form.css';
 
 // The three generics mirror useForm's, so a schema that transforms its values (defaults, coercion)
 // hands the submit handler the output type, not the input type.
@@ -48,7 +48,7 @@ export function Form<
 >({ form, onSubmit, children, attrs }: FormProps<TFieldValues, TContext, TTransformedValues>) {
   return (
     <FormProvider {...form}>
-      <form className={styles.formForm} onSubmit={form.handleSubmit(onSubmit)} {...attrs}>
+      <form className={formStyles.form} onSubmit={form.handleSubmit(onSubmit)} {...attrs}>
         {children}
       </form>
     </FormProvider>
@@ -100,13 +100,13 @@ export function FormItem({ children, group = false }: { children: ReactNode; gro
   if (group) {
     return (
       <FormItemContext.Provider value={value}>
-        <fieldset className={styles.formItemFieldset}>{children}</fieldset>
+        <fieldset className={formStyles.item}>{children}</fieldset>
       </FormItemContext.Provider>
     );
   }
   return (
     <FormItemContext.Provider value={value}>
-      <div className={styles.formItemDiv}>{children}</div>
+      <div className={formStyles.item}>{children}</div>
     </FormItemContext.Provider>
   );
 }
@@ -158,7 +158,7 @@ export function FormControl({ children }: { children: ReactElement }) {
 export function FormMessage() {
   const { error, formMessageId } = useFormField();
   return (
-    <p id={formMessageId} data-form-message className={styles.formMessageP}>
+    <p id={formMessageId} data-form-message className={formStyles.message}>
       {error?.message ? String(error.message) : null}
     </p>
   );

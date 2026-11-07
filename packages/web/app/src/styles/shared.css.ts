@@ -1,6 +1,6 @@
 import { style, styleVariants, type StyleRule } from '@vanilla-extract/css';
 import { layered } from './layered';
-import { space } from './space';
+import { space, square } from './space';
 import { vars } from './theme.css';
 
 /*
@@ -81,11 +81,6 @@ export const srOnly = style(
 );
 
 // Icons ----------------------------------------------------------------------------------------
-
-const square = (n: number) => ({
-  width: `calc(${vars.spacing} * ${n})`,
-  height: `calc(${vars.spacing} * ${n})`,
-});
 
 /** Icon sizes, by the spacing step they are square in: 3 is 12px, 3.5 is 14px, 4 is 16px. */
 export const icon = variants({

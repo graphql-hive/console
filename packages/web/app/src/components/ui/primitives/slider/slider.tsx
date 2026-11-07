@@ -1,6 +1,5 @@
 import { Slider as BaseSlider } from '@base-ui/react/slider';
-import { focusRing } from '../shared-styles';
-import * as styles from './slider.css';
+import { sliderStyles } from './slider.css';
 
 /** One thumb for a number; two, for a bounded range such as a duration filter, for a pair. */
 type SliderValue = number | [number, number];
@@ -39,12 +38,12 @@ export function Slider<V extends SliderValue>({
       max={max}
       step={step}
       disabled={disabled}
-      className={styles.sliderRoot}
+      className={sliderStyles.root}
     >
       {/* Vertical padding widens the hit area past the 4px track. */}
-      <BaseSlider.Control className={styles.sliderControl}>
-        <BaseSlider.Track className={styles.sliderTrack}>
-          <BaseSlider.Indicator className={styles.sliderIndicator} />
+      <BaseSlider.Control className={sliderStyles.control}>
+        <BaseSlider.Track className={sliderStyles.track}>
+          <BaseSlider.Indicator className={sliderStyles.indicator} />
           {(isRange ? [0, 1] : [0]).map(index => (
             <BaseSlider.Thumb
               key={index}
@@ -52,7 +51,7 @@ export function Slider<V extends SliderValue>({
               aria-label={
                 isRange ? `${ariaLabel} ${index === 0 ? 'minimum' : 'maximum'}` : ariaLabel
               }
-              className={`${styles.sliderThumb} ${focusRing}`}
+              className={sliderStyles.thumb}
             />
           ))}
         </BaseSlider.Track>
