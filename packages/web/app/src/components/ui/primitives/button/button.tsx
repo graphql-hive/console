@@ -1,12 +1,13 @@
 import { forwardRef, type ReactNode } from 'react';
 import { type LucideIcon } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
-import { cn } from '@/lib/utils';
 import { useRender } from '@base-ui/react/use-render';
-import { disabledStyle, segmentSeparator } from '../shared-styles';
-import * as styles from './button.css';
+import { disabledStyle } from '../shared-styles';
+import { buttonStyles } from './button.css';
 
-export const buttonVariants = lenient(styles.buttonVariants);
+export const buttonVariants = lenient(buttonStyles.root);
+
+const rightIconVariants = lenient(buttonStyles.rightIcon);
 
 type AnchorProps = {
   href: string;
@@ -15,8 +16,8 @@ type AnchorProps = {
   download?: boolean | string;
 };
 
-// `layout` is a cva variant so padding can key on it, but as a prop it is the discriminant of
-// the union below, so the union defines it rather than cva.
+// `layout` is a recipe variant so padding can key on it, but as a prop it is the discriminant of
+// the union below, so the union defines it rather than the recipe.
 type CommonProps = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'style'> &
   Omit<NonNullable<Parameters<typeof buttonVariants>[0]>, 'layout'> & {
     'data-testid'?: string;
@@ -113,7 +114,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     ref,
     defaultTagName: 'button',
     props: {
-      className: cn(buttonVariants({ variant, size, layout, width, onSurface })),
+      className: buttonVariants({ variant, size, layout, width, onSurface }),
       disabled: anchor ? undefined : disabled,
       'aria-disabled': anchor && disabled ? true : undefined,
       tabIndex: anchor && disabled ? -1 : undefined,
@@ -121,17 +122,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ...domProps,
       children:
         props.layout === 'iconOnly' ? (
-          <span className={styles.buttonSpan}>
-            <props.icon className={styles.buttonIcon} />
+          <span className={buttonStyles.iconSlot}>
+            <props.icon className={buttonStyles.iconOnlyIcon} />
           </span>
         ) : props.label != null ? (
           <>
-            <span className={styles.buttonSpan2}>{props.label}</span>
+            <span className={buttonStyles.label}>{props.label}</span>
 
             {props.accessoryInformation != null && (
-              <span className={`${segmentSeparator} ${styles.buttonSpan3}`}>
-                {props.accessoryInformation}
-              </span>
+              <span className={buttonStyles.accessory}>{props.accessoryInformation}</span>
             )}
             {props.rightIcon && (
               <span
@@ -165,9 +164,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
                       }
                     : undefined
                 }
-                className={`${props.rightIcon.withSeparator && segmentSeparator} ${styles.buttonSpan4} ${props.rightIcon.action ? styles.buttonSpan6 : styles.buttonSpan7} ${styles.buttonSpan5}`}
+                className={rightIconVariants({
+                  separated: props.rightIcon.withSeparator,
+                  interactive: !!props.rightIcon.action,
+                })}
               >
-                <props.rightIcon.icon className={styles.buttonIcon2} />
+                <props.rightIcon.icon className={buttonStyles.rightIconGlyph} />
               </span>
             )}
           </>

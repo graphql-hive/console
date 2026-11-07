@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Tabs } from './tabs';
-import * as styles from './tabs.css';
+import { tabsStyles } from './tabs.css';
 
 const ITEMS = [
   {
@@ -18,8 +18,8 @@ describe('Tabs', () => {
   it('wraps a horizontal strip in a sideways scroller and leaves a vertical one alone', () => {
     const { rerender } = render(<Tabs items={ITEMS} defaultValue="details" />);
     const list = screen.getByRole('tablist');
-    const horizontalList = styles.listVariants.classNames.variants.orientation.horizontal;
-    const horizontalScroller = styles.scrollerVariants.classNames.variants.orientation.horizontal;
+    const horizontalList = tabsStyles.list.classNames.variants.orientation.horizontal;
+    const horizontalScroller = tabsStyles.scroller.classNames.variants.orientation.horizontal;
     expect(list.className).toContain(horizontalList);
     expect(list.parentElement!.className).toContain(horizontalScroller);
 
@@ -66,7 +66,7 @@ describe('Tabs', () => {
       const outgoing = screen.getByText('Details panel').closest('[role="tabpanel"]')!;
       expect(outgoing.hasAttribute('data-ending-style')).toBe(true);
       expect(outgoing.hasAttribute('inert')).toBe(true);
-      expect(outgoing.className).toContain(styles.panelVariants.classNames.base);
+      expect(outgoing.className).toContain(tabsStyles.panel.classNames.base);
       expect(screen.getByText('Schema panel')).toBeTruthy();
 
       await act(async () => {

@@ -3,13 +3,13 @@ import { formatDateToString } from '@/lib/date-math';
 import { UTCDate } from '@date-fns/utc';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { DateRangePicker, presetLast7Days } from './date-range-picker';
-import * as buttonStyles from './primitives/button/button.css';
+import { buttonStyles } from './primitives/button/button.css';
 
 describe('DateRangePicker', () => {
   it('renders its own segmented trigger at the form-control height', () => {
     render(<DateRangePicker selectedRange={presetLast7Days.range} />);
     const trigger = screen.getByRole('button', { name: 'Last 7 days' });
-    const { size } = buttonStyles.buttonVariants.classNames.variants;
+    const { size } = buttonStyles.root.classNames.variants;
     expect(trigger.className).toContain(size.default);
     expect(trigger.className).not.toContain(size.compact);
   });
@@ -17,7 +17,7 @@ describe('DateRangePicker', () => {
   it('takes the compact height for a filter row', () => {
     render(<DateRangePicker selectedRange={presetLast7Days.range} size="compact" />);
     expect(screen.getByRole('button', { name: 'Last 7 days' }).className).toContain(
-      buttonStyles.buttonVariants.classNames.variants.size.compact,
+      buttonStyles.root.classNames.variants.size.compact,
     );
   });
 

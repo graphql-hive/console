@@ -1,10 +1,8 @@
 import { useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { lenient } from '@/lib/recipe';
-import { cn } from '@/lib/utils';
-import * as shared from '@/styles/shared.css';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import { Tooltip } from '../floating/tooltip/tooltip';
-import * as styles from './tabs.css';
+import { tabsStyles } from './tabs.css';
 
 export type TabsVariant = 'underline' | 'header';
 export type TabsSize = 'default' | 'sm';
@@ -36,29 +34,17 @@ type TabsProps = {
   attrs?: Record<string, string>;
 };
 
-const rootVariants = lenient(styles.rootVariants);
+const rootVariants = lenient(tabsStyles.root);
 
-/**
- * A horizontal strip scrolls sideways once its tabs outgrow it, with the scrollbar hidden the way
- * tab strips usually are; the arrow keys still reach every tab. Inline-size containment keeps the
- * tabs from counting toward the width of the flex columns above, which would otherwise stretch
- * to fit them and push the page sideways instead. A scroll container clips on both axes, so the
- * wrapper pads by the focus ring's reach (4px) plus the indicator's pixel below the border, and
- * pulls the same back with negative margins.
- */
-const scrollerVariants = lenient(styles.scrollerVariants);
+const scrollerVariants = lenient(tabsStyles.scroller);
 
-const listVariants = lenient(styles.listVariants);
+const listVariants = lenient(tabsStyles.list);
 
-const tabVariants = lenient(styles.tabVariants);
+const tabVariants = lenient(tabsStyles.tab);
 
-const indicatorVariants = lenient(styles.indicatorVariants);
+const indicatorVariants = lenient(tabsStyles.indicator);
 
-// Base UI keeps the outgoing panel mounted until its exit transition ends, which without an
-// animation is still a frame or so of both panels stacked, so hide it the moment it starts ending.
-const panelVariants = lenient(styles.panelVariants);
-
-const iconSize = { default: styles.iconSizeDefault, sm: styles.iconSizeSm } as const;
+const panelVariants = lenient(tabsStyles.panel);
 
 export function TabStrip({
   items,
@@ -70,7 +56,7 @@ export function TabStrip({
   /** The controlled value, so a tab picked from outside the strip is scrolled into view. */
   activeValue?: string;
 }) {
-  const icon = variant === 'header' ? iconSize.sm : iconSize[size];
+  const icon = tabsStyles.icon[variant === 'header' ? 'sm' : size];
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   // A tab activated from outside the strip, like a service just added to a proposal, can sit
@@ -99,7 +85,7 @@ export function TabStrip({
             className={tabVariants({ variant, size, orientation })}
             {...item.attrs}
           >
-            {Icon ? <Icon className={cn(icon, styles.tabStripIcon)} /> : null}
+            {Icon ? <Icon className={icon} /> : null}
             {item.label}
           </BaseTabs.Tab>
         );
@@ -110,7 +96,7 @@ export function TabStrip({
         return (
           <Tooltip
             key={item.value}
-            trigger={<span className={shared.inlineFlex}>{tab}</span>}
+            trigger={<span className={tabsStyles.tooltipTrigger}>{tab}</span>}
             content={item.tooltip}
           />
         );

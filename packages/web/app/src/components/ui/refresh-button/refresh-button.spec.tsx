@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react';
 import { RefreshButton } from './refresh-button';
-import * as buttonStyles from '../primitives/button/button.css';
+import { buttonStyles } from '../primitives/button/button.css';
 
 describe('RefreshButton', () => {
   it('is a button named Refresh that calls back on click', () => {
     const onClick = vi.fn();
     render(<RefreshButton onClick={onClick} />);
     const button = screen.getByRole('button', { name: 'Refresh' });
-    expect(button.className).toContain(buttonStyles.buttonVariants({ layout: 'iconOnly' }));
+    expect(button.className).toContain(buttonStyles.root({ layout: 'iconOnly' }));
 
     fireEvent.click(button);
     expect(onClick).toHaveBeenCalledTimes(1);
@@ -17,7 +17,7 @@ describe('RefreshButton', () => {
   it('takes the compact size for filter rows', () => {
     render(<RefreshButton size="compact" onClick={() => {}} />);
     expect(screen.getByRole('button', { name: 'Refresh' }).className).toContain(
-      buttonStyles.buttonVariants({ layout: 'iconOnly', size: 'compact' }),
+      buttonStyles.root({ layout: 'iconOnly', size: 'compact' }),
     );
   });
 

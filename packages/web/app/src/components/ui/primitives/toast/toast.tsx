@@ -1,9 +1,8 @@
 import { useCallback, type ReactNode } from 'react';
 import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Toast as BaseToast } from '@base-ui/react/toast';
 import { Button } from '../button/button';
-import * as styles from './toast.css';
+import { toastStyles } from './toast.css';
 
 export type ToastVariant = 'default' | 'destructive' | 'success';
 
@@ -47,48 +46,24 @@ export function useToast() {
 }
 
 const iconByVariant: Record<ToastVariant, ReactNode> = {
-  default: <Info aria-hidden className={styles.info} />,
-  success: <CircleCheck aria-hidden className={styles.circleCheck} />,
-  destructive: <CircleAlert aria-hidden className={styles.circleAlert} />,
+  default: <Info aria-hidden className={toastStyles.icon.default} />,
+  success: <CircleCheck aria-hidden className={toastStyles.icon.success} />,
+  destructive: <CircleAlert aria-hidden className={toastStyles.icon.destructive} />,
 };
-
-const viewportClass = cn(styles.class2, styles.class3, styles.class4);
-
-const rootClass = cn(
-  styles.class5,
-  styles.class6,
-  styles.class7,
-  styles.class8,
-  styles.class9,
-  // Bridges the gap to the next toast so the pointer can travel the stack without collapsing it.
-  styles.class10,
-  styles.class11,
-  styles.class12,
-  styles.class13,
-  styles.class14,
-  styles.class15,
-  styles.class16,
-  styles.class17,
-  styles.class18,
-  styles.class19,
-  styles.class20,
-);
-
-const contentClass = cn(styles.class21, styles.class22);
 
 function ToastList() {
   const { toasts } = BaseToast.useToastManager();
 
   return toasts.map(toast => (
-    <BaseToast.Root key={toast.id} toast={toast} className={rootClass}>
-      <BaseToast.Content className={contentClass}>
+    <BaseToast.Root key={toast.id} toast={toast} className={toastStyles.root}>
+      <BaseToast.Content className={toastStyles.content}>
         {iconByVariant[(toast.type as ToastVariant | undefined) ?? 'default']}
-        <div className={styles.toastListDiv}>
-          <BaseToast.Title className={styles.toastListTitle} />
-          <BaseToast.Description className={styles.toastListDescription} />
+        <div className={toastStyles.body}>
+          <BaseToast.Title className={toastStyles.title} />
+          <BaseToast.Description className={toastStyles.description} />
         </div>
       </BaseToast.Content>
-      <span className={styles.toastListSpan}>
+      <span className={toastStyles.close}>
         <BaseToast.Close
           render={
             <Button layout="iconOnly" icon={X} aria-label="Close" variant="ghost" size="icon-sm" />
@@ -104,7 +79,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <BaseToast.Provider limit={3}>
       {children}
       <BaseToast.Portal>
-        <BaseToast.Viewport className={viewportClass}>
+        <BaseToast.Viewport className={toastStyles.viewport}>
           <ToastList />
         </BaseToast.Viewport>
       </BaseToast.Portal>

@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import { Accordion as BaseAccordion } from '@base-ui/react/accordion';
-import * as styles from './accordion.css';
+import { accordionStyles } from './accordion.css';
 
 export type AccordionItem = {
   value: string;
@@ -48,27 +48,19 @@ type AccordionProps = {
   attrs?: Record<string, string>;
 };
 
-const rootVariants = lenient(styles.rootVariants);
+const rootVariants = lenient(accordionStyles.root);
 
-const itemVariants = lenient(styles.itemVariants);
+const itemVariants = lenient(accordionStyles.item);
 
-const headerRowVariants = lenient(styles.headerRowVariants);
+const headerRowVariants = lenient(accordionStyles.headerRow);
 
-// A static row has no button, so no hover fill and no hover text change.
-const staticHeaderRowVariants = lenient(styles.staticHeaderRowVariants);
+const staticRowVariants = lenient(accordionStyles.staticRow);
 
-const staticRowVariants = lenient(styles.staticRowVariants);
+const triggerVariants = lenient(accordionStyles.trigger);
 
-const chevronSpacerVariants = lenient(styles.chevronSpacerVariants);
+const chevronVariants = lenient(accordionStyles.chevron);
 
-const triggerVariants = lenient(styles.triggerVariants);
-
-const chevronVariants = lenient(styles.chevronVariants);
-
-// Base UI measures the panel into a variable, which is what lets the height animate.
-const panelVariants = lenient(styles.panelVariants);
-
-const panelInnerVariants = lenient(styles.panelInnerVariants);
+const panelInnerVariants = lenient(accordionStyles.panelInner);
 
 export function Accordion({
   items,
@@ -98,24 +90,24 @@ export function Accordion({
         item.content == null ? (
           // Outside BaseAccordion.Item: an Item expects a trigger and a panel to wire together.
           <div key={item.value} className={itemVariants({ variant })} {...item.attrs}>
-            <div className={staticHeaderRowVariants({ variant })}>
-              <h3 className={styles.accordionH3} {...item.triggerAttrs}>
+            <div className={headerRowVariants({ variant, interactive: false })}>
+              <h3 className={accordionStyles.heading} {...item.triggerAttrs}>
                 <span className={staticRowVariants({ size, tone })}>
                   {/* Holds the chevron's place, so labels and trailing line up with open-able rows. */}
                   {chevron === 'start' ? (
-                    <span aria-hidden className={chevronSpacerVariants({ size })} />
+                    <span aria-hidden className={accordionStyles.chevronSpacer[size]} />
                   ) : null}
-                  <span className={styles.accordionSpan}>{item.label}</span>
+                  <span className={accordionStyles.label}>{item.label}</span>
                   {item.trailing != null ? (
-                    <span className={styles.accordionSpan2}>{item.trailing}</span>
+                    <span className={accordionStyles.trailing}>{item.trailing}</span>
                   ) : null}
                   {chevron === 'end' ? (
-                    <span aria-hidden className={chevronSpacerVariants({ size })} />
+                    <span aria-hidden className={accordionStyles.chevronSpacer[size]} />
                   ) : null}
                 </span>
               </h3>
               {item.action != null ? (
-                <div className={styles.accordionDiv}>{item.action}</div>
+                <div className={accordionStyles.action}>{item.action}</div>
               ) : null}
             </div>
           </div>
@@ -127,25 +119,25 @@ export function Accordion({
             className={itemVariants({ variant })}
             {...item.attrs}
           >
-            <div className={headerRowVariants({ variant })}>
-              <BaseAccordion.Header className={styles.accordionHeader}>
+            <div className={headerRowVariants({ variant, interactive: true })}>
+              <BaseAccordion.Header className={accordionStyles.heading}>
                 <BaseAccordion.Trigger
                   className={triggerVariants({ size, tone })}
                   {...item.triggerAttrs}
                 >
                   {chevron === 'start' ? chevronIcon : null}
-                  <span className={styles.accordionSpan}>{item.label}</span>
+                  <span className={accordionStyles.label}>{item.label}</span>
                   {item.trailing != null ? (
-                    <span className={styles.accordionSpan2}>{item.trailing}</span>
+                    <span className={accordionStyles.trailing}>{item.trailing}</span>
                   ) : null}
                   {chevron === 'end' ? chevronIcon : null}
                 </BaseAccordion.Trigger>
               </BaseAccordion.Header>
               {item.action != null ? (
-                <div className={styles.accordionDiv}>{item.action}</div>
+                <div className={accordionStyles.action}>{item.action}</div>
               ) : null}
             </div>
-            <BaseAccordion.Panel className={panelVariants()}>
+            <BaseAccordion.Panel className={accordionStyles.panel}>
               <div className={panelInnerVariants({ variant, size })}>{item.content}</div>
             </BaseAccordion.Panel>
           </BaseAccordion.Item>

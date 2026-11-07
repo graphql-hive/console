@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Accordion } from './accordion';
-import * as styles from './accordion.css';
+import { accordionStyles } from './accordion.css';
 
 const ITEMS = [
   {
@@ -76,10 +76,10 @@ describe('Accordion', () => {
     const { container, rerender } = render(<Accordion items={ITEMS} variant="boxed" />);
     const header = () =>
       screen.getByRole('button', { name: 'Breaking' }).closest('h3')!.parentElement!;
-    const boxedHeader = styles.headerRowVariants.classNames.variants.variant.boxed;
+    const boxedHeader = accordionStyles.headerRow.classNames.variants.variant.boxed;
     expect(header().className).toContain(boxedHeader);
     expect((container.firstElementChild!.firstElementChild as HTMLElement).className).toContain(
-      styles.itemVariants.classNames.variants.variant.boxed,
+      accordionStyles.item.classNames.variants.variant.boxed,
     );
 
     rerender(<Accordion items={ITEMS} variant="list" />);
