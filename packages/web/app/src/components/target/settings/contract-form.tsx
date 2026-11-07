@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/primitives/input/input';
 import { Label } from '@/components/ui/primitives/label/label';
 import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './contract-form.css';
+import { contractFormStyles } from './contract-form.css';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
 export const CONTRACT_FORM_ID = 'create-contract-form';
@@ -43,8 +43,8 @@ export function TagSuggestions(props: {
   onToggle: (tag: string) => void;
 }) {
   return (
-    <div className={styles.tagSuggestionsDiv}>
-      <div className={styles.tagSuggestionsDiv2}>Tags from latest schema version</div>
+    <div className={contractFormStyles.suggestions}>
+      <div className={contractFormStyles.suggestionsTitle}>Tags from latest schema version</div>
       {props.tags.map(value => (
         <button
           key={value}
@@ -52,16 +52,13 @@ export function TagSuggestions(props: {
           onClick={() => props.onToggle(value)}
           className={cn(
             itemVariants({ selected: props.selected.includes(value) }),
-            styles.tagSuggestionsButton,
+            contractFormStyles.suggestion,
           )}
         >
           <Check
-            className={cn(
-              styles.tagSuggestionsCheck,
-              props.selected.includes(value)
-                ? styles.tagSuggestionsCheck2
-                : styles.tagSuggestionsCheck3,
-            )}
+            className={contractFormStyles.suggestionCheck({
+              selected: props.selected.includes(value),
+            })}
           />
           {value}
         </button>
@@ -113,7 +110,7 @@ function TagsField(props: {
   return (
     <div className={shared.flex}>
       <div className={shared.fill}>
-        <div className={styles.tagsFieldDiv3}>
+        <div className={contractFormStyles.tagsField}>
           <Input
             ref={inputRef}
             id={props.id}
@@ -157,7 +154,7 @@ function TagsField(props: {
           }
         />
       </div>
-      <div className={styles.tagsFieldDiv4}>
+      <div className={contractFormStyles.tags}>
         {props.value.map(value => (
           <Button
             key={value}
@@ -171,7 +168,7 @@ function TagsField(props: {
             }}
           >
             {value}
-            <X className={styles.tagsFieldX} />
+            <X className={contractFormStyles.tagRemoveIcon} />
           </Button>
         ))}
       </div>
@@ -249,7 +246,7 @@ export function ContractForm(props: {
         render={({ field }) => (
           <FormItem group>
             <FormLabel label="Remove unreachable Types" />
-            <div className={styles.contractFormDiv}>
+            <div className={contractFormStyles.switchRow}>
               <Checkbox
                 id={pruneId}
                 checked={field.value}

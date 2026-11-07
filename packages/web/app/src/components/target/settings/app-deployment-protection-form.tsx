@@ -7,9 +7,8 @@ import { Form, FormField } from '@/components/ui/primitives/form/form';
 import { numberInput } from '@/components/ui/primitives/form/number-input';
 import { Input } from '@/components/ui/primitives/input/input';
 import { AppDeploymentProtectionRuleLogicType } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './app-deployment-protection-form.css';
+import { appDeploymentProtectionFormStyles } from './app-deployment-protection-form.css';
 
 const wholeDays = (min: number, minMessage: string) =>
   numberInput(
@@ -85,16 +84,14 @@ export function AppDeploymentProtectionForm(props: {
   });
 
   return (
-    <div
-      className={cn(shared.fg.secondary, !props.enabled && styles.appDeploymentProtectionFormDiv2)}
-    >
+    <div className={appDeploymentProtectionFormStyles.root({ disabled: !props.enabled })}>
       <Form form={form} onSubmit={props.onSubmit}>
-        <div className={styles.appDeploymentProtectionFormDiv3}>
+        <div className={appDeploymentProtectionFormStyles.fields}>
           <div>
-            <div className={styles.appDeploymentProtectionFormDiv4}>
+            <div className={appDeploymentProtectionFormStyles.lead}>
               An app deployment can only be retired if it
             </div>
-            <div className={styles.appDeploymentProtectionFormDiv5}>
+            <div className={appDeploymentProtectionFormStyles.conditions}>
               <div className={shared.row.wrap2}>
                 <span>was created at least</span>
                 {number('minDaysSinceCreation', 'Minimum days since creation', { min: 0 })}
@@ -133,13 +130,13 @@ export function AppDeploymentProtectionForm(props: {
               </div>
             </div>
           </div>
-          <div className={styles.appDeploymentProtectionFormDiv8}>
+          <div className={appDeploymentProtectionFormStyles.note}>
             The creation date check always applies. The inactivity and traffic checks only apply if
             the app deployment has usage data.
           </div>
         </div>
         {messages.length ? (
-          <div className={styles.appDeploymentProtectionFormDiv9}>
+          <div className={appDeploymentProtectionFormStyles.errors}>
             {messages.map(({ name, message }) => (
               <div key={name}>{message}</div>
             ))}

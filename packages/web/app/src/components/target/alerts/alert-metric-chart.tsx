@@ -15,7 +15,7 @@ import {
   visibleSeries,
   windowAggregates,
 } from './alert-threshold';
-import * as styles from './alert-metric-chart.css';
+import { alertMetricChartStyles } from './alert-metric-chart.css';
 
 export const AlertMetricChart_OperationsStatsFragment = graphql(`
   fragment AlertMetricChart_OperationsStatsFragment on OperationsStats {
@@ -163,11 +163,11 @@ export function AlertMetricChart({
 
   if (data.length === 0) {
     return (
-      <div className={styles.alertMetricChartDiv}>
+      <div className={alertMetricChartStyles.placeholder}>
         {error && !loading ? (
-          <span className={styles.alertMetricChartSpan}>{error}</span>
+          <span className={alertMetricChartStyles.error}>{error}</span>
         ) : (
-          <span className={loading ? styles.alertMetricChartSpan2 : styles.alertMetricChartSpan3}>
+          <span className={alertMetricChartStyles.status({ loading })}>
             {loading ? 'Loading chart data...' : 'No data available for this range.'}
           </span>
         )}
@@ -398,8 +398,8 @@ export function AlertMetricChart({
   }
 
   return (
-    <div className={styles.alertMetricChartDiv2}>
-      <div className={styles.alertMetricChartDiv3}>
+    <div className={alertMetricChartStyles.legend}>
+      <div className={alertMetricChartStyles.legendRow}>
         {hasPreviousWindow ? (
           <>
             <span>
@@ -416,11 +416,11 @@ export function AlertMetricChart({
                 : `${deltaPercent >= 0 ? '+' : ''}${deltaPercent.toFixed(1)}%`}
             </span>
             {isLatency ? (
-              <span className={styles.alertMetricChartSpan5}>(latency Δ is approximate)</span>
+              <span className={alertMetricChartStyles.legendNote}>(latency Δ is approximate)</span>
             ) : null}
           </>
         ) : (
-          <span className={styles.alertMetricChartSpan6}>
+          <span className={alertMetricChartStyles.legendNote}>
             No previous window in this range to compare.
           </span>
         )}

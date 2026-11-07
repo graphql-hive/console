@@ -7,9 +7,8 @@ import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '@/components/ui/primitives/form/form';
 import { Label } from '@/components/ui/primitives/label/label';
 import { DangerousChangeType } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './dangerous-changes-form.css';
+import { dangerousChangesFormStyles } from './dangerous-changes-form.css';
 
 export const DangerousChangesFormSchema = z
   .object({
@@ -78,13 +77,13 @@ const dangerousChangeList = (
 
 /** The dot beside a value that differs from what is saved. */
 export function PendingIndicator() {
-  return <span className={styles.pendingIndicatorSpan} />;
+  return <span className={dangerousChangesFormStyles.pendingDot} />;
 }
 
 export function JustSavedLabel() {
   return (
-    <div className={styles.justSavedLabelDiv}>
-      <Check className={styles.justSavedLabelCheck} />
+    <div className={dangerousChangesFormStyles.justSaved}>
+      <Check className={dangerousChangesFormStyles.justSavedIcon} />
       <span>Saved just now</span>
     </div>
   );
@@ -92,8 +91,8 @@ export function JustSavedLabel() {
 
 export function SavedLabel() {
   return (
-    <div className={styles.savedLabelDiv}>
-      <Check className={styles.savedLabelCheck} />
+    <div className={dangerousChangesFormStyles.saved}>
+      <Check className={dangerousChangesFormStyles.savedIcon} />
       <span>All changes saved</span>
     </div>
   );
@@ -101,7 +100,7 @@ export function SavedLabel() {
 
 export function UnsavedChangesLabel() {
   return (
-    <div className={styles.unsavedChangesLabelDiv}>
+    <div className={dangerousChangesFormStyles.unsaved}>
       <PendingIndicator />
       <span>Unsaved changes</span>
     </div>
@@ -149,22 +148,17 @@ export function DangerousChangesForm(props: {
   }
 
   return (
-    <div
-      className={cn(
-        styles.dangerousChangesFormDiv,
-        !props.enabled && styles.dangerousChangesFormDiv2,
-      )}
-    >
+    <div className={dangerousChangesFormStyles.root({ disabled: !props.enabled })}>
       <Form form={form} onSubmit={props.onSubmit}>
-        <div className={styles.dangerousChangesFormDiv3}>
-          <div className={styles.dangerousChangesFormDiv4}>
+        <div className={dangerousChangesFormStyles.panel}>
+          <div className={dangerousChangesFormStyles.panelTitle}>
             Select Failing Dangerous Change Types
           </div>
           <FormField
             control={form.control}
             name="failAllDangerousChanges"
             render={({ field }) => (
-              <div className={styles.dangerousChangesFormDiv5}>
+              <div className={dangerousChangesFormStyles.failAll}>
                 <Checkbox
                   id={`${id}-all`}
                   disabled={!props.enabled}
@@ -176,23 +170,22 @@ export function DangerousChangesForm(props: {
                 />
                 <Label htmlFor={`${id}-all`} variant="inline" label="Fail All Dangerous Changes" />
                 <span
-                  className={cn(
-                    styles.dangerousChangesFormSpan,
-                    field.value === saved?.failAllDangerousChanges && shared.hidden,
-                  )}
+                  className={dangerousChangesFormStyles.failAllPending({
+                    hidden: field.value === saved?.failAllDangerousChanges,
+                  })}
                 >
                   <PendingIndicator />
                 </span>
               </div>
             )}
           />
-          <div className={styles.dangerousChangesFormDiv6}>or fail only:</div>
+          <div className={dangerousChangesFormStyles.orFailOnly}>or fail only:</div>
           <FormField
             control={form.control}
             name="failingChangeTypes"
             render={() => (
               <FormItem group>
-                <div className={styles.dangerousChangesFormDiv7}>
+                <div className={dangerousChangesFormStyles.changes}>
                   {dangerousChangeList.map(({ label, types }, index) => {
                     const checked = failAll || includesAll(selected, types);
                     const disabled = !props.enabled || failAll;
@@ -200,7 +193,7 @@ export function DangerousChangesForm(props: {
                     const changed =
                       !failAll && includesAll(selected, types) !== includesAll(savedTypes, types);
                     return (
-                      <div className={styles.dangerousChangesFormDiv8} key={label}>
+                      <div className={dangerousChangesFormStyles.change} key={label}>
                         <Checkbox
                           id={`${id}-${index}`}
                           checked={checked}
@@ -209,10 +202,7 @@ export function DangerousChangesForm(props: {
                         />
                         <Label htmlFor={`${id}-${index}`} variant="inline" label={label} />
                         <span
-                          className={cn(
-                            styles.dangerousChangesFormSpan3,
-                            !changed && shared.hidden,
-                          )}
+                          className={dangerousChangesFormStyles.changePending({ hidden: !changed })}
                         >
                           <PendingIndicator />
                         </span>
@@ -225,7 +215,7 @@ export function DangerousChangesForm(props: {
             )}
           />
         </div>
-        <div className={styles.dangerousChangesFormDiv9}>
+        <div className={dangerousChangesFormStyles.actions}>
           <Button
             type="submit"
             disabled={form.formState.isSubmitting || !props.enabled || !form.formState.isDirty}
@@ -235,8 +225,8 @@ export function DangerousChangesForm(props: {
           {props.status}
         </div>
         {props.error ? (
-          <div className={styles.dangerousChangesFormDiv10}>
-            <XIcon className={styles.dangerousChangesFormXIcon} />
+          <div className={dangerousChangesFormStyles.error}>
+            <XIcon className={dangerousChangesFormStyles.errorIcon} />
             <span className={shared.weight.semibold}>{props.error.title}</span>
             <span>{props.error.description}</span>
           </div>

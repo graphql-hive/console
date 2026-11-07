@@ -24,7 +24,7 @@ import {
   CdnTokenFormSchema,
   type CdnTokenFormValues,
 } from './cdn-token-form';
-import * as styles from './cdn-access-tokens.css';
+import { cdnAccessTokensStyles } from './cdn-access-tokens.css';
 
 const cdnRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/settings/cdn',
@@ -297,7 +297,7 @@ export function CDNAccessTokens(): React.ReactElement {
         }}
       />
 
-      <div className={styles.cDNAccessTokensDiv}>
+      <div className={cdnAccessTokensStyles.header}>
         <Button
           render={
             <Link

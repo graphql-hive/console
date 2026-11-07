@@ -13,7 +13,7 @@ import {
 import { GraphQLArguments } from './graphql-arguments';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { useExplorerFieldFiltering } from './utils';
-import * as styles from './graphql-fields.css';
+import { graphqlFieldsStyles } from './graphql-fields.css';
 
 const GraphQLFields_FieldFragment = graphql(`
   fragment GraphQLFields_FieldFragment on GraphQLField {
@@ -67,7 +67,7 @@ export function GraphQLFields(props: {
           return (
             <GraphQLTypeCardListItem key={field.name} index={i}>
               <div className={shared.fullWidth}>
-                <div className={styles.graphQLFieldsDiv3}>
+                <div className={graphqlFieldsStyles.row}>
                   <div>
                     {props.warnAboutUnusedArguments &&
                       isUsed &&
@@ -78,7 +78,7 @@ export function GraphQLFields(props: {
                             <button
                               type="button"
                               aria-label="Unused arguments"
-                              className={styles.graphQLFieldsButton}
+                              className={graphqlFieldsStyles.hint}
                             >
                               *
                             </button>
@@ -86,7 +86,7 @@ export function GraphQLFields(props: {
                           openOnHover
                           width="auto"
                           content={
-                            <p className={styles.graphQLFieldsP}>
+                            <p className={graphqlFieldsStyles.hintText}>
                               This field is used but the presented arguments are not.
                             </p>
                           }
@@ -98,7 +98,7 @@ export function GraphQLFields(props: {
                           <button
                             type="button"
                             aria-label="Deprecated arguments"
-                            className={styles.graphQLFieldsButton2}
+                            className={graphqlFieldsStyles.hint}
                           >
                             *
                           </button>
@@ -106,7 +106,7 @@ export function GraphQLFields(props: {
                         openOnHover
                         width="auto"
                         content={
-                          <p className={styles.graphQLFieldsP2}>
+                          <p className={graphqlFieldsStyles.hintText}>
                             This field is not deprecated but the presented arguments are.
                           </p>
                         }
@@ -115,7 +115,7 @@ export function GraphQLFields(props: {
                     <DeprecationNote deprecationReason={field.deprecationReason}>
                       <LinkToCoordinatePage
                         coordinate={coordinate}
-                        className={styles.graphQLFieldsLinkToCoordinatePage}
+                        className={graphqlFieldsStyles.name}
                       >
                         {field.name}
                       </LinkToCoordinatePage>
@@ -123,15 +123,12 @@ export function GraphQLFields(props: {
                     {field.args.length > 0 && (
                       <GraphQLArguments parentCoordinate={coordinate} args={field.args} />
                     )}
-                    <span className={styles.graphQLFieldsSpan}>:</span>
-                    <GraphQLTypeAsLink
-                      className={styles.graphQLFieldsGraphQLTypeAsLink}
-                      type={field.type}
-                    />
+                    <span className={graphqlFieldsStyles.colon}>:</span>
+                    <GraphQLTypeAsLink className={graphqlFieldsStyles.type} type={field.type} />
                   </div>
-                  <div className={styles.graphQLFieldsDiv4}>
+                  <div className={graphqlFieldsStyles.meta}>
                     {field.supergraphMetadata && (
-                      <div className={styles.graphQLFieldsDiv5}>
+                      <div className={graphqlFieldsStyles.metaItem}>
                         <SupergraphMetadataList supergraphMetadata={field.supergraphMetadata} />
                       </div>
                     )}

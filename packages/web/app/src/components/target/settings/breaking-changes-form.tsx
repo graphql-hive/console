@@ -10,9 +10,8 @@ import { Input } from '@/components/ui/primitives/input/input';
 import { Label } from '@/components/ui/primitives/label/label';
 import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { BreakingChangeFormulaType } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './breaking-changes-form.css';
+import { breakingChangesFormStyles } from './breaking-changes-form.css';
 
 /**
  * The period is capped by the organization's usage retention, so the schema is built per page.
@@ -120,11 +119,11 @@ export function BreakingChangesForm(props: {
   }
 
   return (
-    <div className={cn(shared.fg.default, !props.enabled && styles.breakingChangesFormDiv2)}>
+    <div className={breakingChangesFormStyles.root({ disabled: !props.enabled })}>
       <Form form={form} onSubmit={props.onSubmit}>
         <div>
           <div>A schema change is considered as breaking only if it affects more than</div>
-          <div className={styles.breakingChangesFormDiv3}>
+          <div className={breakingChangesFormStyles.fields}>
             <FormField
               control={form.control}
               name="breakingChangeFormula"
@@ -175,24 +174,24 @@ export function BreakingChangesForm(props: {
             <span>days.</span>
           </div>
           {messages.length ? (
-            <div className={styles.breakingChangesFormDiv5}>
+            <div className={breakingChangesFormStyles.errors}>
               {messages.map(({ name, message }) => (
                 <div key={name}>{message}</div>
               ))}
             </div>
           ) : null}
         </div>
-        <div className={styles.breakingChangesFormDiv6}>
-          <div className={styles.breakingChangesFormDiv7}>
+        <div className={breakingChangesFormStyles.sections}>
+          <div className={breakingChangesFormStyles.section}>
             <div>
-              <div className={styles.breakingChangesFormDiv8}>
+              <div className={breakingChangesFormStyles.strong}>
                 Allow breaking change for these clients:
               </div>
-              <div className={styles.breakingChangesFormDiv9}>
+              <div className={breakingChangesFormStyles.hint}>
                 Marks a breaking change as safe when it only affects the following clients.
               </div>
             </div>
-            <div className={styles.breakingChangesFormDiv10}>
+            <div className={breakingChangesFormStyles.control}>
               <FormField
                 control={form.control}
                 name="excludedClients"
@@ -206,16 +205,16 @@ export function BreakingChangesForm(props: {
               />
             </div>
           </div>
-          <div className={styles.breakingChangesFormDiv7}>
+          <div className={breakingChangesFormStyles.section}>
             <div>
-              <div className={styles.breakingChangesFormDiv8}>
+              <div className={breakingChangesFormStyles.strong}>
                 Allow breaking change for these app deployments:
               </div>
-              <div className={styles.breakingChangesFormDiv9}>
+              <div className={breakingChangesFormStyles.hint}>
                 Marks a breaking change as safe when it only affects the following app deployments.
               </div>
             </div>
-            <div className={styles.breakingChangesFormDiv10}>
+            <div className={breakingChangesFormStyles.control}>
               <FormField
                 control={form.control}
                 name="excludedAppDeployments"
@@ -228,31 +227,32 @@ export function BreakingChangesForm(props: {
             name="targetIds"
             render={({ field }) => (
               <FormItem group>
-                <div className={styles.breakingChangesFormDiv12}>
-                  <div className={styles.breakingChangesFormDiv8}>
+                <div className={breakingChangesFormStyles.targetsSection}>
+                  <div className={breakingChangesFormStyles.strong}>
                     Check usage in these targets:
                   </div>
-                  <div className={styles.breakingChangesFormDiv9}>
+                  <div className={breakingChangesFormStyles.hint}>
                     Traffic from the checked targets is what the Conditional Breaking Change
                     threshold is measured against. A change is flagged as breaking only when clients
                     of these targets use the affected field or type. Some common configurations are:
                   </div>
-                  <ul className={styles.breakingChangesFormUl}>
+                  <ul className={breakingChangesFormStyles.targetsHelp}>
                     <li>
-                      Check only <span className={styles.breakingChangesFormSpan2}>production</span>{' '}
-                      on a development target to allow changes that would only break development
-                      clients, while still blocking changes that production clients depend on.
+                      Check only{' '}
+                      <span className={breakingChangesFormStyles.strong}>production</span> on a
+                      development target to allow changes that would only break development clients,
+                      while still blocking changes that production clients depend on.
                     </li>
                     <li>
-                      Check <span className={styles.breakingChangesFormSpan3}>staging</span> and{' '}
-                      <span className={styles.breakingChangesFormSpan4}>production</span> on the
+                      Check <span className={breakingChangesFormStyles.strong}>staging</span> and{' '}
+                      <span className={breakingChangesFormStyles.strong}>production</span> on the
                       production target to protect clients that are only exercised in staging.
                     </li>
                   </ul>
                 </div>
-                <div className={styles.breakingChangesFormDiv13}>
+                <div className={breakingChangesFormStyles.targets}>
                   {props.targets.map(target => (
-                    <div key={target.id} className={styles.breakingChangesFormDiv14}>
+                    <div key={target.id} className={breakingChangesFormStyles.target}>
                       <Checkbox
                         id={`${id}-${target.id}`}
                         checked={field.value.includes(target.id)}
@@ -275,9 +275,9 @@ export function BreakingChangesForm(props: {
             )}
           />
         </div>
-        <div className={styles.breakingChangesFormDiv15}>
+        <div className={breakingChangesFormStyles.example}>
           <div>
-            <div className={styles.breakingChangesFormDiv8}>Example settings</div>
+            <div className={breakingChangesFormStyles.strong}>Example settings</div>
             <div className={shared.text.sm}>Removal of a field is considered breaking if</div>
           </div>
           <div className={shared.text.sm}>

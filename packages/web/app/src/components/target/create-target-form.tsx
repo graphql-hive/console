@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
-import * as styles from './create-target-form.css';
+import { createTargetFormStyles } from './create-target-form.css';
 
 export const CreateTargetFormSchema = z.object({
   targetSlug: z
@@ -49,7 +49,7 @@ export function CreateTargetForm(props: {
           </FormItem>
         )}
       />
-      <div className={styles.createTargetFormDiv}>
+      <div className={createTargetFormStyles.submit}>
         <Button
           width="full"
           onSurface="raised"

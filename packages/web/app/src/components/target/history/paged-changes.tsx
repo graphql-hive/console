@@ -4,7 +4,6 @@ import { Accordion } from '@/components/ui/primitives/accordion/accordion';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import type { SchemaChangeKind } from '@/gql/graphql';
 import { useResetState } from '@/lib/hooks/use-reset-state';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { CHANGES_PAGE_SIZE } from './change-page-size';
 import {
@@ -14,7 +13,7 @@ import {
   ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment,
   ChangesTitle,
 } from './errors-and-changes';
-import * as styles from './paged-changes.css';
+import { pagedChangesStyles } from './paged-changes.css';
 
 export { CHANGES_PAGE_SIZE };
 
@@ -104,12 +103,12 @@ function PageControls(props: {
     <div className={shared.stack.gap3}>
       <div
         aria-busy={paging.loading}
-        className={cn(styles.pageControlsDiv5, paging.loading && styles.pageControlsDiv6)}
+        className={pagedChangesStyles.page({ loading: paging.loading })}
       >
         {props.children}
       </div>
       {paging.failed ? (
-        <p className={styles.pageControlsP2}>This page could not be loaded. Try again.</p>
+        <p className={pagedChangesStyles.error}>This page could not be loaded. Try again.</p>
       ) : null}
       <DataTablePagination
         pageIndex={paging.pageIndex}
@@ -126,7 +125,7 @@ export function CountedTitle(props: { children: ReactNode; count: number }) {
   return (
     <>
       {props.children}{' '}
-      <span className={styles.countedTitleSpan2}>· {formatTotal(props.count)}</span>
+      <span className={pagedChangesStyles.count}>· {formatTotal(props.count)}</span>
     </>
   );
 }
@@ -211,7 +210,7 @@ export function SafeChangeGroups(props: {
           value: group.kind,
           label: changeKindLabel(group.kind),
           trailing: (
-            <span className={styles.safeChangeGroupsSpan2}>{formatTotal(group.totalCount)}</span>
+            <span className={pagedChangesStyles.groupCount}>{formatTotal(group.totalCount)}</span>
           ),
           content: (
             <SafeChangeGroupPage

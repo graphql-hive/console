@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { hasUnsavedChanges, toInsightsFilterInput, type CurrentFilters } from './utils';
-import * as styles from './update-filter-button.css';
+import { updateFilterButtonStyles } from './update-filter-button.css';
 
 const InsightsUpdateSavedFilter_Mutation = graphql(`
   mutation InsightsUpdateSavedFilter($input: UpdateSavedFilterInput!) {
@@ -113,7 +113,7 @@ export function UpdateFilterButton({
         <BaseButton label={`Update "${activeView.name}"`} variant="muted-action" size="compact" />
       }
       content={
-        <div className={styles.updateFilterButtonDiv}>
+        <div className={updateFilterButtonStyles.actions}>
           <BaseButton
             variant="primary"
             width="full"

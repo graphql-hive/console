@@ -3,9 +3,8 @@ import { CheckIcon, PlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/primitives/button/button';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { cn } from '@/lib/utils';
 import { AnnotatedContext } from './schema-diff/components';
-import * as styles from './Review.css';
+import { reviewStyles } from './Review.css';
 
 export const ProposalOverview_ReviewCommentsFragment = graphql(/** GraphQL */ `
   fragment ProposalOverview_ReviewCommentsFragment on SchemaProposalReview {
@@ -35,7 +34,7 @@ export function ReviewComments(props: {
 
   return (
     <>
-      <div className={styles.reviewCommentsDiv}>
+      <div className={reviewStyles.comments}>
         {review.comments?.edges?.map(({ node: comment }, idx) => {
           return (
             <ReviewComment key={`comment-${comment.id}`} first={idx === 0} comment={comment} />
@@ -43,13 +42,13 @@ export function ReviewComments(props: {
         })}
       </div>
       {/* @todo check if able to reply */}
-      <div className={styles.reviewCommentsDiv2}>
+      <div className={reviewStyles.actions}>
         <Button variant="outline" type="button">
-          <PlusIcon size={16} className={styles.reviewCommentsPlusIcon} />
+          <PlusIcon size={16} className={reviewStyles.actionIcon} />
           Reply
         </Button>
         <Button variant="outline" type="button">
-          <CheckIcon size={16} className={styles.reviewCommentsCheckIcon} />
+          <CheckIcon size={16} className={reviewStyles.actionIcon} />
           Resolve
         </Button>
       </div>
@@ -74,17 +73,17 @@ export function ReviewComment(props: {
   const comment = useFragment(ProposalOverview_CommentFragment, props.comment);
   return (
     <>
-      <div className={cn(!props.first && styles.reviewCommentDiv, styles.reviewCommentDiv2)}>
-        <div className={styles.reviewCommentDiv3}>{comment.author ?? 'Unknown'}</div>
-        <div className={styles.reviewCommentDiv4}>
+      <div className={reviewStyles.commentHeader({ reply: !props.first })}>
+        <div className={reviewStyles.commentAuthor}>{comment.author ?? 'Unknown'}</div>
+        <div className={reviewStyles.commentMeta}>
           {!!comment.updatedAt && 'updated '}
           <TimeAgo
             date={comment.updatedAt ?? comment.createdAt}
-            className={styles.reviewCommentTimeAgo}
+            className={reviewStyles.commentTime}
           />
         </div>
       </div>
-      <div className={styles.reviewCommentDiv5}>{comment.body}</div>
+      <div className={reviewStyles.commentBody}>{comment.body}</div>
     </>
   );
 }

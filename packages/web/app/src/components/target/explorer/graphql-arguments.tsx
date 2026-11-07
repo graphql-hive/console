@@ -1,7 +1,7 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { DeprecationNote, Description, GraphQLTypeAsLink, LinkToCoordinatePage } from './common';
 import { useDescriptionsVisibleToggle } from './provider';
-import * as styles from './graphql-arguments.css';
+import { graphqlArgumentsStyles } from './graphql-arguments.css';
 
 export const GraphQLArguments_ArgumentFragment = graphql(`
   fragment GraphQLArguments_ArgumentFragment on GraphQLArgument {
@@ -22,9 +22,9 @@ export function GraphQLArguments(props: {
   const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
 
   return (
-    <span className={styles.graphQLArgumentsSpan}>
+    <span className={graphqlArgumentsStyles.root}>
       <span>(</span>
-      <div className={styles.graphQLArgumentsDiv}>
+      <div className={graphqlArgumentsStyles.list}>
         {args.map(arg => {
           const coordinate = `${props.parentCoordinate}.${arg.name}`;
           return (
@@ -33,10 +33,7 @@ export function GraphQLArguments(props: {
                 <LinkToCoordinatePage coordinate={coordinate}>{arg.name}</LinkToCoordinatePage>
               </DeprecationNote>
               {': '}
-              <GraphQLTypeAsLink
-                className={styles.graphQLArgumentsGraphQLTypeAsLink}
-                type={arg.type}
-              />
+              <GraphQLTypeAsLink className={graphqlArgumentsStyles.type} type={arg.type} />
               {arg.description && isDescriptionsVisible && (
                 <Description description={arg.description} />
               )}

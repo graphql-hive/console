@@ -6,7 +6,7 @@ import * as shared from '@/styles/shared.css';
 import { ProposalOverview_ReviewCommentsFragment, ReviewComments } from '../Review';
 import { ChangeRow } from './components';
 import { Word, WordProps } from './words';
-import * as styles from './lines.css';
+import { linesStyles } from './lines.css';
 
 type AnnotationProps = {
   lineText: string;
@@ -69,7 +69,7 @@ export function Line(props: LineProps & { beforeLine: number; afterLine: number 
       ))}
       {props.annotations?.map((node, i) => (
         <Fragment key={`annotations-${i}`}>
-          {node.lineText && <code className={styles.lineCode}>{node.lineText}</code>}
+          {node.lineText && <code className={linesStyles.line}>{node.lineText}</code>}
           <ReviewComments review={node} />
         </Fragment>
       ))}

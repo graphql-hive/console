@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
 import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './contract-failures-table.css';
+import { contractFailuresTableStyles } from './contract-failures-table.css';
 
 export type ContractFailure = {
   key: string;
@@ -36,7 +36,7 @@ export function ContractFailuresTable(props: {
         <span className={shared.inlineRow.gap2}>
           <Badge content={row.original.reason} variants={{ variant: 'critical' }} />
           {row.original.detail ? (
-            <span className={styles.contractFailuresTableSpan2}>{row.original.detail}</span>
+            <span className={contractFailuresTableStyles.detail}>{row.original.detail}</span>
           ) : null}
         </span>
       ),

@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { useClipboard } from '@/lib/hooks/use-clipboard';
 import * as shared from '@/styles/shared.css';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
-import * as styles from './alert-notification-preview.css';
+import { alertNotificationPreviewStyles } from './alert-notification-preview.css';
 
 const WEBHOOK_JSON_SCHEMA = {
   $schema: 'http://json-schema.org/draft-07/schema#',
@@ -86,9 +86,18 @@ type PreviewProps = {
 };
 
 const SEVERITY_COLORS = {
-  CRITICAL: { bar: styles.severityColorsBar, text: styles.severityColorsText },
-  WARNING: { bar: styles.severityColorsBar2, text: styles.severityColorsText2 },
-  INFO: { bar: styles.severityColorsBar3, text: styles.severityColorsText3 },
+  CRITICAL: {
+    bar: alertNotificationPreviewStyles.severityBar.critical,
+    text: alertNotificationPreviewStyles.severityText.critical,
+  },
+  WARNING: {
+    bar: alertNotificationPreviewStyles.severityBar.warning,
+    text: alertNotificationPreviewStyles.severityText.warning,
+  },
+  INFO: {
+    bar: alertNotificationPreviewStyles.severityBar.info,
+    text: alertNotificationPreviewStyles.severityText.info,
+  },
 } as const;
 
 function formatThreshold(
@@ -134,29 +143,33 @@ function SlackPreview(props: PreviewProps) {
   );
 
   return (
-    <div className={styles.slackPreviewDiv}>
-      <div className={styles.slackPreviewDiv2}>Slack preview</div>
-      <div className={styles.slackPreviewDiv3}>
+    <div className={alertNotificationPreviewStyles.slack}>
+      <div className={alertNotificationPreviewStyles.slackLabel}>Slack preview</div>
+      <div className={alertNotificationPreviewStyles.slackCard}>
         {/* Bot header */}
-        <div className={styles.slackPreviewDiv4}>
-          <div className={styles.slackPreviewDiv5}>H</div>
-          <span className={styles.slackPreviewSpan}>Hive Alerts</span>
-          <span className={styles.slackPreviewSpan2}>APP</span>
+        <div className={alertNotificationPreviewStyles.slackHeader}>
+          <div className={alertNotificationPreviewStyles.slackAvatar}>H</div>
+          <span className={alertNotificationPreviewStyles.slackSender}>Hive Alerts</span>
+          <span className={alertNotificationPreviewStyles.slackBadge}>APP</span>
         </div>
 
         {/* Attachment with colored bar */}
         <div className={shared.flex}>
-          <div className={`${colors.bar} ${styles.slackPreviewDiv7}`} />
-          <div className={styles.slackPreviewDiv8}>
-            <div className={styles.slackPreviewDiv9}>{props.alertName || 'Untitled alert'}</div>
-            <div className={styles.slackPreviewDiv10}>
+          <div className={`${colors.bar} ${alertNotificationPreviewStyles.slackBar}`} />
+          <div className={alertNotificationPreviewStyles.slackMessage}>
+            <div className={alertNotificationPreviewStyles.slackTitle}>
+              {props.alertName || 'Untitled alert'}
+            </div>
+            <div className={alertNotificationPreviewStyles.slackLine}>
               {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
             </div>
-            <div className={styles.slackPreviewDiv11}>
-              Target: <code className={styles.slackPreviewCode}>{props.targetSlug}</code> in{' '}
-              <code className={styles.slackPreviewCode2}>{props.projectSlug}</code>
+            <div className={alertNotificationPreviewStyles.slackLine}>
+              Target:{' '}
+              <code className={alertNotificationPreviewStyles.slackCode}>{props.targetSlug}</code>{' '}
+              in{' '}
+              <code className={alertNotificationPreviewStyles.slackCode}>{props.projectSlug}</code>
             </div>
-            <div className={styles.slackPreviewDiv12}>View alert in Hive</div>
+            <div className={alertNotificationPreviewStyles.slackLink}>View alert in Hive</div>
           </div>
         </div>
       </div>
@@ -203,11 +216,13 @@ function WebhookPreview(props: PreviewProps) {
   const copyToClipboard = useClipboard();
 
   return (
-    <div className={styles.webhookPreviewDiv}>
-      <div className={styles.webhookPreviewDiv2}>Webhook payload preview</div>
-      <div className={styles.webhookPreviewDiv3}>
+    <div className={alertNotificationPreviewStyles.webhook}>
+      <div className={alertNotificationPreviewStyles.webhookLabel}>Webhook payload preview</div>
+      <div className={alertNotificationPreviewStyles.webhookCard}>
         <ScrollArea axis="horizontal">
-          <pre className={styles.webhookPreviewPre}>{JSON.stringify(payload, null, 2)}</pre>
+          <pre className={alertNotificationPreviewStyles.webhookPayload}>
+            {JSON.stringify(payload, null, 2)}
+          </pre>
         </ScrollArea>
       </div>
       <Button
@@ -236,32 +251,34 @@ function TeamsPreview(props: PreviewProps) {
   );
 
   return (
-    <div className={styles.teamsPreviewDiv}>
-      <div className={styles.teamsPreviewDiv2}>Teams preview</div>
-      <div className={styles.teamsPreviewDiv3}>
+    <div className={alertNotificationPreviewStyles.teams}>
+      <div className={alertNotificationPreviewStyles.teamsLabel}>Teams preview</div>
+      <div className={alertNotificationPreviewStyles.teamsCard}>
         {/* Theme color bar */}
-        <div className={`${colors.bar} ${styles.teamsPreviewDiv4}`} />
-        <div className={styles.teamsPreviewDiv5}>
-          <div className={styles.teamsPreviewDiv6}>{props.alertName || 'Untitled alert'}</div>
-          <div className={styles.teamsPreviewDiv7}>
+        <div className={`${colors.bar} ${alertNotificationPreviewStyles.teamsBar}`} />
+        <div className={alertNotificationPreviewStyles.teamsBody}>
+          <div className={alertNotificationPreviewStyles.teamsTitle}>
+            {props.alertName || 'Untitled alert'}
+          </div>
+          <div className={alertNotificationPreviewStyles.teamsFields}>
             <div className={shared.flex}>
-              <span className={styles.teamsPreviewSpan}>Condition</span>
+              <span className={alertNotificationPreviewStyles.teamsFieldLabel}>Condition</span>
               <span className={shared.fg.default}>
                 {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
               </span>
             </div>
             <div className={shared.flex}>
-              <span className={styles.teamsPreviewSpan3}>Severity</span>
+              <span className={alertNotificationPreviewStyles.teamsFieldLabel}>Severity</span>
               <span className={colors.text}>{props.severity}</span>
             </div>
             <div className={shared.flex}>
-              <span className={styles.teamsPreviewSpan4}>Target</span>
+              <span className={alertNotificationPreviewStyles.teamsFieldLabel}>Target</span>
               <span className={shared.fg.default}>
                 {props.targetSlug} in {props.projectSlug}
               </span>
             </div>
           </div>
-          <div className={styles.teamsPreviewDiv11}>View alert in Hive</div>
+          <div className={alertNotificationPreviewStyles.teamsLink}>View alert in Hive</div>
         </div>
       </div>
     </div>
@@ -279,35 +296,35 @@ function DiscordPreview(props: PreviewProps) {
   );
 
   return (
-    <div className={styles.discordPreviewDiv}>
-      <div className={styles.discordPreviewDiv2}>Discord preview</div>
-      <div className={styles.discordPreviewDiv3}>
+    <div className={alertNotificationPreviewStyles.discord}>
+      <div className={alertNotificationPreviewStyles.discordLabel}>Discord preview</div>
+      <div className={alertNotificationPreviewStyles.discordCard}>
         {/* Discord embeds render the severity color as a vertical bar. */}
-        <div className={`${colors.bar} ${styles.discordPreviewDiv4}`} />
-        <div className={styles.discordPreviewDiv5}>
-          <div className={styles.discordPreviewDiv6}>
+        <div className={`${colors.bar} ${alertNotificationPreviewStyles.discordBar}`} />
+        <div className={alertNotificationPreviewStyles.discordBody}>
+          <div className={alertNotificationPreviewStyles.discordTitle}>
             🔴 {props.alertName || 'Untitled alert'} — triggered
           </div>
-          <div className={styles.discordPreviewDiv7}>
+          <div className={alertNotificationPreviewStyles.discordDescription}>
             {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
           </div>
-          <div className={styles.discordPreviewDiv8}>
+          <div className={alertNotificationPreviewStyles.discordFields}>
             <div className={shared.flex}>
-              <span className={styles.discordPreviewSpan}>Type</span>
+              <span className={alertNotificationPreviewStyles.discordFieldLabel}>Type</span>
               <span className={shared.fg.default}>{props.alertType}</span>
             </div>
             <div className={shared.flex}>
-              <span className={styles.discordPreviewSpan3}>Severity</span>
+              <span className={alertNotificationPreviewStyles.discordFieldLabel}>Severity</span>
               <span className={colors.text}>{props.severity}</span>
             </div>
             <div className={shared.flex}>
-              <span className={styles.discordPreviewSpan4}>Target</span>
+              <span className={alertNotificationPreviewStyles.discordFieldLabel}>Target</span>
               <span className={shared.fg.default}>
                 {props.targetSlug} in {props.projectSlug}
               </span>
             </div>
           </div>
-          <div className={styles.discordPreviewDiv12}>View alert in Hive</div>
+          <div className={alertNotificationPreviewStyles.discordLink}>View alert in Hive</div>
         </div>
       </div>
     </div>
@@ -316,7 +333,11 @@ function DiscordPreview(props: PreviewProps) {
 
 export function AlertPreview(props: PreviewProps) {
   if (!props.channelType) {
-    return <div className={styles.alertPreviewDiv}>Select a destination to preview the alert.</div>;
+    return (
+      <div className={alertNotificationPreviewStyles.empty}>
+        Select a destination to preview the alert.
+      </div>
+    );
   }
 
   let preview: React.ReactNode;
@@ -338,9 +359,9 @@ export function AlertPreview(props: PreviewProps) {
   }
 
   return (
-    <div className={styles.alertPreviewDiv2}>
+    <div className={alertNotificationPreviewStyles.root}>
       {preview}
-      <p className={styles.alertPreviewP}>
+      <p className={alertNotificationPreviewStyles.note}>
         Preview is illustrative. Actual notifications will include live metric values.
       </p>
     </div>

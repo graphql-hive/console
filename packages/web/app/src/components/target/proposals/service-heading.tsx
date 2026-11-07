@@ -1,8 +1,7 @@
 import { useState, type MouseEventHandler } from 'react';
 import { Box, ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './service-heading.css';
+import { serviceHeadingStyles } from './service-heading.css';
 
 export enum ServiceHeadingType {
   NEW,
@@ -22,34 +21,28 @@ export function ServiceHeading(props: {
   const showToggleIcon = props.showToggleIcon ?? props.onClick !== undefined;
   return (
     <div
-      className={cn(
-        styles.serviceHeadingDiv,
-        props.onClick !== undefined && styles.serviceHeadingDiv2,
-        props.onClick !== undefined && isOpen && styles.serviceHeadingDiv3,
-      )}
+      className={serviceHeadingStyles.root({
+        interactive: props.onClick !== undefined,
+        open: props.onClick !== undefined && isOpen,
+      })}
       onClick={e => {
         props.onClick?.(e);
         setIsOpen(!isOpen);
       }}
     >
-      <div className={styles.serviceHeadingDiv4}>
-        <Box className={styles.serviceHeadingBox} />
+      <div className={serviceHeadingStyles.title}>
+        <Box className={serviceHeadingStyles.icon} />
         <span>{props.serviceName}</span>
         {props.type === ServiceHeadingType.NEW ? (
-          <span className={styles.serviceHeadingSpan}>*NEW*</span>
+          <span className={serviceHeadingStyles.added}>*NEW*</span>
         ) : null}
         {props.type === ServiceHeadingType.DELETED ? (
-          <span className={styles.serviceHeadingSpan2}>*DELETED*</span>
+          <span className={serviceHeadingStyles.removed}>*DELETED*</span>
         ) : null}
       </div>
       {showToggleIcon && (
         <div className={shared.flex}>
-          <ChevronDown
-            className={cn(
-              styles.serviceHeadingChevronDown,
-              isOpen && styles.serviceHeadingChevronDown2,
-            )}
-          />
+          <ChevronDown className={serviceHeadingStyles.chevron({ open: isOpen })} />
         </div>
       )}
     </div>

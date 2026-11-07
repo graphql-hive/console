@@ -7,7 +7,7 @@ import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
 import * as shared from '@/styles/shared.css';
-import * as styles from './connect-lab-modal.css';
+import { connectLabModalStyles } from './connect-lab-modal.css';
 
 const Laboratory_IsCDNEnabledFragment = graphql(`
   fragment Laboratory_IsCDNEnabledFragment on Query {
@@ -61,36 +61,34 @@ export const ConnectLabModalContent = (props: {
       <div className={shared.stack.gap4}>
         {props?.isCDNEnabled ? (
           <div>
-            <h3 className={styles.connectLabModalContentH3}>High-availability CDN:</h3>
-            <Callout className={styles.connectLabModalContentCallout} type="info">
+            <h3 className={connectLabModalStyles.heading}>High-availability CDN:</h3>
+            <Callout className={connectLabModalStyles.callout} type="info">
               If you want to consume the GraphQL schema for a tool like GraphQL Code Generator, we
               instead recommend using the high-availability CDN instead.
             </Callout>
           </div>
         ) : null}
-        <span className={styles.connectLabModalContentSpan}>
-          You can use the following endpoint:
-        </span>
+        <span className={connectLabModalStyles.emphasis}>You can use the following endpoint:</span>
         <InputCopy value={props.endpoint} onSurface="raised" />
-        <span className={styles.connectLabModalContentSpan2}>
+        <span className={connectLabModalStyles.emphasis}>
           To authenticate, use the following HTTP headers, with a token that has `target:read`
           scope:
         </span>
         {/* A header line with a link inside, not a pill: a code block rather than a Badge. */}
-        <code className={styles.connectLabModalContentCode}>
+        <code className={connectLabModalStyles.code}>
           X-Hive-Key:
           <Link
             as="a"
             variant="secondary"
             target="_blank"
-            className={styles.connectLabModalContentLink}
+            className={connectLabModalStyles.link}
             rel="noreferrer"
             href={props.docsUrl}
           >
             YOUR_TOKEN_HERE
           </Link>
         </code>
-        <p className={styles.connectLabModalContentP}>
+        <p className={connectLabModalStyles.note}>
           Read the{' '}
           <Link as="a" variant="primary" target="_blank" rel="noreferrer" href={props.docsUrl}>
             Managing Tokens

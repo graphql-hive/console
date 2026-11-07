@@ -2,13 +2,13 @@ import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { MetricAlertRuleState } from '@/gql/graphql';
 import * as shared from '@/styles/shared.css';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
-import * as styles from './alert-state-transitions-bar.css';
+import { alertStateTransitionsBarStyles } from './alert-state-transitions-bar.css';
 
 export const ALERT_STATE_COLOR: Record<MetricAlertRuleState, string> = {
-  [MetricAlertRuleState.Normal]: styles.alertStateColorMetricAlertRuleStateNormal,
-  [MetricAlertRuleState.Pending]: styles.alertStateColorMetricAlertRuleStatePending,
-  [MetricAlertRuleState.Firing]: styles.alertStateColorMetricAlertRuleStateFiring,
-  [MetricAlertRuleState.Recovering]: styles.alertStateColorMetricAlertRuleStateRecovering,
+  [MetricAlertRuleState.Normal]: alertStateTransitionsBarStyles.state.normal,
+  [MetricAlertRuleState.Pending]: alertStateTransitionsBarStyles.state.pending,
+  [MetricAlertRuleState.Firing]: alertStateTransitionsBarStyles.state.firing,
+  [MetricAlertRuleState.Recovering]: alertStateTransitionsBarStyles.state.recovering,
 };
 
 export const ALERT_STATE_LABEL: Record<MetricAlertRuleState, string> = {
@@ -42,7 +42,7 @@ type AlertStateTransitionsBarProps = {
 
 type SegmentState = MetricAlertRuleState | 'NO_DATA';
 
-const NO_DATA_COLOR = styles.noDataColorClass;
+const NO_DATA_COLOR = alertStateTransitionsBarStyles.state.noData;
 const NO_DATA_LABEL = 'No data';
 
 function colorForSegment(state: SegmentState): string {
@@ -137,10 +137,10 @@ export function AlertStateTransitionsBar({
     // Pad to the metric chart's fixed plot insets so the bar's segments and
     // tick labels line up time-wise with the chart below it.
     <div
-      className={styles.alertStateTransitionsBarDiv}
+      className={alertStateTransitionsBarStyles.root}
       style={{ paddingLeft: ALERT_CHART_INSET_LEFT, paddingRight: ALERT_CHART_INSET_RIGHT }}
     >
-      <div className={styles.alertStateTransitionsBarDiv2}>
+      <div className={alertStateTransitionsBarStyles.bar}>
         {segments.map((seg, i) => {
           const widthPct = ((seg.endMs - seg.startMs) / rangeMs) * 100;
           if (widthPct <= 0) return null;
@@ -149,7 +149,7 @@ export function AlertStateTransitionsBar({
               key={i}
               trigger={
                 <div
-                  className={`${colorForSegment(seg.state)} ${styles.alertStateTransitionsBarDiv3}`}
+                  className={`${colorForSegment(seg.state)} ${alertStateTransitionsBarStyles.segment}`}
                   style={{ width: `${widthPct}%` }}
                   aria-label={`${labelForSegment(seg.state)} ${formatTimestamp(
                     new Date(seg.startMs).toISOString(),
@@ -158,7 +158,7 @@ export function AlertStateTransitionsBar({
               }
               content={
                 <div className={shared.text.xs}>
-                  <div className={styles.alertStateTransitionsBarDiv5}>
+                  <div className={alertStateTransitionsBarStyles.tooltipState}>
                     {labelForSegment(seg.state)}
                   </div>
                   <div className={shared.fg.secondary}>
@@ -171,7 +171,7 @@ export function AlertStateTransitionsBar({
           );
         })}
       </div>
-      <div className={styles.alertStateTransitionsBarDiv7}>
+      <div className={alertStateTransitionsBarStyles.ticks}>
         {ticks.map((tick, i) => (
           <span key={i}>{formatTick(tick, rangeMs)}</span>
         ))}

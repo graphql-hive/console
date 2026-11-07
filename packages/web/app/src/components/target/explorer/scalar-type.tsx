@@ -1,7 +1,7 @@
 import { Markdown } from '@/components/ui/markdown';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { GraphQLTypeCard, SchemaExplorerUsageStats } from './common';
-import * as styles from './scalar-type.css';
+import { scalarTypeStyles } from './scalar-type.css';
 
 const GraphQLScalarTypeComponent_TypeFragment = graphql(`
   fragment GraphQLScalarTypeComponent_TypeFragment on GraphQLScalarType {
@@ -23,8 +23,8 @@ export function GraphQLScalarTypeComponent(props: {
   const ttype = useFragment(GraphQLScalarTypeComponent_TypeFragment, props.type);
   return (
     <GraphQLTypeCard name={ttype.name} kind="scalar" supergraphMetadata={ttype.supergraphMetadata}>
-      <div className={styles.graphQLScalarTypeComponentDiv}>
-        <div className={styles.graphQLScalarTypeComponentDiv2}>
+      <div className={scalarTypeStyles.root}>
+        <div className={scalarTypeStyles.body}>
           {typeof ttype.description === 'string' && <Markdown content={ttype.description} />}
         </div>
         {typeof props.totalRequests === 'number' && (

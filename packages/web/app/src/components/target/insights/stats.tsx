@@ -34,7 +34,7 @@ import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { useRouter } from '@tanstack/react-router';
 import { OperationsFallback } from './fallback';
 import { resolutionToMilliseconds } from './utils';
-import * as styles from './stats.css';
+import { statsStyles } from './stats.css';
 
 export const Stats_GeneralOperationsStatsQuery = graphql(`
   query Stats_GeneralOperationsStats(
@@ -571,20 +571,20 @@ function ClientsStats(props: {
       title="Clients"
       description="Top 5 - GraphQL API consumers"
     >
-      <div className={styles.clientsStatsDiv}>
+      <div className={statsStyles.clients}>
         <Chart option={byClientOption} height={200} onEvents={clientBarEvents} />
         <Chart option={byVersionOption} height={200} />
       </div>
       {isOpen ? (
-        <div className={styles.clientsStatsDiv2}>
+        <div className={statsStyles.clientsChart}>
           <Chart option={byClientAndVersionOption} height={400} />
         </div>
       ) : null}
-      <div className={styles.clientsStatsDiv3}>
+      <div className={statsStyles.clientsToggle}>
         <Button variant="outline" onClick={() => setIsOpen(value => !value)}>
           {isOpen ? (
             <>
-              <ChevronUp className={styles.clientsStatsChevronUp} /> Hide
+              <ChevronUp className={statsStyles.clientsToggleIcon} /> Hide
             </>
           ) : (
             'Display all versions'
@@ -771,9 +771,9 @@ export function OperationsStats({
         : 'success';
 
   return (
-    <section className={styles.operationsStatsSection}>
+    <section className={statsStyles.operations}>
       <OperationsFallback state={state} refetch={refetch}>
-        <div className={styles.operationsStatsDiv}>
+        <div className={statsStyles.operationsGrid}>
           <RequestsStats requests={operationsStats?.totalRequests} dateRangeText={dateRangeText} />
           <RPM
             requests={operationsStats?.totalRequests}

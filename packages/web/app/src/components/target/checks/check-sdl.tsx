@@ -3,7 +3,7 @@ import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import type { TabbedViewItem } from '@/components/ui/tabbed-view/tabbed-view';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
-import * as styles from './check-sdl.css';
+import { checkSdlStyles } from './check-sdl.css';
 
 const CheckSdlQuery = graphql(`
   query CheckSdlQuery($selector: TargetSelectorInput!, $schemaCheckId: ID!) {
@@ -144,7 +144,7 @@ export function withContractCheckSdl<
 }
 
 function TabMessage(props: { children: React.ReactNode }) {
-  return <div className={styles.tabMessageDiv2}>{props.children}</div>;
+  return <div className={checkSdlStyles.message}>{props.children}</div>;
 }
 
 // The body fills the viewport below the tab strip and toolbar (5rem), whatever it holds, so the
@@ -155,12 +155,12 @@ export function SdlPane(props: {
   children: React.ReactNode;
 }) {
   return (
-    <div className={styles.sdlPaneDiv6}>
-      <div className={styles.sdlPaneDiv7}>
-        <div className={styles.sdlPaneDiv8}>{props.title}</div>
-        <div className={styles.sdlPaneDiv9}>{props.actions}</div>
+    <div className={checkSdlStyles.pane}>
+      <div className={checkSdlStyles.paneHeader}>
+        <div className={checkSdlStyles.paneTitle}>{props.title}</div>
+        <div className={checkSdlStyles.paneActions}>{props.actions}</div>
       </div>
-      <div className={styles.sdlPaneDiv10}>{props.children}</div>
+      <div className={checkSdlStyles.paneBody}>{props.children}</div>
     </div>
   );
 }
@@ -192,7 +192,7 @@ export function withSdlState<T>(
         {message ? (
           <TabMessage>{message}</TabMessage>
         ) : (
-          <div className={styles.withSdlStateDiv2}>
+          <div className={checkSdlStyles.state}>
             <Spinner variants={{ size: 'lg' }} label="Loading schema" />
             Loading schema…
           </div>

@@ -11,7 +11,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
-import * as styles from './registry-token-form.css';
+import { registryTokenFormStyles } from './registry-token-form.css';
 
 export const RegistryTokenFormSchema = z.object({
   tokenDescription: z
@@ -82,7 +82,7 @@ export function RegistryTokenForm(props: {
           },
         ]}
       />
-      <div className={styles.registryTokenFormDiv}>
+      <div className={registryTokenFormStyles.actions}>
         <Button variant="outline" type="button" onClick={props.onCancel}>
           Cancel
         </Button>

@@ -8,7 +8,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
-import * as styles from './super-graph-metadata.css';
+import { superGraphMetadataStyles } from './super-graph-metadata.css';
 
 function stringToHue(str: string) {
   let hash = 0;
@@ -32,14 +32,18 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
   return (
     <Popover
       trigger={
-        <button type="button" aria-label="Supergraph metadata" className={styles.metadataButton}>
-          <MetadataIcon className={styles.metadataMetadataIcon} />
+        <button
+          type="button"
+          aria-label="Supergraph metadata"
+          className={superGraphMetadataStyles.metadataButton}
+        >
+          <MetadataIcon className={superGraphMetadataStyles.metadataIcon} />
         </button>
       }
       openOnHover
       width="auto"
       content={
-        <div className={styles.metadataDiv}>
+        <div className={superGraphMetadataStyles.metadata}>
           {props.supergraphMetadata.map((m, i) => (
             <div key={i}>
               <span className={shared.weight.bold}>{m.name}:</span> {m.content}
@@ -71,11 +75,11 @@ function SubgraphChip(props: {
         service: props.text,
       }}
       style={subgraphChipColors(props.text, resolvedTheme)}
-      className={styles.subgraphChipLink}
+      className={superGraphMetadataStyles.chip}
     >
-      <span className={styles.subgraphChipSpan}>{props.text}</span>
-      <PackageIcon size={10} className={styles.subgraphChipPackageIcon} />
-      {props.metadata?.length && <span className={styles.subgraphChipSpan2}>*</span>}
+      <span className={superGraphMetadataStyles.chipName}>{props.text}</span>
+      <PackageIcon size={10} className={superGraphMetadataStyles.chipIcon} />
+      {props.metadata?.length && <span className={superGraphMetadataStyles.chipMarker}>*</span>}
     </Link>
   );
 
@@ -194,24 +198,24 @@ export function SupergraphMetadataList(props: {
   const [previewItems, allItems] = items ?? [null, null];
 
   return (
-    <div className={styles.supergraphMetadataListDiv}>
+    <div className={superGraphMetadataStyles.list}>
       {meta}
       {previewItems}
       {allItems && (
         <Popover
           trigger={
-            <button type="button" className={styles.supergraphMetadataListButton}>
+            <button type="button" className={superGraphMetadataStyles.listMore}>
               + {allItems.length - previewItems.length} more
             </button>
           }
           openOnHover
           width="auto"
           content={
-            <div className={styles.supergraphMetadataListDiv2}>
-              <div className={styles.supergraphMetadataListDiv3}>All Subgraphs</div>
-              <div className={styles.supergraphMetadataListDiv4}>
+            <div className={superGraphMetadataStyles.listPopover}>
+              <div className={superGraphMetadataStyles.listPopoverTitle}>All Subgraphs</div>
+              <div className={superGraphMetadataStyles.listPopoverBody}>
                 <ScrollArea maxHeight="md">
-                  <div className={styles.supergraphMetadataListDiv5}>{allItems}</div>
+                  <div className={superGraphMetadataStyles.listPopoverChips}>{allItems}</div>
                 </ScrollArea>
               </div>
             </div>

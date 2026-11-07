@@ -21,7 +21,7 @@ import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
 import { AlertRuleEnabledToggle } from './alert-rule-enabled-toggle';
 import { DeleteRuleConfirmationDialog } from './delete-rule-confirmation-dialog';
-import * as styles from './alert-conditions-panel.css';
+import { alertConditionsPanelStyles } from './alert-conditions-panel.css';
 
 const TYPE_CATEGORY: Record<MetricAlertRuleType, string> = {
   [MetricAlertRuleType.ErrorRate]: 'Reliability',
@@ -128,18 +128,24 @@ export type AlertConditionsPanelProps = {
 
 function RelativeTimestamp({ iso }: { iso: string }) {
   return (
-    <span className={styles.relativeTimestampSpan}>
+    <span className={alertConditionsPanelStyles.timestamp}>
       <TimeAgo date={iso} />
       <Popover
         trigger={
-          <button type="button" aria-label="Exact time" className={styles.relativeTimestampButton}>
-            <Info className={styles.relativeTimestampInfo} />
+          <button
+            type="button"
+            aria-label="Exact time"
+            className={alertConditionsPanelStyles.timestampHint}
+          >
+            <Info className={alertConditionsPanelStyles.timestampHintIcon} />
           </button>
         }
         openOnHover
         width="auto"
         content={
-          <span className={styles.relativeTimestampSpan2}>{new Date(iso).toUTCString()}</span>
+          <span className={alertConditionsPanelStyles.timestampExact}>
+            {new Date(iso).toUTCString()}
+          </span>
         }
       />
     </span>
@@ -197,18 +203,18 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
       })}
       target="_blank"
       rel="noreferrer"
-      className={styles.alertConditionsPanelLink}
+      className={alertConditionsPanelStyles.link}
     >
       {rule.savedFilter.name}
-      <ExternalLink className={styles.alertConditionsPanelExternalLink} />
+      <ExternalLink className={alertConditionsPanelStyles.linkIcon} />
     </Link>
   ) : (
     '—'
   );
 
   return (
-    <div className={styles.alertConditionsPanelDiv}>
-      <h2 className={styles.alertConditionsPanelH2}>Alert conditions</h2>
+    <div className={alertConditionsPanelStyles.root}>
+      <h2 className={alertConditionsPanelStyles.title}>Alert conditions</h2>
 
       <DescriptionList
         rows={[
@@ -224,9 +230,9 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
               {
                 term: 'Severity',
                 description: (
-                  <span className={styles.alertConditionsPanelSpan}>
+                  <span className={alertConditionsPanelStyles.condition}>
                     <StatusDot color={SEVERITY_DOT_COLOR[rule.severity]} />
-                    <span className={styles.alertConditionsPanelSpan2}>
+                    <span className={alertConditionsPanelStyles.conditionLabel}>
                       {rule.severity.toLowerCase()}
                     </span>
                   </span>
@@ -239,7 +245,9 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
               {
                 term: 'Condition',
                 description: (
-                  <span className={styles.alertConditionsPanelSpan3}>{conditionLabel}</span>
+                  <span className={alertConditionsPanelStyles.conditionLabel}>
+                    {conditionLabel}
+                  </span>
                 ),
               },
               {
@@ -275,10 +283,10 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
         ]}
       />
 
-      <div className={styles.alertConditionsPanelDiv2}>
-        <span className={styles.alertConditionsPanelSpan4}>
-          <span className={styles.alertConditionsPanelSpan5}>Alert status</span>
-          <span className={styles.alertConditionsPanelSpan6}>
+      <div className={alertConditionsPanelStyles.status}>
+        <span className={alertConditionsPanelStyles.statusText}>
+          <span className={alertConditionsPanelStyles.statusTitle}>Alert status</span>
+          <span className={alertConditionsPanelStyles.statusDetail}>
             {rule.enabled
               ? 'Evaluating conditions and sending notifications'
               : "Paused (conditions aren't evaluated)"}

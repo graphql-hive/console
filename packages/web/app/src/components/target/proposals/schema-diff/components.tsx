@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { SeverityLevelType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
 import { ChangeRowContext } from './context';
-import * as styles from './components.css';
+import { schemaDiffStyles } from './components.css';
 
 const TAB = <>&nbsp;&nbsp;</>;
 
@@ -38,10 +38,7 @@ export function AnnotatedProvider(props: { children: ReactNode }) {
 export function ChangeDocument(props: { children: ReactNode; className?: string }) {
   return (
     <ScrollArea axis="horizontal">
-      <table
-        aria-label="change-document"
-        className={cn(styles.changeDocumentTable, props.className)}
-      >
+      <table aria-label="change-document" className={cn(schemaDiffStyles.table, props.className)}>
         {props.children}
       </table>
     </ScrollArea>
@@ -83,56 +80,45 @@ export function ChangeRow(props: {
       <tr>
         <td
           className={cn(
-            styles.changeRowTd,
+            schemaDiffStyles.beforeGutter({
+              removed: props.type === 'removal' || removed,
+              hidden: props.type === 'addition',
+            }),
             props.className,
-            (props.type === 'removal' || removed) && styles.changeRowTd2,
-            props.type === 'addition' && styles.changeRowTd3,
           )}
         >
           {props.beforeLine}
         </td>
         <td
           className={cn(
-            styles.changeRowTd4,
+            schemaDiffStyles.afterGutter({
+              hidden: props.type === 'removal',
+              added: props.type === 'addition' || added,
+            }),
             props.className,
-            props.type === 'removal' && styles.changeRowTd5,
-            (props.type === 'addition' || added) && styles.changeRowTd6,
           )}
         >
           {props.afterLine}
         </td>
-        <td
-          className={cn(
-            styles.changeRowTd7,
-            props.className,
-            props.type === 'removal' && styles.changeRowTd8,
-            props.type === 'addition' && styles.changeRowTd9,
-          )}
-        >
-          <span
-            className={cn(
-              styles.changeRowSpan,
-              props.type === 'removal' && styles.changeRowSpan2,
-              props.type === 'addition' && styles.changeRowSpan3,
-            )}
-          >
+        <td className={cn(schemaDiffStyles.content({ type: props.type }), props.className)}>
+          <span className={schemaDiffStyles.line({ type: props.type })}>
             {!!props.indent &&
               Array.from({ length: Number(props.indent) }).map((_, i) => (
                 <Fragment key={i}>{TAB}</Fragment>
               ))}
             {props.severityLevel === SeverityLevelType.Breaking && (
               <span title="Breaking Change">
-                <XIcon className={styles.changeRowXIcon} />
+                <XIcon className={schemaDiffStyles.removedIcon} />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Dangerous && (
               <span title="Dangerous Change">
-                <TriangleAlert className={styles.changeRowTriangleAlert} />
+                <TriangleAlert className={schemaDiffStyles.warningIcon} />
               </span>
             )}
             {props.severityLevel === SeverityLevelType.Safe && (
               <span title="Safe Change">
-                <CheckIcon className={styles.changeRowCheckIcon} />
+                <CheckIcon className={schemaDiffStyles.addedIcon} />
               </span>
             )}
             {props.children}
@@ -156,7 +142,7 @@ function Removal(props: { children: ReactNode | string; className?: string }): R
     }
   }, [change.removal]);
 
-  return <span className={cn(styles.removalSpan, props.className)}>{props.children}</span>;
+  return <span className={cn(schemaDiffStyles.removal, props.className)}>{props.children}</span>;
 }
 
 function Addition(props: { children: ReactNode; className?: string }): ReactNode {
@@ -166,7 +152,7 @@ function Addition(props: { children: ReactNode; className?: string }): ReactNode
       setAdded(true);
     }
   }, [change.addition]);
-  return <span className={cn(styles.additionSpan, props.className)}>{props.children}</span>;
+  return <span className={cn(schemaDiffStyles.addition, props.className)}>{props.children}</span>;
 }
 
 export function Change({

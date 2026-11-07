@@ -18,7 +18,7 @@ import {
   ContractFormSchema,
   type ContractFormValues,
 } from './contract-form';
-import * as styles from './schema-contracts.css';
+import { schemaContractsStyles } from './schema-contracts.css';
 
 export const SchemaContractsQuery = graphql(`
   query SchemaContractsQuery($selector: TargetSelectorInput!, $after: String) {
@@ -222,7 +222,7 @@ export function SchemaContracts() {
         description="Schema Contracts allow you to have separate public graphs that are a subset of the main graph."
         docsLink={{ href: '/management/contracts', text: 'Learn more about Schema Contracts' }}
       />
-      <div className={styles.schemaContractsDiv}>
+      <div className={schemaContractsStyles.header}>
         <Button onClick={() => setCreateOpen(true)}>Create new contract</Button>
         <CreateContractDialog
           key={overlaySession}

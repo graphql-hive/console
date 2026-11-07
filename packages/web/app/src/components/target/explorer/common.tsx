@@ -18,18 +18,14 @@ import AvailabilityBar from './availability-bar';
 import { useDescriptionsVisibleToggle, useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { matchesSubgraphFilter, useExplorerFieldFiltering } from './utils';
-import * as styles from './common.css';
+import { explorerCommonStyles } from './common.css';
 
 export function Description(props: { description: string }) {
   const { isDescriptionsVisible } = useDescriptionsVisibleToggle();
 
   return (
-    <div
-      className={clsx(styles.descriptionDiv, {
-        hidden: !isDescriptionsVisible,
-      })}
-    >
-      <Markdown className={clsx(styles.descriptionMarkdown)} content={props.description} />
+    <div className={explorerCommonStyles.description({ hidden: !isDescriptionsVisible })}>
+      <Markdown className={explorerCommonStyles.descriptionText} content={props.description} />
     </div>
   );
 }
@@ -118,18 +114,18 @@ export function SchemaExplorerUsageStats(props: {
   ];
 
   return (
-    <div className={styles.schemaExplorerUsageStatsDiv}>
+    <div className={explorerCommonStyles.usage}>
       <div className={shared.grow}>
-        <div className={styles.schemaExplorerUsageStatsDiv3}>{formatNumber(usage.total)}</div>
+        <div className={explorerCommonStyles.usageTotal}>{formatNumber(usage.total)}</div>
       </div>
       {availability !== null ? (
-        <div className={styles.schemaExplorerUsageStatsDiv4}>
+        <div className={explorerCommonStyles.usageCell}>
           <Popover
             trigger={
               <button
                 type="button"
                 aria-label="Field stats"
-                className={styles.schemaExplorerUsageStatsButton}
+                className={explorerCommonStyles.usageTrigger}
               >
                 <AvailabilityBar availability={availability} />
               </button>
@@ -138,12 +134,12 @@ export function SchemaExplorerUsageStats(props: {
             align="end"
             width="auto"
             content={
-              <div className={styles.schemaExplorerUsageStatsDiv5}>
-                <div className={styles.schemaExplorerUsageStatsDiv6}>
+              <div className={explorerCommonStyles.usagePopover}>
+                <div className={explorerCommonStyles.usagePopoverTitle}>
                   {capitalize(kindLabel)} Stats
                 </div>
                 {hasFieldLevelMetrics ? (
-                  <div className={styles.schemaExplorerUsageStatsDiv7}>
+                  <div className={explorerCommonStyles.usagePopoverBody}>
                     <span className={shared.weight.bold}>Requests</span> counts how many client
                     requests asked for a field, whereas{' '}
                     <span className={shared.weight.bold}>Resolutions</span> counts the actual number
@@ -151,7 +147,7 @@ export function SchemaExplorerUsageStats(props: {
                     multiply within lists or drop to zero if a parent returned null).
                   </div>
                 ) : null}
-                <div className={styles.schemaExplorerUsageStatsDiv8}>
+                <div className={explorerCommonStyles.usageBreakdown}>
                   <div>
                     <span className={shared.weight.bold}>{formatNumber(usage.total)} Requests</span>{' '}
                     {hasFieldLevelMetrics ? 'with' : null}
@@ -180,12 +176,8 @@ export function SchemaExplorerUsageStats(props: {
       ) : null}
       <Popover
         trigger={
-          <button
-            type="button"
-            aria-label="Usage"
-            className={styles.schemaExplorerUsageStatsButton2}
-          >
-            <ActivityIcon className={styles.schemaExplorerUsageStatsActivityIcon} />
+          <button type="button" aria-label="Usage" className={explorerCommonStyles.activityButton}>
+            <ActivityIcon className={explorerCommonStyles.activityIcon} />
           </button>
         }
         openOnHover
@@ -194,9 +186,7 @@ export function SchemaExplorerUsageStats(props: {
         width="lg"
         content={
           <div>
-            <div className={styles.schemaExplorerUsageStatsDiv11}>
-              {capitalize(kindLabel)} Usage
-            </div>
+            <div className={explorerCommonStyles.popoverHeading}>{capitalize(kindLabel)} Usage</div>
             {usage.isUsed === false ? (
               <div>This {kindLabel} is currently not in use.</div>
             ) : (
@@ -204,21 +194,19 @@ export function SchemaExplorerUsageStats(props: {
                 <ul>
                   <li>
                     This {kindLabel} has been queried in{' '}
-                    <span className={styles.schemaExplorerUsageStatsSpan5}>
+                    <span className={explorerCommonStyles.emphasis}>
                       {formatNumber(usage.total)}
                     </span>{' '}
                     requests.
                   </li>
                   <li>
-                    <span className={styles.schemaExplorerUsageStatsSpan6}>
-                      {toDecimal(percentage)}%
-                    </span>{' '}
+                    <span className={explorerCommonStyles.emphasis}>{toDecimal(percentage)}%</span>{' '}
                     of all requests use this {kindLabel}.
                   </li>
                 </ul>
 
                 {Array.isArray(usage.topOperations) && (
-                  <div className={styles.schemaExplorerUsageStatsDiv12}>
+                  <div className={explorerCommonStyles.popoverFooter}>
                     <DataTable
                       data={usage.topOperations}
                       columns={topOperationColumns}
@@ -239,9 +227,9 @@ export function SchemaExplorerUsageStats(props: {
           <button
             type="button"
             aria-label="Client usage"
-            className={styles.schemaExplorerUsageStatsButton3}
+            className={explorerCommonStyles.clientsButton}
           >
-            <UsersIcon className={styles.schemaExplorerUsageStatsUsersIcon} />
+            <UsersIcon className={explorerCommonStyles.clientsIcon} />
           </button>
         }
         openOnHover
@@ -249,18 +237,18 @@ export function SchemaExplorerUsageStats(props: {
         width="auto"
         content={
           <>
-            <div className={styles.schemaExplorerUsageStatsDiv13}>Client Usage</div>
+            <div className={explorerCommonStyles.popoverHeading}>Client Usage</div>
 
             {Array.isArray(usage.usedByClients) && usage.usedByClients.length > 0 ? (
               <>
-                <div className={styles.schemaExplorerUsageStatsDiv14}>
+                <div className={explorerCommonStyles.clientsNote}>
                   This {kindLabel} is used by the following clients:
                 </div>
                 <ul>
                   {usage.usedByClients.map(clientName => (
                     <li key={clientName} className={shared.weight.bold}>
                       <Link
-                        className={styles.schemaExplorerUsageStatsLink}
+                        className={explorerCommonStyles.clientsLink}
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
                         params={{
                           organizationSlug,
@@ -330,8 +318,11 @@ export function DeprecationNote(props: {
       maxWidth="screen"
       content={
         <>
-          <div className={styles.deprecationNoteDiv}>Deprecation reason</div>
-          <Markdown className={styles.deprecationNoteMarkdown} content={props.deprecationReason} />
+          <div className={explorerCommonStyles.deprecation}>Deprecation reason</div>
+          <Markdown
+            className={explorerCommonStyles.deprecationText}
+            content={props.deprecationReason}
+          />
         </>
       }
     />
@@ -359,11 +350,11 @@ export function GraphQLTypeCard(props: {
   }
 
   return (
-    <div className={styles.graphQLTypeCardDiv}>
-      <div className={styles.graphQLTypeCardDiv2}>
+    <div className={explorerCommonStyles.card}>
+      <div className={explorerCommonStyles.cardHeader}>
         <div>
-          <div className={styles.graphQLTypeCardDiv3}>
-            <div className={styles.graphQLTypeCardDiv4}>{props.kind}</div>
+          <div className={explorerCommonStyles.cardTitle}>
+            <div className={explorerCommonStyles.cardKind}>{props.kind}</div>
             <div className={shared.weight.semibold}>
               <GraphQLTypeAsLink type={props.name} />
             </div>
@@ -371,9 +362,9 @@ export function GraphQLTypeCard(props: {
           {props.description && <Description description={props.description} />}
         </div>
         {Array.isArray(props.implements) && props.implements.length > 0 && (
-          <div className={styles.graphQLTypeCardDiv6}>
-            <div className={styles.graphQLTypeCardDiv7}>implements</div>
-            <div className={styles.graphQLTypeCardDiv8}>
+          <div className={explorerCommonStyles.cardImplements}>
+            <div className={explorerCommonStyles.cardImplementsLabel}>implements</div>
+            <div className={explorerCommonStyles.cardImplementsList}>
               {props.implements.map(t => (
                 <GraphQLTypeAsLink key={t} type={t} />
               ))}
@@ -404,8 +395,7 @@ export function GraphQLTypeCardListItem(props: {
     <div
       onClick={props.onClick}
       className={clsx(
-        styles.graphQLTypeCardListItemDiv,
-        props.index % 2 ? '' : styles.graphQLTypeCardListItemDiv2,
+        explorerCommonStyles.listItem({ striped: !(props.index % 2) }),
         props.className,
       )}
     >
@@ -416,7 +406,7 @@ export function GraphQLTypeCardListItem(props: {
 
 export function ExplorerFilteredEmptyState() {
   return (
-    <div className={styles.explorerFilteredEmptyStateDiv}>
+    <div className={explorerCommonStyles.empty}>
       No schema coordinates match the active filters.
     </div>
   );
@@ -444,19 +434,19 @@ export function GraphQLInputFields(props: {
         return (
           <GraphQLTypeCardListItem key={field.name} index={i}>
             <div>
-              <div className={styles.graphQLInputFieldsDiv2}>
+              <div className={explorerCommonStyles.inputField}>
                 <div className={shared.fg.secondary}>
                   <DeprecationNote deprecationReason={field.deprecationReason}>
                     <LinkToCoordinatePage
                       coordinate={coordinate}
-                      className={styles.graphQLInputFieldsLinkToCoordinatePage}
+                      className={explorerCommonStyles.inputFieldName}
                     >
                       {field.name}
                     </LinkToCoordinatePage>
                   </DeprecationNote>
-                  <span className={styles.graphQLInputFieldsSpan}>:</span>
+                  <span className={explorerCommonStyles.colon}>:</span>
                   <GraphQLTypeAsLink
-                    className={styles.graphQLInputFieldsGraphQLTypeAsLink}
+                    className={explorerCommonStyles.inputFieldType}
                     type={field.type}
                   />
                 </div>
@@ -484,17 +474,17 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
   return (
     <Popover
       trigger={
-        <button type="button" className={cn(styles.graphQLTypeAsLinkButton, props.className)}>
+        <button type="button" className={cn(explorerCommonStyles.typeLink, props.className)}>
           {props.type}
         </button>
       }
       side="right"
       arrow
       content={
-        <div className={styles.graphQLTypeAsLinkDiv}>
+        <div className={explorerCommonStyles.typeLinkPopover}>
           <p>
             <Link
-              className={styles.graphQLTypeAsLinkLink}
+              className={explorerCommonStyles.typeLinkAction}
               to="/$organizationSlug/$projectSlug/$targetSlug/explorer/$typename"
               params={{
                 organizationSlug,
@@ -506,11 +496,11 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
             >
               Visit in <span className={shared.weight.medium}>Explorer</span>
             </Link>
-            <span className={styles.graphQLTypeAsLinkSpan2}> - displays a full type</span>
+            <span className={explorerCommonStyles.typeLinkHint}> - displays a full type</span>
           </p>
           <p>
             <Link
-              className={styles.graphQLTypeAsLinkLink2}
+              className={explorerCommonStyles.typeLinkAction}
               to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
               params={{
                 organizationSlug,
@@ -522,7 +512,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
             >
               Visit in <span className={shared.weight.medium}>Insights</span>
             </Link>
-            <span className={styles.graphQLTypeAsLinkSpan4}> - usage insights</span>
+            <span className={explorerCommonStyles.typeLinkHint}> - usage insights</span>
           </p>
         </div>
       }
@@ -544,7 +534,7 @@ export const LinkToCoordinatePage = React.forwardRef<
   return (
     <Link
       ref={ref}
-      className={cn(styles.link, props.className)}
+      className={cn(explorerCommonStyles.link, props.className)}
       to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
       params={{
         organizationSlug,
@@ -560,12 +550,7 @@ export const LinkToCoordinatePage = React.forwardRef<
 });
 
 const getRandomWidth = () => {
-  const values = [
-    styles.valuesClass,
-    styles.valuesClass2,
-    styles.valuesClass3,
-    styles.valuesClass4,
-  ];
+  const values = Object.values(explorerCommonStyles.skeletonWidth);
 
   return values[Math.floor(Math.random() * values.length)];
 };
@@ -578,25 +563,25 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
   }, [props.count]);
 
   return (
-    <div className={styles.graphQLFieldsSkeletonDiv}>
+    <div className={explorerCommonStyles.fieldsSkeleton}>
       {widths.map((width, index) => (
         <GraphQLTypeCardListItem
           key={index}
           index={index}
-          className={styles.graphQLFieldsSkeletonGraphQLTypeCardListItem}
+          className={explorerCommonStyles.fieldsSkeletonItem}
         >
-          <div className={styles.graphQLFieldsSkeletonDiv2}>
-            <span className={cn(styles.graphQLFieldsSkeletonSpan, width)}>
+          <div className={explorerCommonStyles.fieldsSkeletonRow}>
+            <span className={cn(explorerCommonStyles.fieldsSkeletonName, width)}>
               <Skeleton variants={{ width: 'full' }} />
             </span>
-            <div className={styles.graphQLFieldsSkeletonDiv3}>
-              <span className={styles.graphQLFieldsSkeletonSpan2}>
+            <div className={explorerCommonStyles.fieldsSkeletonActions}>
+              <span className={explorerCommonStyles.skeletonIcon}>
                 <Skeleton variants={{ shape: 'block' }} />
               </span>
-              <span className={styles.graphQLFieldsSkeletonSpan3}>
+              <span className={explorerCommonStyles.skeletonIcon}>
                 <Skeleton variants={{ shape: 'block' }} />
               </span>
-              <span className={styles.graphQLFieldsSkeletonSpan4}>
+              <span className={explorerCommonStyles.skeletonIcon}>
                 <Skeleton variants={{ shape: 'block' }} />
               </span>
             </div>
@@ -609,10 +594,10 @@ export const GraphQLFieldsSkeleton = (props: { count?: number }) => {
 
 export const GraphQLTypeCardSkeleton = (props: { children: ReactNode }) => {
   return (
-    <div className={styles.graphQLTypeCardSkeletonDiv}>
-      <div className={styles.graphQLTypeCardSkeletonDiv2}>
-        <div className={styles.graphQLTypeCardSkeletonDiv3}>
-          <span className={styles.graphQLTypeCardSkeletonSpan}>
+    <div className={explorerCommonStyles.cardSkeleton}>
+      <div className={explorerCommonStyles.cardSkeletonHeader}>
+        <div className={explorerCommonStyles.cardSkeletonTitle}>
+          <span className={explorerCommonStyles.cardSkeletonName}>
             <Skeleton variants={{ width: 'full' }} />
           </span>
         </div>

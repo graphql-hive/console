@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Chart } from '@/components/ui/primitives/chart/chart';
 import { useChartTheme } from '@/components/ui/primitives/chart/chart-theme';
 import { MetricAlertRuleSeverity, MetricAlertRuleState } from '@/gql/graphql';
-import * as styles from './alert-activity-chart.css';
+import { alertActivityChartStyles } from './alert-activity-chart.css';
 
 type ActivityEvent = {
   toState: MetricAlertRuleState;
@@ -118,8 +118,8 @@ export function AlertActivityChart({ events, from, to }: ChartProps) {
 
   if (totalEvents === 0) {
     return (
-      <div className={styles.alertActivityChartDiv}>
-        <span className={styles.alertActivityChartSpan}>
+      <div className={alertActivityChartStyles.empty}>
+        <span className={alertActivityChartStyles.emptyText}>
           No alerts fired in the selected time range.
         </span>
       </div>

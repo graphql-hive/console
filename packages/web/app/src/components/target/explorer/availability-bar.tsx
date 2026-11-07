@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import * as styles from './availability-bar.css';
+import { availabilityBarStyles } from './availability-bar.css';
 
 export default function AvailabilityBar({
   availability,
@@ -19,14 +19,14 @@ export default function AvailabilityBar({
 
   return (
     <div
-      className={cn(styles.availabilityBarDiv, className)}
+      className={cn(availabilityBarStyles.root, className)}
       role="progressbar"
       aria-valuenow={safePercent}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <div
-        className={cn(styles.availabilityBarDiv2, isLessThan100 && styles.availabilityBarDiv3)}
+        className={availabilityBarStyles.fill({ partial: isLessThan100 })}
         style={{ width: fillWidth }}
       />
     </div>

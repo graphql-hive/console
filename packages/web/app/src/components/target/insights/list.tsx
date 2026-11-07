@@ -12,7 +12,7 @@ import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
 import { OperationsFallback } from './fallback';
-import * as styles from './list.css';
+import { listStyles } from './list.css';
 
 interface Operation {
   id: string;
@@ -70,12 +70,12 @@ function OperationsTable({
                     aria-label="Anonymous operation"
                     className={shared.inlineFlex}
                   >
-                    <TriangleAlert className={styles.operationsTableTriangleAlert} />
+                    <TriangleAlert className={listStyles.warningIcon} />
                   </button>
                 }
                 openOnHover
                 content={
-                  <p className={styles.operationsTableP}>
+                  <p className={listStyles.warningText}>
                     Anonymous operation detected. Naming your operations is a recommended practice
                   </p>
                 }
@@ -168,7 +168,7 @@ function OperationsTable({
   ];
 
   return (
-    <div className={styles.operationsTableDiv}>
+    <div className={listStyles.pagination}>
       <Card
         variants={{ onSurface: 'raised', titleSize: 'large' }}
         title="Operations"

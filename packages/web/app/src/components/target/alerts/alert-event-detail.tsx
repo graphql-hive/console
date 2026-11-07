@@ -21,16 +21,28 @@ import { formatNumber } from '@/lib/hooks/use-formatted-number';
 import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import { ALERT_STATE_LABEL } from './alert-state-transitions-bar';
-import * as styles from './alert-event-detail.css';
+import { alertEventDetailStyles } from './alert-event-detail.css';
 
 export const STATE_ICON: Record<
   MetricAlertRuleState,
   { Icon: typeof CircleCheck; className: string }
 > = {
-  [MetricAlertRuleState.Normal]: { Icon: CircleCheck, className: styles.class2 },
-  [MetricAlertRuleState.Pending]: { Icon: CircleEllipsis, className: styles.class3 },
-  [MetricAlertRuleState.Firing]: { Icon: CircleX, className: styles.class4 },
-  [MetricAlertRuleState.Recovering]: { Icon: CircleDotDashed, className: styles.class5 },
+  [MetricAlertRuleState.Normal]: {
+    Icon: CircleCheck,
+    className: alertEventDetailStyles.stateIcon.normal,
+  },
+  [MetricAlertRuleState.Pending]: {
+    Icon: CircleEllipsis,
+    className: alertEventDetailStyles.stateIcon.pending,
+  },
+  [MetricAlertRuleState.Firing]: {
+    Icon: CircleX,
+    className: alertEventDetailStyles.stateIcon.firing,
+  },
+  [MetricAlertRuleState.Recovering]: {
+    Icon: CircleDotDashed,
+    className: alertEventDetailStyles.stateIcon.recovering,
+  },
 };
 
 const STATE_BADGE_VARIANT: Record<
@@ -53,10 +65,10 @@ export function stateBadgeItem(state: MetricAlertRuleState) {
 }
 
 const STATE_SUMMARY_CLASS: Record<MetricAlertRuleState, string> = {
-  [MetricAlertRuleState.Normal]: styles.stateSummaryClassMetricAlertRuleStateNormal,
-  [MetricAlertRuleState.Pending]: styles.stateSummaryClassMetricAlertRuleStatePending,
-  [MetricAlertRuleState.Firing]: styles.stateSummaryClassMetricAlertRuleStateFiring,
-  [MetricAlertRuleState.Recovering]: styles.stateSummaryClassMetricAlertRuleStateRecovering,
+  [MetricAlertRuleState.Normal]: alertEventDetailStyles.stateSummary.normal,
+  [MetricAlertRuleState.Pending]: alertEventDetailStyles.stateSummary.pending,
+  [MetricAlertRuleState.Firing]: alertEventDetailStyles.stateSummary.firing,
+  [MetricAlertRuleState.Recovering]: alertEventDetailStyles.stateSummary.recovering,
 };
 
 export type AlertEventRow = {
@@ -205,7 +217,7 @@ export function StateBadge({ state }: { state: MetricAlertRuleState }) {
       aria-label={ALERT_STATE_LABEL[state]}
       title={ALERT_STATE_LABEL[state]}
     >
-      <Icon className={`${styles.stateBadgeIcon} ${className}`} />
+      <Icon className={`${alertEventDetailStyles.badgeIcon} ${className}`} />
     </span>
   );
 }
@@ -218,15 +230,19 @@ export function StateFlow({
   toState: MetricAlertRuleState;
 }) {
   return (
-    <div className={styles.stateFlowDiv}>
-      <div className={styles.stateFlowDiv2}>
+    <div className={alertEventDetailStyles.flow}>
+      <div className={alertEventDetailStyles.flowState}>
         <StateBadge state={fromState} />
-        <span className={styles.stateFlowSpan}>{ALERT_STATE_LABEL[fromState].toLowerCase()}</span>
+        <span className={alertEventDetailStyles.flowLabel}>
+          {ALERT_STATE_LABEL[fromState].toLowerCase()}
+        </span>
       </div>
-      <ArrowRight className={styles.stateFlowArrowRight} />
-      <div className={styles.stateFlowDiv3}>
+      <ArrowRight className={alertEventDetailStyles.flowArrow} />
+      <div className={alertEventDetailStyles.flowState}>
         <StateBadge state={toState} />
-        <span className={styles.stateFlowSpan2}>{ALERT_STATE_LABEL[toState].toLowerCase()}</span>
+        <span className={alertEventDetailStyles.flowLabel}>
+          {ALERT_STATE_LABEL[toState].toLowerCase()}
+        </span>
       </div>
     </div>
   );
@@ -260,21 +276,21 @@ export function AlertEventDetail({
       })}
       target="_blank"
       rel="noreferrer"
-      className={styles.alertEventDetailLink}
+      className={alertEventDetailStyles.link}
     >
       {rule.savedFilter.name}
-      <ExternalLink className={styles.alertEventDetailExternalLink} />
+      <ExternalLink className={alertEventDetailStyles.linkIcon} />
     </Link>
   ) : (
     '—'
   );
 
   return (
-    <div className={styles.alertEventDetailDiv}>
-      <div className={`${styles.alertEventDetailDiv2} ${STATE_SUMMARY_CLASS[event.toState]}`}>
+    <div className={alertEventDetailStyles.root}>
+      <div className={`${alertEventDetailStyles.summary} ${STATE_SUMMARY_CLASS[event.toState]}`}>
         {transitionSentence(rule, event.toState, event.value)}
       </div>
-      <div className={styles.alertEventDetailDiv3}>
+      <div className={alertEventDetailStyles.footer}>
         <div className={shared.fillShrinkable}>
           <DescriptionList
             rows={[
@@ -302,9 +318,9 @@ export function AlertEventDetail({
             params={{ organizationSlug, projectSlug, targetSlug, ruleId }}
             className={buttonVariants({ variant: 'primary', layout: 'label' })}
           >
-            <span className={styles.alertEventDetailSpan}>View alert rule detail</span>
-            <span className={styles.alertEventDetailSpan2}>
-              <ArrowRight className={styles.alertEventDetailArrowRight} />
+            <span className={alertEventDetailStyles.ruleLinkLabel}>View alert rule detail</span>
+            <span className={alertEventDetailStyles.ruleLinkArrow}>
+              <ArrowRight className={alertEventDetailStyles.ruleLinkArrowIcon} />
             </span>
           </Link>
         ) : null}

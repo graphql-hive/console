@@ -3,7 +3,7 @@ import reactStringReplace from 'react-string-replace';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { SubgraphName } from '@/components/ui/subgraph-name/subgraph-name';
 import * as shared from '@/styles/shared.css';
-import * as styles from './composition-error-message.css';
+import { compositionErrorMessageStyles } from './composition-error-message.css';
 
 const QUERY_HEAD = 'The following supergraph API query:';
 const QUERY_TAIL = 'cannot be satisfied by the subgraphs because:';
@@ -106,10 +106,10 @@ function renderCompositionErrorText(message: string): ReactNode[] {
 
 export function CompositionErrorMessage(props: { message: string }) {
   return (
-    <div className={styles.compositionErrorMessageDiv}>
+    <div className={compositionErrorMessageStyles.root}>
       {splitCompositionErrorMessage(props.message).map((segment, index) =>
         segment.kind === 'code' ? (
-          <pre key={index} className={styles.compositionErrorMessagePre}>
+          <pre key={index} className={compositionErrorMessageStyles.block}>
             {segment.text}
           </pre>
         ) : (
@@ -122,7 +122,7 @@ export function CompositionErrorMessage(props: { message: string }) {
                 style={depth ? { marginLeft: `${depth}em` } : undefined}
               >
                 {/* A gutter cell rather than a negative text-indent, which badges inherit and clip. */}
-                {bullet ? <span className={styles.compositionErrorMessageSpan2}>-</span> : null}
+                {bullet ? <span className={compositionErrorMessageStyles.bullet}>-</span> : null}
                 <span className={shared.shrinkable}>{renderCompositionErrorText(text)}</span>
               </span>
             );

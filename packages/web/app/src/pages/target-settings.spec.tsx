@@ -2,8 +2,8 @@
 import type { ReactNode } from 'react';
 import type * as Urql from 'urql';
 import type { SchemaEditorProps } from '@/components/schema-editor';
-import * as protectionStyles from '@/components/target/settings/app-deployment-protection-form.css';
-import * as breakingStyles from '@/components/target/settings/breaking-changes-form.css';
+import { appDeploymentProtectionFormStyles } from '@/components/target/settings/app-deployment-protection-form.css';
+import { breakingChangesFormStyles } from '@/components/target/settings/breaking-changes-form.css';
 import { ToastProvider } from '@/components/ui/primitives/toast/toast';
 import { DangerousChangeType } from '@/gql/graphql';
 import type * as Router from '@tanstack/react-router';
@@ -457,14 +457,14 @@ describe('AppDeploymentProtection', () => {
     });
     expect(
       numberInput('minDaysInactive').closest(
-        `.${protectionStyles.appDeploymentProtectionFormDiv2}`,
+        `.${appDeploymentProtectionFormStyles.root.classNames.variants.disabled.true}`,
       ),
     ).toBeNull();
 
     renderSection({ isEnabled: false });
     expect(
       (document.querySelectorAll('input[name="minDaysInactive"]')[1] as HTMLElement).closest(
-        `.${protectionStyles.appDeploymentProtectionFormDiv2}`,
+        `.${appDeploymentProtectionFormStyles.root.classNames.variants.disabled.true}`,
       ),
     ).not.toBeNull();
   });
@@ -655,12 +655,16 @@ describe('BreakingChanges', () => {
     expect(urql.mutate.mock.calls[1][0]).toEqual({
       input: { failDiffOnDangerousChange: false, target: { bySelector: selector } },
     });
-    expect(numberInput('period').closest(`.${breakingStyles.breakingChangesFormDiv2}`)).toBeNull();
+    expect(
+      numberInput('period').closest(
+        `.${breakingChangesFormStyles.root.classNames.variants.disabled.true}`,
+      ),
+    ).toBeNull();
 
     renderSection({ isEnabled: false });
     expect(
       (document.querySelectorAll('input[name="period"]')[1] as HTMLElement).closest(
-        `.${breakingStyles.breakingChangesFormDiv2}`,
+        `.${breakingChangesFormStyles.root.classNames.variants.disabled.true}`,
       ),
     ).not.toBeNull();
   });

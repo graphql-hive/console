@@ -38,7 +38,7 @@ import { AlertPreview, type AlertPreviewChannelType } from './alert-notification
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 import { percentChangeWindowFits, percentChangeWindowReason } from './percent-change-window';
 import { previewWindowMinutes } from './preview-window';
-import * as styles from './alert-form.css';
+import { alertFormStyles } from './alert-form.css';
 
 export const AlertForm_ChannelsQuery = graphql(`
   query AlertForm_ChannelsQuery($organizationSlug: String!, $projectSlug: String!) {
@@ -246,9 +246,9 @@ const THRESHOLD_TYPE_OPTIONS = [
 ] as const;
 
 const SEVERITIES = [
-  { value: 'INFO' as const, label: 'Info', dotClass: styles.severitiesDotClass },
-  { value: 'WARNING' as const, label: 'Warning', dotClass: styles.severitiesDotClass2 },
-  { value: 'CRITICAL' as const, label: 'Critical', dotClass: styles.severitiesDotClass3 },
+  { value: 'INFO' as const, label: 'Info', dotClass: alertFormStyles.severityDot.info },
+  { value: 'WARNING' as const, label: 'Warning', dotClass: alertFormStyles.severityDot.warning },
+  { value: 'CRITICAL' as const, label: 'Critical', dotClass: alertFormStyles.severityDot.critical },
 ];
 
 const AlertFormFields = z.object({
@@ -637,8 +637,8 @@ export function AlertForm(props: AlertFormProps) {
 
   return (
     <Form form={form} onSubmit={onSubmit}>
-      <div className={showPreview ? styles.alertFormDiv : undefined}>
-        <div className={showPreview ? styles.alertFormDiv2 : styles.alertFormDiv3}>
+      <div className={alertFormStyles.root({ split: showPreview })}>
+        <div className={alertFormStyles.form({ split: showPreview })}>
           {/* Section 1: Destination */}
           <Card
             title="1. Destination"
@@ -648,7 +648,7 @@ export function AlertForm(props: AlertFormProps) {
                 <Link
                   to="/$organizationSlug/$projectSlug/view/alerts"
                   params={{ organizationSlug, projectSlug }}
-                  className={styles.alertFormLink}
+                  className={alertFormStyles.link}
                 >
                   here
                 </Link>
@@ -656,7 +656,7 @@ export function AlertForm(props: AlertFormProps) {
               </>
             }
           >
-            <div className={styles.alertFormDiv4}>
+            <div className={alertFormStyles.conditions}>
               {fields.map((field, index) => (
                 <FormField
                   key={field.id}
@@ -684,7 +684,7 @@ export function AlertForm(props: AlertFormProps) {
                           aria-label={`Remove channel ${index + 1}`}
                           onClick={() => remove(index)}
                         >
-                          <X className={styles.alertFormX} />
+                          <X className={alertFormStyles.removeIcon} />
                         </Button>
                       </div>
                       <FormMessage />
@@ -693,7 +693,7 @@ export function AlertForm(props: AlertFormProps) {
                 />
               ))}
               <Button type="button" variant="outline" onClick={() => append({ channelId: '' })}>
-                <Plus className={styles.alertFormPlus} />
+                <Plus className={alertFormStyles.addIcon} />
                 {fields.length === 0 ? 'Add destination' : 'Add another destination'}
               </Button>
             </div>
@@ -704,7 +704,7 @@ export function AlertForm(props: AlertFormProps) {
             title="2. Alert type and range"
             description="Select the alert type and range for this alert."
           >
-            <div className={styles.alertFormDiv6}>
+            <div className={alertFormStyles.fieldRow}>
               <FormField
                 control={form.control}
                 name="metricSelection"
@@ -749,7 +749,7 @@ export function AlertForm(props: AlertFormProps) {
             title="3. Alert name and severity"
             description="Choose a name for your alert and the severity level."
           >
-            <div className={styles.alertFormDiv7}>
+            <div className={alertFormStyles.fieldRow}>
               <FormField
                 control={form.control}
                 name="name"
@@ -780,7 +780,7 @@ export function AlertForm(props: AlertFormProps) {
                           ariaLabel: sev.label,
                           content: (
                             <>
-                              <span className={`${styles.alertFormSpan} ${sev.dotClass}`} />
+                              <span className={`${alertFormStyles.dot} ${sev.dotClass}`} />
                               {sev.label}
                             </>
                           ),
@@ -799,9 +799,9 @@ export function AlertForm(props: AlertFormProps) {
             title="4. Condition, threshold, value"
             description="Select the firing condition, threshold type, and value for this alert. Use advanced settings to debounce false positives."
           >
-            <div className={styles.alertFormDiv8}>
-              <div className={styles.alertFormDiv9}>
-                <div className={styles.alertFormDiv10}>
+            <div className={alertFormStyles.channels}>
+              <div className={alertFormStyles.channelsHeader}>
+                <div className={alertFormStyles.channelsRow}>
                   <FormField
                     control={form.control}
                     name="direction"
@@ -860,7 +860,7 @@ export function AlertForm(props: AlertFormProps) {
                     )}
                   />
                 </div>
-                <p className={styles.alertFormP}>
+                <p className={alertFormStyles.channelsHint}>
                   {isPercentageChange
                     ? `"% change vs. previous" compares this ${thresholdRangeLabel} window to the one before it. With "${
                         watchedValues.direction === 'BELOW' ? 'a Decrease' : 'an Increase'
@@ -900,7 +900,7 @@ export function AlertForm(props: AlertFormProps) {
                     value: 'advanced',
                     label: 'Advanced settings',
                     content: (
-                      <div className={styles.alertFormDiv11}>
+                      <div className={alertFormStyles.channelFields}>
                         <FormField
                           control={form.control}
                           name="savedFilterId"
@@ -951,7 +951,7 @@ export function AlertForm(props: AlertFormProps) {
                                 tooltip={
                                   <>
                                     Wait for the condition to exist for{' '}
-                                    <span className={styles.alertFormSpan2}>
+                                    <span className={alertFormStyles.emphasis}>
                                       {field.value || '0'}
                                     </span>{' '}
                                     minutes before firing. Helps prevent false alarms from brief
@@ -975,7 +975,7 @@ export function AlertForm(props: AlertFormProps) {
             </div>
           </Card>
 
-          <div className={styles.alertFormDiv12}>
+          <div className={alertFormStyles.actions}>
             {onCancel ? (
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
                 Cancel
@@ -988,7 +988,7 @@ export function AlertForm(props: AlertFormProps) {
         </div>
 
         {showPreview ? (
-          <div className={styles.alertFormDiv13}>
+          <div className={alertFormStyles.preview}>
             <AlertPreview
               alertName={watchedValues.name}
               metricLabel={metricOption?.label ?? 'Total requests'}

@@ -10,7 +10,7 @@ import {
 import { useSchemaExplorerContext } from './provider';
 import { SupergraphMetadataList } from './super-graph-metadata';
 import { matchesSubgraphFilter } from './utils';
-import * as styles from './union-type.css';
+import { unionTypeStyles } from './union-type.css';
 
 const GraphQLUnionTypeComponent_TypeFragment = graphql(`
   fragment GraphQLUnionTypeComponent_TypeFragment on GraphQLUnionType {
@@ -58,10 +58,7 @@ export function GraphQLUnionTypeComponent(props: {
         <div className={shared.stack.base}>
           {members.map((member, i) => (
             <GraphQLTypeCardListItem key={member.name} index={i}>
-              <GraphQLTypeAsLink
-                className={styles.graphQLUnionTypeComponentGraphQLTypeAsLink}
-                type={member.name}
-              />
+              <GraphQLTypeAsLink className={unionTypeStyles.member} type={member.name} />
               {member.supergraphMetadata && (
                 <SupergraphMetadataList supergraphMetadata={member.supergraphMetadata} />
               )}

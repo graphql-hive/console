@@ -5,7 +5,7 @@ import * as shared from '@/styles/shared.css';
 import { DetachedAnnotations, ReviewComments } from './Review';
 import { AnnotatedProvider } from './schema-diff/components';
 import { SchemaDiff } from './schema-diff/core';
-import * as styles from './index.css';
+import { proposalsStyles } from './index.css';
 
 /**
  * Fragment containing a list of reviews. Each review is tied to a coordinate
@@ -491,7 +491,7 @@ export function Proposal(props: {
               <Fragment key={cursor}>
                 {/* @todo if node.resolvedBy/resolvedAt is set, then minimize this */}
                 {withPreview === true && node.lineText && (
-                  <code className={styles.annotateCode}>{node.lineText}</code>
+                  <code className={proposalsStyles.line}>{node.lineText}</code>
                 )}
                 <ReviewComments review={node} />
               </Fragment>
@@ -511,7 +511,7 @@ export function Proposal(props: {
           coordinates={reviewssByCoordinate.keys().toArray()}
           annotate={(coordinate, withPreview) => (
             <>
-              <div className={styles.proposalDiv}>
+              <div className={proposalsStyles.note}>
                 This comment refers to a schema coordinate that no longer exists.
               </div>
               {annotations(coordinate, withPreview)}

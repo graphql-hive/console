@@ -25,7 +25,7 @@ import { formatCount } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './errors-and-changes.css';
+import { errorsAndChangesStyles } from './errors-and-changes.css';
 
 function ChangeBadge({ content }: { content: string }) {
   return <Badge content={content} variants={{ padding: 'tight', variant: 'warning' }} />;
@@ -38,8 +38,8 @@ export function labelize(message: string) {
 }
 
 const severityLevelMapping = {
-  [SeverityLevelType.Safe]: clsx(styles.class2),
-  [SeverityLevelType.Dangerous]: clsx(styles.class3),
+  [SeverityLevelType.Safe]: errorsAndChangesStyles.severity.safe,
+  [SeverityLevelType.Dangerous]: errorsAndChangesStyles.severity.dangerous,
 } as Record<SeverityLevelType, string>;
 
 export const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphql(`
@@ -203,10 +203,9 @@ export function ChangesBlock(
     <div>
       {props.title && <ChangesTitle>{props.title}</ChangesTitle>}
       <div
-        className={clsx(
-          styles.changesBlockDiv,
-          props.changesWithUsage ? shared.stack.gap4 : styles.changesBlockDiv3,
-        )}
+        className={errorsAndChangesStyles.list({
+          layout: props.changesWithUsage ? 'stack' : 'bullets',
+        })}
       >
         {props.changesWithUsage?.map((change, index) => (
           <ChangeItem
@@ -235,7 +234,7 @@ export function ChangesBlock(
 
 export function ChangesTitle(props: { children: ReactNode; 'data-testid'?: string }) {
   return (
-    <h2 className={styles.changesTitleH2} data-testid={props['data-testid']}>
+    <h2 className={errorsAndChangesStyles.title} data-testid={props['data-testid']}>
       {props.children}
     </h2>
   );
@@ -318,8 +317,8 @@ function ChangeItem(
         coordinate={targetUsage.coordinate}
         period={targetUsage.metadata.period}
       />
-      <section className={styles.changeItemSection}>
-        <h4 className={styles.changeItemH4}>Affected operations and clients</h4>
+      <section className={errorsAndChangesStyles.section}>
+        <h4 className={errorsAndChangesStyles.sectionTitle}>Affected operations and clients</h4>
         <UsageStatisticsPanels
           usageStatistics={targetUsage.statistics}
           targets={targetUsage.metadata.settings.targets}
@@ -339,11 +338,11 @@ function ChangeItem(
     </>
   ) : 'usageStatistics' in change && change.usageStatistics && metadata ? (
     <div>
-      <h4 className={styles.changeItemH42}>Affected Operations (based on usage)</h4>
-      <div className={styles.changeItemDiv}>
+      <h4 className={errorsAndChangesStyles.heading}>Affected Operations (based on usage)</h4>
+      <div className={errorsAndChangesStyles.usageSummary}>
         <span>Top 10 operations and clients affected by this change based on usage data.</span>
         {metadata && (
-          <span className={styles.changeItemSpan}>
+          <span className={errorsAndChangesStyles.usageCount}>
             See{' '}
             {metadata.settings.targets.map((target, index, arr) => (
               <>
@@ -357,7 +356,7 @@ function ChangeItem(
                   <Link
                     key={index}
                     preload={false}
-                    className={styles.changeItemLink}
+                    className={errorsAndChangesStyles.usageLink}
                     to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                     params={{
                       organizationSlug,
@@ -386,7 +385,7 @@ function ChangeItem(
       {props.schemaCheckId &&
       'affectedAppDeployments' in change &&
       change.affectedAppDeployments?.edges?.length ? (
-        <div className={styles.changeItemDiv2}>
+        <div className={errorsAndChangesStyles.usageDetails}>
           <AffectedAppDeploymentsPanel
             schemaCheckId={props.schemaCheckId}
             coordinate={change.path?.join('.')}
@@ -416,9 +415,9 @@ function ChangeItem(
           label: (
             <div
               className={clsx(
-                styles.changeItemDiv3,
-                (change.approval && styles.changeItemDiv4) ||
-                  (severityLevelMapping[change.severityLevel] ?? styles.changeItemDiv5),
+                errorsAndChangesStyles.label,
+                (change.approval && errorsAndChangesStyles.approved) ||
+                  (severityLevelMapping[change.severityLevel] ?? errorsAndChangesStyles.breaking),
               )}
             >
               <span className={shared.fg.secondary}>{labelize(change.message)}</span>
@@ -483,19 +482,15 @@ function ChangeItem(
               }
             >
               Explorer
-              <ExternalLinkIcon className={styles.changeItemExternalLinkIcon} />
+              <ExternalLinkIcon className={errorsAndChangesStyles.externalIcon} />
             </Button>
           ) : undefined,
           content:
             change.approval || details ? (
               <div
-                className={
-                  targetUsage
-                    ? styles.changeItemDiv6
-                    : props.changeWithUsage
-                      ? undefined
-                      : styles.changeItemDiv7
-                }
+                className={errorsAndChangesStyles.content({
+                  spacing: targetUsage ? 'sections' : props.changeWithUsage ? undefined : 'padded',
+                })}
               >
                 {change.approval && (
                   <SchemaChangeApproval
@@ -613,7 +608,7 @@ function UsageStatisticsPanels(props: {
   ];
 
   return (
-    <div className={styles.usageStatisticsPanelsDiv}>
+    <div className={errorsAndChangesStyles.panels}>
       <div className={shared.fillShrinkable}>
         <DataTable
           data={props.usageStatistics.topAffectedOperations}
@@ -713,10 +708,10 @@ function AffectedAppDeploymentsPanel(props: {
                 width="md"
                 arrow
                 content={
-                  <div className={styles.affectedAppDeploymentsPanelDiv}>
-                    <h5 className={styles.affectedAppDeploymentsPanelH5}>Affected Operations</h5>
+                  <div className={errorsAndChangesStyles.section}>
+                    <h5 className={errorsAndChangesStyles.panelTitle}>Affected Operations</h5>
                     <ScrollArea maxHeight="sm">
-                      <ul className={styles.affectedAppDeploymentsPanelUl}>
+                      <ul className={errorsAndChangesStyles.panelList}>
                         {deployment.affectedOperations.edges.map(({ node: op }) => (
                           <li key={op.hash} className={shared.fg.default}>
                             {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
@@ -726,7 +721,7 @@ function AffectedAppDeploymentsPanel(props: {
                     </ScrollArea>
                     <Link
                       {...appVersionLink(deployment)}
-                      className={styles.affectedAppDeploymentsPanelLink}
+                      className={errorsAndChangesStyles.panelLink}
                     >
                       Show all ({deployment.totalAffectedOperations}) affected operations
                     </Link>
@@ -742,8 +737,8 @@ function AffectedAppDeploymentsPanel(props: {
 
   return (
     <div>
-      <h4 className={styles.affectedAppDeploymentsPanelH4}>Affected App Deployments</h4>
-      <p className={styles.affectedAppDeploymentsPanelP}>
+      <h4 className={errorsAndChangesStyles.heading}>Affected App Deployments</h4>
+      <p className={errorsAndChangesStyles.panelText}>
         Top 5 active app deployments that have operations using this schema coordinate (snapshot
         from when the check was run).
       </p>
@@ -763,7 +758,7 @@ function AffectedAppDeploymentsPanel(props: {
             schemaCheckId: props.schemaCheckId,
           }}
           search={{ coordinate: props.coordinate }}
-          className={styles.affectedAppDeploymentsPanelLink2}
+          className={errorsAndChangesStyles.panelWarningLink}
         >
           View all ({props.connection.totalCount}) affected app deployments
         </Link>
@@ -817,7 +812,7 @@ function SchemaChangeApproval(props: {
     '/' + [organizationSlug, projectSlug, targetSlug, 'checks', approval.schemaCheckId].join('/');
 
   return (
-    <div className={styles.schemaChangeApprovalDiv}>
+    <div className={errorsAndChangesStyles.approval}>
       This breaking change was manually{' '}
       {approval.schemaCheckId === props.schemaCheckId ? (
         <>
@@ -825,7 +820,7 @@ function SchemaChangeApproval(props: {
           approved by {approvalName} in this schema check on {approvalDate}.
         </>
       ) : (
-        <a href={schemaCheckPath} className={styles.schemaChangeApprovalA}>
+        <a href={schemaCheckPath} className={errorsAndChangesStyles.approvalLink}>
           approved by {approvalName} on {approvalDate}.
         </a>
       )}
@@ -865,17 +860,17 @@ export function CompositionErrorsList(props: {
   description?: string;
 }) {
   return (
-    <div className={styles.compositionErrorsListDiv}>
+    <div className={errorsAndChangesStyles.errors}>
       <ChangesTitle data-testid="composition-errors-title">
         {props.title}
         <CompositionErrorsPopover />
       </ChangesTitle>
       {props.description ? (
-        <p className={styles.compositionErrorsListP}>{props.description}</p>
+        <p className={errorsAndChangesStyles.errorsText}>{props.description}</p>
       ) : null}
       <ul>
         {props.errors.map((error, index) => (
-          <li key={index} className={styles.compositionErrorsListLi}>
+          <li key={index} className={errorsAndChangesStyles.error}>
             <CompositionErrorMessage message={error.message} />
           </li>
         ))}
@@ -886,12 +881,14 @@ export function CompositionErrorsList(props: {
 
 export function NoGraphChanges() {
   return (
-    <div className={styles.noGraphChangesDiv}>
-      <div className={styles.noGraphChangesDiv2}>
-        <CircleCheckIcon className={styles.noGraphChangesCircleCheckIcon} />
-        <h2 className={styles.noGraphChangesH2}>No Graph Changes</h2>
+    <div className={errorsAndChangesStyles.empty}>
+      <div className={errorsAndChangesStyles.emptyHeader}>
+        <CircleCheckIcon className={errorsAndChangesStyles.emptyIcon} />
+        <h2 className={errorsAndChangesStyles.emptyTitle}>No Graph Changes</h2>
       </div>
-      <p className={styles.noGraphChangesP}>There are no changes in this graph for this graph.</p>
+      <p className={errorsAndChangesStyles.emptyText}>
+        There are no changes in this graph for this graph.
+      </p>
     </div>
   );
 }

@@ -9,10 +9,9 @@ import { Input } from '@/components/ui/primitives/input/input';
 import { Tabs } from '@/components/ui/primitives/tabs/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { prettier, schemaTitle } from './util';
-import * as styles from './editor.css';
+import { editorStyles } from './editor.css';
 
 export type Service =
   | {
@@ -237,7 +236,7 @@ export function ProposalEditor(props: {
 
   return (
     <div>
-      <div className={styles.proposalEditorDiv}>
+      <div className={editorStyles.tabs}>
         <ServiceSelect
           targetFragment={props.selectFragment ?? undefined}
           onSelect={onAddService}
@@ -258,7 +257,7 @@ export function ProposalEditor(props: {
       </div>
       {props.error}
       {activeService && (
-        <div className={styles.proposalEditorDiv2}>
+        <div className={editorStyles.body}>
           <Tabs
             value={tabValue(activeService, activeIndex)}
             onValueChange={value =>
@@ -293,7 +292,7 @@ export function ProposalEditor(props: {
                   <>
                     {isNewService ? (
                       <Circle
-                        className={styles.proposalEditorCircle}
+                        className={editorStyles.changedDot}
                         fill="currentColor"
                         strokeWidth={0}
                       />
@@ -302,32 +301,25 @@ export function ProposalEditor(props: {
                       'single schema'
                     ) : hasEmptyName ? (
                       // The tab keeps its width and a name while the field is empty.
-                      <span className={styles.proposalEditorSpan}>unnamed service</span>
+                      <span className={editorStyles.unnamed}>unnamed service</span>
                     ) : (
                       schemaTitle(service)
                     )}
-                    {nameError ? (
-                      <TriangleAlertIcon className={styles.proposalEditorTriangleAlertIcon} />
-                    ) : null}
+                    {nameError ? <TriangleAlertIcon className={editorStyles.errorIcon} /> : null}
                     {service.__typename === 'CompositeSchema' ? (
-                      <span className={styles.proposalEditorSpan2} onClick={() => onRemoveTab(idx)}>
-                        <XIcon
-                          className={cn(
-                            styles.proposalEditorXIcon,
-                            !isActiveTab && styles.proposalEditorXIcon2,
-                          )}
-                        />
+                      <span className={editorStyles.close} onClick={() => onRemoveTab(idx)}>
+                        <XIcon className={editorStyles.closeIcon({ hidden: !isActiveTab })} />
                       </span>
                     ) : null}
                   </>
                 ),
                 tooltip: nameError,
                 content: (
-                  <div className={styles.proposalEditorDiv3}>
-                    <div className={styles.proposalEditorDiv4}>
+                  <div className={editorStyles.pane}>
+                    <div className={editorStyles.toolbar}>
                       <button
                         type="button"
-                        className={styles.proposalEditorButton}
+                        className={editorStyles.toolbarButton}
                         title="Prettify schema"
                         onClick={() => {
                           const prettierSource = prettier(activeService?.source ?? '');
@@ -335,18 +327,18 @@ export function ProposalEditor(props: {
                           editor?.setValue(prettierSource);
                         }}
                       >
-                        <WandSparkles className={styles.proposalEditorWandSparkles} />
+                        <WandSparkles className={editorStyles.toolbarIcon} />
                       </button>
                       {service.__typename === 'CompositeSchema' && (
                         <Popover
                           trigger={
                             <button
                               type="button"
-                              className={styles.proposalEditorButton2}
+                              className={editorStyles.toolbarButton}
                               aria-label="Edit schema settings"
                               title="Edit schema settings"
                             >
-                              <Settings className={styles.proposalEditorSettings} />
+                              <Settings className={editorStyles.toolbarIcon} />
                             </button>
                           }
                           align="end"
@@ -354,10 +346,10 @@ export function ProposalEditor(props: {
                           title="Settings"
                           description="Additional service configuration"
                           content={
-                            <div className={styles.proposalEditorDiv5}>
+                            <div className={editorStyles.settings}>
                               {isNewService && (
                                 <div>
-                                  <div className={styles.proposalEditorDiv6}>Service name</div>
+                                  <div className={editorStyles.settingsLabel}>Service name</div>
                                   <Input
                                     onSurface="raised"
                                     value={service.service ?? ''}
@@ -365,12 +357,12 @@ export function ProposalEditor(props: {
                                     invalid={nameError != null}
                                   />
                                   {nameError && (
-                                    <p className={styles.proposalEditorP}>{nameError}</p>
+                                    <p className={editorStyles.settingsError}>{nameError}</p>
                                   )}
                                 </div>
                               )}
                               <div>
-                                <div className={styles.proposalEditorDiv7}>Service URL</div>
+                                <div className={editorStyles.settingsLabel}>Service URL</div>
                                 <Input
                                   onSurface="raised"
                                   value={service.url ?? ''}
@@ -437,7 +429,7 @@ function ServiceSelect(props: {
   }
 
   return schemaEdges && schemaEdges.length > 1 ? (
-    <div className={styles.serviceSelectDiv}>
+    <div className={editorStyles.serviceSelect}>
       <Select
         aria-label="Add a service"
         options={selectableServices}
@@ -449,7 +441,7 @@ function ServiceSelect(props: {
       />
       <Button variant="link" onClick={props.onSelectNew}>
         <span className={shared.nowrap}>
-          + New<span className={styles.serviceSelectSpan2}>&nbsp;Service</span>
+          + New<span className={editorStyles.serviceSelectLabel}>&nbsp;Service</span>
         </span>
       </Button>
     </div>
