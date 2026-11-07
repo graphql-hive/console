@@ -22,10 +22,9 @@ import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { ManageGroupMappingSheet } from './groups/manage-group-mapping-sheet';
-import * as styles from './groups.css';
+import { groupsStyles } from './groups.css';
 
 // By slug, so the route loader can start it from the URL alone.
 export const Groups_OrganizationGroupQuery = graphql(`
@@ -84,7 +83,7 @@ export function Groups(): React.ReactElement | null {
         subPageTitle="Groups"
         description="Manage group to role and resource mappings."
         sideContent={
-          <div className={styles.groupsDiv}>
+          <div className={groupsStyles.search}>
             <Input
               placeholder="Search by group name"
               leadingIcon={SearchIcon}
@@ -94,45 +93,45 @@ export function Groups(): React.ReactElement | null {
           </div>
         }
       />
-      <div className={styles.groupsDiv2}>
-        <div className={styles.groupsDiv3}>
+      <div className={groupsStyles.table}>
+        <div className={groupsStyles.tableHeader}>
           <div>Group</div>
-          <div className={styles.groupsDiv4}>Members</div>
-          <div className={styles.groupsDiv5} />
+          <div className={groupsStyles.membersColumn}>Members</div>
+          <div className={groupsStyles.actionsColumn} />
         </div>
-        <div className={styles.groupsDiv6}>
+        <div className={groupsStyles.rows}>
           {!organization ? (
-            <div role="status" aria-label="Loading groups" className={styles.groupsDiv7}>
+            <div role="status" aria-label="Loading groups" className={groupsStyles.rows}>
               <span className={shared.srOnly}>Loading groups</span>
               {Array.from({ length: 8 }, (_, index) => (
-                <div key={index} className={styles.groupsDiv8}>
+                <div key={index} className={groupsStyles.skeletonRow}>
                   <div className={shared.row.gap3}>
-                    <span className={styles.groupsSpan2}>
+                    <span className={groupsStyles.skeletonToggle}>
                       <Skeleton variants={{ shape: 'block' }} />
                     </span>
                     <Skeleton variants={{ shape: 'circle' }} />
                     <div className={shared.row.gap2}>
-                      <span className={styles.groupsSpan3}>
+                      <span className={groupsStyles.skeletonName}>
                         <Skeleton variants={{ width: 'full' }} />
                       </span>
-                      <span className={styles.groupsSpan4}>
+                      <span className={groupsStyles.skeletonBadge}>
                         <Skeleton variants={{ size: 'lg', width: 'full' }} />
                       </span>
                     </div>
                   </div>
-                  <div className={styles.groupsDiv11}>
-                    <span className={styles.groupsSpan5}>
+                  <div className={groupsStyles.skeletonMembers}>
+                    <span className={groupsStyles.skeletonCount}>
                       <Skeleton variants={{ width: 'full' }} />
                     </span>
                   </div>
-                  <div className={styles.groupsDiv12} />
+                  <div className={groupsStyles.actionsColumn} />
                 </div>
               ))}
             </div>
           ) : organization.groups.edges.length === 0 ? (
-            <div className={styles.groupsDiv13}>
-              <h3 className={styles.groupsH3}>No groups synced yet</h3>
-              <p className={styles.groupsP}>
+            <div className={groupsStyles.empty}>
+              <h3 className={groupsStyles.emptyTitle}>No groups synced yet</h3>
+              <p className={groupsStyles.emptyText}>
                 Groups will appear here after they are provisioned from your identity provider via
                 SCIM. Once synced, you can map them to roles and resources.
               </p>
@@ -145,7 +144,7 @@ export function Groups(): React.ReactElement | null {
         </div>
       </div>
 
-      <div className={styles.groupsDiv14}>
+      <div className={groupsStyles.loadMore}>
         <Button
           variant="ghost"
           width="full"
@@ -166,7 +165,7 @@ export function Groups(): React.ReactElement | null {
         </Button>
       </div>
 
-      <p className={styles.groupsP2}>
+      <p className={groupsStyles.note}>
         Groups are synced from your identity provider via SCIM. Role assignments configured here
         determine what permissions group members receive.
       </p>
@@ -259,27 +258,27 @@ function GroupRow(props: GroupRowProps): ReactNode {
 
   return (
     <div>
-      <div className={cn(styles.groupRowDiv)} onClick={onToggleExpand}>
+      <div className={groupsStyles.row} onClick={onToggleExpand}>
         <div className={shared.row.gap3}>
           <button
-            className={styles.groupRowButton}
+            className={groupsStyles.toggle}
             onClick={e => {
               e.stopPropagation();
               onToggleExpand();
             }}
           >
             {isExpanded ? (
-              <ChevronDownIcon className={styles.groupRowChevronDownIcon} />
+              <ChevronDownIcon className={groupsStyles.icon} />
             ) : (
-              <ChevronRightIcon className={styles.groupRowChevronRightIcon} />
+              <ChevronRightIcon className={groupsStyles.icon} />
             )}
           </button>
-          <div className={cn(styles.groupRowDiv3)}>
-            <UsersIcon className={styles.groupRowUsersIcon} />
+          <div className={groupsStyles.avatar}>
+            <UsersIcon className={groupsStyles.icon} />
           </div>
           <div className={shared.fillShrinkable}>
             <div className={shared.row.gap2}>
-              <span className={cn(styles.groupRowSpan)}>{group.name}</span>
+              <span className={groupsStyles.name}>{group.name}</span>
               <Badge
                 variants={{ variant: 'outline' }}
                 content={
@@ -292,20 +291,20 @@ function GroupRow(props: GroupRowProps): ReactNode {
           </div>
         </div>
 
-        <div className={styles.groupRowDiv6}>
+        <div className={groupsStyles.membersColumn}>
           <span className={shared.text.sm}>{group.memberCount}</span>
         </div>
 
-        <div className={styles.groupRowDiv7} />
+        <div className={groupsStyles.rowActions} />
       </div>
 
       {isExpanded && (
         <>
           {groupDetailed ? (
-            <div className={styles.groupRowDiv8}>
-              <div className={styles.groupRowDiv9}>
-                <div className={styles.groupRowDiv10}>Role Mappings</div>
-                <div className={styles.groupRowDiv11}>
+            <div className={groupsStyles.details}>
+              <div className={groupsStyles.detailsBody}>
+                <div className={groupsStyles.detailsTitle}>Role Mappings</div>
+                <div className={groupsStyles.mappings}>
                   {groupDetailed.roleMappings.map(groupRoleMapping => (
                     <GroupRoleMappingRow
                       key={groupRoleMapping.id}
@@ -370,7 +369,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
                     />
                   ))}
                   <button
-                    className={styles.groupRowButton2}
+                    className={groupsStyles.addMapping}
                     onClick={() =>
                       setSheetNode(
                         <ManageGroupMappingSheet
@@ -382,7 +381,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
                       )
                     }
                   >
-                    <PlusIcon className={styles.groupRowPlusIcon} />
+                    <PlusIcon className={groupsStyles.smallIcon} />
                     Add role mapping
                   </button>
                 </div>
@@ -423,7 +422,7 @@ function GroupRoleMappingRow(props: {
   );
 
   return (
-    <div className={cn(styles.groupRoleMappingRowDiv, 'group')}>
+    <div className={groupsStyles.mapping}>
       <div className={shared.row.gap3}>
         <div className={shared.row.gap2}>
           <Badge content={groupRoleMapping.role.name} />
@@ -441,11 +440,11 @@ function GroupRoleMappingRow(props: {
           </span>
         </div>
       </div>
-      <div className={styles.groupRoleMappingRowDiv4}>
+      <div className={groupsStyles.mappingActions}>
         <Tooltip
           trigger={
             <Button variant="ghost" size="icon-sm" onClick={props.onClickEdit}>
-              <PencilIcon className={styles.groupRoleMappingRowPencilIcon} />
+              <PencilIcon className={groupsStyles.smallIcon} />
             </Button>
           }
           content="Edit mapping"
@@ -453,7 +452,7 @@ function GroupRoleMappingRow(props: {
         <Tooltip
           trigger={
             <Button variant="ghost" size="icon-sm" onClick={props.onClickDelete}>
-              <Trash2Icon className={styles.groupRoleMappingRowTrash2Icon} />
+              <Trash2Icon className={groupsStyles.smallIcon} />
             </Button>
           }
           content="Remove mapping"

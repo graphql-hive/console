@@ -9,9 +9,8 @@ import { Tabs } from '@/components/ui/primitives/tabs/tabs';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './resource-selector.css';
+import { resourceSelectorStyles } from './resource-selector.css';
 
 const ResourceSelector_OrganizationFragment = graphql(`
   fragment ResourceSelector_OrganizationFragment on Organization {
@@ -728,19 +727,19 @@ export function ResourceSelector(props: {
             <>
               {projectState && (
                 <>
-                  <p className={styles.resourceSelectorP2}>
+                  <p className={resourceSelectorStyles.intro}>
                     The permissions are granted on the specified resources.
                   </p>
                   <div>
-                    <div className={styles.resourceSelectorDiv}>
+                    <div className={resourceSelectorStyles.tabs}>
                       {showProjectsTab && (
-                        <div className={styles.resourceSelectorDiv2}>Projects</div>
+                        <div className={resourceSelectorStyles.projectsTab}>Projects</div>
                       )}
-                      <div className={styles.resourceSelectorDiv3}>
+                      <div className={resourceSelectorStyles.targetsTab}>
                         <div className={shared.weight.bold}>Targets</div>
                         {targetState && showProjectsTab && (
-                          <div className={styles.resourceSelectorDiv5}>
-                            <span className={styles.resourceSelectorSpan}>All</span>
+                          <div className={resourceSelectorStyles.allToggle}>
+                            <span className={resourceSelectorStyles.allLabel}>All</span>
                             <Checkbox
                               size="sm"
                               title="All"
@@ -757,8 +756,8 @@ export function ResourceSelector(props: {
                           </div>
                         )}
                       </div>
-                      <div className={styles.resourceSelectorDiv6}>
-                        <div className={styles.resourceSelectorDiv7}>
+                      <div className={resourceSelectorStyles.servicesTab}>
+                        <div className={resourceSelectorStyles.tabTitle}>
                           <span className={shared.weight.bold}>
                             {organizationQuery.data?.organization?.isAppDeploymentsEnabled ? (
                               <>
@@ -767,14 +766,12 @@ export function ResourceSelector(props: {
                                   onClick={toggleServiceAppsState}
                                 >
                                   <ChevronDownIcon
-                                    className={cn(
-                                      styles.resourceSelectorChevronDownIcon,
-                                      serviceAppsState !== ServicesAppsState.service &&
-                                        styles.resourceSelectorChevronDownIcon2,
-                                    )}
+                                    className={resourceSelectorStyles.chevron({
+                                      collapsed: serviceAppsState !== ServicesAppsState.service,
+                                    })}
                                   />
                                   Services
-                                  <span className={styles.resourceSelectorSpan3}>
+                                  <span className={resourceSelectorStyles.count}>
                                     {serviceAppsState === ServicesAppsState.apps &&
                                     serviceState &&
                                     serviceState !== 'none' &&
@@ -790,8 +787,8 @@ export function ResourceSelector(props: {
                           </span>
                           {/** Service All / Granular Toggle */}
                           {serviceState && serviceState !== 'none' && (
-                            <div className={styles.resourceSelectorDiv8}>
-                              <span className={styles.resourceSelectorSpan4}>All</span>
+                            <div className={resourceSelectorStyles.allToggle}>
+                              <span className={resourceSelectorStyles.allLabel}>All</span>
                               <Checkbox
                                 size="sm"
                                 title="All"
@@ -812,13 +809,15 @@ export function ResourceSelector(props: {
                         </div>
                       </div>
                     </div>
-                    <div className={styles.resourceSelectorDiv9}>
+                    <div className={resourceSelectorStyles.panes}>
                       {/** Projects Content */}
                       {showProjectsTab && (
-                        <div className={styles.resourceSelectorDiv10}>
+                        <div className={resourceSelectorStyles.projectsPane}>
                           <ScrollArea axis="both" fill>
-                            <div className={styles.resourceSelectorDiv11}>
-                              <div className={styles.resourceSelectorDiv12}>access granted</div>
+                            <div className={resourceSelectorStyles.pane}>
+                              <div className={resourceSelectorStyles.groupLabel}>
+                                access granted
+                              </div>
                               {projectState.selected.length ? (
                                 projectState.selected.map(selection => (
                                   <RowItem
@@ -841,9 +840,13 @@ export function ResourceSelector(props: {
                                   />
                                 ))
                               ) : (
-                                <div className={styles.resourceSelectorDiv13}>None selected</div>
+                                <div className={resourceSelectorStyles.groupEmpty}>
+                                  None selected
+                                </div>
                               )}
-                              <div className={styles.resourceSelectorDiv14}>not selected</div>
+                              <div className={resourceSelectorStyles.groupLabelSpaced}>
+                                not selected
+                              </div>
                               {projectState.notSelected.length ? (
                                 projectState.notSelected.map(project => (
                                   <RowItem
@@ -854,7 +857,9 @@ export function ResourceSelector(props: {
                                   />
                                 ))
                               ) : (
-                                <div className={styles.resourceSelectorDiv15}>All selected</div>
+                                <div className={resourceSelectorStyles.groupEmpty}>
+                                  All selected
+                                </div>
                               )}
                             </div>
                           </ScrollArea>
@@ -863,26 +868,23 @@ export function ResourceSelector(props: {
 
                       {/** Targets Content */}
                       <div
-                        className={cn(
-                          styles.resourceSelectorDiv16,
-                          !showProjectsTab && styles.resourceSelectorDiv17,
-                        )}
+                        className={resourceSelectorStyles.targetsPane({ first: !showProjectsTab })}
                       >
                         <ScrollArea axis="both" fill>
-                          <div className={styles.resourceSelectorDiv18}>
+                          <div className={resourceSelectorStyles.pane}>
                             {targetState === null ? (
-                              <div className={styles.resourceSelectorDiv19}>
+                              <div className={resourceSelectorStyles.placeholder}>
                                 Select a project for adjusting the target access.
                               </div>
                             ) : (
                               <>
                                 {targetState.selection === '*' ? (
-                                  <div className={styles.resourceSelectorDiv20}>
+                                  <div className={resourceSelectorStyles.hint}>
                                     Access to all targets of project granted.
                                   </div>
                                 ) : (
                                   <>
-                                    <div className={styles.resourceSelectorDiv21}>
+                                    <div className={resourceSelectorStyles.groupLabel}>
                                       access granted
                                     </div>
                                     {targetState.selection.selected.length ? (
@@ -916,11 +918,13 @@ export function ResourceSelector(props: {
                                         />
                                       ))
                                     ) : (
-                                      <div className={styles.resourceSelectorDiv22}>
+                                      <div className={resourceSelectorStyles.groupEmpty}>
                                         None selected
                                       </div>
                                     )}
-                                    <div className={styles.resourceSelectorDiv23}>Not selected</div>
+                                    <div className={resourceSelectorStyles.groupLabelSpaced}>
+                                      Not selected
+                                    </div>
                                     {targetState.selection.notSelected.length ? (
                                       targetState.selection.notSelected.map(target => (
                                         <RowItem
@@ -933,7 +937,7 @@ export function ResourceSelector(props: {
                                         />
                                       ))
                                     ) : (
-                                      <div className={styles.resourceSelectorDiv24}>
+                                      <div className={resourceSelectorStyles.groupEmpty}>
                                         All selected
                                       </div>
                                     )}
@@ -945,34 +949,34 @@ export function ResourceSelector(props: {
                         </ScrollArea>
                       </div>
 
-                      <div className={styles.resourceSelectorDiv25}>
+                      <div className={resourceSelectorStyles.servicesPane}>
                         <ScrollArea axis="both" fill>
                           <div className={shared.stack.base}>
                             {/** Services Content */}
                             {serviceAppsState === ServicesAppsState.service && (
-                              <div className={styles.resourceSelectorDiv27}>
+                              <div className={resourceSelectorStyles.section}>
                                 {projectState.activeProject?.projectSelection.targets.mode ===
                                 GraphQLSchema.ResourceAssignmentModeType.All ? (
-                                  <div className={styles.resourceSelectorDiv28}>
+                                  <div className={resourceSelectorStyles.hint}>
                                     Access to all services of projects targets granted.
                                   </div>
                                 ) : serviceState === null ? (
-                                  <div className={styles.resourceSelectorDiv29}>
+                                  <div className={resourceSelectorStyles.hint}>
                                     Select a target for adjusting the service access.
                                   </div>
                                 ) : (
                                   <>
                                     {serviceState === 'none' ? (
-                                      <div className={styles.resourceSelectorDiv30}>
+                                      <div className={resourceSelectorStyles.hint}>
                                         Project is monolithic and has no services.
                                       </div>
                                     ) : serviceState.selection === '*' ? (
-                                      <div className={styles.resourceSelectorDiv31}>
+                                      <div className={resourceSelectorStyles.hint}>
                                         Access to all services in target granted.
                                       </div>
                                     ) : (
                                       <>
-                                        <div className={styles.resourceSelectorDiv32}>
+                                        <div className={resourceSelectorStyles.groupLabel}>
                                           access granted
                                         </div>
                                         {serviceState.selection.selected.length ? (
@@ -987,9 +991,11 @@ export function ResourceSelector(props: {
                                             />
                                           ))
                                         ) : (
-                                          <div className={styles.resourceSelectorDiv33}>None</div>
+                                          <div className={resourceSelectorStyles.groupEmpty}>
+                                            None
+                                          </div>
                                         )}
-                                        <div className={styles.resourceSelectorDiv34}>
+                                        <div className={resourceSelectorStyles.groupLabelSpaced}>
                                           Not selected
                                         </div>
                                         {serviceState.selection.notSelected.map(serviceName => (
@@ -1002,7 +1008,7 @@ export function ResourceSelector(props: {
                                         ))}
                                         <input
                                           placeholder="Add service by name"
-                                          className={styles.resourceSelectorInput}
+                                          className={resourceSelectorStyles.filter}
                                           name="serviceName"
                                           onKeyPress={ev => {
                                             if (ev.key !== 'Enter') {
@@ -1045,26 +1051,22 @@ export function ResourceSelector(props: {
                             {/** Apps Content */}
                             {organizationQuery.data?.organization?.isAppDeploymentsEnabled ? (
                               <div
-                                className={cn(
-                                  styles.resourceSelectorDiv35,
-                                  serviceAppsState !== ServicesAppsState.apps &&
-                                    styles.resourceSelectorDiv36,
-                                )}
+                                className={resourceSelectorStyles.appsHeader({
+                                  collapsed: serviceAppsState !== ServicesAppsState.apps,
+                                })}
                               >
-                                <div className={styles.resourceSelectorDiv37}>
+                                <div className={resourceSelectorStyles.tabTitle}>
                                   <button
-                                    className={styles.resourceSelectorButton2}
+                                    className={resourceSelectorStyles.appsTitle}
                                     onClick={toggleServiceAppsState}
                                   >
                                     <ChevronDownIcon
-                                      className={cn(
-                                        styles.resourceSelectorChevronDownIcon3,
-                                        serviceAppsState !== ServicesAppsState.apps &&
-                                          styles.resourceSelectorChevronDownIcon4,
-                                      )}
+                                      className={resourceSelectorStyles.chevron({
+                                        collapsed: serviceAppsState !== ServicesAppsState.apps,
+                                      })}
                                     />
                                     Apps
-                                    <span className={styles.resourceSelectorSpan5}>
+                                    <span className={resourceSelectorStyles.count}>
                                       {serviceAppsState === ServicesAppsState.service &&
                                       typeof appsState?.selection === 'object'
                                         ? `(${appsState.selection.selected.length} selected)`
@@ -1073,8 +1075,8 @@ export function ResourceSelector(props: {
                                   </button>
                                   {/** Apps All / Granular Toggle */}
                                   {appsState && (
-                                    <div className={styles.resourceSelectorDiv38}>
-                                      <span className={styles.resourceSelectorSpan6}>All</span>
+                                    <div className={resourceSelectorStyles.allToggle}>
+                                      <span className={resourceSelectorStyles.allLabel}>All</span>
                                       <Checkbox
                                         size="sm"
                                         title="All"
@@ -1096,25 +1098,25 @@ export function ResourceSelector(props: {
                               </div>
                             ) : null}
                             {serviceAppsState === ServicesAppsState.apps && (
-                              <div className={styles.resourceSelectorDiv39}>
+                              <div className={resourceSelectorStyles.section}>
                                 {projectState.activeProject?.projectSelection.targets.mode ===
                                 GraphQLSchema.ResourceAssignmentModeType.All ? (
-                                  <div className={styles.resourceSelectorDiv40}>
+                                  <div className={resourceSelectorStyles.hint}>
                                     Access to all apps of projects targets granted.
                                   </div>
                                 ) : appsState === null ? (
-                                  <div className={styles.resourceSelectorDiv41}>
+                                  <div className={resourceSelectorStyles.hint}>
                                     Select a target for adjusting the apps access.
                                   </div>
                                 ) : (
                                   <>
                                     {appsState.selection === '*' ? (
-                                      <div className={styles.resourceSelectorDiv42}>
+                                      <div className={resourceSelectorStyles.hint}>
                                         Access to all apps in target granted.
                                       </div>
                                     ) : (
                                       <>
-                                        <div className={styles.resourceSelectorDiv43}>
+                                        <div className={resourceSelectorStyles.groupLabel}>
                                           access granted
                                         </div>
                                         {appsState.selection.selected.length ? (
@@ -1129,9 +1131,11 @@ export function ResourceSelector(props: {
                                             />
                                           ))
                                         ) : (
-                                          <div className={styles.resourceSelectorDiv44}>None</div>
+                                          <div className={resourceSelectorStyles.groupEmpty}>
+                                            None
+                                          </div>
                                         )}
-                                        <div className={styles.resourceSelectorDiv45}>
+                                        <div className={resourceSelectorStyles.groupLabelSpaced}>
                                           Not selected
                                         </div>
                                         {appsState.selection.notSelected.map(serviceName => (
@@ -1144,7 +1148,7 @@ export function ResourceSelector(props: {
                                         ))}
                                         <input
                                           placeholder="Add app by name"
-                                          className={styles.resourceSelectorInput2}
+                                          className={resourceSelectorStyles.filter}
                                           name="appName"
                                           onKeyPress={ev => {
                                             if (ev.key !== 'Enter') {
@@ -1173,7 +1177,7 @@ export function ResourceSelector(props: {
                       </div>
                     </div>
                   </div>
-                  <div className={styles.resourceSelectorDiv46}>
+                  <div className={resourceSelectorStyles.footer}>
                     {projectState.activeProject && (
                       <>
                         <button
@@ -1211,11 +1215,11 @@ function RowItem(props: {
   onDelete?: () => void;
 }) {
   return (
-    <div className={styles.rowItemDiv} data-active={props.isActive}>
-      <span className={styles.rowItemSpan} onClick={props.onClick}>
+    <div className={resourceSelectorStyles.item} data-active={props.isActive}>
+      <span className={resourceSelectorStyles.itemTitle} onClick={props.onClick}>
         {props.title}{' '}
         {props.isActive && (
-          <ChevronRightIcon size={12} className={styles.rowItemChevronRightIcon} />
+          <ChevronRightIcon size={12} className={resourceSelectorStyles.itemChevron} />
         )}
       </span>
 
@@ -1228,7 +1232,11 @@ function RowItem(props: {
                 props.onDelete?.();
               }}
             >
-              <XIcon size={12} data-active={props.isActive} className={styles.rowItemXIcon} />
+              <XIcon
+                size={12}
+                data-active={props.isActive}
+                className={resourceSelectorStyles.itemRemove}
+              />
             </button>
           }
           content="Remove"
