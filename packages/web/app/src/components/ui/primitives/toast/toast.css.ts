@@ -1,10 +1,8 @@
 import { style, styleVariants } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
-
-const s = layered.components;
 
 /*
  * The stack is laid out by Base UI's variables: `--toast-index` from the front, the swipe offsets,
@@ -13,12 +11,12 @@ const s = layered.components;
  */
 export const toastStyles = {
   icon: styleVariants({
-    default: s({ ...square(4), flexShrink: 0, color: vars.color.info.DEFAULT }),
-    success: s({ ...square(4), flexShrink: 0, color: vars.color.success.DEFAULT }),
-    destructive: s({ ...square(4), flexShrink: 0, color: vars.color.critical.DEFAULT }),
+    default: component({ ...square(4), flexShrink: 0, color: vars.color.info.DEFAULT }),
+    success: component({ ...square(4), flexShrink: 0, color: vars.color.success.DEFAULT }),
+    destructive: component({ ...square(4), flexShrink: 0, color: vars.color.critical.DEFAULT }),
   }),
   viewport: style(
-    s({
+    component({
       position: 'fixed',
       zIndex: 100,
       insetInline: space(4),
@@ -37,7 +35,7 @@ export const toastStyles = {
     }),
   ),
   root: style(
-    s({
+    component({
       position: 'absolute',
       right: 0,
       top: 0,
@@ -107,7 +105,7 @@ export const toastStyles = {
     }),
   ),
   content: style(
-    s({
+    component({
       display: 'flex',
       alignItems: 'flex-start',
       gap: space(3),
@@ -127,12 +125,12 @@ export const toastStyles = {
     shared.text.sm,
     shared.weight.medium,
     shared.fg.strong,
-    s({ userSelect: 'text', WebkitUserSelect: 'text' }),
+    component({ userSelect: 'text', WebkitUserSelect: 'text' }),
   ]),
   description: style([
     shared.text.sm,
     shared.fg.default,
-    s({ userSelect: 'text', WebkitUserSelect: 'text' }),
+    component({ userSelect: 'text', WebkitUserSelect: 'text' }),
   ]),
-  close: style(s({ position: 'absolute', top: space(2), right: space(2) })),
+  close: style(component({ position: 'absolute', top: space(2), right: space(2) })),
 };

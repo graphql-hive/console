@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { utility } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import { animate } from '../../../../styles/animations.css';
 import * as shared from '../../../../styles/shared.css';
@@ -9,27 +9,27 @@ import * as shared from '../../../../styles/shared.css';
 export const createPersonalAccessTokenSheetContentP = style([shared.text.sm, shared.fg.secondary]);
 
 export const createPersonalAccessTokenSheetContentP2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(3),
   }),
 );
 
 export const createPersonalAccessTokenSheetContentDiv = style(
-  layered.utilities({
+  utility({
     width: '100%',
   }),
 );
 
 globalStyle(
   `:where(${createPersonalAccessTokenSheetContentDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
 );
 
 export const createPersonalAccessTokenSheetContentUl = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     listStyleType: 'none',
     flexWrap: 'wrap',
@@ -38,7 +38,7 @@ export const createPersonalAccessTokenSheetContentUl = style(
 );
 
 export const shakeElementClass = style(
-  layered.utilities({
+  utility({
     animation: animate.shake,
   }),
 );

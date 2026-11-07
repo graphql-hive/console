@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 
@@ -7,14 +7,14 @@ import * as shared from '../../../../styles/shared.css';
 
 export const textFilterChipSpan = style([
   shared.text.control,
-  layered.components({
+  component({
     paddingInline: space(2.5),
     paddingBlock: space(1.5),
   }),
 ]);
 
 export const textFilterChipButton = style(
-  layered.components({
+  component({
     maxWidth: space(40),
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -23,7 +23,7 @@ export const textFilterChipButton = style(
 );
 
 export const textFilterChipX = style(
-  layered.components({
+  component({
     width: space(3.5),
     height: space(3.5),
   }),

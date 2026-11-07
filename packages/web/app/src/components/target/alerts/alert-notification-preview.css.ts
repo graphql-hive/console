@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -10,7 +10,7 @@ export const slackPreviewDiv = style({});
 
 globalStyle(
   `:where(${slackPreviewDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -20,13 +20,13 @@ export const slackPreviewDiv2 = style([
   shared.text.xs,
   shared.weight.medium,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBottom: space(2),
   }),
 ]);
 
 export const slackPreviewDiv3 = style(
-  layered.utilities({
+  utility({
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
     borderWidth: '1px',
@@ -38,7 +38,7 @@ export const slackPreviewDiv3 = style(
 
 export const slackPreviewDiv4 = style([
   shared.row.gap2,
-  layered.utilities({
+  utility({
     marginBottom: space(2),
   }),
 ]);
@@ -49,7 +49,7 @@ export const slackPreviewDiv5 = style([
   shared.text['2xs'],
   shared.weight.bold,
   shared.fg.accent,
-  layered.utilities({
+  utility({
     justifyContent: 'center',
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.accent.DEFAULT,
@@ -61,7 +61,7 @@ export const slackPreviewSpan = style([shared.text.sm, shared.weight.bold, share
 export const slackPreviewSpan2 = style([shared.text.xs, shared.fg.subtle]);
 
 export const slackPreviewDiv7 = style(
-  layered.utilities({
+  utility({
     width: space(1),
     flexShrink: '0',
     borderTopLeftRadius: vars.radius.DEFAULT,
@@ -70,7 +70,7 @@ export const slackPreviewDiv7 = style(
 );
 
 export const slackPreviewDiv8 = style(
-  layered.utilities({
+  utility({
     borderTopRightRadius: vars.radius.DEFAULT,
     borderBottomRightRadius: vars.radius.DEFAULT,
     backgroundColor: vars.color.surface.card,
@@ -83,14 +83,14 @@ export const slackPreviewDiv8 = style(
 export const slackPreviewDiv9 = style([shared.weight.bold, shared.fg.strong]);
 
 export const slackPreviewDiv10 = style(
-  layered.utilities({
+  utility({
     marginTop: space(1),
     color: vars.color.fg.secondary,
   }),
 );
 
 export const slackPreviewDiv11 = style(
-  layered.utilities({
+  utility({
     marginTop: space(1),
     color: vars.color.fg.secondary,
   }),
@@ -98,7 +98,7 @@ export const slackPreviewDiv11 = style(
 
 export const slackPreviewCode = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.surface.code,
     paddingInline: space(1),
@@ -107,7 +107,7 @@ export const slackPreviewCode = style([
 
 export const slackPreviewCode2 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.surface.code,
     paddingInline: space(1),
@@ -115,7 +115,7 @@ export const slackPreviewCode2 = style([
 ]);
 
 export const slackPreviewDiv12 = style(
-  layered.utilities({
+  utility({
     marginTop: space(1),
     color: vars.color.accent.DEFAULT,
   }),
@@ -125,7 +125,7 @@ export const webhookPreviewDiv = style({});
 
 globalStyle(
   `:where(${webhookPreviewDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(3),
   }),
@@ -135,13 +135,13 @@ export const webhookPreviewDiv2 = style([
   shared.text.xs,
   shared.weight.medium,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBottom: space(2),
   }),
 ]);
 
 export const webhookPreviewDiv3 = style(
-  layered.utilities({
+  utility({
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
     borderWidth: '1px',
@@ -152,7 +152,7 @@ export const webhookPreviewDiv3 = style(
 );
 
 export const webhookPreviewPre = style(
-  layered.utilities({
+  utility({
     fontSize: vars.text.xs,
     lineHeight: vars.leading.relaxed,
     color: vars.color.fg.default,
@@ -163,7 +163,7 @@ export const teamsPreviewDiv = style({});
 
 globalStyle(
   `:where(${teamsPreviewDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -173,13 +173,13 @@ export const teamsPreviewDiv2 = style([
   shared.text.xs,
   shared.weight.medium,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBottom: space(2),
   }),
 ]);
 
 export const teamsPreviewDiv3 = style(
-  layered.utilities({
+  utility({
     overflow: 'hidden',
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -190,13 +190,13 @@ export const teamsPreviewDiv3 = style(
 );
 
 export const teamsPreviewDiv4 = style(
-  layered.utilities({
+  utility({
     height: space(1),
   }),
 );
 
 export const teamsPreviewDiv5 = style(
-  layered.utilities({
+  utility({
     padding: space(3),
   }),
 );
@@ -204,7 +204,7 @@ export const teamsPreviewDiv5 = style(
 export const teamsPreviewDiv6 = style([shared.weight.bold, shared.fg.strong]);
 
 export const teamsPreviewDiv7 = style(
-  layered.utilities({
+  utility({
     marginTop: space(2),
     fontSize: vars.text.sm,
     lineHeight: vars.text.smLineHeight,
@@ -213,28 +213,28 @@ export const teamsPreviewDiv7 = style(
 
 globalStyle(
   `:where(${teamsPreviewDiv7} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
 );
 
 export const teamsPreviewSpan = style(
-  layered.utilities({
+  utility({
     width: space(20),
     color: vars.color.fg.secondary,
   }),
 );
 
 export const teamsPreviewSpan3 = style(
-  layered.utilities({
+  utility({
     width: space(20),
     color: vars.color.fg.secondary,
   }),
 );
 
 export const teamsPreviewSpan4 = style(
-  layered.utilities({
+  utility({
     width: space(20),
     color: vars.color.fg.secondary,
   }),
@@ -243,7 +243,7 @@ export const teamsPreviewSpan4 = style(
 export const teamsPreviewDiv11 = style([
   shared.text.sm,
   shared.fg.accent,
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 ]);
@@ -252,7 +252,7 @@ export const discordPreviewDiv = style({});
 
 globalStyle(
   `:where(${discordPreviewDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -262,13 +262,13 @@ export const discordPreviewDiv2 = style([
   shared.text.xs,
   shared.weight.medium,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBottom: space(2),
   }),
 ]);
 
 export const discordPreviewDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     overflow: 'hidden',
     borderRadius: vars.radius.md,
@@ -280,14 +280,14 @@ export const discordPreviewDiv3 = style(
 );
 
 export const discordPreviewDiv4 = style(
-  layered.utilities({
+  utility({
     width: space(1),
     flexShrink: '0',
   }),
 );
 
 export const discordPreviewDiv5 = style(
-  layered.utilities({
+  utility({
     padding: space(3),
   }),
 );
@@ -297,13 +297,13 @@ export const discordPreviewDiv6 = style([shared.weight.bold, shared.fg.strong]);
 export const discordPreviewDiv7 = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 ]);
 
 export const discordPreviewDiv8 = style(
-  layered.utilities({
+  utility({
     marginTop: space(3),
     fontSize: vars.text.sm,
     lineHeight: vars.text.smLineHeight,
@@ -312,28 +312,28 @@ export const discordPreviewDiv8 = style(
 
 globalStyle(
   `:where(${discordPreviewDiv8} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
 );
 
 export const discordPreviewSpan = style(
-  layered.utilities({
+  utility({
     width: space(20),
     color: vars.color.fg.secondary,
   }),
 );
 
 export const discordPreviewSpan3 = style(
-  layered.utilities({
+  utility({
     width: space(20),
     color: vars.color.fg.secondary,
   }),
 );
 
 export const discordPreviewSpan4 = style(
-  layered.utilities({
+  utility({
     width: space(20),
     color: vars.color.fg.secondary,
   }),
@@ -342,7 +342,7 @@ export const discordPreviewSpan4 = style(
 export const discordPreviewDiv12 = style([
   shared.text.sm,
   shared.fg.accent,
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 ]);
@@ -350,7 +350,7 @@ export const discordPreviewDiv12 = style([
 export const alertPreviewDiv = style([
   shared.text.sm,
   shared.fg.subtle,
-  layered.utilities({
+  utility({
     fontStyle: 'italic',
   }),
 ]);
@@ -359,7 +359,7 @@ export const alertPreviewDiv2 = style({});
 
 globalStyle(
   `:where(${alertPreviewDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -368,37 +368,37 @@ globalStyle(
 export const alertPreviewP = style([shared.text.xs, shared.fg.subtle]);
 
 export const severityColorsBar = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.DEFAULT,
   }),
 );
 
 export const severityColorsText = style(
-  layered.utilities({
+  utility({
     color: vars.color.critical.DEFAULT,
   }),
 );
 
 export const severityColorsBar2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.warning.DEFAULT,
   }),
 );
 
 export const severityColorsText2 = style(
-  layered.utilities({
+  utility({
     color: vars.color.warning.DEFAULT,
   }),
 );
 
 export const severityColorsBar3 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.info.DEFAULT,
   }),
 );
 
 export const severityColorsText3 = style(
-  layered.utilities({
+  utility({
     color: vars.color.info.DEFAULT,
   }),
 );

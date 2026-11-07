@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../styles/theme.css';
 export const annotateCode = style([
   shared.fullWidth,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     marginBottom: space(3),
     display: 'block',
     backgroundColor: vars.color.surface.code,
@@ -21,7 +21,7 @@ export const annotateCode = style([
 export const proposalDiv = style([
   shared.text.sm,
   shared.fg.subtle,
-  layered.utilities({
+  utility({
     padding: space(2),
   }),
 ]);

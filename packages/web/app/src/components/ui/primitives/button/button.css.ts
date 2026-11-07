@@ -1,16 +1,15 @@
+import type { StyleRule } from '@vanilla-extract/css';
 import { style } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import { controlOnSurface, controlSize, focusRing, segmentSeparator } from '../shared-styles';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 
-const s = layered.components;
-
 // Plain, because a segment's hover rule selects on the button being hovered.
 const button = style(
-  s({
+  component({
     display: 'inline-flex',
     alignItems: 'center',
     borderRadius: vars.radius.sm,
@@ -27,8 +26,8 @@ const button = style(
   }),
 );
 
-const hover = (rule: Parameters<typeof s>[0]) =>
-  s({ '@media': { '(hover: hover)': { selectors: { '&:hover': rule } } } });
+const hover = (rule: StyleRule) =>
+  component({ '@media': { '(hover: hover)': { selectors: { '&:hover': rule } } } });
 
 export const buttonStyles = {
   root: recipe({
@@ -36,13 +35,13 @@ export const buttonStyles = {
     variants: {
       variant: {
         default: [
-          s({
+          component({
             color: vars.color.fg.muted,
             selectors: { '&:where(.dark, .dark *)': { color: vars.color.fg.default } },
           }),
           hover({ color: vars.color.fg.default }),
         ],
-        active: s({
+        active: component({
           borderColor: vars.color.line.DEFAULT,
           backgroundColor: vars.color.neutral[3],
           color: vars.color.fg.DEFAULT,
@@ -54,7 +53,7 @@ export const buttonStyles = {
           },
         }),
         action: [
-          s({
+          component({
             borderStyle: 'dashed',
             borderColor: vars.color.accent.line,
             backgroundColor: vars.color.accent.tintSubtle,
@@ -67,7 +66,7 @@ export const buttonStyles = {
           }),
         ],
         'muted-action': [
-          s({ borderStyle: 'dashed' }),
+          component({ borderStyle: 'dashed' }),
           hover({
             borderColor: vars.color.neutral[7],
             backgroundColor: vars.color.neutral[3],
@@ -75,7 +74,7 @@ export const buttonStyles = {
           }),
         ],
         primary: [
-          s({
+          component({
             borderColor: 'transparent',
             backgroundColor: vars.color.surface.inverse,
             color: vars.color.fg.inverse,
@@ -83,7 +82,7 @@ export const buttonStyles = {
           hover({ backgroundColor: vars.color.neutral[11] }),
         ],
         outline: [
-          s({
+          component({
             borderColor: vars.color.line.DEFAULT,
             backgroundColor: 'transparent',
             color: vars.color.fg.default,
@@ -91,7 +90,7 @@ export const buttonStyles = {
           hover({ backgroundColor: vars.color.neutral[4], color: vars.color.fg.DEFAULT }),
         ],
         ghost: [
-          s({
+          component({
             borderColor: 'transparent',
             backgroundColor: 'transparent',
             color: vars.color.fg.secondary,
@@ -99,7 +98,7 @@ export const buttonStyles = {
           hover({ color: vars.color.fg.DEFAULT }),
         ],
         destructive: [
-          s({
+          component({
             borderColor: vars.color.critical.line,
             backgroundColor: vars.color.critical.tintSubtle,
             color: vars.color.critical.text,
@@ -110,23 +109,23 @@ export const buttonStyles = {
           }),
         ],
         link: [
-          s({ color: vars.color.accent.DEFAULT, textUnderlineOffset: 4 }),
+          component({ color: vars.color.accent.DEFAULT, textUnderlineOffset: 4 }),
           hover({ textDecorationLine: 'underline' }),
         ],
       },
       size: {
         compact: [controlSize.compact],
         default: [controlSize.default],
-        'icon-sm': s({ width: space(7), height: space(7), justifyContent: 'center' }),
+        'icon-sm': component({ width: space(7), height: space(7), justifyContent: 'center' }),
       },
       layout: {
         children: {},
         label: {},
-        iconOnly: s({ justifyContent: 'center' }),
+        iconOnly: component({ justifyContent: 'center' }),
       },
       width: {
         auto: {},
-        full: s({ width: '100%' }),
+        full: component({ width: '100%' }),
       },
       onSurface: {
         base: {},
@@ -138,18 +137,24 @@ export const buttonStyles = {
       { variants: { variant: 'default', onSurface: 'raised' }, style: [controlOnSurface.raised] },
       {
         variants: { layout: 'children', size: 'compact' },
-        style: s({ gap: space(1), paddingInline: space(3) }),
+        style: component({ gap: space(1), paddingInline: space(3) }),
       },
       {
         variants: { layout: 'children', size: 'default' },
-        style: s({ gap: space(1.5), paddingInline: space(4) }),
+        style: component({ gap: space(1.5), paddingInline: space(4) }),
       },
-      { variants: { layout: 'iconOnly', size: 'compact' }, style: s({ width: space(7.5) }) },
-      { variants: { layout: 'iconOnly', size: 'default' }, style: s({ width: space(9) }) },
-      { variants: { layout: 'children', width: 'full' }, style: s({ justifyContent: 'center' }) },
+      {
+        variants: { layout: 'iconOnly', size: 'compact' },
+        style: component({ width: space(7.5) }),
+      },
+      { variants: { layout: 'iconOnly', size: 'default' }, style: component({ width: space(9) }) },
+      {
+        variants: { layout: 'children', width: 'full' },
+        style: component({ justifyContent: 'center' }),
+      },
       {
         variants: { variant: 'link' },
-        style: s({
+        style: component({
           height: 'auto',
           borderRadius: 0,
           borderWidth: 0,
@@ -167,22 +172,32 @@ export const buttonStyles = {
     },
   }),
   /** The icon-only layout: the icon, padded to the button's edges. */
-  iconSlot: style([shared.row.base, s({ padding: space(1.5) })]),
+  iconSlot: style([shared.row.base, component({ padding: space(1.5) })]),
   iconOnlyIcon: shared.icon.md,
   /** The label layout: the label fills, and each segment after it stretches to the button's height. */
   label: style([
     shared.row.base,
     shared.grow,
-    s({ alignSelf: 'stretch', paddingInline: space(3) }),
+    component({ alignSelf: 'stretch', paddingInline: space(3) }),
   ]),
   accessory: style([
     segmentSeparator,
-    s({ display: 'flex', alignItems: 'center', alignSelf: 'stretch', paddingInline: space(3) }),
+    component({
+      display: 'flex',
+      alignItems: 'center',
+      alignSelf: 'stretch',
+      paddingInline: space(3),
+    }),
   ]),
   rightIcon: recipe({
     base: [
       shared.fg.subtle,
-      s({ display: 'flex', alignItems: 'center', alignSelf: 'stretch', paddingInline: space(2) }),
+      component({
+        display: 'flex',
+        alignItems: 'center',
+        alignSelf: 'stretch',
+        paddingInline: space(2),
+      }),
     ],
     variants: {
       separated: {
@@ -191,7 +206,7 @@ export const buttonStyles = {
       /** With its own action the segment lights up on its own hover; otherwise with the button's. */
       interactive: {
         true: hover({ color: vars.color.fg.default }),
-        false: s({
+        false: component({
           '@media': {
             '(hover: hover)': {
               selectors: { [`${button}:hover &`]: { color: vars.color.fg.DEFAULT } },

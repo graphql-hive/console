@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 
@@ -9,14 +9,14 @@ export const div = style([
   shared.flex,
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     alignItems: 'flex-end',
     gap: space(8),
   }),
 ]);
 
 export const span2 = style(
-  layered.components({
+  component({
     display: 'block',
     height: space(16),
     width: space(32),
@@ -25,7 +25,7 @@ export const span2 = style(
 
 export const span3 = style([
   shared.stack.gap2,
-  layered.components({
+  component({
     alignItems: 'center',
   }),
 ]);
@@ -33,7 +33,7 @@ export const span3 = style([
 export const div2 = style([shared.stack.gap3, shared.text.xs, shared.fg.secondary]);
 
 export const span5 = style(
-  layered.components({
+  component({
     width: space(14),
   }),
 );
@@ -42,34 +42,34 @@ export const div3 = style([
   shared.stack.gap3,
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     width: '32rem',
   }),
 ]);
 
 export const span6 = style(
-  layered.components({
+  component({
     width: space(14),
     flexShrink: '0',
   }),
 );
 
 export const div4 = style(
-  layered.components({
+  component({
     maxWidth: '800px',
   }),
 );
 
 globalStyle(
   `:where(${div4} > :not(:last-child))`,
-  layered.components({
+  component({
     marginBlockStart: '0',
     marginBlockEnd: space(4),
   }),
 );
 
 export const span7 = style(
-  layered.components({
+  component({
     display: 'block',
     height: space(24),
     width: space(64),

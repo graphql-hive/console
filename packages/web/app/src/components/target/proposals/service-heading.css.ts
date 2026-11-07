@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -11,7 +11,7 @@ export const serviceHeadingDiv = style([
   shared.text.base,
   shared.weight.semibold,
   shared.fg.accent,
-  layered.utilities({
+  utility({
     marginTop: space(2),
     flexDirection: 'row',
     alignItems: 'center',
@@ -23,7 +23,7 @@ export const serviceHeadingDiv = style([
 ]);
 
 export const serviceHeadingDiv2 = style(
-  layered.utilities({
+  utility({
     cursor: 'pointer',
     '@media': {
       '(hover: hover)': {
@@ -38,7 +38,7 @@ export const serviceHeadingDiv2 = style(
 );
 
 export const serviceHeadingDiv3 = style(
-  layered.utilities({
+  utility({
     borderBottomRightRadius: '0',
     borderBottomLeftRadius: '0',
   }),
@@ -47,14 +47,14 @@ export const serviceHeadingDiv3 = style(
 export const serviceHeadingDiv4 = style([
   shared.flex,
   shared.grow,
-  layered.utilities({
+  utility({
     flexDirection: 'row',
     alignItems: 'center',
   }),
 ]);
 
 export const serviceHeadingBox = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -64,7 +64,7 @@ export const serviceHeadingBox = style(
 export const serviceHeadingSpan = style([
   shared.text.xs,
   shared.fg.success,
-  layered.utilities({
+  utility({
     marginLeft: space(2),
   }),
 ]);
@@ -72,13 +72,13 @@ export const serviceHeadingSpan = style([
 export const serviceHeadingSpan2 = style([
   shared.text.xs,
   shared.fg.critical,
-  layered.utilities({
+  utility({
     marginLeft: space(2),
   }),
 ]);
 
 export const serviceHeadingChevronDown = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     transitionProperty:
@@ -89,7 +89,7 @@ export const serviceHeadingChevronDown = style(
 );
 
 export const serviceHeadingChevronDown2 = style(
-  layered.utilities({
+  utility({
     rotate: '-180deg',
   }),
 );

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { utility } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import * as utilities from '../../styles/utilities.css';
@@ -8,7 +8,7 @@ import * as utilities from '../../styles/utilities.css';
 
 export const createOrganizationFormDiv = style([
   utilities.container,
-  layered.utilities({
+  utility({
     width: '80%',
     maxWidth: '520px',
     '@media': {
@@ -21,7 +21,7 @@ export const createOrganizationFormDiv = style([
 
 export const createOrganizationFormDiv2 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     marginTop: space(6),
   }),
 ]);

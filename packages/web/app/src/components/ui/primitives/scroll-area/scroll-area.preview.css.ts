@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -10,7 +10,7 @@ export const rowsDiv2 = style([
   shared.row.base,
   shared.text.sm,
   shared.fg.default,
-  layered.components({
+  component({
     borderRadius: vars.radius.md,
     paddingInline: space(2),
     paddingBlock: space(1),
@@ -29,7 +29,7 @@ export const rowsDiv2 = style([
 export const rowsSpan = style([shared.truncate, shared.weight.medium]);
 
 export const rowsSpan2 = style(
-  layered.components({
+  component({
     marginLeft: 'auto',
     paddingLeft: space(4),
     fontWeight: vars.weight.light,
@@ -37,7 +37,7 @@ export const rowsSpan2 = style(
 );
 
 export const div = style(
-  layered.components({
+  component({
     display: 'flex',
     alignItems: 'flex-start',
     gap: space(6),
@@ -45,7 +45,7 @@ export const div = style(
 );
 
 export const div2 = style(
-  layered.components({
+  component({
     width: space(72),
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -56,7 +56,7 @@ export const div2 = style(
 );
 
 export const div3 = style(
-  layered.components({
+  component({
     display: 'flex',
     alignItems: 'flex-start',
     gap: space(6),
@@ -64,7 +64,7 @@ export const div3 = style(
 );
 
 export const div4 = style(
-  layered.components({
+  component({
     width: space(72),
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -75,7 +75,7 @@ export const div4 = style(
 );
 
 export const div5 = style(
-  layered.components({
+  component({
     width: space(72),
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -87,7 +87,7 @@ export const div5 = style(
 
 export const div6 = style([
   shared.stack.base,
-  layered.components({
+  component({
     height: space(64),
     width: space(80),
     borderRadius: vars.radius.md,
@@ -101,7 +101,7 @@ export const div7 = style([
   shared.text.sm,
   shared.weight.medium,
   shared.fg.strong,
-  layered.components({
+  component({
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
     borderColor: vars.color.line.DEFAULT,
@@ -111,13 +111,13 @@ export const div7 = style([
 ]);
 
 export const div8 = style(
-  layered.components({
+  component({
     padding: space(2),
   }),
 );
 
 export const div9 = style(
-  layered.components({
+  component({
     width: space(96),
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -127,7 +127,7 @@ export const div9 = style(
 );
 
 export const pre = style(
-  layered.components({
+  component({
     padding: space(2),
     fontFamily: vars.font.mono,
     fontSize: vars.text['2xs'],
@@ -138,7 +138,7 @@ export const pre = style(
 );
 
 export const div10 = style(
-  layered.components({
+  component({
     width: space(96),
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -150,7 +150,7 @@ export const div10 = style(
 export const pre2 = style([
   shared.mono,
   shared.fg.default,
-  layered.components({
+  component({
     padding: space(2),
     fontSize: vars.text['2xs'],
     lineHeight: vars.leading.tight,
@@ -159,7 +159,7 @@ export const pre2 = style([
 ]);
 
 export const div11 = style(
-  layered.components({
+  component({
     width: space(72),
     borderRadius: vars.radius.md,
     borderStyle: 'solid',

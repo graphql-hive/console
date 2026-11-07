@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { component } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../styles/theme.css';
 export const div = style([
   shared.row.wrap2,
   shared.text.sm,
-  layered.components({
+  component({
     maxWidth: '40rem',
   }),
 ]);
@@ -17,20 +17,20 @@ export const div = style([
 export const p = style([
   shared.text.sm,
   shared.fg.strong,
-  layered.components({
+  component({
     width: '40rem',
   }),
 ]);
 
 export const ul = style(
-  layered.components({
+  component({
     width: '56rem',
   }),
 );
 
 globalStyle(
   `:where(${ul} > :not(:last-child))`,
-  layered.components({
+  component({
     borderBottomStyle: 'solid',
     borderTopStyle: 'solid',
     borderTopWidth: '0px',
@@ -40,14 +40,14 @@ globalStyle(
 );
 
 export const li = style(
-  layered.components({
+  component({
     paddingBlock: space(3),
   }),
 );
 
 export const div2 = style([
   shared.text.sm,
-  layered.components({
+  component({
     width: space(40),
   }),
 ]);

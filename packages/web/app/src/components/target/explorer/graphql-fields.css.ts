@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../styles/theme.css';
 export const graphQLFieldsDiv3 = style([
   shared.flex,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
@@ -19,7 +19,7 @@ export const graphQLFieldsDiv3 = style([
 export const graphQLFieldsButton = style([
   shared.text.sm,
   shared.fg.accent,
-  layered.utilities({
+  utility({
     marginRight: space(1),
   }),
 ]);
@@ -29,7 +29,7 @@ export const graphQLFieldsP = style([shared.text.sm, shared.fg.default]);
 export const graphQLFieldsButton2 = style([
   shared.text.sm,
   shared.fg.accent,
-  layered.utilities({
+  utility({
     marginRight: space(1),
   }),
 ]);
@@ -37,26 +37,26 @@ export const graphQLFieldsButton2 = style([
 export const graphQLFieldsP2 = style([shared.text.sm, shared.fg.default]);
 
 export const graphQLFieldsLinkToCoordinatePage = style(
-  layered.utilities({
+  utility({
     fontWeight: vars.weight.semibold,
   }),
 );
 
 export const graphQLFieldsSpan = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
   }),
 );
 
 export const graphQLFieldsGraphQLTypeAsLink = style(
-  layered.utilities({
+  utility({
     fontWeight: vars.weight.semibold,
     color: vars.color.fg.default,
   }),
 );
 
 export const graphQLFieldsDiv4 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -64,7 +64,7 @@ export const graphQLFieldsDiv4 = style(
 );
 
 export const graphQLFieldsDiv5 = style(
-  layered.utilities({
+  utility({
     marginLeft: space(1),
   }),
 );

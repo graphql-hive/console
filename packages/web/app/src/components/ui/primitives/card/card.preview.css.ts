@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../../styles/theme.css';
 export const p = style([shared.text.sm, shared.fg.default]);
 
 export const a = style(
-  layered.components({
+  component({
     color: vars.color.accent.DEFAULT,
     textDecorationLine: 'underline',
   }),
@@ -20,21 +20,21 @@ export const p2 = style([shared.text.sm, shared.fg.default]);
 export const p3 = style([shared.text.sm, shared.fg.default]);
 
 export const div = style(
-  layered.components({
+  component({
     display: 'flex',
     gap: space(4),
   }),
 );
 
 export const div2 = style(
-  layered.components({
+  component({
     display: 'flex',
     gap: space(4),
   }),
 );
 
 export const div3 = style(
-  layered.components({
+  component({
     display: 'grid',
     width: '36rem',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -46,7 +46,7 @@ export const div4 = style([
   shared.textCenter,
   shared.text.xs,
   shared.fg.default,
-  layered.components({
+  component({
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.accent.tintStrong,
     padding: space(4),
@@ -57,7 +57,7 @@ export const div5 = style([
   shared.textCenter,
   shared.text.xs,
   shared.fg.default,
-  layered.components({
+  component({
     backgroundColor: vars.color.accent.tintStrong,
     padding: space(4),
   }),
@@ -67,7 +67,7 @@ export const div7 = style([
   shared.textCenter,
   shared.text.xs,
   shared.fg.default,
-  layered.components({
+  component({
     backgroundColor: vars.color.accent.tintStrong,
     padding: space(4),
   }),
@@ -75,13 +75,13 @@ export const div7 = style([
 
 export const div8 = style([
   shared.stack.gap4,
-  layered.components({
+  component({
     width: '36rem',
   }),
 ]);
 
 export const copyIcon = style(
-  layered.components({
+  component({
     width: space(3.5),
     height: space(3.5),
   }),

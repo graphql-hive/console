@@ -1,16 +1,14 @@
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import { focusRing } from '../shared-styles';
 import { vars } from '../../../../styles/theme.css';
-
-const s = layered.components;
 
 export const switchStyles = {
   root: recipe({
     base: [
       focusRing,
-      s({
+      component({
         position: 'relative',
         display: 'inline-flex',
         flexShrink: 0,
@@ -42,18 +40,18 @@ export const switchStyles = {
     ],
     variants: {
       size: {
-        standard: s({ height: space(5), width: space(10), padding: space(0.5) }),
-        small: s({ height: space(2.5), width: space(6) }),
+        standard: component({ height: space(5), width: space(10), padding: space(0.5) }),
+        small: component({ height: space(2.5), width: space(6) }),
       },
       /** A read-out rather than a control: the cursor is whatever owns the click. */
       decorative: {
-        true: s({ cursor: 'inherit' }),
+        true: component({ cursor: 'inherit' }),
       },
     },
     defaultVariants: { size: 'standard' },
   }),
   thumb: recipe({
-    base: s({
+    base: component({
       pointerEvents: 'none',
       display: 'block',
       borderRadius: vars.radius.full,
@@ -70,11 +68,11 @@ export const switchStyles = {
     }),
     variants: {
       size: {
-        standard: s({
+        standard: component({
           ...square(4),
           selectors: { '&[data-checked]': { translate: `${space(5)} 0` } },
         }),
-        small: s({
+        small: component({
           width: 13,
           height: 13,
           selectors: { '&[data-checked]': { translate: '11px 0' } },

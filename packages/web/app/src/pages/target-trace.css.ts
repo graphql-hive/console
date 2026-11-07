@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { palette, vars } from '../styles/theme.css';
@@ -8,13 +8,13 @@ import { palette, vars } from '../styles/theme.css';
 
 export const traceViewDiv = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     height: '100%',
   }),
 ]);
 
 export const traceViewDiv2 = style(
-  layered.utilities({
+  utility({
     position: 'sticky',
     top: '0px',
     zIndex: '10',
@@ -32,7 +32,7 @@ export const traceViewDiv3 = style([
 ]);
 
 export const traceViewDiv4 = style(
-  layered.utilities({
+  utility({
     height: space(12),
     flexShrink: '0',
     paddingBlock: space(2),
@@ -40,7 +40,7 @@ export const traceViewDiv4 = style(
 );
 
 export const traceViewDiv5 = style(
-  layered.utilities({
+  utility({
     paddingLeft: space(4),
   }),
 );
@@ -48,7 +48,7 @@ export const traceViewDiv5 = style(
 export const traceViewDiv7 = style([shared.text.xs, shared.fg.secondary]);
 
 export const traceViewDiv8 = style(
-  layered.utilities({
+  utility({
     height: space(12),
     flexGrow: '1',
     paddingRight: space(8),
@@ -58,13 +58,13 @@ export const traceViewDiv8 = style(
 export const traceViewDiv9 = style([
   shared.relative,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     height: '100%',
   }),
 ]);
 
 export const traceViewDiv10 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: space(6),
     left: '0px',
@@ -74,7 +74,7 @@ export const traceViewDiv10 = style(
 );
 
 export const traceViewDiv11 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     bottom: '0px',
     left: '0px',
@@ -85,7 +85,7 @@ export const traceViewDiv11 = style(
 );
 
 export const traceViewDiv12 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: space(6),
     left: '25%',
@@ -95,7 +95,7 @@ export const traceViewDiv12 = style(
 );
 
 export const traceViewDiv13 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     bottom: '0px',
     left: '25%',
@@ -107,7 +107,7 @@ export const traceViewDiv13 = style(
 );
 
 export const traceViewDiv14 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: space(6),
     left: '50%',
@@ -117,7 +117,7 @@ export const traceViewDiv14 = style(
 );
 
 export const traceViewDiv15 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     bottom: '0px',
     left: '50%',
@@ -129,7 +129,7 @@ export const traceViewDiv15 = style(
 );
 
 export const traceViewDiv16 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: space(6),
     left: '75%',
@@ -139,7 +139,7 @@ export const traceViewDiv16 = style(
 );
 
 export const traceViewDiv17 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     bottom: '0px',
     left: '75%',
@@ -151,7 +151,7 @@ export const traceViewDiv17 = style(
 );
 
 export const traceViewDiv18 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: space(6),
     right: '0px',
@@ -161,7 +161,7 @@ export const traceViewDiv18 = style(
 );
 
 export const traceViewDiv19 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     right: '0px',
     bottom: '0px',
@@ -173,7 +173,7 @@ export const traceViewDiv19 = style(
 );
 
 export const traceViewDiv20 = style(
-  layered.utilities({
+  utility({
     position: 'sticky',
     bottom: '0px',
     zIndex: '10',
@@ -186,7 +186,7 @@ export const traceViewDiv21 = style([
   shared.row.base,
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: space(6),
@@ -195,7 +195,7 @@ export const traceViewDiv21 = style([
 
 export const traceViewDiv22 = style([
   shared.row.gap2,
-  layered.utilities({
+  utility({
     cursor: 'pointer',
     '@media': {
       '(hover: hover)': {
@@ -210,20 +210,20 @@ export const traceViewDiv22 = style([
 ]);
 
 export const traceViewDiv23 = style(
-  layered.utilities({
+  utility({
     width: space(2),
     height: space(2),
   }),
 );
 
 export const treeIconSvg = style(
-  layered.utilities({
+  utility({
     flexShrink: '1',
   }),
 );
 
 export const traceResizeDiv = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     insetBlock: '0px',
     zIndex: '20',
@@ -233,7 +233,7 @@ export const traceResizeDiv = style(
 );
 
 export const traceResizeDiv2 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     insetBlock: '0px',
     left: '2px',
@@ -243,13 +243,13 @@ export const traceResizeDiv2 = style(
 );
 
 export const traceResizeDiv3 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.fg.subtle,
   }),
 );
 
 export const traceResizeDiv4 = style(
-  layered.utilities({
+  utility({
     '@media': {
       '(hover: hover)': {
         selectors: {
@@ -263,7 +263,7 @@ export const traceResizeDiv4 = style(
 );
 
 export const nodeElementDiv = style(
-  layered.utilities({
+  utility({
     position: 'relative',
     zIndex: '20',
     display: 'block',
@@ -282,7 +282,7 @@ export const nodeElementDiv2 = style([
   shared.mono,
   shared.nowrap,
   shared.fg.default,
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: '50%',
     translate: '0 -50%',
@@ -292,7 +292,7 @@ export const nodeElementDiv2 = style([
 ]);
 
 export const spanNodeDiv = style(
-  layered.utilities({
+  utility({
     paddingRight: space(8),
     selectors: {
       '&:nth-child(odd)': {
@@ -312,7 +312,7 @@ export const spanNodeDiv = style(
 );
 
 export const spanNodeDiv2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.tint,
     selectors: {
       '&:nth-child(odd)': {
@@ -332,7 +332,7 @@ export const spanNodeDiv2 = style(
 );
 
 export const spanNodeDiv3 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.tintStrong,
     selectors: {
       '&:nth-child(odd)': {
@@ -346,7 +346,7 @@ export const spanNodeDiv4 = style([
   shared.relative,
   shared.row.base,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     height: space(8),
     overflow: 'hidden',
   }),
@@ -356,7 +356,7 @@ export const spanNodeDiv5 = style([
   shared.relative,
   shared.row.base,
   shared.noShrink,
-  layered.utilities({
+  utility({
     height: space(8),
     columnGap: space(2),
     overflow: 'hidden',
@@ -369,13 +369,13 @@ export const spanNodeDiv6 = style([
   shared.noShrink,
   shared.truncate,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     height: space(8),
   }),
 ]);
 
 export const spanNodeDiv7 = style(
-  layered.utilities({
+  utility({
     cursor: 'pointer',
   }),
 );
@@ -385,19 +385,19 @@ export const spanNodeDiv8 = style([
   shared.fullWidth,
   shared.text.xs,
   shared.nowrap,
-  layered.utilities({
+  utility({
     verticalAlign: 'middle',
   }),
 ]);
 
 export const spanNodeSpan = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
   }),
 );
 
 export const spanNodeSpan2 = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
     marginLeft: 'auto',
     display: 'inline-flex',
@@ -409,7 +409,7 @@ export const spanNodeDiv11 = style([shared.truncate, shared.text.xs]);
 export const spanNodeDiv14 = style([shared.relative, shared.fullWidth]);
 
 export const spanNodeLink = style(
-  layered.utilities({
+  utility({
     position: 'relative',
     display: 'flex',
     height: '100%',
@@ -421,27 +421,27 @@ export const spanNodeLink = style(
 );
 
 export const spanNodeLink2 = style(
-  layered.utilities({
+  utility({
     opacity: '25%',
   }),
 );
 
 export const spanNodeDiv15 = style(
-  layered.utilities({
+  utility({
     minWidth: '200px',
   }),
 );
 
 globalStyle(
   `:where(${spanNodeDiv15} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(3),
   }),
 );
 
 export const spanNodeDiv16 = style(
-  layered.utilities({
+  utility({
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     rowGap: space(2),
@@ -449,34 +449,34 @@ export const spanNodeDiv16 = style(
 );
 
 export const spanNodeDiv18 = style(
-  layered.utilities({
+  utility({
     textAlign: 'right',
     fontFamily: vars.font.mono,
   }),
 );
 
 export const spanNodeDiv20 = style(
-  layered.utilities({
+  utility({
     textAlign: 'right',
     fontFamily: vars.font.mono,
   }),
 );
 
 export const spanNodeDiv22 = style(
-  layered.utilities({
+  utility({
     textAlign: 'right',
     fontFamily: vars.font.mono,
   }),
 );
 
 export const spanNodeDiv23 = style(
-  layered.utilities({
+  utility({
     gridColumn: 'span 2 / span 2',
   }),
 );
 
 export const spanNodeDiv24 = style(
-  layered.utilities({
+  utility({
     height: '2px',
     width: '100%',
     overflow: 'hidden',
@@ -485,26 +485,26 @@ export const spanNodeDiv24 = style(
 );
 
 export const spanNodeDiv25 = style(
-  layered.utilities({
+  utility({
     height: '100%',
   }),
 );
 
 export const spanNodeDiv27 = style(
-  layered.utilities({
+  utility({
     textAlign: 'right',
     fontFamily: vars.font.mono,
   }),
 );
 
 export const spanNodeDiv28 = style(
-  layered.utilities({
+  utility({
     gridColumn: 'span 2 / span 2',
   }),
 );
 
 export const spanNodeDiv29 = style(
-  layered.utilities({
+  utility({
     height: '2px',
     width: '100%',
     overflow: 'hidden',
@@ -513,13 +513,13 @@ export const spanNodeDiv29 = style(
 );
 
 export const spanNodeDiv30 = style(
-  layered.utilities({
+  utility({
     height: '100%',
   }),
 );
 
 export const spanNodeLink3 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     insetBlock: '0px',
     zIndex: '50',
@@ -530,14 +530,14 @@ export const spanNodeLink3 = style(
 );
 
 export const spanNodeDiv31 = style(
-  layered.utilities({
+  utility({
     position: 'relative',
     height: '100%',
   }),
 );
 
 export const spanNodeDiv32 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     insetBlock: '0px',
     width: space(0.5),
@@ -545,19 +545,19 @@ export const spanNodeDiv32 = style(
 );
 
 export const spanNodeDiv33 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.DEFAULT,
   }),
 );
 
 export const spanNodeDiv34 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.warning.DEFAULT,
   }),
 );
 
 export const spanNodeDiv35 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: '-2px',
     left: '-3px',
@@ -567,25 +567,25 @@ export const spanNodeDiv35 = style(
 );
 
 export const spanNodeDiv36 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.DEFAULT,
   }),
 );
 
 export const spanNodeDiv37 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.warning.DEFAULT,
   }),
 );
 
 export const spanNodeDiv38 = style(
-  layered.utilities({
+  utility({
     minWidth: '200px',
   }),
 );
 
 export const traceSheetDiv = style(
-  layered.utilities({
+  utility({
     minHeight: '0px',
     flex: '1',
   }),
@@ -593,13 +593,13 @@ export const traceSheetDiv = style(
 
 export const traceSheetDiv2 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     height: '100%',
   }),
 ]);
 
 export const traceSheetDiv3 = style(
-  layered.utilities({
+  utility({
     position: 'sticky',
     top: '0px',
     zIndex: '10',
@@ -607,20 +607,20 @@ export const traceSheetDiv3 = style(
 );
 
 export const traceSheetDiv4 = style(
-  layered.utilities({
+  utility({
     height: '100%',
   }),
 );
 
 export const traceSheetDiv5 = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(4),
     textAlign: 'center',
   }),
 );
 
 export const traceSheetAlertTriangle = style(
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     marginBottom: space(2),
     width: space(6),
@@ -632,14 +632,14 @@ export const traceSheetAlertTriangle = style(
 export const traceSheetP = style([shared.text.xs, shared.fg.secondary]);
 
 export const traceSheetDiv6 = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(4),
     textAlign: 'center',
   }),
 );
 
 export const traceSheetAlertTriangle2 = style(
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     marginBottom: space(2),
     width: space(6),
@@ -651,7 +651,7 @@ export const traceSheetAlertTriangle2 = style(
 export const traceSheetP2 = style([shared.text.xs, shared.fg.secondary]);
 
 export const traceSheetDiv7 = style(
-  layered.utilities({
+  utility({
     padding: space(4),
   }),
 );
@@ -660,7 +660,7 @@ export const traceSheetDiv8 = style({});
 
 globalStyle(
   `:where(${traceSheetDiv8} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -669,14 +669,14 @@ globalStyle(
 export const traceSheetDiv9 = style([shared.text.sm, shared.fg.subtle]);
 
 export const traceSheetLink = style(
-  layered.utilities({
+  utility({
     marginBottom: space(2),
     display: 'block',
   }),
 );
 
 export const traceSheetDiv10 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     insetBlock: '0px',
     width: '100%',
@@ -684,7 +684,7 @@ export const traceSheetDiv10 = style(
 );
 
 export const targetInsightsNewPageContentDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     height: '100%',
     flexDirection: 'column',
@@ -694,14 +694,14 @@ export const targetInsightsNewPageContentDiv = style(
 
 globalStyle(
   `:where(${targetInsightsNewPageContentDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(4),
   }),
 );
 
 export const targetInsightsNewPageContentSpan2 = style(
-  layered.utilities({
+  utility({
     display: 'inline-block',
     paddingInline: space(2),
     color: vars.color.fg.secondary,
@@ -713,13 +713,13 @@ export const targetInsightsNewPageContentSpan4 = style([
   shared.mono,
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginLeft: space(2),
   }),
 ]);
 
 export const targetInsightsNewPageContentSpan5 = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     width: '150px',
     verticalAlign: 'middle',
@@ -727,7 +727,7 @@ export const targetInsightsNewPageContentSpan5 = style(
 );
 
 export const targetInsightsNewPageContentSpan7 = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     width: '200px',
     verticalAlign: 'middle',
@@ -737,13 +737,13 @@ export const targetInsightsNewPageContentSpan7 = style(
 export const targetInsightsNewPageContentDiv2 = style([
   shared.row.gap3,
   shared.text.xs,
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 ]);
 
 export const targetInsightsNewPageContentClock = style(
-  layered.utilities({
+  utility({
     width: space(3),
     height: space(3),
     color: vars.color.fg.secondary,
@@ -753,13 +753,13 @@ export const targetInsightsNewPageContentClock = style(
 export const targetInsightsNewPageContentSpan9 = style([
   shared.mono,
   shared.fg.default,
-  layered.utilities({
+  utility({
     textTransform: 'uppercase',
   }),
 ]);
 
 export const targetTracePageLayoutContent = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     height: palette.layout.contentHeight,
     flexDirection: 'column',
@@ -769,7 +769,7 @@ export const targetTracePageLayoutContent = style(
 export const targetTracePageDiv = style([
   shared.stack.base,
   shared.fill,
-  layered.utilities({
+  utility({
     minHeight: '0px',
   }),
 ]);
@@ -778,20 +778,20 @@ export const spanSheetSpan = style([
   shared.mono,
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginLeft: space(2),
   }),
 ]);
 
 export const spanSheetSpan2 = style(
-  layered.utilities({
+  utility({
     marginLeft: space(2),
     color: vars.color.fg.secondary,
   }),
 );
 
 export const spanSheetArrowUp = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -799,7 +799,7 @@ export const spanSheetArrowUp = style(
 );
 
 export const spanSheetLinkLucide = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -807,7 +807,7 @@ export const spanSheetLinkLucide = style(
 );
 
 export const spanSheetDiv = style(
-  layered.utilities({
+  utility({
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     gap: space(4),
@@ -822,7 +822,7 @@ export const spanSheetDiv = style(
 );
 
 export const spanSheetDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
   }),
@@ -830,14 +830,14 @@ export const spanSheetDiv2 = style(
 
 globalStyle(
   `:where(${spanSheetDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(2),
   }),
 );
 
 export const spanSheetClock = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.info.DEFAULT,
@@ -849,7 +849,7 @@ export const spanSheetP = style([shared.text.xs, shared.fg.secondary]);
 export const spanSheetP2 = style([shared.text.sm, shared.weight.medium]);
 
 export const spanSheetDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
   }),
@@ -857,14 +857,14 @@ export const spanSheetDiv3 = style(
 
 globalStyle(
   `:where(${spanSheetDiv3} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(2),
   }),
 );
 
 export const spanSheetPlay = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.success.DEFAULT,
@@ -876,7 +876,7 @@ export const spanSheetP3 = style([shared.text.xs, shared.fg.secondary]);
 export const spanSheetP4 = style([shared.text.sm, shared.weight.medium]);
 
 export const spanSheetDiv4 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
   }),
@@ -884,14 +884,14 @@ export const spanSheetDiv4 = style(
 
 globalStyle(
   `:where(${spanSheetDiv4} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(2),
   }),
 );
 
 export const spanSheetPieChart = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.accent.DEFAULT,
@@ -903,7 +903,7 @@ export const spanSheetP5 = style([shared.text.xs, shared.fg.secondary]);
 export const spanSheetP6 = style([shared.text.sm, shared.weight.medium]);
 
 export const spanSheetDiv5 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
   }),
@@ -911,14 +911,14 @@ export const spanSheetDiv5 = style(
 
 globalStyle(
   `:where(${spanSheetDiv5} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(2),
   }),
 );
 
 export const spanSheetTreePine = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.accent.DEFAULT,
@@ -932,13 +932,13 @@ export const spanSheetP8 = style([shared.text.sm, shared.weight.medium]);
 export const spanSheetDiv6 = style([
   shared.stack.base,
   shared.fill,
-  layered.utilities({
+  utility({
     minHeight: '0px',
   }),
 ]);
 
 export const spanSheetDiv7 = style(
-  layered.utilities({
+  utility({
     borderTopStyle: 'solid',
     borderTopWidth: '1px',
     borderColor: vars.color.line.DEFAULT,
@@ -946,14 +946,14 @@ export const spanSheetDiv7 = style(
 );
 
 export const spanSheetDiv8 = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(4),
     textAlign: 'center',
   }),
 );
 
 export const spanSheetAlertTriangle = style(
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     marginBottom: space(2),
     width: space(6),
@@ -965,14 +965,14 @@ export const spanSheetAlertTriangle = style(
 export const spanSheetP9 = style([shared.text.xs, shared.fg.secondary]);
 
 export const spanSheetDiv9 = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(4),
     textAlign: 'center',
   }),
 );
 
 export const spanSheetAlertTriangle2 = style(
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     marginBottom: space(2),
     width: space(6),
@@ -984,27 +984,27 @@ export const spanSheetAlertTriangle2 = style(
 export const spanSheetP10 = style([shared.text.xs, shared.fg.secondary]);
 
 export const spanSheetDiv10 = style(
-  layered.utilities({
+  utility({
     paddingInline: space(1),
     paddingTop: space(2),
   }),
 );
 
 export const spanSheetDiv11 = style(
-  layered.utilities({
+  utility({
     marginBottom: space(2),
   }),
 );
 
 export const spanSheetDiv12 = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(4),
     textAlign: 'center',
   }),
 );
 
 export const spanSheetAlertTriangle3 = style(
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     marginBottom: space(2),
     width: space(6),
@@ -1018,7 +1018,7 @@ export const spanSheetP11 = style([shared.text.xs, shared.fg.secondary]);
 export const attributeRowSpan = style([
   shared.flex,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     marginRight: '0px',
     marginLeft: 'auto',
   }),
@@ -1027,7 +1027,7 @@ export const attributeRowSpan = style([
 export const attributeRowDiv = style([
   shared.row.between,
   shared.text.xs,
-  layered.utilities({
+  utility({
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
     borderColor: vars.color.line.DEFAULT,
@@ -1042,14 +1042,14 @@ export const attributeRowDiv = style([
 ]);
 
 export const attributeRowDiv2 = style(
-  layered.utilities({
+  utility({
     flexDirection: 'column',
     textAlign: 'left',
   }),
 );
 
 export const attributeRowDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flex: '1',
     paddingRight: space(2),
@@ -1058,14 +1058,14 @@ export const attributeRowDiv3 = style(
 );
 
 export const attributeRowDiv4 = style(
-  layered.utilities({
+  utility({
     width: '100%',
     paddingRight: '0px',
   }),
 );
 
 export const attributeRowDiv5 = style(
-  layered.utilities({
+  utility({
     width: '100%',
     flex: '1',
     paddingTop: space(2),
@@ -1077,7 +1077,7 @@ export const attributeRowDiv5 = style(
 );
 
 export const attributeRowDiv6 = style(
-  layered.utilities({
+  utility({
     overflow: 'hidden',
     paddingTop: '0px',
     ...({ textWrap: 'nowrap' } as object),
@@ -1086,7 +1086,7 @@ export const attributeRowDiv6 = style(
 );
 
 export const exceptionTeaserDiv = style(
-  layered.utilities({
+  utility({
     overflow: 'hidden',
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -1098,7 +1098,7 @@ export const exceptionTeaserDiv = style(
 
 export const exceptionTeaserDiv2 = style([
   shared.row.between,
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.tintStrong,
     paddingInline: space(3),
     paddingBlock: space(2),
@@ -1114,13 +1114,13 @@ export const exceptionTeaserSpan = style([
 
 export const exceptionTeaserDiv3 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     padding: space(3),
   }),
 ]);
 
 export const exceptionTeaserDiv4 = style(
-  layered.utilities({
+  utility({
     marginTop: space(2),
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.surface.inset,
@@ -1130,7 +1130,7 @@ export const exceptionTeaserDiv4 = style(
 export const exceptionTeaserPre = style([
   shared.mono,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     padding: space(2),
     fontSize: vars.text['2xs'],
     lineHeight: vars.leading.tight,
@@ -1138,7 +1138,7 @@ export const exceptionTeaserPre = style([
 ]);
 
 export const traceSheetGraphQLHighlight = style(
-  layered.utilities({
+  utility({
     height: '100%',
     maxHeight: 'none',
     vars: {

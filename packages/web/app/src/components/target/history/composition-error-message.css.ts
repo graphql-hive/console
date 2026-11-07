@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -10,13 +10,13 @@ export const compositionErrorMessageDiv = style([
   shared.shrinkable,
   shared.text.sm,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     whiteSpace: 'pre-wrap',
   }),
 ]);
 
 export const compositionErrorMessagePre = style(
-  layered.utilities({
+  utility({
     marginBlock: space(2),
     overflowX: 'auto',
     borderRadius: vars.radius.md,
@@ -33,7 +33,7 @@ export const compositionErrorMessagePre = style(
 );
 
 export const compositionErrorMessageSpan2 = style(
-  layered.utilities({
+  utility({
     width: '1em',
     flexShrink: '0',
     userSelect: 'none',

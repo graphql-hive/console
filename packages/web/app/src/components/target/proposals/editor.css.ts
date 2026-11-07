@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../styles/theme.css';
 export const proposalEditorDiv = style([
   shared.flex,
   shared.grow,
-  layered.utilities({
+  utility({
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
     paddingBottom: space(4),
@@ -18,13 +18,13 @@ export const proposalEditorDiv = style([
 ]);
 
 export const proposalEditorDiv2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 );
 
 export const proposalEditorCircle = style(
-  layered.utilities({
+  utility({
     marginLeft: space(-2),
     width: space(4),
     height: space(4),
@@ -34,13 +34,13 @@ export const proposalEditorCircle = style(
 );
 
 export const proposalEditorSpan = style(
-  layered.utilities({
+  utility({
     fontStyle: 'italic',
   }),
 );
 
 export const proposalEditorTriangleAlertIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.critical.DEFAULT,
@@ -48,26 +48,26 @@ export const proposalEditorTriangleAlertIcon = style(
 );
 
 export const proposalEditorSpan2 = style(
-  layered.utilities({
+  utility({
     marginLeft: space(2),
   }),
 );
 
 export const proposalEditorXIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const proposalEditorXIcon2 = style(
-  layered.utilities({
+  utility({
     display: 'none',
   }),
 );
 
 export const proposalEditorDiv3 = style(
-  layered.utilities({
+  utility({
     borderRadius: vars.radius.sm,
     borderStyle: 'solid',
     borderWidth: '1px',
@@ -76,7 +76,7 @@ export const proposalEditorDiv3 = style(
 
 export const proposalEditorDiv4 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     justifyContent: 'flex-end',
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
@@ -86,7 +86,7 @@ export const proposalEditorDiv4 = style([
 ]);
 
 export const proposalEditorButton = style(
-  layered.utilities({
+  utility({
     marginLeft: space(2),
     cursor: 'pointer',
     padding: space(1),
@@ -103,14 +103,14 @@ export const proposalEditorButton = style(
 );
 
 export const proposalEditorWandSparkles = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const proposalEditorButton2 = style(
-  layered.utilities({
+  utility({
     marginLeft: space(2),
     cursor: 'pointer',
     padding: space(1),
@@ -127,7 +127,7 @@ export const proposalEditorButton2 = style(
 );
 
 export const proposalEditorSettings = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
@@ -136,7 +136,7 @@ export const proposalEditorSettings = style(
 export const proposalEditorDiv5 = style([shared.stack.gap4, shared.text.sm]);
 
 export const proposalEditorDiv6 = style(
-  layered.utilities({
+  utility({
     marginBottom: space(2),
     fontWeight: vars.weight.semibold,
   }),
@@ -145,13 +145,13 @@ export const proposalEditorDiv6 = style(
 export const proposalEditorP = style([
   shared.text.xs,
   shared.fg.critical,
-  layered.utilities({
+  utility({
     marginTop: space(1),
   }),
 ]);
 
 export const proposalEditorDiv7 = style(
-  layered.utilities({
+  utility({
     marginBottom: space(2),
     fontWeight: vars.weight.semibold,
   }),
@@ -160,14 +160,14 @@ export const proposalEditorDiv7 = style(
 export const serviceSelectDiv = style([
   shared.flex,
   shared.grow,
-  layered.utilities({
+  utility({
     flexDirection: 'row',
   }),
 ]);
 
 export const serviceSelectSpan2 = style([
   shared.hidden,
-  layered.utilities({
+  utility({
     '@media': {
       '(width >= 40rem)': {
         display: 'inline-block',

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../../styles/layered';
+import { component } from '../../../../../styles/layered';
 import { space } from '../../../../../styles/space';
 import * as shared from '../../../../../styles/shared.css';
 
@@ -8,7 +8,7 @@ import * as shared from '../../../../../styles/shared.css';
 export const previewDiv = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     paddingInline: space(2),
     paddingBlock: space(3),
   }),
@@ -17,14 +17,14 @@ export const previewDiv = style([
 export const div = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     paddingInline: space(2),
     paddingBlock: space(3),
   }),
 ]);
 
 export const div2 = style(
-  layered.components({
+  component({
     display: 'flex',
     gap: space(4),
   }),

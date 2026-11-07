@@ -1,17 +1,15 @@
 import { style } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { palette, vars } from '../../../../styles/theme.css';
-
-const s = layered.components;
 
 export const overlayPartsStyles = {
   // Base UI sets `data-starting-style` on the frame a popup mounts and `data-ending-style` while
   // it leaves, so one opacity transition covers both directions.
   backdrop: style(
-    s({
+    component({
       position: 'fixed',
       inset: 0,
       zIndex: 50,
@@ -30,7 +28,7 @@ export const overlayPartsStyles = {
     }),
   ),
   surface: style(
-    s({
+    component({
       zIndex: 50,
       display: 'flex',
       flexDirection: 'column',
@@ -44,22 +42,22 @@ export const overlayPartsStyles = {
       outlineStyle: 'none',
     }),
   ),
-  portalMount: style(s({ position: 'absolute', insetInline: 0, top: 0, height: 0 })),
+  portalMount: style(component({ position: 'absolute', insetInline: 0, top: 0, height: 0 })),
   header: recipe({
     base: [
       shared.stack.base,
       shared.noShrink,
-      s({ gap: space(1.5), paddingInline: space(6), paddingTop: space(6) }),
+      component({ gap: space(1.5), paddingInline: space(6), paddingTop: space(6) }),
     ],
     variants: {
       /** Leaves room on the right for the close button. */
       clearCloseButton: {
-        true: s({ paddingRight: space(14) }),
+        true: component({ paddingRight: space(14) }),
       },
     },
   }),
   title: style(
-    s({
+    component({
       marginBottom: space(2),
       fontSize: vars.text.lg,
       lineHeight: 1,
@@ -69,20 +67,20 @@ export const overlayPartsStyles = {
   ),
   description: style([shared.text.sm, shared.fg.default]),
   /** The body of content that lays itself out and owns its scrolling: the remaining height, no inset. */
-  bodyFill: style([shared.stack.base, shared.grow, s({ minHeight: 0 })]),
+  bodyFill: style([shared.stack.base, shared.grow, component({ minHeight: 0 })]),
   body: recipe({
-    base: s({ paddingInline: space(6) }),
+    base: component({ paddingInline: space(6) }),
     variants: {
       /** When nothing follows the body, it carries the bottom inset itself. */
       padBottom: {
-        true: s({ paddingBottom: space(6) }),
+        true: component({ paddingBottom: space(6) }),
       },
     },
   }),
   footer: style([
     shared.flex,
     shared.noShrink,
-    s({
+    component({
       flexDirection: 'column-reverse',
       gap: space(2),
       paddingInline: space(6),
@@ -92,5 +90,5 @@ export const overlayPartsStyles = {
       },
     }),
   ]),
-  closeButton: style(s({ position: 'absolute', top: space(4), right: space(4) })),
+  closeButton: style(component({ position: 'absolute', top: space(4), right: space(4) })),
 };

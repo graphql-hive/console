@@ -1,19 +1,17 @@
 import { style } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import { focusRing } from '../shared-styles';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 
-const s = layered.components;
-
 // Plain styles for the root and the trigger, because the header's border and the chevron's turn
 // select on their open state.
-const column = style(s({ display: 'flex', minHeight: 0, flexDirection: 'column' }));
+const column = style(component({ display: 'flex', minHeight: 0, flexDirection: 'column' }));
 
 const trigger = style(
-  s({
+  component({
     display: 'flex',
     minWidth: 0,
     flexGrow: 1,
@@ -46,7 +44,7 @@ export const collapsibleStyles = {
       variant: {
         section: {},
         /** A titled panel's bar: a rule under it while the panel is open. */
-        panel: s({
+        panel: component({
           borderColor: vars.color.line.DEFAULT,
           paddingRight: space(4),
           selectors: {
@@ -60,7 +58,7 @@ export const collapsibleStyles = {
     base: [trigger, focusRing],
     variants: {
       variant: {
-        section: s({
+        section: component({
           height: space(8),
           borderRadius: vars.radius.md,
           paddingInline: space(2),
@@ -70,12 +68,12 @@ export const collapsibleStyles = {
             },
           },
         }),
-        panel: s({ paddingInline: space(4), paddingBlock: space(3) }),
+        panel: component({ paddingInline: space(4), paddingBlock: space(3) }),
       },
     },
   }),
   chevron: style(
-    s({
+    component({
       ...square(4),
       flexShrink: 0,
       color: vars.color.fg.secondary,

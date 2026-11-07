@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -8,7 +8,7 @@ import { vars } from '../../../styles/theme.css';
 
 export const resourceSelectorP2 = style([
   shared.text.sm,
-  layered.utilities({
+  utility({
     marginBottom: space(4),
   }),
 ]);
@@ -18,7 +18,7 @@ export const resourceSelectorDiv = style([shared.flex, shared.text.sm]);
 export const resourceSelectorDiv2 = style([
   shared.fill,
   shared.weight.bold,
-  layered.utilities({
+  utility({
     borderTopLeftRadius: vars.radius.sm,
     borderTopStyle: 'solid',
     borderTopWidth: '1px',
@@ -35,7 +35,7 @@ export const resourceSelectorDiv2 = style([
 export const resourceSelectorDiv3 = style([
   shared.flex,
   shared.fill,
-  layered.utilities({
+  utility({
     alignItems: 'baseline',
     borderTopStyle: 'solid',
     borderTopWidth: '1px',
@@ -52,13 +52,13 @@ export const resourceSelectorDiv3 = style([
 export const resourceSelectorDiv5 = style([
   shared.row.base,
   shared.text.xs,
-  layered.utilities({
+  utility({
     marginLeft: 'auto',
   }),
 ]);
 
 export const resourceSelectorSpan = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
   }),
 );
@@ -66,7 +66,7 @@ export const resourceSelectorSpan = style(
 export const resourceSelectorDiv6 = style([
   shared.flex,
   shared.fill,
-  layered.utilities({
+  utility({
     alignItems: 'baseline',
     borderTopRightRadius: vars.radius.sm,
     borderInlineStyle: 'solid',
@@ -84,14 +84,14 @@ export const resourceSelectorDiv6 = style([
 export const resourceSelectorDiv7 = style([shared.row.base, shared.grow]);
 
 export const resourceSelectorChevronDownIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const resourceSelectorChevronDownIcon2 = style(
-  layered.utilities({
+  utility({
     rotate: '-90deg',
   }),
 );
@@ -99,7 +99,7 @@ export const resourceSelectorChevronDownIcon2 = style(
 export const resourceSelectorSpan3 = style([
   shared.text.xs,
   shared.weight.normal,
-  layered.utilities({
+  utility({
     marginLeft: space(1),
   }),
 ]);
@@ -107,19 +107,19 @@ export const resourceSelectorSpan3 = style([
 export const resourceSelectorDiv8 = style([
   shared.row.base,
   shared.text.xs,
-  layered.utilities({
+  utility({
     marginLeft: 'auto',
   }),
 ]);
 
 export const resourceSelectorSpan4 = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
   }),
 );
 
 export const resourceSelectorDiv9 = style(
-  layered.utilities({
+  utility({
     marginTop: '0px',
     display: 'flex',
     height: space(64),
@@ -131,7 +131,7 @@ export const resourceSelectorDiv9 = style(
 export const resourceSelectorDiv10 = style([
   shared.stack.base,
   shared.fill,
-  layered.utilities({
+  utility({
     height: '100%',
     borderStyle: 'solid',
     borderWidth: '1px',
@@ -140,7 +140,7 @@ export const resourceSelectorDiv10 = style([
 
 export const resourceSelectorDiv11 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     paddingTop: space(2),
   }),
 ]);
@@ -148,7 +148,7 @@ export const resourceSelectorDiv11 = style([
 export const resourceSelectorDiv12 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBottom: space(1),
     paddingInline: space(2),
     textTransform: 'uppercase',
@@ -157,7 +157,7 @@ export const resourceSelectorDiv12 = style([
 
 export const resourceSelectorDiv13 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -165,7 +165,7 @@ export const resourceSelectorDiv13 = style([
 export const resourceSelectorDiv14 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(3),
     marginBottom: space(1),
     paddingInline: space(2),
@@ -175,7 +175,7 @@ export const resourceSelectorDiv14 = style([
 
 export const resourceSelectorDiv15 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -183,7 +183,7 @@ export const resourceSelectorDiv15 = style([
 export const resourceSelectorDiv16 = style([
   shared.stack.base,
   shared.fill,
-  layered.utilities({
+  utility({
     height: '100%',
     borderBlockStyle: 'solid',
     borderBlockWidth: '1px',
@@ -193,7 +193,7 @@ export const resourceSelectorDiv16 = style([
 ]);
 
 export const resourceSelectorDiv17 = style(
-  layered.utilities({
+  utility({
     borderLeftStyle: 'solid',
     borderLeftWidth: '1px',
   }),
@@ -201,7 +201,7 @@ export const resourceSelectorDiv17 = style(
 
 export const resourceSelectorDiv18 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     paddingTop: space(2),
   }),
 ]);
@@ -209,7 +209,7 @@ export const resourceSelectorDiv18 = style([
 export const resourceSelectorDiv19 = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -217,7 +217,7 @@ export const resourceSelectorDiv19 = style([
 export const resourceSelectorDiv20 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -225,7 +225,7 @@ export const resourceSelectorDiv20 = style([
 export const resourceSelectorDiv21 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBottom: space(1),
     paddingInline: space(2),
     textTransform: 'uppercase',
@@ -234,7 +234,7 @@ export const resourceSelectorDiv21 = style([
 
 export const resourceSelectorDiv22 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -242,7 +242,7 @@ export const resourceSelectorDiv22 = style([
 export const resourceSelectorDiv23 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(3),
     marginBottom: space(1),
     paddingInline: space(2),
@@ -252,7 +252,7 @@ export const resourceSelectorDiv23 = style([
 
 export const resourceSelectorDiv24 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -260,7 +260,7 @@ export const resourceSelectorDiv24 = style([
 export const resourceSelectorDiv25 = style([
   shared.stack.base,
   shared.fill,
-  layered.utilities({
+  utility({
     height: '100%',
     borderBlockStyle: 'solid',
     borderBlockWidth: '1px',
@@ -270,7 +270,7 @@ export const resourceSelectorDiv25 = style([
 ]);
 
 export const resourceSelectorDiv27 = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(2),
   }),
 );
@@ -278,7 +278,7 @@ export const resourceSelectorDiv27 = style(
 export const resourceSelectorDiv28 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -286,7 +286,7 @@ export const resourceSelectorDiv28 = style([
 export const resourceSelectorDiv29 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -294,7 +294,7 @@ export const resourceSelectorDiv29 = style([
 export const resourceSelectorDiv30 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -302,7 +302,7 @@ export const resourceSelectorDiv30 = style([
 export const resourceSelectorDiv31 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -310,7 +310,7 @@ export const resourceSelectorDiv31 = style([
 export const resourceSelectorDiv32 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBottom: space(1),
     paddingInline: space(2),
     textTransform: 'uppercase',
@@ -319,7 +319,7 @@ export const resourceSelectorDiv32 = style([
 
 export const resourceSelectorDiv33 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -327,7 +327,7 @@ export const resourceSelectorDiv33 = style([
 export const resourceSelectorDiv34 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(3),
     marginBottom: space(1),
     paddingInline: space(2),
@@ -337,7 +337,7 @@ export const resourceSelectorDiv34 = style([
 
 export const resourceSelectorInput = style([
   shared.text.sm,
-  layered.utilities({
+  utility({
     marginInline: space(2),
     marginTop: space(1),
     maxWidth: '70%',
@@ -347,7 +347,7 @@ export const resourceSelectorInput = style([
 ]);
 
 export const resourceSelectorDiv35 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'baseline',
     borderBottomStyle: 'solid',
@@ -360,7 +360,7 @@ export const resourceSelectorDiv35 = style(
 );
 
 export const resourceSelectorDiv36 = style(
-  layered.utilities({
+  utility({
     borderTopStyle: 'solid',
     borderTopWidth: '1px',
   }),
@@ -371,14 +371,14 @@ export const resourceSelectorDiv37 = style([shared.row.base, shared.grow]);
 export const resourceSelectorButton2 = style([shared.row.base, shared.text.sm, shared.weight.bold]);
 
 export const resourceSelectorChevronDownIcon3 = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const resourceSelectorChevronDownIcon4 = style(
-  layered.utilities({
+  utility({
     rotate: '-90deg',
   }),
 );
@@ -386,7 +386,7 @@ export const resourceSelectorChevronDownIcon4 = style(
 export const resourceSelectorSpan5 = style([
   shared.text.xs,
   shared.weight.normal,
-  layered.utilities({
+  utility({
     marginLeft: space(1),
   }),
 ]);
@@ -394,19 +394,19 @@ export const resourceSelectorSpan5 = style([
 export const resourceSelectorDiv38 = style([
   shared.row.base,
   shared.text.xs,
-  layered.utilities({
+  utility({
     marginLeft: 'auto',
   }),
 ]);
 
 export const resourceSelectorSpan6 = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
   }),
 );
 
 export const resourceSelectorDiv39 = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(2),
   }),
 );
@@ -414,7 +414,7 @@ export const resourceSelectorDiv39 = style(
 export const resourceSelectorDiv40 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -422,7 +422,7 @@ export const resourceSelectorDiv40 = style([
 export const resourceSelectorDiv41 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -430,7 +430,7 @@ export const resourceSelectorDiv41 = style([
 export const resourceSelectorDiv42 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -438,7 +438,7 @@ export const resourceSelectorDiv42 = style([
 export const resourceSelectorDiv43 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBottom: space(1),
     paddingInline: space(2),
     textTransform: 'uppercase',
@@ -447,7 +447,7 @@ export const resourceSelectorDiv43 = style([
 
 export const resourceSelectorDiv44 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -455,7 +455,7 @@ export const resourceSelectorDiv44 = style([
 export const resourceSelectorDiv45 = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(3),
     marginBottom: space(1),
     paddingInline: space(2),
@@ -465,7 +465,7 @@ export const resourceSelectorDiv45 = style([
 
 export const resourceSelectorInput2 = style([
   shared.text.sm,
-  layered.utilities({
+  utility({
     marginInline: space(2),
     marginTop: space(1),
     maxWidth: '70%',
@@ -477,13 +477,13 @@ export const resourceSelectorInput2 = style([
 export const resourceSelectorDiv46 = style([
   shared.row.base,
   shared.text.sm,
-  layered.utilities({
+  utility({
     height: space(5),
   }),
 ]);
 
 export const rowItemDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     cursor: 'pointer',
     alignItems: 'center',
@@ -501,7 +501,7 @@ export const rowItemDiv = style(
 
 globalStyle(
   `:where(${rowItemDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(1),
   }),
@@ -510,13 +510,13 @@ globalStyle(
 export const rowItemSpan = style([shared.grow, shared.text.sm]);
 
 export const rowItemChevronRightIcon = style(
-  layered.utilities({
+  utility({
     display: 'inline',
   }),
 );
 
 export const rowItemXIcon = style(
-  layered.utilities({
+  utility({
     color: vars.color.fg.secondary,
     selectors: {
       '&[data-active="true"]': {

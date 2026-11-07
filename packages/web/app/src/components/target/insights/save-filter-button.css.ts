@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 
@@ -7,7 +7,7 @@ import * as shared from '../../../styles/shared.css';
 
 export const saveFilterButtonDiv = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     columnGap: space(2),
   }),
 ]);
@@ -16,7 +16,7 @@ export const createFilterButtonDiv = style({});
 
 globalStyle(
   `:where(${createFilterButtonDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(3),
   }),

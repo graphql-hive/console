@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
@@ -11,7 +11,7 @@ export const targetHistorySchemaVersionPageDiv = style([
   shared.fullWidth,
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -20,13 +20,13 @@ export const targetHistorySchemaVersionPageDiv = style([
 ]);
 
 export const targetHistorySchemaVersionPageSpan = style(
-  layered.utilities({
+  utility({
     marginBottom: space(3),
   }),
 );
 
 export const targetHistorySchemaVersionPageQueryError = style(
-  layered.utilities({
+  utility({
     marginTop: space(20),
   }),
 );
@@ -35,13 +35,13 @@ export const schemaVersionViewSpan = style([
   shared.inlineRow.gap1_5,
   shared.text.xs,
   shared.fg.default,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
 
 export const schemaVersionViewSpan2 = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1.5),
@@ -52,7 +52,7 @@ export const schemaVersionViewDiv = style([
   shared.stack.base,
   shared.fullWidth,
   shared.fillShrinkable,
-  layered.utilities({
+  utility({
     paddingBlock: space(6),
   }),
 ]);
@@ -61,7 +61,7 @@ export const schemaVersionViewDiv2 = targetHistorySchemaVersionPageSpan;
 
 export const schemaVersionViewDiv3 = style([
   shared.stack.gap3,
-  layered.utilities({
+  utility({
     marginTop: space(3),
   }),
 ]);
@@ -72,35 +72,35 @@ export const schemaVersionViewDiv5 = style({});
 
 globalStyle(
   `:where(${schemaVersionViewDiv5} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(8),
   }),
 );
 
 export const schemaVersionViewDiv6 = style(
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 );
 
 globalStyle(
   `:where(${schemaVersionViewDiv6} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(8),
   }),
 );
 
 export const versionStatusGitCompareIcon = style(
-  layered.utilities({
+  utility({
     width: space(3.5),
     height: space(3.5),
   }),
 );
 
 export const versionStatusCheckIcon = style(
-  layered.utilities({
+  utility({
     width: space(3.5),
     height: space(3.5),
     color: vars.color.success.DEFAULT,
@@ -108,7 +108,7 @@ export const versionStatusCheckIcon = style(
 );
 
 export const versionStatusTriangleAlertIcon = style(
-  layered.utilities({
+  utility({
     width: space(3.5),
     height: space(3.5),
     color: vars.color.critical.DEFAULT,
@@ -122,7 +122,7 @@ export const versionStatusTrailingSpan = style([
 ]);
 
 export const graphQLSchemaViewArrowRightIcon = style(
-  layered.utilities({
+  utility({
     display: 'inline',
     width: space(3),
     height: space(3),
@@ -130,7 +130,7 @@ export const graphQLSchemaViewArrowRightIcon = style(
 );
 
 export const graphQLSchemaViewDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'flex-end',
@@ -143,7 +143,7 @@ export const graphQLSchemaViewSpan2 = style([shared.text.xs, shared.fg.muted]);
 
 export const graphQLSchemaViewDiv2 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     minHeight: 'var(--code-max-h)',
     vars: {
       '--code-max-h': 'calc(100vh - 11rem)',
@@ -152,14 +152,14 @@ export const graphQLSchemaViewDiv2 = style([
 ]);
 
 export const graphQLSchemaViewDiv3 = style(
-  layered.utilities({
+  utility({
     paddingInline: space(5),
     paddingBlock: space(3),
   }),
 );
 
 export const downloadButtonDownloadIcon = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
     width: space(3),
     height: space(3),
@@ -170,20 +170,20 @@ export const filterableSchemaChangeBlockDiv = style({});
 
 globalStyle(
   `:where(${filterableSchemaChangeBlockDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(3),
   }),
 );
 
 export const filterableSchemaChangeBlockDiv2 = style(
-  layered.utilities({
+  utility({
     paddingInline: space(5),
   }),
 );
 
 export const filterableSchemaChangeBlockDiv3 = style(
-  layered.utilities({
+  utility({
     paddingTop: space(2),
     paddingBottom: space(8),
   }),
@@ -191,19 +191,19 @@ export const filterableSchemaChangeBlockDiv3 = style(
 
 export const filterableSchemaChangeBlockDiv4 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingBlock: space(3),
   }),
 ]);
 
 export const filterableSchemaChangeBlockDiv5 = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(3),
   }),
 );
 
 export const subgraphCardDiv = style(
-  layered.utilities({
+  utility({
     overflow: 'hidden',
     borderRadius: vars.radius.xl,
     borderStyle: 'solid',
@@ -213,7 +213,7 @@ export const subgraphCardDiv = style(
 
 globalStyle(
   `:where(${subgraphCardDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     borderBottomStyle: 'solid',
     borderTopStyle: 'solid',
     borderTopWidth: '0px',
@@ -222,13 +222,13 @@ globalStyle(
 );
 
 export const subgraphCardSubgraphRow = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.card,
   }),
 );
 
 export const subgraphCardDiv2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.inset,
   }),
 );
@@ -237,7 +237,7 @@ export const componentDiv = graphQLSchemaViewDiv;
 
 export const graphVersionSubgraphViewP = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     maxWidth: '600px',
     padding: space(5),
   }),
@@ -246,7 +246,7 @@ export const graphVersionSubgraphViewP = style([
 export const graphVersionSubgraphChangesViewDiv = filterableSchemaChangeBlockDiv2;
 
 export const graphVersionSubgraphChangesViewDiv2 = style(
-  layered.utilities({
+  utility({
     marginBottom: space(8),
     paddingTop: space(2),
   }),
@@ -254,14 +254,14 @@ export const graphVersionSubgraphChangesViewDiv2 = style(
 
 export const graphVersionSubgraphChangesViewDiv3 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingBlock: space(5),
   }),
 ]);
 
 export const graphVersionSubgraphChangesViewDiv4 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     paddingInline: space(5),
     paddingBlock: space(5),
   }),
@@ -273,7 +273,7 @@ export const graphVersionSubgraphChangesViewDiv6 = style({});
 
 globalStyle(
   `:where(${graphVersionSubgraphChangesViewDiv6} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(4),
   }),
@@ -283,14 +283,14 @@ export const sDLDiffViewDiv = style([
   shared.row.gap2,
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingInline: space(5),
     paddingBlock: space(3),
   }),
 ]);
 
 export const sDLDiffViewCircleCheckIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.success.DEFAULT,
@@ -298,7 +298,7 @@ export const sDLDiffViewCircleCheckIcon = style(
 );
 
 export const sDLDiffViewInfoIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.fg.muted,
@@ -306,7 +306,7 @@ export const sDLDiffViewInfoIcon = style(
 );
 
 export const sDLDiffNoticeDiv = style(
-  layered.utilities({
+  utility({
     cursor: 'default',
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
@@ -318,7 +318,7 @@ export const sDLDiffNoticeDiv = style(
 
 export const sDLDiffNoticeDiv2 = style([
   shared.row.gap3,
-  layered.utilities({
+  utility({
     marginBottom: space(1),
   }),
 ]);
@@ -326,7 +326,7 @@ export const sDLDiffNoticeDiv2 = style([
 export const sDLDiffNoticeH2 = style([shared.text.sm, shared.weight.medium, shared.fg.strong]);
 
 export const sDLDiffNoticeP = style(
-  layered.utilities({
+  utility({
     fontSize: vars.text.xs,
     lineHeight: vars.text.xsLineHeight,
     color: vars.color.fg.secondary,
@@ -334,19 +334,19 @@ export const sDLDiffNoticeP = style(
 );
 
 export const sDLViewDiv = style(
-  layered.utilities({
+  utility({
     maxWidth: 'inherit',
   }),
 );
 
 export const firstComposableGraphVersionDiv = style(
-  layered.utilities({
+  utility({
     cursor: 'default',
   }),
 );
 
 export const firstComposableGraphVersionDiv2 = style(
-  layered.utilities({
+  utility({
     marginBottom: space(3),
     display: 'flex',
     alignItems: 'center',
@@ -357,7 +357,7 @@ export const firstComposableGraphVersionDiv2 = style(
 export const firstComposableGraphVersionCircleCheckIcon = sDLDiffViewCircleCheckIcon;
 
 export const firstComposableGraphVersionH2 = style(
-  layered.utilities({
+  utility({
     fontSize: vars.text.base,
     lineHeight: vars.text.baseLineHeight,
     fontWeight: vars.weight.medium,
@@ -380,14 +380,14 @@ export const noGraphChangesP = sDLDiffNoticeP;
 export const schemaVersionPromotionOriginContentsSpan = schemaVersionViewSpan2;
 
 export const schemaVersionPromotionOriginContentsGitCommit = style(
-  layered.utilities({
+  utility({
     height: space(3.5),
     width: space(3.5),
   }),
 );
 
 export const schemaVersionPromotionOriginContentsLink = style(
-  layered.utilities({
+  utility({
     fontFamily: vars.font.mono,
   }),
 );
@@ -402,7 +402,7 @@ export const schemaVersionHeaderGitCommit2 = schemaVersionPromotionOriginContent
 
 export const schemaVersionHeaderSpan3 = style([
   shared.inlineRow.gap1_5,
-  layered.utilities({
+  utility({
     flexWrap: 'wrap',
   }),
 ]);
@@ -411,13 +411,13 @@ export const schemaVersionHeaderGitCommit3 = schemaVersionPromotionOriginContent
 
 export const schemaVersionHeaderSpan4 = style([
   shared.inlineRow.gap1,
-  layered.utilities({
+  utility({
     marginLeft: space(1),
   }),
 ]);
 
 export const schemaVersionHeaderGitBranch = style(
-  layered.utilities({
+  utility({
     height: space(3),
     width: space(3),
   }),
@@ -428,7 +428,7 @@ export const schemaVersionHeaderSpan5 = schemaVersionViewSpan2;
 export const schemaVersionHeaderGitCommit4 = schemaVersionPromotionOriginContentsGitCommit;
 
 export const schemaVersionHeaderDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'baseline',
@@ -440,7 +440,7 @@ export const schemaVersionHeaderDiv = style(
 export const schemaVersionHeaderH1 = style([
   shared.weight.semibold,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     fontSize: vars.text.xl,
     lineHeight: vars.leading.tight,
   }),
@@ -449,13 +449,13 @@ export const schemaVersionHeaderH1 = style([
 export const schemaVersionHeaderP = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(1.5),
   }),
 ]);
 
 export const schemaVersionHeaderDiv2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(6),
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -471,7 +471,7 @@ export const schemaVersionHeaderSpan6 = schemaVersionViewSpan2;
 export const schemaVersionHeaderSpan7 = schemaVersionViewSpan2;
 
 export const schemaVersionHeaderClock = style(
-  layered.utilities({
+  utility({
     width: space(3),
     height: space(3),
   }),
@@ -479,14 +479,14 @@ export const schemaVersionHeaderClock = style(
 
 export const schemaVersionHeaderSpan8 = style([
   shared.truncate,
-  layered.utilities({
+  utility({
     marginTop: space(0.5),
     display: 'block',
   }),
 ]);
 
 export const viewModeToggleDiv = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1),
@@ -498,7 +498,7 @@ export const viewModeToggleDiv = style(
 );
 
 export const viewModeToggleButton = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1.5),
@@ -523,7 +523,7 @@ export const viewModeToggleButton = style(
 );
 
 export const viewModeToggleButton2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.selected,
   }),
 );
@@ -531,19 +531,19 @@ export const viewModeToggleButton2 = style(
 export const viewModeToggleIcon = schemaVersionPromotionOriginContentsGitCommit;
 
 export const breakingChangeTypeModesDotColor = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.DEFAULT,
   }),
 );
 
 export const breakingChangeTypeModesDotColor2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.warning.DEFAULT,
   }),
 );
 
 export const breakingChangeTypeModesDotColor3 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.info.DEFAULT,
   }),
 );
@@ -551,7 +551,7 @@ export const breakingChangeTypeModesDotColor3 = style(
 export const changeTypeToggleDiv = viewModeToggleDiv;
 
 export const changeTypeToggleButton = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1.5),
@@ -575,7 +575,7 @@ export const changeTypeToggleButton = style(
 export const changeTypeToggleButton2 = viewModeToggleButton2;
 
 export const changeTypeToggleSpan = style(
-  layered.utilities({
+  utility({
     height: space(1.5),
     width: space(1.5),
     translate: '0 -1px',
@@ -584,7 +584,7 @@ export const changeTypeToggleSpan = style(
 );
 
 export const changeTypeToggleSpan2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.fg.muted,
   }),
 );
@@ -596,13 +596,13 @@ export const sectionHeaderH2 = style([shared.text.base, shared.weight.semibold, 
 export const sectionHeaderP = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(0.5),
   }),
 ]);
 
 export const schemaVersionSummaryDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'grid',
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: '1px',
@@ -623,7 +623,7 @@ export const schemaVersionSummarySpan = style([
   shared.row.base,
   shared.text.xs,
   shared.fg.critical,
-  layered.utilities({
+  utility({
     marginLeft: space(2),
     gap: space(0.5),
     '@media': {
@@ -636,7 +636,7 @@ export const schemaVersionSummarySpan = style([
 ]);
 
 export const schemaVersionSummaryShieldAlertIcon = style(
-  layered.utilities({
+  utility({
     display: 'inline',
   }),
 );
@@ -644,7 +644,7 @@ export const schemaVersionSummaryShieldAlertIcon = style(
 export const schemaVersionSummarySpan2 = style([
   shared.text.base,
   shared.fg.success,
-  layered.utilities({
+  utility({
     paddingLeft: space(2),
   }),
 ]);
@@ -652,7 +652,7 @@ export const schemaVersionSummarySpan2 = style([
 export const schemaVersionSummaryCheckIcon = schemaVersionSummaryShieldAlertIcon;
 
 export const schemaVersionSummaryStat = style(
-  layered.utilities({
+  utility({
     display: 'none',
     '@media': {
       '(width >= 96rem)': {
@@ -663,7 +663,7 @@ export const schemaVersionSummaryStat = style(
 );
 
 export const schemaVersionSummaryDiv3 = style(
-  layered.utilities({
+  utility({
     overflow: 'hidden',
     borderRadius: vars.radius.xl,
     borderStyle: 'solid',
@@ -673,7 +673,7 @@ export const schemaVersionSummaryDiv3 = style(
 
 export const schemaVersionSummaryDiv4 = style([
   shared.row.between,
-  layered.utilities({
+  utility({
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
     backgroundColor: vars.color.surface.card,
@@ -686,20 +686,20 @@ export const schemaVersionSummaryDiv5 = style([
   shared.row.gap2,
   shared.text.xs,
   shared.weight.bold,
-  layered.utilities({
+  utility({
     textTransform: 'capitalize',
   }),
 ]);
 
 export const schemaVersionSummaryUl = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.inset,
   }),
 );
 
 globalStyle(
   `:where(${schemaVersionSummaryUl} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     borderBottomStyle: 'solid',
     borderTopStyle: 'solid',
     borderTopWidth: '0px',
@@ -708,13 +708,13 @@ globalStyle(
 );
 
 export const schemaVersionSummaryLi = style(
-  layered.utilities({
+  utility({
     opacity: '50%',
   }),
 );
 
 export const statDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     gap: space(1.5),
@@ -726,13 +726,13 @@ export const statDiv = style(
 export const statSpan = style([
   shared.text.xs,
   shared.weight.bold,
-  layered.utilities({
+  utility({
     textTransform: 'capitalize',
   }),
 ]);
 
 export const statSpan2 = style(
-  layered.utilities({
+  utility({
     fontSize: vars.text.xl,
     lineHeight: '1',
     letterSpacing: vars.tracking.tight,
@@ -740,75 +740,75 @@ export const statSpan2 = style(
 );
 
 export const kindMetaText = style(
-  layered.utilities({
+  utility({
     color: vars.color.warning.DEFAULT,
   }),
 );
 
 export const kindMetaBg = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.warning.tintStrong,
   }),
 );
 
-export const kindMetaRing = style(layered.utilities({}));
+export const kindMetaRing = style(utility({}));
 
 export const kindMetaDot = breakingChangeTypeModesDotColor2;
 
 export const kindMetaText2 = style(
-  layered.utilities({
+  utility({
     color: vars.color.critical.DEFAULT,
   }),
 );
 
 export const kindMetaBg2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.tintStrong,
   }),
 );
 
-export const kindMetaRing2 = style(layered.utilities({}));
+export const kindMetaRing2 = style(utility({}));
 
 export const kindMetaDot2 = breakingChangeTypeModesDotColor;
 
 export const kindMetaText3 = style(
-  layered.utilities({
+  utility({
     color: vars.color.info.DEFAULT,
   }),
 );
 
 export const kindMetaBg3 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.info.tintStrong,
   }),
 );
 
-export const kindMetaRing3 = style(layered.utilities({}));
+export const kindMetaRing3 = style(utility({}));
 
 export const kindMetaDot3 = breakingChangeTypeModesDotColor3;
 
 export const kindMetaText4 = style(
-  layered.utilities({
+  utility({
     color: vars.color.fg.secondary,
   }),
 );
 
 export const kindMetaBg4 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.page,
   }),
 );
 
-export const kindMetaRing4 = style(layered.utilities({}));
+export const kindMetaRing4 = style(utility({}));
 
 export const kindMetaDot4 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.line.DEFAULT,
   }),
 );
 
 export const subgraphRowDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     gap: space(4),
@@ -818,7 +818,7 @@ export const subgraphRowDiv = style(
 );
 
 export const subgraphRowSpan = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     height: space(7),
     width: space(7),
@@ -836,14 +836,14 @@ export const subgraphRowDiv2 = style([shared.stack.base, shared.fillShrinkable])
 
 export const subgraphRowDiv3 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     flexWrap: 'wrap',
     columnGap: space(1),
   }),
 ]);
 
 export const subgraphRowCode = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(0.5),
     fontSize: vars.text.sm,
     lineHeight: vars.text.smLineHeight,
@@ -853,7 +853,7 @@ export const subgraphRowCode = style(
 export const subgraphRowArrowRight = schemaVersionHeaderGitBranch;
 
 export const subgraphRowSpan2 = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1.5),
@@ -863,13 +863,13 @@ export const subgraphRowSpan2 = style(
 );
 
 export const subgraphRowSpan3 = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
   }),
 );
 
 export const subgraphRowSpan4 = style(
-  layered.utilities({
+  utility({
     height: space(1.5),
     width: space(1.5),
     borderRadius: 'calc(infinity * 1px)',
@@ -880,13 +880,13 @@ export const subgraphLinkA = style([
   shared.inlineRow.gap1,
   shared.text.xs,
   shared.fg.default,
-  layered.utilities({
+  utility({
     width: 'fit-content',
   }),
 ]);
 
 export const subgraphLinkExternalLink = style(
-  layered.utilities({
+  utility({
     height: space(2.5),
     width: space(2.5),
   }),
@@ -896,7 +896,7 @@ export const genericGraphCardDiv = subgraphCardDiv;
 
 export const genericGraphCardDiv2 = style([
   shared.row.gap4,
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.card,
     paddingInline: space(5),
     paddingBlock: space(3.5),
@@ -914,14 +914,14 @@ export const genericGraphCardBoxIcon = schemaVersionPromotionOriginContentsGitCo
 export const genericGraphCardDiv3 = style([
   shared.stack.base,
   shared.fillShrinkable,
-  layered.utilities({
+  utility({
     gap: space(0.5),
   }),
 ]);
 
 export const genericGraphCardDiv4 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     flexWrap: 'wrap',
     columnGap: space(1),
     rowGap: space(1),

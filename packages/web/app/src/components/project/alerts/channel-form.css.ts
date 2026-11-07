@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
 
@@ -8,7 +8,7 @@ import { vars } from '../../../styles/theme.css';
 export const channelFormA = style([
   shared.text.sm,
   shared.fg.accent,
-  layered.utilities({
+  utility({
     '@media': {
       '(hover: hover)': {
         selectors: {

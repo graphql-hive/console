@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../styles/theme.css';
 export const button = style([
   shared.inlineFlex,
   shared.fg.muted,
-  layered.utilities({
+  utility({
     '@media': {
       '(hover: hover)': {
         selectors: {
@@ -23,14 +23,14 @@ export const button = style([
 ]);
 
 export const info = style(
-  layered.utilities({
+  utility({
     width: space(3.5),
     height: space(3.5),
   }),
 );
 
 export const div = style(
-  layered.utilities({
+  utility({
     fontSize: vars.text.xs,
     lineHeight: vars.text.xsLineHeight,
   }),
@@ -38,7 +38,7 @@ export const div = style(
 
 globalStyle(
   `:where(${div} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -47,7 +47,7 @@ globalStyle(
 export const span2 = style([shared.mono, shared.fg.strong]);
 
 export const usageChipSpan = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     borderRadius: vars.radius.sm,
@@ -65,14 +65,14 @@ export const targetAlertsRulesPageDiv = style([
   shared.flex,
   shared.text.sm,
   shared.fg.critical,
-  layered.utilities({
+  utility({
     justifyContent: 'center',
     paddingBlock: space(12),
   }),
 ]);
 
 export const colorClass = style(
-  layered.utilities({
+  utility({
     borderColor: vars.color.critical.line,
     backgroundColor: vars.color.critical.tintSubtle,
     color: vars.color.critical.DEFAULT,
@@ -80,7 +80,7 @@ export const colorClass = style(
 );
 
 export const colorClass2 = style(
-  layered.utilities({
+  utility({
     borderColor: vars.color.warning.line,
     backgroundColor: vars.color.warning.tint,
     color: vars.color.warning.text,
@@ -88,7 +88,7 @@ export const colorClass2 = style(
 );
 
 export const colorClass3 = style(
-  layered.utilities({
+  utility({
     borderColor: vars.color.line.DEFAULT,
     backgroundColor: vars.color.surface.card,
     color: vars.color.fg.default,

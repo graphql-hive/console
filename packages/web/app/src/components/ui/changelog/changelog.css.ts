@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { component } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import { animate } from '../../../styles/animations.css';
 import * as shared from '../../../styles/shared.css';
@@ -10,20 +10,20 @@ import { vars } from '../../../styles/theme.css';
 export const changelogPopoverSpan = style([shared.relative, shared.inlineFlex]);
 
 export const changelogPopoverDiv = style(
-  layered.components({
+  component({
     display: 'grid',
   }),
 );
 
 export const changelogPopoverDiv2 = style(
-  layered.components({
+  component({
     padding: space(4),
   }),
 );
 
 globalStyle(
   `:where(${changelogPopoverDiv2} > :not(:last-child))`,
-  layered.components({
+  component({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -32,7 +32,7 @@ globalStyle(
 export const changelogPopoverH4 = style([
   shared.weight.medium,
   shared.fg.strong,
-  layered.components({
+  component({
     fontSize: vars.text.sm,
     lineHeight: '1',
   }),
@@ -41,14 +41,14 @@ export const changelogPopoverH4 = style([
 export const changelogPopoverP = style([shared.text.control, shared.fg.default]);
 
 export const changelogPopoverOl = style(
-  layered.components({
+  component({
     position: 'relative',
     margin: '0px',
   }),
 );
 
 export const changelogPopoverLi = style(
-  layered.components({
+  component({
     borderLeftStyle: 'solid',
     borderLeftWidth: '2px',
     paddingInline: space(4),
@@ -56,13 +56,13 @@ export const changelogPopoverLi = style(
 );
 
 export const changelogPopoverLi2 = style(
-  layered.components({
+  component({
     borderColor: 'transparent',
   }),
 );
 
 export const changelogPopoverLi3 = style(
-  layered.components({
+  component({
     borderColor: vars.color.accent.muted,
   }),
 );
@@ -71,7 +71,7 @@ export const changelogPopoverTime = style([
   shared.text.xs,
   shared.weight.normal,
   shared.fg.secondary,
-  layered.components({
+  component({
     marginBottom: space(1),
   }),
 ]);
@@ -80,7 +80,7 @@ export const changelogPopoverH3 = style([
   shared.text.sm,
   shared.weight.medium,
   shared.fg.strong,
-  layered.components({
+  component({
     marginBottom: space(0.5),
     ...({ textWrap: 'pretty' } as object),
     '@media': {
@@ -99,14 +99,14 @@ export const changelogPopoverP2 = style([
   shared.text.control,
   shared.weight.normal,
   shared.fg.default,
-  layered.components({
+  component({
     marginBottom: space(5),
     ...({ textWrap: 'pretty' } as object),
   }),
 ]);
 
 export const changelogPopoverDiv3 = style(
-  layered.components({
+  component({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -117,7 +117,7 @@ export const changelogPopoverDiv3 = style(
 );
 
 export const changelogPopoverSpan2 = style(
-  layered.components({
+  component({
     position: 'absolute',
     top: '0px',
     right: '0px',
@@ -132,7 +132,7 @@ export const changelogPopoverSpan2 = style(
 export const changelogPopoverSpan3 = style([
   shared.inlineFlex,
   shared.fullWidth,
-  layered.components({
+  component({
     position: 'absolute',
     height: '100%',
     animation: animate.pulse,

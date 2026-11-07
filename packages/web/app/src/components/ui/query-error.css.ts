@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -9,14 +9,14 @@ import { vars } from '../../styles/theme.css';
 export const queryErrorDiv = style([
   shared.row.base,
   shared.fullWidth,
-  layered.components({
+  component({
     height: '100%',
     justifyContent: 'center',
   }),
 ]);
 
 export const queryErrorDiv2 = style(
-  layered.components({
+  component({
     position: 'absolute',
     top: space(6),
     right: space(6),
@@ -24,7 +24,7 @@ export const queryErrorDiv2 = style(
 );
 
 export const queryErrorLogOutIcon = style(
-  layered.components({
+  component({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -33,7 +33,7 @@ export const queryErrorLogOutIcon = style(
 
 export const queryErrorDiv3 = style([
   shared.stack.base,
-  layered.components({
+  component({
     maxWidth: '960px',
     alignItems: 'center',
     columnGap: space(6),
@@ -46,7 +46,7 @@ export const queryErrorDiv3 = style([
 ]);
 
 export const queryErrorImg = style(
-  layered.components({
+  component({
     display: 'block',
     width: '200px',
     height: '200px',
@@ -56,7 +56,7 @@ export const queryErrorImg = style(
 export const queryErrorDiv4 = style([
   shared.grow,
   shared.textCenter,
-  layered.components({
+  component({
     '@media': {
       '(width >= 40rem)': {
         textAlign: 'left',
@@ -68,14 +68,14 @@ export const queryErrorDiv4 = style([
 export const queryErrorH1 = style([shared.text.xl, shared.weight.semibold]);
 
 export const queryErrorDiv5 = style(
-  layered.components({
+  component({
     marginTop: space(2),
   }),
 );
 
 export const queryErrorDiv8 = style([
   shared.text.xs,
-  layered.components({
+  component({
     marginTop: space(6),
   }),
 ]);
@@ -83,7 +83,7 @@ export const queryErrorDiv8 = style([
 export const queryErrorDiv9 = style([shared.inlineRow.base, shared.fg.default]);
 
 export const queryErrorDiv10 = style(
-  layered.components({
+  component({
     borderTopLeftRadius: vars.radius.sm,
     borderBottomLeftRadius: vars.radius.sm,
     backgroundColor: vars.color.warning.tint,
@@ -92,7 +92,7 @@ export const queryErrorDiv10 = style(
 );
 
 export const queryErrorDiv11 = style(
-  layered.components({
+  component({
     borderTopRightRadius: vars.radius.sm,
     borderBottomRightRadius: vars.radius.sm,
     backgroundColor: vars.color.warning.tintSubtle,

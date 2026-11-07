@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -9,13 +9,13 @@ import { vars } from '../../../styles/theme.css';
 export const div = style([
   shared.text.sm,
   shared.weight.bold,
-  layered.utilities({
+  utility({
     marginBottom: space(2),
   }),
 ]);
 
 export const span = style(
-  layered.utilities({
+  utility({
     gap: space(1),
   }),
 );
@@ -23,7 +23,7 @@ export const span = style(
 export const a = style([
   shared.weight.medium,
   shared.fg.accent,
-  layered.utilities({
+  utility({
     transitionProperty:
       'color, background-color, border-color, outline-color, text-decoration-color, fill, stroke',
     transitionTimingFunction: vars.transition.timing,
@@ -43,7 +43,7 @@ export const a = style([
 export const planDiv = style([
   shared.stack.base,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     height: '100%',
     justifyContent: 'space-between',
     alignSelf: 'stretch',
@@ -65,7 +65,7 @@ export const planDiv3 = style([shared.text.sm, shared.fg.secondary]);
 
 export const planDiv4 = style([
   shared.stack.gap2,
-  layered.utilities({
+  utility({
     marginTop: space(6),
   }),
 ]);
@@ -73,7 +73,7 @@ export const planDiv4 = style([
 export const planDiv5 = style([shared.row.gap1, shared.text.sm, shared.fg.secondary]);
 
 export const planCheck = style(
-  layered.utilities({
+  utility({
     width: space(5),
     height: space(5),
     color: vars.color.fg.secondary,
@@ -81,7 +81,7 @@ export const planCheck = style(
 );
 
 export const planDiv6 = style(
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     marginBlock: space(4),
     width: '75%',

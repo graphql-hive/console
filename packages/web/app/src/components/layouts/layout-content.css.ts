@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { utility } from '../../styles/layered';
 import { space } from '../../styles/space';
 import { palette } from '../../styles/theme.css';
 import * as utilities from '../../styles/utilities.css';
@@ -8,7 +8,7 @@ import * as utilities from '../../styles/utilities.css';
 
 export const layoutContentDiv = style([
   utilities.container,
-  layered.utilities({
+  utility({
     minHeight: palette.layout.contentHeight,
     paddingBottom: space(7),
   }),

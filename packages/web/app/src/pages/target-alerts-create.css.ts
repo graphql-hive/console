@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../styles/theme.css';
 export const targetAlertsCreatePageDiv = style([
   shared.stack.gap3,
   shared.textCenter,
-  layered.utilities({
+  utility({
     minHeight: '400px',
     alignItems: 'center',
     justifyContent: 'center',
@@ -18,7 +18,7 @@ export const targetAlertsCreatePageDiv = style([
 ]);
 
 export const targetAlertsCreatePageCircleAlert = style(
-  layered.utilities({
+  utility({
     width: space(10),
     height: space(10),
     color: vars.color.fg.muted,
@@ -29,7 +29,7 @@ export const targetAlertsCreatePageH2 = style([
   shared.text.base,
   shared.weight.medium,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     margin: '0px',
   }),
 ]);
@@ -37,7 +37,7 @@ export const targetAlertsCreatePageH2 = style([
 export const targetAlertsCreatePageP = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     margin: '0px',
     maxWidth: vars.container.md,
   }),

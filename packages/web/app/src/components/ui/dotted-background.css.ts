@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import * as patterns from '../../styles/patterns.css';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -8,7 +8,7 @@ import { vars } from '../../styles/theme.css';
 
 export const dottedBackgroundDiv = style([
   patterns.bgDot.lineStrong,
-  layered.components({
+  component({
     position: 'relative',
     display: 'flex',
     width: '100%',
@@ -21,7 +21,7 @@ export const dottedBackgroundDiv = style([
 
 export const dottedBackgroundDiv2 = style([
   shared.row.base,
-  layered.components({
+  component({
     pointerEvents: 'none',
     position: 'absolute',
     inset: '0px',

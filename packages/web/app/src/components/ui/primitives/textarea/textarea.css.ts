@@ -1,23 +1,21 @@
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import { controlSurface } from '../shared-styles';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 import { field } from '../input/input.css';
 
-const s = layered.components;
-
 export const textareaStyles = {
   root: recipe({
     base: [
       field,
       shared.text.sm,
-      s({ width: '100%', paddingInline: space(3), paddingBlock: space(2) }),
+      component({ width: '100%', paddingInline: space(3), paddingBlock: space(2) }),
     ],
     variants: {
       onSurface: {
-        base: s({
+        base: component({
           borderColor: vars.color.line.control,
           backgroundColor: vars.color.surface.control,
           selectors: {
@@ -35,7 +33,7 @@ export const textareaStyles = {
         }),
         raised: [
           controlSurface.raised,
-          s({
+          component({
             selectors: {
               '&:focus': { borderColor: vars.color.neutral[7] },
               '&:where(.dark, .dark *):focus': { backgroundColor: vars.color.neutral[6] },
@@ -57,8 +55,8 @@ export const textareaStyles = {
       },
       /** Grows with its text (`field-sizing`, set inline), so it must not be resizable by hand. */
       autoSize: {
-        true: s({ resize: 'none' }),
-        false: s({ minHeight: space(20), resize: 'vertical' }),
+        true: component({ resize: 'none' }),
+        false: component({ minHeight: space(20), resize: 'vertical' }),
       },
     },
     defaultVariants: { onSurface: 'base', mono: false, autoSize: false },

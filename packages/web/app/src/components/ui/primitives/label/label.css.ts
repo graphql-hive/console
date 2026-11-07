@@ -1,10 +1,8 @@
 import { style } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
-
-const s = layered.components;
 
 export const labelStyles = {
   root: recipe({
@@ -14,14 +12,19 @@ export const labelStyles = {
         caps: [
           shared.weight.medium,
           shared.fg.secondary,
-          s({ display: 'block', fontSize: 9, letterSpacing: '0.75px', textTransform: 'uppercase' }),
+          component({
+            display: 'block',
+            fontSize: 9,
+            letterSpacing: '0.75px',
+            textTransform: 'uppercase',
+          }),
         ],
         /** Beside a control, in running text. */
         inline: [
           shared.text.xs,
           shared.weight.normal,
           shared.fg.default,
-          s({ display: 'inline-block' }),
+          component({ display: 'inline-block' }),
         ],
       },
     },
@@ -31,7 +34,7 @@ export const labelStyles = {
   hint: style([
     shared.inlineFlex,
     shared.fg.muted,
-    s({
+    component({
       '@media': {
         '(hover: hover)': {
           selectors: { '&:hover': { color: vars.color.fg.default } },

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { component } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -12,7 +12,7 @@ export const subgraphNameSpan = style([
   shared.mono,
   shared.weight.medium,
   shared.fg.strong,
-  layered.components({
+  component({
     top: '-1px',
     maxWidth: '100%',
     alignItems: 'stretch',
@@ -29,13 +29,13 @@ export const subgraphNameSpan = style([
 
 export const subgraphNameSpan2 = style([
   shared.row.base,
-  layered.components({
+  component({
     paddingInline: space(1),
   }),
 ]);
 
 export const subgraphNamePackageIcon = style(
-  layered.components({
+  component({
     width: space(2.5),
     height: space(2.5),
     flexShrink: '0',
@@ -45,7 +45,7 @@ export const subgraphNamePackageIcon = style(
 export const subgraphNameSpan3 = style([
   shared.shrinkable,
   shared.truncate,
-  layered.components({
+  component({
     borderLeftStyle: 'solid',
     borderLeftWidth: '1px',
     borderColor: vars.color.line.strong,

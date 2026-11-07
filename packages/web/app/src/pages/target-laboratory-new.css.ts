@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { palette, vars } from '../styles/theme.css';
@@ -9,14 +9,14 @@ import { palette, vars } from '../styles/theme.css';
 export const laboratoryPageContentDiv = style([
   shared.stack.gap3,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     height: '100%',
     paddingBlock: space(6),
   }),
 ]);
 
 export const laboratoryPageContentDiv5 = style(
-  layered.utilities({
+  utility({
     height: space(4),
     width: '1px',
     backgroundColor: vars.color.line.DEFAULT,
@@ -24,7 +24,7 @@ export const laboratoryPageContentDiv5 = style(
 );
 
 export const laboratoryPageContentSpan = style(
-  layered.utilities({
+  utility({
     marginLeft: space(1),
     width: space(2),
     height: space(2),
@@ -35,7 +35,7 @@ export const laboratoryPageContentSpan = style(
 
 export const laboratoryPageContentDiv6 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     marginRight: '0px',
     marginLeft: 'auto',
     justifyContent: 'center',
@@ -43,7 +43,7 @@ export const laboratoryPageContentDiv6 = style([
 ]);
 
 export const laboratoryPageContentDiv7 = style(
-  layered.utilities({
+  utility({
     alignSelf: 'flex-end',
     paddingTop: space(2),
   }),
@@ -52,13 +52,13 @@ export const laboratoryPageContentDiv7 = style(
 export const laboratoryPageContentSpan2 = style([
   shared.text.xs,
   shared.weight.bold,
-  layered.utilities({
+  utility({
     marginRight: space(2),
   }),
 ]);
 
 export const laboratoryPageContentDiv8 = style(
-  layered.utilities({
+  utility({
     flex: '1',
     overflow: 'hidden',
     borderRadius: vars.radius.lg,
@@ -70,7 +70,7 @@ export const laboratoryPageContentDiv8 = style(
 export const targetLaboratoryPageP = style([shared.text.sm, shared.fg.default]);
 
 export const targetLaboratoryPageLayoutContent = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     height: palette.layout.contentHeight,
     flexDirection: 'column',

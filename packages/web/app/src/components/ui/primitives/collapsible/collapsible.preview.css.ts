@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -16,14 +16,14 @@ export const filterRowsDiv = style([
 export const div = style([
   shared.stack.base,
   shared.fg.default,
-  layered.components({
+  component({
     width: space(64),
   }),
 ]);
 
 export const div2 = style([
   shared.stack.base,
-  layered.components({
+  component({
     maxHeight: '200px',
     width: '36rem',
     overflow: 'hidden',
@@ -38,7 +38,7 @@ export const div2 = style([
 export const div3 = style([
   shared.mono,
   shared.fg.default,
-  layered.components({
+  component({
     padding: space(4),
     fontSize: vars.text.xs,
     lineHeight: '18px',
@@ -49,13 +49,13 @@ export const div4 = style([
   shared.stack.gap3,
   shared.text.sm,
   shared.fg.default,
-  layered.components({
+  component({
     width: space(64),
   }),
 ]);
 
 export const div5 = style(
-  layered.components({
+  component({
     width: '36rem',
     overflow: 'hidden',
     borderRadius: vars.radius.md,
@@ -67,7 +67,7 @@ export const div5 = style(
 );
 
 export const div6 = style(
-  layered.components({
+  component({
     width: space(64),
     padding: space(2),
     color: vars.color.fg.default,
@@ -75,7 +75,7 @@ export const div6 = style(
 );
 
 export const div7 = style(
-  layered.components({
+  component({
     padding: space(2),
   }),
 );

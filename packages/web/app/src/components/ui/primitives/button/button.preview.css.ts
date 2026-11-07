@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -8,7 +8,7 @@ import { vars } from '../../../../styles/theme.css';
 
 export const div = style([
   shared.row.gap4,
-  layered.components({
+  component({
     flexWrap: 'wrap',
   }),
 ]);
@@ -16,20 +16,20 @@ export const div = style([
 export const span = style([
   shared.text.xs,
   shared.fg.muted,
-  layered.components({
+  component({
     width: space(16),
   }),
 ]);
 
 export const x = style(
-  layered.components({
+  component({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const plus = style(
-  layered.components({
+  component({
     marginRight: space(1),
     width: space(3.5),
     height: space(3.5),
@@ -39,27 +39,27 @@ export const plus = style(
 export const p = style([
   shared.text.sm,
   shared.fg.default,
-  layered.components({
+  component({
     maxWidth: vars.container.md,
   }),
 ]);
 
 export const div4 = style([
   shared.stack.gap3,
-  layered.components({
+  component({
     width: space(96),
   }),
 ]);
 
 export const div5 = style(
-  layered.components({
+  component({
     display: 'flex',
     gap: space(2),
   }),
 );
 
 export const div6 = style(
-  layered.components({
+  component({
     display: 'flex',
     flexWrap: 'wrap',
     gap: space(6),
@@ -67,14 +67,14 @@ export const div6 = style(
 );
 
 export const div7 = style(
-  layered.components({
+  component({
     width: '24rem',
   }),
 );
 
 export const div9 = style([
   shared.stack.gap6,
-  layered.components({
+  component({
     width: '28rem',
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -86,7 +86,7 @@ export const div9 = style([
 ]);
 
 export const div10 = style(
-  layered.components({
+  component({
     display: 'flex',
     justifyContent: 'flex-end',
     gap: space(2),
@@ -94,7 +94,7 @@ export const div10 = style(
 );
 
 export const div11 = style(
-  layered.components({
+  component({
     width: space(80),
   }),
 );

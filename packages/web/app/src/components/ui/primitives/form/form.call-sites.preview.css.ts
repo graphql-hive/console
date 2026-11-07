@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../../styles/theme.css';
 export const submittedPre = style([
   shared.text.xs,
   shared.fg.default,
-  layered.components({
+  component({
     marginTop: space(4),
   }),
 ]);
@@ -17,7 +17,7 @@ export const submittedPre = style([
 export const queryBackedDiv = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     borderRadius: vars.radius.sm,
     borderWidth: '1px',
     borderStyle: 'dashed',
@@ -27,37 +27,37 @@ export const queryBackedDiv = style([
 ]);
 
 export const panelWidthCard = style(
-  layered.components({
+  component({
     width: '28rem',
   }),
 );
 
 export const panelWidthDialog = style(
-  layered.components({
+  component({
     width: '520px',
   }),
 );
 
 export const panelWidthDialogLg = style(
-  layered.components({
+  component({
     width: '640px',
   }),
 );
 
 export const panelWidthDialogXl = style(
-  layered.components({
+  component({
     width: '960px',
   }),
 );
 
 export const panelWidthSheet = style(
-  layered.components({
+  component({
     width: '700px',
   }),
 );
 
 export const raisedDiv = style(
-  layered.components({
+  component({
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
     borderWidth: '1px',
@@ -69,7 +69,7 @@ export const raisedDiv = style(
 
 export const signInExampleA = style([
   shared.text.sm,
-  layered.components({
+  component({
     marginLeft: 'auto',
     display: 'inline-block',
     textDecorationLine: 'underline',
@@ -77,7 +77,7 @@ export const signInExampleA = style([
 ]);
 
 export const resetPasswordExampleDiv = style(
-  layered.components({
+  component({
     display: 'flex',
     flexWrap: 'wrap',
     gap: space(8),
@@ -85,13 +85,13 @@ export const resetPasswordExampleDiv = style(
 );
 
 export const createOrganizationExampleDiv = style(
-  layered.components({
+  component({
     width: '56rem',
   }),
 );
 
 export const slugExampleDiv = style(
-  layered.components({
+  component({
     width: '36rem',
   }),
 );
@@ -107,7 +107,7 @@ export const dangerousChangesExampleDiv = slugExampleDiv;
 export const appDeploymentProtectionExampleDiv = slugExampleDiv;
 
 export const breakingChangesExampleDiv = style(
-  layered.components({
+  component({
     width: '48rem',
   }),
 );

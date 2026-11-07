@@ -1,14 +1,12 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 
-const s = layered.components;
-
 // Plain rather than composed, because the copy icon's hover rule selects on it.
 const chip = style(
-  s({
+  component({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1.5),
@@ -24,7 +22,7 @@ export const copyChipStyles = {
   /** Hidden until the chip is hovered. */
   copyIcon: style([
     shared.icon.xs,
-    s({
+    component({
       opacity: 0,
       transitionProperty: 'opacity',
       transitionTimingFunction: vars.transition.timing,

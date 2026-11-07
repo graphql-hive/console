@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 
@@ -7,13 +7,13 @@ import * as shared from '../../../styles/shared.css';
 
 export const roleFormDiv = style([
   shared.row.gap2,
-  layered.utilities({
+  utility({
     justifyContent: 'flex-end',
   }),
 ]);
 
 export const roleFieldsDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'row',
     gap: space(6),
@@ -23,7 +23,7 @@ export const roleFieldsDiv = style(
 export const roleFieldsDiv2 = style([
   shared.stack.base,
   shared.noShrink,
-  layered.utilities({
+  utility({
     width: space(72),
     gap: space(5),
   }),
@@ -31,7 +31,7 @@ export const roleFieldsDiv2 = style([
 
 export const roleFieldsDiv4 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     height: '400px',
   }),
 ]);

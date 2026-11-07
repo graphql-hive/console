@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../styles/theme.css';
 export const legendOl = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     display: 'grid',
     gridTemplateColumns: 'auto auto 1fr',
     columnGap: space(3),
@@ -18,21 +18,21 @@ export const legendOl = style([
 ]);
 
 export const legendSpan = style(
-  layered.utilities({
+  utility({
     fontFamily: vars.font.mono,
   }),
 );
 
 export const bothContainersDiv = style([
   shared.stack.gap8,
-  layered.utilities({
+  utility({
     width: '56rem',
   }),
 ]);
 
 export const rawStringsViewOl = style([
   shared.stack.gap6,
-  layered.utilities({
+  utility({
     width: '56rem',
   }),
 ]);
@@ -41,7 +41,7 @@ export const rawStringsViewDiv = style([
   shared.flex,
   shared.text.xs,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     alignItems: 'baseline',
     gap: space(3),
   }),
@@ -52,7 +52,7 @@ export const rawStringsViewSpan = legendSpan;
 export const rawStringsViewSpan2 = legendSpan;
 
 export const rawStringsViewDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'grid',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     gap: space(3),
@@ -67,7 +67,7 @@ export const rawStringsViewPre = style([
   shared.mono,
   shared.breakAll,
   shared.fg.default,
-  layered.utilities({
+  utility({
     overflowX: 'auto',
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -84,7 +84,7 @@ export const rawStringsViewPre = style([
 export const rawStringsViewPre2 = style([
   shared.mono,
   shared.fg.default,
-  layered.utilities({
+  utility({
     overflowX: 'auto',
     borderRadius: vars.radius.md,
     borderStyle: 'solid',

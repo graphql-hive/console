@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -9,20 +9,20 @@ import { vars } from '../../../../styles/theme.css';
 export const span = style([shared.text.xs, shared.weight.bold]);
 
 export const circleMinus = style(
-  layered.components({
+  component({
     width: '15px',
     height: '15px',
   }),
 );
 
 export const circleMinus2 = style(
-  layered.components({
+  component({
     color: vars.color.fg.DEFAULT,
   }),
 );
 
 export const circleMinus3 = style(
-  layered.components({
+  component({
     color: vars.color.fg.subtle,
   }),
 );
@@ -30,7 +30,7 @@ export const circleMinus3 = style(
 export const triangleAlert = circleMinus;
 
 export const triangleAlert2 = style(
-  layered.components({
+  component({
     color: vars.color.warning.DEFAULT,
   }),
 );
@@ -40,7 +40,7 @@ export const triangleAlert3 = circleMinus3;
 export const circleX = circleMinus;
 
 export const circleX2 = style(
-  layered.components({
+  component({
     color: vars.color.critical.DEFAULT,
   }),
 );
@@ -49,13 +49,13 @@ export const circleX3 = circleMinus3;
 
 export const div2 = style([
   shared.row.base,
-  layered.components({
+  component({
     gap: space(6),
   }),
 ]);
 
 export const div4 = style(
-  layered.components({
+  component({
     display: 'flex',
     flexWrap: 'wrap',
     gap: space(6),
@@ -63,14 +63,14 @@ export const div4 = style(
 );
 
 export const div5 = style(
-  layered.components({
+  component({
     width: '20rem',
   }),
 );
 
 export const div6 = style([
   shared.stack.gap3,
-  layered.components({
+  component({
     alignItems: 'flex-start',
   }),
 ]);
@@ -78,7 +78,7 @@ export const div6 = style([
 export const span2 = style([shared.text.xs, shared.fg.default]);
 
 export const div7 = style(
-  layered.components({
+  component({
     display: 'flex',
     width: '20rem',
     flexDirection: 'column',

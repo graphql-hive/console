@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -8,13 +8,13 @@ import { vars } from '../../../styles/theme.css';
 
 export const transferOrganizationOwnershipModalDiv = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     gap: space(5),
   }),
 ]);
 
 export const transferOrganizationOwnershipModalDiv2 = style(
-  layered.utilities({
+  utility({
     height: '0px',
     width: '100%',
     borderTopStyle: 'solid',
@@ -26,7 +26,7 @@ export const transferOrganizationOwnershipModalDiv2 = style(
 export const transferOrganizationOwnershipModalUl = style([
   shared.text.sm,
   shared.fg.default,
-  layered.utilities({
+  utility({
     listStylePosition: 'inside',
     listStyleType: 'disc',
     paddingInline: space(2),
@@ -34,13 +34,13 @@ export const transferOrganizationOwnershipModalUl = style([
 ]);
 
 export const transferOrganizationOwnershipModalLi = style(
-  layered.utilities({
+  utility({
     paddingTop: space(3),
   }),
 );
 
 export const transferOrganizationOwnershipModalLi2 = style(
-  layered.utilities({
+  utility({
     paddingTop: space(3),
   }),
 );

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { utility } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -9,13 +9,13 @@ import { vars } from '../../styles/theme.css';
 export const submittedPre = style([
   shared.text.xs,
   shared.fg.default,
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 ]);
 
 export const div = style(
-  layered.utilities({
+  utility({
     maxWidth: vars.container.xl,
   }),
 );

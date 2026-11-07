@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../styles/theme.css';
 export const internalUnusedSchemaViewDiv = style([
   shared.row.base,
   shared.noShrink,
-  layered.utilities({
+  utility({
     height: '250px',
     justifyContent: 'center',
     borderRadius: vars.radius.md,
@@ -21,7 +21,7 @@ export const internalUnusedSchemaViewDiv = style([
 export const internalUnusedSchemaViewDiv2 = style([
   shared.stack.base,
   shared.textCenter,
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     maxWidth: '420px',
     alignItems: 'center',
@@ -30,7 +30,7 @@ export const internalUnusedSchemaViewDiv2 = style([
 ]);
 
 export const internalUnusedSchemaViewPartyPopperIcon = style(
-  layered.utilities({
+  utility({
     width: space(10),
     height: space(10),
     color: vars.color.success.DEFAULT,
@@ -40,7 +40,7 @@ export const internalUnusedSchemaViewPartyPopperIcon = style(
 export const internalUnusedSchemaViewH3 = style([
   shared.text.lg,
   shared.weight.semibold,
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 ]);
@@ -48,7 +48,7 @@ export const internalUnusedSchemaViewH3 = style([
 export const internalUnusedSchemaViewP = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(2),
     marginBottom: space(4),
   }),
@@ -58,7 +58,7 @@ export const internalUnusedSchemaViewDiv3 = style({});
 
 globalStyle(
   `:where(${internalUnusedSchemaViewDiv3} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(6),
   }),
@@ -67,7 +67,7 @@ globalStyle(
 export const internalUnusedSchemaViewP2 = style([shared.text.sm, shared.fg.secondary]);
 
 export const internalUnusedSchemaViewButton = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     height: space(9),
     alignItems: 'center',
@@ -84,14 +84,14 @@ export const internalUnusedSchemaViewButton = style(
 );
 
 export const internalUnusedSchemaViewButton2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.selected,
     color: vars.color.accent.DEFAULT,
   }),
 );
 
 export const internalUnusedSchemaViewButton3 = style(
-  layered.utilities({
+  utility({
     color: vars.color.fg.secondary,
     '@media': {
       '(hover: hover)': {
@@ -107,26 +107,26 @@ export const internalUnusedSchemaViewButton3 = style(
 );
 
 export const unusedSchemaExplorerDiv = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(8),
   }),
 );
 
 export const unusedSchemaExplorerAlert = style(
-  layered.utilities({
+  utility({
     marginBottom: space(3),
   }),
 );
 
 export const unusedSchemaExplorerAlertCircleIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const unusedSchemaExplorerAlertDescription = style(
-  layered.utilities({
+  utility({
     maxWidth: '600px',
   }),
 );

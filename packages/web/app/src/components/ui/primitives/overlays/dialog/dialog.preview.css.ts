@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../../styles/layered';
+import { component } from '../../../../../styles/layered';
 import { space } from '../../../../../styles/space';
 import * as shared from '../../../../../styles/shared.css';
 
@@ -7,13 +7,13 @@ import * as shared from '../../../../../styles/shared.css';
 
 export const collectionFieldsDiv2 = style([
   shared.stack.base,
-  layered.components({
+  component({
     gap: space(1.5),
   }),
 ]);
 
 export const div = style(
-  layered.components({
+  component({
     display: 'flex',
     flexWrap: 'wrap',
     gap: space(3),

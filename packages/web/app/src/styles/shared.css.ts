@@ -1,5 +1,5 @@
 import { style, styleVariants, type StyleRule } from '@vanilla-extract/css';
-import { layered } from './layered';
+import { component } from './layered';
 import { space, square } from './space';
 import { vars } from './theme.css';
 
@@ -10,10 +10,8 @@ import { vars } from './theme.css';
  * Everything here is in the `components` layer, below call-site styles in `utilities`, so a page
  * can still override a primitive on an element that carries one.
  */
-const s = layered.components;
-
 /** A map of named rules, each in the components layer. Typed so literals stay literals. */
-const variants = <K extends string>(rules: Record<K, StyleRule>) => styleVariants(rules, s);
+const variants = <K extends string>(rules: Record<K, StyleRule>) => styleVariants(rules, component);
 
 // Text -----------------------------------------------------------------------------------------
 
@@ -55,19 +53,19 @@ export const fg = variants({
   criticalText: { color: vars.color.critical.text },
 });
 
-export const mono = style(s({ fontFamily: vars.font.mono }));
-export const tabularNums = style(s({ fontVariantNumeric: 'tabular-nums' }));
-export const textCenter = style(s({ textAlign: 'center' }));
+export const mono = style(component({ fontFamily: vars.font.mono }));
+export const tabularNums = style(component({ fontVariantNumeric: 'tabular-nums' }));
+export const textCenter = style(component({ textAlign: 'center' }));
 export const truncate = style(
-  s({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
+  component({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
 );
-export const nowrap = style(s({ whiteSpace: 'nowrap' }));
-export const breakAll = style(s({ wordBreak: 'break-all' }));
-export const lineThrough = style(s({ textDecorationLine: 'line-through' }));
+export const nowrap = style(component({ whiteSpace: 'nowrap' }));
+export const breakAll = style(component({ wordBreak: 'break-all' }));
+export const lineThrough = style(component({ textDecorationLine: 'line-through' }));
 
 /** Visually hidden, still read by assistive technology. */
 export const srOnly = style(
-  s({
+  component({
     position: 'absolute',
     width: 1,
     height: 1,
@@ -124,15 +122,15 @@ export const stack = variants({
   gap8: { display: 'flex', flexDirection: 'column', gap: space(8) },
 });
 
-export const flex = style(s({ display: 'flex' }));
-export const inlineFlex = style(s({ display: 'inline-flex' }));
-export const grow = style(s({ flexGrow: 1 }));
-export const fill = style(s({ flex: 1 }));
+export const flex = style(component({ display: 'flex' }));
+export const inlineFlex = style(component({ display: 'inline-flex' }));
+export const grow = style(component({ flexGrow: 1 }));
+export const fill = style(component({ flex: 1 }));
 /** `min-width: 0` on a flex child, so it can shrink and truncate. */
-export const shrinkable = style(s({ minWidth: 0 }));
-export const fillShrinkable = style(s({ minWidth: 0, flex: 1 }));
-export const noShrink = style(s({ flexShrink: 0 }));
-export const fullWidth = style(s({ width: '100%' }));
-export const relative = style(s({ position: 'relative' }));
-export const hidden = style(s({ display: 'none' }));
-export const contents = style(s({ display: 'contents' }));
+export const shrinkable = style(component({ minWidth: 0 }));
+export const fillShrinkable = style(component({ minWidth: 0, flex: 1 }));
+export const noShrink = style(component({ flexShrink: 0 }));
+export const fullWidth = style(component({ width: '100%' }));
+export const relative = style(component({ position: 'relative' }));
+export const hidden = style(component({ display: 'none' }));
+export const contents = style(component({ display: 'contents' }));

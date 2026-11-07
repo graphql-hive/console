@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -10,7 +10,7 @@ export const div2 = style([shared.stack.gap3, shared.text.control]);
 
 export const label4 = style([
   shared.row.gap2,
-  layered.components({
+  component({
     opacity: '100%',
   }),
 ]);
@@ -18,7 +18,7 @@ export const label4 = style([
 export const div4 = style([
   shared.stack.gap3,
   shared.text.control,
-  layered.components({
+  component({
     width: space(64),
   }),
 ]);
@@ -26,7 +26,7 @@ export const div4 = style([
 export const label6 = style([
   shared.row.gap2,
   shared.weight.medium,
-  layered.components({
+  component({
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
     borderColor: vars.color.line.DEFAULT,

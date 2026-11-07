@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 
@@ -8,13 +8,13 @@ import * as shared from '../styles/shared.css';
 export const serviceHeaderDiv2 = style([shared.text.xs, shared.weight.normal, shared.fg.secondary]);
 
 export const serviceSchemaDiv = style(
-  layered.utilities({
+  utility({
     padding: space(2),
   }),
 );
 
 export const schemaViewDiv = style(
-  layered.utilities({
+  utility({
     marginBottom: space(5),
     display: 'flex',
     flexDirection: 'row',
@@ -24,7 +24,7 @@ export const schemaViewDiv = style(
 );
 
 export const schemaViewDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -33,7 +33,7 @@ export const schemaViewDiv2 = style(
 );
 
 export const targetSchemaPageDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -45,7 +45,7 @@ export const targetSchemaPageDiv = style(
 export const targetSchemaPageDiv2 = schemaViewDiv2;
 
 export const targetSchemaPageSpan = style(
-  layered.utilities({
+  utility({
     fontStyle: 'italic',
   }),
 );

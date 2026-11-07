@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { utility } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../../styles/theme.css';
 export const lineCode = style([
   shared.fullWidth,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     marginBottom: space(3),
     display: 'block',
     backgroundColor: vars.color.surface.code,

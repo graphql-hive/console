@@ -1,16 +1,14 @@
 import { styleVariants } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import { focusRingQuiet } from '../shared-styles';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 
-const s = layered.components;
-
 export const badgeStyles = {
   root: recipe({
-    base: s({
+    base: component({
       display: 'inline-flex',
       width: 'fit-content',
       flexShrink: 0,
@@ -31,37 +29,37 @@ export const badgeStyles = {
     }),
     variants: {
       variant: {
-        default: s({
+        default: component({
           borderColor: 'transparent',
           backgroundColor: vars.color.neutral[6],
           color: vars.color.fg.default,
         }),
-        secondary: s({
+        secondary: component({
           borderColor: 'transparent',
           backgroundColor: vars.color.neutral[4],
           color: vars.color.fg.default,
         }),
-        outline: s({
+        outline: component({
           borderColor: vars.color.line.DEFAULT,
           fontWeight: vars.weight.normal,
           color: vars.color.fg.default,
         }),
-        success: s({
+        success: component({
           borderColor: 'transparent',
           backgroundColor: vars.color.success.tint,
           color: vars.color.success.text,
         }),
-        warning: s({
+        warning: component({
           borderColor: 'transparent',
           backgroundColor: vars.color.warning.tint,
           color: vars.color.warning.text,
         }),
-        critical: s({
+        critical: component({
           borderColor: 'transparent',
           backgroundColor: vars.color.critical.tint,
           color: vars.color.critical.text,
         }),
-        info: s({
+        info: component({
           borderColor: 'transparent',
           backgroundColor: vars.color.info.tint,
           color: vars.color.info.text,
@@ -73,7 +71,7 @@ export const badgeStyles = {
       },
       padding: {
         default: {},
-        tight: s({ paddingInline: space(1), paddingBlock: 0 }),
+        tight: component({ paddingInline: space(1), paddingBlock: 0 }),
       },
       mono: {
         true: [shared.mono],
@@ -87,18 +85,18 @@ export const badgeStyles = {
     compoundVariants: [
       {
         variants: { size: 'default', padding: 'default' },
-        style: s({ paddingInline: space(2), paddingBlock: space(0.5) }),
+        style: component({ paddingInline: space(2), paddingBlock: space(0.5) }),
       },
       {
         variants: { size: 'sm', padding: 'default' },
-        style: s({ paddingInline: space(1.5), paddingBlock: 1 }),
+        style: component({ paddingInline: space(1.5), paddingBlock: 1 }),
       },
     ],
     defaultVariants: { variant: 'default', size: 'default', padding: 'default', mono: false },
   }),
   /** The leading icon, by the badge's size. */
   icon: styleVariants({
-    default: s(square(3.5)),
-    sm: s(square(3)),
+    default: component(square(3.5)),
+    sm: component(square(3)),
   }),
 };

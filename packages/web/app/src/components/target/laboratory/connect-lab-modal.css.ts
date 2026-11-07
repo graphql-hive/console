@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../styles/theme.css';
 export const connectLabModalContentH3 = style([shared.text.sm, shared.fg.strong]);
 
 export const connectLabModalContentCallout = style(
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 );
@@ -22,7 +22,7 @@ export const connectLabModalContentCode = style([
   shared.inlineRow.base,
   shared.text.sm,
   shared.fg.default,
-  layered.utilities({
+  utility({
     columnGap: space(1),
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.surface.code,
@@ -31,7 +31,7 @@ export const connectLabModalContentCode = style([
 ]);
 
 export const connectLabModalContentLink = style(
-  layered.utilities({
+  utility({
     textDecorationLine: 'underline',
     textUnderlineOffset: '2px',
   }),

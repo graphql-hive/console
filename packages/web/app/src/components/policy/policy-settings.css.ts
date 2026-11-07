@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { utility } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -8,7 +8,7 @@ import { vars } from '../../styles/theme.css';
 
 export const policySettingsListFormDiv = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     justifyContent: 'flex-end',
   }),
 ]);
@@ -16,20 +16,20 @@ export const policySettingsListFormDiv = style([
 export const policySettingsListFormP = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingRight: space(2),
   }),
 ]);
 
 export const policySettingsListFormCallout = style(
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     width: '66.666667%',
   }),
 );
 
 export const policySettingsListFormDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'grid',
     gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
   }),
@@ -37,7 +37,7 @@ export const policySettingsListFormDiv2 = style(
 
 globalStyle(
   `:where(${policySettingsListFormDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     borderBottomStyle: 'solid',
     borderTopStyle: 'solid',
     borderTopWidth: '0px',

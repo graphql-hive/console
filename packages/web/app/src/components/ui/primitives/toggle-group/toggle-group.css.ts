@@ -1,14 +1,12 @@
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import { controlSize, controlSurface, focusRing } from '../shared-styles';
 import { palette, vars } from '../../../../styles/theme.css';
 
-const s = layered.components;
-
 export const toggleGroupStyles = {
   group: recipe({
-    base: s({
+    base: component({
       display: 'inline-flex',
       borderRadius: vars.radius.sm,
       borderStyle: 'solid',
@@ -30,7 +28,7 @@ export const toggleGroupStyles = {
   item: recipe({
     base: [
       focusRing,
-      s({
+      component({
         position: 'relative',
         display: 'flex',
         cursor: 'pointer',
@@ -84,8 +82,8 @@ export const toggleGroupStyles = {
     ],
     variants: {
       size: {
-        compact: s({ paddingInline: space(3) }),
-        default: s({ paddingInline: space(4) }),
+        compact: component({ paddingInline: space(3) }),
+        default: component({ paddingInline: space(4) }),
       },
     },
     defaultVariants: { size: 'compact' },

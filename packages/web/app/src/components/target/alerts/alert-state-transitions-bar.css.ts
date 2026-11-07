@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -10,7 +10,7 @@ export const alertStateTransitionsBarDiv = style({});
 
 globalStyle(
   `:where(${alertStateTransitionsBarDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -19,7 +19,7 @@ globalStyle(
 export const alertStateTransitionsBarDiv2 = style([
   shared.flex,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     height: space(4),
     overflow: 'hidden',
     borderRadius: vars.radius.sm,
@@ -30,7 +30,7 @@ export const alertStateTransitionsBarDiv2 = style([
 ]);
 
 export const alertStateTransitionsBarDiv3 = style(
-  layered.utilities({
+  utility({
     height: '100%',
   }),
 );
@@ -40,38 +40,38 @@ export const alertStateTransitionsBarDiv5 = style([shared.weight.medium, shared.
 export const alertStateTransitionsBarDiv7 = style([
   shared.flex,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     justifyContent: 'space-between',
     fontSize: '11px',
   }),
 ]);
 
 export const alertStateColorMetricAlertRuleStateNormal = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.success.DEFAULT,
   }),
 );
 
 export const alertStateColorMetricAlertRuleStatePending = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.warning.DEFAULT,
   }),
 );
 
 export const alertStateColorMetricAlertRuleStateFiring = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.critical.DEFAULT,
   }),
 );
 
 export const alertStateColorMetricAlertRuleStateRecovering = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.info.DEFAULT,
   }),
 );
 
 export const noDataColorClass = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.line.strong,
   }),
 );

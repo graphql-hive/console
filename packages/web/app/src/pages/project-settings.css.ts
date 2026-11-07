@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
@@ -10,7 +10,7 @@ export const gitHubIntegrationDiv = style([shared.text.sm, shared.fg.secondary])
 
 export const gitHubIntegrationDiv2 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     marginBlock: space(8),
     width: 'fit-content',
     rowGap: space(1),
@@ -19,14 +19,14 @@ export const gitHubIntegrationDiv2 = style([
 
 export const gitHubIntegrationDiv3 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     columnGap: space(2),
     paddingLeft: space(1),
   }),
 ]);
 
 export const gitHubIntegrationCheckIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.success.DEFAULT,
@@ -36,7 +36,7 @@ export const gitHubIntegrationCheckIcon = style(
 export const gitHubIntegrationDiv4 = style([
   shared.row.base,
   shared.icon.xl,
-  layered.utilities({
+  utility({
     justifyContent: 'center',
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.surface.inverse,
@@ -44,7 +44,7 @@ export const gitHubIntegrationDiv4 = style([
 ]);
 
 export const gitHubIntegrationHiveLogo = style(
-  layered.utilities({
+  utility({
     width: '80%',
     height: '80%',
   }),
@@ -53,7 +53,7 @@ export const gitHubIntegrationHiveLogo = style(
 export const gitHubIntegrationDiv5 = style([shared.weight.semibold, shared.fg.default]);
 
 export const gitHubIntegrationArrowBigDownDashIcon = style(
-  layered.utilities({
+  utility({
     width: space(6),
     height: space(6),
     alignSelf: 'center',
@@ -62,14 +62,14 @@ export const gitHubIntegrationArrowBigDownDashIcon = style(
 
 export const gitHubIntegrationDiv7 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     columnGap: space(2),
     paddingLeft: space(1),
   }),
 ]);
 
 export const gitHubIntegrationCheckIcon2 = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     color: vars.color.success.DEFAULT,
@@ -79,7 +79,7 @@ export const gitHubIntegrationCheckIcon2 = style(
 export const gitHubIntegrationDiv8 = style([
   shared.row.base,
   shared.icon.xl,
-  layered.utilities({
+  utility({
     justifyContent: 'center',
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.surface.inverse,
@@ -87,7 +87,7 @@ export const gitHubIntegrationDiv8 = style([
 ]);
 
 export const gitHubIntegrationHiveLogo2 = style(
-  layered.utilities({
+  utility({
     width: '80%',
     height: '80%',
   }),
@@ -99,13 +99,13 @@ export const projectPolicySettingsDiv = style([
   shared.text.sm,
   shared.weight.bold,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     paddingLeft: space(1),
   }),
 ]);
 
 export const projectPolicySettingsP = style(
-  layered.utilities({
+  utility({
     marginRight: space(4),
     display: 'inline-block',
     color: vars.color.fg.inverse,
@@ -113,7 +113,7 @@ export const projectPolicySettingsP = style(
 );
 
 export const projectSettingsPageLayoutContent = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     rowGap: space(10),
@@ -124,7 +124,7 @@ export const projectSettingsPageDiv = style({});
 
 globalStyle(
   `:where(${projectSettingsPageDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(12),
   }),

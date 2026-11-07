@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import { animate } from '../styles/animations.css';
 import * as shared from '../styles/shared.css';
@@ -10,7 +10,7 @@ import { palette, vars } from '../styles/theme.css';
 export const signInButtonSpan = style([shared.relative, shared.inlineFlex, shared.fullWidth]);
 
 export const signInButtonSpan2 = style(
-  layered.utilities({
+  utility({
     pointerEvents: 'none',
     position: 'absolute',
     inset: '0px',
@@ -22,7 +22,7 @@ export const signInButtonSpan2 = style(
 );
 
 export const authSignInPageLink = style(
-  layered.utilities({
+  utility({
     marginLeft: 'auto',
     display: 'inline-block',
     fontSize: vars.text.sm,
@@ -32,7 +32,7 @@ export const authSignInPageLink = style(
 );
 
 export const authSignInPageGoogleIcon = style(
-  layered.utilities({
+  utility({
     marginRight: space(4),
     width: space(4),
     height: space(4),
@@ -46,13 +46,13 @@ export const authSignInPageOktaIcon = authSignInPageGoogleIcon;
 export const authSignInPageCircleUserRound = authSignInPageGoogleIcon;
 
 export const authSignInPageDiv = style(
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 );
 
 export const authSignInPageLink2 = style(
-  layered.utilities({
+  utility({
     textDecorationLine: 'underline',
   }),
 );

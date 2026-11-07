@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -8,7 +8,7 @@ import { vars } from '../../../styles/theme.css';
 
 export const alertMetricChartDiv = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     height: '200px',
     justifyContent: 'center',
     borderRadius: vars.radius.md,
@@ -27,7 +27,7 @@ export const alertMetricChartSpan2 = style([shared.text.sm, shared.fg.subtle]);
 export const alertMetricChartSpan3 = style([
   shared.text.sm,
   shared.fg.subtle,
-  layered.utilities({
+  utility({
     fontStyle: 'italic',
   }),
 ]);
@@ -36,7 +36,7 @@ export const alertMetricChartDiv2 = style({});
 
 globalStyle(
   `:where(${alertMetricChartDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1.5),
   }),
@@ -46,20 +46,20 @@ export const alertMetricChartDiv3 = style([
   shared.row.base,
   shared.text.control,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     flexWrap: 'wrap',
     columnGap: space(2),
   }),
 ]);
 
 export const alertMetricChartSpan5 = style(
-  layered.utilities({
+  utility({
     fontStyle: 'italic',
   }),
 );
 
 export const alertMetricChartSpan6 = style(
-  layered.utilities({
+  utility({
     fontStyle: 'italic',
   }),
 );

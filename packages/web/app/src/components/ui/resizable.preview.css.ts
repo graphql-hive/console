@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
 
@@ -9,14 +9,14 @@ export const paneDiv = style([
   shared.row.base,
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     height: '100%',
     justifyContent: 'center',
   }),
 ]);
 
 export const div = style(
-  layered.components({
+  component({
     height: '28rem',
     width: '48rem',
     borderRadius: vars.radius.md,
@@ -27,7 +27,7 @@ export const div = style(
 );
 
 export const div2 = style(
-  layered.components({
+  component({
     height: '16rem',
     width: '48rem',
     borderRadius: vars.radius.md,

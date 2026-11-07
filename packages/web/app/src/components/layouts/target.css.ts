@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { utility } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -8,7 +8,7 @@ import { vars } from '../../styles/theme.css';
 
 export const targetLayoutDiv = style([
   shared.hidden,
-  layered.utilities({
+  utility({
     '@media': {
       '(width >= 48rem)': {
         display: 'block',
@@ -20,19 +20,19 @@ export const targetLayoutDiv = style([
 export const targetLayoutSpan = style([shared.row.base, shared.nowrap]);
 
 export const targetLayoutLinkIcon = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
   }),
 );
 
 export const connectSchemaModalDiv = style(
-  layered.utilities({
+  utility({
     maxWidth: '600px',
   }),
 );
 
 export const connectSchemaModalDiv2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(1),
     marginBottom: space(5),
     display: 'flex',
@@ -43,7 +43,7 @@ export const connectSchemaModalDiv2 = style(
 );
 
 export const connectSchemaModalDiv3 = style(
-  layered.utilities({
+  utility({
     fontSize: vars.text.sm,
     lineHeight: vars.text.smLineHeight,
   }),
@@ -51,7 +51,7 @@ export const connectSchemaModalDiv3 = style(
 
 globalStyle(
   `:where(${connectSchemaModalDiv3} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -61,7 +61,7 @@ export const federationModalContentDiv = style([
   shared.stack.base,
   shared.grow,
   shared.text.sm,
-  layered.utilities({
+  utility({
     marginTop: space(2),
     minHeight: '300px',
   }),
@@ -71,14 +71,14 @@ export const federationModalContentDiv2 = style({});
 
 globalStyle(
   `:where(${federationModalContentDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
 );
 
 export const federationModalContentDiv3 = style(
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 );
@@ -87,7 +87,7 @@ export const federationModalContentDiv4 = style({});
 
 globalStyle(
   `:where(${federationModalContentDiv4} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -97,7 +97,7 @@ export const federationModalContentDiv5 = style({});
 
 globalStyle(
   `:where(${federationModalContentDiv5} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -107,7 +107,7 @@ export const federationModalContentDiv6 = style({});
 
 globalStyle(
   `:where(${federationModalContentDiv6} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -117,14 +117,14 @@ export const federationModalContentDiv7 = style({});
 
 globalStyle(
   `:where(${federationModalContentDiv7} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
 );
 
 export const federationModalContentDiv8 = style(
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 );

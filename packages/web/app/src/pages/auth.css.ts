@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import { animate } from '../styles/animations.css';
 import * as shared from '../styles/shared.css';
@@ -12,7 +12,7 @@ export const externalLinkA = style([
   shared.row.base,
   shared.weight.medium,
   shared.fg.subtle,
-  layered.utilities({
+  utility({
     isolation: 'isolate',
     flex: 'none',
     columnGap: space(3),
@@ -38,7 +38,7 @@ export const externalLinkA = style([
 ]);
 
 export const externalLinkSpan = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     inset: '0px',
     zIndex: '-10',
@@ -64,7 +64,7 @@ export const externalLinkSpan = style(
 );
 
 export const authPageDiv = style(
-  layered.utilities({
+  utility({
     width: '100%',
     height: '100%',
   }),
@@ -72,14 +72,14 @@ export const authPageDiv = style(
 
 export const authPageDiv2 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     minHeight: '100vh',
     justifyContent: 'center',
   }),
 ]);
 
 export const authPageHiveLogo = style(
-  layered.utilities({
+  utility({
     width: space(8),
     height: space(8),
     animation: animate.pulse,
@@ -87,7 +87,7 @@ export const authPageHiveLogo = style(
 );
 
 export const authPageDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'grid',
     height: '100%',
     minHeight: '100vh',
@@ -110,7 +110,7 @@ export const authPageDiv4 = style([
   shared.relative,
   shared.hidden,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     height: '100%',
     flexDirection: 'column',
     borderRightStyle: 'solid',
@@ -127,7 +127,7 @@ export const authPageDiv4 = style([
 ]);
 
 export const authPageDiv5 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     inset: '0px',
     backgroundColor: vars.color.surface.inset,
@@ -139,13 +139,13 @@ export const authPageDiv6 = style([
   shared.row.base,
   shared.text.lg,
   shared.weight.medium,
-  layered.utilities({
+  utility({
     zIndex: '20',
   }),
 ]);
 
 export const authPageHiveLogo2 = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
     width: space(6),
     height: space(6),
@@ -155,7 +155,7 @@ export const authPageHiveLogo2 = style(
 export const authPageDiv7 = style([
   shared.relative,
   shared.flex,
-  layered.utilities({
+  utility({
     height: '100%',
     flexDirection: 'row',
     alignItems: 'center',
@@ -164,7 +164,7 @@ export const authPageDiv7 = style([
 ]);
 
 export const authPageDiv8 = style(
-  layered.utilities({
+  utility({
     maxWidth: vars.container.xs,
     '@media': {
       '(width >= 48rem)': {
@@ -175,7 +175,7 @@ export const authPageDiv8 = style(
 );
 
 export const authPageH1 = style(
-  layered.utilities({
+  utility({
     fontWeight: vars.weight.light,
     ...({ textWrap: 'balance' } as object),
     color: vars.color.fg.DEFAULT,
@@ -193,7 +193,7 @@ export const authPageH1 = style(
 );
 
 export const authPageP = style(
-  layered.utilities({
+  utility({
     marginTop: space(4),
     fontSize: vars.text.sm,
     lineHeight: space(6),
@@ -203,7 +203,7 @@ export const authPageP = style(
 );
 
 export const authPageDiv9 = style(
-  layered.utilities({
+  utility({
     marginTop: space(8),
     display: 'flex',
     flexWrap: 'wrap',
@@ -222,7 +222,7 @@ export const authPageDiv9 = style(
 );
 
 export const authPageBookIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     flex: 'none',
@@ -231,14 +231,14 @@ export const authPageBookIcon = style(
 );
 
 export const authPageSpan2 = style(
-  layered.utilities({
+  utility({
     alignSelf: 'baseline',
     color: vars.color.fg.DEFAULT,
   }),
 );
 
 export const authPageGitHubIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     flex: 'none',
@@ -247,14 +247,14 @@ export const authPageGitHubIcon = style(
 );
 
 export const authPageSpan3 = style(
-  layered.utilities({
+  utility({
     alignSelf: 'baseline',
     color: vars.color.fg.DEFAULT,
   }),
 );
 
 export const authPageDiv10 = style(
-  layered.utilities({
+  utility({
     gridColumn: 'span 2 / span 2',
   }),
 );

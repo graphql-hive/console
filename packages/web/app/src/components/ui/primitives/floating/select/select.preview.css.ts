@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../../styles/layered';
+import { component } from '../../../../../styles/layered';
 import { space } from '../../../../../styles/space';
 import * as shared from '../../../../../styles/shared.css';
 import { vars } from '../../../../../styles/theme.css';
@@ -8,7 +8,7 @@ import { vars } from '../../../../../styles/theme.css';
 
 export const div = style([
   shared.row.base,
-  layered.components({
+  component({
     gap: space(6),
   }),
 ]);
@@ -16,7 +16,7 @@ export const div = style([
 export const span = style([shared.text.xs, shared.fg.default]);
 
 export const alertTriangle = style(
-  layered.components({
+  component({
     width: space(3.5),
     height: space(3.5),
     color: vars.color.warning.DEFAULT,
@@ -24,14 +24,14 @@ export const alertTriangle = style(
 );
 
 export const gitCompare = style(
-  layered.components({
+  component({
     width: space(3.5),
     height: space(3.5),
   }),
 );
 
 export const check = style(
-  layered.components({
+  component({
     width: space(3.5),
     height: space(3.5),
     color: vars.color.success.DEFAULT,
@@ -41,21 +41,21 @@ export const check = style(
 export const span2 = style([
   shared.text.xs,
   shared.fg.muted,
-  layered.components({
+  component({
     width: space(16),
   }),
 ]);
 
 export const div5 = style([
   shared.stack.gap3,
-  layered.components({
+  component({
     width: '28rem',
     alignItems: 'flex-start',
   }),
 ]);
 
 export const div6 = style(
-  layered.components({
+  component({
     display: 'flex',
     alignItems: 'flex-start',
     gap: space(6),
@@ -63,7 +63,7 @@ export const div6 = style(
 );
 
 export const div7 = style(
-  layered.components({
+  component({
     display: 'flex',
     flexWrap: 'wrap',
     gap: space(6),
@@ -71,13 +71,13 @@ export const div7 = style(
 );
 
 export const div8 = style(
-  layered.components({
+  component({
     width: '20rem',
   }),
 );
 
 export const div10 = style(
-  layered.components({
+  component({
     display: 'flex',
     width: '20rem',
     flexDirection: 'column',
@@ -87,7 +87,7 @@ export const div10 = style(
 );
 
 export const div11 = style(
-  layered.components({
+  component({
     width: '28rem',
   }),
 );

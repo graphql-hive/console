@@ -1,17 +1,15 @@
 import { style, styleVariants } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { square } from '../../../../styles/space';
 import { focusRing } from '../shared-styles';
 import { vars } from '../../../../styles/theme.css';
-
-const s = layered.components;
 
 export const checkboxStyles = {
   root: recipe({
     base: [
       focusRing,
-      s({
+      component({
         display: 'inline-flex',
         flexShrink: 0,
         alignItems: 'center',
@@ -30,11 +28,11 @@ export const checkboxStyles = {
     ],
     variants: {
       size: {
-        sm: s(square(3.5)),
-        md: s(square(4.5)),
+        sm: component(square(3.5)),
+        md: component(square(4.5)),
       },
       variant: {
-        default: s({
+        default: component({
           borderColor: vars.color.line.strong,
           selectors: {
             '&[data-checked], &[data-indeterminate]': {
@@ -62,11 +60,16 @@ export const checkboxStyles = {
     defaultVariants: { size: 'md', variant: 'default' },
   }),
   indicator: style(
-    s({ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'currentcolor' }),
+    component({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'currentcolor',
+    }),
   ),
   /** The check or dash, by the box's size. */
   icon: styleVariants({
-    sm: s(square(2.5)),
-    md: s(square(3)),
+    sm: component(square(2.5)),
+    md: component(square(3)),
   }),
 };

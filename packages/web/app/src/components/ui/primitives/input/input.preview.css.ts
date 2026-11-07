@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -8,13 +8,13 @@ import { vars } from '../../../../styles/theme.css';
 
 export const div = style([
   shared.stack.gap3,
-  layered.components({
+  component({
     width: space(72),
   }),
 ]);
 
 export const div2 = style(
-  layered.components({
+  component({
     display: 'flex',
     flexWrap: 'wrap',
     gap: space(6),
@@ -23,7 +23,7 @@ export const div2 = style(
 
 export const div3 = style([
   shared.stack.gap3,
-  layered.components({
+  component({
     width: space(80),
     borderRadius: vars.radius.md,
     backgroundColor: vars.color.neutral[1],
@@ -33,7 +33,7 @@ export const div3 = style([
 
 export const div4 = style([
   shared.stack.gap3,
-  layered.components({
+  component({
     width: space(80),
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -47,19 +47,19 @@ export const div4 = style([
 export const div6 = style([
   shared.row.wrap2,
   shared.text.sm,
-  layered.components({
+  component({
     width: '34rem',
   }),
 ]);
 
 export const div7 = style(
-  layered.components({
+  component({
     width: space(80),
   }),
 );
 
 export const div8 = style(
-  layered.components({
+  component({
     width: space(96),
   }),
 );

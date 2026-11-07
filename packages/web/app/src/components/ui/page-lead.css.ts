@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 
@@ -7,7 +7,7 @@ import * as shared from '../../styles/shared.css';
 
 export const pageLeadDiv = style([
   shared.stack.base,
-  layered.components({
+  component({
     marginBottom: space(4),
     gap: space(1.5),
   }),
@@ -17,7 +17,7 @@ export const pageLeadH1 = style([
   shared.text.lg,
   shared.weight.medium,
   shared.fg.strong,
-  layered.components({
+  component({
     margin: '0px',
   }),
 ]);
@@ -25,7 +25,7 @@ export const pageLeadH1 = style([
 export const pageLeadP = style([
   shared.text.sm,
   shared.fg.default,
-  layered.components({
+  component({
     margin: '0px',
   }),
 ]);

@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { utility } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -10,7 +10,7 @@ export const oIDCIntegrationConfigurationDiv = style({});
 
 globalStyle(
   `:where(${oIDCIntegrationConfigurationDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(10),
   }),
@@ -20,14 +20,14 @@ export const oIDCIntegrationConfigurationDiv2 = style({});
 
 globalStyle(
   `:where(${oIDCIntegrationConfigurationDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
 );
 
 export const oIDCIntegrationConfigurationDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     justifyContent: 'space-between',
   }),
@@ -37,14 +37,14 @@ export const oIDCIntegrationConfigurationDiv4 = style({});
 
 globalStyle(
   `:where(${oIDCIntegrationConfigurationDiv4} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
 );
 
 export const oIDCIntegrationConfigurationDiv5 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     justifyContent: 'space-between',
   }),
@@ -54,7 +54,7 @@ export const oIDCIntegrationConfigurationDiv6 = style({});
 
 globalStyle(
   `:where(${oIDCIntegrationConfigurationDiv6} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -64,7 +64,7 @@ export const oIDCDomainConfigurationDiv = style({});
 
 globalStyle(
   `:where(${oIDCDomainConfigurationDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(4),
   }),
@@ -74,21 +74,21 @@ export const oIDCDomainConfigurationDiv2 = style({});
 
 globalStyle(
   `:where(${oIDCDomainConfigurationDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
 );
 
 export const oIDCDomainConfigurationDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     justifyContent: 'space-between',
   }),
 );
 
 export const oIDCDomainConfigurationDiv4 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -97,14 +97,14 @@ export const oIDCDomainConfigurationDiv4 = style(
 
 globalStyle(
   `:where(${oIDCDomainConfigurationDiv4} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
 );
 
 export const oIDCDomainConfigurationDiv5 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     fontSize: vars.text.sm,
@@ -115,14 +115,14 @@ export const oIDCDomainConfigurationDiv5 = style(
 
 globalStyle(
   `:where(${oIDCDomainConfigurationDiv5} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
 );
 
 export const oIDCDomainConfigurationP = style(
-  layered.utilities({
+  utility({
     maxWidth: '500px',
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
@@ -131,7 +131,7 @@ export const oIDCDomainConfigurationP = style(
 );
 
 export const oIDCAccessSettingsDiv = style(
-  layered.utilities({
+  utility({
     marginTop: space(2),
     borderRadius: vars.radius.lg,
     borderStyle: 'solid',
@@ -142,7 +142,7 @@ export const oIDCAccessSettingsDiv = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(4),
   }),
@@ -152,14 +152,14 @@ export const oIDCAccessSettingsDiv2 = style({});
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(5),
   }),
 );
 
 export const oIDCAccessSettingsDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -168,14 +168,14 @@ export const oIDCAccessSettingsDiv3 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv3} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
 );
 
 export const oIDCAccessSettingsDiv4 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     fontSize: vars.text.sm,
@@ -186,7 +186,7 @@ export const oIDCAccessSettingsDiv4 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv4} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -195,7 +195,7 @@ globalStyle(
 export const oIDCAccessSettingsP = style([
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     maxWidth: '500px',
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
@@ -203,7 +203,7 @@ export const oIDCAccessSettingsP = style([
 ]);
 
 export const oIDCAccessSettingsDiv5 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -212,14 +212,14 @@ export const oIDCAccessSettingsDiv5 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv5} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
 );
 
 export const oIDCAccessSettingsDiv6 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     fontSize: vars.text.sm,
@@ -230,7 +230,7 @@ export const oIDCAccessSettingsDiv6 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv6} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -239,7 +239,7 @@ globalStyle(
 export const oIDCAccessSettingsP2 = style([
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     maxWidth: '500px',
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
@@ -247,7 +247,7 @@ export const oIDCAccessSettingsP2 = style([
 ]);
 
 export const oIDCAccessSettingsLink = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1),
@@ -265,7 +265,7 @@ export const oIDCAccessSettingsLink = style(
 );
 
 export const oIDCAccessSettingsDiv7 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -274,14 +274,14 @@ export const oIDCAccessSettingsDiv7 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv7} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
 );
 
 export const oIDCAccessSettingsDiv8 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     fontSize: vars.text.sm,
@@ -292,7 +292,7 @@ export const oIDCAccessSettingsDiv8 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv8} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -301,7 +301,7 @@ globalStyle(
 export const oIDCAccessSettingsP3 = style([
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     maxWidth: '500px',
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
@@ -309,7 +309,7 @@ export const oIDCAccessSettingsP3 = style([
 ]);
 
 export const oIDCAccessSettingsLink2 = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1),
@@ -329,7 +329,7 @@ export const oIDCAccessSettingsLink2 = style(
 export const oIDCAccessSettingsButton = style([shared.flex, shared.text.xs, shared.fg.warning]);
 
 export const oIDCAccessSettingsDiv9 = style(
-  layered.utilities({
+  utility({
     fontSize: vars.text.sm,
     lineHeight: vars.text.smLineHeight,
     color: vars.color.fg.default,
@@ -338,14 +338,14 @@ export const oIDCAccessSettingsDiv9 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv9} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
 );
 
 export const oIDCAccessSettingsLink3 = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1),
@@ -363,7 +363,7 @@ export const oIDCAccessSettingsLink3 = style(
 );
 
 export const oIDCAccessSettingsDiv10 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -372,14 +372,14 @@ export const oIDCAccessSettingsDiv10 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv10} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
 );
 
 export const oIDCAccessSettingsDiv11 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     fontSize: vars.text.sm,
@@ -390,7 +390,7 @@ export const oIDCAccessSettingsDiv11 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv11} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -399,7 +399,7 @@ globalStyle(
 export const oIDCAccessSettingsP4 = style([
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     maxWidth: '500px',
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
@@ -407,7 +407,7 @@ export const oIDCAccessSettingsP4 = style([
 ]);
 
 export const oIDCAccessSettingsLink4 = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1),
@@ -428,14 +428,14 @@ export const oIDCAccessSettingsDiv12 = style({});
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv12} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(5),
   }),
 );
 
 export const oIDCAccessSettingsDiv13 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -444,14 +444,14 @@ export const oIDCAccessSettingsDiv13 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv13} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
 );
 
 export const oIDCAccessSettingsDiv14 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     fontSize: vars.text.sm,
@@ -462,7 +462,7 @@ export const oIDCAccessSettingsDiv14 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv14} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -471,14 +471,14 @@ globalStyle(
 export const oIDCAccessSettingsP5 = style([
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
   }),
 ]);
 
 export const oIDCAccessSettingsDiv15 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -487,14 +487,14 @@ export const oIDCAccessSettingsDiv15 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv15} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
 );
 
 export const oIDCAccessSettingsDiv16 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     fontSize: vars.text.sm,
@@ -505,7 +505,7 @@ export const oIDCAccessSettingsDiv16 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv16} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -514,14 +514,14 @@ globalStyle(
 export const oIDCAccessSettingsP6 = style([
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
   }),
 ]);
 
 export const oIDCAccessSettingsDiv17 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -530,14 +530,14 @@ export const oIDCAccessSettingsDiv17 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv17} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
 );
 
 export const oIDCAccessSettingsDiv18 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'column',
     fontSize: vars.text.sm,
@@ -548,7 +548,7 @@ export const oIDCAccessSettingsDiv18 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv18} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -557,14 +557,14 @@ globalStyle(
 export const oIDCAccessSettingsP7 = style([
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
   }),
 ]);
 
 export const oIDCAccessSettingsDiv19 = style(
-  layered.utilities({
+  utility({
     fontSize: vars.text.sm,
     lineHeight: '1',
     fontWeight: vars.weight.medium,
@@ -573,20 +573,20 @@ export const oIDCAccessSettingsDiv19 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv19} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
 );
 
 export const oIDCAccessSettingsDiv20 = style(
-  layered.utilities({
+  utility({
     cursor: 'not-allowed',
   }),
 );
 
 export const oIDCAccessSettingsDiv21 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
@@ -595,7 +595,7 @@ export const oIDCAccessSettingsDiv21 = style(
 
 globalStyle(
   `:where(${oIDCAccessSettingsDiv21} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(4),
   }),
@@ -603,7 +603,7 @@ globalStyle(
 
 export const oIDCAccessSettingsDiv22 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     flexBasis: '66.666667%',
     '@media': {
       '(width >= 48rem)': {
@@ -616,14 +616,14 @@ export const oIDCAccessSettingsDiv22 = style([
 export const oIDCAccessSettingsP8 = style([
   shared.weight.normal,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     fontSize: vars.text.xs,
     lineHeight: vars.leading.snug,
   }),
 ]);
 
 export const oIDCAccessSettingsDiv23 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     minWidth: '150px',
     flexBasis: '33.333333%',
@@ -636,7 +636,7 @@ export const oIDCAccessSettingsDiv23 = style(
 );
 
 export const oIDCAccessSettingsDiv24 = style(
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 );

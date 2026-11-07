@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../styles/theme.css';
 export const memberStatusIconSpan = style([
   shared.row.base,
   shared.fg.critical,
-  layered.utilities({
+  utility({
     width: space(9),
     height: space(9),
     justifyContent: 'center',
@@ -19,7 +19,7 @@ export const memberStatusIconSpan = style([
 ]);
 
 export const memberStatusIconUserRoundX = style(
-  layered.utilities({
+  utility({
     width: space(5),
     height: space(5),
   }),
@@ -27,7 +27,7 @@ export const memberStatusIconUserRoundX = style(
 
 export const memberStatusIconSpan2 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     width: space(9),
     height: space(9),
     justifyContent: 'center',
@@ -39,13 +39,13 @@ export const memberStatusIconSpan2 = style([
 export const memberStatusIconIcon = memberStatusIconUserRoundX;
 
 export const memberNameCellButton = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
   }),
 );
 
 export const memberNameCellShieldCheck = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
@@ -58,7 +58,7 @@ export const memberNameCellSpan3 = memberNameCellButton;
 export const memberNameCellIcon = memberNameCellShieldCheck;
 
 export const memberNameCellIcon2 = style(
-  layered.utilities({
+  utility({
     color: vars.color.fg.subtle,
   }),
 );
@@ -66,7 +66,7 @@ export const memberNameCellIcon2 = style(
 export const memberRoleCellButton = style([
   shared.inlineFlex,
   shared.fg.muted,
-  layered.utilities({
+  utility({
     '@media': {
       '(hover: hover)': {
         selectors: {
@@ -80,7 +80,7 @@ export const memberRoleCellButton = style([
 ]);
 
 export const memberRoleCellInfo = style(
-  layered.utilities({
+  utility({
     width: space(3.5),
     height: space(3.5),
   }),
@@ -89,7 +89,7 @@ export const memberRoleCellInfo = style(
 export const memberRoleCellSpan = memberNameCellButton;
 
 export const memberRoleCellDiv = style(
-  layered.utilities({
+  utility({
     marginRight: '0px',
     marginLeft: 'auto',
     width: 'fit-content',
@@ -97,7 +97,7 @@ export const memberRoleCellDiv = style(
 );
 
 export const memberRoleCellTriangleAlert = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
     width: space(3),
     height: space(3),
@@ -107,14 +107,14 @@ export const memberRoleCellTriangleAlert = style(
 export const memberRoleCellP = style([shared.text.sm, shared.fg.default]);
 
 export const memberRoleCellDiv2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 );
 
 globalStyle(
   `:where(${memberRoleCellDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -122,20 +122,20 @@ globalStyle(
 
 export const memberRoleCellDiv4 = style([
   shared.row.gap2,
-  layered.utilities({
+  utility({
     width: 'fit-content',
   }),
 ]);
 
 export const memberRoleCellKeyIcon = style(
-  layered.utilities({
+  utility({
     height: space(3.5),
     width: space(3.5),
   }),
 );
 
 export const memberActionsCellSpan = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     justifyContent: 'flex-end',
   }),
@@ -146,7 +146,7 @@ export const memberActionsCellSpan2 = memberNameCellButton;
 export const memberActionsCellShieldCheck = memberNameCellIcon2;
 
 export const organizationMembersLink = style(
-  layered.utilities({
+  utility({
     color: vars.color.fg.inverse,
     '@media': {
       '(hover: hover)': {
@@ -161,20 +161,20 @@ export const organizationMembersLink = style(
 );
 
 export const organizationMembersDiv = style(
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 );
 
 export const organizationMembersSpan = style([
   shared.stack.gap2,
-  layered.utilities({
+  utility({
     alignItems: 'center',
   }),
 ]);
 
 export const organizationMembersLink2 = style(
-  layered.utilities({
+  utility({
     color: vars.color.accent.DEFAULT,
     '@media': {
       '(hover: hover)': {

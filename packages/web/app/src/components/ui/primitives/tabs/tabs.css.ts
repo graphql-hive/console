@@ -1,24 +1,22 @@
 import { styleVariants } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import { focusRingQuiet } from '../shared-styles';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 import * as utilities from '../../../../styles/utilities.css';
 
-const s = layered.components;
-
 export const tabsStyles = {
   root: recipe({
     variants: {
       variant: {
         underline: {},
-        header: s({ width: '100%' }),
+        header: component({ width: '100%' }),
       },
       orientation: {
         horizontal: {},
-        vertical: s({ display: 'flex', minHeight: 0, gap: space(8) }),
+        vertical: component({ display: 'flex', minHeight: 0, gap: space(8) }),
       },
     },
   }),
@@ -35,7 +33,7 @@ export const tabsStyles = {
       orientation: {
         horizontal: [
           utilities.noScrollbar,
-          s({
+          component({
             marginInline: space(-1),
             marginTop: space(-1),
             marginBottom: -5,
@@ -53,31 +51,36 @@ export const tabsStyles = {
     },
   }),
   list: recipe({
-    base: s({ position: 'relative', display: 'flex' }),
+    base: component({ position: 'relative', display: 'flex' }),
     variants: {
       variant: {
-        underline: s({ gap: space(1), borderColor: vars.color.line.DEFAULT }),
-        header: s({ height: space(10), flexGrow: 1, gap: space(1), paddingInline: space(2) }),
+        underline: component({ gap: space(1), borderColor: vars.color.line.DEFAULT }),
+        header: component({
+          height: space(10),
+          flexGrow: 1,
+          gap: space(1),
+          paddingInline: space(2),
+        }),
       },
       orientation: {
-        horizontal: s({ width: 'max-content', minWidth: '100%', alignItems: 'center' }),
-        vertical: s({ flexDirection: 'column', alignItems: 'stretch' }),
+        horizontal: component({ width: 'max-content', minWidth: '100%', alignItems: 'center' }),
+        vertical: component({ flexDirection: 'column', alignItems: 'stretch' }),
       },
     },
     compoundVariants: [
       {
         variants: { variant: 'underline', orientation: 'horizontal' },
-        style: s({ borderBottomStyle: 'solid', borderBottomWidth: 1 }),
+        style: component({ borderBottomStyle: 'solid', borderBottomWidth: 1 }),
       },
       {
         variants: { variant: 'underline', orientation: 'vertical' },
-        style: s({ borderLeftStyle: 'solid', borderLeftWidth: 1 }),
+        style: component({ borderLeftStyle: 'solid', borderLeftWidth: 1 }),
       },
     ],
   }),
   /** The accent bar under (or beside) the active tab. Base UI measures the tab into variables. */
   indicator: recipe({
-    base: s({
+    base: component({
       position: 'absolute',
       backgroundColor: vars.color.accent.DEFAULT,
       transitionProperty: 'left, width, top, height',
@@ -87,7 +90,7 @@ export const tabsStyles = {
     variants: {
       variant: {
         underline: {},
-        header: s({
+        header: component({
           bottom: -1,
           left: 'var(--active-tab-left)',
           height: space(0.5),
@@ -102,7 +105,7 @@ export const tabsStyles = {
     compoundVariants: [
       {
         variants: { variant: 'underline', orientation: 'horizontal' },
-        style: s({
+        style: component({
           bottom: -1,
           left: 'var(--active-tab-left)',
           height: space(0.5),
@@ -111,7 +114,7 @@ export const tabsStyles = {
       },
       {
         variants: { variant: 'underline', orientation: 'vertical' },
-        style: s({
+        style: component({
           top: 'var(--active-tab-top)',
           left: -1,
           height: 'var(--active-tab-height)',
@@ -123,21 +126,21 @@ export const tabsStyles = {
   // Base UI keeps the outgoing panel mounted until its exit transition ends, which without an
   // animation is still a frame or so of both panels stacked, so hide it the moment it starts ending.
   panel: recipe({
-    base: s({
+    base: component({
       outlineStyle: 'none',
       selectors: { '&[data-ending-style]': { display: 'none' } },
     }),
     variants: {
       orientation: {
-        horizontal: s({ paddingTop: space(4) }),
-        vertical: s({ minWidth: 0, flex: 1, overflowY: 'auto' }),
+        horizontal: component({ paddingTop: space(4) }),
+        vertical: component({ minWidth: 0, flex: 1, overflowY: 'auto' }),
       },
     },
   }),
   tab: recipe({
     base: [
       focusRingQuiet,
-      s({
+      component({
         position: 'relative',
         zIndex: 10,
         display: 'inline-flex',
@@ -166,9 +169,12 @@ export const tabsStyles = {
     ],
     variants: {
       variant: {
-        underline: s({ selectors: { '&:focus-visible': { outlineOffset: 2 } } }),
+        underline: component({ selectors: { '&:focus-visible': { outlineOffset: 2 } } }),
         // Inside a band, so the ring sits within the tab rather than clipping on the band's edge.
-        header: s({ height: '100%', selectors: { '&:focus-visible': { outlineOffset: -2 } } }),
+        header: component({
+          height: '100%',
+          selectors: { '&:focus-visible': { outlineOffset: -2 } },
+        }),
       },
       size: {
         default: {},
@@ -176,41 +182,41 @@ export const tabsStyles = {
       },
       orientation: {
         horizontal: {},
-        vertical: s({ justifyContent: 'flex-start' }),
+        vertical: component({ justifyContent: 'flex-start' }),
       },
     },
     compoundVariants: [
       {
         variants: { variant: 'underline', size: 'default' },
-        style: [shared.text.sm, s({ paddingInline: space(3), paddingBlock: space(2) })],
+        style: [shared.text.sm, component({ paddingInline: space(3), paddingBlock: space(2) })],
       },
       {
         variants: { variant: 'underline', size: 'sm' },
-        style: [shared.text.xs, s({ paddingInline: space(2.5), paddingBlock: space(1.5) })],
+        style: [shared.text.xs, component({ paddingInline: space(2.5), paddingBlock: space(1.5) })],
       },
       {
         variants: { variant: 'header', size: 'default' },
-        style: [shared.text.xs, s({ paddingInline: space(2.5), paddingBlock: 0 })],
+        style: [shared.text.xs, component({ paddingInline: space(2.5), paddingBlock: 0 })],
       },
       {
         variants: { variant: 'header', size: 'sm' },
-        style: [shared.text.xs, s({ paddingInline: space(2), paddingBlock: 0 })],
+        style: [shared.text.xs, component({ paddingInline: space(2), paddingBlock: 0 })],
       },
       // Over the list's border, so the indicator sits on it.
       {
         variants: { variant: 'underline', orientation: 'horizontal' },
-        style: s({ marginBottom: -1 }),
+        style: component({ marginBottom: -1 }),
       },
       {
         variants: { variant: 'underline', orientation: 'vertical' },
-        style: s({ marginLeft: -1 }),
+        style: component({ marginLeft: -1 }),
       },
     ],
   }),
   /** A tab's icon, by the tab's size. */
   icon: styleVariants({
-    default: s({ ...square(4), flexShrink: 0 }),
-    sm: s({ ...square(3.5), flexShrink: 0 }),
+    default: component({ ...square(4), flexShrink: 0 }),
+    sm: component({ ...square(3.5), flexShrink: 0 }),
   }),
   /** A disabled button fires no pointer events, so this span carries a tab's tooltip hover. */
   tooltipTrigger: shared.inlineFlex,

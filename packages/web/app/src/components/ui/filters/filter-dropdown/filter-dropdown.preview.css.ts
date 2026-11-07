@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../../styles/theme.css';
 export const selectionReadoutDiv = style([shared.text.sm, shared.fg.subtle]);
 
 export const selectionReadoutUl = style(
-  layered.components({
+  component({
     fontSize: vars.text.sm,
     lineHeight: vars.text.smLineHeight,
   }),
@@ -17,7 +17,7 @@ export const selectionReadoutUl = style(
 
 globalStyle(
   `:where(${selectionReadoutUl} > :not(:last-child))`,
-  layered.components({
+  component({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -26,7 +26,7 @@ globalStyle(
 export const selectionReadoutSpan = style([shared.weight.medium, shared.fg.strong]);
 
 export const selectionReadoutSpan2 = style(
-  layered.components({
+  component({
     color: vars.color.fg.subtle,
     fontStyle: 'italic',
   }),
@@ -34,7 +34,7 @@ export const selectionReadoutSpan2 = style(
 
 export const filterHarnessDiv = style([
   shared.stack.gap6,
-  layered.components({
+  component({
     width: space(80),
     alignItems: 'flex-start',
   }),
@@ -44,7 +44,7 @@ export const filterHarnessDiv2 = style([
   shared.text.xs,
   shared.weight.medium,
   shared.fg.subtle,
-  layered.components({
+  component({
     marginBottom: space(2),
     letterSpacing: vars.tracking.wider,
     textTransform: 'uppercase',

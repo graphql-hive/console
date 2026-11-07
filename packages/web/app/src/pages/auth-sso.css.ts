@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 
@@ -8,13 +8,13 @@ import * as shared from '../styles/shared.css';
 export const authSSOPageDiv = style([
   shared.textCenter,
   shared.text.sm,
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 ]);
 
 export const authSSOPageLink = style(
-  layered.utilities({
+  utility({
     textDecorationLine: 'underline',
   }),
 );

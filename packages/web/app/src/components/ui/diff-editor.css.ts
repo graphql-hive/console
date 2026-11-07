@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -8,7 +8,7 @@ import { vars } from '../../styles/theme.css';
 
 export const diffEditorDiv2 = style([
   shared.row.between,
-  layered.components({
+  component({
     marginBottom: space(2),
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
@@ -19,7 +19,7 @@ export const diffEditorDiv2 = style([
 ]);
 
 export const diffEditorDiv3 = style(
-  layered.components({
+  component({
     paddingInline: space(2),
     fontWeight: vars.weight.bold,
   }),
@@ -27,7 +27,7 @@ export const diffEditorDiv3 = style(
 
 export const diffEditorDiv4 = style([
   shared.row.base,
-  layered.components({
+  component({
     marginLeft: 'auto',
     height: '36px',
     paddingInline: space(2),
@@ -37,27 +37,27 @@ export const diffEditorDiv4 = style([
 export const diffEditorDiv5 = style([
   shared.text.xs,
   shared.weight.normal,
-  layered.components({
+  component({
     marginRight: space(2),
   }),
 ]);
 
 export const diffEditorArrowUp = style(
-  layered.components({
+  component({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const diffEditorArrowDown = style(
-  layered.components({
+  component({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const diffEditorDiv6 = style(
-  layered.components({
+  component({
     marginLeft: space(2),
     display: 'flex',
     alignItems: 'center',
@@ -66,14 +66,14 @@ export const diffEditorDiv6 = style(
 
 globalStyle(
   `:where(${diffEditorDiv6} > :not(:last-child))`,
-  layered.components({
+  component({
     marginInlineStart: '0',
     marginInlineEnd: space(2),
   }),
 );
 
 export const downloadButtonDownload = style(
-  layered.components({
+  component({
     marginRight: space(2),
     width: space(4),
     height: space(4),

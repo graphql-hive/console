@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 
@@ -7,7 +7,7 @@ import * as shared from '../../../../styles/shared.css';
 
 export const div = style([
   shared.row.base,
-  layered.components({
+  component({
     gap: space(6),
   }),
 ]);
@@ -15,7 +15,7 @@ export const div = style([
 export const div2 = style([shared.stack.gap4, shared.text.control]);
 
 export const div3 = style(
-  layered.components({
+  component({
     width: space(96),
   }),
 );

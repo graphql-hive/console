@@ -1,16 +1,14 @@
 import { style, styleVariants } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import { focusRingQuiet } from '../shared-styles';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 
-const s = layered.components;
-
 // Plain, because the chevron's turn selects on the trigger's open state.
 const trigger = style(
-  s({
+  component({
     display: 'flex',
     width: '100%',
     alignItems: 'center',
@@ -34,7 +32,7 @@ export const accordionStyles = {
     variants: {
       variant: {
         list: {},
-        boxed: s({ display: 'flex', flexDirection: 'column', gap: space(4) }),
+        boxed: component({ display: 'flex', flexDirection: 'column', gap: space(4) }),
         plain: {},
       },
     },
@@ -42,12 +40,12 @@ export const accordionStyles = {
   item: recipe({
     variants: {
       variant: {
-        list: s({
+        list: component({
           borderBottomStyle: 'solid',
           borderBottomWidth: 1,
           borderColor: vars.color.line.DEFAULT,
         }),
-        boxed: s({
+        boxed: component({
           overflow: 'hidden',
           borderRadius: vars.radius.md,
           borderStyle: 'solid',
@@ -64,7 +62,7 @@ export const accordionStyles = {
     variants: {
       variant: {
         list: {},
-        boxed: s({ paddingInline: space(4) }),
+        boxed: component({ paddingInline: space(4) }),
         plain: {},
       },
       /** A static row has no button, so no hover fill. */
@@ -76,7 +74,7 @@ export const accordionStyles = {
     compoundVariants: [
       {
         variants: { variant: 'boxed', interactive: true },
-        style: s({
+        style: component({
           transitionProperty:
             'color, background-color, border-color, outline-color, text-decoration-color, fill, stroke',
           transitionTimingFunction: vars.transition.timing,
@@ -90,16 +88,16 @@ export const accordionStyles = {
       },
     ],
   }),
-  heading: style(s({ display: 'flex', minWidth: 0, flexGrow: 1 })),
+  heading: style(component({ display: 'flex', minWidth: 0, flexGrow: 1 })),
   trigger: recipe({
     base: [trigger, focusRingQuiet],
     variants: {
       size: {
-        default: [shared.text.sm, s({ paddingBlock: space(3) })],
-        sm: [shared.text.xs, s({ paddingBlock: space(2) })],
+        default: [shared.text.sm, component({ paddingBlock: space(3) })],
+        sm: [shared.text.xs, component({ paddingBlock: space(2) })],
       },
       tone: {
-        default: s({
+        default: component({
           color: vars.color.fg.DEFAULT,
           '@media': {
             '(hover: hover)': {
@@ -107,7 +105,7 @@ export const accordionStyles = {
             },
           },
         }),
-        accent: s({
+        accent: component({
           color: vars.color.accent.DEFAULT,
           '@media': {
             '(hover: hover)': {
@@ -120,7 +118,7 @@ export const accordionStyles = {
   }),
   /** The same header as the trigger's, for a row with nothing to open. */
   staticRow: recipe({
-    base: s({
+    base: component({
       display: 'flex',
       width: '100%',
       alignItems: 'center',
@@ -130,8 +128,8 @@ export const accordionStyles = {
     }),
     variants: {
       size: {
-        default: [shared.text.sm, s({ paddingBlock: space(3) })],
-        sm: [shared.text.xs, s({ paddingBlock: space(2) })],
+        default: [shared.text.sm, component({ paddingBlock: space(3) })],
+        sm: [shared.text.xs, component({ paddingBlock: space(2) })],
       },
       tone: {
         default: [shared.fg.strong],
@@ -140,10 +138,10 @@ export const accordionStyles = {
     },
   }),
   label: style([shared.shrinkable, shared.grow]),
-  trailing: style([shared.noShrink, s({ marginLeft: 'auto' })]),
-  action: style([shared.noShrink, s({ paddingLeft: space(2) })]),
+  trailing: style([shared.noShrink, component({ marginLeft: 'auto' })]),
+  action: style([shared.noShrink, component({ paddingLeft: space(2) })]),
   chevron: recipe({
-    base: s({
+    base: component({
       flexShrink: 0,
       transitionProperty: 'transform, translate, scale, rotate',
       transitionTimingFunction: vars.transition.timing,
@@ -151,35 +149,35 @@ export const accordionStyles = {
     }),
     variants: {
       size: {
-        default: s(square(4)),
-        sm: s(square(3)),
+        default: component(square(4)),
+        sm: component(square(3)),
       },
       tone: {
         default: [shared.fg.subtle],
         accent: [shared.fg.accent],
       },
       chevron: {
-        end: s({
+        end: component({
           marginLeft: 'auto',
           selectors: { [`${trigger}[data-panel-open] &`]: { rotate: '180deg' } },
         }),
-        start: s({
+        start: component({
           rotate: '-90deg',
           selectors: { [`${trigger}[data-panel-open] &`]: { rotate: '0deg' } },
         }),
-        none: s({ display: 'none' }),
+        none: component({ display: 'none' }),
       },
     },
   }),
   /** Holds the chevron's place in a static row, so labels line up with open-able rows. */
   chevronSpacer: styleVariants({
-    default: s({ ...square(4), flexShrink: 0 }),
-    sm: s({ ...square(3), flexShrink: 0 }),
+    default: component({ ...square(4), flexShrink: 0 }),
+    sm: component({ ...square(3), flexShrink: 0 }),
   }),
   // Base UI measures the panel into a variable, which is what lets the height animate.
   panel: style([
     shared.text.sm,
-    s({
+    component({
       height: 'var(--accordion-panel-height)',
       overflow: 'hidden',
       transitionProperty: 'height',
@@ -192,12 +190,12 @@ export const accordionStyles = {
     variants: {
       variant: {
         list: {},
-        boxed: s({ paddingInline: space(4), paddingTop: space(3) }),
+        boxed: component({ paddingInline: space(4), paddingTop: space(3) }),
         plain: {},
       },
       size: {
-        default: s({ paddingBottom: space(4) }),
-        sm: s({ paddingBottom: space(2) }),
+        default: component({ paddingBottom: space(4) }),
+        sm: component({ paddingBottom: space(2) }),
       },
     },
   }),

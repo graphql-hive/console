@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
 
@@ -8,7 +8,7 @@ import { vars } from '../../styles/theme.css';
 export const titleH3 = style([
   shared.text.lg,
   shared.weight.semibold,
-  layered.components({
+  component({
     cursor: 'default',
     letterSpacing: vars.tracking.tight,
   }),
@@ -17,7 +17,7 @@ export const titleH3 = style([
 export const subtitleP = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.components({
+  component({
     cursor: 'default',
   }),
 ]);

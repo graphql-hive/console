@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../../styles/theme.css';
 export const copyP = style([shared.text.sm, shared.fg.default]);
 
 export const labelledSpan = style(
-  layered.components({
+  component({
     fontSize: vars.text.xs,
     lineHeight: vars.text.xsLineHeight,
     color: vars.color.fg.secondary,
@@ -17,21 +17,21 @@ export const labelledSpan = style(
 );
 
 export const div = style(
-  layered.components({
+  component({
     width: space(96),
   }),
 );
 
 export const div2 = style([
   shared.stack.base,
-  layered.components({
+  component({
     width: space(96),
     gap: space(10),
   }),
 ]);
 
 export const div3 = style(
-  layered.components({
+  component({
     width: '36rem',
   }),
 );
@@ -41,13 +41,13 @@ export const span = labelledSpan;
 export const p = style([
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     marginTop: space(3),
   }),
 ]);
 
 export const div4 = style(
-  layered.components({
+  component({
     width: '40rem',
   }),
 );
@@ -59,33 +59,33 @@ export const div6 = style([shared.text.xs, shared.weight.normal, shared.fg.secon
 export const pre = style([
   shared.mono,
   shared.fg.default,
-  layered.components({
+  component({
     fontSize: vars.text.xs,
     lineHeight: vars.leading.relaxed,
   }),
 ]);
 
 export const div7 = style(
-  layered.components({
+  component({
     width: '28rem',
   }),
 );
 
 export const div8 = style(
-  layered.components({
+  component({
     width: space(72),
   }),
 );
 
 export const span2 = style([
   shared.inlineRow.base,
-  layered.components({
+  component({
     columnGap: space(3),
   }),
 ]);
 
 export const folderOpenIcon = style(
-  layered.components({
+  component({
     width: space(4),
     height: space(4),
   }),
@@ -94,7 +94,7 @@ export const folderOpenIcon = style(
 export const folderIcon = folderOpenIcon;
 
 export const ul = style(
-  layered.components({
+  component({
     paddingLeft: space(2),
     fontSize: vars.text.sm,
     lineHeight: vars.text.smLineHeight,
@@ -104,7 +104,7 @@ export const ul = style(
 
 globalStyle(
   `:where(${ul} > :not(:last-child))`,
-  layered.components({
+  component({
     marginBlockStart: '0',
     marginBlockEnd: space(1),
   }),
@@ -112,14 +112,14 @@ globalStyle(
 
 export const div9 = style([
   shared.stack.base,
-  layered.components({
+  component({
     width: '56rem',
     gap: space(10),
   }),
 ]);
 
 export const div10 = style(
-  layered.components({
+  component({
     width: '32rem',
   }),
 );
@@ -128,7 +128,7 @@ export const span4 = labelledSpan;
 
 // The `gap` prop of the StaticRows preview carried these as class strings.
 export const staticRowsGapBoxed = style(
-  layered.components({
+  component({
     display: 'flex',
     flexDirection: 'column',
     gap: space(4),
@@ -136,7 +136,7 @@ export const staticRowsGapBoxed = style(
 );
 
 export const staticRowsGapList = style(
-  layered.components({
+  component({
     display: 'flex',
     flexDirection: 'column',
     gap: space(2),

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -10,7 +10,7 @@ export const div = style([
   shared.flex,
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     alignItems: 'flex-end',
     gap: space(8),
   }),
@@ -18,7 +18,7 @@ export const div = style([
 
 export const span = style([
   shared.stack.gap2,
-  layered.components({
+  component({
     alignItems: 'center',
   }),
 ]);
@@ -28,7 +28,7 @@ export const div2 = style([shared.stack.gap6, shared.text.sm]);
 export const div3 = style([
   shared.row.base,
   shared.textCenter,
-  layered.components({
+  component({
     height: space(24),
     justifyContent: 'center',
     borderRadius: vars.radius.md,
@@ -40,14 +40,14 @@ export const div3 = style([
 
 export const div4 = style([
   shared.stack.base,
-  layered.components({
+  component({
     alignItems: 'center',
   }),
 ]);
 
 export const div5 = style([
   shared.text.xs,
-  layered.components({
+  component({
     marginTop: space(2),
   }),
 ]);

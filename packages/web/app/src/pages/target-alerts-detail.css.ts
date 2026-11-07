@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 
@@ -8,7 +8,7 @@ import * as shared from '../styles/shared.css';
 export const targetAlertsDetailPageDiv = style([
   shared.row.base,
   shared.fill,
-  layered.utilities({
+  utility({
     height: 'fit-content',
     justifyContent: 'center',
     paddingBlock: space(28),
@@ -20,7 +20,7 @@ export const targetAlertsDetailPageDiv2 = style([shared.text.sm, shared.fg.criti
 export const targetAlertsDetailPageDiv3 = style([
   shared.row.base,
   shared.fill,
-  layered.utilities({
+  utility({
     height: 'fit-content',
     justifyContent: 'center',
     paddingBlock: space(28),
@@ -28,7 +28,7 @@ export const targetAlertsDetailPageDiv3 = style([
 ]);
 
 export const targetAlertsDetailPageDiv4 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     gap: space(8),
     paddingTop: space(7),
@@ -36,7 +36,7 @@ export const targetAlertsDetailPageDiv4 = style(
 );
 
 export const targetAlertsDetailPageDiv5 = style(
-  layered.utilities({
+  utility({
     minWidth: '0px',
     flex: '1',
   }),
@@ -44,14 +44,14 @@ export const targetAlertsDetailPageDiv5 = style(
 
 globalStyle(
   `:where(${targetAlertsDetailPageDiv5} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(6),
   }),
 );
 
 export const targetAlertsDetailPageAside = style(
-  layered.utilities({
+  utility({
     position: 'sticky',
     top: space(6),
     width: space(94),
@@ -63,13 +63,13 @@ export const targetAlertsDetailPageAside = style(
 export const ruleStateLogSectionDiv = style([
   shared.text.sm,
   shared.fg.critical,
-  layered.utilities({
+  utility({
     paddingBlock: space(4),
   }),
 ]);
 
 export const ruleStateLogSectionDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     justifyContent: 'center',
     paddingBlock: space(6),
@@ -80,7 +80,7 @@ export const ruleStateLogSectionSection = style({});
 
 globalStyle(
   `:where(${ruleStateLogSectionSection} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -90,7 +90,7 @@ export const ruleStateLogSectionH2 = style([
   shared.text.sm,
   shared.weight.medium,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     margin: '0px',
     marginBottom: space(2),
   }),
@@ -100,7 +100,7 @@ export const ruleStateLogSectionSection2 = style({});
 
 globalStyle(
   `:where(${ruleStateLogSectionSection2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -110,7 +110,7 @@ export const ruleStateLogSectionH22 = style([
   shared.text.sm,
   shared.weight.medium,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     margin: '0px',
   }),
 ]);

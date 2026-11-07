@@ -1,31 +1,29 @@
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import { animate } from '../../../../styles/animations.css';
 import { palette, vars } from '../../../../styles/theme.css';
-
-const s = layered.components;
 
 type Size = 'xs' | 'sm' | 'default' | 'lg' | 'xl';
 type Width = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 const line = (size: Size, steps: number) => ({
   variants: { shape: 'line' as const, size },
-  style: s({ height: space(steps) }),
+  style: component({ height: space(steps) }),
 });
 const lineWidth = (width: Width, steps: number) => ({
   variants: { shape: 'line' as const, width },
-  style: s({ width: space(steps) }),
+  style: component({ width: space(steps) }),
 });
 const circle = (size: Size, steps: number) => ({
   variants: { shape: 'circle' as const, size },
-  style: s(square(steps)),
+  style: component(square(steps)),
 });
 
 export const skeletonStyles = {
   root: recipe({
     // The gradient is fixed to the viewport, so every skeleton on the page shares one shimmer.
-    base: s({
+    base: component({
       display: 'block',
       flexShrink: 0,
       animation: animate.skeleton,
@@ -39,9 +37,9 @@ export const skeletonStyles = {
     }),
     variants: {
       shape: {
-        line: s({ borderRadius: vars.radius.sm }),
-        block: s({ width: '100%', height: '100%', borderRadius: vars.radius.sm }),
-        circle: s({ borderRadius: vars.radius.full }),
+        line: component({ borderRadius: vars.radius.sm }),
+        block: component({ width: '100%', height: '100%', borderRadius: vars.radius.sm }),
+        circle: component({ borderRadius: vars.radius.full }),
       },
       size: { xs: {}, sm: {}, default: {}, lg: {}, xl: {} },
       width: { xs: {}, sm: {}, md: {}, lg: {}, xl: {}, full: {} },
@@ -57,7 +55,7 @@ export const skeletonStyles = {
       lineWidth('md', 48),
       lineWidth('lg', 72),
       lineWidth('xl', 96),
-      { variants: { shape: 'line', width: 'full' }, style: s({ width: '100%' }) },
+      { variants: { shape: 'line', width: 'full' }, style: component({ width: '100%' }) },
       circle('xs', 6),
       circle('sm', 6),
       circle('default', 9),

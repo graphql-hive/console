@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { utility } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -10,14 +10,14 @@ export const getStartedWizardDiv = style({});
 
 globalStyle(
   `:where(${getStartedWizardDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(3),
   }),
 );
 
 export const taskA = style(
-  layered.utilities({
+  utility({
     position: 'relative',
     display: 'block',
     borderRadius: vars.radius.lg,
@@ -39,13 +39,13 @@ export const taskA = style(
 );
 
 export const taskA2 = style(
-  layered.utilities({
+  utility({
     opacity: '70%',
   }),
 );
 
 export const taskDiv = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'flex-start',
   }),
@@ -53,14 +53,14 @@ export const taskDiv = style(
 
 globalStyle(
   `:where(${taskDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginInlineStart: '0',
     marginInlineEnd: space(3),
   }),
 );
 
 export const taskCircleCheck = style(
-  layered.utilities({
+  utility({
     width: space(5),
     height: space(5),
     color: vars.color.accent.DEFAULT,
@@ -68,7 +68,7 @@ export const taskCircleCheck = style(
 );
 
 export const taskCircle = style(
-  layered.utilities({
+  utility({
     width: space(5),
     height: space(5),
     color: vars.color.accent.DEFAULT,
@@ -76,7 +76,7 @@ export const taskCircle = style(
 );
 
 export const taskDiv2 = style(
-  layered.utilities({
+  utility({
     width: '0px',
     flex: '1',
   }),
@@ -85,7 +85,7 @@ export const taskDiv2 = style(
 export const taskP = style([
   shared.weight.medium,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     lineHeight: space(5),
   }),
 ]);
@@ -93,7 +93,7 @@ export const taskP = style([
 export const taskP2 = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(1),
   }),
 ]);

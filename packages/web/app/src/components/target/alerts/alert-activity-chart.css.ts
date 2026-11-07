@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
 
@@ -7,7 +7,7 @@ import { vars } from '../../../styles/theme.css';
 
 export const alertActivityChartDiv = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     height: '200px',
     justifyContent: 'center',
     borderRadius: vars.radius.md,
@@ -21,7 +21,7 @@ export const alertActivityChartDiv = style([
 export const alertActivityChartSpan = style([
   shared.text.sm,
   shared.fg.subtle,
-  layered.utilities({
+  utility({
     fontStyle: 'italic',
   }),
 ]);

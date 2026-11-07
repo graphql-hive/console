@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../../../styles/theme.css';
 export const copyP = style([shared.text.sm, shared.fg.default]);
 
 export const markCheck = style(
-  layered.components({
+  component({
     width: space(4),
     height: space(4),
   }),
@@ -17,20 +17,20 @@ export const markCheck = style(
 
 export const div = style([
   shared.stack.base,
-  layered.components({
+  component({
     gap: space(10),
   }),
 ]);
 
 export const div3 = style([
   shared.stack.base,
-  layered.components({
+  component({
     gap: space(10),
   }),
 ]);
 
 export const div4 = style(
-  layered.components({
+  component({
     display: 'flex',
     width: '40rem',
     borderRadius: vars.radius.md,
@@ -44,7 +44,7 @@ export const div5 = style([
   shared.noShrink,
   shared.text.xs,
   shared.fg.secondary,
-  layered.components({
+  component({
     width: space(40),
     borderRightStyle: 'solid',
     borderRightWidth: '1px',
@@ -56,7 +56,7 @@ export const div5 = style([
 export const div6 = style([
   shared.stack.base,
   shared.fill,
-  layered.components({
+  component({
     padding: space(3),
   }),
 ]);

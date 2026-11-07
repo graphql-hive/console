@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 
@@ -8,14 +8,14 @@ import * as shared from '../styles/shared.css';
 export const targetProposalEditPageDiv = style([
   shared.relative,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     minHeight: '500px',
   }),
 ]);
 
 export const targetProposalEditPageDiv2 = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: '0px',
     right: space(1),
@@ -23,14 +23,14 @@ export const targetProposalEditPageDiv2 = style([
 ]);
 
 export const targetProposalEditPageSpan = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
     display: 'inline-flex',
   }),
 );
 
 export const targetProposalEditPageSaveIcon = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
     width: space(4),
     height: space(4),

@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { utility } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -10,27 +10,27 @@ export const class2 = style({});
 
 globalStyle(
   `:is(${class2} > *)`,
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.editor,
   }),
 );
 
 export const class3 = style(
-  layered.utilities({
+  utility({
     height: space(32),
   }),
 );
 
 globalStyle(
   `:is(${class3} > *)`,
-  layered.utilities({
+  utility({
     borderRadius: vars.radius.md,
     backgroundColor: vars.color.editor,
   }),
 );
 
 export const class4 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: '1px',
     left: space(-5),
@@ -38,7 +38,7 @@ export const class4 = style(
 );
 
 export const editorTitleDiv = style(
-  layered.utilities({
+  utility({
     cursor: 'default',
     fontSize: vars.text.base,
     lineHeight: vars.text.baseLineHeight,
@@ -49,13 +49,13 @@ export const editorTitleDiv = style(
 
 export const preflightContentDiv = style([
   shared.row.gap4,
-  layered.utilities({
+  utility({
     justifyContent: 'space-between',
   }),
 ]);
 
 export const preflightContentSpan = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     alignItems: 'center',
     gap: space(1),
@@ -63,7 +63,7 @@ export const preflightContentSpan = style(
 );
 
 export const preflightContentPencilIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     flexShrink: '0',
@@ -71,13 +71,13 @@ export const preflightContentPencilIcon = style(
 );
 
 export const preflightContentDiv2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(3),
   }),
 );
 
 export const preflightContentPowerIcon = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -85,7 +85,7 @@ export const preflightContentPowerIcon = style(
 );
 
 export const preflightContentEditorTitle = style(
-  layered.utilities({
+  utility({
     marginTop: space(6),
     display: 'flex',
     cursor: 'not-allowed',
@@ -95,7 +95,7 @@ export const preflightContentEditorTitle = style(
 );
 
 export const preflightContentSubtitle = style(
-  layered.utilities({
+  utility({
     marginBottom: space(3),
     cursor: 'not-allowed',
   }),
@@ -104,7 +104,7 @@ export const preflightContentSubtitle = style(
 export const preflightContentDiv4 = style([
   shared.row.base,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     position: 'absolute',
     inset: '0px',
     zIndex: '20',
@@ -121,7 +121,7 @@ export const preflightContentDiv4 = style([
 
 export const preflightContentDiv5 = style([
   shared.text.sm,
-  layered.utilities({
+  utility({
     borderRadius: vars.radius.md,
     backgroundColor: vars.color.editor,
     padding: space(4),
@@ -129,13 +129,13 @@ export const preflightContentDiv5 = style([
 ]);
 
 export const preflightContentMonacoEditor = style(
-  layered.utilities({
+  utility({
     zIndex: '10',
   }),
 );
 
 export const preflightContentEditorTitle2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(6),
     display: 'flex',
     alignItems: 'center',
@@ -144,7 +144,7 @@ export const preflightContentEditorTitle2 = style(
 );
 
 export const preflightContentSubtitle2 = style(
-  layered.utilities({
+  utility({
     marginBottom: space(3),
   }),
 );
@@ -153,7 +153,7 @@ export const preflightModalP = style([
   shared.row.gap2,
   shared.text.sm,
   shared.fg.default,
-  layered.utilities({
+  utility({
     marginInlineEnd: 'auto',
   }),
 ]);
@@ -161,7 +161,7 @@ export const preflightModalP = style([
 export const preflightModalInfoIcon = preflightContentPencilIcon;
 
 export const preflightModalDiv = style(
-  layered.utilities({
+  utility({
     display: 'grid',
     height: '60vh',
     gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -170,20 +170,20 @@ export const preflightModalDiv = style(
 
 globalStyle(
   `${preflightModalDiv} section`,
-  layered.utilities({
+  utility({
     flexGrow: '1',
   }),
 );
 
 export const preflightModalDiv2 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     marginRight: space(4),
   }),
 ]);
 
 export const preflightModalDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     justifyContent: 'space-between',
     padding: space(2),
@@ -191,7 +191,7 @@ export const preflightModalDiv3 = style(
 );
 
 export const preflightModalEditorTitle = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     gap: space(2),
   }),
@@ -205,7 +205,7 @@ export const preflightModalPlayIcon = preflightContentPencilIcon;
 
 export const preflightModalDiv4 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     height: 'inherit',
   }),
 ]);
@@ -213,7 +213,7 @@ export const preflightModalDiv4 = style([
 export const preflightModalSpan2 = preflightContentSpan;
 
 export const preflightModalXIcon2 = style(
-  layered.utilities({
+  utility({
     width: space(3),
     height: space(3),
     flexShrink: '0',
@@ -222,14 +222,14 @@ export const preflightModalXIcon2 = style(
 
 export const preflightModalDiv5 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     height: '50%',
     backgroundColor: vars.color.editor,
   }),
 ]);
 
 export const preflightModalSection = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(2.5),
     paddingRight: space(2.5),
     paddingLeft: '26px',
@@ -240,7 +240,7 @@ export const preflightModalSection = style(
 );
 
 export const preflightModalEditorTitle2 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     gap: space(2),
     padding: space(2),
@@ -248,31 +248,31 @@ export const preflightModalEditorTitle2 = style(
 );
 
 export const logColorsError = style(
-  layered.utilities({
+  utility({
     color: vars.color.critical.DEFAULT,
   }),
 );
 
 export const logColorsInfo = style(
-  layered.utilities({
+  utility({
     color: vars.color.success.DEFAULT,
   }),
 );
 
 export const logColorsWarn = style(
-  layered.utilities({
+  utility({
     color: vars.color.warning.DEFAULT,
   }),
 );
 
 export const logColorsLog = style(
-  layered.utilities({
+  utility({
     color: vars.color.fg.secondary,
   }),
 );
 
 export const logLineHr = style(
-  layered.utilities({
+  utility({
     marginBlock: space(2),
     borderStyle: 'dashed',
     borderColor: 'currentcolor',

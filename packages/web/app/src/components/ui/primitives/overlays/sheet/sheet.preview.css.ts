@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../../../styles/layered';
+import { component } from '../../../../../styles/layered';
 import { space } from '../../../../../styles/space';
 import * as shared from '../../../../../styles/shared.css';
 import { vars } from '../../../../../styles/theme.css';
@@ -8,13 +8,13 @@ import { vars } from '../../../../../styles/theme.css';
 
 export const tokenFieldsDiv2 = style([
   shared.stack.base,
-  layered.components({
+  component({
     gap: space(1.5),
   }),
 ]);
 
 export const div = style(
-  layered.components({
+  component({
     display: 'flex',
     flexWrap: 'wrap',
     gap: space(3),
@@ -25,13 +25,13 @@ export const span = style([
   shared.mono,
   shared.weight.normal,
   shared.fg.secondary,
-  layered.components({
+  component({
     marginLeft: space(2),
   }),
 ]);
 
 export const ul = style(
-  layered.components({
+  component({
     borderTopStyle: 'solid',
     borderTopWidth: '1px',
     borderColor: vars.color.line.DEFAULT,
@@ -42,7 +42,7 @@ export const ul = style(
 
 globalStyle(
   `:where(${ul} > :not(:last-child))`,
-  layered.components({
+  component({
     borderBottomStyle: 'solid',
     borderTopStyle: 'solid',
     borderTopWidth: '0px',
@@ -54,7 +54,7 @@ globalStyle(
 export const li = style([
   shared.mono,
   shared.fg.default,
-  layered.components({
+  component({
     paddingInline: space(6),
     paddingBlock: space(3),
   }),

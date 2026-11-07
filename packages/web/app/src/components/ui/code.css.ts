@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -12,7 +12,7 @@ export const codeSpan = style([
   shared.mono,
   shared.text.sm,
   shared.breakAll,
-  layered.components({
+  component({
     cursor: 'text',
     borderRadius: vars.radius.md,
     borderStyle: 'solid',
@@ -25,13 +25,13 @@ export const codeSpan = style([
 ]);
 
 export const codeCode = style(
-  layered.components({
+  component({
     whiteSpace: 'pre-line',
   }),
 );
 
 export const codeButton = style(
-  layered.components({
+  component({
     position: 'absolute',
     top: space(2),
     right: space(3),

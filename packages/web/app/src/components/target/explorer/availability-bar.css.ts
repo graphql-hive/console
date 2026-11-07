@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -10,7 +10,7 @@ export const availabilityBarDiv = style([
   shared.relative,
   shared.row.base,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     height: space(2),
     overflow: 'hidden',
     borderRadius: vars.radius.sm,
@@ -19,7 +19,7 @@ export const availabilityBarDiv = style([
 ]);
 
 export const availabilityBarDiv2 = style(
-  layered.utilities({
+  utility({
     height: '100%',
     backgroundColor: vars.color.success.DEFAULT,
     transitionProperty: 'all',
@@ -29,7 +29,7 @@ export const availabilityBarDiv2 = style(
 );
 
 export const availabilityBarDiv3 = style(
-  layered.utilities({
+  utility({
     borderRightStyle: 'solid',
     borderRightWidth: '1px',
   }),

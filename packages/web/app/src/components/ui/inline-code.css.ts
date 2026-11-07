@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -11,7 +11,7 @@ export const inlineCodeSpan = style([
   shared.mono,
   shared.text.sm,
   shared.breakAll,
-  layered.components({
+  component({
     borderRadius: vars.radius.md,
     backgroundColor: vars.color.surface.code,
     paddingBlock: space(1),
@@ -19,14 +19,14 @@ export const inlineCodeSpan = style([
 ]);
 
 export const inlineCodeCode = style(
-  layered.components({
+  component({
     flexGrow: '1',
     paddingInline: space(3),
   }),
 );
 
 export const inlineCodeButton = style(
-  layered.components({
+  component({
     cursor: 'pointer',
     padding: space(2),
     '@media': {

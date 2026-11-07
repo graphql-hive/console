@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 
@@ -8,7 +8,7 @@ import * as shared from '../styles/shared.css';
 export const authResetPasswordEmailP = style([shared.text.sm, shared.fg.secondary]);
 
 export const authResetPasswordEmailButton = style(
-  layered.utilities({
+  utility({
     textDecorationLine: 'underline',
   }),
 );
@@ -16,13 +16,13 @@ export const authResetPasswordEmailButton = style(
 export const authResetPasswordEmailDiv = style([
   shared.textCenter,
   shared.text.sm,
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 ]);
 
 export const authResetPasswordEmailLink = style(
-  layered.utilities({
+  utility({
     textDecorationLine: 'underline',
   }),
 );
@@ -30,13 +30,13 @@ export const authResetPasswordEmailLink = style(
 export const authPasswordNewDiv = style([
   shared.textCenter,
   shared.text.sm,
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 ]);
 
 export const authPasswordNewLink = style(
-  layered.utilities({
+  utility({
     textDecorationLine: 'underline',
   }),
 );

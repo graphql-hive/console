@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../../styles/theme.css';
 export const docsLinkA = style([
   shared.inlineRow.base,
   shared.text.sm,
-  layered.components({
+  component({
     marginTop: space(2),
     padding: '0px',
     whiteSpace: 'pre-wrap',
@@ -26,7 +26,7 @@ export const docsLinkA = style([
 ]);
 
 export const docsLinkBook = style(
-  layered.components({
+  component({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -34,7 +34,7 @@ export const docsLinkBook = style(
 );
 
 export const docsLinkExternalLink = style(
-  layered.components({
+  component({
     display: 'inline',
     width: space(4),
     height: space(4),
@@ -46,7 +46,7 @@ export const productUpdatesLinkA = style([
   shared.inlineRow.base,
   shared.weight.medium,
   shared.fg.info,
-  layered.components({
+  component({
     padding: '0px',
     transitionProperty:
       'color, background-color, border-color, outline-color, text-decoration-color, fill, stroke',
@@ -65,7 +65,7 @@ export const productUpdatesLinkA = style([
 ]);
 
 export const productUpdatesLinkMegaphone = style(
-  layered.components({
+  component({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -73,7 +73,7 @@ export const productUpdatesLinkMegaphone = style(
 );
 
 export const productUpdatesLinkExternalLink = style(
-  layered.components({
+  component({
     display: 'inline',
     width: space(4),
     height: space(4),

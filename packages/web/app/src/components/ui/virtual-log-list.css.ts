@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 
@@ -9,14 +9,14 @@ export const virtualLogListDiv = style([
   shared.flex,
   shared.mono,
   shared.text.xs,
-  layered.components({
+  component({
     paddingInline: space(2),
     paddingBottom: space(1),
   }),
 ]);
 
 export const virtualLogListTime = style(
-  layered.components({
+  component({
     paddingRight: space(4),
   }),
 );

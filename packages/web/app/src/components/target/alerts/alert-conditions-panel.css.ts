@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -16,7 +16,7 @@ export const relativeTimestampSpan = style([
 export const relativeTimestampButton = style([shared.inlineFlex, shared.fg.secondary]);
 
 export const relativeTimestampInfo = style(
-  layered.utilities({
+  utility({
     width: space(3),
     height: space(3),
   }),
@@ -25,7 +25,7 @@ export const relativeTimestampInfo = style(
 export const relativeTimestampSpan2 = style([shared.text.xs, shared.fg.default]);
 
 export const alertConditionsPanelLink = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     alignItems: 'center',
     gap: space(1),
@@ -43,14 +43,14 @@ export const alertConditionsPanelLink = style(
 );
 
 export const alertConditionsPanelExternalLink = style(
-  layered.utilities({
+  utility({
     width: space(3),
     height: space(3),
   }),
 );
 
 export const alertConditionsPanelDiv = style(
-  layered.utilities({
+  utility({
     borderLeftStyle: 'solid',
     borderLeftWidth: '1px',
     borderColor: vars.color.line.DEFAULT,
@@ -62,7 +62,7 @@ export const alertConditionsPanelDiv = style(
 
 globalStyle(
   `:where(${alertConditionsPanelDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(6),
   }),
@@ -72,7 +72,7 @@ export const alertConditionsPanelH2 = style([
   shared.text.sm,
   shared.weight.semibold,
   shared.fg.strong,
-  layered.utilities({
+  utility({
     marginBottom: space(2),
     display: 'block',
   }),
@@ -80,26 +80,26 @@ export const alertConditionsPanelH2 = style([
 
 export const alertConditionsPanelSpan = style([
   shared.inlineRow.base,
-  layered.utilities({
+  utility({
     gap: space(0.5),
   }),
 ]);
 
 export const alertConditionsPanelSpan2 = style(
-  layered.utilities({
+  utility({
     textTransform: 'capitalize',
   }),
 );
 
 export const alertConditionsPanelSpan3 = style(
-  layered.utilities({
+  utility({
     textTransform: 'capitalize',
   }),
 );
 
 export const alertConditionsPanelDiv2 = style([
   shared.row.between,
-  layered.utilities({
+  utility({
     borderBlockStyle: 'solid',
     borderBlockWidth: '1px',
     borderColor: vars.color.line.DEFAULT,
@@ -109,7 +109,7 @@ export const alertConditionsPanelDiv2 = style([
 
 export const alertConditionsPanelSpan4 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     gap: space(0.5),
   }),
 ]);

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
@@ -10,7 +10,7 @@ export const schemaChecksListDiv = style([
   shared.stack.base,
   shared.fullWidth,
   shared.grow,
-  layered.utilities({
+  utility({
     marginTop: space(4),
     alignItems: 'center',
   }),
@@ -20,7 +20,7 @@ export const schemaChecksListDiv2 = style([
   shared.textCenter,
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginBlock: space(4),
     cursor: 'default',
   }),
@@ -29,7 +29,7 @@ export const schemaChecksListDiv2 = style([
 export const schemaChecksListDiv3 = style([
   shared.stack.base,
   shared.grow,
-  layered.utilities({
+  utility({
     minHeight: '0px',
     width: '300px',
     borderRadius: vars.radius.md,
@@ -41,14 +41,14 @@ export const schemaChecksListDiv3 = style([
 
 export const schemaChecksListDiv4 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     gap: space(2.5),
     padding: space(2.5),
   }),
 ]);
 
 export const schemaChecksListDiv5 = style(
-  layered.utilities({
+  utility({
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
@@ -67,13 +67,13 @@ export const schemaChecksListDiv5 = style(
 );
 
 export const schemaChecksListDiv6 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.selected,
   }),
 );
 
 export const schemaChecksListLink = style(
-  layered.utilities({
+  utility({
     selectors: {
       '&::after': {
         position: 'absolute',
@@ -98,7 +98,7 @@ export const schemaChecksListDiv8 = style([
   shared.text.xs,
   shared.weight.medium,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(2.5),
     marginBottom: space(1.5),
     verticalAlign: 'middle',
@@ -106,7 +106,7 @@ export const schemaChecksListDiv8 = style([
 ]);
 
 export const schemaChecksListDiv10 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -115,7 +115,7 @@ export const schemaChecksListDiv10 = style(
 );
 
 export const schemaChecksListServiceFilterButton = style(
-  layered.utilities({
+  utility({
     position: 'relative',
     zIndex: '10',
     marginLeft: 'auto',
@@ -130,7 +130,7 @@ export const schemaChecksListA = style([
   shared.text.xs,
   shared.weight.medium,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     zIndex: '10',
     marginLeft: '-1px',
     '@media': {
@@ -146,7 +146,7 @@ export const schemaChecksListA = style([
 ]);
 
 export const schemaChecksListExternalLink = style(
-  layered.utilities({
+  utility({
     display: 'inline',
     width: space(4),
     height: space(4),
@@ -154,7 +154,7 @@ export const schemaChecksListExternalLink = style(
 );
 
 export const checksPageContentDiv2 = style(
-  layered.utilities({
+  utility({
     width: '300px',
     paddingBlock: space(6),
   }),
@@ -164,14 +164,14 @@ export const checksPageContentDiv3 = style([
   shared.stack.base,
   shared.fullWidth,
   shared.grow,
-  layered.utilities({
+  utility({
     marginTop: space(4),
     alignItems: 'center',
   }),
 ]);
 
 export const checksPageContentDiv4 = style(
-  layered.utilities({
+  utility({
     marginBlock: space(4),
     marginTop: space(6),
     width: '100%',
@@ -183,14 +183,14 @@ export const checksPageContentDiv4 = style(
 
 export const noSchemaChecksDiv = style([
   shared.text.sm,
-  layered.utilities({
+  utility({
     cursor: 'default',
   }),
 ]);
 
 export const schemaChecksSideNavDiv = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     position: 'sticky',
     top: space(6),
     maxHeight: 'calc(100vh - 3rem)',
@@ -200,7 +200,7 @@ export const schemaChecksSideNavDiv = style([
 ]);
 
 export const schemaChecksSideNavDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     height: space(9),
     flexDirection: 'row',
@@ -210,7 +210,7 @@ export const schemaChecksSideNavDiv2 = style(
 );
 
 export const schemaChecksSideNavDiv3 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     height: space(9),
     flexDirection: 'row',
@@ -220,7 +220,7 @@ export const schemaChecksSideNavDiv3 = style(
 );
 
 export const schemaChecksSideNavDiv4 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     height: space(9),
     flexDirection: 'row',
@@ -230,7 +230,7 @@ export const schemaChecksSideNavDiv4 = style(
 );
 
 export const targetChecksPageLayoutContent = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'row',
     columnGap: space(6),

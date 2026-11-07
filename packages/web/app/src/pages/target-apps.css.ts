@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 
@@ -8,13 +8,13 @@ import * as shared from '../styles/shared.css';
 export const targetAppsViewDiv = style([
   shared.stack.base,
   shared.fill,
-  layered.utilities({
+  utility({
     paddingBlock: space(6),
   }),
 ]);
 
 export const targetAppsViewDiv2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 );

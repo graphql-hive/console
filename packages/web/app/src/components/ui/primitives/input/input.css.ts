@@ -1,17 +1,15 @@
 import { style } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import { controlSize, controlSurface, focusRing } from '../shared-styles';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 
-const s = layered.components;
-
 // Everything a field is before its surface: colour, shape, transition, and its disabled and
 // invalid states. The surface (fill and border colour) is the `onSurface` variant.
 const fieldBase = style(
-  s({
+  component({
     color: vars.color.fg.DEFAULT,
     minWidth: 0,
     appearance: 'none',
@@ -53,7 +51,7 @@ export const inputStyles = {
       size: {
         compact: [
           controlSize.compact,
-          s({
+          component({
             paddingInline: space(2.5),
             fontSize: vars.text.sm,
             lineHeight: vars.text.smLineHeight,
@@ -61,7 +59,7 @@ export const inputStyles = {
         ],
         default: [
           controlSize.default,
-          s({
+          component({
             paddingInline: space(3),
             fontSize: vars.text.sm,
             lineHeight: vars.text.smLineHeight,
@@ -69,7 +67,7 @@ export const inputStyles = {
         ],
       },
       onSurface: {
-        base: s({
+        base: component({
           borderColor: vars.color.line.control,
           backgroundColor: vars.color.surface.control,
           selectors: {
@@ -87,7 +85,7 @@ export const inputStyles = {
         }),
         raised: [
           controlSurface.raised,
-          s({
+          component({
             selectors: {
               '&:focus': { borderColor: vars.color.neutral[7] },
               '&:where(.dark, .dark *):focus': { backgroundColor: vars.color.neutral[6] },
@@ -104,13 +102,13 @@ export const inputStyles = {
         ],
       },
       width: {
-        full: s({ width: '100%' }),
-        xs: s({ width: space(16) }),
-        sm: s({ width: space(48) }),
-        md: s({ width: space(96) }),
+        full: component({ width: '100%' }),
+        xs: component({ width: space(16) }),
+        sm: component({ width: space(48) }),
+        md: component({ width: space(96) }),
       },
       mono: {
-        true: s({
+        true: component({
           fontFamily: vars.font.mono,
           fontSize: vars.text.xs,
           lineHeight: vars.text.xsLineHeight,
@@ -119,14 +117,14 @@ export const inputStyles = {
       },
       /** Room inside the edge for what sits there. */
       leadingIcon: {
-        true: s({ paddingLeft: space(9) }),
+        true: component({ paddingLeft: space(9) }),
       },
       trailing: {
-        true: s({ paddingRight: space(9) }),
+        true: component({ paddingRight: space(9) }),
       },
       /** Joined to a prefix block on its left. */
       prefixed: {
-        true: s({ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }),
+        true: component({ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }),
       },
     },
     defaultVariants: { size: 'default', onSurface: 'base', width: 'full', mono: false },
@@ -143,7 +141,7 @@ export const inputStyles = {
   }),
   /** The block before a slug. It sits one step further from the page than the field it joins. */
   prefix: recipe({
-    base: s({
+    base: component({
       display: 'inline-flex',
       flexShrink: 0,
       alignItems: 'center',
@@ -164,12 +162,12 @@ export const inputStyles = {
         default: [controlSize.default],
       },
       onSurface: {
-        base: s({
+        base: component({
           borderColor: vars.color.line.control,
           backgroundColor: vars.color.neutral[3],
           selectors: { '&:where(.dark, .dark *)': { backgroundColor: vars.color.neutral[4] } },
         }),
-        raised: s({
+        raised: component({
           borderColor: vars.color.line.DEFAULT,
           backgroundColor: vars.color.neutral[3],
           selectors: {
@@ -184,7 +182,7 @@ export const inputStyles = {
     defaultVariants: { size: 'default', onSurface: 'base' },
   }),
   leadingIcon: style(
-    s({
+    component({
       pointerEvents: 'none',
       position: 'absolute',
       left: space(3),
@@ -192,5 +190,5 @@ export const inputStyles = {
       color: vars.color.fg.muted,
     }),
   ),
-  trailing: style([shared.inlineRow.base, s({ position: 'absolute', right: space(1.5) })]),
+  trailing: style([shared.inlineRow.base, component({ position: 'absolute', right: space(1.5) })]),
 };

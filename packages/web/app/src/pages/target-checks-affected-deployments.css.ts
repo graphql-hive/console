@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
@@ -9,14 +9,14 @@ import { vars } from '../styles/theme.css';
 export const targetChecksAffectedDeploymentsContentDiv = style([
   shared.stack.base,
   shared.fill,
-  layered.utilities({
+  utility({
     height: '100%',
     paddingBlock: space(6),
   }),
 ]);
 
 export const targetChecksAffectedDeploymentsContentLink = style(
-  layered.utilities({
+  utility({
     color: vars.color.warning.DEFAULT,
     '@media': {
       '(hover: hover)': {
@@ -31,7 +31,7 @@ export const targetChecksAffectedDeploymentsContentLink = style(
 );
 
 export const targetChecksAffectedDeploymentsContentSpan2 = style(
-  layered.utilities({
+  utility({
     marginInline: space(2),
     color: vars.color.fg.secondary,
   }),
@@ -40,7 +40,7 @@ export const targetChecksAffectedDeploymentsContentSpan2 = style(
 export const targetChecksAffectedDeploymentsContentCode = style([
   shared.mono,
   shared.fg.warning,
-  layered.utilities({
+  utility({
     borderRadius: vars.radius.sm,
     backgroundColor: vars.color.surface.code,
     paddingInline: space(1),
@@ -49,13 +49,13 @@ export const targetChecksAffectedDeploymentsContentCode = style([
 ]);
 
 export const targetChecksAffectedDeploymentsContentDiv2 = style(
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 );
 
 export const targetChecksAffectedDeploymentsPageLayoutContent = style(
-  layered.utilities({
+  utility({
     minHeight: vars.minH.content,
   }),
 );

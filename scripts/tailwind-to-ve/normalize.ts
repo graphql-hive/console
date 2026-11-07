@@ -5,7 +5,8 @@
  *   pnpm tsx scripts/tailwind-to-ve/normalize.ts --scope components/ui [--dry] [--verbose]
  *
  * In every `.css.ts` under the scope, each `{ '@layer': { [layer]: {...} } }` block (in `style`,
- * `recipe`, `globalStyle`, wherever it sits) is rewritten as `layered.<layer>({...})` with:
+ * `recipe`, `globalStyle`, wherever it sits) is rewritten as `component({...})` (or `utility`,
+ * both from `src/styles/layered.ts`) with:
  *
  * - typed tokens instead of raw variables: `vars.color.fg.muted` for `var(--color-fg-muted)`,
  *   `space(4)` for `calc(var(--spacing) * 4)`, `palette.neutral[4]` for `var(--neutral-4)`;
@@ -955,6 +956,7 @@ async function main() {
     );
     if (!layerImport) continue;
     const layerName = layerImport[1];
+    const layerFn = layerName === 'components' ? 'component' : 'utility';
     const cssFile = ts.createSourceFile(cssPath, cssText, ts.ScriptTarget.ES2022, true);
     const wrappers = findWrappers(cssFile);
     if (!wrappers.length) continue;
@@ -1050,7 +1052,7 @@ async function main() {
         const local: StyleTree = { decls: rest, queries: tree.queries, selectors: tree.selectors };
         const parts = [...exprs];
         if (!isEmptyTree(local)) {
-          parts.push(`layered.${layerName}({\n${renderTree(local, tokens, used).join('\n')}\n})`);
+          parts.push(`${layerFn}({\n${renderTree(local, tokens, used).join('\n')}\n})`);
         }
         const text = `export const ${e.name} = style([${parts.join(', ')}]);`;
         cssEdits.push({ start: e.statement.getStart(), end: e.statement.getEnd(), text });
@@ -1063,7 +1065,7 @@ async function main() {
       const tree = trees.get(w);
       if (!tree) continue;
       const lines = renderTree(tree, tokens, used);
-      const text = `layered.${layerName}({\n${lines.join('\n')}\n})`;
+      const text = `${layerFn}({\n${lines.join('\n')}\n})`;
       cssEdits.push({ start: w.node.getStart(), end: w.node.getEnd(), text });
       totals.blocks++;
     }
@@ -1071,8 +1073,8 @@ async function main() {
     let css = apply(cssText, cssEdits).replaceAll('style([])', 'style({})');
     const stylesDir = path.dirname(layerImport[2]);
     const header: string[] = [];
-    if (/layered\.(components|utilities)\(/.test(css)) {
-      header.push(`import { layered } from '${stylesDir}/layered';`);
+    if (new RegExp(`\\b${layerFn}\\(`).test(css)) {
+      header.push(`import { ${layerFn} } from '${stylesDir}/layered';`);
     }
     if (/\bshared\./.test(css)) header.push(`import * as shared from '${stylesDir}/shared.css';`);
     if (used.has('animate')) header.push(`import { animate } from '${stylesDir}/animations.css';`);

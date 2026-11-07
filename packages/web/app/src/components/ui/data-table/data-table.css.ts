@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { component } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -11,7 +11,7 @@ export const sortHeaderButton = style([
   shared.text.xs,
   shared.weight.medium,
   shared.fg.secondary,
-  layered.components({
+  component({
     '@media': {
       '(hover: hover)': {
         selectors: {
@@ -27,7 +27,7 @@ export const sortHeaderButton = style([
 export const sortHeaderSpan = style([shared.inlineFlex, shared.fg.success]);
 
 export const sortHeaderArrowDown = style(
-  layered.components({
+  component({
     width: space(3),
     height: space(3),
     transitionProperty: 'transform, translate, scale, rotate',
@@ -37,19 +37,19 @@ export const sortHeaderArrowDown = style(
 );
 
 export const sortHeaderArrowDown2 = style(
-  layered.components({
+  component({
     color: vars.color.success.DEFAULT,
   }),
 );
 
 export const sortHeaderArrowDown3 = style(
-  layered.components({
+  component({
     opacity: '30%',
   }),
 );
 
 export const sortHeaderArrowDown4 = style(
-  layered.components({
+  component({
     rotate: '180deg',
   }),
 );
@@ -59,7 +59,7 @@ export const sortHeaderSpan2 = style([shared.text['2xs'], shared.fg.success, sha
 export const dataTableDiv = style([
   shared.relative,
   shared.fullWidth,
-  layered.components({
+  component({
     overflow: 'auto',
   }),
 ]);
@@ -69,7 +69,7 @@ export const dataTableTable = style([shared.fullWidth, shared.text.sm]);
 export const dataTableSpan2 = style([shared.inlineFlex, shared.fg.muted]);
 
 export const dataTableInfo = style(
-  layered.components({
+  component({
     width: space(3.5),
     height: space(3.5),
   }),
@@ -78,19 +78,19 @@ export const dataTableInfo = style(
 export const dataTableSpan4 = style([shared.inlineFlex, shared.fullWidth]);
 
 export const dataTableSpan5 = style(
-  layered.components({
+  component({
     maxWidth: space(48),
   }),
 );
 
 export const dataTableSpan6 = style(
-  layered.components({
+  component({
     maxWidth: space(24),
   }),
 );
 
 export const dataTableChevronDown = style(
-  layered.components({
+  component({
     width: space(4),
     height: space(4),
     transitionProperty: 'transform, translate, scale, rotate',
@@ -100,13 +100,13 @@ export const dataTableChevronDown = style(
 );
 
 export const dataTableChevronDown2 = style(
-  layered.components({
+  component({
     rotate: '180deg',
   }),
 );
 
 export const dataTableChevronRight = style(
-  layered.components({
+  component({
     width: space(4),
     height: space(4),
   }),

@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 
@@ -7,7 +7,7 @@ import * as shared from '../../../../styles/shared.css';
 
 export const div = style([
   shared.row.gap3,
-  layered.components({
+  component({
     flexWrap: 'wrap',
   }),
 ]);
@@ -15,7 +15,7 @@ export const div = style([
 export const div2 = style([
   shared.row.base,
   shared.text.sm,
-  layered.components({
+  component({
     gap: space(6),
   }),
 ]);
@@ -24,13 +24,13 @@ export const div4 = style([shared.stack.gap3, shared.text.sm]);
 
 export const compositionErrorTextUl = style([
   shared.text.sm,
-  layered.components({
+  component({
     width: space(80),
   }),
 ]);
 
 export const compositionErrorTextLi = style(
-  layered.components({
+  component({
     marginBottom: space(1),
     marginLeft: '1.25em',
     listStyleType: 'square',
@@ -48,20 +48,20 @@ export const compositionErrorTextLi = style(
 
 globalStyle(
   `${compositionErrorTextLi} ::marker`,
-  layered.components({
+  component({
     paddingLeft: space(1),
   }),
 );
 
 globalStyle(
   `${compositionErrorTextLi} ::-webkit-details-marker`,
-  layered.components({
+  component({
     paddingLeft: space(1),
   }),
 );
 
 export const div8 = style(
-  layered.components({
+  component({
     display: 'flex',
     gap: space(8),
   }),
@@ -70,7 +70,7 @@ export const div8 = style(
 export const span3 = style([shared.text.xs, shared.fg.secondary]);
 
 export const div10 = style(
-  layered.components({
+  component({
     width: space(48),
   }),
 );

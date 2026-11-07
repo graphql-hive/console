@@ -1,17 +1,15 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 import { focusRing } from '../shared-styles.css';
 
-const s = layered.components;
-
 export const sliderStyles = {
   root: style([
     shared.row.base,
     shared.fullWidth,
-    s({
+    component({
       touchAction: 'none',
       selectors: { '&[data-disabled]': { pointerEvents: 'none', opacity: 0.5 } },
     }),
@@ -20,10 +18,10 @@ export const sliderStyles = {
   control: style([
     shared.row.base,
     shared.fullWidth,
-    s({ cursor: 'pointer', paddingBlock: space(2) }),
+    component({ cursor: 'pointer', paddingBlock: space(2) }),
   ]),
   track: style(
-    s({
+    component({
       position: 'relative',
       height: space(1),
       width: '100%',
@@ -34,11 +32,11 @@ export const sliderStyles = {
     }),
   ),
   indicator: style(
-    s({ borderRadius: vars.radius.full, backgroundColor: vars.color.accent.DEFAULT }),
+    component({ borderRadius: vars.radius.full, backgroundColor: vars.color.accent.DEFAULT }),
   ),
   thumb: style([
     focusRing,
-    s({
+    component({
       ...square(4),
       borderRadius: vars.radius.full,
       backgroundColor: vars.color.neutral[12],

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../../styles/layered';
+import { component } from '../../../../../styles/layered';
 import { space } from '../../../../../styles/space';
 import * as shared from '../../../../../styles/shared.css';
 import { vars } from '../../../../../styles/theme.css';
@@ -9,13 +9,13 @@ import { vars } from '../../../../../styles/theme.css';
 export const span = style([
   shared.mono,
   shared.text.xs,
-  layered.components({
+  component({
     textTransform: 'uppercase',
   }),
 ]);
 
 export const div = style(
-  layered.components({
+  component({
     display: 'flex',
     flexWrap: 'wrap',
     gap: space(3),
@@ -23,14 +23,14 @@ export const div = style(
 );
 
 export const p = style(
-  layered.components({
+  component({
     marginBottom: space(1),
     fontWeight: vars.weight.medium,
   }),
 );
 
 export const div2 = style(
-  layered.components({
+  component({
     display: 'flex',
     gap: space(3),
     padding: space(16),
@@ -38,7 +38,7 @@ export const div2 = style(
 );
 
 export const div3 = style(
-  layered.components({
+  component({
     display: 'flex',
     gap: space(3),
   }),
@@ -46,20 +46,20 @@ export const div3 = style(
 
 export const div4 = style([
   shared.row.gap3,
-  layered.components({
+  component({
     paddingTop: space(10),
   }),
 ]);
 
 export const div5 = style([
   shared.row.base,
-  layered.components({
+  component({
     gap: space(6),
   }),
 ]);
 
 export const info = style(
-  layered.components({
+  component({
     width: space(4),
     height: space(4),
   }),
@@ -70,7 +70,7 @@ export const p2 = style([shared.text.sm, shared.fg.default]);
 export const div7 = style([shared.text.sm, shared.weight.normal, shared.fg.default]);
 
 export const div8 = style(
-  layered.components({
+  component({
     padding: space(16),
   }),
 );

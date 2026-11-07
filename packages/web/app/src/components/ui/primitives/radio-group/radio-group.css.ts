@@ -1,15 +1,13 @@
 import { style } from '@vanilla-extract/css';
 import { recipe } from '@vanilla-extract/recipes';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
 
-const s = layered.components;
-
 // Plain, because the card's radio ring selects on the item's checked state.
 const item = style(
-  s({
+  component({
     display: 'flex',
     cursor: 'pointer',
     alignItems: 'center',
@@ -25,25 +23,25 @@ const item = style(
 
 export const radioGroupStyles = {
   group: recipe({
-    base: s({ display: 'flex' }),
+    base: component({ display: 'flex' }),
     variants: {
       orientation: {
-        horizontal: s({ flexDirection: 'row' }),
-        vertical: s({ flexDirection: 'column' }),
+        horizontal: component({ flexDirection: 'row' }),
+        vertical: component({ flexDirection: 'column' }),
       },
       variant: {
-        'as-card': s({ alignItems: 'stretch', gap: space(2) }),
-        'as-button': s({ gap: space(1) }),
+        'as-card': component({ alignItems: 'stretch', gap: space(2) }),
+        'as-button': component({ gap: space(1) }),
       },
     },
     compoundVariants: [
       {
         variants: { variant: 'as-button', orientation: 'horizontal' },
-        style: s({ alignItems: 'center' }),
+        style: component({ alignItems: 'center' }),
       },
       {
         variants: { variant: 'as-button', orientation: 'vertical' },
-        style: s({ alignItems: 'flex-start' }),
+        style: component({ alignItems: 'flex-start' }),
       },
     ],
     defaultVariants: { orientation: 'horizontal', variant: 'as-button' },
@@ -55,7 +53,7 @@ export const radioGroupStyles = {
         'as-button': [
           shared.text.control,
           shared.weight.medium,
-          s({
+          component({
             gap: space(1.5),
             borderRadius: vars.radius.xs,
             paddingInline: space(3),
@@ -64,7 +62,12 @@ export const radioGroupStyles = {
         ],
         'as-card': [
           shared.text.sm,
-          s({ gap: space(4), borderRadius: vars.radius.md, padding: space(4), textAlign: 'left' }),
+          component({
+            gap: space(4),
+            borderRadius: vars.radius.md,
+            padding: space(4),
+            textAlign: 'left',
+          }),
         ],
       },
       onSurface: {
@@ -79,15 +82,15 @@ export const radioGroupStyles = {
     compoundVariants: [
       {
         variants: { variant: 'as-card', orientation: 'vertical' },
-        style: s({ width: '100%' }),
+        style: component({ width: '100%' }),
       },
       {
         variants: { variant: 'as-card', orientation: 'horizontal' },
-        style: s({ flex: 1, flexBasis: 0 }),
+        style: component({ flex: 1, flexBasis: 0 }),
       },
       {
         variants: { variant: 'as-button', onSurface: 'base' },
-        style: s({
+        style: component({
           borderColor: vars.color.line.DEFAULT,
           backgroundColor: vars.color.neutral[2],
           color: vars.color.fg.default,
@@ -113,7 +116,7 @@ export const radioGroupStyles = {
       },
       {
         variants: { variant: 'as-card', onSurface: 'base' },
-        style: s({
+        style: component({
           borderColor: vars.color.line.subtle,
           backgroundColor: 'transparent',
           selectors: {
@@ -131,7 +134,7 @@ export const radioGroupStyles = {
       },
       {
         variants: { variant: 'as-button', onSurface: 'raised' },
-        style: s({
+        style: component({
           borderColor: vars.color.line.DEFAULT,
           backgroundColor: vars.color.neutral[3],
           color: vars.color.fg.default,
@@ -153,7 +156,7 @@ export const radioGroupStyles = {
       },
       {
         variants: { variant: 'as-card', onSurface: 'raised' },
-        style: s({
+        style: component({
           borderColor: vars.color.line.DEFAULT,
           backgroundColor: vars.color.neutral[4],
           selectors: {
@@ -177,7 +180,7 @@ export const radioGroupStyles = {
     shared.row.base,
     shared.icon.lg,
     shared.noShrink,
-    s({
+    component({
       justifyContent: 'center',
       borderRadius: vars.radius.full,
       borderStyle: 'solid',
@@ -187,7 +190,7 @@ export const radioGroupStyles = {
     }),
   ]),
   dot: style(
-    s({
+    component({
       ...square(2.5),
       borderRadius: vars.radius.full,
       backgroundColor: vars.color.accent.DEFAULT,
@@ -195,5 +198,5 @@ export const radioGroupStyles = {
   ),
   cardText: shared.stack.gap2,
   cardLabel: style([shared.weight.medium, shared.fg.strong]),
-  cardDescription: style(s({ lineHeight: 1.4, color: vars.color.fg.default })),
+  cardDescription: style(component({ lineHeight: 1.4, color: vars.color.fg.default })),
 };

@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -8,13 +8,13 @@ import { vars } from '../../styles/theme.css';
 
 export const pageLayoutDiv = style([
   shared.stack.base,
-  layered.components({
+  component({
     rowGap: space(4),
   }),
 ]);
 
 export const pageLayoutDiv2 = style(
-  layered.components({
+  component({
     display: 'flex',
     flexDirection: 'row',
     columnGap: space(6),
@@ -23,7 +23,7 @@ export const pageLayoutDiv2 = style(
 );
 
 export const div = style(
-  layered.components({
+  component({
     flexGrow: '1',
   }),
 );
@@ -31,13 +31,13 @@ export const div = style(
 export const h1 = style([
   shared.text['2xl'],
   shared.weight.semibold,
-  layered.components({
+  component({
     marginBottom: space(2),
   }),
 ]);
 
 export const div2 = style(
-  layered.components({
+  component({
     marginBottom: space(3),
     height: '1px',
     width: '100%',
@@ -49,21 +49,21 @@ export const subPageLayoutDiv = style({});
 
 globalStyle(
   `:where(${subPageLayoutDiv} > :not(:last-child))`,
-  layered.components({
+  component({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
 );
 
 export const subPageLayoutHeaderDiv = style(
-  layered.components({
+  component({
     maxWidth: '600px',
   }),
 );
 
 globalStyle(
   `:where(${subPageLayoutHeaderDiv} > :not(:last-child))`,
-  layered.components({
+  component({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -76,7 +76,7 @@ export const subPageLayoutHeaderH3 = style([
 ]);
 
 export const subPageLayoutHeaderDiv2 = style(
-  layered.components({
+  component({
     marginBottom: space(6),
   }),
 );
@@ -84,13 +84,13 @@ export const subPageLayoutHeaderDiv2 = style(
 export const subPageLayoutHeaderDiv3 = style([
   shared.flex,
   shared.fullWidth,
-  layered.components({
+  component({
     justifyContent: 'space-between',
   }),
 ]);
 
 export const subPageLayoutHeaderDiv4 = style(
-  layered.components({
+  component({
     display: 'flex',
     gap: space(4),
   }),

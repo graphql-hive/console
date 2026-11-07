@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
@@ -9,7 +9,7 @@ import { vars } from '../styles/theme.css';
 export const internalDeprecatedSchemaViewDiv = style([
   shared.row.base,
   shared.noShrink,
-  layered.utilities({
+  utility({
     height: '250px',
     justifyContent: 'center',
     borderRadius: vars.radius.md,
@@ -21,7 +21,7 @@ export const internalDeprecatedSchemaViewDiv = style([
 export const internalDeprecatedSchemaViewDiv2 = style([
   shared.stack.base,
   shared.textCenter,
-  layered.utilities({
+  utility({
     marginInline: 'auto',
     maxWidth: '420px',
     alignItems: 'center',
@@ -30,7 +30,7 @@ export const internalDeprecatedSchemaViewDiv2 = style([
 ]);
 
 export const internalDeprecatedSchemaViewPartyPopperIcon = style(
-  layered.utilities({
+  utility({
     width: space(10),
     height: space(10),
     color: vars.color.success.DEFAULT,
@@ -40,7 +40,7 @@ export const internalDeprecatedSchemaViewPartyPopperIcon = style(
 export const internalDeprecatedSchemaViewH3 = style([
   shared.text.lg,
   shared.weight.semibold,
-  layered.utilities({
+  utility({
     marginTop: space(4),
   }),
 ]);
@@ -48,7 +48,7 @@ export const internalDeprecatedSchemaViewH3 = style([
 export const internalDeprecatedSchemaViewP = style([
   shared.text.sm,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     marginTop: space(2),
     marginBottom: space(4),
   }),
@@ -58,14 +58,14 @@ export const internalDeprecatedSchemaViewDiv3 = style({});
 
 globalStyle(
   `:where(${internalDeprecatedSchemaViewDiv3} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(6),
   }),
 );
 
 export const internalDeprecatedSchemaViewButton = style(
-  layered.utilities({
+  utility({
     display: 'inline-flex',
     height: space(9),
     alignItems: 'center',
@@ -82,14 +82,14 @@ export const internalDeprecatedSchemaViewButton = style(
 );
 
 export const internalDeprecatedSchemaViewButton2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.selected,
     color: vars.color.accent.DEFAULT,
   }),
 );
 
 export const internalDeprecatedSchemaViewButton3 = style(
-  layered.utilities({
+  utility({
     color: vars.color.fg.secondary,
     '@media': {
       '(hover: hover)': {
@@ -105,20 +105,20 @@ export const internalDeprecatedSchemaViewButton3 = style(
 );
 
 export const deprecatedSchemaExplorerAlert = style(
-  layered.utilities({
+  utility({
     marginBottom: space(3),
   }),
 );
 
 export const deprecatedSchemaExplorerAlertCircleIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const deprecatedSchemaExplorerAlertDescription = style(
-  layered.utilities({
+  utility({
     maxWidth: '600px',
   }),
 );

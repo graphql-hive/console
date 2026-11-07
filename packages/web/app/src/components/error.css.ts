@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 
@@ -9,14 +9,14 @@ export const errorComponentDiv = style([
   shared.relative,
   shared.row.base,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     height: '100%',
     justifyContent: 'center',
   }),
 ]);
 
 export const errorComponentDiv2 = style(
-  layered.utilities({
+  utility({
     position: 'absolute',
     top: space(6),
     right: space(6),
@@ -24,7 +24,7 @@ export const errorComponentDiv2 = style(
 );
 
 export const errorComponentLogOutIcon = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -33,7 +33,7 @@ export const errorComponentLogOutIcon = style(
 
 export const errorComponentDiv3 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     maxWidth: '960px',
     alignItems: 'center',
     columnGap: space(6),
@@ -46,7 +46,7 @@ export const errorComponentDiv3 = style([
 ]);
 
 export const errorComponentImg = style(
-  layered.utilities({
+  utility({
     display: 'block',
     width: '200px',
     height: '200px',
@@ -56,7 +56,7 @@ export const errorComponentImg = style(
 export const errorComponentDiv4 = style([
   shared.grow,
   shared.textCenter,
-  layered.utilities({
+  utility({
     '@media': {
       '(width >= 40rem)': {
         textAlign: 'left',
@@ -68,7 +68,7 @@ export const errorComponentDiv4 = style([
 export const errorComponentH1 = style([shared.text.xl, shared.weight.semibold]);
 
 export const errorComponentDiv5 = style(
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 );

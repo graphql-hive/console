@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../../styles/layered';
+import { component } from '../../../../styles/layered';
 import { space } from '../../../../styles/space';
 import * as shared from '../../../../styles/shared.css';
 import { palette, vars } from '../../../../styles/theme.css';
@@ -9,7 +9,7 @@ import { palette, vars } from '../../../../styles/theme.css';
 export const floatingTrioSpan = style([
   shared.text.xs,
   shared.fg.default,
-  layered.components({
+  component({
     width: space(16),
   }),
 ]);
@@ -17,7 +17,7 @@ export const floatingTrioSpan = style([
 export const floatingTrioSpan2 = style([
   shared.text.xs,
   shared.fg.default,
-  layered.components({
+  component({
     width: space(16),
   }),
 ]);
@@ -25,7 +25,7 @@ export const floatingTrioSpan2 = style([
 export const floatingTrioP = style([
   shared.text.sm,
   shared.fg.default,
-  layered.components({
+  component({
     padding: space(3),
   }),
 ]);
@@ -33,7 +33,7 @@ export const floatingTrioP = style([
 export const floatingTrioSpan3 = style([
   shared.text.xs,
   shared.fg.default,
-  layered.components({
+  component({
     width: space(16),
   }),
 ]);
@@ -41,7 +41,7 @@ export const floatingTrioSpan3 = style([
 export const floatingTrioP2 = style([shared.text.xs, shared.fg.secondary]);
 
 export const bareModalBackdrop = style(
-  layered.components({
+  component({
     position: 'fixed',
     inset: '0px',
     zIndex: '50',
@@ -59,7 +59,7 @@ export const bareModalBackdrop = style(
 );
 
 export const bareModalPopup = style(
-  layered.components({
+  component({
     position: 'fixed',
     top: '50%',
     left: '50%',
@@ -77,7 +77,7 @@ export const bareModalPopup = style(
 );
 
 export const bareModalTitle = style(
-  layered.components({
+  component({
     marginBottom: space(4),
     fontSize: vars.text.sm,
     lineHeight: vars.text.smLineHeight,
@@ -87,7 +87,7 @@ export const bareModalTitle = style(
 );
 
 export const bareModalDiv = style(
-  layered.components({
+  component({
     marginTop: space(6),
     display: 'flex',
     justifyContent: 'flex-end',

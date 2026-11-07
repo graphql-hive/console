@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import * as shared from '../styles/shared.css';
 
@@ -7,13 +7,13 @@ import * as shared from '../styles/shared.css';
 
 export const visibilityCellSpan = style([
   shared.inlineRow.base,
-  layered.utilities({
+  utility({
     gap: space(3),
   }),
 ]);
 
 export const savedFilterRowFiltersDiv = style(
-  layered.utilities({
+  utility({
     paddingInline: space(10),
     paddingBlock: space(4),
   }),
@@ -22,7 +22,7 @@ export const savedFilterRowFiltersDiv = style(
 export const savedFilterRowFiltersSpan = style([shared.text.xs, shared.fg.critical]);
 
 export const savedFilterRowFiltersDiv3 = style(
-  layered.utilities({
+  utility({
     marginTop: space(3),
     display: 'flex',
     gap: space(2),
@@ -30,13 +30,13 @@ export const savedFilterRowFiltersDiv3 = style(
 );
 
 export const manageFiltersContentDiv = style(
-  layered.utilities({
+  utility({
     paddingBlock: space(8),
   }),
 );
 
 export const manageFiltersContentDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'grid',
     gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: space(4),
@@ -44,20 +44,20 @@ export const manageFiltersContentDiv2 = style(
 );
 
 export const manageFiltersContentDiv3 = style(
-  layered.utilities({
+  utility({
     marginTop: space(8),
   }),
 );
 
 export const statSkeletonSpan = style([
   shared.row.base,
-  layered.utilities({
+  utility({
     height: space(8),
   }),
 ]);
 
 export const targetInsightsManageFiltersPageDiv = style(
-  layered.utilities({
+  utility({
     paddingTop: space(6),
     paddingBottom: space(3),
   }),

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import { animate } from '../../../styles/animations.css';
 import * as shared from '../../../styles/shared.css';
@@ -8,7 +8,7 @@ import * as shared from '../../../styles/shared.css';
 
 export const legacyCompositionSettingsDiv = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     alignItems: 'flex-start',
     rowGap: space(6),
   }),
@@ -17,7 +17,7 @@ export const legacyCompositionSettingsDiv = style([
 export const legacyCompositionSettingsP = style([shared.text.sm, shared.fg.secondary]);
 
 export const legacyCompositionSettingsDiv2 = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -26,7 +26,7 @@ export const legacyCompositionSettingsDiv2 = style(
 );
 
 export const legacyCompositionSettingsRefreshCcwIcon = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
     width: space(4),
     height: space(4),

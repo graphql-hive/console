@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { component } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -8,20 +8,20 @@ import { vars } from '../../../styles/theme.css';
 
 export const div = style([
   shared.stack.gap8,
-  layered.components({
+  component({
     marginInline: space(-6),
   }),
 ]);
 
 export const plusIcon = style(
-  layered.components({
+  component({
     marginRight: space(2),
   }),
 );
 
 export const div2 = style([
   shared.hidden,
-  layered.components({
+  component({
     '@media': {
       '(width >= 48rem)': {
         display: 'block',
@@ -35,13 +35,13 @@ export const span2 = style([shared.row.base, shared.nowrap]);
 export const linkIcon = plusIcon;
 
 export const proposalProposalId = style(
-  layered.components({
+  component({
     paddingRight: space(7),
   }),
 );
 
 export const div5 = style(
-  layered.components({
+  component({
     borderBottomStyle: 'solid',
     borderBottomWidth: '1px',
     borderColor: vars.color.line.DEFAULT,
@@ -49,7 +49,7 @@ export const div5 = style(
 );
 
 export const sectionsPageDiv = style(
-  layered.components({
+  component({
     height: space(40),
     borderRadius: vars.radius.md,
     backgroundColor: vars.color.neutral[3],

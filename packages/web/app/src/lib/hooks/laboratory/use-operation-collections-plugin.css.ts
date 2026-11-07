@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -8,34 +8,34 @@ import { vars } from '../../../styles/theme.css';
 
 export const contentSpan = style([
   shared.inlineRow.base,
-  layered.utilities({
+  utility({
     columnGap: space(3),
   }),
 ]);
 
 export const contentFolderOpenIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const contentFolderIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const contentEllipsisIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const contentDiv = style(
-  layered.utilities({
+  utility({
     paddingBottom: space(2),
     paddingLeft: space(2),
   }),
@@ -43,14 +43,14 @@ export const contentDiv = style(
 
 globalStyle(
   `:where(${contentDiv} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: '0',
   }),
 );
 
 export const contentLink = style(
-  layered.utilities({
+  utility({
     display: 'flex',
     width: '100%',
     alignItems: 'center',
@@ -74,27 +74,27 @@ export const contentLink = style(
 );
 
 export const contentLink2 = style(
-  layered.utilities({
+  utility({
     backgroundColor: vars.color.surface.selected,
     color: vars.color.fg.DEFAULT,
   }),
 );
 
 export const contentLink3 = style(
-  layered.utilities({
+  utility({
     position: 'relative',
   }),
 );
 
 export const contentSquareTerminalIcon = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const contentButton = style(
-  layered.utilities({
+  utility({
     color: vars.color.fg.DEFAULT,
     opacity: '0%',
     transitionProperty: 'opacity',
@@ -109,14 +109,14 @@ export const contentButton = style(
 );
 
 export const contentEllipsisIcon2 = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
   }),
 );
 
 export const contentPlusIcon = style(
-  layered.utilities({
+  utility({
     marginRight: space(1),
     display: 'inline',
     width: space(4),
@@ -126,7 +126,7 @@ export const contentPlusIcon = style(
 
 export const contentDiv4 = style([
   shared.row.gap1,
-  layered.utilities({
+  utility({
     marginBottom: space(5),
     justifyContent: 'space-between',
   }),
@@ -137,7 +137,7 @@ export const contentSpan2 = style([shared.flex, shared.shrinkable]);
 export const contentSpan3 = style([shared.row.gap1, shared.shrinkable]);
 
 export const contentPlusIcon2 = style(
-  layered.utilities({
+  utility({
     width: space(4),
     height: space(4),
     flexShrink: '0',
@@ -146,7 +146,7 @@ export const contentPlusIcon2 = style(
 
 export const contentDiv5 = style([
   shared.stack.gap3,
-  layered.utilities({
+  utility({
     paddingInline: space(2),
   }),
 ]);
@@ -154,7 +154,7 @@ export const contentDiv5 = style([
 export const contentDiv6 = style([
   shared.row.base,
   shared.fill,
-  layered.utilities({
+  utility({
     height: 'fit-content',
     justifyContent: 'center',
   }),
@@ -162,20 +162,20 @@ export const contentDiv6 = style([
 
 export const contentDiv7 = style([
   shared.stack.base,
-  layered.utilities({
+  utility({
     alignItems: 'center',
   }),
 ]);
 
 export const contentDiv8 = style([
   shared.text.xs,
-  layered.utilities({
+  utility({
     marginTop: space(2),
   }),
 ]);
 
 export const contentDiv9 = style(
-  layered.utilities({
+  utility({
     marginTop: space(3),
   }),
 );

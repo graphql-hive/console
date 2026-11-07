@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { layered } from '../../../styles/layered';
+import { utility } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
@@ -10,14 +10,14 @@ export const proposalChangeDetailDiv = style([
   shared.flex,
   shared.fullWidth,
   shared.fg.subtle,
-  layered.utilities({
+  utility({
     flexDirection: 'row',
     alignItems: 'center',
   }),
 ]);
 
 export const proposalChangeDetailDiv2 = style(
-  layered.utilities({
+  utility({
     minWidth: 'fit-content',
     flexGrow: '1',
     paddingRight: space(2),
@@ -30,13 +30,13 @@ export const proposalChangeDetailDiv2 = style(
 );
 
 export const changeBlockDiv = style(
-  layered.utilities({
+  utility({
     marginTop: space(6),
   }),
 );
 
 export const changeBlockDiv2 = style(
-  layered.utilities({
+  utility({
     listStylePosition: 'inside',
     listStyleType: 'disc',
     fontSize: vars.text.sm,
@@ -46,7 +46,7 @@ export const changeBlockDiv2 = style(
 
 globalStyle(
   `:where(${changeBlockDiv2} > :not(:last-child))`,
-  layered.utilities({
+  utility({
     marginBlockStart: '0',
     marginBlockEnd: space(2),
   }),
@@ -55,14 +55,14 @@ globalStyle(
 export const changeBlockSpan = style([
   shared.row.base,
   shared.fg.critical,
-  layered.utilities({
+  utility({
     justifyContent: 'flex-end',
     paddingLeft: space(4),
   }),
 ]);
 
 export const changeBlockTriangleAlert = style(
-  layered.utilities({
+  utility({
     marginRight: space(2),
     width: space(4),
     height: space(4),
@@ -72,7 +72,7 @@ export const changeBlockTriangleAlert = style(
 export const changeBlockSpan2 = style([
   shared.row.base,
   shared.fg.secondary,
-  layered.utilities({
+  utility({
     justifyContent: 'flex-end',
     paddingLeft: space(4),
   }),
@@ -81,7 +81,7 @@ export const changeBlockSpan2 = style([
 export const changeBlockDiamond = changeBlockTriangleAlert;
 
 export const changesBlockTooltipInfo = style(
-  layered.utilities({
+  utility({
     width: space(3),
     height: space(3),
   }),

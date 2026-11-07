@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../../styles/layered';
+import { component } from '../../styles/layered';
 import { space } from '../../styles/space';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
@@ -10,7 +10,7 @@ export const stepBodyDiv = style([
   shared.row.base,
   shared.text.sm,
   shared.fg.secondary,
-  layered.components({
+  component({
     height: space(40),
     justifyContent: 'center',
     borderRadius: vars.radius.md,
@@ -21,7 +21,7 @@ export const stepBodyDiv = style([
 ]);
 
 export const accessTokenWizardDiv = style(
-  layered.components({
+  component({
     width: '40rem',
     borderRadius: vars.radius.md,
     backgroundColor: vars.color.surface.overlay,

@@ -1,5 +1,5 @@
 import { style } from '@vanilla-extract/css';
-import { layered } from '../styles/layered';
+import { utility } from '../styles/layered';
 import { space } from '../styles/space';
 import { animate } from '../styles/animations.css';
 import * as shared from '../styles/shared.css';
@@ -9,7 +9,7 @@ import * as shared from '../styles/shared.css';
 export const indexPageDiv = style([
   shared.flex,
   shared.fullWidth,
-  layered.utilities({
+  utility({
     height: '100vh',
     flexDirection: 'row',
     alignItems: 'center',
@@ -18,7 +18,7 @@ export const indexPageDiv = style([
 ]);
 
 export const indexPageHiveLogo = style(
-  layered.utilities({
+  utility({
     width: space(16),
     height: space(16),
     animation: animate.pulse,
