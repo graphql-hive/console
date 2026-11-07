@@ -157,6 +157,7 @@ import {
   TokenExpirationPeriod,
 } from '@/gql/graphql';
 import type { DocumentCollectionOperation } from '@/lib/hooks/laboratory/use-collections';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as styles from './form.call-sites.preview.css';
 
@@ -496,7 +497,7 @@ function SSOExample() {
 export const Auth = createPreview({
   label: 'Auth',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <SignInExample />
       <SignUpExample />
       <ResetPasswordExample />
@@ -623,7 +624,7 @@ function OperationExample() {
 export const Create = createPreview({
   label: 'Create',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <CreateOrganizationExample />
       <CreateProjectExample />
       <CreateTargetExample />
@@ -662,7 +663,7 @@ function SlugExample(props: {
 export const Slugs = createPreview({
   label: 'Slugs',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <SlugExample
         noun="Organization"
         slug="the-guild"
@@ -759,7 +760,7 @@ function TransferOwnershipExample() {
 export const OrganizationSettings = createPreview({
   label: 'Organization settings',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <AuditLogsExample />
       <UserSettingsExample />
       <TransferOwnershipExample />
@@ -854,7 +855,7 @@ function RoleExample() {
 export const Members = createPreview({
   label: 'Members',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <InvitationExample />
       <RoleExample />
     </div>
@@ -991,7 +992,7 @@ function RegisterDomainExample() {
 export const SingleSignOn = createPreview({
   label: 'Single sign-on',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <MetadataUrlExample />
       <ConnectProviderExample editing={false} />
       <ConnectProviderExample editing />
@@ -1091,7 +1092,7 @@ function AlertExample() {
 export const ProjectSettings = createPreview({
   label: 'Project settings',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <ExternalCompositionExample />
       <ChannelExample />
       <AlertExample />
@@ -1212,7 +1213,7 @@ function BreakingChangesExample() {
 export const TargetSettings = createPreview({
   label: 'Target settings',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <GraphqlEndpointExample />
       <DangerousChangesExample />
       <AppDeploymentProtectionExample />
@@ -1304,7 +1305,7 @@ function RegistryTokenExample() {
 export const TargetTokensAndContracts = createPreview({
   label: 'Target tokens and contracts',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <ContractExample />
       <CdnTokenExample />
       <RegistryTokenExample />

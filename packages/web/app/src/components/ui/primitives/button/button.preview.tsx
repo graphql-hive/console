@@ -1,5 +1,6 @@
 import { ChevronDown, Copy, ListFilter, Plus, RefreshCw, X } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Card } from '../card/card';
 import { Button } from './button';
 import * as styles from './button.preview.css';
@@ -31,14 +32,14 @@ export const TriggerVariants = createPreview(() => (
  * `controlSize`.
  */
 export const Sizes = createPreview(() => (
-  <div className={styles.div2}>
-    <div className={styles.div3}>
+  <div className={shared.stack.gap4}>
+    <div className={shared.row.gap4}>
       <span className={styles.span}>default</span>
       <Button variant="primary">Save alert</Button>
       <Button label="Last 7 days" rightIcon={{ icon: ChevronDown, withSeparator: true }} />
       <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />
     </div>
-    <div className={styles.div3}>
+    <div className={shared.row.gap4}>
       <span className={styles.span}>compact</span>
       <Button variant="primary" size="compact">
         Save alert
@@ -50,7 +51,7 @@ export const Sizes = createPreview(() => (
       />
       <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" size="compact" />
     </div>
-    <div className={styles.div3}>
+    <div className={shared.row.gap4}>
       <span className={styles.span}>icon-sm</span>
       <Button variant="ghost" size="icon-sm">
         <X className={styles.x} />
@@ -73,7 +74,7 @@ export const Segmented = createPreview(() => (
 ));
 
 export const IconOnly = createPreview(() => (
-  <div className={styles.div3}>
+  <div className={shared.row.gap4}>
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" />
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" variant="active" />
     <Button layout="iconOnly" icon={RefreshCw} aria-label="Refresh" variant="action" />
@@ -121,7 +122,7 @@ export const AsLink = createPreview(() => (
 ));
 
 export const Disabled = createPreview(() => (
-  <div className={styles.div3}>
+  <div className={shared.row.gap4}>
     <Button variant="primary" disabled>
       Saving...
     </Button>
@@ -154,7 +155,7 @@ export const OnRaisedSurface = createPreview(() => (
   <div className={styles.div6}>
     <div className={styles.div7}>
       <Card variants={{ onSurface: 'raised' }}>
-        <div className={styles.div8}>
+        <div className={shared.stack.gap3}>
           <Button type="submit" width="full" onSurface="raised">
             Sign in
           </Button>

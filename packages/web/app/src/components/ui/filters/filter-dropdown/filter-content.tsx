@@ -1,4 +1,5 @@
 import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react';
+import * as shared from '@/styles/shared.css';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FloatingSearch } from '../../primitives/floating/floating-search';
 import { floatingEmptyState, menuPanelInset } from '../../primitives/floating/shared-styles';
@@ -146,8 +147,8 @@ export function FilterContent({
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (
         <div className={styles.filterContentDiv3}>
-          <span className={styles.filterContentSpan4}>Struck-through</span> items are not found in
-          the selected date range.
+          <span className={shared.lineThrough}>Struck-through</span> items are not found in the
+          selected date range.
         </div>
       )}
 

@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
-import { cn } from '@/lib/utils';
 import { Accordion as BaseAccordion } from '@base-ui/react/accordion';
 import * as styles from './accordion.css';
 

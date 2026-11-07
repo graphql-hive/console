@@ -1,4 +1,5 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { ScrollArea } from './scroll-area';
 import * as styles from './scroll-area.preview.css';
 
@@ -26,7 +27,7 @@ function Rows(props: { count?: number }) {
     (_, i) => OPERATIONS[i % OPERATIONS.length],
   );
   return (
-    <div className={styles.rowsDiv}>
+    <div className={shared.stack.base}>
       {rows.map((name, index) => (
         <div key={index} className={styles.rowsDiv2}>
           <span className={styles.rowsSpan}>{name}</span>

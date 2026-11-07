@@ -5,6 +5,7 @@ import { ContractFailuresTable } from '@/components/target/checks/contract-failu
 import { buildChanges, metadata, PATH } from '@/components/target/history/changes-block.fixtures';
 import { ChangesBlock } from '@/components/target/history/errors-and-changes';
 import { Subtitle, Title } from '@/components/ui/page';
+import * as shared from '@/styles/shared.css';
 import { RouterAt } from '../../../../foundry.router';
 import { Button } from '../primitives/button/button';
 import { DescriptionList } from '../primitives/description-list/description-list';
@@ -132,13 +133,16 @@ export const ChecksPage = createPreview(() => {
         <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
       <div className={styles.div4}>
-        <div className={styles.div5}>
+        <div className={shared.fillShrinkable}>
           <DescriptionList
             variants={{ termStyle: 'title', columns: 'auto' }}
             rows={[
               {
                 items: [
-                  { term: 'Status', description: <span className={styles.span}>Failed</span> },
+                  {
+                    term: 'Status',
+                    description: <span className={shared.fg.critical}>Failed</span>,
+                  },
                   { term: 'Triggered', description: '3d ago by User' },
                 ],
               },

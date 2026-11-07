@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { FilterChips, FilterMenu } from './filter-menu';
 import type { FilterDimension, FilterItem, FilterSelection } from './types';
 import * as styles from './filter-menu.preview.css';
@@ -75,7 +76,7 @@ export const WithChips = createPreview(() => {
   });
 
   return (
-    <div className={styles.div}>
+    <div className={shared.row.wrap2}>
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
     </div>
@@ -175,7 +176,7 @@ export const AllDimensionKinds = createPreview(() => {
   ];
 
   return (
-    <div className={styles.div2}>
+    <div className={shared.row.wrap2}>
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
     </div>
@@ -247,7 +248,7 @@ export const InsightsDimensions = createPreview(() => {
   ];
 
   return (
-    <div className={styles.div3}>
+    <div className={shared.row.wrap2}>
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
     </div>
@@ -280,7 +281,7 @@ export const InsightsDimensionsLoading = createPreview(() => {
   ];
 
   return (
-    <div className={styles.div4}>
+    <div className={shared.row.wrap2}>
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
       <span className={styles.span}>{loaded ? 'items loaded' : 'loading items…'}</span>
@@ -312,7 +313,7 @@ export const TextFilterEmpty = createPreview(() => {
   ];
 
   return (
-    <div className={styles.div5}>
+    <div className={shared.row.wrap2}>
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
     </div>

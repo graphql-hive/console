@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DataTable } from './data-table';
@@ -627,8 +628,8 @@ describe('DataTableCell', () => {
     ]);
     // The second row would take the stripe; the critical tint replaces it.
     expect(rows[1].className).not.toContain('bg-neutral-2/60');
-    expect(screen.getByText('beta').className).toContain(cellStyles.dataTableCellSpan17);
-    expect(screen.getByText('alpha').className).not.toContain(cellStyles.dataTableCellSpan17);
+    expect(screen.getByText('beta').className).toContain(shared.lineThrough);
+    expect(screen.getByText('alpha').className).not.toContain(shared.lineThrough);
   });
 
   it('shows only the label when a link-out cell has nowhere to go', () => {

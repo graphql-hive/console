@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ComponentType, type ReactNode } from 'react';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import { Tooltip } from '../floating/tooltip/tooltip';
 import * as styles from './tabs.css';
@@ -109,7 +110,7 @@ export function TabStrip({
         return (
           <Tooltip
             key={item.value}
-            trigger={<span className={styles.tabStripSpan}>{tab}</span>}
+            trigger={<span className={shared.inlineFlex}>{tab}</span>}
             content={item.tooltip}
           />
         );

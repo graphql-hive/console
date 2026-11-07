@@ -1,5 +1,6 @@
 import { CalendarDays, SearchIcon } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../button/button';
 import { Input } from './input';
 import * as styles from './input.preview.css';
@@ -62,7 +63,7 @@ export const Sizes = createPreview(() => (
 
 /** `full` is fluid; the other three are the fixed widths the app's fields come in. */
 export const Widths = createPreview(() => (
-  <div className={styles.div5}>
+  <div className={shared.stack.gap3}>
     <Input placeholder="full" />
     <Input placeholder="md" width="md" />
     <Input placeholder="sm" width="sm" />
@@ -92,7 +93,7 @@ export const LeadingIcon = createPreview(() => (
  * width, so a long slug path never squeezes the field.
  */
 export const PrefixText = createPreview(() => (
-  <div className={styles.div5}>
+  <div className={shared.stack.gap3}>
     <Input placeholder="slug" prefixText="app.graphql-hive.com/the-guild/" width="sm" />
     <Input placeholder="slug" prefixText="app.graphql-hive.com/the-guild/graphql-api/" />
   </div>

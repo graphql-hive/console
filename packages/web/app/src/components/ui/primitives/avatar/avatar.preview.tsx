@@ -1,4 +1,5 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Avatar } from './avatar';
 import * as styles from './avatar.preview.css';
 
@@ -15,7 +16,7 @@ const PHOTO = `data:image/svg+xml,${encodeURIComponent(
  * as in the header while the viewer is still loading, it falls back to a person icon.
  */
 export const Sizes = createPreview(() => (
-  <div className={styles.div}>
+  <div className={shared.row.gap4}>
     <Avatar size="xs" alt="User" />
     <Avatar size="md" alt="User" />
   </div>
@@ -24,9 +25,9 @@ export const Sizes = createPreview(() => (
 export const Initials = createPreview(() => (
   <div className={styles.div2}>
     {['User', 'Ada Lovelace', 'Jean-Luc Picard', 'user@the-guild.dev', ''].map(name => (
-      <div key={name} className={styles.div3}>
+      <div key={name} className={shared.row.gap3}>
         <Avatar alt={name} />
-        <code className={styles.code}>{name === '' ? '(no alt)' : name}</code>
+        <code className={shared.mono}>{name === '' ? '(no alt)' : name}</code>
       </div>
     ))}
   </div>
@@ -34,7 +35,7 @@ export const Initials = createPreview(() => (
 
 /** `outlined` is the header's accent ring, previously a className at that one call site. */
 export const Outlined = createPreview(() => (
-  <div className={styles.div4}>
+  <div className={shared.row.gap4}>
     <Avatar variant="outlined" alt="User" />
     <Avatar variant="outlined" />
   </div>
@@ -42,7 +43,7 @@ export const Outlined = createPreview(() => (
 
 /** No call site passes `src` today; this shows the image path is wired should one appear. */
 export const WithImage = createPreview(() => (
-  <div className={styles.div5}>
+  <div className={shared.row.gap4}>
     <Avatar size="xs" src={PHOTO} alt="User" />
     <Avatar size="md" src={PHOTO} alt="User" />
     <Avatar size="md" variant="outlined" src={PHOTO} alt="User" />
@@ -51,7 +52,7 @@ export const WithImage = createPreview(() => (
 
 /** The alerts tables: an `xs` avatar and the name it stands for, in a `text-xs` row. */
 export const BesideName = createPreview(() => (
-  <div className={styles.div6}>
+  <div className={shared.stack.gap2}>
     <span className={styles.span}>
       <Avatar size="xs" alt="User" />
       User

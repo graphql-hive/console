@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import * as shared from '@/styles/shared.css';
 import { Input } from '../primitives/input/input';
 import { Spinner } from '../primitives/spinner/spinner';
 import * as styles from './data-table-pagination.css';
@@ -141,7 +142,7 @@ export function DataTableCursorPagination({
       className={`${barClass} ${styles.dataTableCursorPaginationNav}`}
     >
       <span className={styles.dataTableCursorPaginationSpan}>{summary}</span>
-      <span className={styles.dataTableCursorPaginationSpan2}>
+      <span className={shared.inlineRow.gap1}>
         {loading ? <Spinner variants={{ size: 'sm' }} /> : null}
         <button
           type="button"

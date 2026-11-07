@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { FilterDropdown } from './filter-dropdown';
 import type { FilterItem, FilterSelection } from './types';
 import * as styles from './filter-dropdown.preview.css';
@@ -34,13 +35,13 @@ function SelectionReadout({ selected }: { selected: FilterSelection[] }) {
   return (
     <ul className={styles.selectionReadoutUl}>
       {selected.map(selection => (
-        <li key={selection.name} className={styles.selectionReadoutLi}>
+        <li key={selection.name} className={shared.fg.default}>
           <span className={styles.selectionReadoutSpan}>{selection.name}</span>
           {': '}
           {selection.values === null ? (
             <span className={styles.selectionReadoutSpan2}>all</span>
           ) : (
-            <span className={styles.selectionReadoutSpan3}>{selection.values.join(', ')}</span>
+            <span className={shared.fg.muted}>{selection.values.join(', ')}</span>
           )}
         </li>
       ))}

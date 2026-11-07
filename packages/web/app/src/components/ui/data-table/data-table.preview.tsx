@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, CircleAlert, Trash2 } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Button } from '../primitives/button/button';
 import { DataTable } from './data-table';
@@ -489,10 +490,10 @@ export const Expandable = createPreview(() => (
       renderSubComponent={row => (
         <div className={styles.div4}>
           <div>
-            Composition for <span className={styles.span}>{row.original.service}</span> produced{' '}
-            {row.original.changes} schema changes.
+            Composition for <span className={shared.fg.strong}>{row.original.service}</span>{' '}
+            produced {row.original.changes} schema changes.
           </div>
-          <div className={styles.div5}>Check id: {row.original.id}</div>
+          <div className={shared.fg.muted}>Check id: {row.original.id}</div>
         </div>
       )}
     />
@@ -566,7 +567,7 @@ const CELL_ROWS: CellRow[] = [
     id: 'number-percent',
     kind: 'number, format=percent / currency',
     sample: (
-      <span className={styles.span2}>
+      <span className={shared.stack.base}>
         <DataTableCell kind="number" value={38.2} format="percent" />
         <DataTableCell kind="number" value={130} format="currency" />
       </span>
@@ -725,7 +726,7 @@ const CELL_ROWS: CellRow[] = [
     id: 'status-icon',
     kind: 'status, icon',
     sample: (
-      <span className={styles.span5}>
+      <span className={shared.stack.gap1}>
         <DataTableCell kind="status" label="Verified" icon={Check} iconTone="success" />
         <DataTableCell
           kind="status"

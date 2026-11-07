@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useClipboard } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './copy-text.css';
 
 export function CopyText(props: { children: ReactNode; copy?: string; className?: string }) {
@@ -11,7 +12,7 @@ export function CopyText(props: { children: ReactNode; copy?: string; className?
   const ref = useRef<HTMLDivElement>(null);
   return (
     <div className={cn(styles.copyTextDiv, 'group', props.className)}>
-      <div ref={ref} className={styles.copyTextDiv2}>
+      <div ref={ref} className={shared.truncate}>
         {props.children}
       </div>
       <span className={styles.copyTextSpan}>

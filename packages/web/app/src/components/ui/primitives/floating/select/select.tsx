@@ -1,6 +1,7 @@
 import { cloneElement, useId, useState, type FocusEvent, type ReactNode } from 'react';
 import { clsx } from 'clsx';
 import { Check, ChevronDown } from 'lucide-react';
+import * as shared from '@/styles/shared.css';
 import { Select as BaseSelect } from '@base-ui/react/select';
 import { Button } from '../../button/button';
 import { type ControlSize, type OnSurface } from '../../shared-styles';
@@ -152,7 +153,7 @@ export function Select({
   return (
     <div className={widthClass[width]}>
       {ariaLabel ? (
-        <span id={labelId} className={styles.selectSpan}>
+        <span id={labelId} className={shared.srOnly}>
           {ariaLabel}
         </span>
       ) : null}
@@ -243,7 +244,7 @@ export function Select({
                           <Check className={styles.selectCheck} />
                         </BaseSelect.ItemIndicator>
                         <BaseSelect.ItemText>
-                          <span className={styles.selectSpan2}>
+                          <span className={shared.row.gap1_5}>
                             {option.icon}
                             {option.label}
                           </span>

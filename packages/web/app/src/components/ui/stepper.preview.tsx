@@ -1,5 +1,6 @@
 import { createPreview, type NavPath } from 'react-foundry';
 import { Button } from '@/components/ui/primitives/button/button';
+import * as shared from '@/styles/shared.css';
 import { defineStepper } from './stepper';
 import * as styles from './stepper.preview.css';
 
@@ -31,7 +32,7 @@ function AccessTokenWizard(props: { defaultStep?: StepId }) {
     <div className={styles.accessTokenWizardDiv}>
       <Stepper.StepperProvider variant="horizontal" defaultStep={props.defaultStep}>
         {({ stepper }) => (
-          <div className={styles.accessTokenWizardDiv2}>
+          <div className={shared.stack.gap6}>
             <Stepper.StepperNavigation>
               {stepper.steps.map(step => (
                 <Stepper.StepperStep key={step.id} of={step.id} clickable={false}>

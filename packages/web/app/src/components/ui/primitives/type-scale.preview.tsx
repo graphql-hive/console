@@ -1,4 +1,5 @@
 import { createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Badge } from './badge/badge';
 import { Button } from './button/button';
 import * as styles from './type-scale.preview.css';
@@ -31,7 +32,7 @@ const STEPS = [
 const SAMPLE = 'Schema checks run on the composed API schema.';
 
 export const Steps = createPreview(() => (
-  <div className={styles.div}>
+  <div className={shared.stack.gap4}>
     {STEPS.map(step => (
       <div key={step.name} className={styles.div2}>
         <div className={styles.div3}>
@@ -53,7 +54,7 @@ export const Steps = createPreview(() => (
  * (control), its description (xs), and a badge (2xs).
  */
 export const SideBySide = createPreview(() => (
-  <div className={styles.div6}>
+  <div className={shared.row.gap3}>
     <Button size="compact" label="Filter" />
     <span className={styles.span}>3 dimensions selected</span>
     <Badge content="BETA" variants={{ variant: 'secondary', size: 'sm' }} />

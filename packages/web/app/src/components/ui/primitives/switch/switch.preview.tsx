@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../button/button';
 import { Card } from '../card/card';
 import { Menu } from '../floating/menu/menu';
@@ -17,19 +18,19 @@ export const Sizes = createPreview(() => (
 
 export const States = createPreview(() => (
   <div className={styles.div2}>
-    <label className={styles.label}>
+    <label className={shared.row.gap3}>
       <Switch />
       Off
     </label>
-    <label className={styles.label}>
+    <label className={shared.row.gap3}>
       <Switch defaultChecked />
       On
     </label>
-    <label className={styles.label}>
+    <label className={shared.row.gap3}>
       <Switch disabled />
       Disabled, off
     </label>
-    <label className={styles.label}>
+    <label className={shared.row.gap3}>
       <Switch disabled defaultChecked />
       Disabled, on
     </label>
@@ -42,7 +43,7 @@ export const InSettingsRow = createPreview(() => {
   return (
     <div className={styles.div3}>
       <Card>
-        <div className={styles.div4}>
+        <div className={shared.row.between}>
           <div>
             <div className={styles.div5}>Alert enabled</div>
             <div className={styles.div6}>

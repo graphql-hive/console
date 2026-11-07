@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/primitives/input/input';
 import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import { useClipboard } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import * as styles from './input-copy.css';
 
 export function InputCopy(props: {
@@ -45,7 +46,7 @@ export function InputCopy(props: {
           onFocus={ev => ev.target.select()}
         />
       ) : (
-        <div className={styles.inputCopyDiv2}>
+        <div className={shared.grow}>
           <Input
             type="text"
             value={props.value}

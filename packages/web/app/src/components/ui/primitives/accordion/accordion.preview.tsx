@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { FolderIcon, FolderOpenIcon, MoreHorizontal, Plus } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Badge } from '../badge/badge';
 import { Button } from '../button/button';
 import { Card } from '../card/card';
@@ -21,7 +22,7 @@ function Copy({ children }: { children: ReactNode }) {
 
 function Labelled(props: { label: string; children: ReactNode }) {
   return (
-    <div className={styles.labelledDiv}>
+    <div className={shared.stack.gap2}>
       <span className={styles.labelledSpan}>{props.label}</span>
       {props.children}
     </div>
@@ -230,7 +231,7 @@ export const Disabled = createPreview(() => (
         {
           value: 'b',
           label: (
-            <span className={styles.span3}>
+            <span className={shared.inlineRow.gap2}>
               Breaking changes
               <Badge content="approved" variants={{ variant: 'secondary', size: 'sm' }} />
             </span>

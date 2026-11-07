@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CircleHelp, Copy, Info } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../../button/button';
 import { Popover } from '../popover/popover';
 import { Tooltip } from './tooltip';
@@ -190,7 +191,7 @@ export const DisabledControl = createPreview(() => (
     <Tooltip trigger={<Button label="Never opens" disabled />} content="You will not see this." />
     <Tooltip
       trigger={
-        <span className={styles.span2}>
+        <span className={shared.inlineFlex}>
           <Button label="Opens" disabled />
         </span>
       }
@@ -215,8 +216,8 @@ export const Infotip = createPreview(() => (
         </p>
       }
     />
-    <div className={styles.div6}>
-      <span className={styles.span3}>Default role</span>
+    <div className={shared.row.base}>
+      <span className={shared.fg.default}>Default role</span>
       <Popover
         trigger={
           <Button variant="ghost" size="icon-sm" aria-label="About the default role">

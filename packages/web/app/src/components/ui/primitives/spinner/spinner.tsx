@@ -1,5 +1,6 @@
 import { LoaderCircle } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
+import * as shared from '@/styles/shared.css';
 import * as styles from './spinner.css';
 
 const spinnerVariants = lenient(styles.spinnerVariants);
@@ -16,9 +17,9 @@ type SpinnerProps = {
  */
 export function Spinner({ label = 'Loading', variants }: SpinnerProps) {
   return (
-    <span role="status" aria-label={label} className={styles.spinnerSpan}>
+    <span role="status" aria-label={label} className={shared.inlineFlex}>
       <LoaderCircle aria-hidden className={spinnerVariants({ ...variants })} />
-      <span className={styles.spinnerSpan2}>{label}</span>
+      <span className={shared.srOnly}>{label}</span>
     </span>
   );
 }

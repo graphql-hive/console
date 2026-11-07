@@ -6,6 +6,7 @@ import { commonErrorStrings } from '@/components/error';
 import { Button } from '@/components/ui/primitives/button/button';
 import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link, useRouter } from '@tanstack/react-router';
 import * as styles from './query-error.css';
 
@@ -57,11 +58,11 @@ export function QueryError({
           <h1 className={styles.queryErrorH1}>Oops, something went wrong.</h1>
           <div className={styles.queryErrorDiv5}>
             {shouldShowError ? (
-              <div className={styles.queryErrorDiv6}>
+              <div className={shared.text.sm}>
                 {error.graphQLErrors?.[0]?.message ?? error.message}
               </div>
             ) : (
-              <div className={styles.queryErrorDiv7}>
+              <div className={shared.text.sm}>
                 <p>{commonErrorStrings.reported}</p>
                 <p>
                   {commonErrorStrings.track}{' '}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
+import * as shared from '@/styles/shared.css';
 import { FloatingSearch } from '../../primitives/floating/floating-search';
 import { MenuItem } from '../../primitives/floating/menu/menu';
 import {
@@ -87,7 +88,7 @@ export function ValuesSubPanel({
           return (
             <MenuItem key={val} closeOnClick={false} onClick={() => toggleValue(val)}>
               <Checkbox checked={checked} size="sm" visual />
-              <span className={styles.valuesSubPanelSpan}>{val}</span>
+              <span className={shared.truncate}>{val}</span>
             </MenuItem>
           );
         })}

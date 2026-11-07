@@ -1,5 +1,6 @@
 import { type ComponentType, type ReactNode } from 'react';
 import { lenient } from '@/lib/recipe';
+import * as shared from '@/styles/shared.css';
 import { Link, type LinkOptions } from '@tanstack/react-router';
 import { Tooltip } from '../primitives/floating/tooltip/tooltip';
 import * as styles from './navigation.css';
@@ -110,12 +111,12 @@ export function Navigation({
                 </Link>
               );
               return (
-                <li key={label} className={styles.navigationLi}>
+                <li key={label} className={shared.contents}>
                   {tooltip == null ? (
                     anchor
                   ) : (
                     <Tooltip
-                      trigger={<span className={styles.navigationSpan}>{anchor}</span>}
+                      trigger={<span className={shared.inlineFlex}>{anchor}</span>}
                       content={tooltip}
                     />
                   )}
@@ -131,7 +132,7 @@ export function Navigation({
     return <div {...attrs}>{links}</div>;
   }
   return (
-    <div className={styles.navigationDiv4} {...attrs}>
+    <div className={shared.row.between} {...attrs}>
       {links}
       {actions}
     </div>

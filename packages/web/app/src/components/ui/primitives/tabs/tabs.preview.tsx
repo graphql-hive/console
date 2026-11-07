@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Box, Check, FileCode2, Layers, List } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Badge } from '../badge/badge';
 import { Tabs, type TabItem } from './tabs';
 import * as styles from './tabs.preview.css';
@@ -157,7 +158,7 @@ export const Underline = createPreview(() => {
         <Tabs items={ACCESS} defaultValue="granular" />
       </Labelled>
       <Labelled label="The schema version views, with icons; the page renders the view">
-        <div className={styles.div2}>
+        <div className={shared.stack.base}>
           <Tabs items={VERSION_VIEWS} value={view} onValueChange={setView} />
           <Copy>The {view} view, rendered by the page.</Copy>
         </div>
@@ -254,7 +255,7 @@ export const Playground = createPreview({
 
 function Labelled(props: { label: string; children: ReactNode }) {
   return (
-    <div className={styles.labelledDiv}>
+    <div className={shared.stack.gap2}>
       <span className={styles.labelledSpan}>{props.label}</span>
       {props.children}
     </div>

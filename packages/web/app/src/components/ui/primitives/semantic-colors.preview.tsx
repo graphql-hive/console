@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { useTheme } from '@/components/theme/theme-provider';
+import * as shared from '@/styles/shared.css';
 import { Badge } from './badge/badge';
 import { Button } from './button/button';
 import { Card } from './card/card';
@@ -56,7 +57,7 @@ export const Tokens = createPreview(() => (
     {STATES.map(state => (
       <div key={state.name} className={styles.div2}>
         <div className={styles.div3}>{state.name}</div>
-        <div className={styles.div4}>
+        <div className={shared.row.gap4}>
           <div className={styles.div5}>
             {[state.solid, ...state.steps].map((cls, index) => (
               <div key={cls} className={styles.div6}>
@@ -123,16 +124,16 @@ export const Roles = createPreview(() => {
   return (
     <div className={styles.div8}>
       <div className={styles.div9}>{theme}</div>
-      <div className={styles.div10}>
+      <div className={shared.stack.gap2}>
         {SURFACES.map(role => (
-          <div key={role.token} className={styles.div11}>
+          <div key={role.token} className={shared.row.gap3}>
             <div className={`${styles.div12} ${role.cls}`} />
             <span className={styles.span5}>{role.token}</span>
             <span className={styles.span6}>{step(role)}</span>
           </div>
         ))}
       </div>
-      <div className={styles.div13}>
+      <div className={shared.stack.gap1}>
         {FOREGROUNDS.map(role => (
           <div key={role.token} className={styles.div14}>
             <span className={`${role.cls} ${styles.span7}`}>The schema check passed</span>
@@ -143,9 +144,9 @@ export const Roles = createPreview(() => {
         ))}
         <div className={styles.div15}>fg-inverse on surface-inverse</div>
       </div>
-      <div className={styles.div10}>
+      <div className={shared.stack.gap2}>
         {LINES.map(role => (
-          <div key={role.token} className={styles.div11}>
+          <div key={role.token} className={shared.row.gap3}>
             <div className={`${styles.div16} ${role.cls}`} />
             <span className={styles.span5}>{role.token}</span>
             <span className={styles.span6}>{step(role)}</span>
@@ -164,7 +165,7 @@ export const RaisedControls = createPreview(() => {
     <div className={styles.div17}>
       <Input onSurface="raised" placeholder="Input" />
       <Select options={METRICS} value={metric} onValueChange={setMetric} onSurface="raised" />
-      <div className={styles.div11}>
+      <div className={shared.row.gap3}>
         <Button onSurface="raised">Button</Button>
         <ToggleGroup
           options={[
@@ -192,7 +193,7 @@ export const OnThePage = createPreview(() => {
   return (
     <div className={styles.div18}>
       <Card title="This is a card on the page" description="Base card: line border, no fill.">
-        <div className={styles.div19}>
+        <div className={shared.stack.gap3}>
           <Input placeholder="Input on surface-control" />
           <Select options={METRICS} value={metric} onValueChange={setMetric} />
         </div>
@@ -202,7 +203,7 @@ export const OnThePage = createPreview(() => {
         title="This is a card on a raised surface"
         description="Raised card: surface-card fill, line-subtle border."
       >
-        <div className={styles.div19}>
+        <div className={shared.stack.gap3}>
           <Input onSurface="raised" placeholder="Input on surface-control-raised" />
           <Select options={METRICS} value={metric} onValueChange={setMetric} onSurface="raised" />
           <p className={styles.p}>
@@ -224,7 +225,7 @@ export const InAnOverlay = createPreview(() => {
       description="Every control in here takes onSurface raised."
       footer={<Button onSurface="raised">Cancel</Button>}
     >
-      <div className={styles.div19}>
+      <div className={shared.stack.gap3}>
         <Input onSurface="raised" placeholder="Input on surface-control-raised" />
         <Select options={METRICS} value={metric} onValueChange={setMetric} onSurface="raised" />
       </div>
@@ -234,7 +235,7 @@ export const InAnOverlay = createPreview(() => {
 
 /** The same four states as the components that carry them. */
 export const InComponents = createPreview(() => (
-  <div className={styles.div19}>
+  <div className={shared.stack.gap3}>
     {STATES.map(state => (
       <div key={state.name} className={styles.div20}>
         <span className={styles.span8}>{state.name}</span>

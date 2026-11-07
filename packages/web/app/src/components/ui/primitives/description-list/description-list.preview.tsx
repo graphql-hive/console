@@ -1,4 +1,5 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Badge } from '../badge/badge';
 import { Button } from '../button/button';
 import { DescriptionList } from './description-list';
@@ -58,7 +59,10 @@ export const RichDescriptions = createPreview(() => (
       rows={[
         {
           items: [
-            { term: 'Target', description: <code className={styles.code}>production</code> },
+            {
+              term: 'Target',
+              description: <code className={shared.text.control}>production</code>,
+            },
             {
               term: 'Status',
               description: <Badge content="Active" variants={{ variant: 'secondary' }} />,
@@ -141,7 +145,7 @@ export const TermTooltips = createPreview(() => (
             {
               term: 'Additional Scopes',
               tooltip: 'Additional scopes that are requested from the OIDC provider.',
-              description: <span className={styles.span}>none</span>,
+              description: <span className={shared.fg.subtle}>none</span>,
             },
           ],
         },
@@ -159,13 +163,13 @@ export const TermTooltips = createPreview(() => (
  */
 export const PageCard = createPreview(() => (
   <div className={styles.div7}>
-    <div className={styles.div8}>
+    <div className={shared.fillShrinkable}>
       <DescriptionList
         variants={{ termStyle: 'title', columns: 'auto' }}
         rows={[
           {
             items: [
-              { term: 'Status', description: <span className={styles.span2}>Failed</span> },
+              { term: 'Status', description: <span className={shared.fg.critical}>Failed</span> },
               { term: 'Service', description: 'users' },
               {
                 term: 'Triggered',

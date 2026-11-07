@@ -5,6 +5,7 @@ import React from 'react';
 import { focusRing } from '@/components/ui/primitives/shared-styles';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as Stepperize from '@stepperize/react/headless';
 import * as styles from './stepper.css';
 
@@ -345,7 +346,7 @@ const CircleStepIndicator = ({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className={styles.circleStepIndicatorCircle}
+          className={shared.fg.secondary}
         />
         <circle
           cx={size / 2}

@@ -1,4 +1,5 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { StatusDot } from './status-dot';
 import * as styles from './status-dot.preview.css';
 
@@ -8,7 +9,7 @@ export const nav: NavPath = 'Primitives/StatusDot';
 export const Colors = createPreview(() => (
   <div className={styles.div}>
     {(['success', 'warning', 'critical', 'info', 'neutral'] as const).map(color => (
-      <span key={color} className={styles.span}>
+      <span key={color} className={shared.inlineRow.gap2}>
         <StatusDot color={color} />
         {color}
       </span>
@@ -18,7 +19,7 @@ export const Colors = createPreview(() => (
 
 export const Sizes = createPreview(() => (
   <div className={styles.div2}>
-    <span className={styles.span2}>
+    <span className={shared.inlineRow.gap2}>
       <StatusDot color="success" />
       default, 8px
     </span>

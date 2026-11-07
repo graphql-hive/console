@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CircleMinus, CircleX, TriangleAlert } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Card } from '../card/card';
 import { floatingVariants } from '../floating/shared-styles';
 import { ToggleGroup } from './toggle-group';
@@ -22,7 +23,7 @@ const ENDPOINTS = [
 export const Text = createPreview(() => {
   const [value, setValue] = useState('mockApi');
   return (
-    <div className={styles.div}>
+    <div className={shared.row.gap2}>
       <span className={styles.span}>Query</span>
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} aria-label="Query" />
     </div>
@@ -94,7 +95,7 @@ export const Disabled = createPreview(() => {
 export const Sizes = createPreview(() => {
   const [value, setValue] = useState('mockApi');
   return (
-    <div className={styles.div3}>
+    <div className={shared.row.gap4}>
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} size="compact" />
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} size="default" />
     </div>

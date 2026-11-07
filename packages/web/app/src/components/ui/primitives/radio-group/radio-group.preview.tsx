@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { Plan, planCollection } from '@/components/organization/billing/BillingPlanPicker';
 import { BillingPlanType } from '@/gql/graphql';
+import * as shared from '@/styles/shared.css';
 import { StatusDot } from '../status-dot/status-dot';
 import { RadioGroup } from './radio-group';
 import * as styles from './radio-group.preview.css';
@@ -128,7 +129,7 @@ export const Orientations = createPreview(() => {
   const [buttons, setButtons] = useState('7d');
 
   return (
-    <div className={styles.div2}>
+    <div className={shared.stack.gap8}>
       <div className={styles.div3}>
         <RadioGroup
           variant="as-card"

@@ -1,5 +1,6 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { SingleSignOnLoadingSkeleton } from '@/components/organization/settings/single-sign-on/single-sign-on-loading-skeleton';
+import * as shared from '@/styles/shared.css';
 import { Skeleton } from './skeleton';
 import * as styles from './skeleton.preview.css';
 
@@ -7,11 +8,11 @@ export const nav: NavPath = 'Primitives/Skeleton';
 
 export const Shapes = createPreview(() => (
   <div className={styles.div}>
-    <span className={styles.span}>
+    <span className={shared.stack.gap2}>
       <Skeleton />
       line
     </span>
-    <span className={styles.span}>
+    <span className={shared.stack.gap2}>
       <span className={styles.span2}>
         <Skeleton variants={{ shape: 'block' }} />
       </span>
@@ -27,7 +28,7 @@ export const Shapes = createPreview(() => (
 export const LineSizes = createPreview(() => (
   <div className={styles.div2}>
     {(['xs', 'sm', 'default', 'lg', 'xl'] as const).map(size => (
-      <span key={size} className={styles.span4}>
+      <span key={size} className={shared.row.gap4}>
         <span className={styles.span5}>{size}</span>
         <Skeleton variants={{ size }} />
       </span>
@@ -38,7 +39,7 @@ export const LineSizes = createPreview(() => (
 export const LineWidths = createPreview(() => (
   <div className={styles.div3}>
     {(['xs', 'sm', 'md', 'lg', 'xl', 'full'] as const).map(width => (
-      <span key={width} className={styles.span4}>
+      <span key={width} className={shared.row.gap4}>
         <span className={styles.span6}>{width}</span>
         <Skeleton variants={{ width }} />
       </span>

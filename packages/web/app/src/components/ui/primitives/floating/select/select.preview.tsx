@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, Check, GitCompare } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../../button/button';
 import { Card } from '../../card/card';
 import { StatusDot } from '../../status-dot/status-dot';
@@ -111,7 +112,7 @@ export const WithLabel = createPreview(() => {
         onValueChange={setValue}
         label={`Sort by ${value}`}
       />
-      <div className={styles.div2}>
+      <div className={shared.row.gap3}>
         <Select
           options={remaining.map(s => ({ value: s, label: s }))}
           value=""
@@ -243,13 +244,13 @@ export const WithTrailing = createPreview(() => {
 });
 
 export const Sizes = createPreview(() => (
-  <div className={styles.div3}>
-    <div className={styles.div4}>
+  <div className={shared.stack.gap4}>
+    <div className={shared.row.gap4}>
       <span className={styles.span2}>default</span>
       <Select options={METRICS} value="TRAFFIC" />
       <Button variant="primary">Save</Button>
     </div>
-    <div className={styles.div4}>
+    <div className={shared.row.gap4}>
       <span className={styles.span2}>compact</span>
       <Select options={METRICS} value="TRAFFIC" size="compact" />
       <Button label="Filter" size="compact" />
@@ -313,7 +314,7 @@ export const OnSurface = createPreview(() => {
     <div className={styles.div7}>
       <div className={styles.div8}>
         <Card variants={{ onSurface: 'raised' }}>
-          <div className={styles.div9}>
+          <div className={shared.stack.gap3}>
             <span className={styles.span}>A card</span>
             {pair}
           </div>

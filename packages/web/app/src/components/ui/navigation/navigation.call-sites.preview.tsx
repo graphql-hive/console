@@ -5,6 +5,7 @@ import { SecondaryNavigation } from '@/components/navigation/secondary-navigatio
 import { GraphQLIcon } from '@/components/ui/brand-icon';
 import { PageLayout, PageLayoutContent } from '@/components/ui/page-content-layout';
 import { Button } from '@/components/ui/primitives/button/button';
+import * as shared from '@/styles/shared.css';
 import { RouterAt } from '../../../../foundry.router';
 import { Navigation, type NavigationItem } from './navigation';
 import * as styles from './navigation.call-sites.preview.css';
@@ -205,7 +206,7 @@ export const Bars = createPreview({
             links={ORGANIZATION_LINKS}
             actions={
               <Button variant="link">
-                <span className={styles.span}>
+                <span className={shared.row.base}>
                   <PlusIcon size={16} className={styles.plusIcon} />
                   New project
                 </span>
@@ -224,7 +225,7 @@ export const Bars = createPreview({
             links={PROJECT_LINKS}
             actions={
               <Button variant="link">
-                <span className={styles.span}>
+                <span className={shared.row.base}>
                   <PlusIcon size={16} className={styles.plusIcon} />
                   New target
                 </span>
@@ -349,14 +350,14 @@ const PROPOSAL_SECTIONS: NavigationItem[] = [
 export const ProposalSections = createPreview({
   label: 'Proposal sections',
   render: () => (
-    <div className={styles.div3}>
+    <div className={shared.stack.gap8}>
       <CallSite
         source="pages/target-proposal.tsx:564"
         origin="base"
         note="On /proposals/pr-7?version=v3: the default section has no page param, so Details links to page: undefined and is current only while the URL has none. Supergraph Preview only on a distributed graph. The page draws the 1px row line under it."
       >
         <RouterAt path={`${TARGET_PATH}/proposals/pr-7?version=v3`}>
-          <div className={styles.div4}>
+          <div className={shared.fullWidth}>
             <div className={styles.div5}>
               <Navigation aria-label="Proposal" items={PROPOSAL_SECTIONS} size="sm" />
             </div>
@@ -365,7 +366,7 @@ export const ProposalSections = createPreview({
       </CallSite>
       <CallSite source="the same" origin="base" note="On ?page=checks&version=v3.">
         <RouterAt path={`${TARGET_PATH}/proposals/pr-7?page=checks&version=v3`}>
-          <div className={styles.div4}>
+          <div className={shared.fullWidth}>
             <div className={styles.div5}>
               <Navigation aria-label="Proposal" items={PROPOSAL_SECTIONS} size="sm" />
             </div>
@@ -519,7 +520,7 @@ const PROJECT_SETTINGS: NavigationItem[] = [
 export const SettingsSections = createPreview({
   label: 'Settings sections',
   render: () => (
-    <div className={styles.div3}>
+    <div className={shared.stack.gap8}>
       <CallSiteGroup label="Sections become child routes; the bare settings URL is General, so General is exact.">
         <CallSite
           source="pages/target-settings.tsx:1350"

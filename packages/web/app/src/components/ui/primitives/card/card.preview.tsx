@@ -1,5 +1,6 @@
 import { CopyIcon } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../button/button';
 import { Card } from './card';
 import * as styles from './card.preview.css';
@@ -138,7 +139,7 @@ export const BodyPadding = createPreview(() => (
  * that it still reads as secondary at `xlarge` rather than looking orphaned under it.
  */
 export const TitleSize = createPreview(() => (
-  <div className={styles.div6}>
+  <div className={shared.stack.gap4}>
     <Card
       variants={{ titleSize: 'default' }}
       title="Default"

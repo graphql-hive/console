@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { DocsLink, type DocsLinkProps } from '@/components/ui/docs-note';
+import * as shared from '@/styles/shared.css';
 import * as styles from './page-lead.css';
 
 export function PageLead({
@@ -20,13 +21,13 @@ export function PageLead({
 }) {
   return (
     <div className={styles.pageLeadDiv}>
-      <div className={styles.pageLeadDiv2}>
+      <div className={shared.row.gap2}>
         <h1 className={styles.pageLeadH1}>{title}</h1>
         {titleAccessory}
       </div>
       <p className={styles.pageLeadP}>{description}</p>
       {docsLink && (
-        <div className={styles.pageLeadDiv3}>
+        <div className={shared.text.control}>
           <DocsLink {...docsLink} />
         </div>
       )}

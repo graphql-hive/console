@@ -2,6 +2,7 @@ import { forwardRef, type ReactNode } from 'react';
 import { type LucideIcon } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { controlSize, type ControlSize, type OnSurface } from '../shared-styles';
 import * as styles from './input.css';
 
@@ -77,7 +78,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   // The width stays on the field: a fixed field keeps its size and a prefix adds its own, so a
   // long slug prefix cannot squeeze the field. A fluid field needs the wrapper to be fluid too.
   return (
-    <span className={cn(styles.inputSpan, (width ?? 'full') === 'full' && styles.inputSpan2)}>
+    <span className={cn(styles.inputSpan, (width ?? 'full') === 'full' && shared.fullWidth)}>
       {prefixText ? (
         <span
           className={cn(

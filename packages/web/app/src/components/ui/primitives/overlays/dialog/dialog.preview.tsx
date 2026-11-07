@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { Label } from '../../label/label';
@@ -18,7 +19,7 @@ export const nav: NavPath = 'Primitives/Overlays/Dialog';
 
 function CollectionFields() {
   return (
-    <div className={styles.collectionFieldsDiv}>
+    <div className={shared.stack.gap4}>
       <div className={styles.collectionFieldsDiv2}>
         <Label htmlFor="collection-name" label="Collection Name" />
         <Input id="collection-name" onSurface="raised" placeholder="Checkout" />
@@ -104,7 +105,7 @@ export const LongContent = createPreview(() => (
   >
     <div className={styles.div2}>
       {Array.from({ length: 24 }, (_, i) => (
-        <p key={i} className={styles.p2}>
+        <p key={i} className={shared.fg.default}>
           Line {i + 1}: lab.environment.set('token', await fetch('/auth').then(r =&gt; r.text()))
         </p>
       ))}

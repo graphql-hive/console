@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Checkbox } from './checkbox';
 import * as styles from './checkbox.preview.css';
 
@@ -8,7 +9,7 @@ export const nav: NavPath = 'Primitives/FormControls/Checkbox';
 const TARGETS = ['production', 'staging', 'development'];
 
 export const Sizes = createPreview(() => (
-  <div className={styles.div}>
+  <div className={shared.row.gap4}>
     <Checkbox size="sm" defaultChecked />
     <Checkbox size="md" defaultChecked />
   </div>
@@ -16,15 +17,15 @@ export const Sizes = createPreview(() => (
 
 export const States = createPreview(() => (
   <div className={styles.div2}>
-    <label className={styles.label}>
+    <label className={shared.row.gap2}>
       <Checkbox />
       Unchecked
     </label>
-    <label className={styles.label2}>
+    <label className={shared.row.gap2}>
       <Checkbox defaultChecked />
       Checked
     </label>
-    <label className={styles.label3}>
+    <label className={shared.row.gap2}>
       <Checkbox indeterminate />
       Indeterminate
     </label>
@@ -32,7 +33,7 @@ export const States = createPreview(() => (
       <Checkbox disabled />
       Disabled
     </label>
-    <label className={styles.label5}>
+    <label className={shared.row.gap2}>
       <Checkbox disabled defaultChecked />
       Disabled, checked
     </label>
@@ -41,7 +42,7 @@ export const States = createPreview(() => (
 
 /** `visual` renders a non-interactive indicator: tabIndex -1, aria-hidden, default cursor. */
 export const Visual = createPreview(() => (
-  <div className={styles.div3}>
+  <div className={shared.row.gap4}>
     <Checkbox visual defaultChecked />
     <Checkbox visual />
   </div>
@@ -62,7 +63,7 @@ export const SelectAll = createPreview(() => {
         All targets
       </label>
       {TARGETS.map(target => (
-        <label key={target} className={styles.label7}>
+        <label key={target} className={shared.row.gap2}>
           <Checkbox
             checked={selected.includes(target)}
             onCheckedChange={checked =>

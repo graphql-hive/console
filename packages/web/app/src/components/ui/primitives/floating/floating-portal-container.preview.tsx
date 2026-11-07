@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Button } from '@/components/ui/primitives/button/button';
+import * as shared from '@/styles/shared.css';
 import { Dialog as BaseDialog } from '@base-ui/react/dialog';
 import { AlertDialog } from '../overlays/alert-dialog/alert-dialog';
 import { Dialog } from '../overlays/dialog/dialog';
@@ -39,12 +40,12 @@ function FloatingTrio() {
   const [picked, setPicked] = useState<string | null>(null);
 
   return (
-    <div className={styles.floatingTrioDiv}>
-      <div className={styles.floatingTrioDiv2}>
+    <div className={shared.stack.gap4}>
+      <div className={shared.row.gap3}>
         <span className={styles.floatingTrioSpan}>Select</span>
         <Select options={OPTIONS} value={metric} onValueChange={setMetric} onSurface="raised" />
       </div>
-      <div className={styles.floatingTrioDiv3}>
+      <div className={shared.row.gap3}>
         <span className={styles.floatingTrioSpan2}>Popover</span>
         <Popover
           trigger={<Button label="Details" onSurface="raised" />}
@@ -55,7 +56,7 @@ function FloatingTrio() {
           }
         />
       </div>
-      <div className={styles.floatingTrioDiv4}>
+      <div className={shared.row.gap3}>
         <span className={styles.floatingTrioSpan3}>Menu</span>
         <Menu
           trigger={<Button label={picked ?? 'Actions'} onSurface="raised" />}

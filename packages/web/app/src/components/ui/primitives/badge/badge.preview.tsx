@@ -1,5 +1,6 @@
 import { ActivityIcon, BoxIcon, CheckIcon, TriangleAlertIcon } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Badge } from './badge';
 import * as styles from './badge.preview.css';
 
@@ -24,11 +25,11 @@ export const Variants = createPreview(() => (
 /** `sm` is the count pill: beside a tab label, or at the end of a filter row. */
 export const Sizes = createPreview(() => (
   <div className={styles.div2}>
-    <span className={styles.span}>
+    <span className={shared.inlineRow.gap2}>
       Attributes
       <Badge content="12" variants={{ variant: 'secondary', size: 'sm' }} />
     </span>
-    <span className={styles.span}>
+    <span className={shared.inlineRow.gap2}>
       Attributes
       <Badge content="12" variants={{ variant: 'secondary' }} />
     </span>
@@ -37,7 +38,7 @@ export const Sizes = createPreview(() => (
 
 /** `mono` for an identifier rather than a word: a permission key, a resource id. */
 export const Mono = createPreview(() => (
-  <div className={styles.div3}>
+  <div className={shared.row.wrap2}>
     <Badge content="organization:describe" variants={{ variant: 'outline', mono: true }} />
     <Badge content="project:describe" variants={{ variant: 'outline', mono: true }} />
     <Badge content="No targets selected." variants={{ variant: 'critical', mono: true }} />
@@ -47,16 +48,16 @@ export const Mono = createPreview(() => (
 
 export const InContext = createPreview(() => (
   <div className={styles.div4}>
-    <div className={styles.div5}>
-      <span className={styles.span2}>production</span>
+    <div className={shared.row.gap2}>
+      <span className={shared.fg.default}>production</span>
       <Badge content="3 subgraphs" variants={{ variant: 'secondary' }} />
     </div>
-    <div className={styles.div5}>
-      <span className={styles.span2}>checkout-service</span>
+    <div className={shared.row.gap2}>
+      <span className={shared.fg.default}>checkout-service</span>
       <Badge content="breaking" variants={{ variant: 'critical' }} />
     </div>
-    <div className={styles.div5}>
-      <span className={styles.span2}>v2.4.0</span>
+    <div className={shared.row.gap2}>
+      <span className={shared.fg.default}>v2.4.0</span>
       <Badge content="latest" variants={{ variant: 'outline' }} />
     </div>
   </div>
@@ -67,7 +68,7 @@ export const InContext = createPreview(() => (
  * sites ("3 mappings", "+2 more") were reaching for with a `font-normal` class of their own.
  */
 export const Weights = createPreview(() => (
-  <div className={styles.div6}>
+  <div className={shared.row.gap3}>
     <Badge content="font-medium" />
     <Badge content="font-normal" variants={{ variant: 'outline' }} />
   </div>
@@ -95,14 +96,14 @@ function CompositionErrorText(props: { padding: 'default' | 'tight' }) {
  */
 /** A leading icon takes the badge's text colour, at a size matched to the badge's. */
 export const WithIcon = createPreview(() => (
-  <div className={styles.div7}>
-    <div className={styles.div5}>
+  <div className={shared.stack.gap3}>
+    <div className={shared.row.gap2}>
       <Badge icon={ActivityIcon} content="2 clients" variants={{ variant: 'critical' }} />
       <Badge icon={TriangleAlertIcon} content="Unapproved" variants={{ variant: 'warning' }} />
       <Badge icon={CheckIcon} content="Approved" variants={{ variant: 'success' }} />
       <Badge icon={ActivityIcon} content="Outline" variants={{ variant: 'outline' }} />
     </div>
-    <div className={styles.div5}>
+    <div className={shared.row.gap2}>
       <Badge
         icon={ActivityIcon}
         content="1 client"
@@ -115,7 +116,7 @@ export const WithIcon = createPreview(() => (
 
 // A short badge with its full sentence on hover.
 export const WithTooltip = createPreview(() => (
-  <div className={styles.div5}>
+  <div className={shared.row.gap2}>
     <Badge
       icon={ActivityIcon}
       content="2 clients"
@@ -144,11 +145,11 @@ export const WithTooltip = createPreview(() => (
 
 export const Padding = createPreview(() => (
   <div className={styles.div8}>
-    <div className={styles.div9}>
+    <div className={shared.stack.gap2}>
       <span className={styles.span3}>default</span>
       <CompositionErrorText padding="default" />
     </div>
-    <div className={styles.div9}>
+    <div className={shared.stack.gap2}>
       <span className={styles.span3}>tight</span>
       <CompositionErrorText padding="tight" />
     </div>

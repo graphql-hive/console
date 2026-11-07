@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Copy } from 'lucide-react';
 import { createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Button } from './button/button';
 import { Card } from './card/card';
 import { Checkbox } from './checkbox/checkbox';
@@ -28,7 +29,7 @@ export const TabThrough = createPreview(() => {
   const [on, setOn] = useState(true);
   const [value, setValue] = useState('p95');
   return (
-    <div className={styles.div}>
+    <div className={shared.stack.gap6}>
       <div className={styles.div2}>
         <Button variant="primary">Save alert</Button>
         <Button variant="outline">Cancel</Button>
@@ -61,9 +62,13 @@ export const TabThrough = createPreview(() => {
 export const TextOnThePage = createPreview(() => (
   <Tabs
     items={[
-      { value: 'summary', label: 'Summary', content: <p className={styles.p}>Summary</p> },
-      { value: 'schema', label: 'Schema', content: <p className={styles.p}>Schema</p> },
-      { value: 'supergraph', label: 'Supergraph', content: <p className={styles.p}>Supergraph</p> },
+      { value: 'summary', label: 'Summary', content: <p className={shared.text.sm}>Summary</p> },
+      { value: 'schema', label: 'Schema', content: <p className={shared.text.sm}>Schema</p> },
+      {
+        value: 'supergraph',
+        label: 'Supergraph',
+        content: <p className={shared.text.sm}>Supergraph</p>,
+      },
     ]}
     defaultValue="summary"
   />

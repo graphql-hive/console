@@ -1,6 +1,7 @@
 import { Info } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { CopyChip } from '../copy-chip/copy-chip';
 import { Tooltip } from '../floating/tooltip/tooltip';
 import * as styles from './description-list.css';
@@ -105,7 +106,7 @@ export function DescriptionList({ rows, variants }: DescriptionListProps) {
               key={itemIndex}
               // A long value (a commit, an email) truncates or wraps instead of pushing the row.
               className={cn(
-                styles.descriptionListDiv3,
+                shared.shrinkable,
                 variants?.columns === 'auto' && styles.descriptionListDiv4,
               )}
             >

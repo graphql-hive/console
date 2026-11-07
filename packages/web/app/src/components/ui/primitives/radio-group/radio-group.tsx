@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { lenient } from '@/lib/recipe';
+import * as shared from '@/styles/shared.css';
 import { Radio as BaseRadio } from '@base-ui/react/radio';
 import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group';
 import * as styles from './radio-group.css';
@@ -67,7 +68,7 @@ function RadioItem({
       ) : (
         <>
           {indicator}
-          <span className={isCard ? styles.radioItemSpan2 : undefined}>
+          <span className={isCard ? shared.stack.gap2 : undefined}>
             <span className={isCard ? styles.radioItemSpan3 : undefined}>{item.label}</span>
             {isCard && item.description ? (
               <span className={styles.radioItemSpan4}>{item.description}</span>

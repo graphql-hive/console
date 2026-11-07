@@ -1,5 +1,6 @@
 import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
 import { useFloatingPortalContainer } from '../floating-portal-container';
 import { type FloatingProps } from '../shared-styles';
@@ -74,7 +75,7 @@ export function Tooltip({
     // The span exists to give a plain string a focus stop, so the hint is reachable by keyboard;
     // that is the one case where a tabIndex on a span is the point rather than a mistake.
     // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-    <span tabIndex={0} className={styles.tooltipSpan}>
+    <span tabIndex={0} className={shared.inlineFlex}>
       {trigger}
     </span>
   );

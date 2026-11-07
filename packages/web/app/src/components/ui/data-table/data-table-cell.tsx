@@ -13,6 +13,7 @@ import {
 import { toDecimal } from '@/lib/hooks/use-decimal';
 import { formatNumber as formatCompact } from '@/lib/hooks/use-formatted-number';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link, useNavigate, type LinkOptions, type RegisteredRouter } from '@tanstack/react-router';
 import { Avatar } from '../primitives/avatar/avatar';
 import { Badge } from '../primitives/badge/badge';
@@ -347,7 +348,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       );
       if (!props.trailing) return value;
       return (
-        <span className={styles.dataTableCellSpan5}>
+        <span className={shared.inlineRow.gap2}>
           {value}
           {props.trailing}
         </span>
@@ -413,7 +414,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       // `contents` keeps a truncating link laid out by the cell itself.
       return (
         <span
-          className={props.trailing ? styles.dataTableCellSpan10 : styles.dataTableCellSpan11}
+          className={props.trailing ? shared.row.gap2 : shared.contents}
           onClick={stopPropagation}
         >
           {link}
@@ -430,7 +431,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       if (props.targets.length === 0) return label;
       if (props.targets.length === 1) {
         return (
-          <span className={styles.dataTableCellSpan13} onClick={stopPropagation}>
+          <span className={shared.inlineRow.gap1_5} onClick={stopPropagation}>
             {label}
             <Tooltip
               trigger={
@@ -448,7 +449,7 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
         );
       }
       return (
-        <span className={styles.dataTableCellSpan13} onClick={stopPropagation}>
+        <span className={shared.inlineRow.gap1_5} onClick={stopPropagation}>
           {label}
           <LinkOutMenu targets={props.targets} tooltip={props.tooltip} />
         </span>
@@ -521,21 +522,19 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       return (
         <span className={styles.dataTableCellSpan16}>
           <Avatar size="xs" alt={props.name} src={props.src} />
-          <span className={cn(props.strikethrough && styles.dataTableCellSpan17)}>
-            {props.name}
-          </span>
+          <span className={cn(props.strikethrough && shared.lineThrough)}>{props.name}</span>
           {props.trailing}
         </span>
       );
     case 'copy':
       return (
-        <span className={styles.dataTableCellSpan18} onClick={stopPropagation}>
+        <span className={shared.inlineFlex} onClick={stopPropagation}>
           <CopyChip value={props.value} label={props.label} />
         </span>
       );
     case 'checkbox':
       return (
-        <span className={styles.dataTableCellSpan18} onClick={stopPropagation}>
+        <span className={shared.inlineFlex} onClick={stopPropagation}>
           <Checkbox
             checked={props.checked}
             onCheckedChange={checked => props.onCheckedChange(checked === true)}

@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Info, type LucideIcon } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
+import * as shared from '@/styles/shared.css';
 import { Tooltip } from '../floating/tooltip/tooltip';
 import * as styles from './label.css';
 
@@ -49,7 +50,7 @@ export function Label({ htmlFor, variant, tooltip, icon, label }: LabelProps) {
     return element;
   }
   return (
-    <span className={variant === 'inline' ? styles.labelSpan : styles.labelSpan2} data-label>
+    <span className={variant === 'inline' ? shared.inlineRow.gap1 : shared.row.gap1} data-label>
       {element}
       <LabelHint tooltip={tooltip} icon={icon} name={label} />
     </span>

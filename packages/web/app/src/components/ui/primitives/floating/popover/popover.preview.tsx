@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { TagSuggestions } from '@/components/target/settings/contract-form';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { floatingVariants } from '../shared-styles';
@@ -19,10 +20,10 @@ export const Structured = createPreview(() => (
     description="Configure the threshold and notification settings."
     content={
       <div className={styles.div}>
-        <div className={styles.div2}>
-          Status: <span className={styles.span}>Normal</span>
+        <div className={shared.fg.default}>
+          Status: <span className={shared.fg.success}>Normal</span>
         </div>
-        <div className={styles.div2}>Last evaluated: 2 minutes ago</div>
+        <div className={shared.fg.default}>Last evaluated: 2 minutes ago</div>
       </div>
     }
   />
@@ -41,7 +42,7 @@ export const Raw = createPreview(() => (
  * a panel with its own header rule.
  */
 export const RawPadding = createPreview(() => (
-  <div className={styles.div3}>
+  <div className={shared.row.gap4}>
     <Popover
       trigger={<Button label="Default padding" />}
       content={<p className={styles.p}>p-4 around the content.</p>}
@@ -105,7 +106,7 @@ export const Widths = createPreview(() => (
 ));
 
 export const Sides = createPreview(() => (
-  <div className={styles.div3}>
+  <div className={shared.row.gap4}>
     <Popover
       trigger={<Button label="Top" />}
       side="top"
@@ -134,7 +135,7 @@ export const Sides = createPreview(() => (
  * `onOpenChange` the call site may not have passed.
  */
 export const NoCloseButton = createPreview(() => (
-  <div className={styles.div3}>
+  <div className={shared.row.gap4}>
     <Popover
       trigger={<Button label="With close button" />}
       title="Uncontrolled"
@@ -160,7 +161,7 @@ export const AnchoredToSibling = createPreview(() => {
   return (
     <div ref={panel} className={cn(floatingVariants({ padding: 'md' }), styles.div5)}>
       <span className={styles.span2}>A panel with a field in it</span>
-      <div className={styles.div6}>
+      <div className={shared.row.gap2}>
         <Input value="2026-09-01" readOnly />
         <Button label="Pick" onClick={() => setOpen(o => !o)} />
       </div>
@@ -226,11 +227,15 @@ export const InputAnchor = createPreview(() => {
  * Base UI's rule: if the trigger exists to open the popup, it is a popover, not a tooltip.
  */
 export const Infotip = createPreview(() => (
-  <div className={styles.div6}>
+  <div className={shared.row.gap2}>
     <span className={styles.span3}>Resolution count</span>
     <Popover
       trigger={
-        <button type="button" aria-label="What resolution count means" className={styles.button}>
+        <button
+          type="button"
+          aria-label="What resolution count means"
+          className={shared.fg.secondary}
+        >
           <Info className={styles.info} />
         </button>
       }
@@ -247,7 +252,7 @@ export const Infotip = createPreview(() => (
 
 /** `modal` blocks the page behind the popup. For a panel that is a task, not a glance. */
 export const Modal = createPreview(() => (
-  <div className={styles.div3}>
+  <div className={shared.row.gap4}>
     <Popover
       trigger={<Button label="Modal" />}
       modal
@@ -270,7 +275,11 @@ export const Playground = createPreview({
       default: 'button',
       derive: kind =>
         kind === 'icon' ? (
-          <button type="button" aria-label="What resolution count means" className={styles.button}>
+          <button
+            type="button"
+            aria-label="What resolution count means"
+            className={shared.fg.secondary}
+          >
             <Info className={styles.info} />
           </button>
         ) : (

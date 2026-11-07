@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { ArrowDown, ChevronDown, ChevronRight, Info, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import {
   flexRender,
   getCoreRowModel,
@@ -257,7 +258,7 @@ export function DataTable<TData>({
                         onSurface={onSurface}
                         tone={tone}
                       >
-                        <span className={styles.dataTableSpan}>
+                        <span className={shared.inlineRow.gap1}>
                           {meta?.sortable ? (
                             <SortHeader header={header} label={label} loading={sorting?.loading} />
                           ) : (
@@ -296,7 +297,7 @@ export function DataTable<TData>({
                   {table.getVisibleLeafColumns().map((column, columnIndex) => (
                     <DataTableCellSlot key={column.id} layout={column.columnDef.meta}>
                       {index === 0 && columnIndex === 0 ? (
-                        <span role="status" aria-label="Loading" className={styles.dataTableSpan3}>
+                        <span role="status" aria-label="Loading" className={shared.srOnly}>
                           Loading
                         </span>
                       ) : null}

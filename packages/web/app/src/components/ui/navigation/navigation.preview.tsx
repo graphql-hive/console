@@ -1,5 +1,6 @@
 import { ChartPieIcon, FileDiffIcon, ListIcon, PencilIcon } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { RouterAt } from '../../../../foundry.router';
 import { Button } from '../primitives/button/button';
 import { Navigation, type NavigationItem } from './navigation';
@@ -174,7 +175,7 @@ export const List = createPreview(() => (
 
 /** While the page that owns the links still loads, placeholders hold the space. */
 export const Loading = createPreview(() => (
-  <div className={styles.div}>
+  <div className={shared.stack.gap8}>
     <Navigation items={TARGET_ITEMS} loading />
     <Navigation variant="list" items={ALERTS_ITEMS} loading />
   </div>

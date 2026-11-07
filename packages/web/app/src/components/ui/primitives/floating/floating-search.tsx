@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './floating-search.css';
 
 type FloatingSearchProps = {
@@ -22,7 +23,7 @@ export function FloatingSearch({
   standalone = false,
 }: FloatingSearchProps) {
   return (
-    <div className={cn(styles.floatingSearchDiv, !standalone && styles.floatingSearchDiv2)}>
+    <div className={cn(shared.relative, !standalone && styles.floatingSearchDiv2)}>
       <input
         type="text"
         role="searchbox"

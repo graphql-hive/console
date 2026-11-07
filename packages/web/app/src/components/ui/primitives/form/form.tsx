@@ -17,6 +17,7 @@ import {
   type SubmitHandler,
   type UseFormReturn,
 } from 'react-hook-form';
+import * as shared from '@/styles/shared.css';
 import { Label, LabelHint, labelVariants, type LabelHintProps } from '../label/label';
 import * as styles from './form.css';
 
@@ -123,7 +124,7 @@ export function FormLabel({ label, tooltip, icon }: FormLabelProps) {
   const { formItemId, group } = useFormField();
   if (group) {
     return (
-      <legend className={styles.formLabelLegend} data-label>
+      <legend className={shared.inlineRow.gap1} data-label>
         <span className={labelVariants({ variant: 'caps' })}>{label}</span>
         <LabelHint tooltip={tooltip} icon={icon} name={label} />
       </legend>

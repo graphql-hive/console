@@ -9,6 +9,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/primitives/form/form';
+import * as ui from '@/styles/shared.css';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Input } from './input';
 import * as shared from '../shared-styles.css';
@@ -126,13 +127,13 @@ describe('Input', () => {
     expect(input.className).toContain(styles.inputInput2);
     // A fixed width is the field's own; the prefix adds to it rather than eating into it.
     expect(input.className).toContain(styles.inputVariants.classNames.variants.width.sm);
-    expect(input.parentElement?.className).not.toContain(styles.inputSpan2);
+    expect(input.parentElement?.className).not.toContain(ui.fullWidth);
   });
 
   it('lets a fluid decorated field fill its container', () => {
     render(<Input placeholder="Search" leadingIcon={Search} />);
     const input = screen.getByPlaceholderText('Search');
     expect(input.className).toContain(styles.inputVariants.classNames.variants.width.full);
-    expect(input.parentElement?.className).toContain(styles.inputSpan2);
+    expect(input.parentElement?.className).toContain(ui.fullWidth);
   });
 });

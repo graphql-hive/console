@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { Label } from '../../label/label';
@@ -17,7 +18,7 @@ export const nav: NavPath = 'Primitives/Overlays/Sheet';
 
 function TokenFields({ count = 3 }: { count?: number }) {
   return (
-    <div className={styles.tokenFieldsDiv}>
+    <div className={shared.stack.gap4}>
       <div className={styles.tokenFieldsDiv2}>
         <Label htmlFor="token-title" label="Title" />
         <Input id="token-title" onSurface="raised" placeholder="CI deploy token" />

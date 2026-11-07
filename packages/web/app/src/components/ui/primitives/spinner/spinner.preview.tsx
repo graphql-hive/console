@@ -1,5 +1,6 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { DataTableCursorPagination } from '@/components/ui/data-table/data-table-pagination';
+import * as shared from '@/styles/shared.css';
 import { Button } from '../button/button';
 import { Spinner } from './spinner';
 import * as styles from './spinner.preview.css';
@@ -44,7 +45,7 @@ export const InContext = createPreview(() => (
 ));
 
 export const InButton = createPreview(() => (
-  <div className={styles.div6}>
+  <div className={shared.row.gap4}>
     <Button>
       <Spinner variants={{ size: 'sm', tone: 'current' }} />
       Creating...

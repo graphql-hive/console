@@ -3,6 +3,7 @@ import { InfoIcon } from 'lucide-react';
 import { Card } from '@/components/ui/primitives/card/card';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { lenient } from '@/lib/recipe';
+import * as shared from '@/styles/shared.css';
 import * as styles from './stat-card.css';
 
 const statTitleVariants = lenient(styles.statTitleVariants);
@@ -22,7 +23,7 @@ export function StatCard({ title, value, caption, icon: Icon, hint, variants }: 
   return (
     <Card variants={{ onSurface: 'raised' }}>
       <div className={styles.statCardDiv}>
-        <div className={styles.statCardDiv2}>
+        <div className={shared.row.gap1_5}>
           <h3 className={statTitleVariants({ ...variants })}>{title}</h3>
           {hint ? (
             <Tooltip

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle, Check, GitCompare } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { Select } from '../primitives/floating/select/select';
 import { Tooltip } from '../primitives/floating/tooltip/tooltip';
 import { ScopeBar } from './scope-bar';
@@ -32,7 +33,7 @@ function statusTooltip(status: Status) {
   return (
     <Tooltip
       trigger={
-        <span className={styles.statusTooltipSpan}>
+        <span className={shared.inlineFlex}>
           <StatusGlyph status={status} />
         </span>
       }
@@ -104,7 +105,7 @@ export const VersionPage = createPreview(() => {
           value={value}
           onValueChange={setValue}
           label={
-            <span className={styles.span}>
+            <span className={shared.inlineRow.gap1_5}>
               <StatusGlyph status={picked.status} />
               {picked.label}
             </span>

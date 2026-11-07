@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react';
+import * as shared from '@/styles/shared.css';
 import type { MenuSection } from '../../primitives/floating/menu/menu';
 import { FilterChips, FilterMenu } from './filter-menu';
 import type { FilterDimension } from './types';
-import * as styles from './filters.css';
 
 /**
  * Single composition for filter UIs across surfaces. Renders, in order:
@@ -44,7 +44,7 @@ export function Filters({
     dimensions.length > 0 || !!extraSections?.length || !!(activeLabel && onClearActive);
 
   return (
-    <div className={styles.filtersDiv}>
+    <div className={shared.row.gap2}>
       {hasMenu && (
         <FilterMenu
           dimensions={dimensions}

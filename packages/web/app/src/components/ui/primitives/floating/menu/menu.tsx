@@ -10,6 +10,7 @@ import { clsx } from 'clsx';
 import { ArrowRight, Check, ChevronRight } from 'lucide-react';
 import { type IconProps } from '@/components/ui/brand-icon';
 import { Switch } from '@/components/ui/primitives/switch/switch';
+import * as shared from '@/styles/shared.css';
 import { Menu as BaseMenu } from '@base-ui/react/menu';
 import { useFloatingPortalContainer } from '../floating-portal-container';
 import { floatingVariants, itemVariants, type FloatingProps } from '../shared-styles';
@@ -238,7 +239,7 @@ function CheckboxRow({
       closeOnClick={closeOnClick}
     >
       {Icon ? <Icon className={styles.checkboxRowIcon} /> : null}
-      <span className={styles.checkboxRowSpan}>{label}</span>
+      <span className={shared.fill}>{label}</span>
       {indicator === 'switch' ? (
         <Switch checked={checked} size="small" decorative />
       ) : (
@@ -307,7 +308,7 @@ function ToggleRow({
       closeOnClick={closeOnClick}
     >
       {Icon ? <Icon className={styles.toggleRowIcon} /> : null}
-      <span className={styles.toggleRowSpan}>{label}</span>
+      <span className={shared.fill}>{label}</span>
       <Switch checked={checked} size="small" decorative />
     </BaseMenu.CheckboxItem>
   );
