@@ -25,11 +25,11 @@ const viewportOverflowClass = {
 // Overlaid, and only drawn while the pointer is over the area or it is scrolling. Base UI sets
 // `position: absolute` itself; the placement classes below say which edge.
 const scrollbarClass = [
-  'flex touch-none select-none rounded-full',
-  'opacity-0 transition-opacity delay-300 duration-200',
-  'data-[hovering]:opacity-100 data-[hovering]:delay-0 data-[hovering]:duration-100',
-  'data-[scrolling]:opacity-100 data-[scrolling]:delay-0 data-[scrolling]:duration-100',
-  'hover:opacity-100 hover:delay-0',
+  styles.scrollbarClassClass,
+  styles.scrollbarClassClass2,
+  styles.scrollbarClassClass3,
+  styles.scrollbarClassClass4,
+  styles.scrollbarClassClass5,
 ].join(' ');
 
 const thumbClass = styles.thumbClass;

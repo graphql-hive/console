@@ -419,3 +419,21 @@ export const tabVariants = recipe({
     },
   ],
 });
+
+export const iconSizeDefault = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 4)',
+      height: 'calc(var(--spacing) * 4)',
+    },
+  },
+});
+
+export const iconSizeSm = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 3.5)',
+      height: 'calc(var(--spacing) * 3.5)',
+    },
+  },
+});

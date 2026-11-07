@@ -1,7 +1,7 @@
 /**
  * Tailwind → Vanilla Extract codemod for `packages/web/app`.
  *
- *   pnpm tsx scripts/tailwind-to-ve/cli.ts --scope components/ui [--scope pages] [--dry] [--force] [--append]
+ *   pnpm tsx scripts/tailwind-to-ve/cli.ts --scope components/ui [--scope pages] [--dry] [--force] [--append] [--sweep]
  *
  * 1. Scans every source file for class strings and compiles the union with Tailwind, once.
  * 2. Rewrites the files under each `--scope` (relative to `src`), writing a `.css.ts` beside each.
@@ -31,6 +31,7 @@ const dry = flag('--dry');
 const force = flag('--force');
 const printCss = flag('--print');
 const append = flag('--append');
+const sweep = flag('--sweep');
 
 if (!scopes.length) {
   console.error('Pass at least one --scope <dir relative to packages/web/app/src>');
@@ -81,7 +82,7 @@ async function main() {
   const texts = new Map(allFiles.map(f => [f, readFileSync(f, 'utf8')] as const));
 
   const candidates = new Set<string>();
-  for (const [file, text] of texts) for (const t of tokensIn(file, text)) candidates.add(t);
+  for (const [file, text] of texts) for (const t of tokensIn(file, text, sweep)) candidates.add(t);
   console.error(`Compiling ${candidates.size} distinct classes from ${allFiles.length} files…`);
   const compiled = await compileTokens(appDir, candidates);
   console.error(`Tailwind recognised ${compiled.tokens.size} of them.`);
@@ -104,6 +105,7 @@ async function main() {
       compiled,
       layer: layerFor(file),
       existingCss,
+      sweep,
     });
     if (!result) continue;
     reports.push(result.report);

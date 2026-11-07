@@ -65,14 +65,8 @@ export const controlSurface = {
 } as const satisfies Record<OnSurface, string>;
 
 export const controlOnSurface = {
-  base: [
-    controlSurface.base,
-    'hover:bg-neutral-1 dark:hover:bg-neutral-4 dark:hover:border-line',
-  ].join(' '),
-  raised: [
-    controlSurface.raised,
-    'hover:border-line-strong dark:hover:bg-neutral-6 dark:hover:border-neutral-7',
-  ].join(' '),
+  base: [controlSurface.base, styles.controlOnSurfaceClass].join(' '),
+  raised: [controlSurface.raised, styles.controlOnSurfaceClass2].join(' '),
 } as const satisfies Record<OnSurface, string>;
 
 /**

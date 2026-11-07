@@ -20,9 +20,9 @@ export const Heading = ({
       className={clsx(
         styles.headingHeadingLevel,
         {
-          lg: 'text-lg font-bold',
-          xl: 'text-xl font-bold',
-          '2xl': 'text-[28px] leading-snug font-extrabold',
+          lg: styles.headingLg,
+          xl: styles.headingXl,
+          '2xl': styles.heading2xl,
         }[size],
         className,
       )}

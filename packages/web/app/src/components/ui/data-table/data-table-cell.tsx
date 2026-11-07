@@ -210,18 +210,18 @@ function stopPropagation(event: MouseEvent) {
   event.stopPropagation();
 }
 
-const tone = { default: 'text-fg', muted: 'text-fg-secondary' } as const;
+const tone = { default: styles.toneDefault, muted: styles.toneMuted } as const;
 const linkTone = {
-  default: 'text-fg-default hover:text-fg hover:underline underline-offset-2',
-  accent: 'text-accent-muted hover:text-accent hover:underline underline-offset-2',
+  default: styles.linkToneDefault,
+  accent: styles.linkToneAccent,
 } as const;
 
 const statusIconTone: Record<StatusColor, string> = {
-  success: 'text-success',
-  warning: 'text-warning',
-  critical: 'text-critical',
-  info: 'text-info',
-  neutral: 'text-fg-secondary',
+  success: styles.statusIconToneSuccess,
+  warning: styles.statusIconToneWarning,
+  critical: styles.statusIconToneCritical,
+  info: styles.statusIconToneInfo,
+  neutral: styles.statusIconToneNeutral,
 };
 
 function Destination<TTo extends string>({

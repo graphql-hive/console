@@ -795,3 +795,35 @@ export const graphQLTypeCardSkeletonSpan = style({
     },
   },
 });
+
+export const valuesClass = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 32)',
+    },
+  },
+});
+
+export const valuesClass2 = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 48)',
+    },
+  },
+});
+
+export const valuesClass3 = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 64)',
+    },
+  },
+});
+
+export const valuesClass4 = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 96)',
+    },
+  },
+});

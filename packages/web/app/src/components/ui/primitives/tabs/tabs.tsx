@@ -57,7 +57,7 @@ const indicatorVariants = lenient(styles.indicatorVariants);
 // animation is still a frame or so of both panels stacked, so hide it the moment it starts ending.
 const panelVariants = lenient(styles.panelVariants);
 
-const iconSize = { default: 'size-4', sm: 'size-3.5' } as const;
+const iconSize = { default: styles.iconSizeDefault, sm: styles.iconSizeSm } as const;
 
 export function TabStrip({
   items,

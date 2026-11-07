@@ -344,11 +344,11 @@ export function CreatePersonalAccessTokenSheetContent(
 
 function shakeElement(ev: React.MouseEvent<HTMLElement>) {
   const el = ev.target as HTMLElement;
-  el.classList.add('animate-shake');
+  el.classList.add(styles.shakeElementClass);
   el.addEventListener(
     'animationend',
     () => {
-      el.classList.remove('animate-shake');
+      el.classList.remove(styles.shakeElementClass);
     },
     { once: true },
   );

@@ -561,7 +561,12 @@ export const LinkToCoordinatePage = React.forwardRef<
 });
 
 const getRandomWidth = () => {
-  const values = ['w-32', 'w-48', 'w-64', 'w-96'];
+  const values = [
+    styles.valuesClass,
+    styles.valuesClass2,
+    styles.valuesClass3,
+    styles.valuesClass4,
+  ];
 
   return values[Math.floor(Math.random() * values.length)];
 };

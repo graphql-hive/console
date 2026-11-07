@@ -99,7 +99,7 @@ export const Pill = createPreview(() => (
   </RouterAt>
 ));
 
-const PROPOSAL = { ...TARGET, proposalId: 'pr-7' };
+const PROPOSAL = { ...TARGET, proposalId: styles.proposalProposalId };
 const PROPOSAL_PATH = `${TARGET_PATH}/proposals/pr-7`;
 const proposalLink = {
   to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',

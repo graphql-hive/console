@@ -17,6 +17,11 @@ remaining class strings were restructured by hand into a static shape (a `cva` w
 `cn(...)`, say). A recipe added this way may compose values the same `.css.ts` already exports, by
 their source name.
 
+`--sweep` widens the scan to every string literal, outside imports, types, tags and non-class
+attributes, whose tokens are all known classes and not a single plain word. That catches the class
+maps in data constants (`{ success: 'text-success' }`) that only Tailwind's source scanner used to
+see. Run it once, with `--append`, after the directory passes.
+
 ## How it works
 
 1. **Scan** every source file for class strings: a `className` attribute, any string inside a call

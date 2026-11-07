@@ -247,3 +247,13 @@ export const div11 = style({
     },
   },
 });
+
+export const statusDotClass = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 2)',
+      height: 'calc(var(--spacing) * 2)',
+      borderRadius: 'calc(infinity * 1px)',
+    },
+  },
+});

@@ -191,3 +191,81 @@ export const scrollAreaThumb2 = style({
     },
   },
 });
+
+export const scrollbarClassClass = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      touchAction: 'none',
+      borderRadius: 'calc(infinity * 1px)',
+      WebkitUserSelect: 'none',
+      userSelect: 'none',
+    },
+  },
+});
+
+export const scrollbarClassClass2 = style({
+  '@layer': {
+    [layer]: {
+      opacity: '0%',
+      transitionProperty: 'opacity',
+      transitionTimingFunction: 'var(--tw-ease, var(--default-transition-timing-function))',
+      transitionDelay: '300ms',
+      transitionDuration: '200ms',
+      vars: {
+        '--tw-duration': '200ms',
+      },
+    },
+  },
+});
+
+export const scrollbarClassClass3 = style({
+  '@layer': {
+    [layer]: {
+      selectors: {
+        '&[data-hovering]': {
+          opacity: '100%',
+          transitionDelay: '0ms',
+          transitionDuration: '100ms',
+          vars: {
+            '--tw-duration': '100ms',
+          },
+        },
+      },
+    },
+  },
+});
+
+export const scrollbarClassClass4 = style({
+  '@layer': {
+    [layer]: {
+      selectors: {
+        '&[data-scrolling]': {
+          opacity: '100%',
+          transitionDelay: '0ms',
+          transitionDuration: '100ms',
+          vars: {
+            '--tw-duration': '100ms',
+          },
+        },
+      },
+    },
+  },
+});
+
+export const scrollbarClassClass5 = style({
+  '@layer': {
+    [layer]: {
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              opacity: '100%',
+              transitionDelay: '0ms',
+            },
+          },
+        },
+      },
+    },
+  },
+});

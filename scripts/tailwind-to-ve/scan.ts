@@ -21,7 +21,9 @@ export type SiteKind =
   /** One quasi of a template literal that also has expressions. */
   | 'quasi'
   /** The initializer, or a property value in the initializer, of a style constant. */
-  | 'constant';
+  | 'constant'
+  /** Any other string literal made only of known classes, found by a sweep. */
+  | 'sweep';
 
 export type Site = {
   kind: SiteKind;
@@ -212,6 +214,11 @@ function nameHintFor(literal: ts.Node, kind: SiteKind): string {
   if (kind === 'constant') {
     return toCamel([constantName(literal), propertyKeyHint(literal)]);
   }
+  if (kind === 'sweep') {
+    // A class map in a constant names itself; a string inside a function takes the function's name.
+    const owner = constantName(literal) || enclosingName(literal);
+    return toCamel([owner, propertyKeyHint(literal) || 'class']);
+  }
   const fn = enclosingName(literal);
   const tag = enclosingTag(literal);
   const prop = propertyKeyHint(literal);
@@ -361,7 +368,29 @@ export function identifiers(file: ts.SourceFile): Set<string> {
   return out;
 }
 
-export function scan(fileName: string, text: string): Scan {
+export type ScanOptions = {
+  /**
+   * Also report string literals outside any class position whose tokens all look like classes:
+   * class maps in data constants, which Tailwind's source scanner picked up and nothing else did.
+   */
+  sweep?: boolean;
+};
+
+/** Positions a sweep never touches: names, types, imports, tags and non-class attributes. */
+function isSweepable(node: ts.Node): boolean {
+  const parent = node.parent;
+  if (!parent) return false;
+  if (ts.isJsxAttribute(parent)) return false;
+  if (ts.isPropertyAssignment(parent) && parent.name === node) return false;
+  if (ts.isComputedPropertyName(parent) || ts.isEnumMember(parent)) return false;
+  if (ts.isExportDeclaration(parent) || ts.isExternalModuleReference(parent)) return false;
+  if (ts.isCaseClause(parent)) return false;
+  if (ts.isElementAccessExpression(parent) && parent.argumentExpression === node) return false;
+  if (ts.isPropertySignature(parent) || ts.isTypeNode(parent)) return false;
+  return true;
+}
+
+export function scan(fileName: string, text: string, options: ScanOptions = {}): Scan {
   const file = parse(fileName, text);
   const sites: Site[] = [];
   const cva: CvaSite[] = [];
@@ -403,6 +432,16 @@ export function scan(fileName: string, text: string): Scan {
           tokens: splitTokens(node.text),
           directArg: ctx.directArg,
           nameHint: nameHintFor(node, kind),
+        });
+      } else if (options.sweep && splitTokens(node.text).length && isSweepable(node)) {
+        sites.push({
+          kind: 'sweep',
+          start: node.getStart(),
+          end: node.getEnd(),
+          text: node.text,
+          tokens: splitTokens(node.text),
+          directArg: false,
+          nameHint: nameHintFor(node, 'sweep'),
         });
       }
       return;

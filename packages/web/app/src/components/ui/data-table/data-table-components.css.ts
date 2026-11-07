@@ -459,3 +459,263 @@ export const dataTableFooterRowTd2 = style({
     },
   },
 });
+
+export const surfaceWrapper = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-neutral-1)',
+      selectors: {
+        '&:where(.dark, .dark *)': {
+          backgroundColor: 'var(--color-neutral-2)',
+        },
+      },
+    },
+  },
+});
+
+export const surfaceHead = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-card)',
+    },
+  },
+});
+
+export const surfaceStripe = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'color-mix(in srgb, hsl(var(--neutral-2)) 60%, transparent)',
+      selectors: {
+        '&:where(.dark, .dark *)': {
+          backgroundColor: 'color-mix(in srgb, hsl(var(--neutral-3)) 60%, transparent)',
+        },
+      },
+      '@supports': {
+        '(color: color-mix(in lab, red, red))': {
+          backgroundColor: 'color-mix(in oklab, var(--color-neutral-2) 60%, transparent)',
+          selectors: {
+            '&:where(.dark, .dark *)': {
+              backgroundColor: 'color-mix(in oklab, var(--color-neutral-3) 60%, transparent)',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const surfaceHover = style({
+  '@layer': {
+    [layer]: {
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              backgroundColor: 'var(--color-neutral-3)',
+            },
+            '&:where(.dark, .dark *):hover': {
+              backgroundColor: 'var(--color-neutral-4)',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const surfaceWrapper2 = surfaceHead;
+
+export const surfaceHead2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-neutral-3)',
+      selectors: {
+        '&:where(.dark, .dark *)': {
+          backgroundColor: 'var(--color-neutral-4)',
+        },
+      },
+    },
+  },
+});
+
+export const surfaceStripe2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'color-mix(in srgb, hsl(var(--neutral-3)) 60%, transparent)',
+      selectors: {
+        '&:where(.dark, .dark *)': {
+          backgroundColor: 'color-mix(in srgb, hsl(var(--neutral-4)) 60%, transparent)',
+        },
+      },
+      '@supports': {
+        '(color: color-mix(in lab, red, red))': {
+          backgroundColor: 'color-mix(in oklab, var(--color-neutral-3) 60%, transparent)',
+          selectors: {
+            '&:where(.dark, .dark *)': {
+              backgroundColor: 'color-mix(in oklab, var(--color-neutral-4) 60%, transparent)',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const surfaceHover2 = style({
+  '@layer': {
+    [layer]: {
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              backgroundColor: 'var(--color-neutral-4)',
+            },
+            '&:where(.dark, .dark *):hover': {
+              backgroundColor: 'var(--color-neutral-5)',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const tonedWrapper = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-critical-line)',
+      backgroundColor: 'var(--color-critical-tint-subtle)',
+    },
+  },
+});
+
+export const tonedHead = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical-tint)',
+    },
+  },
+});
+
+export const tonedStripe = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'color-mix(in srgb, hsl(var(--critical) / 0.1) 40%, transparent)',
+      '@supports': {
+        '(color: color-mix(in lab, red, red))': {
+          backgroundColor: 'color-mix(in oklab, var(--color-critical-tint) 40%, transparent)',
+        },
+      },
+    },
+  },
+});
+
+export const tonedHover = style({
+  '@layer': {
+    [layer]: {
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              backgroundColor: 'var(--color-critical-tint)',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const tonedLine = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-critical-line-subtle)',
+    },
+  },
+});
+
+export const tonedTitleLine = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-critical-line)',
+    },
+  },
+});
+
+export const tonedIcon = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-critical)',
+    },
+  },
+});
+
+export const tonedWrapper2 = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-warning-line)',
+      backgroundColor: 'var(--color-warning-tint-subtle)',
+    },
+  },
+});
+
+export const tonedHead2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning-tint)',
+    },
+  },
+});
+
+export const tonedStripe2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'color-mix(in srgb, hsl(var(--warning) / 0.1) 40%, transparent)',
+      '@supports': {
+        '(color: color-mix(in lab, red, red))': {
+          backgroundColor: 'color-mix(in oklab, var(--color-warning-tint) 40%, transparent)',
+        },
+      },
+    },
+  },
+});
+
+export const tonedHover2 = style({
+  '@layer': {
+    [layer]: {
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              backgroundColor: 'var(--color-warning-tint)',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const tonedLine2 = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-warning-line-subtle)',
+    },
+  },
+});
+
+export const tonedTitleLine2 = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-warning-line)',
+    },
+  },
+});
+
+export const tonedIcon2 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-warning)',
+    },
+  },
+});

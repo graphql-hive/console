@@ -641,3 +641,51 @@ export const alertPreviewP = style({
     },
   },
 });
+
+export const severityColorsBar = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical)',
+    },
+  },
+});
+
+export const severityColorsText = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-critical)',
+    },
+  },
+});
+
+export const severityColorsBar2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning)',
+    },
+  },
+});
+
+export const severityColorsText2 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-warning)',
+    },
+  },
+});
+
+export const severityColorsBar3 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info)',
+    },
+  },
+});
+
+export const severityColorsText3 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-info)',
+    },
+  },
+});

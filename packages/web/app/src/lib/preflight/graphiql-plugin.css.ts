@@ -389,3 +389,35 @@ export const logLineHr = style({
     },
   },
 });
+
+export const logColorsError = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-critical)',
+    },
+  },
+});
+
+export const logColorsInfo = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-success)',
+    },
+  },
+});
+
+export const logColorsWarn = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-warning)',
+    },
+  },
+});
+
+export const logColorsLog = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-secondary)',
+    },
+  },
+});

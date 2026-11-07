@@ -227,3 +227,27 @@ export const alertFormDiv13 = style({
     },
   },
 });
+
+export const severitiesDotClass = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info)',
+    },
+  },
+});
+
+export const severitiesDotClass2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning)',
+    },
+  },
+});
+
+export const severitiesDotClass3 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical)',
+    },
+  },
+});

@@ -4,8 +4,9 @@ import { join, relative } from 'node:path';
 const SRC = join(__dirname, '..');
 
 // Primitives, and the composites that came out of the old `base/`, keep the neutral scale for
-// their internal step ladders.
+// their internal step ladders. `styles/` defines the scale and the roles in the first place.
 const ALLOWED = [
+  'styles/',
   'components/ui/primitives/',
   'components/ui/data-table/',
   'components/ui/filters/',

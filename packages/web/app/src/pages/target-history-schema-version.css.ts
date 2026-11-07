@@ -1875,3 +1875,145 @@ export const genericGraphCardDiv5 = style({
     },
   },
 });
+
+export const breakingChangeTypeModesDotColor = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical)',
+    },
+  },
+});
+
+export const breakingChangeTypeModesDotColor2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning)',
+    },
+  },
+});
+
+export const breakingChangeTypeModesDotColor3 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info)',
+    },
+  },
+});
+
+export const kindMetaText = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-warning)',
+    },
+  },
+});
+
+export const kindMetaBg = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning-tint-strong)',
+    },
+  },
+});
+
+export const kindMetaRing = style({
+  '@layer': {
+    [layer]: {
+      vars: {
+        '--tw-ring-color': 'var(--color-warning-line)',
+      },
+    },
+  },
+});
+
+export const kindMetaDot = breakingChangeTypeModesDotColor2;
+
+export const kindMetaText2 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-critical)',
+    },
+  },
+});
+
+export const kindMetaBg2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical-tint-strong)',
+    },
+  },
+});
+
+export const kindMetaRing2 = style({
+  '@layer': {
+    [layer]: {
+      vars: {
+        '--tw-ring-color': 'var(--color-critical-line)',
+      },
+    },
+  },
+});
+
+export const kindMetaDot2 = breakingChangeTypeModesDotColor;
+
+export const kindMetaText3 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-info)',
+    },
+  },
+});
+
+export const kindMetaBg3 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info-tint-strong)',
+    },
+  },
+});
+
+export const kindMetaRing3 = style({
+  '@layer': {
+    [layer]: {
+      vars: {
+        '--tw-ring-color': 'var(--color-info-line)',
+      },
+    },
+  },
+});
+
+export const kindMetaDot3 = breakingChangeTypeModesDotColor3;
+
+export const kindMetaText4 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-secondary)',
+    },
+  },
+});
+
+export const kindMetaBg4 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-page)',
+    },
+  },
+});
+
+export const kindMetaRing4 = style({
+  '@layer': {
+    [layer]: {
+      vars: {
+        '--tw-ring-color': 'var(--color-line-strong)',
+      },
+    },
+  },
+});
+
+export const kindMetaDot4 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-line)',
+    },
+  },
+});

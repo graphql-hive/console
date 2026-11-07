@@ -353,11 +353,11 @@ function QueryBacked(props: { name: string }) {
 
 /** The overlay widths, so a form is seen at the width it ships at. */
 const panelWidth = {
-  card: 'w-[28rem]',
-  dialog: 'w-[520px]',
-  'dialog-lg': 'w-[640px]',
-  'dialog-xl': 'w-[960px]',
-  sheet: 'w-[700px]',
+  card: styles.panelWidthCard,
+  dialog: styles.panelWidthDialog,
+  'dialog-lg': styles.panelWidthDialogLg,
+  'dialog-xl': styles.panelWidthDialogXl,
+  sheet: styles.panelWidthSheet,
 } as const;
 
 /** The raised panel a dialog, sheet or card puts the form on, at that overlay's width. */

@@ -194,3 +194,80 @@ export const inventoryListSpan2 = style({
     },
   },
 });
+
+export const originTagUi = style({
+  '@layer': {
+    [layer]: {
+      borderRadius: 'var(--radius-xs)',
+      backgroundColor: 'var(--color-surface-hover)',
+      paddingInline: 'var(--spacing)',
+      paddingBlock: '1px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: 'var(--text-2xs)',
+      lineHeight: '1',
+      color: 'var(--color-fg-default)',
+      vars: {
+        '--tw-leading': '1',
+      },
+    },
+  },
+});
+
+export const originTagV2 = style({
+  '@layer': {
+    [layer]: {
+      borderRadius: 'var(--radius-xs)',
+      backgroundColor: 'var(--color-surface-selected)',
+      paddingInline: 'var(--spacing)',
+      paddingBlock: '1px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: 'var(--text-2xs)',
+      lineHeight: '1',
+      color: 'var(--color-fg)',
+      vars: {
+        '--tw-leading': '1',
+      },
+    },
+  },
+});
+
+export const originTagBase = style({
+  '@layer': {
+    [layer]: {
+      borderRadius: 'var(--radius-xs)',
+      backgroundColor: 'color-mix(in srgb, hsl(var(--success) / 0.8) 20%, transparent)',
+      paddingInline: 'var(--spacing)',
+      paddingBlock: '1px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: 'var(--text-2xs)',
+      lineHeight: '1',
+      color: 'var(--color-success-muted)',
+      vars: {
+        '--tw-leading': '1',
+      },
+      '@supports': {
+        '(color: color-mix(in lab, red, red))': {
+          backgroundColor: 'color-mix(in oklab, var(--color-success-muted) 20%, transparent)',
+        },
+      },
+    },
+  },
+});
+
+export const originTagRaw = style({
+  '@layer': {
+    [layer]: {
+      borderRadius: 'var(--radius-xs)',
+      backgroundColor: 'var(--color-warning-tint)',
+      paddingInline: 'var(--spacing)',
+      paddingBlock: '1px',
+      fontFamily: 'var(--font-mono)',
+      fontSize: 'var(--text-2xs)',
+      lineHeight: '1',
+      color: 'var(--color-warning-text)',
+      vars: {
+        '--tw-leading': '1',
+      },
+    },
+  },
+});

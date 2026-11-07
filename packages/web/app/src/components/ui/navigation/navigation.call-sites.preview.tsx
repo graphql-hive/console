@@ -326,7 +326,7 @@ export const ExplorerFilter = createPreview({
   ),
 });
 
-const PROPOSAL = { ...TARGET, proposalId: 'pr-7' };
+const PROPOSAL = { ...TARGET, proposalId: styles.proposalProposalId };
 const proposalLink = {
   to: '/$organizationSlug/$projectSlug/$targetSlug/proposals/$proposalId',
   params: PROPOSAL,

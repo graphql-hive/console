@@ -6,8 +6,8 @@ import * as styles from './checkbox.css';
 const checkboxVariants = lenient(styles.checkboxVariants);
 
 const iconSizeMap = {
-  sm: 'size-2.5',
-  md: 'size-3',
+  sm: styles.iconSizeMapSm,
+  md: styles.iconSizeMapMd,
 } as const;
 
 export function Checkbox({

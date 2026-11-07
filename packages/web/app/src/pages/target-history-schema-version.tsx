@@ -1332,9 +1332,17 @@ function ViewModeToggle(props: { active: SchemaViewMode; onChange: (m: SchemaVie
 }
 
 const breakingChangeTypeModes: { id: SeverityLevelType; label: string; dotColor: string }[] = [
-  { id: SeverityLevelType.Breaking, label: 'Breaking', dotColor: 'bg-critical' },
-  { id: SeverityLevelType.Dangerous, label: 'Dangerous', dotColor: 'bg-warning' },
-  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: 'bg-info' },
+  {
+    id: SeverityLevelType.Breaking,
+    label: 'Breaking',
+    dotColor: styles.breakingChangeTypeModesDotColor,
+  },
+  {
+    id: SeverityLevelType.Dangerous,
+    label: 'Dangerous',
+    dotColor: styles.breakingChangeTypeModesDotColor2,
+  },
+  { id: SeverityLevelType.Safe, label: 'Safe', dotColor: styles.breakingChangeTypeModesDotColor3 },
 ];
 
 function ChangeTypeToggle(props: {
@@ -1662,34 +1670,34 @@ const kindMeta = {
   SubgraphDiffAdded: {
     label: 'Added',
     Icon: Plus,
-    text: 'text-warning',
-    bg: 'bg-warning-tint-strong',
-    ring: 'ring-warning-line',
-    dot: 'bg-warning',
+    text: styles.kindMetaText,
+    bg: styles.kindMetaBg,
+    ring: styles.kindMetaRing,
+    dot: styles.kindMetaDot,
   },
   SubgraphDiffRemoved: {
     label: 'Removed',
     Icon: Minus,
-    text: 'text-critical',
-    bg: 'bg-critical-tint-strong',
-    ring: 'ring-critical-line',
-    dot: 'bg-critical',
+    text: styles.kindMetaText2,
+    bg: styles.kindMetaBg2,
+    ring: styles.kindMetaRing2,
+    dot: styles.kindMetaDot2,
   },
   SubgraphDiffChanged: {
     label: 'Updated',
     Icon: GitCompareArrows,
-    text: 'text-info',
-    bg: 'bg-info-tint-strong',
-    ring: 'ring-info-line',
-    dot: 'bg-info',
+    text: styles.kindMetaText3,
+    bg: styles.kindMetaBg3,
+    ring: styles.kindMetaRing3,
+    dot: styles.kindMetaDot3,
   },
   SubgraphDiffUnchanged: {
     label: 'Unchanged',
     Icon: CircleIcon,
-    text: 'text-fg-secondary',
-    bg: 'bg-surface-page',
-    ring: 'ring-line-strong',
-    dot: 'bg-line',
+    text: styles.kindMetaText4,
+    bg: styles.kindMetaBg4,
+    ring: styles.kindMetaRing4,
+    dot: styles.kindMetaDot4,
   },
 } as const;
 

@@ -263,11 +263,7 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
 function UsageChip({ used, limit }: { used: number; limit: number }) {
   const ratio = limit > 0 ? used / limit : 0;
   const color =
-    used >= limit
-      ? 'border-critical-line bg-critical-tint-subtle text-critical'
-      : ratio >= 0.8
-        ? 'border-warning-line bg-warning-tint text-warning-text'
-        : 'border-line bg-surface-card text-fg-default';
+    used >= limit ? styles.colorClass : ratio >= 0.8 ? styles.colorClass2 : styles.colorClass3;
   const label = `${used} / ${limit} rules`;
   const title =
     used >= limit

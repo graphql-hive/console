@@ -49,16 +49,16 @@ function layoutClass(layout: DataTableColumnLayout | undefined) {
 // header one more; a raised table (in a sheet, dialog or raised card) starts one step higher.
 const surface = {
   base: {
-    wrapper: 'bg-neutral-1 dark:bg-neutral-2',
-    head: 'bg-surface-card',
-    stripe: 'bg-neutral-2/60 dark:bg-neutral-3/60',
-    hover: 'hover:bg-neutral-3 dark:hover:bg-neutral-4',
+    wrapper: styles.surfaceWrapper,
+    head: styles.surfaceHead,
+    stripe: styles.surfaceStripe,
+    hover: styles.surfaceHover,
   },
   raised: {
-    wrapper: 'bg-surface-card',
-    head: 'bg-neutral-3 dark:bg-neutral-4',
-    stripe: 'bg-neutral-3/60 dark:bg-neutral-4/60',
-    hover: 'hover:bg-neutral-4 dark:hover:bg-neutral-5',
+    wrapper: styles.surfaceWrapper2,
+    head: styles.surfaceHead2,
+    stripe: styles.surfaceStripe2,
+    hover: styles.surfaceHover2,
   },
 } as const satisfies Record<OnSurface, Record<string, string>>;
 
@@ -66,22 +66,22 @@ export type DataTableTone = 'default' | 'critical' | 'warning';
 
 const toned = {
   critical: {
-    wrapper: 'border-critical-line bg-critical-tint-subtle',
-    head: 'bg-critical-tint',
-    stripe: 'bg-critical-tint/40',
-    hover: 'hover:bg-critical-tint',
-    line: 'border-critical-line-subtle',
-    titleLine: 'border-critical-line',
-    icon: 'text-critical',
+    wrapper: styles.tonedWrapper,
+    head: styles.tonedHead,
+    stripe: styles.tonedStripe,
+    hover: styles.tonedHover,
+    line: styles.tonedLine,
+    titleLine: styles.tonedTitleLine,
+    icon: styles.tonedIcon,
   },
   warning: {
-    wrapper: 'border-warning-line bg-warning-tint-subtle',
-    head: 'bg-warning-tint',
-    stripe: 'bg-warning-tint/40',
-    hover: 'hover:bg-warning-tint',
-    line: 'border-warning-line-subtle',
-    titleLine: 'border-warning-line',
-    icon: 'text-warning',
+    wrapper: styles.tonedWrapper2,
+    head: styles.tonedHead2,
+    stripe: styles.tonedStripe2,
+    hover: styles.tonedHover2,
+    line: styles.tonedLine2,
+    titleLine: styles.tonedTitleLine2,
+    icon: styles.tonedIcon2,
   },
 } as const satisfies Record<Exclude<DataTableTone, 'default'>, Record<string, string>>;
 

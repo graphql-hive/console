@@ -11,3 +11,43 @@ export const headingHeadingLevel = style({
     },
   },
 });
+
+export const headingLg = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-lg)',
+      lineHeight: 'var(--tw-leading, var(--text-lg--line-height))',
+      fontWeight: 'var(--font-weight-bold)',
+      vars: {
+        '--tw-font-weight': 'var(--font-weight-bold)',
+      },
+    },
+  },
+});
+
+export const headingXl = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-xl)',
+      lineHeight: 'var(--tw-leading, var(--text-xl--line-height))',
+      fontWeight: 'var(--font-weight-bold)',
+      vars: {
+        '--tw-font-weight': 'var(--font-weight-bold)',
+      },
+    },
+  },
+});
+
+export const heading2xl = style({
+  '@layer': {
+    [layer]: {
+      fontSize: '28px',
+      lineHeight: 'var(--leading-snug)',
+      fontWeight: 'var(--font-weight-extrabold)',
+      vars: {
+        '--tw-leading': 'var(--leading-snug)',
+        '--tw-font-weight': 'var(--font-weight-extrabold)',
+      },
+    },
+  },
+});

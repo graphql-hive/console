@@ -230,3 +230,43 @@ export const div9 = style({
     },
   },
 });
+
+export const panelWidthCard = style({
+  '@layer': {
+    [layer]: {
+      width: '28rem',
+    },
+  },
+});
+
+export const panelWidthDialog = style({
+  '@layer': {
+    [layer]: {
+      width: '520px',
+    },
+  },
+});
+
+export const panelWidthDialogLg = style({
+  '@layer': {
+    [layer]: {
+      width: '640px',
+    },
+  },
+});
+
+export const panelWidthDialogXl = style({
+  '@layer': {
+    [layer]: {
+      width: '960px',
+    },
+  },
+});
+
+export const panelWidthSheet = style({
+  '@layer': {
+    [layer]: {
+      width: '700px',
+    },
+  },
+});

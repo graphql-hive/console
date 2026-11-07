@@ -27,7 +27,7 @@ const CLIENTS: SelectOption[] = [
   'envelop-plugin',
 ].map(name => ({ value: name, label: name }));
 
-const STATUS_DOT = 'size-2 rounded-full';
+const STATUS_DOT = styles.statusDotClass;
 
 export const Default = createPreview(() => {
   const [value, setValue] = useState('TRAFFIC');

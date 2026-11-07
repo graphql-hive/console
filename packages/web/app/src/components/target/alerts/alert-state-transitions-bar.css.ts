@@ -79,3 +79,43 @@ export const alertStateTransitionsBarDiv7 = style({
     },
   },
 });
+
+export const alertStateColorMetricAlertRuleStateNormal = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-success)',
+    },
+  },
+});
+
+export const alertStateColorMetricAlertRuleStatePending = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning)',
+    },
+  },
+});
+
+export const alertStateColorMetricAlertRuleStateFiring = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical)',
+    },
+  },
+});
+
+export const alertStateColorMetricAlertRuleStateRecovering = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info)',
+    },
+  },
+});
+
+export const noDataColorClass = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-line-strong)',
+    },
+  },
+});

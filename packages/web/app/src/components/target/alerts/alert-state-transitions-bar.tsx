@@ -4,10 +4,10 @@ import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-l
 import * as styles from './alert-state-transitions-bar.css';
 
 export const ALERT_STATE_COLOR: Record<MetricAlertRuleState, string> = {
-  [MetricAlertRuleState.Normal]: 'bg-success',
-  [MetricAlertRuleState.Pending]: 'bg-warning',
-  [MetricAlertRuleState.Firing]: 'bg-critical',
-  [MetricAlertRuleState.Recovering]: 'bg-info',
+  [MetricAlertRuleState.Normal]: styles.alertStateColorMetricAlertRuleStateNormal,
+  [MetricAlertRuleState.Pending]: styles.alertStateColorMetricAlertRuleStatePending,
+  [MetricAlertRuleState.Firing]: styles.alertStateColorMetricAlertRuleStateFiring,
+  [MetricAlertRuleState.Recovering]: styles.alertStateColorMetricAlertRuleStateRecovering,
 };
 
 export const ALERT_STATE_LABEL: Record<MetricAlertRuleState, string> = {
@@ -41,7 +41,7 @@ type AlertStateTransitionsBarProps = {
 
 type SegmentState = MetricAlertRuleState | 'NO_DATA';
 
-const NO_DATA_COLOR = 'bg-line-strong';
+const NO_DATA_COLOR = styles.noDataColorClass;
 const NO_DATA_LABEL = 'No data';
 
 function colorForSegment(state: SegmentState): string {

@@ -81,6 +81,8 @@ export type TransformOptions = {
   layer: 'components' | 'utilities';
   /** The sibling `.css.ts` as it exists now, when adding to a file converted earlier. */
   existingCss?: string;
+  /** Also convert class strings found outside class positions; see `ScanOptions.sweep`. */
+  sweep?: boolean;
 };
 
 type Resolved = {
@@ -107,7 +109,8 @@ function resolveTokens(tokens: string[], compiled: Compiled, report: FileReport)
 class Names {
   private used = new Set<string>(RESERVED);
   claim(hint: string): string {
-    const base = /^[A-Za-z_$][\w$]*$/.test(hint) ? hint : toCamel([hint]);
+    let base = /^[A-Za-z_$][\w$]*$/.test(hint) ? hint : toCamel([hint]);
+    if (!/^[A-Za-z_$]/.test(base)) base = `style${base}`;
     let name = base;
     for (let i = 2; this.used.has(name); i++) name = `${base}${i}`;
     this.used.add(name);
@@ -185,7 +188,7 @@ export function transformFile(
   text: string,
   options: TransformOptions,
 ): TransformResult {
-  const { sites, cva, file } = scan(absPath, text);
+  const { sites, cva, file } = scan(absPath, text, { sweep: options.sweep });
   const report: FileReport = {
     file: path.relative(options.srcDir, absPath),
     styles: 0,
@@ -359,15 +362,23 @@ export function transformFile(
   }
 
   // Class strings -----------------------------------------------------------------------------
+  const sameTokens = new Map<string, { name: string; hint: string }>();
   for (const site of sites) {
     // A constant is only a class string if every token is one; prose and paths in a `*Styles`
     // object must stay untouched. Attributes and class-function arguments are class strings by
     // position, so there unknown tokens are kept as literals and reported.
-    if (site.kind === 'constant') {
+    if (site.kind === 'constant' || site.kind === 'sweep') {
       const known = site.tokens.every(
         t => MAPPED[t] || options.compiled.tokens.has(t) || MARKER.test(t),
       );
       if (!known) continue;
+      // A sweep finds strings with no class position vouching for them: a marker alone is not one.
+      if (
+        site.kind === 'sweep' &&
+        !site.tokens.some(t => MAPPED[t] || options.compiled.tokens.has(t))
+      ) {
+        continue;
+      }
       // A single plain word (`outline`, `hidden`, `block`) is as likely a prop value as a class.
       if (site.tokens.length === 1 && /^[a-z]+$/.test(site.tokens[0])) {
         report.notes.push(
@@ -383,10 +394,24 @@ export function transformFile(
         `dynamic class built in a template literal: \`${site.text}\` (${site.nameHint})`,
       );
     }
-    const name = names.claim(site.nameHint);
-    const expr = css.styleExpr(name, resolved);
-    css.lines.push(`export const ${name} = ${expr};`, '', ...css.flushGlobals());
-    report.styles++;
+    // The same class string twice in one file is one style: `classList.add(x)` and
+    // `classList.remove(x)` must name the same class.
+    const tokensKey = [...resolved.compiled.map(t => t.token), ...resolved.mapped].join(' ');
+    const same = sameTokens.get(tokensKey);
+    let name: string;
+    if (!same) {
+      name = names.claim(site.nameHint);
+      sameTokens.set(tokensKey, { name, hint: site.nameHint });
+      const expr = css.styleExpr(name, resolved);
+      css.lines.push(`export const ${name} = ${expr};`, '', ...css.flushGlobals());
+      report.styles++;
+    } else if (same.hint === site.nameHint) {
+      name = same.name;
+    } else {
+      // Same classes under a different role: an alias keeps the call site's name honest.
+      name = names.claim(site.nameHint);
+      css.lines.push(`export const ${name} = ${same.name};`, '');
+    }
     const ref = `${stylesId}.${name}`;
     const rest = [...resolved.markers, ...resolved.leftovers];
     let replacement: string;
@@ -407,6 +432,7 @@ export function transformFile(
       }
       case 'literal':
       case 'constant':
+      case 'sweep':
         if (!rest.length) replacement = ref;
         else if (site.directArg) replacement = `${ref}, ${literalFor(rest)}`;
         else replacement = `\`\${${ref}} ${rest.join(' ')}\``;
@@ -562,8 +588,32 @@ export function transformFile(
   );
 
   if (options.existingCss) {
-    const existing = options.existingCss.trimEnd();
-    const newImports = header.filter(l => l.startsWith('import ') && !existing.includes(l));
+    let existing = options.existingCss.trimEnd();
+    // Named imports from a module the file already imports merge into that line; the rest append.
+    const newImports: string[] = [];
+    for (const line of header.filter(l => l.startsWith('import '))) {
+      if (existing.includes(line)) continue;
+      const named = line.match(/^import \{ ([^}]+) \} from '([^']+)';$/);
+      const current =
+        named &&
+        existing.match(
+          new RegExp(
+            `^import \\{ ([^}]+) \\} from '${named[2].replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}';$`,
+            'm',
+          ),
+        );
+      if (named && current) {
+        const names = new Set(
+          [...current[1].split(','), ...named[1].split(',')].map(n => n.trim()),
+        );
+        existing = existing.replace(
+          current[0],
+          `import { ${[...names].sort().join(', ')} } from '${named[2]}';`,
+        );
+      } else {
+        newImports.push(line);
+      }
+    }
     return {
       source,
       css: [existing, '', ...newImports, ...(newImports.length ? [''] : []), ...css.lines].join(
@@ -576,8 +626,8 @@ export function transformFile(
 }
 
 /** Every class token in a file, for the one-shot compile. */
-export function tokensIn(absPath: string, text: string): string[] {
-  const { sites, cva } = scan(absPath, text);
+export function tokensIn(absPath: string, text: string, sweep = false): string[] {
+  const { sites, cva } = scan(absPath, text, { sweep });
   const out: string[] = [];
   for (const site of sites) out.push(...site.tokens);
   for (const site of cva) {

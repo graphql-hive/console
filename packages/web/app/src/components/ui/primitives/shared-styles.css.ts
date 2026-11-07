@@ -134,3 +134,43 @@ export const controlSizeDefault = style({
     },
   },
 });
+
+export const controlOnSurfaceClass = style({
+  '@layer': {
+    [layer]: {
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              backgroundColor: 'var(--color-neutral-1)',
+            },
+            '&:where(.dark, .dark *):hover': {
+              borderColor: 'var(--color-line)',
+              backgroundColor: 'var(--color-neutral-4)',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const controlOnSurfaceClass2 = style({
+  '@layer': {
+    [layer]: {
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              borderColor: 'var(--color-line-strong)',
+            },
+            '&:where(.dark, .dark *):hover': {
+              borderColor: 'var(--color-neutral-7)',
+              backgroundColor: 'var(--color-neutral-6)',
+            },
+          },
+        },
+      },
+    },
+  },
+});

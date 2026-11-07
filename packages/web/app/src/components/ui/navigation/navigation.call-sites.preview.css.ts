@@ -165,3 +165,11 @@ export const div8 = style({
     },
   },
 });
+
+export const proposalProposalId = style({
+  '@layer': {
+    [layer]: {
+      paddingRight: 'calc(var(--spacing) * 7)',
+    },
+  },
+});

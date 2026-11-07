@@ -845,10 +845,10 @@ function PreflightModal({
 }
 
 const LOG_COLORS = {
-  error: 'text-critical',
-  info: 'text-success',
-  warn: 'text-warning',
-  log: 'text-fg-secondary',
+  error: styles.logColorsError,
+  info: styles.logColorsInfo,
+  warn: styles.logColorsWarn,
+  log: styles.logColorsLog,
 };
 
 export function LogLine({ log }: { log: LogRecord }) {

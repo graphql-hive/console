@@ -15,29 +15,28 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
       showOutsideDays={showOutsideDays}
       className={cn(styles.calendarDayPicker, className)}
       classNames={{
-        months: 'relative flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
-        month: 'space-y-4',
-        month_caption: 'flex h-7 items-center justify-center',
-        caption_label: 'text-sm font-medium',
+        months: styles.calendarMonths,
+        month: styles.calendarMonth,
+        month_caption: styles.calendarMonthCaption,
+        caption_label: styles.calendarCaptionLabel,
         // One nav for all months, laid over the caption row with a button at each outer edge.
-        nav: 'absolute inset-x-1 top-0 z-10 flex items-center justify-between',
+        nav: styles.calendarNav,
         button_previous: navButton,
         button_next: navButton,
-        month_grid: 'w-full border-collapse space-y-1',
-        weekdays: 'flex',
-        weekday: 'text-fg-secondary rounded-md w-8 font-normal text-control',
-        week: 'flex w-full mt-2',
+        month_grid: styles.calendarMonthGrid,
+        weekdays: styles.calendarWeekdays,
+        weekday: styles.calendarWeekday,
+        week: styles.calendarWeek,
         // The cell carries aria-selected and the modifiers; the button inside is styled below.
         day: cn(
           styles.calendarDayPicker2,
           props.mode === 'range' ? styles.calendarDayPicker3 : styles.calendarDayPicker4,
         ),
-        range_start: 'rounded-l-md',
-        range_end: 'rounded-r-md',
-        outside:
-          'text-fg-secondary opacity-50 aria-selected:bg-surface-stripe aria-selected:opacity-30',
-        disabled: 'text-fg-secondary opacity-50',
-        hidden: 'invisible',
+        range_start: styles.calendarRangeStart,
+        range_end: styles.calendarRangeEnd,
+        outside: styles.calendarOutside,
+        disabled: styles.calendarDisabled,
+        hidden: styles.calendarHidden,
         ...classNames,
       }}
       components={{

@@ -103,3 +103,21 @@ export const checkboxIndicator = style({
     },
   },
 });
+
+export const iconSizeMapSm = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 2.5)',
+      height: 'calc(var(--spacing) * 2.5)',
+    },
+  },
+});
+
+export const iconSizeMapMd = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 3)',
+      height: 'calc(var(--spacing) * 3)',
+    },
+  },
+});

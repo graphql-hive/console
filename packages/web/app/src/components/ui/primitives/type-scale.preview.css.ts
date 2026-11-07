@@ -113,3 +113,75 @@ export const span3 = style({
     },
   },
 });
+
+export const stepsCls = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-2xs)',
+      lineHeight: 'var(--tw-leading, var(--text-2xs--line-height))',
+    },
+  },
+});
+
+export const stepsCls2 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+    },
+  },
+});
+
+export const stepsCls3 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-control)',
+      lineHeight: 'var(--tw-leading, var(--text-control--line-height))',
+    },
+  },
+});
+
+export const stepsCls4 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-sm)',
+      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
+    },
+  },
+});
+
+export const stepsCls5 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-base)',
+      lineHeight: 'var(--tw-leading, var(--text-base--line-height))',
+    },
+  },
+});
+
+export const stepsCls6 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-lg)',
+      lineHeight: 'var(--tw-leading, var(--text-lg--line-height))',
+    },
+  },
+});
+
+export const stepsCls7 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-xl)',
+      lineHeight: 'var(--tw-leading, var(--text-xl--line-height))',
+    },
+  },
+});
+
+export const stepsCls8 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-2xl)',
+      lineHeight: 'var(--tw-leading, var(--text-2xl--line-height))',
+    },
+  },
+});

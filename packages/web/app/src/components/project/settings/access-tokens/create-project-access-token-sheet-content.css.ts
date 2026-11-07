@@ -59,3 +59,11 @@ export const createProjectAccessTokenSheetContentUl = style({
     },
   },
 });
+
+export const shakeElementClass = style({
+  '@layer': {
+    [layer]: {
+      animation: 'var(--animate-shake)',
+    },
+  },
+});

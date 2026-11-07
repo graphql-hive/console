@@ -443,3 +443,91 @@ export const dataTableCellSpan32 = style({
     },
   },
 });
+
+export const toneDefault = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg)',
+    },
+  },
+});
+
+export const toneMuted = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-secondary)',
+    },
+  },
+});
+
+export const linkToneDefault = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-default)',
+      textUnderlineOffset: '2px',
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              color: 'var(--color-fg)',
+              textDecorationLine: 'underline',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const linkToneAccent = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-accent-muted)',
+      textUnderlineOffset: '2px',
+      '@media': {
+        '(hover: hover)': {
+          selectors: {
+            '&:hover': {
+              color: 'var(--color-accent)',
+              textDecorationLine: 'underline',
+            },
+          },
+        },
+      },
+    },
+  },
+});
+
+export const statusIconToneSuccess = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-success)',
+    },
+  },
+});
+
+export const statusIconToneWarning = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-warning)',
+    },
+  },
+});
+
+export const statusIconToneCritical = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-critical)',
+    },
+  },
+});
+
+export const statusIconToneInfo = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-info)',
+    },
+  },
+});
+
+export const statusIconToneNeutral = toneMuted;

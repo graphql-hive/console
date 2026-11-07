@@ -245,9 +245,9 @@ const THRESHOLD_TYPE_OPTIONS = [
 ] as const;
 
 const SEVERITIES = [
-  { value: 'INFO' as const, label: 'Info', dotClass: 'bg-info' },
-  { value: 'WARNING' as const, label: 'Warning', dotClass: 'bg-warning' },
-  { value: 'CRITICAL' as const, label: 'Critical', dotClass: 'bg-critical' },
+  { value: 'INFO' as const, label: 'Info', dotClass: styles.severitiesDotClass },
+  { value: 'WARNING' as const, label: 'Warning', dotClass: styles.severitiesDotClass2 },
+  { value: 'CRITICAL' as const, label: 'Critical', dotClass: styles.severitiesDotClass3 },
 ];
 
 const AlertFormFields = z.object({

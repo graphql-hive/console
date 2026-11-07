@@ -10,14 +10,20 @@ export const nav: NavPath = 'Primitives/Foundations/TypeScale';
  * own line-height.
  */
 const STEPS = [
-  { name: '2xs', px: 10, lh: 14, cls: 'text-2xs', use: 'badges, chips, tick labels' },
-  { name: 'xs', px: 12, lh: 16, cls: 'text-xs', use: 'secondary text, tooltips, descriptions' },
-  { name: 'control', px: 13, lh: 18, cls: 'text-control', use: 'buttons, inputs, menus, chips' },
-  { name: 'sm', px: 14, lh: 20, cls: 'text-sm', use: 'body' },
-  { name: 'base', px: 16, lh: 24, cls: 'text-base', use: 'lead paragraphs' },
-  { name: 'lg', px: 18, lh: 28, cls: 'text-lg', use: 'section headings' },
-  { name: 'xl', px: 20, lh: 28, cls: 'text-xl', use: 'page titles' },
-  { name: '2xl', px: 24, lh: 32, cls: 'text-2xl', use: 'stat values' },
+  { name: '2xs', px: 10, lh: 14, cls: styles.stepsCls, use: 'badges, chips, tick labels' },
+  {
+    name: 'xs',
+    px: 12,
+    lh: 16,
+    cls: styles.stepsCls2,
+    use: 'secondary text, tooltips, descriptions',
+  },
+  { name: 'control', px: 13, lh: 18, cls: styles.stepsCls3, use: 'buttons, inputs, menus, chips' },
+  { name: 'sm', px: 14, lh: 20, cls: styles.stepsCls4, use: 'body' },
+  { name: 'base', px: 16, lh: 24, cls: styles.stepsCls5, use: 'lead paragraphs' },
+  { name: 'lg', px: 18, lh: 28, cls: styles.stepsCls6, use: 'section headings' },
+  { name: 'xl', px: 20, lh: 28, cls: styles.stepsCls7, use: 'page titles' },
+  { name: '2xl', px: 24, lh: 32, cls: styles.stepsCls8, use: 'stat values' },
 ] as const;
 
 const SAMPLE = 'Schema checks run on the composed API schema.';

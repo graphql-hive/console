@@ -85,9 +85,9 @@ type PreviewProps = {
 };
 
 const SEVERITY_COLORS = {
-  CRITICAL: { bar: 'bg-critical', text: 'text-critical' },
-  WARNING: { bar: 'bg-warning', text: 'text-warning' },
-  INFO: { bar: 'bg-info', text: 'text-info' },
+  CRITICAL: { bar: styles.severityColorsBar, text: styles.severityColorsText },
+  WARNING: { bar: styles.severityColorsBar2, text: styles.severityColorsText2 },
+  INFO: { bar: styles.severityColorsBar3, text: styles.severityColorsText3 },
 } as const;
 
 function formatThreshold(

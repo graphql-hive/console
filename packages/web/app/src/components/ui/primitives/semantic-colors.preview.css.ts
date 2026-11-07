@@ -596,3 +596,419 @@ export const span15 = style({
     },
   },
 });
+
+export const statesSolid = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-success)',
+    },
+  },
+});
+
+export const statesClass = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-success-muted)',
+    },
+  },
+});
+
+export const statesClass2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-success-tint-strong)',
+    },
+  },
+});
+
+export const statesClass3 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-success-tint)',
+    },
+  },
+});
+
+export const statesClass4 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-success-tint-subtle)',
+    },
+  },
+});
+
+export const statesText = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-success)',
+    },
+  },
+});
+
+export const statesTextOnTint = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-success-text)',
+    },
+  },
+});
+
+export const statesSolid2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning)',
+    },
+  },
+});
+
+export const statesClass5 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning-muted)',
+    },
+  },
+});
+
+export const statesClass6 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning-tint-strong)',
+    },
+  },
+});
+
+export const statesClass7 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning-tint)',
+    },
+  },
+});
+
+export const statesClass8 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-warning-tint-subtle)',
+    },
+  },
+});
+
+export const statesText2 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-warning)',
+    },
+  },
+});
+
+export const statesTextOnTint2 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-warning-text)',
+    },
+  },
+});
+
+export const statesSolid3 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical)',
+    },
+  },
+});
+
+export const statesClass9 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical-muted)',
+    },
+  },
+});
+
+export const statesClass10 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical-tint-strong)',
+    },
+  },
+});
+
+export const statesClass11 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical-tint)',
+    },
+  },
+});
+
+export const statesClass12 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-critical-tint-subtle)',
+    },
+  },
+});
+
+export const statesText3 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-critical)',
+    },
+  },
+});
+
+export const statesTextOnTint3 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-critical-text)',
+    },
+  },
+});
+
+export const statesSolid4 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info)',
+    },
+  },
+});
+
+export const statesClass13 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info-muted)',
+    },
+  },
+});
+
+export const statesClass14 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info-tint-strong)',
+    },
+  },
+});
+
+export const statesClass15 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info-tint)',
+    },
+  },
+});
+
+export const statesClass16 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info-tint-subtle)',
+    },
+  },
+});
+
+export const statesText4 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-info)',
+    },
+  },
+});
+
+export const statesTextOnTint4 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-info-text)',
+    },
+  },
+});
+
+export const surfacesCls = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-page)',
+    },
+  },
+});
+
+export const surfacesCls2 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-card)',
+    },
+  },
+});
+
+export const surfacesCls3 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-card-hover)',
+    },
+  },
+});
+
+export const surfacesCls4 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-overlay)',
+    },
+  },
+});
+
+export const surfacesCls5 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-floating)',
+    },
+  },
+});
+
+export const surfacesCls6 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-control)',
+    },
+  },
+});
+
+export const surfacesCls7 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-control-raised)',
+    },
+  },
+});
+
+export const surfacesCls8 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-selected)',
+    },
+  },
+});
+
+export const surfacesCls9 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-inverse)',
+    },
+  },
+});
+
+export const surfacesCls10 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-hover)',
+    },
+  },
+});
+
+export const surfacesCls11 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-pressed)',
+    },
+  },
+});
+
+export const surfacesCls12 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-inset)',
+    },
+  },
+});
+
+export const surfacesCls13 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-code)',
+    },
+  },
+});
+
+export const surfacesCls14 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-skeleton)',
+    },
+  },
+});
+
+export const surfacesCls15 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-surface-stripe)',
+    },
+  },
+});
+
+export const foregroundsCls = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg)',
+    },
+  },
+});
+
+export const foregroundsCls2 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-default)',
+    },
+  },
+});
+
+export const foregroundsCls3 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-secondary)',
+    },
+  },
+});
+
+export const foregroundsCls4 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-muted)',
+    },
+  },
+});
+
+export const foregroundsCls5 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-subtle)',
+    },
+  },
+});
+
+export const linesCls = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-line)',
+    },
+  },
+});
+
+export const linesCls2 = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-line-subtle)',
+    },
+  },
+});
+
+export const linesCls3 = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-line-strong)',
+    },
+  },
+});
+
+export const linesCls4 = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-line-control)',
+    },
+  },
+});

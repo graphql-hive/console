@@ -232,7 +232,7 @@ describe('DataTable', () => {
     );
     const wrapper = () => container.firstElementChild as HTMLElement;
     expect(wrapper().className).toContain(partStyles.wrapperClassClass2);
-    expect(wrapper().className).toContain('bg-neutral-1');
+    expect(wrapper().className).toContain(partStyles.surfaceWrapper);
 
     rerender(
       <DataTable
@@ -424,9 +424,9 @@ describe('DataTable', () => {
       />,
     );
     const wrapper = () => container.firstElementChild as HTMLElement;
-    expect(wrapper().className).toContain('border-critical-line');
-    expect(container.querySelector('th')?.className).toContain('bg-critical-tint');
-    expect(container.querySelector('tbody tr')?.className).toContain('border-critical-line-subtle');
+    expect(wrapper().className).toContain(partStyles.tonedWrapper);
+    expect(container.querySelector('th')?.className).toContain(partStyles.tonedHead);
+    expect(container.querySelector('tbody tr')?.className).toContain(partStyles.tonedLine);
 
     rerender(
       <DataTable
@@ -436,8 +436,8 @@ describe('DataTable', () => {
         variants={{ tone: 'critical', bordered: false }}
       />,
     );
-    expect(wrapper().className).not.toContain('critical');
-    expect(container.querySelector('th')?.className).not.toContain('critical');
+    expect(wrapper().className).not.toContain(partStyles.tonedWrapper);
+    expect(container.querySelector('th')?.className).not.toContain(partStyles.tonedHead);
 
     rerender(
       <DataTable
@@ -448,7 +448,7 @@ describe('DataTable', () => {
         footer={{ label: 'Total', value: 6 }}
       />,
     );
-    expect(container.querySelector('tfoot tr')?.className).toContain('border-critical-line');
+    expect(container.querySelector('tfoot tr')?.className).toContain(partStyles.tonedTitleLine);
   });
 
   it('renders the footer, the loading row and the empty message', () => {
@@ -589,7 +589,7 @@ describe('DataTableCell', () => {
       [...container.querySelectorAll('tbody > tr')].filter(
         tr => !tr.textContent?.startsWith('panel'),
       );
-    const striped = () => dataRows().map(tr => tr.className.includes('bg-neutral-2/60'));
+    const striped = () => dataRows().map(tr => tr.className.includes(partStyles.surfaceStripe));
     expect(striped()).toEqual([false, true, false]);
 
     fireEvent.click(dataRows()[0]);

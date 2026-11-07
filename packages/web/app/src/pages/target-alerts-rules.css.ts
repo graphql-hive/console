@@ -112,3 +112,33 @@ export const targetAlertsRulesPageDiv = style({
     },
   },
 });
+
+export const colorClass = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-critical-line)',
+      backgroundColor: 'var(--color-critical-tint-subtle)',
+      color: 'var(--color-critical)',
+    },
+  },
+});
+
+export const colorClass2 = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-warning-line)',
+      backgroundColor: 'var(--color-warning-tint)',
+      color: 'var(--color-warning-text)',
+    },
+  },
+});
+
+export const colorClass3 = style({
+  '@layer': {
+    [layer]: {
+      borderColor: 'var(--color-line)',
+      backgroundColor: 'var(--color-surface-card)',
+      color: 'var(--color-fg-default)',
+    },
+  },
+});
