@@ -1,6 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css';
 import { layered } from '../../../styles/layered';
 import { space } from '../../../styles/space';
+import { animate } from '../../../styles/animations.css';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
 
@@ -134,7 +135,7 @@ export const changelogPopoverSpan3 = style([
   layered.components({
     position: 'absolute',
     height: '100%',
-    animation: 'var(--animate-pulse)',
+    animation: animate.pulse,
     borderRadius: 'calc(infinity * 1px)',
     backgroundColor: vars.color.accent.DEFAULT,
   }),

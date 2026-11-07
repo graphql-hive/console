@@ -15,23 +15,6 @@ import { vars } from './theme.css';
 
 // Base ---------------------------------------------------------------------------------------
 
-// Tailwind v3-era ring and shadow defaults that the ring utilities still read.
-globalStyle('*', {
-  '@layer': {
-    [base]: {
-      vars: {
-        '--tw-ring-inset': ' ',
-        '--tw-ring-offset-width': '1px',
-        '--tw-ring-offset-color': vars.color.accent.line,
-        '--tw-ring-offset-shadow': '0 0 #0000',
-        '--tw-ring-shadow': '0 0 #0000',
-        '--tw-shadow': '0 0 #0000',
-        '--tw-shadow-colored': '0 0 #0000',
-      },
-    },
-  },
-});
-
 globalStyle(':root', {
   '@layer': {
     [base]: {
@@ -82,7 +65,7 @@ globalStyle('#root', {
       height: '100%',
       flexDirection: 'column',
       fontSize: vars.text.sm,
-      lineHeight: `var(--tw-leading, ${vars.text.smLineHeight})`,
+      lineHeight: vars.text.smLineHeight,
       WebkitFontSmoothing: 'antialiased',
       MozOsxFontSmoothing: 'grayscale',
     },

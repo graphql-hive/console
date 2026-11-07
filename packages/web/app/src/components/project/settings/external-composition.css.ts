@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css';
 import { layered } from '../../../styles/layered';
 import { space } from '../../../styles/space';
+import { animate } from '../../../styles/animations.css';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
 
@@ -10,7 +11,7 @@ export const externalCompositionStatusRefreshCw = style(
   layered.utilities({
     width: space(5),
     height: space(5),
-    animation: 'var(--animate-spin)',
+    animation: animate.spin,
     cursor: 'default',
     color: vars.color.fg.secondary,
   }),

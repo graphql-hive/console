@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css';
 import { layered } from '../styles/layered';
 import { space } from '../styles/space';
+import { animate } from '../styles/animations.css';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
 
@@ -114,6 +115,6 @@ export const organizationTransferPageLoaderCircleIcon = style(
     display: 'inline',
     width: space(8),
     height: space(8),
-    animation: 'var(--animate-spin)',
+    animation: animate.spin,
   }),
 );

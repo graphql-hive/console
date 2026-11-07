@@ -69,7 +69,13 @@ export const animate = createGlobalThemeContract({
   shake: 'animate-shake',
   spinnerSpin: 'animate-spinner-spin',
   spinnerArc: 'animate-spinner-arc',
+  spin: 'animate-spin',
+  pulse: 'animate-pulse',
 });
+
+/** Tailwind's `animate-spin` and `animate-pulse`, kept under their own names. */
+export const spin = keyframes({ to: { transform: 'rotate(360deg)' } });
+export const pulse = keyframes({ '50%': { opacity: 0.5 } });
 
 const emphasized = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
@@ -86,6 +92,8 @@ globalStyle(':root, :host', {
         shake: `${shake} 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both`,
         spinnerSpin: `${spinnerSpin} 1.6s linear infinite`,
         spinnerArc: `${spinnerArc} 1.6s ${vars.ease.authentic} infinite`,
+        spin: `${spin} 1s linear infinite`,
+        pulse: `${pulse} 2s cubic-bezier(0.4, 0, 0.6, 1) infinite`,
       }),
     },
   },

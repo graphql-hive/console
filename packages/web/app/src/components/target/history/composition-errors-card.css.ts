@@ -98,7 +98,7 @@ export const compositionErrorsCardSpan = style(
     transitionDuration: vars.transition.duration,
     selectors: {
       '&:focus': {
-        boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${vars.color.accent.DEFAULT}`,
+        boxShadow: `0 0 0 2px ${vars.color.accent.line}, 0 0 0 4px ${vars.color.accent.DEFAULT}`,
         outlineStyle: 'none',
       },
     },
@@ -256,7 +256,7 @@ export const compositionErrorsCardSpan5 = style([
     transitionDuration: vars.transition.duration,
     selectors: {
       '&:focus': {
-        boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${vars.color.accent.DEFAULT}`,
+        boxShadow: `0 0 0 2px ${vars.color.accent.line}, 0 0 0 4px ${vars.color.accent.DEFAULT}`,
         outlineStyle: 'none',
       },
     },

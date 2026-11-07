@@ -11,7 +11,7 @@ export const descriptionDiv = style(
     marginTop: '0px',
     marginBottom: space(2),
     display: 'block',
-    maxWidth: 'var(--breakpoint-sm)',
+    maxWidth: vars.breakpoint.sm,
   }),
 );
 

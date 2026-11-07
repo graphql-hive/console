@@ -66,7 +66,9 @@ The app no longer depends on Tailwind, so the codemod keeps what it needs here: 
 and the compiler is resolved through `@graphql-hive/laboratory`, which still uses Tailwind. That
 keeps the codemod runnable for any further merge from `main` that brings Tailwind classes with it.
 Delete this directory, the root `codemod:tailwind-to-ve` script and `--candidates-from` once the
-migration has landed and `main` has no Tailwind classes left.
+migration has landed and `main` has no Tailwind classes left. Note that
+`src/styles/tailwind-defaults.css` has been retired: every style now reads the typed tokens, so a
+run that writes it back should be followed by the normalize pass, and the file deleted again.
 
 ## How it works
 

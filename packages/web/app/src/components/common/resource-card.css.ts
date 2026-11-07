@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css';
 import { layered } from '../../styles/layered';
 import { space } from '../../styles/space';
+import { animate } from '../../styles/animations.css';
 import * as shared from '../../styles/shared.css';
 import { vars } from '../../styles/theme.css';
 
@@ -52,7 +53,7 @@ export const resourceCardDiv5 = style(
   layered.utilities({
     height: space(4),
     width: space(48),
-    animation: 'var(--animate-pulse)',
+    animation: animate.pulse,
     borderRadius: 'calc(infinity * 1px)',
     backgroundColor: vars.color.surface.skeleton,
     paddingBlock: space(2),
@@ -64,7 +65,7 @@ export const resourceCardDiv6 = style(
     marginTop: space(4),
     height: space(2),
     width: space(24),
-    animation: 'var(--animate-pulse)',
+    animation: animate.pulse,
     borderRadius: 'calc(infinity * 1px)',
     backgroundColor: vars.color.surface.skeleton,
   }),
@@ -117,7 +118,7 @@ export const resourceCardDiv12 = style(
     marginBlock: space(1),
     height: space(2),
     width: space(16),
-    animation: 'var(--animate-pulse)',
+    animation: animate.pulse,
     borderRadius: 'calc(infinity * 1px)',
     backgroundColor: vars.color.surface.skeleton,
   }),
@@ -128,7 +129,7 @@ export const resourceCardDiv13 = style(
     marginBlock: space(1),
     height: space(2),
     width: space(16),
-    animation: 'var(--animate-pulse)',
+    animation: animate.pulse,
     borderRadius: 'calc(infinity * 1px)',
     backgroundColor: vars.color.surface.skeleton,
   }),

@@ -7,9 +7,7 @@
  * 3. `theme.css`, `animations.css` and `global.css` fill the theme, base and components
  *    layers: tokens, keyframes, and the element-level rules. Base rules come after the reset so
  *    they win their ties with it.
- * 4. `tailwind-defaults.css` holds the default scale the generated styles reference (spacing,
- *    text sizes, weights, …) and the `@property` registrations for their variables.
- * 5. `utilities.css`, `patterns.css` and `shared.css` export classes for components and call
+ * 4. `utilities.css`, `patterns.css` and `shared.css` export classes for components and call
  *    sites to compose; importing them here puts them before every component stylesheet, so a
  *    component's own style wins a tie with a primitive it composes.
  */
@@ -18,7 +16,6 @@ import '@fontsource-variable/instrument-sans/wght-italic.css';
 import './layers.css';
 import './preflight.css';
 import './theme.css';
-import './tailwind-defaults.css';
 import './animations.css';
 import './global.css';
 import './utilities.css';

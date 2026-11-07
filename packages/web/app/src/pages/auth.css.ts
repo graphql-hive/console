@@ -1,6 +1,7 @@
 import { style } from '@vanilla-extract/css';
 import { layered } from '../styles/layered';
 import { space } from '../styles/space';
+import { animate } from '../styles/animations.css';
 import * as shared from '../styles/shared.css';
 import { vars } from '../styles/theme.css';
 
@@ -81,7 +82,7 @@ export const authPageHiveLogo = style(
   layered.utilities({
     width: space(8),
     height: space(8),
-    animation: 'var(--animate-pulse)',
+    animation: animate.pulse,
   }),
 );
 

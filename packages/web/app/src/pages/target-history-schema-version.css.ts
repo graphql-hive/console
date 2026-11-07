@@ -826,7 +826,7 @@ export const subgraphRowSpan = style(
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: vars.radius.md,
-    boxShadow: '0 0 0 1px currentcolor',
+    boxShadow: `0 0 0 1px ${vars.color.accent.line}, 0 0 0 2px currentcolor`,
   }),
 );
 

@@ -150,8 +150,9 @@ const INITIAL: Record<string, string> = {
   '--tw-ring-shadow': '0 0 #0000',
   '--tw-inset-ring-shadow': '0 0 #0000',
   '--tw-ring-offset-shadow': '0 0 #0000',
-  '--tw-ring-offset-width': '0px',
-  '--tw-ring-offset-color': '#fff',
+  // The app's global.css.ts set these two on every element, over Tailwind's own 0px and #fff.
+  '--tw-ring-offset-width': '1px',
+  '--tw-ring-offset-color': 'var(--color-accent-line)',
   '--tw-shadow-alpha': '100%',
   '--tw-inset-shadow-alpha': '100%',
   '--tw-drop-shadow-alpha': '100%',

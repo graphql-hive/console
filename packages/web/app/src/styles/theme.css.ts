@@ -292,8 +292,7 @@ export const vars = createGlobalThemeContract({
     monoFontFamily: 'default-mono-font-family',
   },
   // The scale: Tailwind's defaults the app used, under Tailwind's names, plus the two extra text
-  // steps. `tailwind-defaults.css` carries the same values for the generated styles that still
-  // spell them as raw variables; it goes when they do.
+  // steps.
   spacing: 'spacing',
   text: {
     '2xs': 'text-2xs',
@@ -346,6 +345,9 @@ export const vars = createGlobalThemeContract({
   },
   blur: {
     sm: 'blur-sm',
+  },
+  breakpoint: {
+    sm: 'breakpoint-sm',
   },
   color: {
     transparent: 'color-transparent',
@@ -511,6 +513,9 @@ globalStyle(':root, :host', {
         },
         blur: {
           sm: '8px',
+        },
+        breakpoint: {
+          sm: '40rem',
         },
         color: {
           transparent: 'transparent',

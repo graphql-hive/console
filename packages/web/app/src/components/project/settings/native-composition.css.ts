@@ -1,6 +1,7 @@
 import { globalStyle, style } from '@vanilla-extract/css';
 import { layered } from '../../../styles/layered';
 import { space } from '../../../styles/space';
+import { animate } from '../../../styles/animations.css';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
 
@@ -23,7 +24,7 @@ export const incrementalNativeCompositionSwitchDiv = style(
 
 export const incrementalNativeCompositionSwitchDiv2 = style(
   layered.utilities({
-    animation: 'var(--animate-pulse)',
+    animation: animate.pulse,
   }),
 );
 
@@ -199,6 +200,6 @@ export const nativeCompositionSettingsRefreshCcwIcon = style(
     marginRight: space(2),
     width: space(4),
     height: space(4),
-    animation: 'var(--animate-spin)',
+    animation: animate.spin,
   }),
 );

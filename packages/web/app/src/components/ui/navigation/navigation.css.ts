@@ -3,6 +3,7 @@ import { recipe } from '@vanilla-extract/recipes';
 import { layered } from '../../../styles/layered';
 import { space } from '../../../styles/space';
 import { focusRingQuiet } from '../primitives/shared-styles';
+import { animate } from '../../../styles/animations.css';
 import * as shared from '../../../styles/shared.css';
 import { vars } from '../../../styles/theme.css';
 
@@ -243,7 +244,7 @@ export const navigationDiv3 = style(
   layered.components({
     height: space(5),
     width: space(12),
-    animation: 'var(--animate-pulse)',
+    animation: animate.pulse,
     borderRadius: 'calc(infinity * 1px)',
     backgroundColor: vars.color.neutral[5],
   }),

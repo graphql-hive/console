@@ -31,7 +31,7 @@ export const resizableHandleSeparator = style(
         translate: '-50% 0',
       },
       '&:focus-visible': {
-        boxShadow: `0 0 0 1px #fff, 0 0 0 2px ${vars.color.accent.DEFAULT}`,
+        boxShadow: `0 0 0 1px ${vars.color.accent.line}, 0 0 0 2px ${vars.color.accent.DEFAULT}`,
         outlineStyle: 'none',
       },
       '&[data-orientation="vertical"]': {
