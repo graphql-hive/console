@@ -2,7 +2,7 @@ import { CopyIcon } from 'lucide-react';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useClipboard } from '@/lib/hooks';
-import * as styles from './copy-icon-button.css';
+import { copyIconButtonStyles } from './copy-icon-button.css';
 
 type CopyIconButtonProps = {
   label: string;
@@ -20,7 +20,7 @@ export function CopyIconButton(props: CopyIconButtonProps) {
           aria-label={props.label}
           onClick={() => clipboard(props.value)}
         >
-          <CopyIcon className={styles.copyIconButtonCopyIcon} />
+          <CopyIcon className={copyIconButtonStyles.icon} />
         </Button>
       }
       content={props.label}

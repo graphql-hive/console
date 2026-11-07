@@ -1,14 +1,14 @@
 import { CopyIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/primitives/toast/toast';
-import * as styles from './inline-code.css';
+import { inlineCodeStyles } from './inline-code.css';
 
 export const InlineCode = (props: { content: string }) => {
   const { toast } = useToast();
   return (
-    <span className={styles.inlineCodeSpan}>
-      <code className={styles.inlineCodeCode}>{props.content}</code>
+    <span className={inlineCodeStyles.root}>
+      <code className={inlineCodeStyles.code}>{props.content}</code>
       <button
-        className={styles.inlineCodeButton}
+        className={inlineCodeStyles.copyButton}
         onClick={async ev => {
           ev.preventDefault();
           await navigator.clipboard.writeText(props.content);

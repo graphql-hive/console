@@ -3,7 +3,7 @@ import { CodeScrollArea, File } from '@/components/ui/diffs';
 import { Card } from '@/components/ui/primitives/card/card';
 import { usePrettify } from '@/lib/hooks';
 import { Heading } from './heading';
-import * as styles from './graphql-block.css';
+import { graphqlBlockStyles } from './graphql-block.css';
 
 /** A read-only, highlighted GraphQL document: SDL or an operation. */
 export function GraphQLHighlight(props: { code: string; className?: string }): ReactElement {
@@ -11,7 +11,7 @@ export function GraphQLHighlight(props: { code: string; className?: string }): R
 
   return (
     <CodeScrollArea className={props.className}>
-      <div className={styles.graphQLHighlightDiv}>
+      <div className={graphqlBlockStyles.highlight}>
         <File
           file={{ name: 'document.graphql', contents: pretty ?? '' }}
           options={{ disableFileHeader: true }}
@@ -35,11 +35,11 @@ export function GraphQLBlock({
   return (
     <div className={className}>
       <Card variants={{ onSurface: 'base' }}>
-        <Heading className={styles.graphQLBlockHeading}>
+        <Heading className={graphqlBlockStyles.heading}>
           {title ?? 'SDL'}
-          {url && <span className={styles.graphQLBlockSpan}>{url}</span>}
+          {url && <span className={graphqlBlockStyles.url}>{url}</span>}
         </Heading>
-        <div className={styles.graphQLBlockDiv}>
+        <div className={graphqlBlockStyles.body}>
           <GraphQLHighlight code={sdl} />
         </div>
       </Card>

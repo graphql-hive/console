@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import * as shared from '@/styles/shared.css';
-import * as styles from './scope-bar.css';
+import { scopeBarStyles } from './scope-bar.css';
 
 type ScopeBarProps = {
   picker: ReactNode;
@@ -11,7 +11,7 @@ type ScopeBarProps = {
 export function ScopeBar({ picker, label = 'Viewing' }: ScopeBarProps) {
   return (
     <div className={shared.row.gap2}>
-      <span className={styles.scopeBarSpan}>{label}</span>
+      <span className={scopeBarStyles.label}>{label}</span>
       {picker}
     </div>
   );

@@ -3,7 +3,7 @@ import { Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import * as shared from '@/styles/shared.css';
 import { InputCopy } from './input-copy';
-import * as styles from './resource-details.css';
+import { resourceDetailsStyles } from './resource-details.css';
 
 /** Renders readonly properties for resources. Used on settings pages. */
 export function ResourceDetails(props: { id: string; label: string }): ReactElement {
@@ -15,9 +15,9 @@ export function ResourceDetails(props: { id: string; label: string }): ReactElem
           <button
             type="button"
             aria-label="What this ID is for"
-            className={styles.resourceDetailsButton}
+            className={resourceDetailsStyles.infoButton}
           >
-            <Info className={styles.resourceDetailsInfo} />
+            <Info className={resourceDetailsStyles.infoIcon} />
           </button>
         }
         maxWidth="md"

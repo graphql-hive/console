@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Menu, MenuItem } from '../../primitives/floating/menu/menu';
 import type { FilterItem, FilterSelection } from './types';
 import { ValuesSubPanel } from './values-sub-panel';
-import * as styles from './item-row.css';
+import { itemRowStyles } from './item-row.css';
 
 /** The list's scroll container, so a row can close its values panel when the list scrolls. */
 export const ListScrollContext = createContext<RefObject<HTMLDivElement> | null>(null);
@@ -22,10 +22,7 @@ interface ItemRowProps {
 
 function ItemName({ name, unavailable }: { name: string; unavailable?: boolean }) {
   return (
-    <span
-      className={`${styles.itemNameSpan} ${unavailable ? styles.itemNameSpan2 : ''}`}
-      title={name}
-    >
+    <span className={itemRowStyles.name({ unavailable })} title={name}>
       {name}
     </span>
   );
@@ -73,7 +70,7 @@ export const ItemRow = memo(function ItemRow({
         <div onClick={() => onToggle(item)}>
           <Checkbox checked={selected} indeterminate={indeterminate} size="sm" visual />
           <ItemName name={item.name} unavailable={unavailable} />
-          <ChevronRight className={styles.itemRowChevronRight} />
+          <ChevronRight className={itemRowStyles.chevron} />
         </div>
       }
       openOnHover

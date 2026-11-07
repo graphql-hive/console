@@ -24,13 +24,12 @@ import { env } from '@/env/frontend';
 import { graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useToggle, useViewer } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import { Link, useParams } from '@tanstack/react-router';
 import { GetStartedProgress } from '../get-started/trigger';
 import { UserSettingsModal } from '../user/settings';
 import { Changelog } from './changelog/changelog';
 import { latestChangelog } from './changelog/generated-changelog';
-import * as styles from './user-menu.css';
+import { userMenuStyles } from './user-menu.css';
 
 const UserMenu_OrganizationConnectionFragment = graphql(`
   fragment UserMenu_OrganizationConnectionFragment on OrganizationConnection {
@@ -121,11 +120,11 @@ export function UserMenu({ withOrganization = true }: { withOrganization?: boole
           organizationSlug={currentOrganization.slug}
         />
       ) : null}
-      <div className={styles.userMenuDiv}>
+      <div className={userMenuStyles.root}>
         <Changelog changes={latestChangelog} />
         {currentOrganization ? (
           <GetStartedProgress
-            className={styles.userMenuGetStartedProgress}
+            className={userMenuStyles.getStartedProgress}
             tasks={currentOrganization.getStarted}
           />
         ) : null}
@@ -136,10 +135,7 @@ export function UserMenu({ withOrganization = true }: { withOrganization?: boole
           trigger={
             <button
               type="button"
-              className={cn(
-                styles.userMenuButton,
-                currentOrganization ? '' : styles.userMenuButton2,
-              )}
+              className={userMenuStyles.trigger({ pulsing: !currentOrganization })}
               data-testid="user-menu-trigger"
             >
               <Avatar variant="outlined" alt={me?.displayName} />
@@ -336,11 +332,8 @@ export function LeaveOrganizationModalContent(props: {
       description={
         <>
           Are you sure you want to leave this organization? You will lose access to{' '}
-          <span className={styles.leaveOrganizationModalContentSpan}>{props.organizationSlug}</span>
-          .{' '}
-          <span className={styles.leaveOrganizationModalContentSpan}>
-            This action is irreversible!
-          </span>
+          <span className={userMenuStyles.leaveEmphasis}>{props.organizationSlug}</span>.{' '}
+          <span className={userMenuStyles.leaveEmphasis}>This action is irreversible!</span>
         </>
       }
       confirm={{
