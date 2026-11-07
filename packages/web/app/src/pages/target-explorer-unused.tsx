@@ -26,6 +26,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
 import * as styles from './target-explorer-unused.css';
@@ -216,7 +217,7 @@ function InternalUnusedSchemaView(props: {
           ))}
         </>
       </div>
-      <div className={styles.internalUnusedSchemaViewDiv4}>
+      <div className={shared.stack.gap4}>
         {(typesGroupedByFirstLetter.get(activeLetter) ?? []).map((type, i) => {
           return (
             <TypeRenderer
@@ -343,11 +344,11 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
                   <AlertTitle>Outdated Schema</AlertTitle>
                   <AlertDescription className={styles.unusedSchemaExplorerAlertDescription}>
                     The latest schema version is{' '}
-                    <span className={styles.unusedSchemaExplorerSpan}>not valid</span> , thus the
-                    explorer might not be accurate as it is showing the{' '}
-                    <span className={styles.unusedSchemaExplorerSpan2}>latest valid</span> schema
-                    version. We recommend you to publish a new schema version that is composable
-                    before using this explorer for decision making.
+                    <span className={shared.weight.bold}>not valid</span> , thus the explorer might
+                    not be accurate as it is showing the{' '}
+                    <span className={shared.weight.bold}>latest valid</span> schema version. We
+                    recommend you to publish a new schema version that is composable before using
+                    this explorer for decision making.
                     <br />
                     <br />
                     <Link
@@ -359,10 +360,7 @@ function UnusedSchemaExplorer({ hasCollectedOperations }: { hasCollectedOperatio
                         versionId: latestSchemaVersion.id,
                       }}
                     >
-                      <span className={styles.unusedSchemaExplorerSpan3}>
-                        {' '}
-                        See the invalid schema version
-                      </span>
+                      <span className={shared.weight.bold}> See the invalid schema version</span>
                     </Link>
                   </AlertDescription>
                 </Alert>

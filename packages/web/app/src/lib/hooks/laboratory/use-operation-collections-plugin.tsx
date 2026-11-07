@@ -23,6 +23,7 @@ import { graphql } from '@/gql';
 import { useClipboard, useToggle } from '@/lib/hooks';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { GraphiQLPlugin, useEditorContext, usePluginContext } from '@graphiql/react';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 import { useCollections } from './use-collections';
@@ -362,7 +363,7 @@ export function Content() {
       <div className={styles.contentDiv}>
         {collection.operations.edges.length ? (
           collection.operations.edges.map(({ node }) => (
-            <div key={node.id} className={styles.contentDiv2}>
+            <div key={node.id} className={shared.row.base}>
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/laboratory"
                 params={{
@@ -430,7 +431,7 @@ export function Content() {
             </div>
           ))
         ) : (
-          <div className={styles.contentDiv3}>
+          <div className={shared.textCenter}>
             <Button variant="link" onClick={() => void addOperation(collection.id)}>
               <PlusIcon className={styles.contentPlusIcon} /> Add Operation
             </Button>
@@ -464,7 +465,7 @@ export function Content() {
                 >
                   <span className={styles.contentSpan3}>
                     <PlusIcon className={styles.contentPlusIcon2} />
-                    <span className={styles.contentSpan4}>New collection</span>
+                    <span className={shared.truncate}>New collection</span>
                   </span>
                 </Button>
               }
@@ -475,7 +476,7 @@ export function Content() {
       </div>
       {loading ? (
         <div role="status" aria-label="Loading collections" className={styles.contentDiv5}>
-          <span className={styles.contentSpan5}>Loading collections</span>
+          <span className={shared.srOnly}>Loading collections</span>
           {[0, 1, 2].map(index => (
             <Skeleton key={index} variants={{ width: 'full' }} />
           ))}

@@ -24,6 +24,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
+import * as shared from '@/styles/shared.css';
 import { Change } from '@graphql-inspector/core';
 import { errors, patchSchema } from '@graphql-inspector/patch';
 import { NoopError, ValueMismatchError } from '@graphql-inspector/patch/errors';
@@ -389,10 +390,10 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
   return (
     <>
       <div className={styles.proposalsContentDiv}>
-        <div className={styles.proposalsContentDiv2}>
+        <div className={shared.fill}>
           <SubPageLayoutHeader
             subPageTitle={
-              <span className={styles.proposalsContentSpan}>
+              <span className={shared.row.base}>
                 <Link
                   className={styles.proposalsContentLink}
                   to="/$organizationSlug/$projectSlug/$targetSlug/proposals"
@@ -428,12 +429,12 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsSinglePage>[0]
               <div className={styles.proposalsContentDiv4}>
                 {/* <VersionSelect proposalId={props.proposalId} versions={proposal.versions ?? {}} /> */}
                 <Title className={styles.proposalsContentTitle4}>
-                  <div className={styles.proposalsContentDiv5}>{proposal.title}</div>
+                  <div className={shared.truncate}>{proposal.title}</div>
                   <Tooltip
                     align="start"
                     maxWidth="lg"
                     trigger={
-                      <span className={styles.proposalsContentSpan4}>
+                      <span className={shared.inlineFlex}>
                         {proposal?.compositionStatus === 'ERROR' ? (
                           <XIcon className={styles.proposalsContentXIcon} />
                         ) : null}
@@ -554,7 +555,7 @@ function TabbedContent(props: {
   ];
 
   return (
-    <div className={styles.tabbedContentDiv}>
+    <div className={shared.fullWidth}>
       <div className={styles.tabbedContentDiv2}>
         <Navigation aria-label="Proposal" items={sections} size="sm" />
       </div>

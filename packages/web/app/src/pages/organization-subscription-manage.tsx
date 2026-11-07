@@ -20,6 +20,7 @@ import Stat from '@/components/ui/stat';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { Link } from '@tanstack/react-router';
 import * as styles from './organization-subscription-manage.css';
@@ -331,7 +332,7 @@ function Inner(props: {
 
   return (
     <div className={styles.innerDiv}>
-      <div className={styles.innerDiv2}>
+      <div className={shared.fullWidth}>
         <Card
           variants={{ onSurface: 'base', titleSize: 'large' }}
           title="Choose Your Plan"
@@ -353,7 +354,7 @@ function Inner(props: {
       <div className={styles.innerDiv3} ref={planSummaryRef}>
         <Card variants={{ onSurface: 'base', titleSize: 'large' }} title="Plan Summary">
           <div>
-            <div className={styles.innerDiv4}>
+            <div className={shared.stack.base}>
               <div>
                 <PlanSummary plan={selectedPlan} operationsRateLimit={operationsRateLimit}>
                   {selectedPlan.planType === BillingPlanType.Pro && (
@@ -548,7 +549,7 @@ function ManageSubscriptionPageContent() {
 
   return (
     <LayoutContent className={styles.manageSubscriptionPageContentLayoutContent}>
-      <div className={styles.manageSubscriptionPageContentDiv}>
+      <div className={shared.grow}>
         <div className={styles.manageSubscriptionPageContentDiv2}>
           <PageLead
             title="Manage subscription"

@@ -26,6 +26,7 @@ import { formatNumber, usePagedConnection, useSlugs } from '@/lib/hooks';
 import { carriedRange, useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
@@ -240,12 +241,12 @@ const TracesList = memo(function TracesList(
                 disableHoverablePopup
                 maxWidth="md"
                 trigger={
-                  <span className={styles.tracesListSpan2}>
+                  <span className={shared.inlineRow.gap2}>
                     <span className={styles.tracesListSpan3}>
                       {row.original.operationType?.substring(0, 1).toUpperCase() ?? 'U'}
                     </span>
                     {row.original.operationName ?? (
-                      <span className={styles.tracesListSpan4}>{'<unknown>'}</span>
+                      <span className={shared.fg.secondary}>{'<unknown>'}</span>
                     )}
                   </span>
                 }
@@ -683,9 +684,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
       title={
         trace ? (
           <>
-            {trace.operationName ?? (
-              <span className={styles.selectedTraceSheetSpan}>{'<unknown>'}</span>
-            )}
+            {trace.operationName ?? <span className={shared.fg.secondary}>{'<unknown>'}</span>}
             <span className={styles.selectedTraceSheetSpan2}>{trace.id.substring(0, 4)}</span>
           </>
         ) : (
@@ -699,7 +698,7 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
           Trace ID:{' '}
           {trace?.id ? (
             <>
-              <span className={styles.selectedTraceSheetSpan4}> {trace.id}</span>
+              <span className={shared.mono}> {trace.id}</span>
               <CopyIconButton value={trace.id} label="Copy Trace ID" />
             </>
           ) : (
@@ -713,11 +712,9 @@ function SelectedTraceSheet(props: SelectedTraceSheetProps) {
       <div className={styles.selectedTraceSheetDiv}>
         {trace ? (
           <>
-            <div className={styles.selectedTraceSheetDiv2}>
+            <div className={shared.row.gap1}>
               <Clock className={styles.selectedTraceSheetClock} />
-              <span className={styles.selectedTraceSheetSpan6}>
-                {formatNanoseconds(BigInt(trace.duration))}
-              </span>
+              <span className={shared.fg.default}>{formatNanoseconds(BigInt(trace.duration))}</span>
             </div>
             <Badge
               content={trace.success ? 'Ok' : 'Error'}

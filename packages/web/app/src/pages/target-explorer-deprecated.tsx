@@ -26,6 +26,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi } from '@tanstack/react-router';
 import { TypeRenderer, TypeRenderFragment } from './target-explorer-type';
 import * as styles from './target-explorer-deprecated.css';
@@ -154,7 +155,7 @@ function InternalDeprecatedSchemaView(props: {
           ))}
         </>
       </div>
-      <div className={styles.internalDeprecatedSchemaViewDiv4}>
+      <div className={shared.stack.gap4}>
         {(typesGroupedByFirstLetter.get(activeLetter) ?? []).map((type, i) => {
           return (
             <TypeRenderer
@@ -272,11 +273,11 @@ function DeprecatedSchemaExplorer() {
                   <AlertTitle>Outdated Schema</AlertTitle>
                   <AlertDescription className={styles.deprecatedSchemaExplorerAlertDescription}>
                     The latest schema version is{' '}
-                    <span className={styles.deprecatedSchemaExplorerSpan}>not valid</span> , thus
-                    the explorer might not be accurate as it is showing the{' '}
-                    <span className={styles.deprecatedSchemaExplorerSpan2}>latest valid</span>{' '}
-                    schema version. We recommend you to publish a new schema version that is
-                    composable before using this explorer for decision making.
+                    <span className={shared.weight.bold}>not valid</span> , thus the explorer might
+                    not be accurate as it is showing the{' '}
+                    <span className={shared.weight.bold}>latest valid</span> schema version. We
+                    recommend you to publish a new schema version that is composable before using
+                    this explorer for decision making.
                     <br />
                     <br />
                     <Link
@@ -288,10 +289,7 @@ function DeprecatedSchemaExplorer() {
                         versionId: latestSchemaVersion.id,
                       }}
                     >
-                      <span className={styles.deprecatedSchemaExplorerSpan3}>
-                        {' '}
-                        See the invalid schema version
-                      </span>
+                      <span className={shared.weight.bold}> See the invalid schema version</span>
                     </Link>
                   </AlertDescription>
                 </Alert>

@@ -10,6 +10,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as styles from './target-checks-affected-deployments.css';
@@ -271,7 +272,7 @@ function TargetChecksAffectedDeploymentsContent(props: {
       <div className={styles.targetChecksAffectedDeploymentsContentDiv}>
         <SubPageLayoutHeader
           subPageTitle={
-            <span className={styles.targetChecksAffectedDeploymentsContentSpan}>
+            <span className={shared.row.base}>
               <Link
                 to="/$organizationSlug/$projectSlug/$targetSlug/checks/$schemaCheckId"
                 params={{

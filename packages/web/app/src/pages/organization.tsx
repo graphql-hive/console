@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/primitives/separator/separator';
 import { QueryError } from '@/components/ui/query-error';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, useRouter } from '@tanstack/react-router';
 import * as styles from './organization.css';
 
@@ -181,7 +182,7 @@ function OrganizationPageContent(props: {} & RouteSearchProps) {
   return (
     <LayoutContent className={styles.organizationPageContentLayoutContent}>
       <>
-        <div className={styles.organizationPageContentDiv}>
+        <div className={shared.grow}>
           <div className={styles.organizationPageContentDiv2}>
             <div>
               <Title>Projects</Title>

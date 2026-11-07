@@ -52,13 +52,14 @@ import { SeverityLevelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn, formatCount } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './target-history-schema-version.css';
 
 /** A status icon inside a tab, explained on hover. */
 function StatusTooltip(props: { icon: React.ReactNode; label: string }) {
   return (
     <Tooltip
-      trigger={<span className={styles.statusTooltipSpan}>{props.icon}</span>}
+      trigger={<span className={shared.inlineFlex}>{props.icon}</span>}
       content={props.label}
     />
   );
@@ -526,7 +527,7 @@ function GraphQLSchemaView(props: {
   }, [props.previousSdl, props.currentSdl]);
 
   const titleNode = (
-    <span className={styles.graphQLSchemaViewSpan}>
+    <span className={shared.row.gap1}>
       {props.fromName && (
         <>
           {props.fromName}
@@ -1512,7 +1513,7 @@ export const SchemaVersionSummary = (props: {
   );
 
   return (
-    <div className={styles.schemaVersionSummaryDiv}>
+    <div className={shared.stack.gap6}>
       <SectionHeader title="Summary" subtitle="Changes introduced by this version." />
       <div className={styles.schemaVersionSummaryDiv2}>
         <Stat label="Schema changes" value={publicChangeStats.totalChanges} />
@@ -1766,7 +1767,7 @@ function SubgraphRow(props: {
           </span>
         )}
         <span className={cn(styles.subgraphRowSpan4, meta.dot)} />
-        <span className={styles.subgraphRowSpan5}>{meta.label}</span>
+        <span className={shared.weight.medium}>{meta.label}</span>
         {props.children}
       </span>
     </div>

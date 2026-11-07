@@ -29,6 +29,7 @@ import { ResourceDetails } from '@/components/ui/resource-details';
 import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Outlet, useRouter } from '@tanstack/react-router';
 import * as styles from './organization-settings.css';
@@ -253,8 +254,8 @@ const OrganizationSettingsContent = (props: {
             description={
               <p>
                 This is your organization's URL namespace on Hive Console. Changing it{' '}
-                <span className={styles.organizationSettingsContentSpan}>will invalidate</span> any
-                existing links to your organization.
+                <span className={shared.weight.bold}>will invalidate</span> any existing links to
+                your organization.
               </p>
             }
             docsLink={{

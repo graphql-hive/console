@@ -3,6 +3,7 @@ import { BookIcon } from 'lucide-react';
 import { GitHubIcon, HiveLogo } from '@/components/ui/brand-icon';
 import { Meta } from '@/components/ui/meta';
 import { useSession } from '@/lib/auth/use-session';
+import * as shared from '@/styles/shared.css';
 import { Link, Outlet } from '@tanstack/react-router';
 import * as styles from './auth.css';
 
@@ -40,7 +41,7 @@ export function AuthPage() {
                 <div className={styles.authPageDiv7}>
                   <div className={styles.authPageDiv8}>
                     <h1 className={styles.authPageH1}>
-                      Open-source <span className={styles.authPageSpan}>GraphQL</span> management
+                      Open-source <span className={shared.fg.accent}>GraphQL</span> management
                       platform
                     </h1>
                     <p className={styles.authPageP}>

@@ -15,6 +15,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
 import * as styles from './project.css';
 
@@ -196,7 +197,7 @@ const ProjectsPageContent = (props: RouteSearchProps) => {
   }
 
   return (
-    <div className={styles.projectsPageContentDiv}>
+    <div className={shared.grow}>
       <div className={styles.projectsPageContentDiv2}>
         <div>
           <Title>Targets</Title>
@@ -244,7 +245,7 @@ const ProjectsPageContent = (props: RouteSearchProps) => {
       </div>
       <div
         className={cn(
-          styles.projectsPageContentDiv5,
+          shared.grow,
           targetConnection?.edges.length === 0 ? '' : styles.projectsPageContentDiv6,
         )}
       >

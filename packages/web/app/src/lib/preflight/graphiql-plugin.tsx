@@ -23,6 +23,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { usePromptManager } from '@/components/ui/prompt';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLocalStorage, useLocalStorageJson, useToggle } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { GraphiQLPlugin } from '@graphiql/react';
 import { Editor as MonacoEditor, OnMount, type Monaco } from '@monaco-editor/react';
 import { captureException } from '@sentry/react';
@@ -456,7 +457,7 @@ export function usePreflight(args: {
       <iframe
         src="/__preflight-embed"
         title="preflight-worker"
-        className={styles.usePreflightIframe}
+        className={shared.hidden}
         data-testid="preflight-embed-iframe"
         /**
          * In DEV we need to use "allow-same-origin", as otherwise the embed can not instantiate the webworker (which is loaded from an URL).
@@ -573,7 +574,7 @@ function PreflightContent() {
         Script <Badge content="JavaScript" variants={{ variant: 'outline' }} />
       </EditorTitle>
       <Subtitle className={styles.preflightContentSubtitle}>Read-only view of the script</Subtitle>
-      <div className={styles.preflightContentDiv3}>
+      <div className={shared.relative}>
         {preflight.isEnabled ? null : (
           <div className={styles.preflightContentDiv4}>
             <div className={styles.preflightContentDiv5}>

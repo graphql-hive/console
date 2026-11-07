@@ -14,6 +14,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import * as styles from './target.css';
 
@@ -46,7 +47,7 @@ function serviceHeader(schema: CompositeSchema) {
   return (
     <div>
       <div
-        className={styles.serviceHeaderDiv}
+        className={shared.text.base}
         id={schema.service ? `service-${schema.service}` : undefined}
       >
         {schema.service ?? 'SDL'}

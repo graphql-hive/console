@@ -64,6 +64,7 @@ import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn, formatCount } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { SDLDiffView, SDLView } from './target-history-schema-version';
 import * as styles from './target-checks-single.css';
 
@@ -291,8 +292,7 @@ function ApproveFailedSchemaCheckModal(props: {
         {props?.contextId ? (
           <p className={styles.approveFailedSchemaCheckModalP}>
             Approval applies to all future changes within the context of a pull request or branch
-            lifecycle:{' '}
-            <span className={styles.approveFailedSchemaCheckModalSpan}>{props?.contextId}</span>
+            lifecycle: <span className={shared.weight.medium}>{props?.contextId}</span>
           </p>
         ) : null}
       </div>
@@ -409,7 +409,7 @@ const PolicyBlock = (props: {
           <li
             key={key}
             className={cn(
-              props.type === 'warning' ? styles.policyBlockLi : styles.policyBlockLi2,
+              props.type === 'warning' ? shared.fg.warning : styles.policyBlockLi2,
               styles.policyBlockLi3,
             )}
           >
@@ -1321,7 +1321,7 @@ function SchemaChecksView(props: {
       value={selectedItem}
       onValueChange={setSelectedItem}
       label={
-        <span className={styles.schemaChecksViewSpan2}>
+        <span className={shared.inlineRow.gap1_5}>
           {selectedContractCheckNode
             ? checkStatus(selectedContractCheckNode, 'Contract schema changed').icon
             : checkStatus(schemaCheck, 'Schema changed').icon}
@@ -1658,7 +1658,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
       </div>
       <div className={styles.activeSchemaCheckDiv5}>
         <div className={styles.activeSchemaCheckDiv6}>
-          <div className={styles.activeSchemaCheckDiv7}>
+          <div className={shared.fillShrinkable}>
             <DescriptionList
               variants={{ termStyle: 'title', columns: 'auto' }}
               rows={[
@@ -1731,7 +1731,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
             />
           </div>
           {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.canBeApproved ? (
-            <div className={styles.activeSchemaCheckDiv8}>
+            <div className={shared.noShrink}>
               {schemaCheck.canBeApprovedByViewer ? (
                 <Popover
                   open={approvalOpen}

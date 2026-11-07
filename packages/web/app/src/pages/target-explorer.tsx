@@ -19,6 +19,7 @@ import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import * as styles from './target-explorer.css';
 
@@ -47,7 +48,7 @@ function SchemaView(props: {
   const { totalRequests } = props;
 
   return (
-    <div className={styles.schemaViewDiv}>
+    <div className={shared.stack.gap4}>
       {query ? (
         <GraphQLObjectTypeComponent
           type={query}
@@ -192,11 +193,11 @@ function ExplorerPageContent() {
                   <AlertTitle>Outdated Schema</AlertTitle>
                   <AlertDescription>
                     The latest schema version is{' '}
-                    <span className={styles.explorerPageContentSpan}>not valid</span> , thus the
-                    explorer might not be accurate as it is showing the{' '}
-                    <span className={styles.explorerPageContentSpan2}>latest valid</span> schema
-                    version. We recommend you to publish a new schema version that is composable
-                    before using this explorer for decision making.
+                    <span className={shared.weight.bold}>not valid</span> , thus the explorer might
+                    not be accurate as it is showing the{' '}
+                    <span className={shared.weight.bold}>latest valid</span> schema version. We
+                    recommend you to publish a new schema version that is composable before using
+                    this explorer for decision making.
                     <br />
                     <br />
                     <Link
@@ -208,10 +209,7 @@ function ExplorerPageContent() {
                         versionId: latestSchemaVersion.id,
                       }}
                     >
-                      <span className={styles.explorerPageContentSpan3}>
-                        {' '}
-                        See the invalid schema version
-                      </span>
+                      <span className={shared.weight.bold}> See the invalid schema version</span>
                     </Link>
                   </AlertDescription>
                 </Alert>

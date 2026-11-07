@@ -14,6 +14,7 @@ import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link, Outlet, useParams } from '@tanstack/react-router';
 import * as styles from './target-history.css';
 
@@ -130,7 +131,7 @@ function VersionsList(props: { versionId?: string }): ReactElement {
               label={version.isValid ? 'Composable' : 'Failed'}
             />
           </div>
-          <div className={styles.versionsListDiv2}>
+          <div className={shared.fillShrinkable}>
             <div className={styles.versionsListDiv3}>
               <div className={styles.versionsListDiv4}>
                 {version.origin.__typename === 'SchemaVersionPublishOrigin' &&
@@ -153,9 +154,9 @@ function VersionsList(props: { versionId?: string }): ReactElement {
               version.origin.publishedSubgraphs && (
                 <div className={styles.versionsListDiv5}>
                   {version.origin.publishedSubgraphs.map((service, idx) => (
-                    <span key={idx} className={styles.versionsListSpan4}>
+                    <span key={idx} className={shared.text.xs}>
                       <PackageIcon className={styles.versionsListPackageIcon} />
-                      <span className={styles.versionsListSpan5}>
+                      <span className={shared.mono}>
                         {service.name}@{service.revision ?? service.versionId.substring(0, 8)}
                       </span>
                     </span>
@@ -165,9 +166,9 @@ function VersionsList(props: { versionId?: string }): ReactElement {
             {version.origin.__typename === 'SchemaVersionSubgraphRemoveOrigin' && (
               <div className={styles.versionsListDiv6}>
                 {version.origin.removedSubgraphs.map((service, idx) => (
-                  <span key={idx} className={styles.versionsListSpan6}>
+                  <span key={idx} className={shared.text.xs}>
                     <PackageIcon className={styles.versionsListPackageIcon2} />
-                    <span className={styles.versionsListSpan7}>
+                    <span className={shared.mono}>
                       {service.name}@{service.versionId.substring(0, 8)}
                     </span>
                   </span>
@@ -177,7 +178,7 @@ function VersionsList(props: { versionId?: string }): ReactElement {
             {version.origin.__typename === 'SchemaVersionPromoteOrigin' && (
               <p className={styles.versionsListP}>
                 <FileSymlinkIcon className={styles.versionsListFileSymlinkIcon} />
-                <span className={styles.versionsListSpan8}>
+                <span className={shared.mono}>
                   {version.origin.targetSlug}@{version.origin.schemaVersionId.substring(0, 8)}
                 </span>
               </p>
@@ -323,7 +324,7 @@ function HistoryPageContent() {
   }
 
   return (
-    <div className={styles.historyPageContentDiv6}>
+    <div className={shared.fullWidth}>
       <div className={styles.historyPageContentDiv7}>
         <Title>Versions</Title>
         <Subtitle>Recently published versions.</Subtitle>

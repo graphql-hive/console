@@ -4,6 +4,7 @@ import { Proposal_ReviewsFragment } from '@/components/target/proposals';
 import { ChangeBlock } from '@/components/target/proposals/change-detail';
 import { ServiceHeading, ServiceHeadingType } from '@/components/target/proposals/service-heading';
 import { FragmentType } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import { Change, CriticalityLevel } from '@graphql-inspector/core';
 import type { ServiceProposalDetails } from './target-proposal-types';
 import * as styles from './target-proposal-details.css';
@@ -87,7 +88,7 @@ export function TargetProposalDetailsPage(props: {
   }, [props.services]);
 
   return (
-    <div className={styles.targetProposalDetailsPageDiv}>
+    <div className={shared.fullWidth}>
       {mappedServices?.map(
         ({
           safe,

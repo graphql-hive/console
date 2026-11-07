@@ -20,6 +20,7 @@ import { focusRing } from '@/components/ui/primitives/shared-styles';
 import { Slider } from '@/components/ui/primitives/slider/slider';
 import { formatNumber } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './target-traces-filter.css';
 
 export function FilterLocalSearch(props: { value: string; onChange(value: string): void }) {
@@ -192,7 +193,7 @@ export const MultiSelectFilter = function MultiSelectFilter<$Value>(props: {
             }}
           >
             {option.label === '' ? (
-              <span className={styles.multiSelectFilterSpan}>{'<unknown>'}</span>
+              <span className={shared.fg.secondary}>{'<unknown>'}</span>
             ) : (
               option.label
             )}

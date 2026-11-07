@@ -25,6 +25,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { getDocsUrl } from '@/lib/docs-url';
 import { useSlugs, useToggle } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Outlet, useRouter } from '@tanstack/react-router';
 import * as styles from './project-settings.css';
@@ -84,8 +85,8 @@ function GitHubIntegration(): ReactElement | null {
         description={
           <p>
             Prevents GitHub Check name collisions when running{' '}
-            <code className={styles.gitHubIntegrationCode}>$ hive schema:check --github</code> for
-            more than one project.
+            <code className={shared.text.xs}>$ hive schema:check --github</code> for more than one
+            project.
           </p>
         }
         docsLink={{
@@ -106,7 +107,7 @@ function GitHubIntegration(): ReactElement | null {
               <div className={styles.gitHubIntegrationDiv5}>
                 {organizationSlug} &gt; schema:check &gt; staging
               </div>
-              <div className={styles.gitHubIntegrationDiv6}>— No changes</div>
+              <div className={shared.fg.secondary}>— No changes</div>
             </div>
             <ArrowBigDownDashIcon className={styles.gitHubIntegrationArrowBigDownDashIcon} />
             <div className={styles.gitHubIntegrationDiv7}>
@@ -118,7 +119,7 @@ function GitHubIntegration(): ReactElement | null {
               <div className={styles.gitHubIntegrationDiv9}>
                 {organizationSlug} &gt; schema:check &gt; {projectSlug} &gt; staging
               </div>
-              <div className={styles.gitHubIntegrationDiv10}>— No changes</div>
+              <div className={shared.fg.secondary}>— No changes</div>
             </div>
           </div>
         </div>
@@ -233,8 +234,8 @@ function ProjectSettingsPage_SlugForm() {
         description={
           <p>
             This is your project's URL namespace on Hive. Changing it{' '}
-            <span className={styles.projectSettingsPageSlugFormSpan}>will invalidate</span> any
-            existing links to your project.
+            <span className={shared.weight.bold}>will invalidate</span> any existing links to your
+            project.
             <br />
           </p>
         }

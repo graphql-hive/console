@@ -27,6 +27,7 @@ import { parse } from '@/lib/date-math';
 import { useSlugs } from '@/lib/hooks';
 import { retentionBoundary } from '@/lib/hooks/use-date-range-controller';
 import { useRangeWithin } from '@/lib/hooks/use-range-within';
+import * as shared from '@/styles/shared.css';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import { Link } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
@@ -220,7 +221,7 @@ function NameCell({
   if (!isRenaming) return <DataTableCell kind="text" value={filter.name} weight="medium" />;
 
   return (
-    <span className={styles.nameCellSpan} onClick={e => e.stopPropagation()}>
+    <span className={shared.row.gap2} onClick={e => e.stopPropagation()}>
       <Input
         value={renameValue}
         onChange={e => setRenameValue(e.target.value)}
@@ -571,7 +572,7 @@ function SavedFilterRowFilters({
 
   return (
     <div className={styles.savedFilterRowFiltersDiv}>
-      <div className={styles.savedFilterRowFiltersDiv2}>
+      <div className={shared.row.wrap2}>
         <DateRangePicker
           size="compact"
           selectedRange={dateRange}

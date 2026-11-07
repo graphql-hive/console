@@ -2,8 +2,8 @@ import { AuthCard } from '@/components/auth';
 import { DocsLink } from '@/components/ui/docs-note';
 import { Meta } from '@/components/ui/meta';
 import { startThirdPartyAuth } from '@/lib/auth/third-party';
+import * as shared from '@/styles/shared.css';
 import { useQuery } from '@tanstack/react-query';
-import * as styles from './auth-oidc.css';
 
 function AuthOIDC(props: { oidcId: string; slug: string | undefined; redirectToPath: string }) {
   const auth = useQuery({
@@ -40,7 +40,7 @@ function MissingOIDCId() {
       title="Missing ID"
       description="You need to provide an OIDC ID to sign in."
       content={
-        <p className={styles.missingOIDCIdP}>
+        <p className={shared.fg.secondary}>
           <DocsLink
             href="/management/sso-oidc-provider#login-via-oidc"
             text="Learn how to login via OIDC"

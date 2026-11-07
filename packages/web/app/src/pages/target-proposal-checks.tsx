@@ -3,6 +3,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import * as styles from './target-proposal-checks.css';
 
@@ -83,7 +84,7 @@ function CheckItem(props: {
       <div className={styles.checkItemDiv2}>
         <div className={styles.checkItemDiv3}>
           <Box className={styles.checkItemBox} />
-          <div className={styles.checkItemDiv4}>{props.serviceName || 'single schema'}</div>
+          <div className={shared.truncate}>{props.serviceName || 'single schema'}</div>
         </div>
       </div>
       <div className={styles.checkItemDiv5}>{props.commit}</div>

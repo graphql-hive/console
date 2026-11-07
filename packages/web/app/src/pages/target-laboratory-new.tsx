@@ -22,6 +22,7 @@ import { useResetState } from '@/lib/hooks/use-reset-state';
 import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
 import { migrateLegacyLaboratoryStorage } from '@/lib/laboratory-legacy-storage';
 import { withLinkedOperation } from '@/lib/laboratory-linked-operation';
+import * as shared from '@/styles/shared.css';
 import {
   Laboratory,
   LaboratoryCollection,
@@ -758,9 +759,9 @@ function LaboratoryPageContent(props: {
         isCDNEnabled={query.data ?? null}
       />
       <div className={styles.laboratoryPageContentDiv}>
-        <div className={styles.laboratoryPageContentDiv2}>
-          <div className={styles.laboratoryPageContentDiv3}>
-            <div className={styles.laboratoryPageContentDiv4}>
+        <div className={shared.flex}>
+          <div className={shared.fill}>
+            <div className={shared.row.gap2}>
               <Title>Laboratory</Title>
               <div className={styles.laboratoryPageContentDiv5} />
               <ToggleGroup

@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSession } from '@/lib/auth/use-session';
 import { HiveStripeWrapper } from '@/lib/billing/stripe';
+import * as shared from '@/styles/shared.css';
 import { Link, useRouter } from '@tanstack/react-router';
 import * as styles from './organization-join.css';
 
@@ -169,7 +170,7 @@ export function JoinOrganizationPage(props: { inviteCode: string }) {
                   >
                     <p>
                       You've been invited to become a member of{' '}
-                      <span className={styles.joinOrganizationPageSpan}>{invitation.name}</span>.
+                      <span className={shared.weight.semibold}>{invitation.name}</span>.
                     </p>
                     <p className={styles.joinOrganizationPageP}>
                       By accepting the invitation, you will be able to collaborate with other

@@ -15,6 +15,7 @@ import { NativeFederationCompatibilityStatusType } from '@/gql/graphql';
 import { useClipboard } from '@/lib/hooks';
 import { useTimed } from '@/lib/hooks/use-timed';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './native-composition-diff.css';
 
 type NativeCompositionDiffProps = {
@@ -132,7 +133,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
             items={results.map((result, index) => ({
               value: String(index),
               label: (
-                <span className={styles.nativeCompositionDiffSpan2}>
+                <span className={shared.row.base}>
                   <StatusDot color={result?.compatible ? 'success' : 'critical'} />
                   <span className={styles.nativeCompositionDiffSpan3}>
                     {result?.target?.slug ?? `Target ${index}`}
@@ -164,7 +165,7 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
             <div className={styles.nativeCompositionDiffDiv8}>
               <div className={styles.nativeCompositionDiffDiv9}>Schema Comparison</div>
               {report?.currentSupergraphSdl === report?.nativeCompositionResult?.supergraphSdl ? (
-                <div className={styles.nativeCompositionDiffDiv10}>
+                <div className={shared.fullWidth}>
                   {report?.schemaVersion?.schemas.edges.length ? (
                     <>
                       The generated supergraph SDL from your existing composition setup and our{' '}
@@ -197,8 +198,8 @@ export function NativeCompositionDiff(props: NativeCompositionDiffProps): ReactN
                   </div>
                 </div>
               ) : (
-                <div className={styles.nativeCompositionDiffDiv13}>
-                  <span className={styles.nativeCompositionDiffSpan5}>
+                <div className={shared.fullWidth}>
+                  <span className={shared.weight.semibold}>
                     There are differences in the generated supergraph SDL
                   </span>{' '}
                   between your existing composition setup and native composition. Review these

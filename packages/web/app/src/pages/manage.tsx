@@ -4,6 +4,7 @@ import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-pic
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
+import * as shared from '@/styles/shared.css';
 import * as styles from './manage.css';
 
 type FilterKey = keyof Filters;
@@ -46,7 +47,7 @@ export function ManagePage() {
   return (
     <div className={styles.managePageDiv}>
       <h2 className={styles.managePageH2}>Hive Stats</h2>
-      <div className={styles.managePageDiv2}>
+      <div className={shared.stack.base}>
         <div className={styles.managePageDiv3}>
           <DateRangePicker
             selectedRange={dateRangeController.selectedPreset.range}
@@ -56,7 +57,7 @@ export function ManagePage() {
           />
           <>
             {CHECKBOXES.map(({ value, label, tooltip }) => (
-              <span className={styles.managePageSpan} key={value}>
+              <span className={shared.row.gap2} key={value}>
                 <Checkbox
                   onCheckedChange={isChecked => {
                     const newFilters = {

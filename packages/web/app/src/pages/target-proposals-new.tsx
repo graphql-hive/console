@@ -36,6 +36,7 @@ import { Textarea } from '@/components/ui/primitives/textarea/textarea';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { addTypeForExtensions } from '@/lib/proposals/utils';
+import * as shared from '@/styles/shared.css';
 import { Change, CriticalityLevel, diff } from '@graphql-inspector/core';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -121,11 +122,11 @@ function ProposalsNewHeading(props: { sideContent?: ReactNode }) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   return (
     <div className={styles.proposalsNewHeadingDiv}>
-      <div className={styles.proposalsNewHeadingDiv2}>
+      <div className={shared.fill}>
         <SubPageLayoutHeader
           sideContent={props.sideContent}
           subPageTitle={
-            <span className={styles.proposalsNewHeadingSpan}>
+            <span className={shared.row.base}>
               <Link
                 className={styles.proposalsNewHeadingLink}
                 to="/$organizationSlug/$projectSlug/$targetSlug/proposals"

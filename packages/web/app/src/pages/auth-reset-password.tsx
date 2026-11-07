@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { sendPasswordResetEmail, submitNewPassword } from '@/lib/auth/api';
 import { useSession } from '@/lib/auth/use-session';
 import { exhaustiveGuard } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, Navigate } from '@tanstack/react-router';
@@ -90,8 +91,8 @@ function AuthResetPasswordEmail(props: { email: string | null; redirectToPath: s
           <AuthCardStack>
             <p>
               A password reset email has been sent to{' '}
-              <span className={styles.authResetPasswordEmailSpan}>{form.getValues().email}</span>,
-              if it exists in our system.
+              <span className={shared.weight.semibold}>{form.getValues().email}</span>, if it exists
+              in our system.
             </p>
             <p className={styles.authResetPasswordEmailP}>
               If you don't receive an email, try to{' '}

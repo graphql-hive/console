@@ -19,6 +19,7 @@ import { TimeAgo } from '@/components/ui/time-ago';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import * as styles from './organization-support-ticket.css';
@@ -191,24 +192,20 @@ function SupportTicket(props: {
             <div className={styles.supportTicketDiv7}>
               <div className={styles.supportTicketDiv8}>
                 <div className={styles.supportTicketDiv9}>Support Ticket ID</div>
-                <div className={styles.supportTicketDiv10}>{ticket.id}</div>
+                <div className={shared.fg.secondary}>{ticket.id}</div>
               </div>
               <div className={styles.supportTicketDiv11}>
                 <div className={styles.supportTicketDiv12}>Status</div>
-                <div className={styles.supportTicketDiv13}>
+                <div className={shared.fg.secondary}>
                   {ticket.status}
-                  <div className={styles.supportTicketDiv14}>
-                    {statusDescription[ticket.status]}
-                  </div>
+                  <div className={shared.text.xs}>{statusDescription[ticket.status]}</div>
                 </div>
               </div>
               <div className={styles.supportTicketDiv15}>
                 <div className={styles.supportTicketDiv16}>Priority</div>
-                <div className={styles.supportTicketDiv17}>
+                <div className={shared.fg.secondary}>
                   {ticket.priority}
-                  <div className={styles.supportTicketDiv18}>
-                    {priorityDescription[ticket.priority]}
-                  </div>
+                  <div className={shared.text.xs}>{priorityDescription[ticket.priority]}</div>
                 </div>
               </div>
               <div className={styles.supportTicketDiv19}>

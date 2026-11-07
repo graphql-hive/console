@@ -65,6 +65,7 @@ import {
 } from '@/gql/graphql';
 import { subDays } from '@/lib/date-time';
 import { useSlugs, useToggle } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, Outlet, useRouter } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -274,14 +275,12 @@ const ExtendBaseSchema = (props: { baseSchema: string }) => {
         onChange={value => setBaseSchema(value ?? '')}
         onSyntaxErrors={markers => setSyntaxError(markers[0]?.message ?? null)}
       />
-      {syntaxError && <div className={styles.extendBaseSchemaDiv}>{syntaxError}</div>}
+      {syntaxError && <div className={shared.fg.critical}>{syntaxError}</div>}
       {mutation.data?.updateBaseSchema.error && (
-        <div className={styles.extendBaseSchemaDiv}>
-          {mutation.data.updateBaseSchema.error.message}
-        </div>
+        <div className={shared.fg.critical}>{mutation.data.updateBaseSchema.error.message}</div>
       )}
       {mutation.error && (
-        <div className={styles.extendBaseSchemaDiv}>
+        <div className={shared.fg.critical}>
           {mutation.error?.graphQLErrors[0]?.message ?? mutation.error.message}
         </div>
       )}
@@ -1052,8 +1051,8 @@ function TargetSlug() {
         description={
           <p>
             This is your target's URL namespace on Hive. Changing it{' '}
-            <span className={styles.targetSlugSpan}>will</span> invalidate any existing links to
-            your target.
+            <span className={shared.weight.bold}>will</span> invalidate any existing links to your
+            target.
           </p>
         }
         docsLink={{

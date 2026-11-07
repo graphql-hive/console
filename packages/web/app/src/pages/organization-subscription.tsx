@@ -17,6 +17,7 @@ import { QueryError } from '@/components/ui/query-error';
 import Stat from '@/components/ui/stat';
 import { graphql, useFragment } from '@/gql';
 import { formatNumber, useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import * as styles from './organization-subscription.css';
 
@@ -110,7 +111,7 @@ function SubscriptionPageContent() {
 
   return (
     <LayoutContent className={styles.subscriptionPageContentLayoutContent}>
-      <div className={styles.subscriptionPageContentDiv}>
+      <div className={shared.grow}>
         <div className={styles.subscriptionPageContentDiv2}>
           <PageLead title="Your subscription" description="Explore your current plan and usage." />
           {organization.viewerCanModifyBilling && (

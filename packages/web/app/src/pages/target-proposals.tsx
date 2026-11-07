@@ -15,6 +15,7 @@ import { graphql } from '@/gql';
 import { SchemaProposalStage } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, useNavigate, useSearch } from '@tanstack/react-router';
 import * as styles from './target-proposals.css';
 
@@ -53,9 +54,9 @@ const ProposalsContent = (props: Parameters<typeof TargetProposalsPage>[0]) => {
   return (
     <>
       <div className={styles.proposalsContentDiv}>
-        <div className={styles.proposalsContentDiv2}>
+        <div className={shared.fill}>
           <SubPageLayoutHeader
-            subPageTitle={<span className={styles.proposalsContentSpan}>Schema Proposals</span>}
+            subPageTitle={<span className={shared.row.base}>Schema Proposals</span>}
             description="Collaborate on schema changes to reduce friction during development."
           />
         </div>
@@ -162,8 +163,8 @@ const ProposalsList = (props: {
         />
       ) : null}
       {query.fetching && !query.data ? (
-        <div role="status" aria-label="Loading" className={styles.proposalsListDiv}>
-          <span className={styles.proposalsListSpan}>Loading</span>
+        <div role="status" aria-label="Loading" className={shared.stack.base}>
+          <span className={shared.srOnly}>Loading</span>
           {[0, 1, 2, 3].map(index => (
             <div key={index} className={styles.proposalsListDiv2}>
               <Skeleton variants={{ size: 'lg', width: 'lg' }} />
@@ -174,7 +175,7 @@ const ProposalsList = (props: {
       ) : null}
       {query.data?.schemaProposals?.edges?.length === 0 && (
         <div className={styles.proposalsListDiv3}>
-          <div className={styles.proposalsListDiv4}>
+          <div className={shared.fullWidth}>
             <Title>
               No proposals {hasFilter ? 'match your search criteria' : 'have been created yet'}
             </Title>
@@ -213,14 +214,14 @@ const ProposalsList = (props: {
                     <span className={styles.proposalsListSpan3}>
                       <StatusDot color={stageToColor(proposal.stage)} />
                     </span>
-                    <span className={styles.proposalsListSpan4}>{proposal.stage}</span>
+                    <span className={shared.fg.secondary}>{proposal.stage}</span>
                   </div>
                   <div className={styles.proposalsListDiv10}>
-                    <div className={styles.proposalsListDiv11}>
+                    <div className={shared.truncate}>
                       proposed <TimeAgo date={proposal.updatedAt} />
                     </div>
                     {proposal.author ? (
-                      <div className={styles.proposalsListDiv12}>by {proposal.author}</div>
+                      <div className={shared.truncate}>by {proposal.author}</div>
                     ) : null}
                   </div>
                 </div>

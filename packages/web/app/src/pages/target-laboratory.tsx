@@ -52,6 +52,7 @@ import { Menu } from '@/components/ui/primitives/floating/menu/menu';
 import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-group';
 import { PromptManager, PromptProvider } from '@/components/ui/prompt';
 import { Kit } from '@/lib/kit';
+import * as shared from '@/styles/shared.css';
 import * as styles from './target-laboratory.css';
 
 const explorer = explorerPlugin();
@@ -425,8 +426,8 @@ function LaboratoryPageContent(props: {
     <>
       {preflight.iframeElement}
       <div className={styles.laboratoryPageContentDiv}>
-        <div className={styles.laboratoryPageContentDiv2}>
-          <div className={styles.laboratoryPageContentDiv3}>
+        <div className={shared.fill}>
+          <div className={shared.row.gap2}>
             <Title>Laboratory</Title>
             <div className={styles.laboratoryPageContentDiv4} />
             <ToggleGroup

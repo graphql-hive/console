@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSession } from '@/lib/auth/use-session';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import * as styles from './auth-verify-email.css';
 
@@ -198,8 +199,8 @@ function AuthVerifyEmail() {
       content={
         <AuthCardStack>
           <p>
-            <span className={styles.authVerifyEmailSpan}>Please click on the link</span> in the
-            email we just sent you to confirm your email address.
+            <span className={shared.weight.semibold}>Please click on the link</span> in the email we
+            just sent you to confirm your email address.
           </p>
           <Button
             type="button"

@@ -17,6 +17,7 @@ import { AppDeploymentStatus } from '@/gql/graphql';
 import { usePagedConnection, useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as styles from './target-app-version.css';
@@ -299,7 +300,7 @@ function TargetAppVersionContent(props: {
                 text: 'Learn more about App Deployments',
               }}
             />
-            <div className={styles.targetAppVersionContentDiv3}>
+            <div className={shared.flex}>
               <AppFilter search={props.search} />
             </div>
           </div>
@@ -348,8 +349,8 @@ function TargetAppVersionContent(props: {
           <>
             <div className={styles.targetAppVersionContentDiv6}>
               <div className={styles.targetAppVersionContentDiv7}>
-                <div className={styles.targetAppVersionContentDiv8}>
-                  <div className={styles.targetAppVersionContentDiv9}>Status</div>
+                <div className={shared.shrinkable}>
+                  <div className={shared.text.xs}>Status</div>
                   <div
                     className={cn(
                       styles.targetAppVersionContentDiv10,
@@ -369,14 +370,14 @@ function TargetAppVersionContent(props: {
                     )}
                   </div>
                 </div>
-                <div className={styles.targetAppVersionContentDiv13}>
-                  <div className={styles.targetAppVersionContentDiv14}>Total Documents</div>
+                <div className={shared.shrinkable}>
+                  <div className={shared.text.xs}>Total Documents</div>
                   <div className={cn(styles.targetAppVersionContentDiv15)}>
                     {appDeployment?.totalDocumentCount ?? '...'}
                   </div>
                 </div>
-                <div className={styles.targetAppVersionContentDiv16}>
-                  <div className={styles.targetAppVersionContentDiv17}>Created</div>
+                <div className={shared.shrinkable}>
+                  <div className={shared.text.xs}>Created</div>
                   <div className={styles.targetAppVersionContentDiv18}>
                     {appDeployment?.createdAt ? (
                       <DateWithTimeAgo
@@ -388,8 +389,8 @@ function TargetAppVersionContent(props: {
                     )}
                   </div>
                 </div>
-                <div className={styles.targetAppVersionContentDiv19}>
-                  <div className={styles.targetAppVersionContentDiv20}>Activated</div>
+                <div className={shared.shrinkable}>
+                  <div className={shared.text.xs}>Activated</div>
                   <div className={styles.targetAppVersionContentDiv21}>
                     {appDeployment?.activatedAt ? (
                       <DateWithTimeAgo
@@ -401,8 +402,8 @@ function TargetAppVersionContent(props: {
                     )}
                   </div>
                 </div>
-                <div className={styles.targetAppVersionContentDiv22}>
-                  <div className={styles.targetAppVersionContentDiv23}>Last Used</div>
+                <div className={shared.shrinkable}>
+                  <div className={shared.text.xs}>Last Used</div>
                   <div className={styles.targetAppVersionContentDiv24}>
                     {data.fetching ? (
                       '...'

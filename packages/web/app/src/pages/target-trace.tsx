@@ -40,6 +40,7 @@ import { useClipboard, useSlugs } from '@/lib/hooks';
 import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, useNavigate } from '@tanstack/react-router';
 import { useWidthSync, WidthSyncProvider } from './traces/target-traces-width';
 import * as styles from './target-trace.css';
@@ -68,7 +69,7 @@ function TraceView(props: {
         <div className={styles.traceViewDiv3}>
           <div className={styles.traceViewDiv4} style={{ width }}>
             <div className={styles.traceViewDiv5}>
-              <div className={styles.traceViewDiv6}>Timeline</div>
+              <div className={shared.weight.medium}>Timeline</div>
               <div className={styles.traceViewDiv7}>Spans and details</div>
             </div>
           </div>
@@ -336,7 +337,7 @@ function TraceTree(props: {
   const durationNs = differenceInNanoseconds(rootSpan.endTime, rootSpan.startTime);
 
   return (
-    <div className={styles.traceTreeDiv} ref={containerRef}>
+    <div className={shared.relative} ref={containerRef}>
       <TraceResize minWidth={minWidth} maxWidth={maxWidth} />
       <SpanNode
         key={rootSpan.id}
@@ -469,10 +470,7 @@ function SpanNode(props: SpanNodeProps) {
               />
             </div>
             <div
-              className={cn(
-                styles.spanNodeDiv8,
-                isDimmed ? styles.spanNodeDiv9 : styles.spanNodeDiv10,
-              )}
+              className={cn(styles.spanNodeDiv8, isDimmed ? shared.fg.secondary : shared.fg.strong)}
             >
               <span className={styles.spanNodeSpan}>{span.name}</span>
               {hasException && (
@@ -485,7 +483,7 @@ function SpanNode(props: SpanNodeProps) {
               <div
                 className={cn(
                   styles.spanNodeDiv11,
-                  isDimmed ? styles.spanNodeDiv12 : styles.spanNodeDiv13,
+                  isDimmed ? shared.fg.subtle : shared.fg.secondary,
                 )}
               >
                 {span.spanAttributes['hive.gateway.upstream.subgraph.name'] as ReactNode}
@@ -520,17 +518,17 @@ function SpanNode(props: SpanNodeProps) {
               content={
                 <div className={styles.spanNodeDiv15}>
                   <div className={styles.spanNodeDiv16}>
-                    <div className={styles.spanNodeDiv17}>Duration</div>
+                    <div className={shared.fg.secondary}>Duration</div>
                     <div className={styles.spanNodeDiv18}>
                       <span>{formatNanoseconds(props.span.durationNs)}</span>
                     </div>
 
-                    <div className={styles.spanNodeDiv19}>Started At</div>
+                    <div className={shared.fg.secondary}>Started At</div>
                     <div className={styles.spanNodeDiv20}>
                       {formatNanoseconds(props.span.startNs)}
                     </div>
 
-                    <div className={styles.spanNodeDiv21}>% of Total</div>
+                    <div className={shared.fg.secondary}>% of Total</div>
                     <div className={styles.spanNodeDiv22}>{props.span.percentageOfTotal}%</div>
 
                     <div className={styles.spanNodeDiv23}>
@@ -550,7 +548,7 @@ function SpanNode(props: SpanNodeProps) {
 
                     {props.span.percentageOfParentSpan === null ? null : (
                       <>
-                        <div className={styles.spanNodeDiv26}>% of Parent</div>
+                        <div className={shared.fg.secondary}>% of Parent</div>
                         <div className={styles.spanNodeDiv27}>
                           {props.span.percentageOfParentSpan}%
                         </div>
@@ -989,7 +987,7 @@ function TargetInsightsNewPageContent(props: {
       <Meta title={`Trace ${props.traceId}`} />
       <SubPageLayoutHeader
         subPageTitle={
-          <span className={styles.targetInsightsNewPageContentSpan}>
+          <span className={shared.row.base}>
             <Link
               to="/$organizationSlug/$projectSlug/$targetSlug/traces"
               params={{
@@ -1004,9 +1002,7 @@ function TargetInsightsNewPageContent(props: {
             <span className={styles.targetInsightsNewPageContentSpan2}>/</span>{' '}
             {trace ? (
               <>
-                {trace.operationName ?? (
-                  <span className={styles.targetInsightsNewPageContentSpan3}>{'<unknown>'}</span>
-                )}
+                {trace.operationName ?? <span className={shared.fg.secondary}>{'<unknown>'}</span>}
                 <span className={styles.targetInsightsNewPageContentSpan4}>
                   {trace.id.substring(0, 4)}
                 </span>
@@ -1024,7 +1020,7 @@ function TargetInsightsNewPageContent(props: {
               Trace ID:{' '}
               {trace?.id ? (
                 <>
-                  <span className={styles.targetInsightsNewPageContentSpan6}> {trace.id}</span>
+                  <span className={shared.mono}> {trace.id}</span>
                   <CopyIconButton value={trace.id} label="Copy Trace ID" />
                 </>
               ) : (
@@ -1035,9 +1031,9 @@ function TargetInsightsNewPageContent(props: {
             </p>
             {trace && (
               <div className={styles.targetInsightsNewPageContentDiv2}>
-                <div className={styles.targetInsightsNewPageContentDiv3}>
+                <div className={shared.row.gap1}>
                   <Clock className={styles.targetInsightsNewPageContentClock} />
-                  <span className={styles.targetInsightsNewPageContentSpan8}>
+                  <span className={shared.fg.default}>
                     {formatNanoseconds(BigInt(trace.duration))}
                   </span>
                 </div>
@@ -1395,7 +1391,7 @@ function SpanSheet(props: SpanSheetProps) {
       }
       description={
         <>
-          Span ID: <span className={styles.spanSheetSpan3}>{span.id}</span>
+          Span ID: <span className={shared.mono}>{span.id}</span>
           <CopyIconButton value={span.id} label="Copy Span ID" />
         </>
       }
@@ -1651,7 +1647,7 @@ function ExceptionTeaser(props: {
         <Badge content={props.name} variants={{ variant: 'critical', size: 'sm', mono: true }} />
       </div>
       <div className={styles.exceptionTeaserDiv3}>
-        <p className={styles.exceptionTeaserP}>{props.message}</p>
+        <p className={shared.fg.default}>{props.message}</p>
         {props.stacktrace && (
           <div className={styles.exceptionTeaserDiv4}>
             <ScrollArea axis="horizontal">

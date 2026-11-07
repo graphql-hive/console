@@ -29,6 +29,7 @@ import { FieldLevelMetricsDisplayState } from '@/gql/graphql';
 import { formatNumber, formatThroughput, toDecimal, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { cn, stringToHiveColor } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import * as styles from './target-insights-coordinate.css';
 
@@ -343,7 +344,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
               <div
                 className={cn(
                   styles.schemaCoordinateViewDiv11,
-                  !showFieldLevelMetrics && styles.schemaCoordinateViewDiv12,
+                  !showFieldLevelMetrics && shared.hidden,
                 )}
               >
                 <p className={styles.schemaCoordinateViewP2}>
@@ -471,7 +472,7 @@ function SchemaCoordinateView(props: { coordinate: string; dataRetentionInDays: 
                         ? null
                         : query.data?.target?.schemaCoordinateStats.errorCodes?.edges.map(
                             ({ node: error }) => (
-                              <div key={error.code} className={styles.schemaCoordinateViewDiv22}>
+                              <div key={error.code} className={shared.row.base}>
                                 <p className={styles.schemaCoordinateViewP5}>{error.code}</p>
                                 <div className={styles.schemaCoordinateViewDiv23}>
                                   <div>{formatNumber(error.count)}</div>

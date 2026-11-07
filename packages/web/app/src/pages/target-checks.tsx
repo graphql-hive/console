@@ -21,6 +21,7 @@ import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link, Outlet, useParams, useRouter } from '@tanstack/react-router';
 import * as styles from './target-checks.css';
 
@@ -151,16 +152,14 @@ function SchemaChecksList(props: { schemaCheckId?: string } & SchemaCheckFilters
                 </h3>
                 {edge.node.meta?.author ? (
                   <div className={styles.schemaChecksListDiv7}>
-                    <span className={styles.schemaChecksListSpan}>{edge.node.meta.author}</span>
+                    <span className={shared.truncate}>{edge.node.meta.author}</span>
                   </div>
                 ) : null}
               </Link>
               <div className={styles.schemaChecksListDiv8}>
                 <div
                   className={cn(
-                    edge.node.__typename === 'FailedSchemaCheck'
-                      ? styles.schemaChecksListDiv9
-                      : null,
+                    edge.node.__typename === 'FailedSchemaCheck' ? shared.fg.critical : null,
                     styles.schemaChecksListDiv10,
                   )}
                 >
@@ -282,7 +281,7 @@ function ChecksPageContent() {
 
   return (
     <>
-      <div className={cn(!hasSchemaChecks && styles.checksPageContentDiv)}>
+      <div className={cn(!hasSchemaChecks && shared.fullWidth)}>
         <div className={styles.checksPageContentDiv2}>
           <Title>Schema Checks</Title>
           <Subtitle>Recently checked schemas.</Subtitle>

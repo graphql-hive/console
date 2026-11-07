@@ -29,6 +29,7 @@ import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useLayoutQuery } from '@/lib/hooks/use-layout-query';
 import { useRollingNow } from '@/lib/hooks/use-rolling-now';
+import * as shared from '@/styles/shared.css';
 import { useNavigate } from '@tanstack/react-router';
 import * as styles from './target-alerts-detail.css';
 
@@ -252,7 +253,7 @@ export function TargetAlertsDetailPage(props: { ruleId: string }) {
 
         <PageLead description={buildDescription(rule)} title={rule.name} />
 
-        <div className={styles.targetAlertsDetailPageDiv6}>
+        <div className={shared.flex}>
           <Select
             aria-label="Time range"
             options={rangeOptions}

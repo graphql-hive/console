@@ -15,6 +15,7 @@ import {
 } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import * as shared from '@/styles/shared.css';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table';
 import * as styles from './target-alerts-rules.css';
@@ -233,8 +234,10 @@ const RULE_COLUMNS: ColumnDef<RuleRow, any>[] = [
               content={
                 <div className={styles.div}>
                   {channels.map(c => (
-                    <div key={c.id} className={styles.div2}>
-                      <span className={styles.span}>{CHANNEL_TYPE_LABEL[c.type] ?? c.type}</span>
+                    <div key={c.id} className={shared.row.gap2}>
+                      <span className={shared.fg.secondary}>
+                        {CHANNEL_TYPE_LABEL[c.type] ?? c.type}
+                      </span>
                       <span className={styles.span2}>{c.detail ?? c.name}</span>
                     </div>
                   ))}
