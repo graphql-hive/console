@@ -39,7 +39,7 @@ function createProvider(latest: Map<string, Delivery> | Error) {
   const getLatestByDestination = vi.fn<DeliveryReader['getLatestByDestination']>(() =>
     latest instanceof Error ? Promise.reject(latest) : Promise.resolve(latest),
   );
-  const provider = new EmailDeliveries({ getLatestByDestination } as any, logger as any);
+  const provider = new EmailDeliveries({ getLatestByDestination } as any, {} as any, logger as any);
   return { provider, getLatestByDestination };
 }
 

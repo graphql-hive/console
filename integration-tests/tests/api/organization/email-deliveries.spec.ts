@@ -27,6 +27,50 @@ const InvitationDeliveriesQuery = graphql(`
   }
 `);
 
+const OrganizationEmailDeliveriesQuery = graphql(`
+  query OrganizationEmailDeliveriesQuery(
+    $organizationSlug: String!
+    $from: DateTime!
+    $to: DateTime!
+  ) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      emailDeliveryStats(period: { from: $from, to: $to }) {
+        totalDeliveries
+        totalFailures
+      }
+      emailDeliveryHealth {
+        lastSuccessAt
+        lastFailureAt
+      }
+      emailDeliveryLog(period: { from: $from, to: $to }) {
+        event
+        destination
+        ok
+        statusCode
+        attempt
+        maxAttempts
+      }
+    }
+  }
+`);
+
+const ViewerCanSeeEmailDeliveriesQuery = graphql(`
+  query ViewerCanSeeEmailDeliveriesQuery($organizationSlug: String!) {
+    organization: organizationBySlug(organizationSlug: $organizationSlug) {
+      id
+      viewerCanSeeEmailDeliveries
+    }
+  }
+`);
+
+function lastHour() {
+  return {
+    from: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    to: new Date(Date.now() + 60 * 1000).toISOString(),
+  };
+}
+
 type DeliveryRow = {
   delivery_type: string;
   destination: string;
@@ -105,7 +149,8 @@ test.concurrent(
       event: 'organization_invitation',
       ok: 0,
       status_code: 422,
-      status_text: '406: You tried to send to a recipient that has been marked as inactive.',
+      status_text:
+        'You tried to send to a recipient that has been marked as inactive. (error code 406)',
       attempt: 1,
       max_attempts: 25,
       metadata: {
@@ -131,10 +176,85 @@ test.concurrent(
       delivery: {
         ok: false,
         statusCode: 422,
-        statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+        statusText:
+          'You tried to send to a recipient that has been marked as inactive. (error code 406)',
         attempt: expect.any(Number),
         maxAttempts: 25,
       },
     });
+
+    // The organization's own view of the same attempts.
+    const deliveries = await execute({
+      document: OrganizationEmailDeliveriesQuery,
+      variables: { organizationSlug: organization.slug, ...lastHour() },
+      authToken: ownerToken,
+    })
+      .then(r => r.expectNoGraphQLErrors())
+      .then(r => r.organization!);
+
+    // The refused address keeps being retried, so only the accepted count is exact.
+    const stats = deliveries.emailDeliveryStats!;
+    expect(stats.totalFailures).toBeGreaterThanOrEqual(1);
+    expect(stats.totalDeliveries - stats.totalFailures).toBe(1);
+    expect(deliveries.emailDeliveryHealth).toEqual({
+      lastSuccessAt: expect.any(String),
+      lastFailureAt: expect.any(String),
+    });
+    expect(deliveries.emailDeliveryLog).toContainEqual({
+      event: 'ORGANIZATION_INVITATION',
+      destination: accepted,
+      ok: true,
+      statusCode: 200,
+      attempt: 1,
+      maxAttempts: 25,
+    });
+    expect(deliveries.emailDeliveryLog).toContainEqual(
+      expect.objectContaining({ destination: refused, ok: false, statusCode: 422 }),
+    );
+  },
+);
+
+test.concurrent(
+  'Organization.emailDelivery* and viewerCanSeeEmailDeliveries follow member:modify',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { organization, inviteAndJoinMember } = await createOrg();
+    const { createMemberRole, assignMemberRole, updateMemberRole, memberToken, member } =
+      await inviteAndJoinMember();
+    const role = await createMemberRole([]);
+    await assignMemberRole({ roleId: role.id, userId: member.id });
+
+    const canSee = () =>
+      execute({
+        document: ViewerCanSeeEmailDeliveriesQuery,
+        variables: { organizationSlug: organization.slug },
+        authToken: memberToken,
+      })
+        .then(r => r.expectNoGraphQLErrors())
+        .then(r => r.organization!.viewerCanSeeEmailDeliveries);
+    const read = () =>
+      execute({
+        document: OrganizationEmailDeliveriesQuery,
+        variables: { organizationSlug: organization.slug, ...lastHour() },
+        authToken: memberToken,
+      });
+
+    await expect(canSee()).resolves.toBe(false);
+    const denied = await read();
+    expect(denied.expectGraphQLErrors()).not.toHaveLength(0);
+    expect(denied.rawBody.data?.organization).toEqual({
+      id: organization.id,
+      emailDeliveryStats: null,
+      emailDeliveryHealth: null,
+      emailDeliveryLog: null,
+    });
+
+    await updateMemberRole(role, ['member:modify']);
+
+    await expect(canSee()).resolves.toBe(true);
+    const allowed = await read().then(r => r.expectNoGraphQLErrors());
+    // The member's own invitation email is at least one recorded attempt.
+    expect(allowed.organization!.emailDeliveryStats!.totalDeliveries).toBeGreaterThanOrEqual(1);
   },
 );

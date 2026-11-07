@@ -5,6 +5,7 @@ type OrganizationPermissions = {
   viewerCanManageAccessTokens: boolean;
   viewerCanManageOIDCIntegration: boolean;
   viewerCanManagePersonalAccessTokens: boolean;
+  viewerCanSeeEmailDeliveries: boolean;
 };
 
 /** `OrganizationSettingsPageQuery` for a viewer with every permission; ids match the layout fixtures. */
@@ -18,6 +19,7 @@ export function organizationSettings(overrides: Partial<OrganizationPermissions>
       viewerCanManageAccessTokens: true,
       viewerCanManageOIDCIntegration: true,
       viewerCanManagePersonalAccessTokens: true,
+      viewerCanSeeEmailDeliveries: true,
       viewerCanDelete: true,
       viewerCanExportAuditLogs: true,
       viewerCanModifyGitHubIntegration: true,

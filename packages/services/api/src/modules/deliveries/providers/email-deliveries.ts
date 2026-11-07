@@ -1,22 +1,65 @@
 import { Injectable, Scope } from 'graphql-modules';
-import type { OrganizationInvitation } from '../../../shared/entities';
+import type { DateRange, OrganizationInvitation } from '../../../shared/entities';
 import { batchBy } from '../../../shared/helpers';
+import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
-import { DeliveryReader, type Delivery } from './delivery-reader';
+import {
+  DeliveryReader,
+  type Delivery,
+  type DeliveryHealth,
+  type DeliverySelector,
+} from './delivery-reader';
 
 /** Recipients one lookup covers: the invitations page is at most this long. */
 const INVITATION_BATCH_SIZE = 50;
 
-/** Reads the email deliveries behind an organization's invitations. */
+/** Reads an organization's email deliveries: its page of them, and the ones behind its invitations. */
 @Injectable({ scope: Scope.Operation })
 export class EmailDeliveries {
   private logger: Logger;
 
   constructor(
     private reader: DeliveryReader,
+    private session: Session,
     logger: Logger,
   ) {
     this.logger = logger.child({ source: 'EmailDeliveries' });
+  }
+
+  /** Reading an organization's email deliveries takes member:modify, like its invitations. */
+  async assertCanRead(organizationId: string): Promise<void> {
+    this.logger.debug('Fetching email deliveries (organization=%s)', organizationId);
+    await this.session.assertPerformAction({
+      action: 'member:modify',
+      organizationId,
+      params: { organizationId },
+    });
+  }
+
+  canRead(organizationId: string): Promise<boolean> {
+    return this.session.canPerformAction({
+      action: 'member:modify',
+      organizationId,
+      params: { organizationId },
+    });
+  }
+
+  async getHealth(organizationId: string): Promise<DeliveryHealth> {
+    await this.assertCanRead(organizationId);
+    return this.reader.getHealth(emailDeliverySelector(organizationId));
+  }
+
+  async getLog(input: {
+    organizationId: string;
+    period: DateRange;
+    limit?: number;
+  }): Promise<Delivery[]> {
+    await this.assertCanRead(input.organizationId);
+    return this.reader.getLog({
+      ...emailDeliverySelector(input.organizationId),
+      period: input.period,
+      limit: input.limit,
+    });
   }
 
   /**
@@ -34,8 +77,7 @@ export class EmailDeliveries {
       let latest: Map<string, Delivery>;
       try {
         latest = await this.reader.getLatestByDestination({
-          organizationId,
-          deliveryType: 'EMAIL',
+          ...emailDeliverySelector(organizationId),
           event: 'organization_invitation',
           destinations: invitations.map(invitation => invitation.email),
           since: new Date(Math.min(...createdAt) * 1000),
@@ -56,6 +98,11 @@ export class EmailDeliveries {
     },
     INVITATION_BATCH_SIZE,
   );
+}
+
+/** Every email delivery of the organization: the key prefix the reader needs. */
+export function emailDeliverySelector(organizationId: string): DeliverySelector {
+  return { organizationId, deliveryType: 'EMAIL' };
 }
 
 /** Recorded timestamps have second precision; the invitation's creation is compared at that precision. */

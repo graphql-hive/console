@@ -62,7 +62,8 @@ export default gql`
     statusCode: Int
     """
     One line describing the outcome: the reason phrase, the Slack API result code, the mail
-    provider's "<code>: <message>" refusal, or "<error code>: <message>" when nothing answered.
+    provider's refusal with its error code, or "Timed out" or "Unexpected error" when nothing
+    usable answered. Never an exception's message.
     """
     statusText: String!
     durationMs: Int!
@@ -113,6 +114,9 @@ export default gql`
     Slack, the SMTP reply code for email; null when nothing answered.
     """
     lastStatusCode: Int
+    """
+    The status text of the last failure, as Delivery.statusText describes it.
+    """
     lastStatusText: String
     """
     First failure after the last success, at the earliest as far back as retention reaches.
@@ -127,5 +131,30 @@ export default gql`
     delivery history could not be read.
     """
     delivery: Delivery
+  }
+
+  extend type Organization {
+    """
+    Attempts to email the organization's members and invitees in the period: invitations,
+    ownership transfers, audit log exports and usage rate limit notices. Requires member:modify.
+    Null when the delivery history could not be read.
+    """
+    emailDeliveryStats(
+      """
+      The period for retrieving the statistics.
+      """
+      period: DateRangeInput!
+    ): DeliveryStats
+    """
+    Health derived across every recipient: lastSuccessAt and lastFailureAt are meaningful, status
+    is not. Requires member:modify. Null when the delivery history could not be read.
+    """
+    emailDeliveryHealth: DeliveryHealth
+    """
+    The most recent email attempts within the period, newest first. limit defaults to 50, at most
+    200. Requires member:modify. Null when the delivery history could not be read.
+    """
+    emailDeliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
+    viewerCanSeeEmailDeliveries: Boolean!
   }
 `;
