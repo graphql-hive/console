@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/primitives/input/input';
 import * as shared from '@/styles/shared.css';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
-import * as styles from './string-config.css';
+import { stringConfigStyles } from './string-config.css';
 
 export const PolicyStringInputConfig = (props: {
   rule: string;
@@ -34,13 +34,13 @@ export const PolicyStringInputConfig = (props: {
                 <button
                   type="button"
                   aria-label="About this option"
-                  className={styles.policyStringInputConfigButton}
+                  className={stringConfigStyles.hint}
                 >
-                  <InfoIcon className={styles.policyStringInputConfigInfoIcon} />
+                  <InfoIcon className={stringConfigStyles.hintIcon} />
                 </button>
               }
               openOnHover
-              content={<p className={styles.policyStringInputConfigP}>{props.tooltip}</p>}
+              content={<p className={stringConfigStyles.hintText}>{props.tooltip}</p>}
             />
           ) : null}
         </div>

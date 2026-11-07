@@ -29,7 +29,7 @@ import {
   permissionLevelToResourceName,
   resolveResources,
 } from '../../../organization/settings/access-tokens/shared-helpers';
-import * as styles from './create-project-access-token-sheet-content.css';
+import { createProjectAccessTokenSheetContentStyles } from './create-project-access-token-sheet-content.css';
 
 const CreateProjectAccessTokenSheetContent_OrganizationFragment = graphql(`
   fragment CreateProjectAccessTokenSheetContent_OrganizationFragment on Organization {
@@ -310,12 +310,12 @@ export function CreateProjectAccessTokenSheetContent(
               'step-4-confirmation': () => (
                 <>
                   <Heading>Confirm and create Access Token</Heading>
-                  <p className={styles.createProjectAccessTokenSheetContentP}>
+                  <p className={createProjectAccessTokenSheetContentStyles.reviewHint}>
                     Please please review the selected permissions and resources to ensure they align
                     with your intended access needs.
                   </p>
                   {form.getValues().permissions.length === 0 ? (
-                    <p className={styles.createProjectAccessTokenSheetContentP2}>
+                    <p className={createProjectAccessTokenSheetContentStyles.noPermissions}>
                       No permissions are selected.
                     </p>
                   ) : (
@@ -325,7 +325,7 @@ export function CreateProjectAccessTokenSheetContent(
                       showOnlyAllowedPermissions
                       isExpanded
                       additionalGroupContent={group => (
-                        <div className={styles.createProjectAccessTokenSheetContentDiv}>
+                        <div className={createProjectAccessTokenSheetContentStyles.resources}>
                           {resolvedResources === null ? (
                             <>Granted on all {permissionLevelToResourceName(group.level)}</>
                           ) : (
@@ -333,7 +333,9 @@ export function CreateProjectAccessTokenSheetContent(
                               <p className={shared.fg.secondary}>
                                 Granted on {permissionLevelToResourceName(group.level)}:
                               </p>
-                              <ul className={styles.createProjectAccessTokenSheetContentUl}>
+                              <ul
+                                className={createProjectAccessTokenSheetContentStyles.resourceList}
+                              >
                                 {!resolvedResources[group.level]?.length && (
                                   <li>
                                     <Badge
@@ -369,11 +371,11 @@ export function CreateProjectAccessTokenSheetContent(
 
 function shakeElement(ev: React.MouseEvent<HTMLElement>) {
   const el = ev.target as HTMLElement;
-  el.classList.add(styles.shakeElementClass);
+  el.classList.add(createProjectAccessTokenSheetContentStyles.shake);
   el.addEventListener(
     'animationend',
     () => {
-      el.classList.remove(styles.shakeElementClass);
+      el.classList.remove(createProjectAccessTokenSheetContentStyles.shake);
     },
     { once: true },
   );

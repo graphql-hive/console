@@ -14,9 +14,8 @@ import {
   UpdateSchemaCompositionInput,
 } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './native-composition.css';
+import { nativeCompositionStyles } from './native-composition.css';
 
 const IncrementalNativeCompositionSwitch_TargetFragment = graphql(`
   fragment IncrementalNativeCompositionSwitch_TargetFragment on Target {
@@ -44,15 +43,10 @@ const IncrementalNativeCompositionSwitch = (props: {
   const [mutation, mutate] = useMutation(IncrementalNativeCompositionSwitch_Mutation);
 
   return (
-    <div
-      className={cn(
-        styles.incrementalNativeCompositionSwitchDiv,
-        mutation.fetching && styles.incrementalNativeCompositionSwitchDiv2,
-      )}
-    >
+    <div className={nativeCompositionStyles.target({ pending: mutation.fetching })}>
       <div>
-        <div className={styles.incrementalNativeCompositionSwitchDiv3}>{target.slug}</div>
-        <div className={styles.incrementalNativeCompositionSwitchDiv4}>
+        <div className={nativeCompositionStyles.targetName}>{target.slug}</div>
+        <div className={nativeCompositionStyles.targetMode}>
           {target.experimental_forcedLegacySchemaComposition ? 'Legacy' : 'Native'} composition
         </div>
       </div>
@@ -216,28 +210,28 @@ export function NativeCompositionSettings(props: {
   }, [toast, props.onMutate, organization.slug, project.slug]);
 
   return (
-    <div className={styles.nativeCompositionSettingsDiv}>
+    <div className={nativeCompositionStyles.root}>
       <div>
-        <p className={styles.nativeCompositionSettingsP}>
+        <p className={nativeCompositionStyles.description}>
           Recommended for most users. Use native GraphQL Federation v2 composition for your project.
         </p>
       </div>
 
       {props.activeCompositionMode === 'native' &&
       project.experimental_nativeCompositionPerTarget === true ? (
-        <div className={styles.nativeCompositionSettingsDiv2}>
+        <div className={nativeCompositionStyles.migration}>
           <div>
-            <div className={styles.nativeCompositionSettingsDiv3}>
+            <div className={nativeCompositionStyles.migrationTitle}>
               <div className={shared.weight.semibold}>Incremental migration</div>
               <Badge content="experimental" variants={{ variant: 'outline' }} />
             </div>
-            <div className={styles.nativeCompositionSettingsDiv5}>
+            <div className={nativeCompositionStyles.compatibilityText}>
               Your project is using the experimental incremental migration feature. <br />
               Migrate targets one by one to the native schema composition.
             </div>
           </div>
           <div>
-            <div className={styles.nativeCompositionSettingsDiv6}>
+            <div className={nativeCompositionStyles.targets}>
               {project.targets.edges.map(edge => (
                 <IncrementalNativeCompositionSwitch key={edge.node.id} target={edge.node} />
               ))}
@@ -249,34 +243,34 @@ export function NativeCompositionSettings(props: {
       {projectQuery.fetching ? (
         <Spinner />
       ) : projectQuery.error ? (
-        <div className={styles.nativeCompositionSettingsDiv7}>
+        <div className={nativeCompositionStyles.compatibility}>
           <div>
-            <HeartCrackIcon className={styles.nativeCompositionSettingsHeartCrackIcon} />
+            <HeartCrackIcon className={nativeCompositionStyles.compatibilityIncompatible} />
           </div>
           <div>
-            <div className={styles.nativeCompositionSettingsDiv8}>
+            <div className={nativeCompositionStyles.compatibilityTitle}>
               Failed to check compatibility. Please try again later.
             </div>
           </div>
         </div>
       ) : projectQuery.data?.project ? (
-        <div className={styles.nativeCompositionSettingsDiv9}>
+        <div className={nativeCompositionStyles.compatibility}>
           <div>
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Compatible ? (
-              <PartyPopperIcon className={styles.nativeCompositionSettingsPartyPopperIcon} />
+              <PartyPopperIcon className={nativeCompositionStyles.compatibilityCompatible} />
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Incompatible ? (
-              <HeartCrackIcon className={styles.nativeCompositionSettingsHeartCrackIcon2} />
+              <HeartCrackIcon className={nativeCompositionStyles.compatibilityIncompatible} />
             ) : null}
             {projectQuery.data.project.nativeFederationCompatibility.status ===
             NativeFederationCompatibilityStatusType.Unknown ? (
-              <FlaskConicalIcon className={styles.nativeCompositionSettingsFlaskConicalIcon} />
+              <FlaskConicalIcon className={nativeCompositionStyles.compatibilityUnknown} />
             ) : null}
           </div>
           <div>
-            <div className={styles.nativeCompositionSettingsDiv10}>
+            <div className={nativeCompositionStyles.compatibilityTitle}>
               {projectQuery.data.project.nativeFederationCompatibility.status ===
               NativeFederationCompatibilityStatusType.Compatible
                 ? 'Your project is compatible'
@@ -290,13 +284,13 @@ export function NativeCompositionSettings(props: {
                 ? 'Unclear whether your project is compatible'
                 : null}
             </div>
-            <div className={styles.nativeCompositionSettingsDiv11}>
+            <div className={nativeCompositionStyles.compatibilityText}>
               {projectQuery.data.project.nativeFederationCompatibility.status ===
               NativeFederationCompatibilityStatusType.Compatible ? (
                 <>
                   Subgraphs of this project are composed and validated correctly by our{' '}
                   <a
-                    className={styles.nativeCompositionSettingsA}
+                    className={nativeCompositionStyles.link}
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library
@@ -309,7 +303,7 @@ export function NativeCompositionSettings(props: {
                 <>
                   Our{' '}
                   <a
-                    className={styles.nativeCompositionSettingsA2}
+                    className={nativeCompositionStyles.link}
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library
@@ -335,7 +329,7 @@ export function NativeCompositionSettings(props: {
                   Your project appears to lack any subgraphs at the moment, making it impossible for
                   us to assess compatibility with our{' '}
                   <a
-                    className={styles.nativeCompositionSettingsA3}
+                    className={nativeCompositionStyles.link}
                     href="https://github.com/the-guild-org/federation"
                   >
                     Open Source composition library
@@ -348,14 +342,14 @@ export function NativeCompositionSettings(props: {
         </div>
       ) : null}
 
-      <div className={styles.nativeCompositionSettingsDiv12}>
+      <div className={nativeCompositionStyles.actions}>
         <Button
           onClick={() => enableNativeComposition()}
           disabled={isMutating || props.activeCompositionMode === 'native'}
         >
           {isMutating ? (
             <>
-              <RefreshCcwIcon className={styles.nativeCompositionSettingsRefreshCcwIcon} />
+              <RefreshCcwIcon className={nativeCompositionStyles.spinner} />
               Please wait
             </>
           ) : props.activeCompositionMode === 'native' ? (

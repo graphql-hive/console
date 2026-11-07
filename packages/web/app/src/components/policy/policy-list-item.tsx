@@ -11,7 +11,7 @@ import { DocsLink } from '../ui/docs-note';
 import { useConfigurationHelper } from './form-helper';
 import { PolicyRuleConfig } from './rules-configuration';
 import { SeverityLevelToggle } from './rules-configuration/severity-toggle';
-import * as styles from './policy-list-item.css';
+import { policyListItemStyles } from './policy-list-item.css';
 
 const PolicyListItem_RuleInfoFragment = graphql(`
   fragment PolicyListItem_RuleInfoFragment on SchemaPolicyRule {
@@ -51,9 +51,9 @@ export function PolicyListItem(props: {
 
   return (
     <>
-      <div className={styles.policyListItemDiv} data-rule={ruleInfo.id}>
-        <div className={styles.policyListItemDiv2}>
-          <div className={styles.policyListItemDiv3}>
+      <div className={policyListItemStyles.root} data-rule={ruleInfo.id}>
+        <div className={policyListItemStyles.row}>
+          <div className={policyListItemStyles.checkbox}>
             <Checkbox
               id={ruleInfo.id}
               value={ruleInfo.id}
@@ -63,17 +63,17 @@ export function PolicyListItem(props: {
             />
           </div>
           <div className={shared.fullWidth}>
-            <div className={styles.policyListItemDiv5}>
-              <label htmlFor={ruleInfo.id} className={styles.policyListItemLabel}>
+            <div className={policyListItemStyles.header}>
+              <label htmlFor={ruleInfo.id} className={policyListItemStyles.label}>
                 {ruleInfo.id}
                 <Popover
                   trigger={
                     <button
                       type="button"
                       aria-label="About this rule"
-                      className={styles.policyListItemButton}
+                      className={policyListItemStyles.hint}
                     >
-                      <InfoIcon className={styles.policyListItemInfoIcon} />
+                      <InfoIcon className={policyListItemStyles.hintIcon} />
                     </button>
                   }
                   openOnHover
@@ -84,7 +84,7 @@ export function PolicyListItem(props: {
                     <div className={shared.fg.default}>
                       <Markdown
                         content={ruleInfo.description}
-                        className={styles.policyListItemMarkdown}
+                        className={policyListItemStyles.hintMarkdown}
                       />
                       <br />
                       {ruleInfo.documentationUrl ? (
@@ -96,11 +96,11 @@ export function PolicyListItem(props: {
               </label>
             </div>
             {enabled ? (
-              <div className={styles.policyListItemDiv7}>
+              <div className={policyListItemStyles.settings}>
                 <div>
                   <SeverityLevelToggle canTurnOff={props.overridingParentRule} rule={ruleInfo.id} />
                 </div>
-                <div className={styles.policyListItemDiv8}>
+                <div className={policyListItemStyles.config}>
                   {shouldShowRuleConfig && (
                     <PolicyRuleConfig
                       rule={ruleInfo.id}
@@ -112,8 +112,8 @@ export function PolicyListItem(props: {
               </div>
             ) : null}
             {props.overridingParentRule && enabled ? (
-              <div className={styles.policyListItemDiv9}>
-                <p className={styles.policyListItemP}>!</p>
+              <div className={policyListItemStyles.override}>
+                <p className={policyListItemStyles.overrideMark}>!</p>
                 You are {severity === RuleInstanceSeverityLevel.Off ? 'disabling' : 'overriding'} a
                 rule configured at the organization level
               </div>

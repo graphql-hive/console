@@ -15,7 +15,7 @@ import {
   ExternalCompositionFormSchema,
   type ExternalCompositionFormValues,
 } from './external-composition-form';
-import * as styles from './external-composition.css';
+import { externalCompositionStyles } from './external-composition.css';
 
 const ExternalCompositionStatus_TestQuery = graphql(`
   query ExternalCompositionStatus_TestQuery($selector: TestExternalSchemaCompositionInput!) {
@@ -124,7 +124,7 @@ const ExternalCompositionStatus = () => {
           trigger={
             <span className={shared.inlineFlex}>
               <RefreshCw
-                className={styles.externalCompositionStatusRefreshCw}
+                className={externalCompositionStyles.statusChecking}
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -144,7 +144,7 @@ const ExternalCompositionStatus = () => {
                 executeTestQuery();
               }}
             >
-              <RotateCw className={styles.externalCompositionStatusRotateCw} />
+              <RotateCw className={externalCompositionStyles.statusRetryIcon} />
             </button>
           }
           content="Execute test"
@@ -156,7 +156,10 @@ const ExternalCompositionStatus = () => {
           defaultOpen
           trigger={
             <span className={shared.inlineFlex}>
-              <X className={styles.externalCompositionStatusX} onClick={e => e.preventDefault()} />
+              <X
+                className={externalCompositionStyles.statusFailed}
+                onClick={e => e.preventDefault()}
+              />
             </span>
           }
           content={error}
@@ -169,7 +172,7 @@ const ExternalCompositionStatus = () => {
           trigger={
             <span className={shared.inlineFlex}>
               <Check
-                className={styles.externalCompositionStatusCheck}
+                className={externalCompositionStyles.statusOk}
                 onClick={e => e.preventDefault()}
               />
             </span>
@@ -284,9 +287,9 @@ export const ExternalCompositionSettings = (props: {
   }
 
   return (
-    <div className={styles.externalCompositionSettingsDiv}>
+    <div className={externalCompositionStyles.root}>
       <div>
-        <p className={styles.externalCompositionSettingsP}>
+        <p className={externalCompositionStyles.description}>
           For advanced users, you can configure an endpoint for external schema compositions. This
           can be used to implement custom composition logic.
         </p>
@@ -295,7 +298,7 @@ export const ExternalCompositionSettings = (props: {
           text="Read about external schema composition in our documentation."
         />
       </div>
-      <div className={styles.externalCompositionSettingsDiv2}>
+      <div className={externalCompositionStyles.header}>
         <ExternalCompositionForm
           form={form}
           onSubmit={onSubmit}

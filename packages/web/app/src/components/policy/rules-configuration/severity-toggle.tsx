@@ -1,11 +1,10 @@
 import { ReactElement } from 'react';
-import clsx from 'clsx';
 import { CircleMinus, CircleX, TriangleAlert } from 'lucide-react';
 import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-group';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
-import * as styles from './severity-toggle.css';
+import { severityToggleStyles } from './severity-toggle.css';
 
 export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }): ReactElement => {
   const config = useConfigurationHelper().ruleConfig(props.rule);
@@ -14,28 +13,14 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       value: RuleInstanceSeverityLevel.Warning,
       label: 'Warning',
       icon: (active: boolean) => (
-        <TriangleAlert
-          className={clsx(
-            styles.severityLevelToggleTriangleAlert,
-            active
-              ? styles.severityLevelToggleTriangleAlert2
-              : styles.severityLevelToggleTriangleAlert3,
-            styles.severityLevelToggleTriangleAlert4,
-          )}
-        />
+        <TriangleAlert className={severityToggleStyles.icon({ tone: 'warning', active })} />
       ),
     },
     {
       value: RuleInstanceSeverityLevel.Error,
       label: 'Error',
       icon: (active: boolean) => (
-        <CircleX
-          className={clsx(
-            styles.severityLevelToggleCircleX,
-            active ? styles.severityLevelToggleCircleX2 : styles.severityLevelToggleCircleX3,
-            styles.severityLevelToggleCircleX4,
-          )}
-        />
+        <CircleX className={severityToggleStyles.icon({ tone: 'critical', active })} />
       ),
     },
   ];
@@ -45,21 +30,13 @@ export const SeverityLevelToggle = (props: { rule: string; canTurnOff: boolean }
       value: RuleInstanceSeverityLevel.Off,
       label: 'Disables a rule defined at the organization level',
       icon: (active: boolean) => (
-        <CircleMinus
-          className={clsx(
-            styles.severityLevelToggleCircleMinus,
-            active
-              ? styles.severityLevelToggleCircleMinus2
-              : styles.severityLevelToggleCircleMinus3,
-            styles.severityLevelToggleCircleMinus4,
-          )}
-        />
+        <CircleMinus className={severityToggleStyles.icon({ tone: 'neutral', active })} />
       ),
     });
   }
 
   return (
-    <PolicyConfigBox title="severity" className={styles.severityLevelTogglePolicyConfigBox}>
+    <PolicyConfigBox title="severity" className={severityToggleStyles.box}>
       <ToggleGroup
         options={options.map(level => ({
           value: level.value,

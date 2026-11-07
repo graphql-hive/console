@@ -13,8 +13,7 @@ import {
 import { Input } from '@/components/ui/primitives/input/input';
 import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { ProjectType } from '@/gql/graphql';
-import { cn } from '@/lib/utils';
-import * as styles from './create-project-form.css';
+import { createProjectFormStyles } from './create-project-form.css';
 
 export const CreateProjectFormSchema = z.object({
   projectSlug: z
@@ -104,16 +103,13 @@ export function CreateProjectForm(props: {
                 content: (
                   <>
                     <Icon
-                      className={cn(
-                        styles.createProjectFormIcon,
-                        field.value === type
-                          ? styles.createProjectFormIcon2
-                          : styles.createProjectFormIcon3,
-                      )}
+                      className={createProjectFormStyles.typeIcon({
+                        selected: field.value === type,
+                      })}
                     />
                     <div>
-                      <span className={styles.createProjectFormSpan}>{title}</span>
-                      <p className={styles.createProjectFormP}>{description}</p>
+                      <span className={createProjectFormStyles.typeTitle}>{title}</span>
+                      <p className={createProjectFormStyles.typeDescription}>{description}</p>
                     </div>
                   </>
                 ),
@@ -123,7 +119,7 @@ export function CreateProjectForm(props: {
           </FormItem>
         )}
       />
-      <div className={styles.createProjectFormDiv}>
+      <div className={createProjectFormStyles.submit}>
         <Button
           width="full"
           onSurface="raised"

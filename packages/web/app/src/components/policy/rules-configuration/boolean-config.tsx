@@ -4,7 +4,7 @@ import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import * as shared from '@/styles/shared.css';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
-import * as styles from './boolean-config.css';
+import { booleanConfigStyles } from './boolean-config.css';
 
 export const PolicyBooleanToggle = (props: {
   rule: string;
@@ -23,10 +23,7 @@ export const PolicyBooleanToggle = (props: {
   }, []);
 
   const label = (
-    <label
-      className={styles.policyBooleanToggleLabel}
-      htmlFor={`${props.rule}_${props.propertyName}`}
-    >
+    <label className={booleanConfigStyles.label} htmlFor={`${props.rule}_${props.propertyName}`}>
       {props.title}
     </label>
   );

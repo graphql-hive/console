@@ -2,10 +2,9 @@ import { ReactElement, useEffect } from 'react';
 import type { JSONSchema } from 'json-schema-typed';
 import { useMonacoTheme } from '@/components/theme/theme-provider';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
-import { cn } from '@/lib/utils';
 import MonacoEditor, { type Monaco } from '@monaco-editor/react';
 import { useConfigurationHelper } from '../form-helper';
-import * as styles from './naming-convention-rule-editor.css';
+import { namingConventionRuleEditorStyles } from './naming-convention-rule-editor.css';
 
 const DEFAULT_VALUE = {
   types: 'PascalCase',
@@ -64,16 +63,13 @@ export function NamingConventionConfigEditor(props: {
   const validationErrorMessage = getValidationStatus('').message;
 
   return (
-    <div className={styles.namingConventionConfigEditorDiv}>
+    <div className={namingConventionRuleEditorStyles.root}>
       <MonacoEditor
         theme={monacoTheme}
         loading={<Spinner />}
         height="40vh"
         beforeMount={handleEditorWillMount}
-        className={cn(
-          styles.namingConventionConfigEditorMonacoEditor,
-          validationErrorMessage ? styles.namingConventionConfigEditorMonacoEditor2 : '',
-        )}
+        className={namingConventionRuleEditorStyles.editor({ invalid: !!validationErrorMessage })}
         width="100%"
         language="json"
         onChange={value => {

@@ -15,7 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Callout } from '../ui/callout';
 import { PolicyListItem } from './policy-list-item';
 import { PolicyFormSchema, type PolicyFormValues } from './rules-configuration';
-import * as styles from './policy-settings.css';
+import { policySettingsStyles } from './policy-settings.css';
 
 const PolicySettingsAvailableRulesQuery = graphql(`
   query PolicySettingsAvailableRulesQuery {
@@ -123,22 +123,22 @@ function PolicySettingsListForm({
                 form.setValue('allowOverrides', value, { shouldDirty: true, shouldValidate: true }),
             })
           : null}
-        <div className={styles.policySettingsListFormDiv}>
-          {isDirty ? <p className={styles.policySettingsListFormP}>Unsaved changes</p> : null}
+        <div className={policySettingsStyles.actions}>
+          {isDirty ? <p className={policySettingsStyles.dirty}>Unsaved changes</p> : null}
 
           <Button disabled={!isDirty || saving || !isValid || !onSave} type="submit">
             Update Policy
           </Button>
         </div>
         {error ? (
-          <Callout type="error" className={styles.policySettingsListFormCallout}>
+          <Callout type="error" className={policySettingsStyles.error}>
             <b>Oops, something went wrong.</b>
             <br />
             {error}
           </Callout>
         ) : null}
       </div>
-      <div className={styles.policySettingsListFormDiv2}>
+      <div className={policySettingsStyles.rules}>
         {availableRules.map(availableRule => (
           <PolicyListItem
             disabled={!onSave}

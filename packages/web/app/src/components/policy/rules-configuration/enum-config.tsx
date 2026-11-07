@@ -5,7 +5,7 @@ import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-grou
 import * as shared from '@/styles/shared.css';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
-import * as styles from './enum-config.css';
+import { enumConfigStyles } from './enum-config.css';
 
 export const PolicyEnumSelect = (props: {
   rule: string;
@@ -38,13 +38,13 @@ export const PolicyEnumSelect = (props: {
                 <button
                   type="button"
                   aria-label="About this option"
-                  className={styles.policyEnumSelectButton}
+                  className={enumConfigStyles.hint}
                 >
-                  <InfoIcon className={styles.policyEnumSelectInfoIcon} />
+                  <InfoIcon className={enumConfigStyles.hintIcon} />
                 </button>
               }
               openOnHover
-              content={<p className={styles.policyEnumSelectP}>{props.tooltip}</p>}
+              content={<p className={enumConfigStyles.hintText}>{props.tooltip}</p>}
             />
           ) : null}
         </div>

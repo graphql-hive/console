@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
 import clsx from 'clsx';
-import * as styles from './policy-config-box.css';
+import { policyConfigBoxStyles } from './policy-config-box.css';
 
 type Props = {
   className?: string;
@@ -10,14 +10,13 @@ export function PolicyConfigBox(props: Props) {
   return (
     <div
       className={clsx(
-        styles.policyConfigBoxDiv,
-        'title' in props ? undefined : styles.policyConfigBoxDiv2,
+        policyConfigBoxStyles.root({ untitled: !('title' in props) }),
         props.className,
       )}
     >
       {'title' in props ? (
         <>
-          <div className={styles.policyConfigBoxDiv3}>{props.title}</div>
+          <div className={policyConfigBoxStyles.title}>{props.title}</div>
           <div>{props.children}</div>
         </>
       ) : (

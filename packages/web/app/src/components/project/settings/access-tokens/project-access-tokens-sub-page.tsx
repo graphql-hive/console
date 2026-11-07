@@ -12,7 +12,7 @@ import { AccessTokenCreatedDialog } from '../../../organization/settings/access-
 import { CreateAccessTokenState } from '../../../organization/settings/access-tokens/access-tokens-sub-page';
 import { CreateProjectAccessTokenSheetContent } from './create-project-access-token-sheet-content';
 import { ProjectAccessTokensTable } from './project-access-tokens-table';
-import * as styles from './project-access-tokens-sub-page.css';
+import { projectAccessTokensSubPageStyles } from './project-access-tokens-sub-page.css';
 
 export const ProjectAccessTokensSubPage_OrganizationQuery = graphql(`
   query ProjectAccessTokensSubPage_OrganizationQuery(
@@ -65,7 +65,7 @@ export function ProjectAccessTokensSubPage(): React.ReactNode {
         }}
       />
       <div
-        className={styles.projectAccessTokensSubPageDiv}
+        className={projectAccessTokensSubPageStyles.root}
         data-testid="organization-settings-personal-access-tokens"
       >
         {query.data?.organization?.project ? (

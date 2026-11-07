@@ -5,7 +5,7 @@ import { Link } from '@/components/ui/link';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
-import * as styles from './LegacyCompositionWarn.css';
+import { legacyCompositionWarnStyles } from './LegacyCompositionWarn.css';
 
 const LegacyCompositionWarn_ProjectFragment = graphql(`
   fragment LegacyCompositionWarn_ProjectFragment on Project {
@@ -40,7 +40,7 @@ export function LegacyCompositionWarn(props: {
   }
 
   return (
-    <Callout type="warning" className={styles.legacyCompositionWarnCallout}>
+    <Callout type="warning" className={legacyCompositionWarnStyles.callout}>
       <b>This project is using Legacy Federation v1 composition.</b>
       <br />
       Migrate to Native Federation v2 for the recommended composition experience.{' '}
@@ -50,7 +50,7 @@ export function LegacyCompositionWarn(props: {
           organizationSlug,
           projectSlug: project.slug,
         }}
-        className={styles.legacyCompositionWarnLink}
+        className={legacyCompositionWarnStyles.link}
       >
         Open Composition settings
       </Link>

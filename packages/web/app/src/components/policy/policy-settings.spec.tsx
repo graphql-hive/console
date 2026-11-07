@@ -4,7 +4,7 @@ import { makeFragmentData } from '@/gql';
 import { RuleInstanceSeverityLevel, type SchemaPolicyInput } from '@/gql/graphql';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { PolicySettings, PolicySettings_SchemaPolicyFragment } from './policy-settings';
-import * as editorStyles from './rules-configuration/naming-convention-rule-editor.css';
+import { namingConventionRuleEditorStyles } from './rules-configuration/naming-convention-rule-editor.css';
 
 /** The stub the mocked urql query hook reads from. */
 const urql = vi.hoisted(() => ({
@@ -435,7 +435,9 @@ describe('PolicySettings', () => {
       fireEvent.change(editor(), { target: { value: '{"types":' } });
     });
     await waitFor(() =>
-      expect(editor().className).toContain(editorStyles.namingConventionConfigEditorMonacoEditor2),
+      expect(editor().className).toContain(
+        namingConventionRuleEditorStyles.editor.classNames.variants.invalid.true,
+      ),
     );
     expect(updateButton().disabled).toBe(true);
 

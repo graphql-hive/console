@@ -5,7 +5,7 @@ import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import * as shared from '@/styles/shared.css';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
-import * as styles from './multiselect-config.css';
+import { multiselectConfigStyles } from './multiselect-config.css';
 
 export const PolicyMultiSelect = (props: {
   rule: string;
@@ -39,13 +39,13 @@ export const PolicyMultiSelect = (props: {
                 <button
                   type="button"
                   aria-label="About this option"
-                  className={styles.policyMultiSelectButton}
+                  className={multiselectConfigStyles.hint}
                 >
-                  <InfoIcon className={styles.policyMultiSelectInfoIcon} />
+                  <InfoIcon className={multiselectConfigStyles.hintIcon} />
                 </button>
               }
               openOnHover
-              content={<p className={styles.policyMultiSelectP}>{props.tooltip}</p>}
+              content={<p className={multiselectConfigStyles.hintText}>{props.tooltip}</p>}
             />
           ) : null}
         </div>
@@ -55,7 +55,7 @@ export const PolicyMultiSelect = (props: {
         name="options"
         inputId={`${props.rule}_${props.propertyName}`}
         placeholder="Select Options"
-        className={styles.policyMultiSelectCombobox}
+        className={multiselectConfigStyles.combobox}
         onBlur={() => {}}
         onChange={newValue => {
           setConfig(

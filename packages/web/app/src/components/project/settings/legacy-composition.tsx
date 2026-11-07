@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
-import * as styles from './legacy-composition.css';
+import { legacyCompositionStyles } from './legacy-composition.css';
 
 const LegacyCompositionSettings_OrganizationFragment = graphql(`
   fragment LegacyCompositionSettings_OrganizationFragment on Organization {
@@ -104,15 +104,15 @@ export function LegacyCompositionSettings(props: {
   }, [toast, props.activeCompositionMode, props.onMutate, organization.slug, project.slug]);
 
   return (
-    <div className={styles.legacyCompositionSettingsDiv}>
+    <div className={legacyCompositionStyles.root}>
       <div>
-        <p className={styles.legacyCompositionSettingsP}>
+        <p className={legacyCompositionStyles.description}>
           Not recommended. Migrate towards using Native Federation v2.
         </p>
         <ProductUpdatesLink href="2023-10-10-native-federation-2" text="Read the announcement!" />
       </div>
 
-      <div className={styles.legacyCompositionSettingsDiv2}>
+      <div className={legacyCompositionStyles.actions}>
         <Button
           variant="destructive"
           onClick={() => enableLegacyComposition()}
@@ -120,7 +120,7 @@ export function LegacyCompositionSettings(props: {
         >
           {isMutating ? (
             <>
-              <RefreshCcwIcon className={styles.legacyCompositionSettingsRefreshCcwIcon} />
+              <RefreshCcwIcon className={legacyCompositionStyles.spinner} />
               Please wait
             </>
           ) : props.activeCompositionMode === 'legacy' ? (
