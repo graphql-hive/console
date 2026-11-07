@@ -8,7 +8,7 @@ import { LAST_VISITED_ORG_KEY } from '@/constants';
 import { cn } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { Link, useRouter } from '@tanstack/react-router';
-import * as styles from './query-error.css';
+import { queryErrorStyles } from './query-error.css';
 
 export function QueryError({
   error,
@@ -37,9 +37,9 @@ export function QueryError({
   const shouldShowError = typeof showError === 'boolean' ? showError : isExpectedError;
 
   return (
-    <div className={cn(styles.queryErrorDiv, className)}>
+    <div className={cn(queryErrorStyles.root, className)}>
       {showLogoutButton && (
-        <div className={styles.queryErrorDiv2}>
+        <div className={queryErrorStyles.signOut}>
           <Button
             variant="outline"
             onClick={() =>
@@ -48,15 +48,15 @@ export function QueryError({
               })
             }
           >
-            <LogOutIcon className={styles.queryErrorLogOutIcon} /> Sign out
+            <LogOutIcon className={queryErrorStyles.signOutIcon} /> Sign out
           </Button>
         </div>
       )}
-      <div className={styles.queryErrorDiv3}>
-        <img src="/images/figures/connection.svg" alt="Ghost" className={styles.queryErrorImg} />
-        <div className={styles.queryErrorDiv4}>
-          <h1 className={styles.queryErrorH1}>Oops, something went wrong.</h1>
-          <div className={styles.queryErrorDiv5}>
+      <div className={queryErrorStyles.body}>
+        <img src="/images/figures/connection.svg" alt="Ghost" className={queryErrorStyles.image} />
+        <div className={queryErrorStyles.text}>
+          <h1 className={queryErrorStyles.title}>Oops, something went wrong.</h1>
+          <div className={queryErrorStyles.details}>
             {shouldShowError ? (
               <div className={shared.text.sm}>
                 {error.graphQLErrors?.[0]?.message ?? error.message}
@@ -86,10 +86,10 @@ export function QueryError({
             )}
 
             {requestId ? (
-              <div className={styles.queryErrorDiv8}>
-                <div className={styles.queryErrorDiv9}>
-                  <div className={styles.queryErrorDiv10}>Error ID</div>
-                  <div className={styles.queryErrorDiv11}>{requestId}</div>
+              <div className={queryErrorStyles.requestId}>
+                <div className={queryErrorStyles.requestIdRow}>
+                  <div className={queryErrorStyles.requestIdLabel}>Error ID</div>
+                  <div className={queryErrorStyles.requestIdValue}>{requestId}</div>
                 </div>
               </div>
             ) : null}

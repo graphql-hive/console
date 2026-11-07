@@ -1,9 +1,9 @@
 import React from 'react';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
-import * as styles from './alert.css';
+import { alertStyles } from './alert.css';
 
-const alertVariants = lenient(styles.alertVariants);
+const alertVariants = lenient(alertStyles.root);
 
 const Alert = React.forwardRef<
   HTMLDivElement,
@@ -16,7 +16,7 @@ Alert.displayName = 'Alert';
 const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
     // eslint-disable-next-line jsx-a11y/heading-has-content
-    <h5 ref={ref} className={cn(styles.h5, className)} {...props} />
+    <h5 ref={ref} className={cn(alertStyles.title, className)} {...props} />
   ),
 );
 AlertTitle.displayName = 'AlertTitle';
@@ -25,7 +25,7 @@ const AlertDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn(styles.div, className)} {...props} />
+  <div ref={ref} className={cn(alertStyles.description, className)} {...props} />
 ));
 AlertDescription.displayName = 'AlertDescription';
 

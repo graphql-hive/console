@@ -4,7 +4,7 @@ import ghost from '../../../../public/images/figures/ghost.svg?url';
 import { Button } from '@/components/ui/primitives/button/button';
 import { lenient } from '@/lib/recipe';
 import { useRouter } from '@tanstack/react-router';
-import * as styles from './not-found.css';
+import { notFoundStyles } from './not-found.css';
 
 const illustrations = {
   ghost,
@@ -18,9 +18,7 @@ export const resourceAccessDescription = (
   </>
 );
 
-// `px-6` on the root rather than on `horizontal` alone: the centred layout needs it too once the
-// viewport is narrow enough for a long title to reach the edges.
-export const notFoundVariants = lenient(styles.notFoundVariants);
+export const notFoundVariants = lenient(notFoundStyles.root);
 
 type NotFoundProps = {
   /**
@@ -52,17 +50,17 @@ export function NotFound({
       alt=""
       width={200}
       height={200}
-      className={styles.notFoundImg}
+      className={notFoundStyles.image}
     />
   );
 
-  const heading = bigHeading ? <p className={styles.notFoundP}>{bigHeading}</p> : null;
-  const titleEl = <h2 className={styles.notFoundH2}>{title}</h2>;
+  const heading = bigHeading ? <p className={notFoundStyles.bigHeading}>{bigHeading}</p> : null;
+  const titleEl = <h2 className={notFoundStyles.title}>{title}</h2>;
   const descriptionEl = description ? (
-    <div className={styles.notFoundDiv}>{description}</div>
+    <div className={notFoundStyles.description}>{description}</div>
   ) : null;
   const backButton = showBackButton ? (
-    <div className={styles.notFoundDiv2}>
+    <div className={notFoundStyles.back}>
       <Button variant="outline" onClick={() => router.history.back()}>
         Go back
       </Button>
@@ -72,12 +70,14 @@ export function NotFound({
   if (variants?.layout === 'horizontal') {
     return (
       <div className={notFoundVariants({ ...variants })}>
-        <div className={styles.notFoundDiv3}>
+        <div className={notFoundStyles.horizontalBody}>
           {image}
-          <div className={styles.notFoundDiv4}>
+          <div className={notFoundStyles.horizontalText}>
             {heading}
             {titleEl}
-            {descriptionEl ? <div className={styles.notFoundDiv5}>{descriptionEl}</div> : null}
+            {descriptionEl ? (
+              <div className={notFoundStyles.horizontalDescription}>{descriptionEl}</div>
+            ) : null}
             {backButton}
           </div>
         </div>

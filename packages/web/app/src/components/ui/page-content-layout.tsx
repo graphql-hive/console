@@ -1,11 +1,11 @@
 import { forwardRef, HTMLAttributes, ReactNode } from 'react';
 import { DocsLink, DocsLinkProps } from '@/components/ui/docs-note';
 import { cn } from '@/lib/utils';
-import * as styles from './page-content-layout.css';
+import { pageContentLayoutStyles } from './page-content-layout.css';
 
 const PageLayout = ({ children }: { children: ReactNode }) => (
-  <div className={styles.pageLayoutDiv}>
-    <div className={styles.pageLayoutDiv2}>{children}</div>
+  <div className={pageContentLayoutStyles.root}>
+    <div className={pageContentLayoutStyles.row}>{children}</div>
   </div>
 );
 PageLayout.displayName = 'PageLayout';
@@ -17,11 +17,11 @@ type PageLayoutContentProps = {
 
 const PageLayoutContent = forwardRef<HTMLDivElement, PageLayoutContentProps>(
   ({ children, mainTitlePage, ...props }, ref) => (
-    <div ref={ref} className={cn(styles.div, props.className)} {...props}>
+    <div ref={ref} className={cn(pageContentLayoutStyles.content, props.className)} {...props}>
       {mainTitlePage ? (
         <>
-          <h1 className={styles.h1}>{mainTitlePage}</h1>
-          <div className={styles.div2} />
+          <h1 className={pageContentLayoutStyles.title}>{mainTitlePage}</h1>
+          <div className={pageContentLayoutStyles.rule} />
         </>
       ) : null}
       {children}
@@ -37,7 +37,7 @@ const SubPageLayout = ({
   children: ReactNode;
   'data-testid'?: string;
 }) => (
-  <div className={styles.subPageLayoutDiv} data-testid={dataTestId}>
+  <div className={pageContentLayoutStyles.subPage} data-testid={dataTestId}>
     {children}
   </div>
 );
@@ -57,18 +57,18 @@ const SubPageLayoutHeader = ({
   subPageTitle,
 }: SubPageLayoutHeaderProps) => {
   const header = (
-    <div className={styles.subPageLayoutHeaderDiv}>
-      <h3 className={styles.subPageLayoutHeaderH3}>{subPageTitle}</h3>
+    <div className={pageContentLayoutStyles.subPageHeading}>
+      <h3 className={pageContentLayoutStyles.subPageTitle}>{subPageTitle}</h3>
       {typeof description === 'string' ? <p>{description}</p> : description}
       {docsLink && <DocsLink {...docsLink} />}
     </div>
   );
   return (
-    <div className={styles.subPageLayoutHeaderDiv2}>
+    <div className={pageContentLayoutStyles.subPageHeader}>
       {sideContent ? (
-        <div className={styles.subPageLayoutHeaderDiv3}>
+        <div className={pageContentLayoutStyles.subPageHeaderSplit}>
           {header}
-          <div className={styles.subPageLayoutHeaderDiv4}>{sideContent}</div>
+          <div className={pageContentLayoutStyles.subPageSide}>{sideContent}</div>
         </div>
       ) : (
         header

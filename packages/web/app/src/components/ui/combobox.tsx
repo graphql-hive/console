@@ -1,9 +1,8 @@
 import React from 'react';
-import clsx from 'clsx';
 import { ChevronDown, CircleX } from 'lucide-react';
 import Select, { components } from 'react-select';
 import CreatableSelect from 'react-select/creatable';
-import * as styles from './combobox.css';
+import { comboboxStyles } from './combobox.css';
 
 interface Option {
   value: string;
@@ -35,34 +34,34 @@ export function Combobox(
       components={{
         ClearIndicator: compProps => (
           <components.ClearIndicator {...compProps}>
-            <CircleX className={styles.comboboxCircleX} />
+            <CircleX className={comboboxStyles.indicatorIcon} />
           </components.ClearIndicator>
         ),
         DropdownIndicator: compProps => (
           <components.DropdownIndicator {...compProps}>
-            <ChevronDown className={styles.comboboxChevronDown} />
+            <ChevronDown className={comboboxStyles.indicatorIcon} />
           </components.DropdownIndicator>
         ),
         NoOptionsMessage: compProps => (
           <components.NoOptionsMessage {...compProps}>
-            <div className={styles.comboboxDiv}>
+            <div className={comboboxStyles.emptyMessage}>
               {props.creatable ? 'Start typing to add values' : 'No options'}
             </div>
           </components.NoOptionsMessage>
         ),
       }}
       classNames={{
-        control: () => clsx(styles.comboboxClass),
-        valueContainer: () => clsx(styles.comboboxClass2),
-        indicatorsContainer: () => clsx(styles.comboboxClass3),
-        container: () => clsx(styles.comboboxClass4),
-        menu: () => clsx(styles.comboboxClass5),
-        menuList: () => clsx(styles.comboboxClass6),
-        option: () => clsx(styles.comboboxClass7),
-        placeholder: () => clsx(styles.comboboxClass8),
-        input: () => clsx(styles.comboboxClass9),
-        multiValue: () => clsx(styles.comboboxClass10),
-        multiValueRemove: () => clsx(styles.comboboxClass11),
+        control: () => comboboxStyles.control,
+        valueContainer: () => comboboxStyles.valueContainer,
+        indicatorsContainer: () => comboboxStyles.indicatorsContainer,
+        container: () => comboboxStyles.container,
+        menu: () => comboboxStyles.menu,
+        menuList: () => comboboxStyles.menuList,
+        option: () => comboboxStyles.option,
+        placeholder: () => comboboxStyles.placeholder,
+        input: () => comboboxStyles.input,
+        multiValue: () => comboboxStyles.multiValue,
+        multiValueRemove: () => comboboxStyles.multiValueRemove,
       }}
       closeMenuOnSelect={false}
       value={props.value}

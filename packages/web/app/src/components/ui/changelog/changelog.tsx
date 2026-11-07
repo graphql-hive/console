@@ -4,8 +4,7 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { useLocalStorageJson, useToggle } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
-import * as styles from './changelog.css';
+import { changelogStyles } from './changelog.css';
 
 export type Changelog = {
   title: string;
@@ -59,7 +58,7 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
   }
 
   return (
-    <span className={styles.changelogPopoverSpan}>
+    <span className={changelogStyles.root}>
       <Popover
         open={isOpen}
         onOpenChange={toggle}
@@ -70,28 +69,23 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
         arrow
         content={
           <>
-            <div className={styles.changelogPopoverDiv}>
-              <div className={styles.changelogPopoverDiv2}>
-                <h4 className={styles.changelogPopoverH4}>What's new in Hive Console</h4>
-                <p className={styles.changelogPopoverP}>
+            <div className={changelogStyles.content}>
+              <div className={changelogStyles.header}>
+                <h4 className={changelogStyles.title}>What's new in Hive Console</h4>
+                <p className={changelogStyles.subtitle}>
                   Find out about the newest features, and enhancements
                 </p>
               </div>
-              <ol className={styles.changelogPopoverOl}>
+              <ol className={changelogStyles.list}>
                 {props.changes.map((change, index) => (
                   <li
-                    className={cn(
-                      styles.changelogPopoverLi,
-                      readChanges.includes(change.href)
-                        ? styles.changelogPopoverLi2
-                        : styles.changelogPopoverLi3,
-                    )}
+                    className={changelogStyles.item({ read: readChanges.includes(change.href) })}
                     key={index}
                   >
-                    <time className={styles.changelogPopoverTime} dateTime={change.date}>
+                    <time className={changelogStyles.date} dateTime={change.date}>
                       {format(new Date(change.date), 'do MMMM yyyy')}
                     </time>
-                    <h3 className={styles.changelogPopoverH3}>
+                    <h3 className={changelogStyles.changeTitle}>
                       <a
                         target="_blank"
                         rel="noreferrer"
@@ -101,12 +95,12 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
                         {change.title}
                       </a>
                     </h3>
-                    <p className={styles.changelogPopoverP2}>{change.description}</p>
+                    <p className={changelogStyles.changeDescription}>{change.description}</p>
                   </li>
                 ))}
               </ol>
             </div>
-            <div className={styles.changelogPopoverDiv3}>
+            <div className={changelogStyles.footer}>
               <Button
                 variant="link"
                 anchor={{
@@ -121,8 +115,8 @@ function ChangelogPopover(props: { changes: Changelog[] }) {
         }
       />
       {displayDot ? (
-        <span className={styles.changelogPopoverSpan2}>
-          <span className={styles.changelogPopoverSpan3} />
+        <span className={changelogStyles.dot}>
+          <span className={changelogStyles.dotPulse} />
         </span>
       ) : null}
     </span>
