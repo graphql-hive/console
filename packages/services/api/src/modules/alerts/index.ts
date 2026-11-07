@@ -1,10 +1,12 @@
 import { createModule } from 'graphql-modules';
+import { ClickHouse } from '../operations/providers/clickhouse-client';
 import { SavedFiltersStorage } from '../saved-filters/providers/saved-filters-storage';
 import { DiscordCommunicationAdapter } from './providers/adapters/discord';
 import { TeamsCommunicationAdapter } from './providers/adapters/msteams';
 import { SlackCommunicationAdapter } from './providers/adapters/slack';
 import { WebhookCommunicationAdapter } from './providers/adapters/webhook';
 import { AlertsManager } from './providers/alerts-manager';
+import { DeliveryRecorder } from './providers/delivery-recorder';
 import { MetricAlertRulesManager } from './providers/metric-alert-rules-manager';
 import { MetricAlertRulesStorage } from './providers/metric-alert-rules-storage';
 import { resolvers } from './resolvers.generated';
@@ -24,5 +26,7 @@ export const alertsModule = createModule({
     WebhookCommunicationAdapter,
     TeamsCommunicationAdapter,
     DiscordCommunicationAdapter,
+    DeliveryRecorder,
+    ClickHouse,
   ],
 });
