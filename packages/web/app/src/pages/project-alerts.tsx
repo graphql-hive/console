@@ -22,12 +22,15 @@ import { Card } from '@/components/ui/primitives/card/card';
 import { QueryError } from '@/components/ui/query-error';
 import { FragmentType, graphql } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
+import { useNavigate } from '@tanstack/react-router';
 
 function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[] }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [isModalOpen, toggleModalOpen] = useToggle();
   const [modalSession, setModalSession] = useState(0);
   const channels = props.channels ?? [];
+  const { organizationSlug, projectSlug } = useSlugs('project');
+  const navigate = useNavigate();
 
   return (
     <Card
@@ -47,6 +50,12 @@ function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChan
         isChecked={channelId => selected.includes(channelId)}
         onCheckedChange={(channelId, isChecked) => {
           setSelected(isChecked ? [...selected, channelId] : selected.filter(k => k !== channelId));
+        }}
+        onRowClick={channelId => {
+          void navigate({
+            to: '/$organizationSlug/$projectSlug/view/alerts/channels/$channelId',
+            params: { organizationSlug, projectSlug, channelId },
+          });
         }}
       />
       <div className="mt-4 flex items-center gap-x-2">
