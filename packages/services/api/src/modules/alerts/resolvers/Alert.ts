@@ -9,7 +9,10 @@ export const Alert: AlertResolvers = {
       projectId: alert.projectId,
     });
 
-    return channels.find(c => c.id === alert.channelId)!;
+    return {
+      ...channels.find(c => c.id === alert.channelId)!,
+      organizationId: alert.organizationId,
+    };
   },
   target: (alert, _, { injector }) => {
     return injector.get(TargetManager).getTarget({

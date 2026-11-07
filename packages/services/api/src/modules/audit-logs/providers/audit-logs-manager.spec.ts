@@ -9,9 +9,6 @@ vi.mock('../../operations/providers/clickhouse-client', () => ({
   ClickHouse: class {},
   sql: (strings: TemplateStringsArray, ...values: any[]) => ({ strings, values }),
 }));
-vi.mock('./audit-log-recorder', () => ({
-  formatToClickhouseDateTime: (d: Date) => d.toISOString(),
-}));
 vi.mock('./audit-logs-types', () => ({
   AuditLogClickhouseArrayModel: { parse: (v: any) => v },
 }));

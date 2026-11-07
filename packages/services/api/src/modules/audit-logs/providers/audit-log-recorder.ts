@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Injectable, Scope } from 'graphql-modules';
+import { formatDateTime } from '@hive/clickhouse';
 import { captureException } from '@sentry/node';
 import { Session } from '../../auth/lib/authz';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
@@ -58,7 +59,7 @@ export class AuditLogRecorder {
         accessToken,
       };
 
-      const eventTime = formatToClickhouseDateTime(new Date());
+      const eventTime = formatDateTime(new Date());
       const id = randomUUID();
 
       await this.clickHouse.postQuery({
@@ -102,8 +103,4 @@ export class AuditLogRecorder {
       });
     }
   }
-}
-
-export function formatToClickhouseDateTime(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
 }
