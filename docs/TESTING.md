@@ -104,22 +104,22 @@ against Chromium.
    ```
 7. Run Playwright: `pnpm test:e2e`
 
-#### Visual Regression Tests
+#### Visual Before/After Check
 
-Two Playwright projects screenshot the UI in light and dark mode and compare against committed
-baselines in `e2e/__screenshots__`:
+`pnpm test:visual` screenshots every Foundry preview (`packages/web/app/src/**/*.preview.tsx`) in
+light and dark mode and compares them with a set you rendered earlier. It needs no backend;
+Playwright starts the Foundry dev server itself. Screenshots live in `e2e/__screenshots__`, are
+git-ignored, and are never compared across machines.
 
-- `visual-foundry` renders every Foundry preview (`packages/web/app/src/**/*.preview.tsx`). It needs
-  no backend; Playwright starts the Foundry dev server itself. Run with `pnpm test:visual`.
-- `visual-routes` seeds one organization through the testkit and visits every app route. It needs
-  the e2e stack above. Run with `pnpm test:visual:routes`.
+To check that a branch renders exactly like `main`:
 
-Baselines are keyed by platform and only the Linux ones are committed, since that is what CI
-renders. To regenerate them, run the `update-screenshots` workflow on your branch: it either uploads
-the new baselines as an artifact or, with `push` ticked, commits them to the branch. On a macOS
-machine `pnpm test:visual:update` writes local `-darwin` baselines (git-ignored) so you can diff
-your own before/after without the stack. Both projects use Playwright's bundled Chromium rather than
-the installed Chrome, so run `pnpm exec playwright install chromium` once.
+1. On `main`: `pnpm test:visual:update` renders the reference set.
+2. On your branch: `pnpm test:visual` compares against it and writes diff images to `test-results/`
+   for anything that changed.
+
+Both runs use Playwright's bundled Chromium rather than the installed Chrome, so run
+`pnpm exec playwright install chromium` once. If the spec cannot find the preview canvas, it is
+usually the dev server still warming up; re-run.
 
 #### Docker Compose Configuration
 

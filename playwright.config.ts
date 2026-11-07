@@ -38,9 +38,8 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: isCI ? 'retain-on-failure' : 'off',
   },
-  // Baselines are keyed by platform: Linux ones (what CI compares against) come from the
-  // `update-screenshots` workflow, macOS ones from `pnpm test:visual:update`.
-  snapshotPathTemplate: '{testDir}/../__screenshots__/{projectName}/{arg}-{platform}{ext}',
+  // Screenshots are a local tool (see docs/TESTING.md), never committed.
+  snapshotPathTemplate: '{testDir}/../__screenshots__/{projectName}/{arg}{ext}',
   projects: [
     {
       name: 'chromium',
@@ -51,9 +50,10 @@ export default defineConfig({
       },
     },
     {
-      // Screenshots of every Foundry preview. Needs no backend, only the Foundry dev server
-      // started by `webServer` below. Uses Playwright's bundled Chromium rather than the
-      // installed Chrome so rendering does not drift with the machine's browser version.
+      // Screenshots of every Foundry preview, as a local before/after check. Needs no backend,
+      // only the Foundry dev server started by `webServer` below. Uses Playwright's bundled
+      // Chromium rather than the installed Chrome so rendering does not drift with the machine's
+      // browser version.
       name: 'visual-foundry',
       testMatch: /visual-foundry\.spec\.ts/,
       retries: 0,
@@ -73,36 +73,14 @@ export default defineConfig({
         },
       },
     },
-    {
-      // Screenshots of every app route against the e2e stack (see `visual-routes.spec.ts`). The
-      // spec seeds one fixture set in `beforeAll`, so its tests run in one worker, in order.
-      name: 'visual-routes',
-      testMatch: /visual-routes\.spec\.ts/,
-      fullyParallel: false,
-      retries: 0,
-      use: {
-        browserName: 'chromium',
-        viewport: {
-          width: 1280,
-          height: 1024,
-        },
-        screenshot: 'off',
-        video: 'off',
-      },
-      expect: {
-        timeout: 20_000,
-        toHaveScreenshot: {
-          animations: 'disabled',
-          caret: 'hide',
-          maxDiffPixelRatio: 0.005,
-        },
-      },
-    },
   ],
-  webServer: {
-    command: 'pnpm --filter @hive/app foundry',
-    url: FOUNDRY_URL,
-    reuseExistingServer: !isCI,
-    timeout: 120_000,
-  },
+  // The Foundry dev server, only for the visual project: the e2e projects do not need it.
+  webServer: process.env.VISUAL_FOUNDRY
+    ? {
+        command: 'pnpm --filter @hive/app foundry',
+        url: FOUNDRY_URL,
+        reuseExistingServer: !isCI,
+        timeout: 120_000,
+      }
+    : undefined,
 });
