@@ -1,6 +1,4 @@
-import { cn } from '@/lib/utils';
-import * as shared from '@/styles/shared.css';
-import * as styles from './floating-search.css';
+import { floatingSearchStyles } from './floating-search.css';
 
 type FloatingSearchProps = {
   label: string;
@@ -23,7 +21,7 @@ export function FloatingSearch({
   standalone = false,
 }: FloatingSearchProps) {
   return (
-    <div className={cn(shared.relative, !standalone && styles.floatingSearchDiv2)}>
+    <div className={floatingSearchStyles.root({ standalone })}>
       <input
         type="text"
         role="searchbox"
@@ -36,10 +34,7 @@ export function FloatingSearch({
             e.stopPropagation();
           }
         }}
-        className={cn(
-          styles.floatingSearchInput,
-          standalone ? styles.floatingSearchInput2 : styles.floatingSearchInput3,
-        )}
+        className={floatingSearchStyles.input({ standalone })}
       />
     </div>
   );

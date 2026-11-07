@@ -1,9 +1,9 @@
 import { style } from '@vanilla-extract/css';
 import { component } from '../../../../styles/layered';
 import { space, square } from '../../../../styles/space';
+import { focusRing } from '../shared-styles';
 import * as shared from '../../../../styles/shared.css';
 import { vars } from '../../../../styles/theme.css';
-import { focusRing } from '../shared-styles.css';
 
 export const sliderStyles = {
   root: style([

@@ -7,7 +7,7 @@
  */
 
 import { lenient } from '@/lib/recipe';
-import * as styles from './shared-styles.css';
+import { floatingStyles } from './shared-styles.css';
 
 /**
  * The inset of a panel made of menu rows: sides and bottom only, because the first row brings the
@@ -15,18 +15,14 @@ import * as styles from './shared-styles.css';
  * `sections`) gets no padding from the popup and applies this itself, so a search field can bleed
  * to the edges with `-mx-2` in either case.
  */
-export const menuPanelInset = styles.menuPanelInset;
+export const menuPanelInset = floatingStyles.panelInset;
 
 /** Base classes shared by all floating panels (menu, select, popover). */
-export const floatingBaseClass =
-  // No z-index here. The positioner is transformed for placement, which makes it a stacking
-  // context, so a z-index on the popup would only compete inside it and lose to any page
-  // element that outranks the positioner. It goes on the positioner instead.
-  styles.floatingBaseClass;
+export const floatingBaseClass = floatingStyles.panelBase;
 
-export const floatingVariants = lenient(styles.floatingVariants);
+export const floatingVariants = lenient(floatingStyles.panel);
 
-export const itemVariants = lenient(styles.itemVariants);
+export const itemVariants = lenient(floatingStyles.item);
 
 /** Common props shared by all floating components (popover, menu, select). */
 export type FloatingProps = {
@@ -66,4 +62,4 @@ export type FloatingProps = {
 export { scrollArea as floatingScrollArea } from '../shared-styles';
 
 /** Empty state text inside a floating panel. */
-export const floatingEmptyState = styles.floatingEmptyState;
+export const floatingEmptyState = floatingStyles.emptyState;

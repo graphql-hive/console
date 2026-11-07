@@ -12,7 +12,7 @@ import {
 import * as ui from '@/styles/shared.css';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Input } from './input';
-import * as shared from '../shared-styles.css';
+import { controlStyles } from '../shared-styles.css';
 import { inputStyles } from './input.css';
 
 /** A field that FormControl wraps, the way every Form in the app does. */
@@ -95,7 +95,7 @@ describe('Input', () => {
   it('paints the raised surface for a field inside a sheet or dialog', () => {
     render(<Input placeholder="Name" onSurface="raised" />);
     const input = screen.getByPlaceholderText('Name');
-    expect(input.className).toContain(shared.controlSurfaceRaised);
+    expect(input.className).toContain(controlStyles.surface.raised);
     const { onSurface } = inputStyles.root.classNames.variants;
     expect(input.className).toContain(onSurface.raised);
     expect(input.className).not.toContain(onSurface.base);
@@ -104,7 +104,7 @@ describe('Input', () => {
   it('applies size, width and mono as classes', () => {
     render(<Input placeholder="Page" size="compact" width="xs" mono />);
     const input = screen.getByPlaceholderText('Page');
-    expect(input.className).toContain(shared.controlSizeCompact);
+    expect(input.className).toContain(controlStyles.size.compact);
     expect(input.className).toContain(inputStyles.root.classNames.variants.width.xs);
     expect(input.className).toContain(inputStyles.root.classNames.variants.mono.true);
   });

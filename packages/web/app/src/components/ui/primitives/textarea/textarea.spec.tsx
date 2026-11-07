@@ -11,7 +11,7 @@ import {
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Textarea } from './textarea';
 import { inputStyles } from '../input/input.css';
-import * as shared from '../shared-styles.css';
+import { controlStyles } from '../shared-styles.css';
 import { textareaStyles } from './textarea.css';
 
 function ReactHookFormField(props: { onSubmit: (values: { description: string }) => void }) {
@@ -78,7 +78,7 @@ describe('Textarea', () => {
   it('paints the raised surface for a field inside a sheet or dialog', () => {
     render(<Textarea placeholder="Description" onSurface="raised" />);
     const textarea = screen.getByPlaceholderText('Description');
-    expect(textarea.className).toContain(shared.controlSurfaceRaised);
+    expect(textarea.className).toContain(controlStyles.surface.raised);
     const { onSurface } = textareaStyles.root.classNames.variants;
     expect(textarea.className).toContain(onSurface.raised);
     expect(textarea.className).not.toContain(onSurface.base);

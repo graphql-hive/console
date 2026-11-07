@@ -1,4 +1,4 @@
-import * as styles from './shared-styles.css';
+import { controlStyles } from './shared-styles.css';
 
 /**
  * Shared style tokens for base components (button segments, disabled state, etc.)
@@ -8,10 +8,10 @@ import * as styles from './shared-styles.css';
  */
 
 /** Separator between segments in a segmented trigger (label | icon, label | count | ×). */
-export const segmentSeparator = styles.segmentSeparator;
+export const segmentSeparator = controlStyles.segmentSeparator;
 
 /** Interactive segment within a segmented trigger (clickable text area). */
-export const segmentButton = styles.segmentButton;
+export const segmentButton = controlStyles.segmentButton;
 
 export const disabledStyle = { opacity: 0.5, pointerEvents: 'none' } as const;
 
@@ -20,14 +20,14 @@ export const disabledStyle = { opacity: 0.5, pointerEvents: 'none' } as const;
  * only. An outline rather than a box-shadow ring because it needs no offset colour, so it reads
  * the same on the page, on a card and inside a popover.
  */
-export const focusRing = styles.focusRing;
+export const focusRing = controlStyles.focusRing;
 
 /**
  * The quiet ring for text on the page rather than a control with an edge: tabs and navigation
  * links. 1px dotted. The outline follows the element's own radius, which stays with the element:
  * a radius here would also round a border the element draws, like a nav link's underline.
  */
-export const focusRingQuiet = styles.focusRingQuiet;
+export const focusRingQuiet = controlStyles.focusRingQuiet;
 
 /**
  * Vertical scroll container with a thin, muted scrollbar. Use anywhere content can overflow
@@ -35,7 +35,7 @@ export const focusRingQuiet = styles.focusRingQuiet;
  * arbitrary Tailwind properties, because older Chromium and Safari need `::-webkit-scrollbar`
  * pseudo-elements that a class string cannot express.
  */
-export const scrollArea = styles.scrollArea;
+export const scrollArea = controlStyles.scrollArea;
 
 /**
  * The surface a control sits on. `base` is the page background; `raised` is a card or a floating
@@ -59,15 +59,9 @@ export type OnSurface = 'base' | 'raised';
 //
 // `controlSurface` is the resting half on its own, for a control whose hover belongs to the
 // segments inside it (a toggle group) rather than to the whole.
-export const controlSurface = {
-  base: styles.controlSurfaceBase,
-  raised: styles.controlSurfaceRaised,
-} as const satisfies Record<OnSurface, string>;
+export const controlSurface = controlStyles.surface satisfies Record<OnSurface, string>;
 
-export const controlOnSurface = {
-  base: [controlSurface.base, styles.controlOnSurfaceClass].join(' '),
-  raised: [controlSurface.raised, styles.controlOnSurfaceClass2].join(' '),
-} as const satisfies Record<OnSurface, string>;
+export const controlOnSurface = controlStyles.onSurface satisfies Record<OnSurface, string>;
 
 /**
  * The two heights an interactive control comes in. `default` (36px) is a form control: an input,
@@ -80,7 +74,4 @@ export const controlOnSurface = {
  */
 export type ControlSize = 'compact' | 'default';
 
-export const controlSize = {
-  compact: styles.controlSizeCompact,
-  default: styles.controlSizeDefault,
-} as const satisfies Record<ControlSize, string>;
+export const controlSize = controlStyles.size satisfies Record<ControlSize, string>;
