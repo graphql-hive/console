@@ -1,10 +1,10 @@
 import { type ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { lenient } from '@/lib/recipe';
 import { Dialog as BaseDialog } from '@base-ui/react/dialog';
 import { Button } from '../button/button';
 import { ScrollArea } from '../scroll-area/scroll-area';
-import * as styles from './overlay-parts.css';
+import { overlayPartsStyles } from './overlay-parts.css';
 
 /**
  * The parts a dialog, a sheet and an alert dialog share, so the three read as one family: the
@@ -13,11 +13,13 @@ import * as styles from './overlay-parts.css';
  * these render inside either root.
  */
 
-// Base UI sets `data-starting-style` on the frame a popup mounts and `data-ending-style` while it
-// leaves, so one CSS transition covers both directions.
-export const backdropClass = styles.backdropClass;
+export const backdropClass = overlayPartsStyles.backdrop;
 
-export const popupSurfaceClass = styles.popupSurfaceClass;
+export const popupSurfaceClass = overlayPartsStyles.surface;
+
+const headerVariants = lenient(overlayPartsStyles.header);
+
+const bodyVariants = lenient(overlayPartsStyles.body);
 
 /**
  * Where menus, selects and tooltips opened inside the overlay portal to. Base UI appends a plain
@@ -26,7 +28,9 @@ export const popupSurfaceClass = styles.popupSurfaceClass;
  * mount keeps the popup's width, since a popup wraps its text to its containing block's width.
  */
 export function OverlayPortalMount({ mountRef }: { mountRef: (node: HTMLElement | null) => void }) {
-  return <div ref={mountRef} className={styles.overlayPortalMountDiv} data-overlay-portal-mount />;
+  return (
+    <div ref={mountRef} className={overlayPartsStyles.portalMount} data-overlay-portal-mount />
+  );
 }
 
 export function OverlayHeader({
@@ -45,10 +49,10 @@ export function OverlayHeader({
   clearCloseButton: boolean;
 }) {
   return (
-    <div className={cn(styles.overlayHeaderDiv, clearCloseButton && styles.overlayHeaderDiv2)}>
-      <BaseDialog.Title className={styles.overlayHeaderTitle}>{title}</BaseDialog.Title>
+    <div className={headerVariants({ clearCloseButton })}>
+      <BaseDialog.Title className={overlayPartsStyles.title}>{title}</BaseDialog.Title>
       {description != null ? (
-        <BaseDialog.Description className={styles.overlayHeaderDescription}>
+        <BaseDialog.Description className={overlayPartsStyles.description}>
           {description}
         </BaseDialog.Description>
       ) : null}
@@ -72,24 +76,22 @@ export function OverlayBody({
   padBottom: boolean;
 }) {
   if (padding === 'none') {
-    return <div className={styles.overlayBodyDiv}>{children}</div>;
+    return <div className={overlayPartsStyles.bodyFill}>{children}</div>;
   }
   return (
     <ScrollArea fill>
-      <div className={cn(styles.overlayBodyDiv2, padBottom && styles.overlayBodyDiv3)}>
-        {children}
-      </div>
+      <div className={bodyVariants({ padBottom })}>{children}</div>
     </ScrollArea>
   );
 }
 
 export function OverlayFooter({ children }: { children: ReactNode }) {
-  return <div className={styles.overlayFooterDiv}>{children}</div>;
+  return <div className={overlayPartsStyles.footer}>{children}</div>;
 }
 
 export function OverlayCloseButton() {
   return (
-    <span className={styles.overlayCloseButtonSpan}>
+    <span className={overlayPartsStyles.closeButton}>
       <BaseDialog.Close
         render={
           <Button layout="iconOnly" icon={X} aria-label="Close" variant="ghost" size="icon-sm" />

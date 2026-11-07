@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Select } from '../../floating/select/select';
 import { Dialog } from './dialog';
-import * as partStyles from '../overlay-parts.css';
+import { overlayPartsStyles } from '../overlay-parts.css';
 import * as styles from './dialog.css';
 
 describe('Dialog', () => {
@@ -53,7 +53,7 @@ describe('Dialog', () => {
     const mount = screen.getByRole('listbox').closest('[data-overlay-portal-mount]');
     expect(mount).not.toBeNull();
     expect(mount!.parentElement).toBe(screen.getByRole('dialog'));
-    expect(mount!.className).toContain(partStyles.overlayPortalMountDiv);
+    expect(mount!.className).toContain(overlayPartsStyles.portalMount);
   });
 
   it('renders nothing until opened, and opens from its trigger', () => {

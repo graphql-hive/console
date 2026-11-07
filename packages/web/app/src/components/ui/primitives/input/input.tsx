@@ -1,29 +1,29 @@
 import { forwardRef, type ReactNode } from 'react';
 import { type LucideIcon } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
-import { cn } from '@/lib/utils';
-import * as shared from '@/styles/shared.css';
-import { controlSize, type ControlSize, type OnSurface } from '../shared-styles';
-import * as styles from './input.css';
+import { inputStyles } from './input.css';
 
 /** The field itself, shared with Textarea. Fill and border come from the `onSurface` variant. */
-export const fieldClass = styles.field;
+export const fieldClass = inputStyles.field;
 
-// The block before a slug sits one step further from the page than the field it joins.
-const prefixSurface = {
-  base: styles.prefixSurfaceBase,
-  raised: styles.prefixSurfaceRaised,
-} as const satisfies Record<OnSurface, string>;
+const inputVariants = lenient(inputStyles.root);
 
-const inputVariants = lenient(styles.inputVariants);
+const wrapperVariants = lenient(inputStyles.wrapper);
+
+const prefixVariants = lenient(inputStyles.prefix);
 
 type NativeInputProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'className' | 'style' | 'size' | 'width' | 'prefix'
 >;
 
+type InputVariants = Omit<
+  NonNullable<Parameters<typeof inputVariants>[0]>,
+  'leadingIcon' | 'trailing' | 'prefixed'
+>;
+
 type InputProps = NativeInputProps &
-  NonNullable<Parameters<typeof inputVariants>[0]> & {
+  InputVariants & {
     /** Error state for a field outside a Form; FormControl sets `aria-invalid` itself. */
     invalid?: boolean;
     /** An icon inside the leading edge, for a search field. */
@@ -61,12 +61,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <input
       ref={ref}
       aria-invalid={isInvalid || undefined}
-      className={cn(
-        inputVariants({ size, onSurface, width, mono }),
-        LeadingIcon && styles.inputInput,
-        trailing && styles.inputInput2,
-        prefixText && styles.inputInput3,
-      )}
+      className={inputVariants({
+        size,
+        onSurface,
+        width,
+        mono,
+        leadingIcon: !!LeadingIcon,
+        trailing: !!trailing,
+        prefixed: !!prefixText,
+      })}
       {...native}
     />
   );
@@ -75,24 +78,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     return input;
   }
 
-  // The width stays on the field: a fixed field keeps its size and a prefix adds its own, so a
-  // long slug prefix cannot squeeze the field. A fluid field needs the wrapper to be fluid too.
   return (
-    <span className={cn(styles.inputSpan, (width ?? 'full') === 'full' && shared.fullWidth)}>
+    <span className={wrapperVariants({ fluid: (width ?? 'full') === 'full' })}>
       {prefixText ? (
-        <span
-          className={cn(
-            controlSize[(size ?? 'default') as ControlSize],
-            prefixSurface[onSurface ?? 'base'],
-            styles.inputSpan3,
-          )}
-        >
-          {prefixText}
-        </span>
+        <span className={prefixVariants({ size, onSurface })}>{prefixText}</span>
       ) : null}
-      {LeadingIcon ? <LeadingIcon className={styles.inputLeadingIcon} /> : null}
+      {LeadingIcon ? <LeadingIcon className={inputStyles.leadingIcon} /> : null}
       {input}
-      {trailing ? <span className={styles.inputSpan4}>{trailing}</span> : null}
+      {trailing ? <span className={inputStyles.trailing}>{trailing}</span> : null}
     </span>
   );
 });

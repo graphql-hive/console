@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { RadioGroup } from './radio-group';
-import * as styles from './radio-group.css';
+import { radioGroupStyles } from './radio-group.css';
 
 const ITEMS = [
   { value: 'info', label: 'Info' },
@@ -14,7 +14,7 @@ describe('RadioGroup', () => {
       <RadioGroup variant="as-button" value="info" onValueChange={() => {}} items={ITEMS} />,
     );
     expect(screen.getAllByRole('radio')[0].className).toContain(
-      styles.radioItemVariants({ variant: 'as-button', onSurface: 'base' }),
+      radioGroupStyles.item({ variant: 'as-button', onSurface: 'base' }),
     );
 
     rerender(
@@ -27,7 +27,7 @@ describe('RadioGroup', () => {
       />,
     );
     expect(screen.getAllByRole('radio')[0].className).toContain(
-      styles.radioItemVariants({ variant: 'as-button', onSurface: 'raised' }),
+      radioGroupStyles.item({ variant: 'as-button', onSurface: 'raised' }),
     );
   });
 });

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/primitives/form/form';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Textarea } from './textarea';
-import * as inputStyles from '../input/input.css';
+import { inputStyles } from '../input/input.css';
 import * as shared from '../shared-styles.css';
 import { textareaStyles } from './textarea.css';
 
@@ -44,7 +44,7 @@ describe('Textarea', () => {
     expect(ref.current).toBe(textarea);
     expect(textarea.getAttribute('rows')).toBe('3');
     expect(textarea.getAttribute('maxlength')).toBe('5000');
-    expect(textarea.className).toContain(inputStyles.fieldClass);
+    expect(textarea.className).toContain(inputStyles.field);
     expect(textarea.className).toContain(textareaStyles.root.classNames.base);
   });
 
@@ -52,7 +52,7 @@ describe('Textarea', () => {
     const onSubmit = vi.fn();
     render(<ReactHookFormField onSubmit={onSubmit} />);
     const textarea = screen.getByPlaceholderText('Description');
-    expect(textarea.className).toContain(inputStyles.fieldClass2);
+    expect(textarea.className).toContain(inputStyles.field);
     expect(textarea.getAttribute('aria-invalid')).toBeNull();
 
     fireEvent.click(screen.getByText('Save'));

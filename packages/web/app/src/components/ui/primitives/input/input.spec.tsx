@@ -13,7 +13,7 @@ import * as ui from '@/styles/shared.css';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Input } from './input';
 import * as shared from '../shared-styles.css';
-import * as styles from './input.css';
+import { inputStyles } from './input.css';
 
 /** A field that FormControl wraps, the way every Form in the app does. */
 function ReactHookFormField(props: { onSubmit: (values: { name: string }) => void }) {
@@ -50,13 +50,13 @@ describe('Input', () => {
     expect(input.getAttribute('autocomplete')).toBe('off');
     expect(input.getAttribute('data-testid')).toBe('email');
     // Regression: the merge used to drop the colour next to the theme's own font size.
-    expect(input.className).toContain(styles.fieldClass);
-    const { size, onSurface } = styles.inputVariants.classNames.variants;
+    expect(input.className).toContain(inputStyles.field);
+    const { size, onSurface } = inputStyles.root.classNames.variants;
     expect(input.className).toContain(size.default);
     // Focus lifts the fill one step on every surface.
     expect(input.className).toContain(onSurface.base);
     // Without this a type="search" field takes WebKit's native searchfield corners.
-    expect(input.className).toContain(styles.fieldClass2);
+    expect(input.className).toContain(inputStyles.field);
   });
 
   it('marks the field invalid through aria-invalid, and only then', () => {
@@ -71,7 +71,7 @@ describe('Input', () => {
     // empty one when the field was valid. Spread onto the input it wiped every class it had.
     render(<ReactHookFormField onSubmit={() => {}} />);
     const input = screen.getByPlaceholderText('Name');
-    expect(input.className).toContain(styles.fieldClass2);
+    expect(input.className).toContain(inputStyles.field);
     expect(input.getAttribute('aria-invalid')).toBeNull();
   });
 
@@ -96,7 +96,7 @@ describe('Input', () => {
     render(<Input placeholder="Name" onSurface="raised" />);
     const input = screen.getByPlaceholderText('Name');
     expect(input.className).toContain(shared.controlSurfaceRaised);
-    const { onSurface } = styles.inputVariants.classNames.variants;
+    const { onSurface } = inputStyles.root.classNames.variants;
     expect(input.className).toContain(onSurface.raised);
     expect(input.className).not.toContain(onSurface.base);
   });
@@ -105,8 +105,8 @@ describe('Input', () => {
     render(<Input placeholder="Page" size="compact" width="xs" mono />);
     const input = screen.getByPlaceholderText('Page');
     expect(input.className).toContain(shared.controlSizeCompact);
-    expect(input.className).toContain(styles.inputVariants.classNames.variants.width.xs);
-    expect(input.className).toContain(styles.inputVariants.classNames.variants.mono.true);
+    expect(input.className).toContain(inputStyles.root.classNames.variants.width.xs);
+    expect(input.className).toContain(inputStyles.root.classNames.variants.mono.true);
   });
 
   it('renders the prefix text, leading icon and trailing slot around the field', () => {
@@ -122,18 +122,18 @@ describe('Input', () => {
     const input = screen.getByPlaceholderText('slug');
     expect(screen.getByText('app.graphql-hive.com/')).toBeTruthy();
     expect(screen.getByText('Clear')).toBeTruthy();
-    expect(input.className).toContain(styles.inputInput3);
-    expect(input.className).toContain(styles.inputInput);
-    expect(input.className).toContain(styles.inputInput2);
+    expect(input.className).toContain(inputStyles.root.classNames.variants.prefixed.true);
+    expect(input.className).toContain(inputStyles.root.classNames.variants.leadingIcon.true);
+    expect(input.className).toContain(inputStyles.root.classNames.variants.trailing.true);
     // A fixed width is the field's own; the prefix adds to it rather than eating into it.
-    expect(input.className).toContain(styles.inputVariants.classNames.variants.width.sm);
+    expect(input.className).toContain(inputStyles.root.classNames.variants.width.sm);
     expect(input.parentElement?.className).not.toContain(ui.fullWidth);
   });
 
   it('lets a fluid decorated field fill its container', () => {
     render(<Input placeholder="Search" leadingIcon={Search} />);
     const input = screen.getByPlaceholderText('Search');
-    expect(input.className).toContain(styles.inputVariants.classNames.variants.width.full);
+    expect(input.className).toContain(inputStyles.root.classNames.variants.width.full);
     expect(input.parentElement?.className).toContain(ui.fullWidth);
   });
 });

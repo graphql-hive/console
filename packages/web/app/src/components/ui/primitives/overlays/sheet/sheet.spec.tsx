@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Sheet } from './sheet';
-import * as partStyles from '../overlay-parts.css';
+import { overlayPartsStyles } from '../overlay-parts.css';
 import * as styles from './sheet.css';
 
 describe('Sheet', () => {
@@ -19,7 +19,9 @@ describe('Sheet', () => {
     const sheet = screen.getByRole('dialog');
     expect(sheet.className).toContain(styles.class2);
     expect(sheet.className).toContain(styles.widthClassLg);
-    expect(screen.getByText('Body').parentElement?.className).toContain(partStyles.overlayBodyDiv2);
+    expect(screen.getByText('Body').parentElement?.className).toContain(
+      overlayPartsStyles.body.classNames.base,
+    );
   });
 
   it('closes from the corner button', () => {
@@ -38,6 +40,6 @@ describe('Sheet', () => {
       </Sheet>,
     );
     const body = screen.getByText('http.method GET').closest('ul')?.parentElement;
-    expect(body?.className).not.toContain(partStyles.overlayBodyDiv2);
+    expect(body?.className).not.toContain(overlayPartsStyles.body.classNames.base);
   });
 });

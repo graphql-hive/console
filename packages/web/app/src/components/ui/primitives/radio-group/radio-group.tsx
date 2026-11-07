@@ -1,13 +1,12 @@
 import { type ReactNode } from 'react';
 import { lenient } from '@/lib/recipe';
-import * as shared from '@/styles/shared.css';
 import { Radio as BaseRadio } from '@base-ui/react/radio';
 import { RadioGroup as BaseRadioGroup } from '@base-ui/react/radio-group';
-import * as styles from './radio-group.css';
+import { radioGroupStyles } from './radio-group.css';
 
-const radioItemVariants = lenient(styles.radioItemVariants);
+const radioItemVariants = lenient(radioGroupStyles.item);
 
-const radioGroupVariants = lenient(styles.radioGroupVariants);
+const radioGroupVariants = lenient(radioGroupStyles.group);
 
 type RadioVariants = NonNullable<Parameters<typeof radioItemVariants>[0]>;
 
@@ -49,8 +48,8 @@ function RadioItem({
   const isCard = variant === 'as-card';
 
   const indicator = isCard ? (
-    <span className={styles.radioItemSpan}>
-      <BaseRadio.Indicator className={styles.radioItemIndicator} />
+    <span className={radioGroupStyles.ring}>
+      <BaseRadio.Indicator className={radioGroupStyles.dot} />
     </span>
   ) : null;
 
@@ -68,10 +67,10 @@ function RadioItem({
       ) : (
         <>
           {indicator}
-          <span className={isCard ? shared.stack.gap2 : undefined}>
-            <span className={isCard ? styles.radioItemSpan3 : undefined}>{item.label}</span>
+          <span className={isCard ? radioGroupStyles.cardText : undefined}>
+            <span className={isCard ? radioGroupStyles.cardLabel : undefined}>{item.label}</span>
             {isCard && item.description ? (
-              <span className={styles.radioItemSpan4}>{item.description}</span>
+              <span className={radioGroupStyles.cardDescription}>{item.description}</span>
             ) : null}
           </span>
         </>
