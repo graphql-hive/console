@@ -2,6 +2,7 @@ import { ReactElement, useEffect } from 'react';
 import { InfoIcon } from 'lucide-react';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Input } from '@/components/ui/primitives/input/input';
+import * as shared from '@/styles/shared.css';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 import * as styles from './string-config.css';
@@ -25,7 +26,7 @@ export const PolicyStringInputConfig = (props: {
   return (
     <PolicyConfigBox
       title={
-        <div className={styles.policyStringInputConfigDiv}>
+        <div className={shared.row.base}>
           <div>{props.title}</div>
           {props.tooltip ? (
             <Popover

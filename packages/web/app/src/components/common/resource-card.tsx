@@ -6,6 +6,7 @@ import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
 import { pluralize } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './resource-card.css';
 
 export function ResourceCard(props: {
@@ -50,7 +51,7 @@ export function ResourceCard(props: {
         {props.renderLink(
           <>
             <div className={styles.resourceCardDiv2}>
-              <div className={styles.resourceCardDiv3}>
+              <div className={shared.grow}>
                 <div>
                   <Sparkline
                     name="Requests"
@@ -83,7 +84,7 @@ export function ResourceCard(props: {
                           trigger={
                             <div className={styles.resourceCardDiv8}>
                               <Globe className={styles.resourceCardGlobe} />
-                              <div className={styles.resourceCardDiv9}>
+                              <div className={shared.text.xs}>
                                 {requestsInDateRange}{' '}
                                 {pluralize(totalNumberOfRequests, 'request', 'requests')}
                               </div>
@@ -95,7 +96,7 @@ export function ResourceCard(props: {
                           trigger={
                             <div className={styles.resourceCardDiv10}>
                               <History className={styles.resourceCardHistory} />
-                              <div className={styles.resourceCardDiv11}>
+                              <div className={shared.text.xs}>
                                 {schemaVersionsInDateRange}{' '}
                                 {pluralize(totalNumberOfVersions, 'commit', 'commits')}
                               </div>

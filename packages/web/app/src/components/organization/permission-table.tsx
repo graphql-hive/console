@@ -1,6 +1,7 @@
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as styles from './permission-table.css';
 
@@ -29,7 +30,7 @@ const PERMISSION_COLUMNS: ColumnDef<PermissionRow, unknown>[] = [
         return (
           <Tooltip
             trigger={
-              <span className={styles.span}>
+              <span className={shared.inlineFlex}>
                 <DataTableCell kind="badge" items={{ content: 'Allowed', variant: 'warning' }} />
               </span>
             }

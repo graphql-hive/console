@@ -15,6 +15,7 @@ import {
 } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './native-composition.css';
 
 const IncrementalNativeCompositionSwitch_TargetFragment = graphql(`
@@ -58,7 +59,7 @@ const IncrementalNativeCompositionSwitch = (props: {
       <div>
         <Tooltip
           trigger={
-            <span className={styles.incrementalNativeCompositionSwitchSpan}>
+            <span className={shared.inlineFlex}>
               <Switch
                 disabled={mutation.fetching}
                 onCheckedChange={nativeComposition => {
@@ -78,7 +79,7 @@ const IncrementalNativeCompositionSwitch = (props: {
           sideOffset={2}
           content={
             <>
-              <span className={styles.incrementalNativeCompositionSwitchSpan2}>
+              <span className={shared.weight.semibold}>
                 {target.experimental_forcedLegacySchemaComposition ? 'Enable' : 'Disable'}
               </span>{' '}
               native composition for the target
@@ -227,7 +228,7 @@ export function NativeCompositionSettings(props: {
         <div className={styles.nativeCompositionSettingsDiv2}>
           <div>
             <div className={styles.nativeCompositionSettingsDiv3}>
-              <div className={styles.nativeCompositionSettingsDiv4}>Incremental migration</div>
+              <div className={shared.weight.semibold}>Incremental migration</div>
               <Badge content="experimental" variants={{ variant: 'outline' }} />
             </div>
             <div className={styles.nativeCompositionSettingsDiv5}>

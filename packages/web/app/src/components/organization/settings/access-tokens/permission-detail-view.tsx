@@ -2,6 +2,7 @@ import { PermissionTable } from '@/components/organization/permission-table';
 import { Accordion } from '@/components/ui/primitives/accordion/accordion';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import { permissionLevelToResourceName } from './shared-helpers';
 import * as styles from './permission-detail-view.css';
 
@@ -67,12 +68,12 @@ export function PermissionDetailView(props: {
               ))}
               <div className={styles.permissionDetailViewDiv3}>
                 {group.resolvedResourceIds == null ? (
-                  <p className={styles.permissionDetailViewP}>
+                  <p className={shared.fg.critical}>
                     Not granted on any {permissionLevelToResourceName(group.level).slice(0, -1)}.
                   </p>
                 ) : (
                   <>
-                    <p className={styles.permissionDetailViewP2}>
+                    <p className={shared.fg.secondary}>
                       Granted on {permissionLevelToResourceName(group.level)}:
                     </p>
                     <ul className={styles.permissionDetailViewUl}>

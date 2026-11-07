@@ -1,6 +1,7 @@
 import { ReactElement, useEffect } from 'react';
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
+import * as shared from '@/styles/shared.css';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 import * as styles from './boolean-config.css';
@@ -40,7 +41,7 @@ export const PolicyBooleanToggle = (props: {
           onCheckedChange={newValue => setConfig(props.propertyName, newValue)}
         />
       </div>
-      <div className={styles.policyBooleanToggleDiv}>
+      <div className={shared.grow}>
         {props.tooltip ? <Tooltip trigger={label} content={props.tooltip} /> : label}
       </div>
     </PolicyConfigBox>

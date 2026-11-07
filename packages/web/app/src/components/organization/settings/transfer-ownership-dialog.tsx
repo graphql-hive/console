@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as styles from './transfer-ownership-dialog.css';
 
@@ -160,9 +161,7 @@ export const TransferOrganizationOwnershipModal = ({
 
         <div className={styles.transferOrganizationOwnershipModalDiv2} />
 
-        <div className={styles.transferOrganizationOwnershipModalDiv3}>
-          About the ownership transfer
-        </div>
+        <div className={shared.weight.medium}>About the ownership transfer</div>
         <ul className={styles.transferOrganizationOwnershipModalUl}>
           <li>
             The new owner will receive a confirmation email. If the new owner doesn't accept the

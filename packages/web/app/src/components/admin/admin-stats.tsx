@@ -6,6 +6,7 @@ import { DataWrapper } from '@/components/ui/data-wrapper';
 import { TimeSeriesChart } from '@/components/ui/primitives/chart/time-series-chart';
 import Stat from '@/components/ui/stat';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as styles from './admin-stats.css';
 
@@ -245,7 +246,7 @@ export function AdminStats({
   return (
     <DataWrapper query={query} organizationSlug={null}>
       {({ data }) => (
-        <div className={styles.adminStatsDiv}>
+        <div className={shared.stack.gap6}>
           <div className={styles.adminStatsDiv2}>
             <OverallStat label="Users" value={overall.users} />
             <OverallStat label="Organizations" value={overall.organizations} />

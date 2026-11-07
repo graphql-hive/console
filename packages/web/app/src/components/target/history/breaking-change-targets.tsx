@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Menu } from '@/components/ui/primitives/floating/menu/menu';
 import { useSlugs } from '@/lib/hooks';
 import { formatCount } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as styles from './breaking-change-targets.css';
@@ -99,7 +100,7 @@ export function BreakingChangeTargets(props: {
       id: 'usage',
       meta: { width: 'fill' },
       cell: ({ row }) => (
-        <span className={styles.breakingChangeTargetsSpan}>
+        <span className={shared.inlineRow.gap2}>
           <Badge
             content={formatCount(row.original.count, 'request', row.original.countFormatted)}
             variants={{ variant: 'outline' }}

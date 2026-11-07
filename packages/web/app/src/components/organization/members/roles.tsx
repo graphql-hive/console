@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -203,7 +204,7 @@ function OrganizationMemberRoleView(props: {
   const [showOnlyGrantedPermissions, setShowOnlyGrantedPermissions] = useState(true);
 
   return (
-    <div className={styles.organizationMemberRoleViewDiv}>
+    <div className={shared.stack.gap4}>
       <div className={styles.organizationMemberRoleViewDiv2}>
         <ScrollArea fill>
           <SelectedPermissionOverview
@@ -502,7 +503,7 @@ function RoleNameCell(props: {
         {role.isLocked ? (
           <Tooltip
             trigger={
-              <span className={styles.roleNameCellSpan}>
+              <span className={shared.inlineFlex}>
                 <LockIcon className={styles.roleNameCellLockIcon} />
               </span>
             }
@@ -528,7 +529,7 @@ function RoleNameCell(props: {
             side="right"
             content={
               <div className={styles.roleNameCellDiv4}>
-                <div className={styles.roleNameCellDiv5}>Default role for new members</div>
+                <div className={shared.weight.medium}>Default role for new members</div>
                 <div className={styles.roleNameCellDiv6}>
                   <p>New members will be assigned to this role by default.</p>
                   {props.canChangeOIDCDefaultRole ? (

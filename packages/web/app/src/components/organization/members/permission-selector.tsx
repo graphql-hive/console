@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/primitives/floating/select/select';
 import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { ResultOf } from '@graphql-typed-document-node/core';
 import * as styles from './permission-selector.css';
 
@@ -113,7 +114,7 @@ export function PermissionSelector(props: PermissionSelectorProps) {
                 !props.selectedPermissionIds.has(permission.dependsOnId);
 
               return (
-                <div className={styles.permissionSelectorDiv2} key={permission.id}>
+                <div className={shared.relative} key={permission.id}>
                   <div
                     className={cn(styles.permissionSelectorDiv3)}
                     data-permission-id={permission.id}

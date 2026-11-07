@@ -1,5 +1,6 @@
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import {
   DeprecationNote,
   Description,
@@ -55,7 +56,7 @@ export function GraphQLFields(props: {
 
   return (
     <>
-      <div className={styles.graphQLFieldsDiv}>
+      <div className={shared.stack.base}>
         {sortedAndFilteredFields.map((field, i) => {
           const coordinate = `${props.typeName}.${field.name}`;
           const isUsed = field.usage.total > 0;
@@ -65,7 +66,7 @@ export function GraphQLFields(props: {
 
           return (
             <GraphQLTypeCardListItem key={field.name} index={i}>
-              <div className={styles.graphQLFieldsDiv2}>
+              <div className={shared.fullWidth}>
                 <div className={styles.graphQLFieldsDiv3}>
                   <div>
                     {props.warnAboutUnusedArguments &&

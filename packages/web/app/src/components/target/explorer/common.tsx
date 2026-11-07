@@ -11,6 +11,7 @@ import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, toDecimal, useSlugs } from '@/lib/hooks';
 import { carriedRange } from '@/lib/hooks/use-date-range-controller';
 import { capitalize, cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link, useLocation } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import AvailabilityBar from './availability-bar';
@@ -118,7 +119,7 @@ export function SchemaExplorerUsageStats(props: {
 
   return (
     <div className={styles.schemaExplorerUsageStatsDiv}>
-      <div className={styles.schemaExplorerUsageStatsDiv2}>
+      <div className={shared.grow}>
         <div className={styles.schemaExplorerUsageStatsDiv3}>{formatNumber(usage.total)}</div>
       </div>
       {availability !== null ? (
@@ -143,33 +144,31 @@ export function SchemaExplorerUsageStats(props: {
                 </div>
                 {hasFieldLevelMetrics ? (
                   <div className={styles.schemaExplorerUsageStatsDiv7}>
-                    <span className={styles.schemaExplorerUsageStatsSpan}>Requests</span> counts how
-                    many client requests asked for a field, whereas{' '}
-                    <span className={styles.schemaExplorerUsageStatsSpan2}>Resolutions</span> counts
-                    the actual number of times your backend executed code to fetch that field's data
-                    (which can multiply within lists or drop to zero if a parent returned null).
+                    <span className={shared.weight.bold}>Requests</span> counts how many client
+                    requests asked for a field, whereas{' '}
+                    <span className={shared.weight.bold}>Resolutions</span> counts the actual number
+                    of times your backend executed code to fetch that field's data (which can
+                    multiply within lists or drop to zero if a parent returned null).
                   </div>
                 ) : null}
                 <div className={styles.schemaExplorerUsageStatsDiv8}>
                   <div>
-                    <span className={styles.schemaExplorerUsageStatsSpan3}>
-                      {formatNumber(usage.total)} Requests
-                    </span>{' '}
+                    <span className={shared.weight.bold}>{formatNumber(usage.total)} Requests</span>{' '}
                     {hasFieldLevelMetrics ? 'with' : null}
                   </div>
                   {usage.totalResolutions ? (
-                    <div className={styles.schemaExplorerUsageStatsDiv9}>
+                    <div className={shared.weight.bold}>
                       {formatNumber(usage.totalResolutions)} Resolutions
                     </div>
                   ) : null}
                   {usage.errorTotal ? (
-                    <div className={styles.schemaExplorerUsageStatsDiv10}>
+                    <div className={shared.weight.bold}>
                       {formatNumber(usage.errorTotal)} Errors
                     </div>
                   ) : null}
                   <div>
                     for{' '}
-                    <span className={styles.schemaExplorerUsageStatsSpan4}>
+                    <span className={shared.fg.warning}>
                       {availability.toFixed(2)}% Availability
                     </span>
                   </div>
@@ -259,7 +258,7 @@ export function SchemaExplorerUsageStats(props: {
                 </div>
                 <ul>
                   {usage.usedByClients.map(clientName => (
-                    <li key={clientName} className={styles.schemaExplorerUsageStatsLi}>
+                    <li key={clientName} className={shared.weight.bold}>
                       <Link
                         className={styles.schemaExplorerUsageStatsLink}
                         to="/$organizationSlug/$projectSlug/$targetSlug/insights/client/$name"
@@ -325,7 +324,7 @@ export function DeprecationNote(props: {
 
   return (
     <Tooltip
-      trigger={<span className={styles.deprecationNoteSpan}>{props.children}</span>}
+      trigger={<span className={shared.lineThrough}>{props.children}</span>}
       side="right"
       sideOffset={5}
       maxWidth="screen"
@@ -365,7 +364,7 @@ export function GraphQLTypeCard(props: {
         <div>
           <div className={styles.graphQLTypeCardDiv3}>
             <div className={styles.graphQLTypeCardDiv4}>{props.kind}</div>
-            <div className={styles.graphQLTypeCardDiv5}>
+            <div className={shared.weight.semibold}>
               <GraphQLTypeAsLink type={props.name} />
             </div>
           </div>
@@ -439,14 +438,14 @@ export function GraphQLInputFields(props: {
   }
 
   return (
-    <div className={styles.graphQLInputFieldsDiv}>
+    <div className={shared.stack.base}>
       {sortedAndFilteredFields.map((field, i) => {
         const coordinate = `${props.typeName}.${field.name}`;
         return (
           <GraphQLTypeCardListItem key={field.name} index={i}>
             <div>
               <div className={styles.graphQLInputFieldsDiv2}>
-                <div className={styles.graphQLInputFieldsDiv3}>
+                <div className={shared.fg.secondary}>
                   <DeprecationNote deprecationReason={field.deprecationReason}>
                     <LinkToCoordinatePage
                       coordinate={coordinate}
@@ -505,7 +504,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
               }}
               search={search}
             >
-              Visit in <span className={styles.graphQLTypeAsLinkSpan}>Explorer</span>
+              Visit in <span className={shared.weight.medium}>Explorer</span>
             </Link>
             <span className={styles.graphQLTypeAsLinkSpan2}> - displays a full type</span>
           </p>
@@ -521,7 +520,7 @@ export function GraphQLTypeAsLink(props: { type: string; className?: string }): 
               }}
               search={carriedRange(search)}
             >
-              Visit in <span className={styles.graphQLTypeAsLinkSpan3}>Insights</span>
+              Visit in <span className={shared.weight.medium}>Insights</span>
             </Link>
             <span className={styles.graphQLTypeAsLinkSpan4}> - usage insights</span>
           </p>

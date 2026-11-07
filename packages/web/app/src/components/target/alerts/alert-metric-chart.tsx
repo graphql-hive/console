@@ -7,6 +7,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { MetricAlertRuleMetric, MetricAlertRuleType } from '@/gql/graphql';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
+import * as shared from '@/styles/shared.css';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 import {
   applyThresholdSign,
@@ -406,7 +407,7 @@ export function AlertMetricChart({
             </span>
             <span>→ current: {formatAggregate(currentAgg)}</span>
             <span
-              className={styles.alertMetricChartSpan4}
+              className={shared.weight.medium}
               style={deltaBreaches ? { color: markColor } : undefined}
             >
               Δ{' '}

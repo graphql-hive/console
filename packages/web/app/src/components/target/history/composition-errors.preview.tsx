@@ -1,6 +1,7 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { CallSite } from '@/components/inventory/shared';
 import { makeFragmentData } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import { CompositionErrorsCard } from './composition-errors-card';
 import {
   CompositionErrorsList,
@@ -317,7 +318,7 @@ function Legend(props: { fixtures: readonly Fixture[] }) {
   return (
     <ol className={styles.legendOl}>
       {props.fixtures.map((fixture, index) => (
-        <li key={fixture.id} className={styles.legendLi}>
+        <li key={fixture.id} className={shared.contents}>
           <span className={styles.legendSpan}>{String(index + 1).padStart(2, '0')}</span>
           <span className={styles.legendSpan}>{fixture.id}</span>
           <span>{fixture.label}</span>
@@ -396,7 +397,7 @@ function RawStringsView(props: { group: keyof typeof GROUPS }) {
   return (
     <ol className={styles.rawStringsViewOl}>
       {GROUPS[props.group].map((fixture, index) => (
-        <li key={fixture.id} className={styles.rawStringsViewLi}>
+        <li key={fixture.id} className={shared.stack.gap2}>
           <div className={styles.rawStringsViewDiv}>
             <span className={styles.rawStringsViewSpan}>{String(index + 1).padStart(2, '0')}</span>
             <span className={styles.rawStringsViewSpan2}>{fixture.id}</span>

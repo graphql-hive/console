@@ -30,6 +30,7 @@ import {
 import { useSlugs } from '@/lib/hooks';
 import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
 import { useLayoutQuery } from '@/lib/hooks/use-layout-query';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
 import { AlertMetricChart } from './alert-metric-chart';
@@ -664,7 +665,7 @@ export function AlertForm(props: AlertFormProps) {
                   render={({ field: channelField }) => (
                     <FormItem>
                       {index === 0 && <FormLabel label="Channel" />}
-                      <div className={styles.alertFormDiv5}>
+                      <div className={shared.row.gap3}>
                         <FormControl>
                           <Select
                             // Only the first row has the visible label.

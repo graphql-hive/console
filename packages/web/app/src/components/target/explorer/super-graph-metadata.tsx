@@ -6,6 +6,7 @@ import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import * as styles from './super-graph-metadata.css';
 
@@ -41,7 +42,7 @@ function Metadata(props: { supergraphMetadata: Array<{ name: string; content: st
         <div className={styles.metadataDiv}>
           {props.supergraphMetadata.map((m, i) => (
             <div key={i}>
-              <span className={styles.metadataSpan}>{m.name}:</span> {m.content}
+              <span className={shared.weight.bold}>{m.name}:</span> {m.content}
             </div>
           ))}
         </div>
@@ -87,11 +88,11 @@ function SubgraphChip(props: {
       trigger={inner}
       content={
         <>
-          <span className={styles.subgraphChipSpan3}>{props.text}</span> subgraph
+          <span className={shared.weight.bold}>{props.text}</span> subgraph
           {props.metadata?.map((m, index) => (
             <Fragment key={`${index}`}>
               <br />
-              <span className={styles.subgraphChipSpan4}>{m.content}</span> {m.name}
+              <span className={shared.weight.bold}>{m.content}</span> {m.name}
             </Fragment>
           )) ?? null}
         </>

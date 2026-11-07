@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import reactStringReplace from 'react-string-replace';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { SubgraphName } from '@/components/ui/subgraph-name/subgraph-name';
+import * as shared from '@/styles/shared.css';
 import * as styles from './composition-error-message.css';
 
 const QUERY_HEAD = 'The following supergraph API query:';
@@ -117,14 +118,12 @@ export function CompositionErrorMessage(props: { message: string }) {
             return (
               <span
                 key={`${index}-${lineIndex}`}
-                className={styles.compositionErrorMessageSpan}
+                className={shared.flex}
                 style={depth ? { marginLeft: `${depth}em` } : undefined}
               >
                 {/* A gutter cell rather than a negative text-indent, which badges inherit and clip. */}
                 {bullet ? <span className={styles.compositionErrorMessageSpan2}>-</span> : null}
-                <span className={styles.compositionErrorMessageSpan3}>
-                  {renderCompositionErrorText(text)}
-                </span>
+                <span className={shared.shrinkable}>{renderCompositionErrorText(text)}</span>
               </span>
             );
           })

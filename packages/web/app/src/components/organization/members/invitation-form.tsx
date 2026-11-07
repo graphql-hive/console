@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
+import * as shared from '@/styles/shared.css';
 import { RoleSelector } from './common';
 import * as styles from './invitation-form.css';
 
@@ -54,7 +55,7 @@ export function MemberInvitationForm(props: {
   return (
     <Form form={form} onSubmit={props.onSubmit}>
       <div className={styles.memberInvitationFormDiv}>
-        <div className={styles.memberInvitationFormDiv2}>
+        <div className={shared.grow}>
           <FormField
             control={form.control}
             name="email"

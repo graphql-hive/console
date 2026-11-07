@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/primitives/label/label';
 import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { BreakingChangeFormulaType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './breaking-changes-form.css';
 
 /**
@@ -119,12 +120,7 @@ export function BreakingChangesForm(props: {
   }
 
   return (
-    <div
-      className={cn(
-        styles.breakingChangesFormDiv,
-        !props.enabled && styles.breakingChangesFormDiv2,
-      )}
-    >
+    <div className={cn(shared.fg.default, !props.enabled && styles.breakingChangesFormDiv2)}>
       <Form form={form} onSubmit={props.onSubmit}>
         <div>
           <div>A schema change is considered as breaking only if it affects more than</div>
@@ -147,7 +143,7 @@ export function BreakingChangesForm(props: {
                       content: (
                         <span
                           data-testid="target-cbc-breakingChangeFormula-option-percentage"
-                          className={styles.breakingChangesFormSpan}
+                          className={shared.inlineRow.gap2}
                         >
                           {number('percentage', 'Percent of traffic', { step: 0.01 })}
                           Percent of Traffic
@@ -161,7 +157,7 @@ export function BreakingChangesForm(props: {
                       content: (
                         <span
                           data-testid="target-cbc-breakingChangeFormula-option-requestCount"
-                          className={styles.breakingChangesFormSpan}
+                          className={shared.inlineRow.gap2}
                         >
                           {number('requestCount', 'Total operations', { step: 1 })}
                           Total Operations
@@ -173,7 +169,7 @@ export function BreakingChangesForm(props: {
               )}
             />
           </div>
-          <div className={styles.breakingChangesFormDiv4}>
+          <div className={shared.row.wrap2}>
             <span>in the past</span>
             {number('period', 'Period in days', { min: 1, max: props.maxPeriod })}
             <span>days.</span>
@@ -204,7 +200,7 @@ export function BreakingChangesForm(props: {
                   targetIds.length > 0 ? (
                     <>{props.clientExclusion(field, targetIds)}</>
                   ) : (
-                    <div className={styles.breakingChangesFormDiv11}>Select targets first</div>
+                    <div className={shared.fg.secondary}>Select targets first</div>
                   )
                 }
               />
@@ -282,26 +278,22 @@ export function BreakingChangesForm(props: {
         <div className={styles.breakingChangesFormDiv15}>
           <div>
             <div className={styles.breakingChangesFormDiv8}>Example settings</div>
-            <div className={styles.breakingChangesFormDiv16}>
-              Removal of a field is considered breaking if
-            </div>
+            <div className={shared.text.sm}>Removal of a field is considered breaking if</div>
           </div>
-          <div className={styles.breakingChangesFormDiv16}>
+          <div className={shared.text.sm}>
             <Badge content="0%" variants={{ variant: 'warning' }} /> - the field was used at least
             once in past 30 days
           </div>
-          <div className={styles.breakingChangesFormDiv16}>
+          <div className={shared.text.sm}>
             <Badge content="10%" variants={{ variant: 'warning' }} /> - the field was requested by
             more than 10% of all GraphQL operations in recent 30 days
           </div>
         </div>
-        <div className={styles.breakingChangesFormDiv17}>
+        <div className={shared.row.gap2}>
           <Button type="submit" disabled={form.formState.isSubmitting}>
             Save
           </Button>
-          {props.error ? (
-            <span className={styles.breakingChangesFormSpan5}>{props.error}</span>
-          ) : null}
+          {props.error ? <span className={shared.fg.critical}>{props.error}</span> : null}
         </div>
       </Form>
     </div>

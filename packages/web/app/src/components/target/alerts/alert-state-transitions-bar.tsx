@@ -1,5 +1,6 @@
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { MetricAlertRuleState } from '@/gql/graphql';
+import * as shared from '@/styles/shared.css';
 import { ALERT_CHART_INSET_LEFT, ALERT_CHART_INSET_RIGHT } from './alert-chart-layout';
 import * as styles from './alert-state-transitions-bar.css';
 
@@ -156,11 +157,11 @@ export function AlertStateTransitionsBar({
                 />
               }
               content={
-                <div className={styles.alertStateTransitionsBarDiv4}>
+                <div className={shared.text.xs}>
                   <div className={styles.alertStateTransitionsBarDiv5}>
                     {labelForSegment(seg.state)}
                   </div>
-                  <div className={styles.alertStateTransitionsBarDiv6}>
+                  <div className={shared.fg.secondary}>
                     {formatTimestamp(new Date(seg.startMs).toISOString())} →{' '}
                     {formatTimestamp(new Date(seg.endMs).toISOString())}
                   </div>

@@ -5,6 +5,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import type { SchemaChangeKind } from '@/gql/graphql';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { CHANGES_PAGE_SIZE } from './change-page-size';
 import {
   ChangesBlock,
@@ -100,7 +101,7 @@ function PageControls(props: {
 }) {
   const { paging } = props;
   return (
-    <div className={styles.pageControlsDiv4}>
+    <div className={shared.stack.gap3}>
       <div
         aria-busy={paging.loading}
         className={cn(styles.pageControlsDiv5, paging.loading && styles.pageControlsDiv6)}

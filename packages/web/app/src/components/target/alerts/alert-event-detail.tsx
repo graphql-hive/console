@@ -18,6 +18,7 @@ import {
 import { useSlugs } from '@/lib/hooks';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { formatNumber } from '@/lib/hooks/use-formatted-number';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import { ALERT_STATE_LABEL } from './alert-state-transitions-bar';
 import * as styles from './alert-event-detail.css';
@@ -200,7 +201,7 @@ export function StateBadge({ state }: { state: MetricAlertRuleState }) {
   const { Icon, className } = STATE_ICON[state];
   return (
     <span
-      className={styles.stateBadgeSpan}
+      className={shared.inlineRow.gap1_5}
       aria-label={ALERT_STATE_LABEL[state]}
       title={ALERT_STATE_LABEL[state]}
     >
@@ -274,7 +275,7 @@ export function AlertEventDetail({
         {transitionSentence(rule, event.toState, event.value)}
       </div>
       <div className={styles.alertEventDetailDiv3}>
-        <div className={styles.alertEventDetailDiv4}>
+        <div className={shared.fillShrinkable}>
           <DescriptionList
             rows={[
               {

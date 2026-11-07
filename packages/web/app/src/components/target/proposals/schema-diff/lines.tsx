@@ -2,6 +2,7 @@ import { ReactElement, useCallback, useState } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 import { Button } from '@/components/ui/primitives/button/button';
 import { FragmentType } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import { ProposalOverview_ReviewCommentsFragment, ReviewComments } from '../Review';
 import { ChangeRow } from './components';
 import { Word, WordProps } from './words';
@@ -31,7 +32,7 @@ export function LineGroup(props: { children?: ReactElement[]; collapsible?: bool
       <tbody>
         {props.children?.slice(0, 3)}
         <tr>
-          <td colSpan={3} className={styles.lineGroupTd}>
+          <td colSpan={3} className={shared.fg.subtle}>
             ...
           </td>
         </tr>
@@ -43,7 +44,7 @@ export function LineGroup(props: { children?: ReactElement[]; collapsible?: bool
           </td>
         </tr>
         <tr>
-          <td colSpan={3} className={styles.lineGroupTd2}>
+          <td colSpan={3} className={shared.fg.subtle}>
             ...
           </td>
         </tr>

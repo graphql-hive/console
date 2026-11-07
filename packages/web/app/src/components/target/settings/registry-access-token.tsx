@@ -11,13 +11,13 @@ import { graphql } from '@/gql';
 import { TargetAccessScope } from '@/gql/graphql';
 import { RegistryAccessScope } from '@/lib/access/common';
 import { useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   RegistryTokenForm,
   RegistryTokenFormSchema,
   type RegistryTokenFormValues,
 } from './registry-token-form';
-import * as styles from './registry-access-token.css';
 
 export const CreateAccessToken_CreateTokenMutation = graphql(`
   mutation CreateAccessToken_CreateToken($input: CreateTokenInput!) {
@@ -177,7 +177,7 @@ export function ModalContent(props: {
 
 export function CreatedTokenContent(props: { secret: string }) {
   return (
-    <div className={styles.createdTokenContentDiv}>
+    <div className={shared.stack.gap4}>
       <InputCopy value={props.secret} onSurface="raised" />
       <Callout type="info">
         This is your unique API key and it is non-recoverable. If you lose this key, you will need

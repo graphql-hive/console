@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
-import * as styles from './sign-in-form.css';
+import * as shared from '@/styles/shared.css';
 
 export const SignInFormSchema = z.object({
   email: z
@@ -62,7 +62,7 @@ export function SignInForm(props: {
         name="password"
         render={() => (
           <FormItem>
-            <div className={styles.signInFormDiv}>
+            <div className={shared.row.base}>
               <FormLabel label="Password" />
               {props.forgotPasswordLink(email)}
             </div>

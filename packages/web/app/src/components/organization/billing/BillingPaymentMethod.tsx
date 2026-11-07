@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/primitives/card/card';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import { useResolvedColors } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { CardElement as StripeCardElement } from '@stripe/react-stripe-js';
 import * as styles from './BillingPaymentMethod.css';
 
@@ -90,7 +91,7 @@ export const ManagePaymentMethod = (props: {
             {mutation.fetching || loadingDashboard ? (
               'Loading...'
             ) : (
-              <div className={styles.managePaymentMethodDiv2}>
+              <div className={shared.row.base}>
                 <ExternalLink className={styles.managePaymentMethodExternalLink} /> Stripe Billing
                 Dashboard
               </div>
@@ -113,7 +114,7 @@ export const BillingPaymentMethodForm = ({
   return (
     <div className={styles.billingPaymentMethodFormDiv}>
       <Card variants={{ onSurface: 'raised' }}>
-        <div className={styles.billingPaymentMethodFormDiv2}>
+        <div className={shared.stack.gap6}>
           <Heading>Payment Method</Heading>
           <StripeCardElement
             className={styles.billingPaymentMethodFormStripeCardElement}

@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { RuleInstanceSeverityLevel } from '@/gql/graphql';
+import * as shared from '@/styles/shared.css';
 import { DocsLink } from '../ui/docs-note';
 import { useConfigurationHelper } from './form-helper';
 import { PolicyRuleConfig } from './rules-configuration';
@@ -61,7 +62,7 @@ export function PolicyListItem(props: {
               onCheckedChange={newState => toggleRuleState(newState as boolean)}
             />
           </div>
-          <div className={styles.policyListItemDiv4}>
+          <div className={shared.fullWidth}>
             <div className={styles.policyListItemDiv5}>
               <label htmlFor={ruleInfo.id} className={styles.policyListItemLabel}>
                 {ruleInfo.id}
@@ -80,7 +81,7 @@ export function PolicyListItem(props: {
                   align="start"
                   width="xl"
                   content={
-                    <div className={styles.policyListItemDiv6}>
+                    <div className={shared.fg.default}>
                       <Markdown
                         content={ruleInfo.description}
                         className={styles.policyListItemMarkdown}

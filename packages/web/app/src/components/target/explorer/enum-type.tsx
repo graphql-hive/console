@@ -1,5 +1,6 @@
 import { SupergraphMetadataList } from '@/components/target/explorer/super-graph-metadata';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import { useRouter } from '@tanstack/react-router';
 import {
   DeprecationNote,
@@ -11,7 +12,6 @@ import {
 } from './common';
 import { useSchemaExplorerContext } from './provider';
 import { matchesSubgraphFilter } from './utils';
-import * as styles from './enum-type.css';
 
 const GraphQLEnumTypeComponent_TypeFragment = graphql(`
   fragment GraphQLEnumTypeComponent_TypeFragment on GraphQLEnumType {
@@ -86,10 +86,10 @@ export function GraphQLEnumTypeComponent(props: {
       {values.length === 0 ? (
         <ExplorerFilteredEmptyState />
       ) : (
-        <div className={styles.graphQLEnumTypeComponentDiv}>
+        <div className={shared.stack.base}>
           {values.map((value, i) => (
             <GraphQLTypeCardListItem key={value.name} index={i}>
-              <div className={styles.graphQLEnumTypeComponentDiv2}>
+              <div className={shared.stack.base}>
                 <DeprecationNote deprecationReason={value.deprecationReason}>
                   <LinkToCoordinatePage coordinate={`${ttype.name}.${value.name}`}>
                     {value.name}

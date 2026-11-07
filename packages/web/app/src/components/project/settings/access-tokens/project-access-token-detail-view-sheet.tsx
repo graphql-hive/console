@@ -4,8 +4,8 @@ import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import * as shared from '@/styles/shared.css';
 import { PermissionDetailView } from '../../../organization/settings/access-tokens/permission-detail-view';
-import * as styles from './project-access-token-detail-view-sheet.css';
 
 const ProjectAccessTokenDetailViewSheet_OrganizationQuery = graphql(`
   query ProjectAccessTokenDetailViewSheet_OrganizationQuery(
@@ -66,12 +66,12 @@ export function ProjectAccessTokenDetailViewSheet(props: ProjectAccessTokenDetai
         <>
           {accessToken?.description}
           <br />
-          <span className={styles.projectAccessTokenDetailViewSheetSpan}>Expires:</span>{' '}
+          <span className={shared.weight.medium}>Expires:</span>{' '}
           <TokenExpiration expiresAt={accessToken?.expiresAt ?? null} />
         </>
       }
     >
-      <div className={styles.projectAccessTokenDetailViewSheetDiv}>
+      <div className={shared.stack.gap4}>
         {accessToken?.resolvedResourcePermissionGroups.map(resolvedResourcePermissionGroup => (
           <PermissionDetailView
             resolvedResourcePermissionGroup={resolvedResourcePermissionGroup}

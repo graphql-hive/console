@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PermissionSelector } from '../../members/permission-selector';
 import {
@@ -303,7 +304,7 @@ export function CreateAccessTokenSheetContent(
                             <>Granted on all {permissionLevelToResourceName(group.level)}</>
                           ) : (
                             <>
-                              <p className={styles.createAccessTokenSheetContentP3}>
+                              <p className={shared.fg.secondary}>
                                 Granted on {permissionLevelToResourceName(group.level)}:
                               </p>
                               <ul className={styles.createAccessTokenSheetContentUl}>

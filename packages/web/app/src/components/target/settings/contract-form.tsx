@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/primitives/input/input';
 import { Label } from '@/components/ui/primitives/label/label';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './contract-form.css';
 
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
@@ -110,8 +111,8 @@ function TagsField(props: {
   }
 
   return (
-    <div className={styles.tagsFieldDiv}>
-      <div className={styles.tagsFieldDiv2}>
+    <div className={shared.flex}>
+      <div className={shared.fill}>
         <div className={styles.tagsFieldDiv3}>
           <Input
             ref={inputRef}

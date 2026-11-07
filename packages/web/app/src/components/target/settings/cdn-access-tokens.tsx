@@ -14,6 +14,7 @@ import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -94,7 +95,7 @@ export function CreateCDNAccessTokenModal(props: {
           </Button>
         }
       >
-        <div className={styles.createCDNAccessTokenModalDiv}>
+        <div className={shared.stack.gap4}>
           <Callout type="warning">
             Please store this access token securely. You will not be able to see it again.
           </Callout>

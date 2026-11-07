@@ -1,6 +1,7 @@
 import { Fragment, useMemo } from 'react';
 import { GraphQLSchema } from 'graphql';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import { DetachedAnnotations, ReviewComments } from './Review';
 import { AnnotatedProvider } from './schema-diff/components';
 import { SchemaDiff } from './schema-diff/core';
@@ -527,7 +528,7 @@ export function Proposal(props: {
   } catch (e: unknown) {
     return (
       <div className={props.className}>
-        <div className={styles.proposalDiv2}>Invalid SDL</div>
+        <div className={shared.text.lg}>Invalid SDL</div>
         <div>{e instanceof Error ? e.message : String(e)}</div>
       </div>
     );

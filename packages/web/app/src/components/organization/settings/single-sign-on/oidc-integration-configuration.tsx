@@ -19,6 +19,7 @@ import { env } from '@/env/frontend';
 import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
@@ -313,7 +314,7 @@ export function OIDCIntegrationConfiguration(props: {
                   term: 'User ID Claim',
                   tooltip: 'The claim that should be used to uniquely identify an user.',
                   description: oidcIntegration.userIdClaim ?? (
-                    <span className={styles.oIDCIntegrationConfigurationSpan}>none set</span>
+                    <span className={shared.fg.secondary}>none set</span>
                   ),
                   mono: true,
                 },
@@ -323,7 +324,7 @@ export function OIDCIntegrationConfiguration(props: {
                   description: oidcIntegration.additionalScopes.length ? (
                     oidcIntegration.additionalScopes.join(' ')
                   ) : (
-                    <span className={styles.oIDCIntegrationConfigurationSpan2}>none</span>
+                    <span className={shared.fg.subtle}>none</span>
                   ),
                   mono: true,
                 },
@@ -756,7 +757,7 @@ function OIDCAccessSettings(props: {
                     <p className={styles.oIDCAccessSettingsP}>
                       Only (active) users provisioned via SCIM can access the organization.
                       <br />
-                      <span className={styles.oIDCAccessSettingsSpan}>
+                      <span className={shared.weight.bold}>
                         The organization owner is excluded from this restriction.
                       </span>
                     </p>
@@ -852,7 +853,7 @@ function OIDCAccessSettings(props: {
                   <p className={styles.oIDCAccessSettingsP5}>
                     Restricts new accounts joining the organization to be authenticated via OIDC.
                     <br />
-                    <span className={styles.oIDCAccessSettingsSpan2}>
+                    <span className={shared.weight.bold}>
                       Existing non-OIDC members will keep their access.
                     </span>
                   </p>
@@ -870,7 +871,7 @@ function OIDCAccessSettings(props: {
                   <p className={styles.oIDCAccessSettingsP6}>
                     Prompt users to authenticate with OIDC before accessing the organization.
                     <br />
-                    <span className={styles.oIDCAccessSettingsSpan3}>
+                    <span className={shared.weight.bold}>
                       Existing users without OIDC credentials will not be able to access the
                       organization.
                     </span>
@@ -909,7 +910,7 @@ function OIDCAccessSettings(props: {
                   <div className={styles.oIDCAccessSettingsDiv22}>
                     <p className={styles.oIDCAccessSettingsP8}>
                       This role is assigned to new members who sign in via OIDC.{' '}
-                      <span className={styles.oIDCAccessSettingsSpan4}>
+                      <span className={shared.weight.medium}>
                         Only members with the Admin role can modify it.
                       </span>
                     </p>
@@ -1006,7 +1007,7 @@ function RemoveOIDCIntegrationModal(props: {
       ) : oidcIntegrationId === null ? (
         <p>This organization does not have an OIDC integration.</p>
       ) : (
-        <div className={styles.removeOIDCIntegrationModalDiv}>
+        <div className={shared.stack.gap4}>
           <Callout type="warning">
             This action is not reversible and revoke access to all users that have signed in with
             this OIDC integration.

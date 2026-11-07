@@ -1,6 +1,7 @@
 import { useState, type MouseEventHandler } from 'react';
 import { Box, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './service-heading.css';
 
 export enum ServiceHeadingType {
@@ -42,7 +43,7 @@ export function ServiceHeading(props: {
         ) : null}
       </div>
       {showToggleIcon && (
-        <div className={styles.serviceHeadingDiv5}>
+        <div className={shared.flex}>
           <ChevronDown
             className={cn(
               styles.serviceHeadingChevronDown,

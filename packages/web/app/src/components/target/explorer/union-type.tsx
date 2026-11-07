@@ -1,4 +1,5 @@
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import {
   ExplorerFilteredEmptyState,
   GraphQLTypeAsLink,
@@ -54,7 +55,7 @@ export function GraphQLUnionTypeComponent(props: {
       {members.length === 0 ? (
         <ExplorerFilteredEmptyState />
       ) : (
-        <div className={styles.graphQLUnionTypeComponentDiv}>
+        <div className={shared.stack.base}>
           {members.map((member, i) => (
             <GraphQLTypeCardListItem key={member.name} index={i}>
               <GraphQLTypeAsLink

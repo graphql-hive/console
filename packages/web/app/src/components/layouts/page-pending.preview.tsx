@@ -1,4 +1,5 @@
 import { createPreview, type NavPath } from 'react-foundry';
+import * as shared from '@/styles/shared.css';
 import { PagePending, SectionPending } from './page-pending';
 import * as styles from './page-pending.preview.css';
 
@@ -14,7 +15,7 @@ export const Page = createPreview(() => (
 export const Section = createPreview(() => (
   <div className={styles.div2}>
     <div className={styles.div3}>
-      <span className={styles.span}>rev-a1b2c3</span>
+      <span className={shared.fg.default}>rev-a1b2c3</span>
       <span>rev-b2c3d4</span>
       <span>rev-c3d4e5</span>
     </div>

@@ -22,6 +22,7 @@ import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { SeverityLevelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { formatCount } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as styles from './errors-and-changes.css';
@@ -204,7 +205,7 @@ export function ChangesBlock(
       <div
         className={clsx(
           styles.changesBlockDiv,
-          props.changesWithUsage ? styles.changesBlockDiv2 : styles.changesBlockDiv3,
+          props.changesWithUsage ? shared.stack.gap4 : styles.changesBlockDiv3,
         )}
       >
         {props.changesWithUsage?.map((change, index) => (
@@ -420,7 +421,7 @@ function ChangeItem(
                   (severityLevelMapping[change.severityLevel] ?? styles.changeItemDiv5),
               )}
             >
-              <span className={styles.changeItemSpan2}>{labelize(change.message)}</span>
+              <span className={shared.fg.secondary}>{labelize(change.message)}</span>
             </div>
           ),
           trailing:
@@ -428,7 +429,7 @@ function ChangeItem(
             usageStatistics ||
             affectedDeployments ||
             change.approval ? (
-              <span className={styles.changeItemSpan3}>
+              <span className={shared.row.gap2}>
                 {change.isSafeBasedOnUsage ? (
                   // Zero usage only means "safe" where usage is recorded.
                   change.isUsageTracked ? (
@@ -613,7 +614,7 @@ function UsageStatisticsPanels(props: {
 
   return (
     <div className={styles.usageStatisticsPanelsDiv}>
-      <div className={styles.usageStatisticsPanelsDiv2}>
+      <div className={shared.fillShrinkable}>
         <DataTable
           data={props.usageStatistics.topAffectedOperations}
           columns={operationColumns}
@@ -623,7 +624,7 @@ function UsageStatisticsPanels(props: {
           emptyMessage="No affected operations."
         />
       </div>
-      <div className={styles.usageStatisticsPanelsDiv2}>
+      <div className={shared.fillShrinkable}>
         <DataTable
           data={props.usageStatistics.topAffectedClients}
           columns={clientColumns}
@@ -717,7 +718,7 @@ function AffectedAppDeploymentsPanel(props: {
                     <ScrollArea maxHeight="sm">
                       <ul className={styles.affectedAppDeploymentsPanelUl}>
                         {deployment.affectedOperations.edges.map(({ node: op }) => (
-                          <li key={op.hash} className={styles.affectedAppDeploymentsPanelLi}>
+                          <li key={op.hash} className={shared.fg.default}>
                             {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
                           </li>
                         ))}

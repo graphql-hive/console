@@ -3,6 +3,7 @@ import { AlertCircleIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/primitives/button/button';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './fallback.css';
 
 export function OperationsFallback({
@@ -15,7 +16,7 @@ export function OperationsFallback({
   refetch: () => void;
 }): ReactElement {
   return (
-    <div className={styles.operationsFallbackDiv}>
+    <div className={shared.relative}>
       <div
         className={cn(
           (state === 'error' || state === 'empty') && styles.operationsFallbackDiv2,

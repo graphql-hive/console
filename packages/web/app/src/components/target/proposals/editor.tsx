@@ -10,6 +10,7 @@ import { Tabs } from '@/components/ui/primitives/tabs/tabs';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { prettier, schemaTitle } from './util';
 import * as styles from './editor.css';
 
@@ -447,7 +448,7 @@ function ServiceSelect(props: {
         width="md"
       />
       <Button variant="link" onClick={props.onSelectNew}>
-        <span className={styles.serviceSelectSpan}>
+        <span className={shared.nowrap}>
           + New<span className={styles.serviceSelectSpan2}>&nbsp;Service</span>
         </span>
       </Button>

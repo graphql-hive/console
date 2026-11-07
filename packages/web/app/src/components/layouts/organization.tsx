@@ -18,6 +18,7 @@ import { ProjectType } from '@/gql/graphql';
 import { getIsStripeEnabled } from '@/lib/billing/stripe-public-key';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { ProPlanBilling } from '../organization/billing/ProPlanBillingWarm';
@@ -93,7 +94,7 @@ export function OrganizationLayout({ children }: { children: ReactNode }): React
           currentOrganization?.viewerCanCreateProject ? (
             <>
               <Button onClick={toggleModalOpen} variant="link" data-testid="new-project-button">
-                <span className={styles.organizationLayoutSpan}>
+                <span className={shared.row.base}>
                   <PlusIcon size={16} className={styles.organizationLayoutPlusIcon} />
                   New project
                 </span>

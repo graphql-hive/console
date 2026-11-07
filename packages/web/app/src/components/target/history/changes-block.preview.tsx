@@ -9,6 +9,7 @@ import { ScopeBar } from '@/components/ui/scope-bar/scope-bar';
 import { TabbedView } from '@/components/ui/tabbed-view/tabbed-view';
 import { makeFragmentData, type DocumentType } from '@/gql';
 import { SchemaChangeKind, SeverityLevelType } from '@/gql/graphql';
+import * as shared from '@/styles/shared.css';
 import { RouterAt } from '../../../../foundry.router';
 import { buildChanges, metadata, PATH } from './changes-block.fixtures';
 import {
@@ -97,7 +98,7 @@ function CheckPageView(props: { usedTargets: number; unusedTargets: number; oper
                 items: [
                   {
                     term: 'Status',
-                    description: <span className={styles.checkPageViewSpan}>Failed</span>,
+                    description: <span className={shared.fg.critical}>Failed</span>,
                   },
                   { term: 'Service', description: 'products' },
                   { term: 'Triggered', description: '1w ago by User' },
@@ -127,7 +128,7 @@ function CheckPageView(props: { usedTargets: number; unusedTargets: number; oper
                 value={graph}
                 onValueChange={setGraph}
                 label={
-                  <span className={styles.checkPageViewSpan2}>
+                  <span className={shared.inlineRow.gap1_5}>
                     {statusIcon(true)}
                     {selected?.name ?? 'Default Graph'}
                   </span>

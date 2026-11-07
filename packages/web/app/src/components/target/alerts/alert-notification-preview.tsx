@@ -8,6 +8,7 @@ import { Copy } from 'lucide-react';
 import { Button } from '@/components/ui/primitives/button/button';
 import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { useClipboard } from '@/lib/hooks/use-clipboard';
+import * as shared from '@/styles/shared.css';
 import { applyThresholdSign, thresholdUnit } from './alert-threshold';
 import * as styles from './alert-notification-preview.css';
 
@@ -144,7 +145,7 @@ function SlackPreview(props: PreviewProps) {
         </div>
 
         {/* Attachment with colored bar */}
-        <div className={styles.slackPreviewDiv6}>
+        <div className={shared.flex}>
           <div className={`${colors.bar} ${styles.slackPreviewDiv7}`} />
           <div className={styles.slackPreviewDiv8}>
             <div className={styles.slackPreviewDiv9}>{props.alertName || 'Untitled alert'}</div>
@@ -243,19 +244,19 @@ function TeamsPreview(props: PreviewProps) {
         <div className={styles.teamsPreviewDiv5}>
           <div className={styles.teamsPreviewDiv6}>{props.alertName || 'Untitled alert'}</div>
           <div className={styles.teamsPreviewDiv7}>
-            <div className={styles.teamsPreviewDiv8}>
+            <div className={shared.flex}>
               <span className={styles.teamsPreviewSpan}>Condition</span>
-              <span className={styles.teamsPreviewSpan2}>
+              <span className={shared.fg.default}>
                 {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
               </span>
             </div>
-            <div className={styles.teamsPreviewDiv9}>
+            <div className={shared.flex}>
               <span className={styles.teamsPreviewSpan3}>Severity</span>
               <span className={colors.text}>{props.severity}</span>
             </div>
-            <div className={styles.teamsPreviewDiv10}>
+            <div className={shared.flex}>
               <span className={styles.teamsPreviewSpan4}>Target</span>
-              <span className={styles.teamsPreviewSpan5}>
+              <span className={shared.fg.default}>
                 {props.targetSlug} in {props.projectSlug}
               </span>
             </div>
@@ -291,17 +292,17 @@ function DiscordPreview(props: PreviewProps) {
             {notificationMetricLabel(props.alertType, props.metricLabel)} {threshold}
           </div>
           <div className={styles.discordPreviewDiv8}>
-            <div className={styles.discordPreviewDiv9}>
+            <div className={shared.flex}>
               <span className={styles.discordPreviewSpan}>Type</span>
-              <span className={styles.discordPreviewSpan2}>{props.alertType}</span>
+              <span className={shared.fg.default}>{props.alertType}</span>
             </div>
-            <div className={styles.discordPreviewDiv10}>
+            <div className={shared.flex}>
               <span className={styles.discordPreviewSpan3}>Severity</span>
               <span className={colors.text}>{props.severity}</span>
             </div>
-            <div className={styles.discordPreviewDiv11}>
+            <div className={shared.flex}>
               <span className={styles.discordPreviewSpan4}>Target</span>
-              <span className={styles.discordPreviewSpan5}>
+              <span className={shared.fg.default}>
                 {props.targetSlug} in {props.projectSlug}
               </span>
             </div>

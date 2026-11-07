@@ -6,6 +6,7 @@ import { Heading } from '@/components/ui/heading';
 import { InlineCode } from '@/components/ui/inline-code';
 import Stat from '@/components/ui/stat';
 import { Text } from '@/components/ui/text';
+import * as shared from '@/styles/shared.css';
 import { CallSite, InventoryList } from './shared';
 import * as styles from './presentational.preview.css';
 
@@ -100,7 +101,7 @@ export const Inventory = createPreview({
 export const Banners = createPreview({
   label: 'Banners',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <CallSite
         source="pages/target-explorer.tsx:189 and 2 more"
         origin="ui"
@@ -110,11 +111,11 @@ export const Banners = createPreview({
           <AlertTriangleIcon className={styles.alertTriangleIcon} />
           <AlertTitle>Outdated Schema</AlertTitle>
           <AlertDescription className={styles.alertDescription}>
-            The latest schema version is <span className={styles.span}>not valid</span> , thus the
-            explorer might not be accurate as it is showing the{' '}
-            <span className={styles.span}>latest valid</span> schema version. We recommend you to
-            publish a new schema version that is composable before using this explorer for decision
-            making.
+            The latest schema version is <span className={shared.weight.bold}>not valid</span> ,
+            thus the explorer might not be accurate as it is showing the{' '}
+            <span className={shared.weight.bold}>latest valid</span> schema version. We recommend
+            you to publish a new schema version that is composable before using this explorer for
+            decision making.
           </AlertDescription>
         </Alert>
       </CallSite>
@@ -140,7 +141,7 @@ export const Banners = createPreview({
         origin="ui"
         note="Callout does the same job in a much louder register: saturated 200-level fills with 900-level text, mt-6 baked in, and its own Radix icon per type. Set one beside the Alert above - they are not the same system. The default type (orange, lightning bolt) has zero call sites."
       >
-        <div className={styles.div2}>
+        <div className={shared.stack.gap3}>
           <Callout type="warning" className={styles.callout}>
             <b>Your organization has reached it's contract limit.</b>
             <br />
@@ -171,13 +172,13 @@ export const Banners = createPreview({
 export const Typography = createPreview({
   label: 'Typography',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <CallSite
         source="24 render sites across 14 files"
         origin="ui"
         note="Three sizes declared. xl is the default and carries 18 of the 24; lg is passed 6 times, in the SSO settings and the role-mapping picker sheet; 2xl has zero call sites. Since the element is h1 only for 2xl, every heading that ships is an h3 - including the ones that visually head a page."
       >
-        <div className={styles.div2}>
+        <div className={shared.stack.gap3}>
           <Heading size="lg">lg — Overview (SSO settings)</Heading>
           <Heading>xl — the default, 18 of 24 uses</Heading>
           <Heading size="2xl">2xl — the only h1, and unreachable</Heading>
@@ -217,7 +218,7 @@ export const Typography = createPreview({
         origin="ui"
         note="The rest of the variant matrix, none of which any call site uses: 5 sizes, 4 weights, 2 colours, 4 alignments. Built for a design system that never arrived."
       >
-        <div className={styles.div5}>
+        <div className={shared.stack.gap1}>
           {(['x-small', 'small', 'medium', 'large', 'x-large'] as const).map(size => (
             <Text key={size} size={size}>
               {size}
@@ -236,13 +237,13 @@ export const Typography = createPreview({
 export const StatPreview = createPreview({
   label: 'Stat',
   render: () => (
-    <div className={styles.div}>
+    <div className={shared.stack.gap8}>
       <CallSite
         source="components/organization/billing/PlanSummary.tsx:142, :164"
         origin="ui"
         note="A dl/dt/dd compound: Label, Number, HelpText, in whatever order the call site wants. PlanSummary puts HelpText both above and below the Number to build 'up to 10M per month', which is the only reason the parts are separate."
       >
-        <div className={styles.div6}>
+        <div className={shared.stack.gap6}>
           <Stat>
             <Stat.Label>Plan Type</Stat.Label>
             <Stat.Number>ENTERPRISE</Stat.Number>

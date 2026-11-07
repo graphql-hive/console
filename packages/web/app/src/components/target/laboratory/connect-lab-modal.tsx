@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { getDocsUrl } from '@/lib/docs-url';
+import * as shared from '@/styles/shared.css';
 import * as styles from './connect-lab-modal.css';
 
 const Laboratory_IsCDNEnabledFragment = graphql(`
@@ -57,7 +58,7 @@ export const ConnectLabModalContent = (props: {
         </Button>
       }
     >
-      <div className={styles.connectLabModalContentDiv}>
+      <div className={shared.stack.gap4}>
         {props?.isCDNEnabled ? (
           <div>
             <h3 className={styles.connectLabModalContentH3}>High-availability CDN:</h3>

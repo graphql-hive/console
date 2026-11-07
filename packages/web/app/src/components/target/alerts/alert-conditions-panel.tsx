@@ -16,6 +16,7 @@ import {
 } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
+import * as shared from '@/styles/shared.css';
 import { Link } from '@tanstack/react-router';
 import { AlertForm, ruleToFormDefaults } from './alert-form';
 import { AlertRuleEnabledToggle } from './alert-rule-enabled-toggle';
@@ -148,7 +149,7 @@ function RelativeTimestamp({ iso }: { iso: string }) {
 function UserCell({ user }: { user: User }) {
   if (!user) return <>—</>;
   return (
-    <span className={styles.userCellSpan}>
+    <span className={shared.inlineRow.gap2}>
       <Avatar size="xs" alt={user.displayName} />
       <span>{user.displayName}</span>
     </span>
@@ -286,7 +287,7 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
         <AlertRuleEnabledToggle ruleId={rule.id} enabled={rule.enabled} />
       </div>
 
-      <div className={styles.alertConditionsPanelDiv3}>
+      <div className={shared.row.gap2}>
         <ModifyAlertSheet rule={rule} />
         <DeleteRuleButton ruleId={rule.id} ruleName={rule.name} onDeleted={onRuleDeleted} />
       </div>

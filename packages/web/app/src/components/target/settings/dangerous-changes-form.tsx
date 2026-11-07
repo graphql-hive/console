@@ -8,6 +8,7 @@ import { Form, FormField, FormItem, FormMessage } from '@/components/ui/primitiv
 import { Label } from '@/components/ui/primitives/label/label';
 import { DangerousChangeType } from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './dangerous-changes-form.css';
 
 export const DangerousChangesFormSchema = z
@@ -177,8 +178,7 @@ export function DangerousChangesForm(props: {
                 <span
                   className={cn(
                     styles.dangerousChangesFormSpan,
-                    field.value === saved?.failAllDangerousChanges &&
-                      styles.dangerousChangesFormSpan2,
+                    field.value === saved?.failAllDangerousChanges && shared.hidden,
                   )}
                 >
                   <PendingIndicator />
@@ -211,7 +211,7 @@ export function DangerousChangesForm(props: {
                         <span
                           className={cn(
                             styles.dangerousChangesFormSpan3,
-                            !changed && styles.dangerousChangesFormSpan4,
+                            !changed && shared.hidden,
                           )}
                         >
                           <PendingIndicator />
@@ -237,7 +237,7 @@ export function DangerousChangesForm(props: {
         {props.error ? (
           <div className={styles.dangerousChangesFormDiv10}>
             <XIcon className={styles.dangerousChangesFormXIcon} />
-            <span className={styles.dangerousChangesFormSpan5}>{props.error.title}</span>
+            <span className={shared.weight.semibold}>{props.error.title}</span>
             <span>{props.error.description}</span>
           </div>
         ) : null}

@@ -3,6 +3,7 @@ import { Callout } from '@/components/ui/callout';
 import { InputCopy } from '@/components/ui/input-copy';
 import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
+import * as shared from '@/styles/shared.css';
 import * as styles from './access-token-created-dialog.css';
 
 /** Shows a freshly created token once, and only lets go once the user says they stored it. */
@@ -27,7 +28,7 @@ export function AccessTokenCreatedDialog(props: {
       }}
       cancel={false}
     >
-      <div className={styles.accessTokenCreatedDialogDiv}>
+      <div className={shared.stack.gap4}>
         <InputCopy value={props.privateAccessKey} onSurface="raised" />
         <Callout type="info">
           This is your unique API key and it is non-recoverable. If you lose this key, you will need

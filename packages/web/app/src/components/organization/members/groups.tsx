@@ -23,6 +23,7 @@ import * as GraphQLSchema from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { ManageGroupMappingSheet } from './groups/manage-group-mapping-sheet';
 import * as styles from './groups.css';
 
@@ -102,15 +103,15 @@ export function Groups(): React.ReactElement | null {
         <div className={styles.groupsDiv6}>
           {!organization ? (
             <div role="status" aria-label="Loading groups" className={styles.groupsDiv7}>
-              <span className={styles.groupsSpan}>Loading groups</span>
+              <span className={shared.srOnly}>Loading groups</span>
               {Array.from({ length: 8 }, (_, index) => (
                 <div key={index} className={styles.groupsDiv8}>
-                  <div className={styles.groupsDiv9}>
+                  <div className={shared.row.gap3}>
                     <span className={styles.groupsSpan2}>
                       <Skeleton variants={{ shape: 'block' }} />
                     </span>
                     <Skeleton variants={{ shape: 'circle' }} />
-                    <div className={styles.groupsDiv10}>
+                    <div className={shared.row.gap2}>
                       <span className={styles.groupsSpan3}>
                         <Skeleton variants={{ width: 'full' }} />
                       </span>
@@ -259,7 +260,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
   return (
     <div>
       <div className={cn(styles.groupRowDiv)} onClick={onToggleExpand}>
-        <div className={styles.groupRowDiv2}>
+        <div className={shared.row.gap3}>
           <button
             className={styles.groupRowButton}
             onClick={e => {
@@ -276,8 +277,8 @@ function GroupRow(props: GroupRowProps): ReactNode {
           <div className={cn(styles.groupRowDiv3)}>
             <UsersIcon className={styles.groupRowUsersIcon} />
           </div>
-          <div className={styles.groupRowDiv4}>
-            <div className={styles.groupRowDiv5}>
+          <div className={shared.fillShrinkable}>
+            <div className={shared.row.gap2}>
               <span className={cn(styles.groupRowSpan)}>{group.name}</span>
               <Badge
                 variants={{ variant: 'outline' }}
@@ -292,7 +293,7 @@ function GroupRow(props: GroupRowProps): ReactNode {
         </div>
 
         <div className={styles.groupRowDiv6}>
-          <span className={styles.groupRowSpan2}>{group.memberCount}</span>
+          <span className={shared.text.sm}>{group.memberCount}</span>
         </div>
 
         <div className={styles.groupRowDiv7} />
@@ -423,11 +424,11 @@ function GroupRoleMappingRow(props: {
 
   return (
     <div className={cn(styles.groupRoleMappingRowDiv, 'group')}>
-      <div className={styles.groupRoleMappingRowDiv2}>
-        <div className={styles.groupRoleMappingRowDiv3}>
+      <div className={shared.row.gap3}>
+        <div className={shared.row.gap2}>
           <Badge content={groupRoleMapping.role.name} />
-          <span className={styles.groupRoleMappingRowSpan}>on</span>
-          <span className={styles.groupRoleMappingRowSpan2}>
+          <span className={shared.text.xs}>on</span>
+          <span className={shared.text.sm}>
             {groupRoleMapping.resourceAssignment.mode ===
             GraphQLSchema.ResourceAssignmentModeType.All ? (
               'all resources'

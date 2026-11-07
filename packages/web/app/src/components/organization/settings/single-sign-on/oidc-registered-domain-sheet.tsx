@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { defineStepper } from '@/components/ui/stepper';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RegisterDomainForm, RegisterDomainFormSchema } from './register-domain-form';
 import * as styles from './oidc-registered-domain-sheet.css';
@@ -373,7 +374,7 @@ export function OIDCRegisteredDomainSheet(props: {
                   {domain && !domain.challenge && (
                     <>
                       <Callout type="warning">This challenge has expired.</Callout>
-                      <div className={styles.oIDCRegisteredDomainSheetDiv4}>
+                      <div className={shared.fg.critical}>
                         {requestDomainChallengeMutationState.error?.message ??
                           requestDomainChallengeMutationState.data?.requestOIDCDomainChallenge.error
                             ?.message}

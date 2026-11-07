@@ -3,6 +3,7 @@ import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Button } from '@/components/ui/primitives/button/button';
+import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as styles from './contract-failures-table.css';
 
@@ -32,7 +33,7 @@ export function ContractFailuresTable(props: {
       id: 'reason',
       meta: { width: 'fill' },
       cell: ({ row }) => (
-        <span className={styles.contractFailuresTableSpan}>
+        <span className={shared.inlineRow.gap2}>
           <Badge content={row.original.reason} variants={{ variant: 'critical' }} />
           {row.original.detail ? (
             <span className={styles.contractFailuresTableSpan2}>{row.original.detail}</span>

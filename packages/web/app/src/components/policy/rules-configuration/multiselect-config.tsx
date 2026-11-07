@@ -2,6 +2,7 @@ import { ReactElement, useEffect } from 'react';
 import { InfoIcon } from 'lucide-react';
 import { Combobox } from '@/components/ui/combobox';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
+import * as shared from '@/styles/shared.css';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 import * as styles from './multiselect-config.css';
@@ -30,7 +31,7 @@ export const PolicyMultiSelect = (props: {
   return (
     <PolicyConfigBox
       title={
-        <div className={styles.policyMultiSelectDiv}>
+        <div className={shared.row.base}>
           <div>{props.title}</div>
           {props.tooltip ? (
             <Popover

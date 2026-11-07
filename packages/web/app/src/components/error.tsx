@@ -3,6 +3,7 @@ import { LogOutIcon } from 'lucide-react';
 import { Button } from '@/components/ui/primitives/button/button';
 import { useSession } from '@/lib/auth/use-session';
 import { isChunkLoadError, reloadOnChunkError } from '@/lib/chunk-error';
+import * as shared from '@/styles/shared.css';
 import { captureException, flush } from '@sentry/react';
 import { useRouter } from '@tanstack/react-router';
 import * as styles from './error.css';
@@ -61,7 +62,7 @@ export function ErrorComponent(props: { error: any; message?: string }) {
             {props.message || 'Oops, something went wrong.'}
           </h1>
           <div className={styles.errorComponentDiv5}>
-            <div className={styles.errorComponentDiv6}>
+            <div className={shared.text.sm}>
               <p>{commonErrorStrings.reported}</p>
               <p>
                 {commonErrorStrings.track}{' '}

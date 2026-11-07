@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useClipboard, useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
@@ -96,10 +97,8 @@ function SendInvitation(props: {
     console.error('Viewer role not found in organization member roles');
     return (
       <>
-        <div className={styles.sendInvitationDiv}>
-          Viewer role not found in organization member roles
-        </div>
-        <div className={styles.sendInvitationDiv2}>Please contact support.</div>
+        <div className={shared.fg.critical}>Viewer role not found in organization member roles</div>
+        <div className={shared.fg.secondary}>Please contact support.</div>
       </>
     );
   }

@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/primitives/input/input';
 import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
 import { Textarea } from '@/components/ui/primitives/textarea/textarea';
+import * as shared from '@/styles/shared.css';
 import * as styles from './role-form.css';
 
 export const RoleFormSchema = z.object({
@@ -101,7 +102,7 @@ export function RoleFields(props: { form: UseFormReturn<RoleFormValues>; permiss
           )}
         />
       </div>
-      <div className={styles.roleFieldsDiv3}>
+      <div className={shared.grow}>
         <FormField
           control={form.control}
           name="selectedPermissions"

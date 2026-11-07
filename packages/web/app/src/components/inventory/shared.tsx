@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import * as shared from '@/styles/shared.css';
 import * as styles from './shared.css';
 
 /**
@@ -30,8 +31,8 @@ export function CallSite(props: {
   children: ReactNode;
 }) {
   return (
-    <div className={styles.callSiteDiv}>
-      <div className={styles.callSiteDiv2}>
+    <div className={shared.stack.gap3}>
+      <div className={shared.stack.gap1}>
         <span className={styles.callSiteSpan}>
           <OriginTag origin={props.origin} />
           <code className={styles.callSiteCode}>{props.source}</code>
@@ -46,7 +47,7 @@ export function CallSite(props: {
 /** Several call sites that share a shape, shown together under one heading. */
 export function CallSiteGroup(props: { label: string; children: ReactNode }) {
   return (
-    <section className={styles.callSiteGroupSection}>
+    <section className={shared.stack.gap6}>
       <h3 className={styles.callSiteGroupH3}>{props.label}</h3>
       {props.children}
     </section>
@@ -109,7 +110,7 @@ export function InventoryList(props: {
         <p className={styles.inventoryListP}>{props.entries.length} call sites</p>
         {props.summary ? <div className={styles.inventoryListDiv3}>{props.summary}</div> : null}
       </div>
-      <ul className={styles.inventoryListUl}>
+      <ul className={shared.stack.base}>
         {props.entries.map(entry => (
           <li key={entry.source} className={styles.inventoryListLi}>
             <span className={styles.inventoryListSpan}>

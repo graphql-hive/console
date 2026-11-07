@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { UpdateSchemaCompositionInput } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ExternalCompositionForm,
@@ -121,7 +122,7 @@ const ExternalCompositionStatus = () => {
       {testState === TestState.LOADING ? (
         <Tooltip
           trigger={
-            <span className={styles.externalCompositionStatusSpan}>
+            <span className={shared.inlineFlex}>
               <RefreshCw
                 className={styles.externalCompositionStatusRefreshCw}
                 onClick={e => e.preventDefault()}
@@ -154,7 +155,7 @@ const ExternalCompositionStatus = () => {
         <Tooltip
           defaultOpen
           trigger={
-            <span className={styles.externalCompositionStatusSpan2}>
+            <span className={shared.inlineFlex}>
               <X className={styles.externalCompositionStatusX} onClick={e => e.preventDefault()} />
             </span>
           }
@@ -166,7 +167,7 @@ const ExternalCompositionStatus = () => {
       {testState === TestState.SUCCESS && !hidden ? (
         <Tooltip
           trigger={
-            <span className={styles.externalCompositionStatusSpan3}>
+            <span className={shared.inlineFlex}>
               <Check
                 className={styles.externalCompositionStatusCheck}
                 onClick={e => e.preventDefault()}

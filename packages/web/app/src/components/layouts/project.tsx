@@ -15,6 +15,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
+import * as shared from '@/styles/shared.css';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
@@ -81,7 +82,7 @@ export function ProjectLayout({ children }: { children: ReactNode }) {
               currentProject?.viewerCanCreateTarget ? (
                 <>
                   <Button onClick={toggleModalOpen} variant="link">
-                    <span className={styles.projectLayoutSpan}>
+                    <span className={shared.row.base}>
                       <PlusIcon size={16} className={styles.projectLayoutPlusIcon} />
                       New target
                     </span>

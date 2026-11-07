@@ -3,6 +3,7 @@ import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import * as styles from './member-groups.css';
 
 export const MemberGroups_GroupFragment = graphql(`
@@ -30,7 +31,7 @@ export function MemberGroups(props: {
         trigger={
           <div className={styles.memberGroupsDiv5}>
             <UsersIcon className={styles.memberGroupsUsersIcon2} />
-            <span className={styles.memberGroupsSpan2}>Groups: none</span>
+            <span className={shared.text.xs}>Groups: none</span>
           </div>
         }
         content="Groups can be assigned via the SCIM provider."
@@ -39,10 +40,10 @@ export function MemberGroups(props: {
   }
 
   return (
-    <div className={layout === 'all' ? styles.memberGroupsDiv6 : styles.memberGroupsDiv7}>
-      <div className={styles.memberGroupsDiv8}>
+    <div className={layout === 'all' ? shared.row.wrap2 : styles.memberGroupsDiv7}>
+      <div className={shared.row.gap1_5}>
         <UsersIcon className={styles.memberGroupsUsersIcon2} />
-        <span className={styles.memberGroupsSpan2}>Groups:</span>
+        <span className={shared.text.xs}>Groups:</span>
       </div>
 
       {layout === 'all' ? (

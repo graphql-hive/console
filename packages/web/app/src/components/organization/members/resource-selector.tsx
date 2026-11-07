@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql, useFragment, type FragmentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import * as styles from './resource-selector.css';
 
 const ResourceSelector_OrganizationFragment = graphql(`
@@ -714,7 +715,7 @@ export function ResourceSelector(props: {
           value: 'full',
           label: 'Full Access',
           content: (
-            <p className={styles.resourceSelectorP}>
+            <p className={shared.text.sm}>
               The permissions are granted on all projects, targets and services within the
               organization.
             </p>
@@ -736,7 +737,7 @@ export function ResourceSelector(props: {
                         <div className={styles.resourceSelectorDiv2}>Projects</div>
                       )}
                       <div className={styles.resourceSelectorDiv3}>
-                        <div className={styles.resourceSelectorDiv4}>Targets</div>
+                        <div className={shared.weight.bold}>Targets</div>
                         {targetState && showProjectsTab && (
                           <div className={styles.resourceSelectorDiv5}>
                             <span className={styles.resourceSelectorSpan}>All</span>
@@ -758,11 +759,11 @@ export function ResourceSelector(props: {
                       </div>
                       <div className={styles.resourceSelectorDiv6}>
                         <div className={styles.resourceSelectorDiv7}>
-                          <span className={styles.resourceSelectorSpan2}>
+                          <span className={shared.weight.bold}>
                             {organizationQuery.data?.organization?.isAppDeploymentsEnabled ? (
                               <>
                                 <button
-                                  className={styles.resourceSelectorButton}
+                                  className={shared.row.base}
                                   onClick={toggleServiceAppsState}
                                 >
                                   <ChevronDownIcon
@@ -946,7 +947,7 @@ export function ResourceSelector(props: {
 
                       <div className={styles.resourceSelectorDiv25}>
                         <ScrollArea axis="both" fill>
-                          <div className={styles.resourceSelectorDiv26}>
+                          <div className={shared.stack.base}>
                             {/** Services Content */}
                             {serviceAppsState === ServicesAppsState.service && (
                               <div className={styles.resourceSelectorDiv27}>

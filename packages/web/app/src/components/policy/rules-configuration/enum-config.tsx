@@ -2,6 +2,7 @@ import { ReactElement, useEffect } from 'react';
 import { InfoIcon } from 'lucide-react';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-group';
+import * as shared from '@/styles/shared.css';
 import { useConfigurationHelper } from '../form-helper';
 import { PolicyConfigBox } from '../policy-config-box';
 import * as styles from './enum-config.css';
@@ -29,7 +30,7 @@ export const PolicyEnumSelect = (props: {
   return (
     <PolicyConfigBox
       title={
-        <div className={styles.policyEnumSelectDiv}>
+        <div className={shared.row.base}>
           <div>{props.title}</div>
           {props.tooltip ? (
             <Popover

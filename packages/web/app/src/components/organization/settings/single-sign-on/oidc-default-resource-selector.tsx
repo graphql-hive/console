@@ -4,6 +4,7 @@ import { useMutation } from 'urql';
 import { useDebouncedCallback } from 'use-debounce';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as shared from '@/styles/shared.css';
 import {
   createResourceSelectionFromResourceAssignment,
   ResourceSelection,
@@ -120,7 +121,7 @@ export function OIDCDefaultResourceSelector(props: {
   );
 
   return (
-    <div className={styles.oIDCDefaultResourceSelectorDiv}>
+    <div className={shared.relative}>
       <MutateState />
       <ResourceSelector
         selection={selection}

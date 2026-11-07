@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
+import * as shared from '@/styles/shared.css';
 import * as styles from './connect-provider-form.css';
 
 /** The endpoints a discovery document must carry, and the only client-side validated fields. */
@@ -218,7 +219,7 @@ export function OIDCMetadataUrlForm(props: {
                   disabled={field.disabled || props.isPending}
                 />
               </FormControl>
-              <div className={styles.oIDCMetadataUrlFormDiv2}>
+              <div className={shared.noShrink}>
                 <Button type="submit" onSurface="raised" disabled={props.isPending}>
                   {props.isPending ? 'Fetching...' : 'Fetch endpoints'}
                 </Button>

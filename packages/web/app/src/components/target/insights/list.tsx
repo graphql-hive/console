@@ -9,6 +9,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { DateRangeInput, OperationStatsFilterInput } from '@/gql/graphql';
 import { formatDuration, useSlugs } from '@/lib/hooks';
 import { carriedRange } from '@/lib/hooks/use-date-range-controller';
+import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
 import { OperationsFallback } from './fallback';
 import * as styles from './list.css';
@@ -67,7 +68,7 @@ function OperationsTable({
                   <button
                     type="button"
                     aria-label="Anonymous operation"
-                    className={styles.operationsTableButton}
+                    className={shared.inlineFlex}
                   >
                     <TriangleAlert className={styles.operationsTableTriangleAlert} />
                   </button>

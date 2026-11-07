@@ -27,6 +27,7 @@ import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import * as GraphQLSchema from '@/gql/graphql';
 import { useSearchParamsFilter } from '@/lib/hooks/use-search-params-filters';
 import { cn } from '@/lib/utils';
+import * as shared from '@/styles/shared.css';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { MemberInvitationButton } from './invitations';
@@ -148,7 +149,7 @@ function MemberNameCell({ member }: { member: MemberRow }) {
       name={member.user.displayName}
       strikethrough={!!member.user.provisionInfo?.isDisabled}
       trailing={
-        <span className={styles.memberNameCellSpan}>
+        <span className={shared.inlineRow.gap1}>
           {member.user.provisionInfo ? (
             <Popover
               trigger={
@@ -167,7 +168,7 @@ function MemberNameCell({ member }: { member: MemberRow }) {
                   <div>Provisioned via SCIM</div>
                   <div>
                     External ID:{' '}
-                    <span className={styles.memberNameCellSpan2}>
+                    <span className={shared.mono}>
                       <CopyChip value={member.user.provisionInfo.externalId} />
                     </span>
                   </div>
@@ -258,7 +259,7 @@ function MemberRoleCell(props: {
   }
 
   return (
-    <span className={styles.memberRoleCellSpan2}>
+    <span className={shared.inlineRow.gap2}>
       {member.viewerCanRemove &&
         member.user.provisionInfo?.provisioningStatus ===
           GraphQLSchema.ProvisioningStatus.PendingConfirmation && (
@@ -329,11 +330,11 @@ function MemberRoleCell(props: {
               unintentionally.
             </p>
             <div className={styles.memberRoleCellDiv2}>
-              <div className={styles.memberRoleCellDiv3}>Pending SCIM values</div>
+              <div className={shared.text.sm}>Pending SCIM values</div>
               <div className={styles.memberRoleCellDiv4}>
-                <div className={styles.memberRoleCellDiv5}>
+                <div className={shared.row.gap1_5}>
                   <KeyIcon className={styles.memberRoleCellKeyIcon} />
-                  <span className={styles.memberRoleCellSpan3}>
+                  <span className={shared.text.xs}>
                     User status: {member.user.provisionInfo.isDisabled ? 'Disabled' : 'Active'}
                   </span>
                 </div>
