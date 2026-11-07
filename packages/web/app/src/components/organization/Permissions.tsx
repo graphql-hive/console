@@ -1,11 +1,10 @@
-import clsx from 'clsx';
 import { Select } from '@/components/ui/primitives/floating/select/select';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import type { OnSurface } from '@/components/ui/primitives/shared-styles';
 import { OrganizationAccessScope, ProjectAccessScope, TargetAccessScope } from '@/gql/graphql';
 import { NoAccess, Scope } from '@/lib/access/common';
 import { truthy } from '@/lib/utils';
-import * as styles from './Permissions.css';
+import { permissionsStyles } from './Permissions.css';
 
 function isLowerThen<T>(targetScope: T, sourceScope: T, scopesInLowerToHigherOrder: readonly T[]) {
   const sourceIndex = scopesInLowerToHigherOrder.indexOf(sourceScope);
@@ -34,15 +33,12 @@ export const PermissionScopeItem = <
   const inner = (
     <div
       key={props.scope.name}
-      className={clsx(
-        styles.permissionScopeItemDiv,
-        props.canManageScope === false ? styles.permissionScopeItemDiv2 : null,
-      )}
+      className={permissionsStyles.scope({ locked: props.canManageScope === false })}
       data-testid={props.dataTestId}
     >
       <div>
-        <div className={styles.permissionScopeItemDiv3}>{props.scope.name}</div>
-        <div className={styles.permissionScopeItemDiv4}>{props.scope.description}</div>
+        <div className={permissionsStyles.scopeName}>{props.scope.name}</div>
+        <div className={permissionsStyles.scopeDescription}>{props.scope.description}</div>
       </div>
       <Select
         aria-label={`${props.scope.name} access`}

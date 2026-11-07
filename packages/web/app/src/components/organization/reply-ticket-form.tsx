@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Textarea } from '@/components/ui/primitives/textarea/textarea';
-import * as styles from './reply-ticket-form.css';
+import { replyTicketFormStyles } from './reply-ticket-form.css';
 
 export const ReplyTicketFormSchema = z.object({
   body: z.string().min(2, {
@@ -39,7 +39,7 @@ export function ReplyTicketForm(props: {
           </FormItem>
         )}
       />
-      <div className={styles.replyTicketFormDiv}>
+      <div className={replyTicketFormStyles.actions}>
         <Button type="submit">Reply</Button>
         <Button variant="link" type="reset" onClick={() => form.reset({ body: '' })}>
           Reset

@@ -10,7 +10,7 @@ import { BillingPlanType } from '@/gql/graphql';
 import { useResolvedColors } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
 import { CardElement as StripeCardElement } from '@stripe/react-stripe-js';
-import * as styles from './BillingPaymentMethod.css';
+import { billingPaymentMethodStyles } from './BillingPaymentMethod.css';
 
 const GenerateStripeLinkMutation = graphql(`
   mutation GenerateStripeLinkMutation($selector: OrganizationSelectorInput!) {
@@ -54,17 +54,17 @@ export const ManagePaymentMethod = (props: {
   }
 
   return (
-    <div className={styles.managePaymentMethodDiv}>
+    <div className={billingPaymentMethodStyles.manage}>
       <Card
         variants={{ onSurface: 'base', titleSize: 'large' }}
         title="Payment Method and Billing Settings"
       >
         <div>
-          <p className={styles.managePaymentMethodP}>
+          <p className={billingPaymentMethodStyles.manageText}>
             Your current payment method is <strong>{info.brand.toUpperCase()}</strong> ending with{' '}
             {info.last4} (expires {info.expMonth}/{info.expYear}).
           </p>
-          <p className={styles.managePaymentMethodP2}>
+          <p className={billingPaymentMethodStyles.manageText}>
             To manage or change your payment method, billing settings, billing email, Tax ID, you
             can use the Stripe customer dashboard:
           </p>
@@ -92,8 +92,8 @@ export const ManagePaymentMethod = (props: {
               'Loading...'
             ) : (
               <div className={shared.row.base}>
-                <ExternalLink className={styles.managePaymentMethodExternalLink} /> Stripe Billing
-                Dashboard
+                <ExternalLink className={billingPaymentMethodStyles.manageLinkIcon} /> Stripe
+                Billing Dashboard
               </div>
             )}
           </Button>
@@ -112,12 +112,12 @@ export const BillingPaymentMethodForm = ({
   const colors = useResolvedColors();
 
   return (
-    <div className={styles.billingPaymentMethodFormDiv}>
+    <div className={billingPaymentMethodStyles.form}>
       <Card variants={{ onSurface: 'raised' }}>
         <div className={shared.stack.gap6}>
           <Heading>Payment Method</Heading>
           <StripeCardElement
-            className={styles.billingPaymentMethodFormStripeCardElement}
+            className={billingPaymentMethodStyles.cardElement}
             onChange={e => {
               if (e.error || !e.complete) {
                 onValidationChange?.(false);
@@ -136,7 +136,7 @@ export const BillingPaymentMethodForm = ({
             }}
           />
 
-          <div className={styles.billingPaymentMethodFormDiv3}>
+          <div className={billingPaymentMethodStyles.formNote}>
             All payments and subscriptions are processed securely by{' '}
             <Link
               as="a"

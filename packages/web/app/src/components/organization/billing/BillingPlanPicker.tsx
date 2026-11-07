@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/primitives/badge/badge';
 import { RadioGroup } from '@/components/ui/primitives/radio-group/radio-group';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import * as styles from './BillingPlanPicker.css';
+import { billingPlanPickerStyles } from './BillingPlanPicker.css';
 
 export const planCollection: {
   [key in BillingPlanType]: {
@@ -33,7 +33,7 @@ export const planCollection: {
     ],
     footer: (
       <>
-        <div className={styles.div}>Free 30 days trial period</div>
+        <div className={billingPlanPickerStyles.trialNote}>Free 30 days trial period</div>
       </>
     ),
   },
@@ -46,11 +46,16 @@ export const planCollection: {
       'Change your plan at any time',
       'Improved pricing as you scale',
       '12 months of usage data retention',
-      <span key="enterprise" className={styles.span}>
+      <span key="enterprise" className={billingPlanPickerStyles.supportFeature}>
         GraphQL/APIs support and guidance
         <br />
         from{' '}
-        <a href="https://the-guild.dev" target="_blank" rel="noreferrer" className={styles.a}>
+        <a
+          href="https://the-guild.dev"
+          target="_blank"
+          rel="noreferrer"
+          className={billingPlanPickerStyles.supportLink}
+        >
           The Guild
         </a>
       </span>,
@@ -68,31 +73,29 @@ export function Plan(plan: {
   footer?: ReactNode;
 }): ReactElement {
   return (
-    // `self-stretch` because the radio item centers its content, and a plan body must fill the
-    // card so the footers line up across plans with different feature counts.
-    <div className={styles.planDiv}>
+    <div className={billingPlanPickerStyles.plan}>
       <div>
-        <h2 className={styles.planH2}>
+        <h2 className={billingPlanPickerStyles.planName}>
           {plan.name}
           {plan.isActive && <Badge content="CURRENT PLAN" variants={{ variant: 'default' }} />}
         </h2>
 
-        <div className={styles.planDiv2}>
+        <div className={billingPlanPickerStyles.planPrice}>
           {typeof plan.price === 'string' ? (
             plan.price
           ) : (
             <>
               ${plan.price}
-              <span className={styles.planSpan}>/mo</span>
+              <span className={billingPlanPickerStyles.planPeriod}>/mo</span>
             </>
           )}
         </div>
-        <div className={styles.planDiv3}>{plan.description}</div>
-        <div className={styles.planDiv4}>
+        <div className={billingPlanPickerStyles.planDescription}>{plan.description}</div>
+        <div className={billingPlanPickerStyles.planFeatures}>
           {plan.features.map((feature, i) => (
             <div key={i}>
-              <div className={styles.planDiv5}>
-                <Check className={styles.planCheck} />
+              <div className={billingPlanPickerStyles.planFeature}>
+                <Check className={billingPlanPickerStyles.planFeatureIcon} />
                 {feature}
               </div>
             </div>
@@ -101,8 +104,8 @@ export function Plan(plan: {
       </div>
       {plan.footer && (
         <div>
-          <div className={styles.planDiv6} />
-          <div className={styles.planDiv7}>{plan.footer}</div>
+          <div className={billingPlanPickerStyles.planRule} />
+          <div className={billingPlanPickerStyles.planFooter}>{plan.footer}</div>
         </div>
       )}
     </div>

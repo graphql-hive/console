@@ -3,7 +3,7 @@ import { ResourceCard } from '@/components/common/resource-card';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ProjectType } from '@/gql/graphql';
 import { Link } from '@tanstack/react-router';
-import * as styles from './project-card.css';
+import { projectCardStyles } from './project-card.css';
 
 export const ProjectCard_ProjectFragment = graphql(`
   fragment ProjectCard_ProjectFragment on Project {
@@ -40,7 +40,7 @@ export const ProjectCard = (props: {
       days={props.days}
       renderLink={children => (
         <Link
-          className={styles.projectCardLink}
+          className={projectCardStyles.link}
           to="/$organizationSlug/$projectSlug"
           disabled={props.cleanOrganizationId == null || project?.slug == null}
           params={{

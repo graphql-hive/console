@@ -2,7 +2,7 @@ import { ReactElement } from 'react';
 import { Callout } from '@/components/ui/callout';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
-import * as styles from './RateLimitWarn.css';
+import { rateLimitWarnStyles } from './RateLimitWarn.css';
 
 const RateLimitWarn_OrganizationFragment = graphql(`
   fragment RateLimitWarn_OrganizationFragment on Organization {
@@ -23,7 +23,7 @@ export function RateLimitWarn(props: {
 
   if (organization.plan === BillingPlanType.Enterprise) {
     return (
-      <Callout type="warning" className={styles.rateLimitWarnCallout}>
+      <Callout type="warning" className={rateLimitWarnStyles.callout}>
         <b>Your organization has reached it's contract limit.</b>
         <br />
         The data under your organization is still being processed and no data will be lost.
@@ -34,7 +34,7 @@ export function RateLimitWarn(props: {
   }
 
   return (
-    <Callout type="warning" className={styles.rateLimitWarnCallout2}>
+    <Callout type="warning" className={rateLimitWarnStyles.callout}>
       <b>Your organization is being rate-limited for operations.</b>
       <br />
       Since you have reached your organization rate-limit and data ingestion limitation, your

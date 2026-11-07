@@ -6,7 +6,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { BillingPlanType } from '@/gql/graphql';
 import type { ColumnDef } from '@tanstack/react-table';
 import { CurrencyFormatter, formatMillionOrBillion } from './helpers';
-import * as styles from './PlanSummary.css';
+import { planSummaryStyles } from './PlanSummary.css';
 
 const PriceEstimationTable_PlanFragment = graphql(`
   fragment PriceEstimationTable_PlanFragment on BillingPlan {
@@ -153,8 +153,8 @@ export function PlanSummary({
 
   return (
     <>
-      <div className={styles.planSummaryDiv}>
-        <Stat className={styles.planSummaryStat}>
+      <div className={planSummaryStyles.root}>
+        <Stat className={planSummaryStyles.stat}>
           <Stat.Label>Plan</Stat.Label>
           <Stat.HelpText>type</Stat.HelpText>
           <Stat.Number>{plan.planType}</Stat.Number>
@@ -167,7 +167,7 @@ export function PlanSummary({
           <Stat.HelpText>up to / per month</Stat.HelpText>
           <Stat.Number>{formatMillionOrBillion(operationsRateLimit)}</Stat.Number>
         </Stat>
-        <Stat className={styles.planSummaryStat2}>
+        <Stat className={planSummaryStyles.stat}>
           <Stat.Label>Retention</Stat.Label>
           <Stat.HelpText>usage reports</Stat.HelpText>
           <Stat.Number>{plan.retentionInDays} days</Stat.Number>

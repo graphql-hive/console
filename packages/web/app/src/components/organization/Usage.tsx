@@ -5,7 +5,7 @@ import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DataWrapper } from '@/components/ui/data-wrapper';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './Usage.css';
+import { usageStyles } from './Usage.css';
 
 const OrganizationUsageEstimationView_OrganizationFragment = graphql(`
   fragment OrganizationUsageEstimationView_OrganizationFragment on Organization {
@@ -81,7 +81,7 @@ export function OrganizationUsageEstimationView(props: {
   });
 
   return (
-    <div className={styles.organizationUsageEstimationViewDiv}>
+    <div className={usageStyles.root}>
       <DataWrapper query={query} organizationSlug={organization.slug}>
         {result => (
           <DataTable

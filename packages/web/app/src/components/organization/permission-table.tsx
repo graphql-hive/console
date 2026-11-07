@@ -3,7 +3,7 @@ import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import * as shared from '@/styles/shared.css';
 import type { ColumnDef } from '@tanstack/react-table';
-import * as styles from './permission-table.css';
+import { permissionTableStyles } from './permission-table.css';
 
 export type PermissionRow = {
   id: string;
@@ -47,7 +47,7 @@ const PERMISSION_COLUMNS: ColumnDef<PermissionRow, unknown>[] = [
 export function PermissionTable(props: { title: string; permissions: PermissionRow[] }) {
   return (
     <div>
-      <h4 className={styles.permissionTableH4}>{props.title}</h4>
+      <h4 className={permissionTableStyles.title}>{props.title}</h4>
       <DataTable
         data={props.permissions}
         columns={PERMISSION_COLUMNS}
