@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 import { GripVertical } from 'lucide-react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import { cn } from '@/lib/utils';
-import * as styles from './resizable.css';
+import { resizableStyles } from './resizable.css';
 
 type Orientation = NonNullable<React.ComponentProps<typeof Group>['orientation']>;
 
@@ -19,7 +19,7 @@ const ResizablePanelGroup = ({
     <Group
       orientation={orientation}
       data-orientation={orientation}
-      className={cn(styles.resizablePanelGroupGroup, className)}
+      className={cn(resizableStyles.group, className)}
       {...props}
     />
   </OrientationContext.Provider>
@@ -38,12 +38,12 @@ const ResizableHandle = ({
   return (
     <Separator
       data-orientation={orientation}
-      className={cn(styles.resizableHandleSeparator, className)}
+      className={cn(resizableStyles.handle, className)}
       {...props}
     >
       {withHandle && (
-        <div className={styles.resizableHandleDiv}>
-          <GripVertical className={styles.resizableHandleGripVertical} />
+        <div className={resizableStyles.grip}>
+          <GripVertical className={resizableStyles.gripIcon} />
         </div>
       )}
     </Separator>

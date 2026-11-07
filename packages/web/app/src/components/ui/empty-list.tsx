@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { Code } from './code';
 import { DocsLink } from './docs-note';
 import { Heading } from './heading';
-import * as styles from './empty-list.css';
+import { emptyListStyles } from './empty-list.css';
 
 export const EmptyList = ({
   title,
@@ -22,15 +22,15 @@ export const EmptyList = ({
   className?: string;
 }): ReactElement => {
   return (
-    <div className={cn(styles.emptyListDiv, className)}>
+    <div className={cn(emptyListStyles.root, className)}>
       <Card variants={{ onSurface: 'raised', bodyPadding: 'none' }}>
-        <div className={styles.emptyListDiv2}>
+        <div className={emptyListStyles.body}>
           <img src={magnifier} alt="Magnifier illustration" width="200" height="200" />
-          <Heading className={styles.emptyListHeading}>{title}</Heading>
-          <span className={styles.emptyListSpan}>{description}</span>
-          <div className={styles.emptyListDiv3}>{children}</div>
+          <Heading className={emptyListStyles.title}>{title}</Heading>
+          <span className={emptyListStyles.description}>{description}</span>
+          <div className={emptyListStyles.actions}>{children}</div>
           {docsUrl && (
-            <div className={styles.emptyListDiv4}>
+            <div className={emptyListStyles.docs}>
               <DocsLink href={docsUrl} text="Read more in the documentation" />
             </div>
           )}
@@ -63,11 +63,11 @@ export const NoSchemaVersion = ({
     if (recommendedAction === 'check') {
       children = (
         <>
-          <div className={styles.noSchemaVersionDiv}>
+          <div className={emptyListStyles.hint}>
             It's recommended to check that the schema is valid and compatible with the state of the
             registry before publishing.
           </div>
-          <div className={styles.noSchemaVersionDiv2}>
+          <div className={emptyListStyles.command}>
             <Code>
               {`hive schema:check ${isDistributed ? '--service <service-name> --url <url> ' : ''} --target "<org>/<project>/<target>" <path/schema.graphql>`}
             </Code>
@@ -78,12 +78,12 @@ export const NoSchemaVersion = ({
       children = (
         <>
           {isDistributed && (
-            <div className={styles.noSchemaVersionDiv3}>
+            <div className={emptyListStyles.hint}>
               For distributed systems, it's recommended to publish the schema after the service is
               deployed.
             </div>
           )}
-          <div className={styles.noSchemaVersionDiv4}>
+          <div className={emptyListStyles.command}>
             <Code>
               {`hive schema:publish ${isDistributed ? '--service <service-name> --url <url> ' : ''} --target "<org>/<project>/<target>" <path/schema.graphql>`}
             </Code>

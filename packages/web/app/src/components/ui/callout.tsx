@@ -2,18 +2,18 @@ import React from 'react';
 import { CircleXIcon, InfoIcon, TriangleAlertIcon, ZapIcon } from 'lucide-react';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
-import * as styles from './callout.css';
+import { calloutStyles } from './callout.css';
 
 const TypeToEmoji = {
-  default: <ZapIcon className={styles.zapIcon} />,
-  error: <CircleXIcon className={styles.circleXIcon} />,
-  info: <InfoIcon className={styles.infoIcon} />,
-  warning: <TriangleAlertIcon className={styles.triangleAlertIcon} />,
+  default: <ZapIcon className={calloutStyles.icon} />,
+  error: <CircleXIcon className={calloutStyles.icon} />,
+  info: <InfoIcon className={calloutStyles.icon} />,
+  warning: <TriangleAlertIcon className={calloutStyles.icon} />,
 };
 
 type CalloutType = keyof typeof TypeToEmoji;
 
-const calloutVariants = lenient(styles.calloutVariants);
+const calloutVariants = lenient(calloutStyles.root);
 
 type CalloutProps = {
   type?: CalloutType;
@@ -29,7 +29,7 @@ const Callout = React.forwardRef<
   return (
     <div ref={ref} className={cn(calloutVariants({ type }), className)} {...props}>
       <div
-        className={styles.div}
+        className={calloutStyles.emoji}
         style={{
           fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
         }}

@@ -5,7 +5,7 @@ import { FloatingSearch } from '../../primitives/floating/floating-search';
 import { floatingEmptyState, menuPanelInset } from '../../primitives/floating/shared-styles';
 import { ItemRow, ListScrollContext } from './item-row';
 import type { FilterItem, FilterSelection } from './types';
-import * as styles from './filter-content.css';
+import { filterContentStyles } from './filter-content.css';
 
 const ITEM_HEIGHT = 28; // h-7
 const MAX_LIST_HEIGHT = 256; // max-h-64
@@ -131,22 +131,22 @@ export function FilterContent({
   return (
     // Modest min-width so the popover doesn't collapse to a single 1–2 char
     // item, but still sizes naturally to fit the content of small lists.
-    <div role="group" className={`${styles.filterContentDiv} ${menuPanelInset}`}>
+    <div role="group" className={`${filterContentStyles.root} ${menuPanelInset}`}>
       {/*
         Only the rows in view are in the DOM, so left to itself the popup would size to whichever
         happen to be rendered. This zero-height row carries every name, one per line, so the popup
         is as wide as its widest item (up to the popup's max-width) from the start and stays put
         through scrolling and search. Laid out like an ItemRow: checkbox, gap, name, chevron.
       */}
-      <div aria-hidden className={styles.filterContentDiv2}>
-        <span className={styles.filterContentSpan} />
-        <span className={styles.filterContentSpan2}>{allNames}</span>
-        {hasSubmenus ? <span className={styles.filterContentSpan3} /> : null}
+      <div aria-hidden className={filterContentStyles.widthProbe}>
+        <span className={filterContentStyles.probeCheckbox} />
+        <span className={filterContentStyles.probeNames}>{allNames}</span>
+        {hasSubmenus ? <span className={filterContentStyles.probeChevron} /> : null}
       </div>
       {showSearch && <FloatingSearch label={label} onSearch={setSearch} value={search} />}
       {/* Note about unavailable items */}
       {items.some(item => item.unavailable) && (
-        <div className={styles.filterContentDiv3}>
+        <div className={filterContentStyles.note}>
           <span className={shared.lineThrough}>Struck-through</span> items are not found in the
           selected date range.
         </div>
@@ -156,7 +156,7 @@ export function FilterContent({
       {filteredItems.length > 0 ? (
         <div
           ref={scrollRef}
-          className={styles.filterContentDiv4}
+          className={filterContentStyles.list}
           style={{
             height: listHeight,
             overflow: 'auto',

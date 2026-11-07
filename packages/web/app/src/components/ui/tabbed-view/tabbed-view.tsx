@@ -2,10 +2,9 @@ import { type ReactNode } from 'react';
 import { lenient } from '@/lib/recipe';
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
 import { TabStrip, type TabItem } from '../primitives/tabs/tabs';
-import * as styles from './tabbed-view.css';
+import { tabbedViewStyles } from './tabbed-view.css';
 
-// Hides the outgoing panel the moment it starts ending, as the tabs primitive does.
-const panelVariants = lenient(styles.panelVariants);
+const panelVariants = lenient(tabbedViewStyles.panel);
 
 export type TabbedViewItem = TabItem & {
   /** The view, in the body. */
@@ -34,10 +33,10 @@ export function TabbedView({
       value={value}
       defaultValue={defaultValue}
       onValueChange={next => onValueChange?.(String(next))}
-      className={styles.tabbedViewRoot}
+      className={tabbedViewStyles.root}
       {...attrs}
     >
-      <div className={styles.tabbedViewDiv}>
+      <div className={tabbedViewStyles.header}>
         <TabStrip items={items} variant="header" activeValue={value} />
       </div>
       {items.map(item => (

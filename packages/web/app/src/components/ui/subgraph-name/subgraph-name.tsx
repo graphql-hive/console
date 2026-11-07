@@ -1,5 +1,5 @@
 import { PackageIcon } from 'lucide-react';
-import * as styles from './subgraph-name.css';
+import { subgraphNameStyles } from './subgraph-name.css';
 
 /**
  * A subgraph's name wherever the UI mentions one. Neutral, not a semantic colour, so it never reads
@@ -7,11 +7,11 @@ import * as styles from './subgraph-name.css';
  */
 export function SubgraphName(props: { name: string }) {
   return (
-    <span className={styles.subgraphNameSpan} title={props.name}>
-      <span className={styles.subgraphNameSpan2}>
-        <PackageIcon className={styles.subgraphNamePackageIcon} />
+    <span className={subgraphNameStyles.root} title={props.name}>
+      <span className={subgraphNameStyles.iconCell}>
+        <PackageIcon className={subgraphNameStyles.icon} />
       </span>
-      <span className={styles.subgraphNameSpan3}>{props.name}</span>
+      <span className={subgraphNameStyles.name}>{props.name}</span>
     </span>
   );
 }

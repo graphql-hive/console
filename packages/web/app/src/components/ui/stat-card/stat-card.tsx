@@ -4,9 +4,9 @@ import { Card } from '@/components/ui/primitives/card/card';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { lenient } from '@/lib/recipe';
 import * as shared from '@/styles/shared.css';
-import * as styles from './stat-card.css';
+import { statCardStyles } from './stat-card.css';
 
-const statTitleVariants = lenient(styles.statTitleVariants);
+const statTitleVariants = lenient(statCardStyles.title);
 
 type StatCardProps = {
   title: string;
@@ -22,26 +22,24 @@ type StatCardProps = {
 export function StatCard({ title, value, caption, icon: Icon, hint, variants }: StatCardProps) {
   return (
     <Card variants={{ onSurface: 'raised' }}>
-      <div className={styles.statCardDiv}>
+      <div className={statCardStyles.header}>
         <div className={shared.row.gap1_5}>
           <h3 className={statTitleVariants({ ...variants })}>{title}</h3>
           {hint ? (
             <Tooltip
               trigger={
                 <button type="button" aria-label="What this measures">
-                  <InfoIcon className={styles.statCardInfoIcon} />
+                  <InfoIcon className={statCardStyles.hintIcon} />
                 </button>
               }
               content={hint}
             />
           ) : null}
         </div>
-        {/* `shrink-0` so a title that wraps to two lines ("Relative Request Frequency") pushes the
-            icon rather than squashing it. */}
-        {Icon ? <Icon className={styles.statCardIcon} /> : null}
+        {Icon ? <Icon className={statCardStyles.icon} /> : null}
       </div>
-      <div className={styles.statCardDiv3}>{value}</div>
-      {caption ? <p className={styles.statCardP}>{caption}</p> : null}
+      <div className={statCardStyles.value}>{value}</div>
+      {caption ? <p className={statCardStyles.caption}>{caption}</p> : null}
     </Card>
   );
 }

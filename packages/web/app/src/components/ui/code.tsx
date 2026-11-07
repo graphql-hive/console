@@ -3,7 +3,7 @@ import cn from 'clsx';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import { useHover } from '@/lib/hooks/use-hover';
 import { useTimed } from '@/lib/hooks/use-timed';
-import * as styles from './code.css';
+import { codeStyles } from './code.css';
 
 export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props }) => {
   const [copied, startCopyTimer] = useTimed(1500);
@@ -14,7 +14,7 @@ export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props
   return (
     <span
       ref={ref}
-      className={styles.codeSpan}
+      className={codeStyles.root}
       // Make this element able to be focused by setting tabIndex.
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
@@ -31,7 +31,7 @@ export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props
     >
       <code
         ref={codeRef}
-        className={cn(styles.codeCode, className)}
+        className={cn(codeStyles.code, className)}
         // always show code blocks in ltr
         dir="ltr"
         {...props}
@@ -41,7 +41,7 @@ export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props
       <button
         hidden={!navigatorClipboardSupport}
         data-hovering={hovering || copied}
-        className={styles.codeButton}
+        className={codeStyles.copyButton}
         onClick={async ev => {
           const value = children?.valueOf().toString();
           if (value) {

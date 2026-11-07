@@ -1,9 +1,9 @@
 import { type ReactNode } from 'react';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
-import * as styles from './text.css';
+import { textStyles } from './text.css';
 
-const textVariants = lenient(styles.textVariants);
+const textVariants = lenient(textStyles.root);
 
 type TextVariantProps = NonNullable<Parameters<typeof textVariants>[0]>;
 

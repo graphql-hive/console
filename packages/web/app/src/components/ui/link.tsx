@@ -3,9 +3,9 @@ import { ComponentProps, PropsWithChildren } from 'react';
 import { lenient } from '@/lib/recipe';
 import { cn } from '@/lib/utils';
 import { LinkOptions, RegisteredRouter, Link as RouterLink } from '@tanstack/react-router';
-import * as styles from './link.css';
+import { linkStyles } from './link.css';
 
-const linkVariants = lenient(styles.linkVariants);
+const linkVariants = lenient(linkStyles.root);
 
 type LinkProps<TTo extends string> = LinkOptions<RegisteredRouter, '/', TTo> &
   NonNullable<Parameters<typeof linkVariants>[0]> &
