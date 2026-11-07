@@ -18,15 +18,25 @@ remaining class strings were restructured by hand into a static shape (a `cva` w
 their source name.
 
 `--sweep` widens the scan to every string literal, outside imports, types, tags and non-class
-attributes, whose tokens are all known classes and not a single plain word. That catches the class
-maps in data constants (`{ success: 'text-success' }`) that only Tailwind's source scanner used to
-see. Run it once, with `--append`, after the directory passes.
+attributes, whose tokens are all known classes and not a single plain word. That catches props other
+than `className` carrying classes (`gap="flex flex-col gap-4"`) and the class maps in data constants
+(`{ success: 'text-success' }`) that only Tailwind's source scanner used to see. Run it once, with
+`--append`, after the directory passes.
 
 `--candidates-from <git ref>` also counts the class strings at that ref towards
 `tailwind-defaults.css`, which is otherwise computed from the current source alone. Pass the
 pre-migration commit and `main`: once a directory is converted its source holds no Tailwind classes,
 and the defaults would otherwise lose the `@property` registrations the converted styles rely on (an
 unregistered `--tw-leading` inherits into children, for one).
+
+## After the removal
+
+The app no longer depends on Tailwind, so the codemod keeps what it needs here: `index.css` and
+`tailwind-plugins.js` are the app's former Tailwind entry stylesheet and plugin, copied unchanged,
+and the compiler is resolved through `@graphql-hive/laboratory`, which still uses Tailwind. That
+keeps the codemod runnable for any further merge from `main` that brings Tailwind classes with it.
+Delete this directory, the root `codemod:tailwind-to-ve` script and `--candidates-from` once the
+migration has landed and `main` has no Tailwind classes left.
 
 ## How it works
 

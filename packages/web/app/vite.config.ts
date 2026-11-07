@@ -4,7 +4,6 @@ import type { HtmlTagDescriptor, Plugin, ResolvedConfig, UserConfig } from 'vite
 import monacoEditor from 'vite-plugin-monaco-editor';
 import viteFastify from '@fastify/vite/plugin';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
-import tailwindcss from '@tailwindcss/vite';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import react from '@vitejs/plugin-react';
 
@@ -66,8 +65,6 @@ export default {
   plugins: [
     viteFastify({ spa: true }),
     react(),
-    // Both styling systems run side by side during the Tailwind → Vanilla Extract migration.
-    tailwindcss(),
     vanillaExtractPlugin(),
     reactScanPlugin,
     sentryVitePlugin({

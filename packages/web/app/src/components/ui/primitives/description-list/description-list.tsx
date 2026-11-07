@@ -34,7 +34,7 @@ type DescriptionListProps = {
   variants?: DescriptionListVariants;
 };
 
-// Tailwind needs full class strings to detect them — explicit map by column count.
+// One style per column count, so the count stays a lookup rather than a computed class.
 const COLS_CLASS: Record<number, string> = {
   1: styles.colsClass1,
   2: styles.colsClass2,

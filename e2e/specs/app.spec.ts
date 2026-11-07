@@ -196,7 +196,7 @@ test.describe('oidc', () => {
       await page.locator('button[data-testid="role-selector-trigger"]').click();
       await page.locator('[data-testid="role-selector-item"]').getByText('Admin').click();
       await page.locator('button[type="submit"]').click();
-      await expect(page.locator('.container table')).toContainText('tom.sailor@gmail.com');
+      await expect(page.getByRole('table')).toContainText('tom.sailor@gmail.com');
 
       await oidc.startSlugLogin(slug);
       await oidc.loginWithMockUser({ username: 'test-user-2', email: 'tom.sailor@gmail.com' });

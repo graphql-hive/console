@@ -178,11 +178,7 @@ module.exports = {
     },
     {
       files: ['packages/web/**'],
-      extends: [
-        '@theguild',
-        '@theguild/eslint-config/react',
-        'plugin:better-tailwindcss/legacy-recommended',
-      ],
+      extends: ['@theguild', '@theguild/eslint-config/react'],
       settings: {
         'import/resolver': {
           typescript: {
@@ -191,13 +187,6 @@ module.exports = {
         },
       },
       rules: {
-        // conflicts with official prettier-plugin-tailwindcss and tailwind v3
-        'better-tailwindcss/enforce-consistent-class-order': 'off',
-        'better-tailwindcss/enforce-canonical-classes': 'off',
-        // keeping classes in one line helps prettier-plugin-tailwindcss
-        // enable wrapping in text editors to make classes human readable
-        'better-tailwindcss/enforce-consistent-line-wrapping': 'off',
-        'better-tailwindcss/enforce-shorthand-classes': 'off',
         'react/display-name': 'off',
         'react/prop-types': 'off',
         'react/no-unknown-property': 'off',
@@ -225,55 +214,6 @@ module.exports = {
         'no-implicit-coercion': 'off',
 
         'react/jsx-key': 'warn',
-      },
-    },
-    {
-      files: ['packages/web/app/**'],
-      settings: {
-        'better-tailwindcss': {
-          // tailwindcss 4: the path to the entry file of the css based tailwind config (eg: `src/global.css`)
-          entryPoint: 'packages/web/app/src/index.css',
-          callees: tailwindCallees,
-        },
-      },
-      rules: {
-        // better-tailwindcss assumes you're using v4...we're being explicit here due to our dual tailwind setups
-        'better-tailwindcss/no-deprecated-classes': 'error',
-        // Tailwind v4 uses CSS variables without var() syntax
-        'better-tailwindcss/enforce-consistent-variable-syntax': 'off',
-        'better-tailwindcss/no-unknown-classes': [
-          'error',
-          {
-            ignore: [
-              'drag-none',
-              // Animation utilities (from index.css, replaces tailwindcss-animate)
-              'animate-in',
-              'animate-out',
-              'fade-in-.*',
-              'fade-out-.*',
-              'zoom-in-.*',
-              'zoom-out-.*',
-              'slide-in-from-.*',
-              'slide-out-to-.*',
-              // Custom radius from @theme
-              'rounded-xs',
-              // ring-offset with semantic colors
-              'ring-offset-.*',
-              // Data attribute variants with custom animations (for Radix UI components)
-              'data-\\[side=(top|right|bottom|left)\\]:animate-slide-(up|down|left|right)-fade',
-              // GraphiQL classes
-              'graphiql-.*',
-              // hive classes
-              'hive-.*',
-              // Schema diff custom classes (defined in index.css)
-              'schema-doc-row-.*',
-              // No scrollbar utility (defined in index.css)
-              'no-scrollbar',
-              // Tailwind v4 CSS variable syntax with parentheses
-              '.*-\\(--.*\\)',
-            ],
-          },
-        ],
       },
     },
     {

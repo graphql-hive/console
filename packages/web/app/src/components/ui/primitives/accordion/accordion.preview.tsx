@@ -329,10 +329,10 @@ const SAFE: Row[] = [
 export const StaticRows = createPreview(() => (
   <div className={styles.div9}>
     <Labelled label="Breaking changes on a check: boxed, one accordion per change (ChangeItem)">
-      <OnePerChange variant="boxed" rows={BREAKING} gap="flex flex-col gap-4" />
+      <OnePerChange variant="boxed" rows={BREAKING} gap={styles.staticRowsGapBoxed} />
     </Labelled>
     <Labelled label="Safe changes, and the history page: list, one accordion per change (ChangeItem)">
-      <OnePerChange variant="list" rows={SAFE} gap="flex flex-col gap-2" />
+      <OnePerChange variant="list" rows={SAFE} gap={styles.staticRowsGapList} />
     </Labelled>
     <Labelled label="Proposals: list, one item, no error to show (ProposalChangeDetail)">
       <OnePerChange

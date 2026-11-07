@@ -380,7 +380,11 @@ export type ScanOptions = {
 function isSweepable(node: ts.Node): boolean {
   const parent = node.parent;
   if (!parent) return false;
-  if (ts.isJsxAttribute(parent)) return false;
+  // A prop other than `className` can still carry classes (`gap="flex flex-col gap-4"`). Two or
+  // more tokens that all turn out to be known classes is a class string; one word stays a value.
+  if (ts.isJsxAttribute(parent)) {
+    return ts.isStringLiteral(node) && splitTokens(node.text).length >= 2;
+  }
   if (ts.isPropertyAssignment(parent) && parent.name === node) return false;
   if (ts.isComputedPropertyName(parent) || ts.isEnumMember(parent)) return false;
   if (ts.isExportDeclaration(parent) || ts.isExternalModuleReference(parent)) return false;

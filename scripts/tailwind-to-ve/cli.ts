@@ -68,7 +68,7 @@ function layerFor(absPath: string): 'components' | 'utilities' {
 }
 
 function appThemeVariableNames(): Set<string> {
-  const css = readFileSync(path.join(srcDir, 'index.css'), 'utf8');
+  const css = readFileSync(path.join(import.meta.dirname, 'index.css'), 'utf8');
   const start = css.indexOf('@theme');
   const open = css.indexOf('{', start);
   let depth = 0;
@@ -155,7 +155,9 @@ async function main() {
   // Keyframes `index.css` declares are ported by hand (animations.css.ts) or dead; keep Tailwind's.
   const ownKeyframes = new Set(
     [
-      ...readFileSync(path.join(srcDir, 'index.css'), 'utf8').matchAll(/@keyframes\s+([\w-]+)/g),
+      ...readFileSync(path.join(import.meta.dirname, 'index.css'), 'utf8').matchAll(
+        /@keyframes\s+([\w-]+)/g,
+      ),
     ].map(m => m[1]),
   );
   const globals = compiled.globals.filter(css => {

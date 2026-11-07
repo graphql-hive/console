@@ -1,6 +1,5 @@
 import { defineConfig } from 'react-foundry';
 import type { Plugin } from 'vite';
-import tailwindcss from '@tailwindcss/vite';
 import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 
 /**
@@ -145,6 +144,6 @@ export default defineConfig({
     // Vite finds the nearest tsconfig per imported file, so previews resolve `@/` through
     // the app's tsconfig even though foundry's vite root is inside node_modules.
     resolve: { tsconfigPaths: true },
-    plugins: [tailwindcss(), vanillaExtractPlugin(), previewEnv],
+    plugins: [vanillaExtractPlugin(), previewEnv],
   },
 });

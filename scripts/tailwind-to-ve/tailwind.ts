@@ -38,10 +38,11 @@ type TailwindNode = {
 };
 
 async function loadTailwind(appDir: string): Promise<TailwindNode> {
-  // `@tailwindcss/node` is not a dependency of the app, only of its Vite plugin, so resolve it
-  // from there rather than from this script.
-  const fromApp = createRequire(path.join(appDir, 'package.json'));
-  const fromPlugin = createRequire(fromApp.resolve('@tailwindcss/vite'));
+  // The app no longer depends on Tailwind; `@graphql-hive/laboratory` still does, and its Vite
+  // plugin depends on `@tailwindcss/node`, so resolve the compiler through there.
+  const laboratory = path.join(appDir, '../../libraries/laboratory/package.json');
+  const fromLaboratory = createRequire(laboratory);
+  const fromPlugin = createRequire(fromLaboratory.resolve('@tailwindcss/vite'));
   return (await import(fromPlugin.resolve('@tailwindcss/node'))) as TailwindNode;
 }
 
@@ -57,8 +58,13 @@ export async function compileTokens(
   candidates: Iterable<string>,
 ): Promise<Compiled> {
   const tailwind = await loadTailwind(appDir);
+  // The entry stylesheet the app used to compile with, kept beside this script as its input now
+  // that `src/index.css` is gone. `base` stays the app's src so `source('./')` keeps its meaning.
   const base = path.join(appDir, 'src');
-  const css = readFileSync(path.join(base, 'index.css'), 'utf8');
+  const css = readFileSync(path.join(import.meta.dirname, 'index.css'), 'utf8').replace(
+    '@plugin "./lib/tailwind-plugins.js";',
+    `@plugin "${path.join(import.meta.dirname, 'tailwind-plugins.js')}";`,
+  );
   const compiler = await tailwind.compile(css, { base, onDependency() {} });
   const list = [...new Set(candidates)].sort();
   const root = postcss.parse(compiler.build(list));

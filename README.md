@@ -115,7 +115,7 @@ more.
 - Runtime: Node.js, TypeScript, go (otel collector)
 - Package Manager: pnpm
 - APIs: Fastify, GraphQL-Yoga, GraphQL-Codegen, GraphQL-Modules
-- App: React, Vite, Fastify, Tailwind
+- App: React, Vite, Fastify, Vanilla Extract
 - CLI: Oclif
 - Deployment: Docker Compose, Pulumi, Kubernetes, Contour (Envoy), Cloudflare Workers and/or AWS
   Lambda, R2 and/or any other S3 compatible storage

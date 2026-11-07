@@ -209,3 +209,24 @@ export const div10 = style({
 });
 
 export const span4 = labelledSpan;
+
+// The `gap` prop of the StaticRows preview carried these as class strings.
+export const staticRowsGapBoxed = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 4)',
+    },
+  },
+});
+
+export const staticRowsGapList = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 2)',
+    },
+  },
+});

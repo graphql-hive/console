@@ -406,7 +406,7 @@
   }
 
   .hive-markdown code {
-    @apply rounded-sm bg-neutral-2 px-2 py-1 text-accent;
+    @apply bg-neutral-2 text-accent rounded-sm px-2 py-1;
   }
 
   .hive-loading-indicator {
@@ -481,7 +481,7 @@
 }
 
 .hive-badge-is-changed:after {
-  @apply absolute right-2 size-1.5 rounded-full border border-b-accent bg-accent-muted content-[''];
+  @apply border-b-accent bg-accent-muted absolute right-2 size-1.5 rounded-full border content-[''];
 }
 
 /*
