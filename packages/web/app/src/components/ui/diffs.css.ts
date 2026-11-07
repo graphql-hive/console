@@ -6,7 +6,7 @@ import { components as layer } from '../../styles/layers.css';
 export const codeScrollAreaVirtualizer = style({
   '@layer': {
     [layer]: {
-      maxHeight: '70vh',
+      maxHeight: 'var(--code-max-h,70vh)',
       overflow: 'auto',
     },
   },

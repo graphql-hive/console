@@ -7,6 +7,7 @@ import { Card } from '../../card/card';
 import { StatusDot } from '../../status-dot/status-dot';
 import { floatingVariants } from '../shared-styles';
 import { Select, type SelectOption } from './select';
+import * as styles from './select.preview.css';
 
 export const nav: NavPath = 'Primitives/Floating/Select';
 
@@ -99,7 +100,7 @@ export const WithLabel = createPreview(() => {
   const [added, setAdded] = useState<string[]>([]);
   const remaining = ['products', 'reviews', 'inventory'].filter(s => !added.includes(s));
   return (
-    <div className="flex items-center gap-6">
+    <div className={styles.div}>
       <Select
         options={[
           { value: 'requests', label: 'Requests' },
@@ -110,7 +111,7 @@ export const WithLabel = createPreview(() => {
         onValueChange={setValue}
         label={`Sort by ${value}`}
       />
-      <div className="flex items-center gap-3">
+      <div className={styles.div2}>
         <Select
           options={remaining.map(s => ({ value: s, label: s }))}
           value=""
@@ -118,7 +119,7 @@ export const WithLabel = createPreview(() => {
           label="Select a service…"
           disabled={remaining.length === 0}
         />
-        <span className="text-xs text-fg-default">
+        <span className={styles.span}>
           {added.length ? `Added: ${added.join(', ')}` : 'Nothing added yet'}
         </span>
       </div>
@@ -221,13 +222,17 @@ export const WithTrailing = createPreview(() => {
         {
           value: 'default',
           label: 'Default Graph',
-          trailing: <AlertTriangle className="size-3.5 text-warning" />,
+          trailing: <AlertTriangle className={styles.alertTriangle} />,
         },
-        { value: 'public-api', label: 'public-api', trailing: <GitCompare className="size-3.5" /> },
+        {
+          value: 'public-api',
+          label: 'public-api',
+          trailing: <GitCompare className={styles.gitCompare} />,
+        },
         {
           value: 'partner-api',
           label: 'partner-api',
-          trailing: <Check className="size-3.5 text-success" />,
+          trailing: <Check className={styles.check} />,
         },
       ]}
       value={value}
@@ -238,14 +243,14 @@ export const WithTrailing = createPreview(() => {
 });
 
 export const Sizes = createPreview(() => (
-  <div className="flex flex-col gap-4">
-    <div className="flex items-center gap-4">
-      <span className="w-16 text-xs text-fg-muted">default</span>
+  <div className={styles.div3}>
+    <div className={styles.div4}>
+      <span className={styles.span2}>default</span>
       <Select options={METRICS} value="TRAFFIC" />
       <Button variant="primary">Save</Button>
     </div>
-    <div className="flex items-center gap-4">
-      <span className="w-16 text-xs text-fg-muted">compact</span>
+    <div className={styles.div4}>
+      <span className={styles.span2}>compact</span>
       <Select options={METRICS} value="TRAFFIC" size="compact" />
       <Button label="Filter" size="compact" />
     </div>
@@ -253,7 +258,7 @@ export const Sizes = createPreview(() => (
 ));
 
 export const Widths = createPreview(() => (
-  <div className="flex w-[28rem] flex-col items-start gap-3">
+  <div className={styles.div5}>
     <Select options={METRICS} value="TRAFFIC" />
     <Select options={METRICS} value="TRAFFIC" width="sm" />
     <Select options={METRICS} value="TRAFFIC" width="md" />
@@ -273,7 +278,7 @@ export const MatchTriggerWidth = createPreview(() => {
     { value: 'c2', label: 'Regression', description: 'Operations replayed before every release' },
   ];
   return (
-    <div className="flex items-start gap-6">
+    <div className={styles.div6}>
       <Select options={collections} value={value} onValueChange={setValue} width="sm" />
       <Select
         options={collections}
@@ -305,17 +310,17 @@ export const OnSurface = createPreview(() => {
     </>
   );
   return (
-    <div className="flex flex-wrap gap-6">
-      <div className="w-[20rem]">
+    <div className={styles.div7}>
+      <div className={styles.div8}>
         <Card variants={{ onSurface: 'raised' }}>
-          <div className="flex flex-col gap-3">
-            <span className="text-xs text-fg-default">A card</span>
+          <div className={styles.div9}>
+            <span className={styles.span}>A card</span>
             {pair}
           </div>
         </Card>
       </div>
-      <div className={cn(floatingVariants({ padding: 'md' }), 'flex w-[20rem] flex-col gap-3 p-4')}>
-        <span className="text-xs text-fg-default">A floating panel</span>
+      <div className={cn(floatingVariants({ padding: 'md' }), styles.div10)}>
+        <span className={styles.span}>A floating panel</span>
         {pair}
       </div>
     </div>
@@ -363,7 +368,7 @@ export const Playground = createPreview({
   render: v => {
     const [value, setValue] = useState<string | undefined>(undefined);
     return (
-      <div className="w-[28rem]">
+      <div className={styles.div11}>
         <Select
           options={v.options}
           value={value}

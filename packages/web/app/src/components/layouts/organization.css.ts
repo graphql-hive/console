@@ -34,15 +34,3 @@ export const createProjectModalSpan = style({
     },
   },
 });
-
-export const createProjectModalSpan2 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-medium)',
-      color: 'var(--color-fg)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});

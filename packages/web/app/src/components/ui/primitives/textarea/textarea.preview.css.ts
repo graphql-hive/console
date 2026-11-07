@@ -51,7 +51,7 @@ export const div5 = style({
       borderStyle: 'var(--tw-border-style)',
       borderWidth: '1px',
       borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-3)',
+      backgroundColor: 'var(--color-surface-overlay)',
       padding: 'calc(var(--spacing) * 6)',
     },
   },
@@ -60,23 +60,7 @@ export const div5 = style({
 export const div6 = style({
   '@layer': {
     [layer]: {
-      width: '28rem',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
       width: '36rem',
-    },
-  },
-});
-
-export const div8 = style({
-  '@layer': {
-    [layer]: {
-      width: '28rem',
     },
   },
 });

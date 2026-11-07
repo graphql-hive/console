@@ -19,19 +19,6 @@ export const class3 = style({
   },
 });
 
-export const changesBlockH2 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-      fontWeight: 'var(--font-weight-bold)',
-      color: 'var(--color-fg-default)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
-    },
-  },
-});
-
 export const changesBlockDiv = style({
   '@layer': {
     [layer]: {
@@ -72,117 +59,17 @@ globalStyle(`:where(${changesBlockDiv3} > :not(:last-child))`, {
   },
 });
 
-export const changeItemDiv = style({
+export const changesTitleH2 = style({
   '@layer': {
     [layer]: {
-      textAlign: 'left',
-    },
-  },
-});
-
-export const changeItemDiv2 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-accent)',
-    },
-  },
-});
-
-export const changeItemDiv3 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-critical)',
-    },
-  },
-});
-
-export const changeItemSpan = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const changeItemSpan2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      borderRadius: 'var(--radius-sm)',
-      backgroundColor: 'var(--color-warning)',
-      paddingInline: 'calc(var(--spacing) * 2)',
-      paddingBlock: 'var(--spacing)',
-      verticalAlign: 'middle',
+      marginBottom: 'calc(var(--spacing) * 3)',
+      fontSize: 'var(--text-base)',
+      lineHeight: 'var(--tw-leading, var(--text-base--line-height))',
       fontWeight: 'var(--font-weight-bold)',
-      color: 'var(--color-fg-inverse)',
+      color: 'var(--color-fg)',
       vars: {
         '--tw-font-weight': 'var(--font-weight-bold)',
       },
-    },
-  },
-});
-
-globalStyle(`:where(${changeItemSpan2} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginInlineStart: 'calc(var(--spacing) * var(--tw-space-x-reverse))',
-      marginInlineEnd: 'calc(var(--spacing) * calc(1 - var(--tw-space-x-reverse)))',
-      vars: {
-        '--tw-space-x-reverse': '0',
-      },
-    },
-  },
-});
-
-export const changeItemBoxIcon = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-      strokeWidth: '2px',
-    },
-  },
-});
-
-export const changeItemSpan3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-    },
-  },
-});
-
-export const changeItemSpan4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const changeItemDiv4 = style([]);
-
-globalStyle(`:where(${changeItemDiv4} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 5) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 5) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const changeItemDiv5 = style({
-  '@layer': {
-    [layer]: {
-      paddingTop: 'calc(var(--spacing) * 4)',
-      paddingBottom: 'calc(var(--spacing) * 4)',
     },
   },
 });
@@ -230,7 +117,7 @@ export const changeItemH42 = style({
   },
 });
 
-export const changeItemDiv6 = style({
+export const changeItemDiv = style({
   '@layer': {
     [layer]: {
       marginBottom: 'calc(var(--spacing) * 2)',
@@ -243,7 +130,7 @@ export const changeItemDiv6 = style({
   },
 });
 
-export const changeItemSpan5 = style({
+export const changeItemSpan = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-xs)',
@@ -270,10 +157,84 @@ export const changeItemLink = style({
   },
 });
 
-export const changeItemDiv7 = style({
+export const changeItemDiv2 = style({
   '@layer': {
     [layer]: {
       marginTop: 'calc(var(--spacing) * 6)',
+    },
+  },
+});
+
+export const changeItemDiv3 = style({
+  '@layer': {
+    [layer]: {
+      textAlign: 'left',
+    },
+  },
+});
+
+export const changeItemDiv4 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-accent)',
+    },
+  },
+});
+
+export const changeItemDiv5 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-critical)',
+    },
+  },
+});
+
+export const changeItemSpan2 = style({
+  '@layer': {
+    [layer]: {
+      color: 'var(--color-fg-secondary)',
+    },
+  },
+});
+
+export const changeItemSpan3 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'calc(var(--spacing) * 2)',
+    },
+  },
+});
+
+export const changeItemExternalLinkIcon = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 3)',
+      height: 'calc(var(--spacing) * 3)',
+    },
+  },
+});
+
+export const changeItemDiv6 = style([]);
+
+globalStyle(`:where(${changeItemDiv6} > :not(:last-child))`, {
+  '@layer': {
+    [layer]: {
+      marginBlockStart: 'calc(calc(var(--spacing) * 5) * var(--tw-space-y-reverse))',
+      marginBlockEnd: 'calc(calc(var(--spacing) * 5) * calc(1 - var(--tw-space-y-reverse)))',
+      vars: {
+        '--tw-space-y-reverse': '0',
+      },
+    },
+  },
+});
+
+export const changeItemDiv7 = style({
+  '@layer': {
+    [layer]: {
+      paddingTop: 'calc(var(--spacing) * 4)',
+      paddingBottom: 'calc(var(--spacing) * 4)',
     },
   },
 });
@@ -296,28 +257,7 @@ export const usageStatisticsPanelsDiv2 = style({
   },
 });
 
-export const usageStatisticsPanelsDiv3 = style({
-  '@layer': {
-    [layer]: {
-      minWidth: '0px',
-      flex: '1',
-    },
-  },
-});
-
-export const affectedAppDeploymentsPanelDiv = style([]);
-
-globalStyle(`:where(${affectedAppDeploymentsPanelDiv} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
+export const affectedAppDeploymentsPanelDiv = changeItemSection;
 
 export const affectedAppDeploymentsPanelH5 = style({
   '@layer': {
@@ -381,20 +321,7 @@ export const affectedAppDeploymentsPanelLink = style({
   },
 });
 
-export const affectedAppDeploymentsPanelH4 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'var(--spacing)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      fontWeight: 'var(--font-weight-medium)',
-      color: 'var(--color-fg)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
+export const affectedAppDeploymentsPanelH4 = changeItemH42;
 
 export const affectedAppDeploymentsPanelP = style({
   '@layer': {
@@ -457,30 +384,6 @@ export const compositionErrorsListDiv = style({
   '@layer': {
     [layer]: {
       marginBottom: 'calc(var(--spacing) * 2)',
-      paddingInline: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const compositionErrorsListDiv2 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
-
-export const compositionErrorsListH2 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-bold)',
-      color: 'var(--color-fg-default)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
     },
   },
 });

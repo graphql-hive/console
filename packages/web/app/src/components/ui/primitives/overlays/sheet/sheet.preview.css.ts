@@ -13,38 +13,12 @@ export const tokenFieldsDiv = style({
   },
 });
 
-export const tokenFieldsLabel = style({
+export const tokenFieldsDiv2 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
       flexDirection: 'column',
       gap: 'calc(var(--spacing) * 1.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const tokenFieldsLabel2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 1.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const tokenFieldsLabel3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 1.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
     },
   },
 });

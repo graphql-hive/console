@@ -6,8 +6,8 @@ import { utilities as layer } from '../../../styles/layers.css';
 export const compositionErrorsPopoverInfoIcon = style({
   '@layer': {
     [layer]: {
-      height: 'calc(var(--spacing) * 3)',
       width: 'calc(var(--spacing) * 3)',
+      height: 'calc(var(--spacing) * 3)',
     },
   },
 });

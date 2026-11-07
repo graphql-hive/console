@@ -69,16 +69,7 @@ export const targetSchemaPageDiv = style({
   },
 });
 
-export const targetSchemaPageDiv2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      columnGap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
+export const targetSchemaPageDiv2 = schemaViewDiv2;
 
 export const targetSchemaPageSpan = style({
   '@layer': {

@@ -50,35 +50,11 @@ export const authSignInPageGoogleIcon = style({
   },
 });
 
-export const authSignInPageGitHubIcon = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'calc(var(--spacing) * 4)',
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
+export const authSignInPageGitHubIcon = authSignInPageGoogleIcon;
 
-export const authSignInPageOktaIcon = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'calc(var(--spacing) * 4)',
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
+export const authSignInPageOktaIcon = authSignInPageGoogleIcon;
 
-export const authSignInPageCircleUserRound = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'calc(var(--spacing) * 4)',
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
+export const authSignInPageCircleUserRound = authSignInPageGoogleIcon;
 
 export const authSignInPageDiv = style({
   '@layer': {

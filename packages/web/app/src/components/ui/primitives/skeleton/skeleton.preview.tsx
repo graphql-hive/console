@@ -1,22 +1,23 @@
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
 import { SingleSignOnLoadingSkeleton } from '@/components/organization/settings/single-sign-on/single-sign-on-loading-skeleton';
 import { Skeleton } from './skeleton';
+import * as styles from './skeleton.preview.css';
 
 export const nav: NavPath = 'Primitives/Skeleton';
 
 export const Shapes = createPreview(() => (
-  <div className="flex items-end gap-8 text-xs text-fg-secondary">
-    <span className="flex flex-col gap-2">
+  <div className={styles.div}>
+    <span className={styles.span}>
       <Skeleton />
       line
     </span>
-    <span className="flex flex-col gap-2">
-      <span className="block h-16 w-32">
+    <span className={styles.span}>
+      <span className={styles.span2}>
         <Skeleton variants={{ shape: 'block' }} />
       </span>
       block
     </span>
-    <span className="flex flex-col items-center gap-2">
+    <span className={styles.span3}>
       <Skeleton variants={{ shape: 'circle' }} />
       circle
     </span>
@@ -24,10 +25,10 @@ export const Shapes = createPreview(() => (
 ));
 
 export const LineSizes = createPreview(() => (
-  <div className="flex flex-col gap-3 text-xs text-fg-secondary">
+  <div className={styles.div2}>
     {(['xs', 'sm', 'default', 'lg', 'xl'] as const).map(size => (
-      <span key={size} className="flex items-center gap-4">
-        <span className="w-14">{size}</span>
+      <span key={size} className={styles.span4}>
+        <span className={styles.span5}>{size}</span>
         <Skeleton variants={{ size }} />
       </span>
     ))}
@@ -35,10 +36,10 @@ export const LineSizes = createPreview(() => (
 ));
 
 export const LineWidths = createPreview(() => (
-  <div className="flex w-[32rem] flex-col gap-3 text-xs text-fg-secondary">
+  <div className={styles.div3}>
     {(['xs', 'sm', 'md', 'lg', 'xl', 'full'] as const).map(width => (
-      <span key={width} className="flex items-center gap-4">
-        <span className="w-14 shrink-0">{width}</span>
+      <span key={width} className={styles.span4}>
+        <span className={styles.span6}>{width}</span>
         <Skeleton variants={{ width }} />
       </span>
     ))}
@@ -46,7 +47,7 @@ export const LineWidths = createPreview(() => (
 ));
 
 export const SettingsSections = createPreview(() => (
-  <div className="max-w-[800px] space-y-4">
+  <div className={styles.div4}>
     <SingleSignOnLoadingSkeleton />
   </div>
 ));
@@ -60,7 +61,7 @@ export const Playground = createPreview({
     },
   }),
   render: v => (
-    <span className="block h-24 w-64">
+    <span className={styles.span7}>
       <Skeleton variants={v.variants} />
     </span>
   ),

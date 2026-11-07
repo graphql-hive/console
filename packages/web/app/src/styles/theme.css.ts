@@ -398,7 +398,7 @@ globalStyle(':root, :host', {
     [theme]: {
       vars: assignVars(vars, {
         font: {
-          sans: "'Instrument Sans', ui-sans-serif, system-ui, sans-serif",
+          sans: "'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif",
           mono: "ui-monospace, 'SFMono-Regular', 'Menlo', 'Monaco', monospace",
         },
         default: {

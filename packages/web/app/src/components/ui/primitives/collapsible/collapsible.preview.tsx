@@ -5,6 +5,7 @@ import { Filter, FilterOption } from '@/pages/traces/target-traces-filter';
 import { Button } from '../button/button';
 import { ScrollArea } from '../scroll-area/scroll-area';
 import { Collapsible } from './collapsible';
+import * as styles from './collapsible.preview.css';
 
 export const nav: NavPath = 'Primitives/Collapsible';
 
@@ -21,7 +22,7 @@ const ERROR_CODES = [
 function FilterRows(props: { rows: { label: string; count: number }[] }) {
   const [selected, setSelected] = useState(['ok']);
   return (
-    <div className="flex w-full min-w-0 flex-col gap-1 text-sm">
+    <div className={styles.filterRowsDiv}>
       {props.rows.map(row => (
         <FilterOption
           key={row.label}
@@ -48,7 +49,7 @@ export const Section = createPreview(() => {
   const toggle = (set: typeof setStatus) => (label: string) =>
     set(prev => (prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]));
   return (
-    <div className="flex w-64 flex-col text-fg-default">
+    <div className={styles.div}>
       <Filter name="Status" changes={status.length} onReset={() => setStatus([])}>
         {STATUS.map(row => (
           <FilterOption
@@ -92,7 +93,7 @@ const LOGS = [
 export const Panel = createPreview(() => {
   const [open, setOpen] = useState(true);
   return (
-    <div className="flex max-h-[200px] w-[36rem] flex-col overflow-hidden rounded-md border border-line bg-neutral-1">
+    <div className={styles.div2}>
       <Collapsible
         variant="panel"
         trigger="Preflight Script Logs"
@@ -105,7 +106,7 @@ export const Panel = createPreview(() => {
         }
       >
         <ScrollArea fill>
-          <div className="p-4 font-mono text-xs/[18px] text-fg-default">
+          <div className={styles.div3}>
             {LOGS.map((line, index) => (
               <div key={index}>{line}</div>
             ))}
@@ -119,7 +120,7 @@ export const Panel = createPreview(() => {
 export const Controlled = createPreview(() => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="flex w-64 flex-col gap-3 text-sm text-fg-default">
+    <div className={styles.div4}>
       <Button variant="outline" onClick={() => setOpen(prev => !prev)}>
         {open ? 'Collapse' : 'Expand'} from outside
       </Button>
@@ -146,13 +147,7 @@ export const Playground = createPreview({
     defaultOpen: { type: 'boolean', default: true },
   }),
   render: v => (
-    <div
-      className={
-        v.variant === 'panel'
-          ? 'w-[36rem] overflow-hidden rounded-md border border-line bg-neutral-1'
-          : 'w-64 p-2 text-fg-default'
-      }
-    >
+    <div className={v.variant === 'panel' ? styles.div5 : styles.div6}>
       {/* `defaultOpen` is read once at mount, so the key remounts on a change. */}
       <Collapsible
         key={String(v.defaultOpen)}
@@ -161,7 +156,7 @@ export const Playground = createPreview({
         actions={v.actions}
         defaultOpen={v.defaultOpen}
       >
-        <div className={v.variant === 'panel' ? 'p-2' : undefined}>
+        <div className={v.variant === 'panel' ? styles.div7 : undefined}>
           <FilterRows rows={STATUS} />
         </div>
       </Collapsible>

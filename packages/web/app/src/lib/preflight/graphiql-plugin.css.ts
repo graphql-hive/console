@@ -216,15 +216,7 @@ export const preflightModalP = style({
   },
 });
 
-export const preflightModalInfoIcon = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-      flexShrink: '0',
-    },
-  },
-});
+export const preflightModalInfoIcon = preflightContentPencilIcon;
 
 export const preflightModalDiv = style({
   '@layer': {
@@ -273,35 +265,11 @@ export const preflightModalEditorTitle = style({
   },
 });
 
-export const preflightModalSpan = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-    },
-  },
-});
+export const preflightModalSpan = preflightContentSpan;
 
-export const preflightModalXIcon = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-      flexShrink: '0',
-    },
-  },
-});
+export const preflightModalXIcon = preflightContentPencilIcon;
 
-export const preflightModalPlayIcon = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-      flexShrink: '0',
-    },
-  },
-});
+export const preflightModalPlayIcon = preflightContentPencilIcon;
 
 export const preflightModalDiv4 = style({
   '@layer': {
@@ -313,25 +281,7 @@ export const preflightModalDiv4 = style({
   },
 });
 
-export const preflightModalDiv5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const preflightModalSpan2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-    },
-  },
-});
+export const preflightModalSpan2 = preflightContentSpan;
 
 export const preflightModalXIcon2 = style({
   '@layer': {
@@ -343,7 +293,7 @@ export const preflightModalXIcon2 = style({
   },
 });
 
-export const preflightModalDiv6 = style({
+export const preflightModalDiv5 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -377,19 +327,6 @@ export const preflightModalEditorTitle2 = style({
   },
 });
 
-export const logLineHr = style({
-  '@layer': {
-    [layer]: {
-      marginBlock: 'calc(var(--spacing) * 2)',
-      borderStyle: 'dashed',
-      borderColor: 'currentcolor',
-      vars: {
-        '--tw-border-style': 'dashed',
-      },
-    },
-  },
-});
-
 export const logColorsError = style({
   '@layer': {
     [layer]: {
@@ -418,6 +355,19 @@ export const logColorsLog = style({
   '@layer': {
     [layer]: {
       color: 'var(--color-fg-secondary)',
+    },
+  },
+});
+
+export const logLineHr = style({
+  '@layer': {
+    [layer]: {
+      marginBlock: 'calc(var(--spacing) * 2)',
+      borderStyle: 'dashed',
+      borderColor: 'currentcolor',
+      vars: {
+        '--tw-border-style': 'dashed',
+      },
     },
   },
 });

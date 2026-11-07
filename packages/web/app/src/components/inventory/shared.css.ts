@@ -79,122 +79,6 @@ export const callSiteGroupH3 = style({
   },
 });
 
-export const inventoryListDiv = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      maxWidth: 'var(--container-3xl)',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const inventoryListDiv2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
-
-export const inventoryListH3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      fontWeight: 'var(--font-weight-medium)',
-      color: 'var(--color-fg)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
-
-export const inventoryListP = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const inventoryListDiv3 = style({
-  '@layer': {
-    [layer]: {
-      maxWidth: '65ch',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const inventoryListUl = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-    },
-  },
-});
-
-export const inventoryListLi = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 0.5)',
-      borderBottomStyle: 'var(--tw-border-style)',
-      borderBottomWidth: '1px',
-      borderColor: 'var(--color-line)',
-      paddingBlock: 'calc(var(--spacing) * 2)',
-      selectors: {
-        '&:last-child': {
-          borderBottomStyle: 'var(--tw-border-style)',
-          borderBottomWidth: '0px',
-        },
-      },
-    },
-  },
-});
-
-export const inventoryListSpan = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
-
-export const inventoryListCode = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const inventoryListSpan2 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
 export const originTagUi = style({
   '@layer': {
     [layer]: {
@@ -206,24 +90,6 @@ export const originTagUi = style({
       fontSize: 'var(--text-2xs)',
       lineHeight: '1',
       color: 'var(--color-fg-default)',
-      vars: {
-        '--tw-leading': '1',
-      },
-    },
-  },
-});
-
-export const originTagV2 = style({
-  '@layer': {
-    [layer]: {
-      borderRadius: 'var(--radius-xs)',
-      backgroundColor: 'var(--color-surface-selected)',
-      paddingInline: 'var(--spacing)',
-      paddingBlock: '1px',
-      fontFamily: 'var(--font-mono)',
-      fontSize: 'var(--text-2xs)',
-      lineHeight: '1',
-      color: 'var(--color-fg)',
       vars: {
         '--tw-leading': '1',
       },
@@ -268,6 +134,93 @@ export const originTagRaw = style({
       vars: {
         '--tw-leading': '1',
       },
+    },
+  },
+});
+
+export const inventoryListDiv = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      maxWidth: 'var(--container-3xl)',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 4)',
+    },
+  },
+});
+
+export const inventoryListDiv2 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 1.5)',
+    },
+  },
+});
+
+export const inventoryListH3 = callSiteGroupH3;
+
+export const inventoryListP = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+      color: 'var(--color-fg-default)',
+    },
+  },
+});
+
+export const inventoryListDiv3 = callSiteP;
+
+export const inventoryListUl = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexDirection: 'column',
+    },
+  },
+});
+
+export const inventoryListLi = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 0.5)',
+      borderBottomStyle: 'var(--tw-border-style)',
+      borderBottomWidth: '1px',
+      borderColor: 'var(--color-line)',
+      paddingBlock: 'calc(var(--spacing) * 2)',
+      selectors: {
+        '&:last-child': {
+          borderBottomStyle: 'var(--tw-border-style)',
+          borderBottomWidth: '0px',
+        },
+      },
+    },
+  },
+});
+
+export const inventoryListSpan = callSiteSpan;
+
+export const inventoryListCode = style({
+  '@layer': {
+    [layer]: {
+      fontFamily: 'var(--font-mono)',
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+      color: 'var(--color-fg-default)',
+    },
+  },
+});
+
+export const inventoryListSpan2 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+      color: 'var(--color-fg-secondary)',
     },
   },
 });

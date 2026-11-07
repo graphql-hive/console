@@ -6,6 +6,7 @@ import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { MergeStatus } from '@/pages/target-proposal-details';
 import type { Change } from '@graphql-inspector/core';
 import { ChangesTitle, labelize } from '../history/errors-and-changes';
+import * as styles from './change-detail.css';
 
 export function ProposalChangeDetail(props: {
   change: Change<any>;
@@ -18,9 +19,9 @@ export function ProposalChangeDetail(props: {
         {
           value: 'item-1',
           label: (
-            <div className="flex w-full flex-row items-center text-fg-subtle">
+            <div className={styles.proposalChangeDetailDiv}>
               <div>{labelize(props.change.message)}</div>
-              <div className="min-w-fit grow pr-2 md:flex-none">{props.icon}</div>
+              <div className={styles.proposalChangeDetailDiv2}>{props.icon}</div>
             </div>
           ),
           content: props.error?.message,
@@ -42,26 +43,26 @@ export function ChangeBlock(props: {
   return (
     props.changes.length !== 0 && (
       <>
-        <div className="mt-6">
+        <div className={styles.changeBlockDiv}>
           <ChangesTitle>
             {props.title}
             {props.info && <ChangesBlockTooltip info={props.info} />}
           </ChangesTitle>
         </div>
-        <div className="list-inside list-disc space-y-2 text-sm leading-relaxed">
+        <div className={styles.changeBlockDiv2}>
           {props.changes.map(({ change, error, mergeStatus }, i) => {
             let icon: ReactNode | undefined;
             if (mergeStatus === MergeStatus.CONFLICT) {
               icon = (
-                <span className="flex items-center justify-end pl-4 text-critical">
-                  <TriangleAlert className="mr-2 size-4" />
+                <span className={styles.changeBlockSpan}>
+                  <TriangleAlert className={styles.changeBlockTriangleAlert} />
                   CONFLICT
                 </span>
               );
             } else if (mergeStatus === MergeStatus.IGNORED) {
               icon = (
-                <span className="flex items-center justify-end pl-4 text-fg-secondary">
-                  <Diamond className="mr-2 size-4" strokeDasharray="2 2" /> NO CHANGE
+                <span className={styles.changeBlockSpan2}>
+                  <Diamond className={styles.changeBlockDiamond} strokeDasharray="2 2" /> NO CHANGE
                 </span>
               );
             }
@@ -85,12 +86,12 @@ function ChangesBlockTooltip(props: { info: string }) {
     <Popover
       trigger={
         <Button variant="ghost" size="icon-sm" aria-label="More about this change">
-          <Info className="size-3" />
+          <Info className={styles.changesBlockTooltipInfo} />
         </Button>
       }
       openOnHover
       width="lg"
-      content={<p className="text-sm font-normal text-fg-default">{props.info}</p>}
+      content={<p className={styles.changesBlockTooltipP}>{props.info}</p>}
     />
   );
 }

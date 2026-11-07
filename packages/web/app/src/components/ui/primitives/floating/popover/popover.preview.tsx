@@ -7,6 +7,7 @@ import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { floatingVariants } from '../shared-styles';
 import { Popover } from './popover';
+import * as styles from './popover.preview.css';
 
 export const nav: NavPath = 'Primitives/Floating/Popover';
 
@@ -17,11 +18,11 @@ export const Structured = createPreview(() => (
     title="Alert details"
     description="Configure the threshold and notification settings."
     content={
-      <div className="space-y-2 text-sm">
-        <div className="text-fg-default">
-          Status: <span className="text-success">Normal</span>
+      <div className={styles.div}>
+        <div className={styles.div2}>
+          Status: <span className={styles.span}>Normal</span>
         </div>
-        <div className="text-fg-default">Last evaluated: 2 minutes ago</div>
+        <div className={styles.div2}>Last evaluated: 2 minutes ago</div>
       </div>
     }
   />
@@ -31,7 +32,7 @@ export const Structured = createPreview(() => (
 export const Raw = createPreview(() => (
   <Popover
     trigger={<Button label="Info" />}
-    content={<p className="text-sm text-fg-default">A raw popover with custom content.</p>}
+    content={<p className={styles.p}>A raw popover with custom content.</p>}
   />
 ));
 
@@ -40,18 +41,18 @@ export const Raw = createPreview(() => (
  * a panel with its own header rule.
  */
 export const RawPadding = createPreview(() => (
-  <div className="flex items-center gap-4">
+  <div className={styles.div3}>
     <Popover
       trigger={<Button label="Default padding" />}
-      content={<p className="text-sm text-fg-default">p-4 around the content.</p>}
+      content={<p className={styles.p}>p-4 around the content.</p>}
     />
     <Popover
       trigger={<Button label="No padding" />}
       padding="none"
       content={
-        <ul className="text-sm text-fg-default">
+        <ul className={styles.ul}>
           {['getUser', 'listProjects', 'createTarget'].map(op => (
-            <li key={op} className="border-b border-line px-3 py-2 last:border-b-0">
+            <li key={op} className={styles.li}>
               {op}
             </li>
           ))}
@@ -65,7 +66,7 @@ export const WithArrow = createPreview(() => (
   <Popover
     trigger={<Button label="With arrow" />}
     title="Tooltip-style"
-    content={<p className="text-sm text-fg-default">Arrows point back at the trigger.</p>}
+    content={<p className={styles.p}>Arrows point back at the trigger.</p>}
     arrow
   />
 ));
@@ -74,56 +75,56 @@ export const WithArrow = createPreview(() => (
  * One scale for both modes. Raw defaults to `sm`, structured to `md`. `lg` and `xl` are the two widest panels in the app, rounded to the rem grid.
  */
 export const Widths = createPreview(() => (
-  <div className="flex flex-wrap items-center gap-4">
+  <div className={styles.div4}>
     <Popover
       trigger={<Button label="auto" />}
       width="auto"
-      content={<p className="text-sm text-fg-default">Sizes to content.</p>}
+      content={<p className={styles.p}>Sizes to content.</p>}
     />
     <Popover
       trigger={<Button label="sm" />}
       width="sm"
-      content={<p className="text-sm text-fg-default">w-72, 288px. The raw default.</p>}
+      content={<p className={styles.p}>w-72, 288px. The raw default.</p>}
     />
     <Popover
       trigger={<Button label="md" />}
       width="md"
-      content={<p className="text-sm text-fg-default">w-80, 320px. The structured default.</p>}
+      content={<p className={styles.p}>w-80, 320px. The structured default.</p>}
     />
     <Popover
       trigger={<Button label="lg" />}
       width="lg"
-      content={<p className="text-sm text-fg-default">28rem, 448px. Was 450.</p>}
+      content={<p className={styles.p}>28rem, 448px. Was 450.</p>}
     />
     <Popover
       trigger={<Button label="xl" />}
       width="xl"
-      content={<p className="text-sm text-fg-default">34rem, 544px. Was 550.</p>}
+      content={<p className={styles.p}>34rem, 544px. Was 550.</p>}
     />
   </div>
 ));
 
 export const Sides = createPreview(() => (
-  <div className="flex items-center gap-4">
+  <div className={styles.div3}>
     <Popover
       trigger={<Button label="Top" />}
       side="top"
-      content={<p className="text-sm text-fg-default">side=&quot;top&quot;</p>}
+      content={<p className={styles.p}>side=&quot;top&quot;</p>}
     />
     <Popover
       trigger={<Button label="Right" />}
       side="right"
-      content={<p className="text-sm text-fg-default">side=&quot;right&quot;</p>}
+      content={<p className={styles.p}>side=&quot;right&quot;</p>}
     />
     <Popover
       trigger={<Button label="Bottom" />}
       side="bottom"
-      content={<p className="text-sm text-fg-default">side=&quot;bottom&quot;</p>}
+      content={<p className={styles.p}>side=&quot;bottom&quot;</p>}
     />
     <Popover
       trigger={<Button label="Left" />}
       side="left"
-      content={<p className="text-sm text-fg-default">side=&quot;left&quot;</p>}
+      content={<p className={styles.p}>side=&quot;left&quot;</p>}
     />
   </div>
 ));
@@ -133,17 +134,17 @@ export const Sides = createPreview(() => (
  * `onOpenChange` the call site may not have passed.
  */
 export const NoCloseButton = createPreview(() => (
-  <div className="flex items-center gap-4">
+  <div className={styles.div3}>
     <Popover
       trigger={<Button label="With close button" />}
       title="Uncontrolled"
-      content={<p className="text-sm text-fg-default">The X closes this.</p>}
+      content={<p className={styles.p}>The X closes this.</p>}
     />
     <Popover
       trigger={<Button label="No close button" />}
       title="Read only"
       hideCloseButton
-      content={<p className="text-sm text-fg-default">Dismiss by clicking outside.</p>}
+      content={<p className={styles.p}>Dismiss by clicking outside.</p>}
     />
   </div>
 ));
@@ -157,12 +158,9 @@ export const AnchoredToSibling = createPreview(() => {
   const [open, setOpen] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
   return (
-    <div
-      ref={panel}
-      className={cn(floatingVariants({ padding: 'md' }), 'flex w-72 flex-col gap-3 p-4')}
-    >
-      <span className="text-xs text-fg-default">A panel with a field in it</span>
-      <div className="flex items-center gap-2">
+    <div ref={panel} className={cn(floatingVariants({ padding: 'md' }), styles.div5)}>
+      <span className={styles.span2}>A panel with a field in it</span>
+      <div className={styles.div6}>
         <Input value="2026-09-01" readOnly />
         <Button label="Pick" onClick={() => setOpen(o => !o)} />
       </div>
@@ -174,11 +172,7 @@ export const AnchoredToSibling = createPreview(() => {
         sideOffset={4}
         collisionPadding={8}
         width="auto"
-        content={
-          <p className="text-sm text-fg-default">
-            Positioned against the panel, not the Pick button.
-          </p>
-        }
+        content={<p className={styles.p}>Positioned against the panel, not the Pick button.</p>}
       />
     </div>
   );
@@ -192,7 +186,7 @@ export const InputAnchor = createPreview(() => {
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="w-64">
+    <div className={styles.div7}>
       <Input
         ref={inputRef}
         placeholder="Add a tag"
@@ -232,21 +226,17 @@ export const InputAnchor = createPreview(() => {
  * Base UI's rule: if the trigger exists to open the popup, it is a popover, not a tooltip.
  */
 export const Infotip = createPreview(() => (
-  <div className="flex items-center gap-2">
-    <span className="text-sm text-fg-default">Resolution count</span>
+  <div className={styles.div6}>
+    <span className={styles.span3}>Resolution count</span>
     <Popover
       trigger={
-        <button
-          type="button"
-          aria-label="What resolution count means"
-          className="text-fg-secondary"
-        >
-          <Info className="size-4" />
+        <button type="button" aria-label="What resolution count means" className={styles.button}>
+          <Info className={styles.info} />
         </button>
       }
       openOnHover
       content={
-        <p className="text-sm text-fg-default">
+        <p className={styles.p}>
           The number of times this field was executed. A single request can resolve a field many
           times, or skip it entirely.
         </p>
@@ -257,13 +247,13 @@ export const Infotip = createPreview(() => (
 
 /** `modal` blocks the page behind the popup. For a panel that is a task, not a glance. */
 export const Modal = createPreview(() => (
-  <div className="flex items-center gap-4">
+  <div className={styles.div3}>
     <Popover
       trigger={<Button label="Modal" />}
       modal
       title="Pick a range"
       content={
-        <p className="text-sm text-fg-default">
+        <p className={styles.p}>
           Try clicking the other button while this is open: it does nothing until you close this.
         </p>
       }
@@ -280,12 +270,8 @@ export const Playground = createPreview({
       default: 'button',
       derive: kind =>
         kind === 'icon' ? (
-          <button
-            type="button"
-            aria-label="What resolution count means"
-            className="text-fg-secondary"
-          >
-            <Info className="size-4" />
+          <button type="button" aria-label="What resolution count means" className={styles.button}>
+            <Info className={styles.info} />
           </button>
         ) : (
           <Button label="Alert details" />
@@ -297,7 +283,7 @@ export const Playground = createPreview({
     content: {
       type: 'text',
       default: 'Status: Normal. Last evaluated 2 minutes ago.',
-      derive: text => <p className="text-sm text-fg-default">{text}</p>,
+      derive: text => <p className={styles.p}>{text}</p>,
     },
     hideCloseButton: { type: 'boolean', default: false },
     padding: { type: 'radio', options: ['default', 'none'], default: 'default' },

@@ -48,124 +48,6 @@ export const contractSelectSpan = style({
   },
 });
 
-export const detailsViewDiv = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 6)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const detailsViewDiv2 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-      fontWeight: 'var(--font-weight-medium)',
-      color: 'var(--color-fg)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
-
-export const detailsViewInfo = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 3.5)',
-      height: 'calc(var(--spacing) * 3.5)',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const detailsViewDiv3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderBottomStyle: 'var(--tw-border-style)',
-      borderBottomWidth: '1px',
-      borderColor: 'var(--color-line)',
-      paddingBlock: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const detailsViewSpan = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const detailsViewChevronDown = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const detailsViewDiv4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 2)',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const detailsViewA = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-      '@media': {
-        '(hover: hover)': {
-          selectors: {
-            '&:hover': {
-              color: 'var(--color-fg)',
-            },
-          },
-        },
-      },
-    },
-  },
-});
-
-export const detailsViewBookOpen = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const detailsViewExternalLink = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 3)',
-      height: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
 export const schemaViewPre = style({
   '@layer': {
     [layer]: {
@@ -183,33 +65,7 @@ export const schemaViewPre = style({
 export const div = style({
   '@layer': {
     [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 6)',
-    },
-  },
-});
-
-export const h2 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xl)',
-      lineHeight: 'var(--tw-leading, var(--text-xl--line-height))',
-      fontWeight: 'var(--font-weight-medium)',
-      color: 'var(--color-fg)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
-
-export const p = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-secondary)',
+      width: '72rem',
     },
   },
 });
@@ -218,20 +74,8 @@ export const div2 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-2)',
-      paddingInline: 'calc(var(--spacing) * 5)',
-      paddingBlock: 'calc(var(--spacing) * 4)',
-      selectors: {
-        '&:where(.dark, .dark *)': {
-          backgroundColor: 'var(--color-neutral-3)',
-        },
-      },
+      width: '72rem',
+      flexDirection: 'column',
     },
   },
 });
@@ -239,8 +83,7 @@ export const div2 = style({
 export const div3 = style({
   '@layer': {
     [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 24)',
+      paddingBlock: 'calc(var(--spacing) * 6)',
     },
   },
 });
@@ -248,9 +91,16 @@ export const div3 = style({
 export const div4 = style({
   '@layer': {
     [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
+      marginBottom: 'calc(var(--spacing) * 3)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'calc(var(--spacing) * 4)',
+      borderRadius: 'var(--radius-md)',
+      borderStyle: 'var(--tw-border-style)',
+      borderWidth: '1px',
+      backgroundColor: 'var(--color-surface-card)',
+      paddingInline: 'calc(var(--spacing) * 5)',
+      paddingBlock: 'calc(var(--spacing) * 4)',
     },
   },
 });
@@ -258,13 +108,16 @@ export const div4 = style({
 export const div5 = style({
   '@layer': {
     [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      fontWeight: 'var(--font-weight-medium)',
+      minWidth: '0px',
+      flex: '1',
+    },
+  },
+});
+
+export const span = style({
+  '@layer': {
+    [layer]: {
       color: 'var(--color-critical)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
     },
   },
 });
@@ -272,26 +125,7 @@ export const div5 = style({
 export const div6 = style({
   '@layer': {
     [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg)',
-    },
-  },
-});
-
-export const div8 = style({
-  '@layer': {
-    [layer]: {
+      marginTop: 'calc(var(--spacing) * 3)',
       display: 'flex',
       flexDirection: 'column',
       gap: 'calc(var(--spacing) * 3)',
@@ -299,7 +133,7 @@ export const div8 = style({
   },
 });
 
-export const div9 = style({
+export const div7 = style({
   '@layer': {
     [layer]: {
       marginBottom: 'calc(var(--spacing) * 3)',
@@ -307,7 +141,7 @@ export const div9 = style({
   },
 });
 
-export const div10 = style({
+export const div8 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -317,7 +151,7 @@ export const div10 = style({
   },
 });
 
-export const p2 = style({
+export const p = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-sm)',
@@ -327,7 +161,7 @@ export const p2 = style({
   },
 });
 
-export const div11 = style({
+export const div9 = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-sm)',
@@ -337,7 +171,7 @@ export const div11 = style({
   },
 });
 
-globalStyle(`:where(${div11} > :not(:last-child))`, {
+globalStyle(`:where(${div9} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       borderBottomStyle: 'var(--tw-border-style)',
@@ -352,16 +186,7 @@ globalStyle(`:where(${div11} > :not(:last-child))`, {
   },
 });
 
-export const div12 = style({
-  '@layer': {
-    [layer]: {
-      paddingInline: 'calc(var(--spacing) * 5)',
-      paddingBlock: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div13 = style({
+export const div10 = style({
   '@layer': {
     [layer]: {
       paddingInline: 'calc(var(--spacing) * 5)',

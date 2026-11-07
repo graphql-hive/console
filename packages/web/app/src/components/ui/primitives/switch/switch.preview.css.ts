@@ -35,53 +35,25 @@ export const label = style({
   },
 });
 
-export const label2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const label3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const label4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
 export const div3 = style({
   '@layer': {
     [layer]: {
-      display: 'flex',
       width: 'calc(var(--spacing) * 96)',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRadius: 'var(--radius-lg)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line)',
-      padding: 'calc(var(--spacing) * 4)',
     },
   },
 });
 
 export const div4 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+  },
+});
+
+export const div5 = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-sm)',
@@ -95,38 +67,12 @@ export const div4 = style({
   },
 });
 
-export const div5 = style({
+export const div6 = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-control)',
       lineHeight: 'var(--tw-leading, var(--text-control--line-height))',
       color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const div6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 64)',
-      cursor: 'pointer',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRadius: 'var(--radius-md)',
-      paddingInline: 'calc(var(--spacing) * 3)',
-      paddingBlock: 'calc(var(--spacing) * 2)',
-      fontSize: 'var(--text-control)',
-      lineHeight: 'var(--tw-leading, var(--text-control--line-height))',
-      '@media': {
-        '(hover: hover)': {
-          selectors: {
-            '&:hover': {
-              backgroundColor: 'var(--color-neutral-3)',
-            },
-          },
-        },
-      },
     },
   },
 });

@@ -120,3 +120,33 @@ export const div7 = style({
     },
   },
 });
+
+export const div8 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      width: '36rem',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 4)',
+    },
+  },
+});
+
+export const copyIcon = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 3.5)',
+      height: 'calc(var(--spacing) * 3.5)',
+    },
+  },
+});
+
+export const pre = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+      color: 'var(--color-fg-default)',
+    },
+  },
+});

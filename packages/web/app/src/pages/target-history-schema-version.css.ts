@@ -81,13 +81,7 @@ export const schemaVersionViewDiv = style({
   },
 });
 
-export const schemaVersionViewDiv2 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
+export const schemaVersionViewDiv2 = targetHistorySchemaVersionPageSpan;
 
 export const schemaVersionViewDiv3 = style({
   '@layer': {
@@ -100,13 +94,7 @@ export const schemaVersionViewDiv3 = style({
   },
 });
 
-export const schemaVersionViewDiv4 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
+export const schemaVersionViewDiv4 = targetHistorySchemaVersionPageSpan;
 
 export const schemaVersionViewDiv5 = style([]);
 
@@ -122,49 +110,7 @@ globalStyle(`:where(${schemaVersionViewDiv5} > :not(:last-child))`, {
   },
 });
 
-export const schemaVersionViewDiv6 = style([]);
-
-globalStyle(`:where(${schemaVersionViewDiv6} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 8) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const schemaVersionViewDiv7 = style([]);
-
-globalStyle(`:where(${schemaVersionViewDiv7} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 8) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const schemaVersionViewDiv8 = style([]);
-
-globalStyle(`:where(${schemaVersionViewDiv8} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 8) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const schemaVersionViewDiv9 = style({
+export const schemaVersionViewDiv6 = style({
   '@layer': {
     [layer]: {
       marginTop: 'calc(var(--spacing) * 4)',
@@ -172,7 +118,7 @@ export const schemaVersionViewDiv9 = style({
   },
 });
 
-globalStyle(`:where(${schemaVersionViewDiv9} > :not(:last-child))`, {
+globalStyle(`:where(${schemaVersionViewDiv6} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       marginBlockStart: 'calc(calc(var(--spacing) * 8) * var(--tw-space-y-reverse))',
@@ -258,7 +204,30 @@ export const graphQLSchemaViewDiv = style({
   },
 });
 
+export const graphQLSchemaViewSpan2 = style({
+  '@layer': {
+    [layer]: {
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+      color: 'var(--color-fg-muted)',
+    },
+  },
+});
+
 export const graphQLSchemaViewDiv2 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      minHeight: 'var(--code-max-h)',
+      flexDirection: 'column',
+      vars: {
+        '--code-max-h': 'calc(100vh - 11rem)',
+      },
+    },
+  },
+});
+
+export const graphQLSchemaViewDiv3 = style({
   '@layer': {
     [layer]: {
       paddingInline: 'calc(var(--spacing) * 5)',
@@ -326,16 +295,6 @@ export const filterableSchemaChangeBlockDiv5 = style({
   },
 });
 
-export const filterableSchemaChangeBlockDiv6 = style({
-  '@layer': {
-    [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 3)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-    },
-  },
-});
-
 export const subgraphCardDiv = style({
   '@layer': {
     [layer]: {
@@ -377,17 +336,7 @@ export const subgraphCardDiv2 = style({
   },
 });
 
-export const componentDiv = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'flex-end',
-      justifyContent: 'space-between',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
+export const componentDiv = graphQLSchemaViewDiv;
 
 export const graphVersionSubgraphViewP = style({
   '@layer': {
@@ -400,13 +349,7 @@ export const graphVersionSubgraphViewP = style({
   },
 });
 
-export const graphVersionSubgraphChangesViewDiv = style({
-  '@layer': {
-    [layer]: {
-      paddingInline: 'calc(var(--spacing) * 5)',
-    },
-  },
-});
+export const graphVersionSubgraphChangesViewDiv = filterableSchemaChangeBlockDiv2;
 
 export const graphVersionSubgraphChangesViewDiv2 = style({
   '@layer': {
@@ -430,16 +373,6 @@ export const graphVersionSubgraphChangesViewDiv3 = style({
 export const graphVersionSubgraphChangesViewDiv4 = style({
   '@layer': {
     [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 5)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-    },
-  },
-});
-
-export const graphVersionSubgraphChangesViewDiv5 = style({
-  '@layer': {
-    [layer]: {
       paddingInline: 'calc(var(--spacing) * 5)',
       paddingBlock: 'calc(var(--spacing) * 5)',
       fontSize: 'var(--text-xs)',
@@ -448,34 +381,11 @@ export const graphVersionSubgraphChangesViewDiv5 = style({
   },
 });
 
-export const graphVersionSubgraphChangesViewDiv6 = style({
-  '@layer': {
-    [layer]: {
-      paddingInline: 'calc(var(--spacing) * 5)',
-      paddingBlock: 'calc(var(--spacing) * 5)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-    },
-  },
-});
+export const graphVersionSubgraphChangesViewDiv5 = filterableSchemaChangeBlockDiv;
 
-export const graphVersionSubgraphChangesViewDiv7 = style([]);
+export const graphVersionSubgraphChangesViewDiv6 = style([]);
 
-globalStyle(`:where(${graphVersionSubgraphChangesViewDiv7} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const graphVersionSubgraphChangesViewDiv8 = style([]);
-
-globalStyle(`:where(${graphVersionSubgraphChangesViewDiv8} > :not(:last-child))`, {
+globalStyle(`:where(${graphVersionSubgraphChangesViewDiv6} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       marginBlockStart: 'calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse))',
@@ -517,21 +427,6 @@ export const sDLDiffViewInfoIcon = style({
     [layer]: {
       width: 'calc(var(--spacing) * 4)',
       height: 'calc(var(--spacing) * 4)',
-      color: 'var(--color-fg-muted)',
-    },
-  },
-});
-
-export const sDLDiffViewDiv2 = style({
-  '@layer': {
-    [layer]: {
-      borderBottomStyle: 'var(--tw-border-style)',
-      borderBottomWidth: '1px',
-      borderColor: 'var(--color-line-subtle)',
-      paddingInline: 'calc(var(--spacing) * 5)',
-      paddingBlock: 'calc(var(--spacing) * 2)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
       color: 'var(--color-fg-muted)',
     },
   },
@@ -612,15 +507,7 @@ export const firstComposableGraphVersionDiv2 = style({
   },
 });
 
-export const firstComposableGraphVersionCircleCheckIcon = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-      color: 'var(--color-success)',
-    },
-  },
-});
+export const firstComposableGraphVersionCircleCheckIcon = sDLDiffViewCircleCheckIcon;
 
 export const firstComposableGraphVersionH2 = style({
   '@layer': {
@@ -636,78 +523,19 @@ export const firstComposableGraphVersionH2 = style({
   },
 });
 
-export const firstComposableGraphVersionP = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
+export const firstComposableGraphVersionP = sDLDiffNoticeP;
 
-export const noGraphChangesDiv = style({
-  '@layer': {
-    [layer]: {
-      cursor: 'default',
-    },
-  },
-});
+export const noGraphChangesDiv = firstComposableGraphVersionDiv;
 
-export const noGraphChangesDiv2 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
+export const noGraphChangesDiv2 = firstComposableGraphVersionDiv2;
 
-export const noGraphChangesCircleCheckIcon = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-      color: 'var(--color-success)',
-    },
-  },
-});
+export const noGraphChangesCircleCheckIcon = sDLDiffViewCircleCheckIcon;
 
-export const noGraphChangesH2 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-base)',
-      lineHeight: 'var(--tw-leading, var(--text-base--line-height))',
-      fontWeight: 'var(--font-weight-medium)',
-      color: 'var(--color-fg)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
+export const noGraphChangesH2 = firstComposableGraphVersionH2;
 
-export const noGraphChangesP = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
+export const noGraphChangesP = sDLDiffNoticeP;
 
-export const schemaVersionPromotionOriginContentsSpan = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
+export const schemaVersionPromotionOriginContentsSpan = schemaVersionViewSpan2;
 
 export const schemaVersionPromotionOriginContentsGitCommit = style({
   '@layer': {
@@ -726,43 +554,13 @@ export const schemaVersionPromotionOriginContentsLink = style({
   },
 });
 
-export const schemaVersionHeaderSpan = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
+export const schemaVersionHeaderSpan = schemaVersionViewSpan2;
 
-export const schemaVersionHeaderGitCommit = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 3.5)',
-      width: 'calc(var(--spacing) * 3.5)',
-    },
-  },
-});
+export const schemaVersionHeaderGitCommit = schemaVersionPromotionOriginContentsGitCommit;
 
-export const schemaVersionHeaderSpan2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
+export const schemaVersionHeaderSpan2 = schemaVersionViewSpan2;
 
-export const schemaVersionHeaderGitCommit2 = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 3.5)',
-      width: 'calc(var(--spacing) * 3.5)',
-    },
-  },
-});
+export const schemaVersionHeaderGitCommit2 = schemaVersionPromotionOriginContentsGitCommit;
 
 export const schemaVersionHeaderSpan3 = style({
   '@layer': {
@@ -775,14 +573,7 @@ export const schemaVersionHeaderSpan3 = style({
   },
 });
 
-export const schemaVersionHeaderGitCommit3 = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 3.5)',
-      width: 'calc(var(--spacing) * 3.5)',
-    },
-  },
-});
+export const schemaVersionHeaderGitCommit3 = schemaVersionPromotionOriginContentsGitCommit;
 
 export const schemaVersionHeaderSpan4 = style({
   '@layer': {
@@ -804,24 +595,9 @@ export const schemaVersionHeaderGitBranch = style({
   },
 });
 
-export const schemaVersionHeaderSpan5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
+export const schemaVersionHeaderSpan5 = schemaVersionViewSpan2;
 
-export const schemaVersionHeaderGitCommit4 = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 3.5)',
-      width: 'calc(var(--spacing) * 3.5)',
-    },
-  },
-});
+export const schemaVersionHeaderGitCommit4 = schemaVersionPromotionOriginContentsGitCommit;
 
 export const schemaVersionHeaderDiv = style({
   '@layer': {
@@ -875,25 +651,9 @@ export const schemaVersionHeaderDiv2 = style({
   },
 });
 
-export const schemaVersionHeaderSpan6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
+export const schemaVersionHeaderSpan6 = schemaVersionViewSpan2;
 
-export const schemaVersionHeaderSpan7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
+export const schemaVersionHeaderSpan7 = schemaVersionViewSpan2;
 
 export const schemaVersionHeaderClock = style({
   '@layer': {
@@ -965,28 +725,33 @@ export const viewModeToggleButton2 = style({
   },
 });
 
-export const viewModeToggleIcon = style({
+export const viewModeToggleIcon = schemaVersionPromotionOriginContentsGitCommit;
+
+export const breakingChangeTypeModesDotColor = style({
   '@layer': {
     [layer]: {
-      height: 'calc(var(--spacing) * 3.5)',
-      width: 'calc(var(--spacing) * 3.5)',
+      backgroundColor: 'var(--color-critical)',
     },
   },
 });
 
-export const changeTypeToggleDiv = style({
+export const breakingChangeTypeModesDotColor2 = style({
   '@layer': {
     [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-      borderRadius: 'var(--radius-lg)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      padding: 'var(--spacing)',
+      backgroundColor: 'var(--color-warning)',
     },
   },
 });
+
+export const breakingChangeTypeModesDotColor3 = style({
+  '@layer': {
+    [layer]: {
+      backgroundColor: 'var(--color-info)',
+    },
+  },
+});
+
+export const changeTypeToggleDiv = viewModeToggleDiv;
 
 export const changeTypeToggleButton = style({
   '@layer': {
@@ -1012,13 +777,7 @@ export const changeTypeToggleButton = style({
   },
 });
 
-export const changeTypeToggleButton2 = style({
-  '@layer': {
-    [layer]: {
-      backgroundColor: 'var(--color-surface-selected)',
-    },
-  },
-});
+export const changeTypeToggleButton2 = viewModeToggleButton2;
 
 export const changeTypeToggleSpan = style({
   '@layer': {
@@ -1042,272 +801,7 @@ export const changeTypeToggleSpan2 = style({
   },
 });
 
-export const changeTypeToggleButton3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-      borderRadius: 'var(--radius-md)',
-      paddingInline: 'calc(var(--spacing) * 2.5)',
-      paddingBlock: 'var(--spacing)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      '@media': {
-        '(hover: hover)': {
-          selectors: {
-            '&:hover': {
-              backgroundColor: 'var(--color-surface-hover)',
-            },
-          },
-        },
-      },
-    },
-  },
-});
-
-export const changeTypeToggleButton4 = style({
-  '@layer': {
-    [layer]: {
-      backgroundColor: 'var(--color-surface-selected)',
-    },
-  },
-});
-
-export const changeTypeToggleSpan3 = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 1.5)',
-      width: 'calc(var(--spacing) * 1.5)',
-      translate: 'var(--tw-translate-x) var(--tw-translate-y)',
-      borderRadius: 'calc(infinity * 1px)',
-      vars: {
-        '--tw-translate-y': '-1px',
-      },
-    },
-  },
-});
-
-export const compositionErrorsDiv = style({
-  '@layer': {
-    [layer]: {
-      overflow: 'hidden',
-      borderRadius: 'var(--radius-xl)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-critical-line)',
-    },
-  },
-});
-
-export const compositionErrorsDiv2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: 'calc(var(--spacing) * 3)',
-      borderBottomStyle: 'var(--tw-border-style)',
-      borderBottomWidth: '1px',
-      borderColor: 'var(--color-critical-line)',
-      backgroundColor: 'var(--color-critical-tint-subtle)',
-      paddingInline: 'calc(var(--spacing) * 5)',
-      paddingBlock: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const compositionErrorsDiv3 = style({
-  '@layer': {
-    [layer]: {
-      marginTop: 'calc(var(--spacing) * 0.5)',
-      display: 'flex',
-      height: 'calc(var(--spacing) * 7)',
-      width: 'calc(var(--spacing) * 7)',
-      flexShrink: '0',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 'calc(infinity * 1px)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-critical-line)',
-    },
-  },
-});
-
-export const compositionErrorsXCircleIcon = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 4)',
-      width: 'calc(var(--spacing) * 4)',
-      color: 'var(--color-critical)',
-    },
-  },
-});
-
-export const compositionErrorsDiv4 = style({
-  '@layer': {
-    [layer]: {
-      minWidth: '0px',
-      color: 'var(--color-fg)',
-    },
-  },
-});
-
-export const compositionErrorsH3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      fontWeight: 'var(--font-weight-semibold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-    },
-  },
-});
-
-export const compositionErrorsP = style({
-  '@layer': {
-    [layer]: {
-      marginTop: 'calc(var(--spacing) * 0.5)',
-      fontSize: '12.5px',
-    },
-  },
-});
-
-export const compositionErrorsSpan = style({
-  '@layer': {
-    [layer]: {
-      marginLeft: 'auto',
-      display: 'inline-flex',
-      alignItems: 'center',
-      borderRadius: 'calc(infinity * 1px)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-critical-line)',
-      backgroundColor: 'var(--color-critical-tint)',
-      paddingInline: 'calc(var(--spacing) * 2.5)',
-      paddingBlock: 'calc(var(--spacing) * 0.5)',
-      fontSize: 'var(--text-2xs)',
-      lineHeight: 'var(--tw-leading, var(--text-2xs--line-height))',
-      fontWeight: 'var(--font-weight-semibold)',
-      color: 'var(--color-critical-text)',
-      transitionProperty:
-        'color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to',
-      transitionTimingFunction: 'var(--tw-ease, var(--default-transition-timing-function))',
-      transitionDuration: 'var(--tw-duration, var(--default-transition-duration))',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-      selectors: {
-        '&:focus': {
-          boxShadow:
-            'var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)',
-          outlineStyle: 'none',
-          vars: {
-            '--tw-ring-shadow':
-              'var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor)',
-            '--tw-ring-color': 'var(--color-accent)',
-            '--tw-ring-offset-width': '2px',
-            '--tw-ring-offset-shadow':
-              'var(--tw-ring-inset,) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color)',
-            '--tw-outline-style': 'none',
-          },
-        },
-      },
-    },
-  },
-});
-
-export const compositionErrorsSpan2 = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'var(--spacing)',
-      height: 'calc(var(--spacing) * 1.5)',
-      width: 'calc(var(--spacing) * 1.5)',
-      borderRadius: 'calc(infinity * 1px)',
-      backgroundColor: 'var(--color-critical)',
-    },
-  },
-});
-
-export const compositionErrorsDiv5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-      paddingInline: 'calc(var(--spacing) * 5)',
-      paddingTop: 'calc(var(--spacing) * 4)',
-      paddingBottom: 'var(--spacing)',
-      color: 'var(--color-fg)',
-    },
-  },
-});
-
-export const compositionErrorsSpan3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      fontWeight: 'var(--font-weight-medium)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
-
-export const compositionErrorsUl = style({
-  '@layer': {
-    [layer]: {
-      paddingInline: 'var(--spacing)',
-      paddingBottom: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-globalStyle(`:where(${compositionErrorsUl} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      borderBottomStyle: 'var(--tw-border-style)',
-      borderTopStyle: 'var(--tw-border-style)',
-      borderTopWidth: 'calc(1px * var(--tw-divide-y-reverse))',
-      borderBottomWidth: 'calc(1px * calc(1 - var(--tw-divide-y-reverse)))',
-      borderColor: 'var(--color-critical-line-subtle)',
-      vars: {
-        '--tw-divide-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const compositionErrorsLi = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 3)',
-      paddingInline: 'calc(var(--spacing) * 4)',
-      paddingBlock: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const compositionErrorsSpan4 = style({
-  '@layer': {
-    [layer]: {
-      marginTop: 'calc(var(--spacing) * 0.5)',
-      width: 'calc(var(--spacing) * 6)',
-      flexShrink: '0',
-      fontFamily: 'var(--font-mono)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-critical)',
-      WebkitUserSelect: 'none',
-      userSelect: 'none',
-    },
-  },
-});
+export const changeTypeToggleButton3 = viewModeToggleButton2;
 
 export const sectionHeaderH2 = style({
   '@layer': {
@@ -1403,41 +897,9 @@ export const schemaVersionSummarySpan2 = style({
   },
 });
 
-export const schemaVersionSummaryCheckIcon = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline',
-    },
-  },
-});
+export const schemaVersionSummaryCheckIcon = schemaVersionSummaryShieldAlertIcon;
 
 export const schemaVersionSummaryStat = style({
-  '@layer': {
-    [layer]: {
-      display: 'none',
-      '@media': {
-        '(width >= 96rem)': {
-          display: 'flex',
-        },
-      },
-    },
-  },
-});
-
-export const schemaVersionSummaryStat2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'none',
-      '@media': {
-        '(width >= 96rem)': {
-          display: 'flex',
-        },
-      },
-    },
-  },
-});
-
-export const schemaVersionSummaryStat3 = style({
   '@layer': {
     [layer]: {
       display: 'none',
@@ -1563,343 +1025,6 @@ export const statSpan2 = style({
   },
 });
 
-export const subgraphRowDiv = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-      paddingInline: 'calc(var(--spacing) * 5)',
-      paddingBlock: 'calc(var(--spacing) * 3.5)',
-    },
-  },
-});
-
-export const subgraphRowSpan = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      height: 'calc(var(--spacing) * 7)',
-      width: 'calc(var(--spacing) * 7)',
-      flexShrink: '0',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 'var(--radius-md)',
-      boxShadow:
-        'var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)',
-      vars: {
-        '--tw-ring-shadow':
-          'var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor)',
-      },
-    },
-  },
-});
-
-export const subgraphRowIcon = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 3.5)',
-      width: 'calc(var(--spacing) * 3.5)',
-    },
-  },
-});
-
-export const subgraphRowDiv2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      minWidth: '0px',
-      flex: '1',
-      flexDirection: 'column',
-    },
-  },
-});
-
-export const subgraphRowDiv3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      columnGap: 'var(--spacing)',
-    },
-  },
-});
-
-export const subgraphRowCode = style({
-  '@layer': {
-    [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 0.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const subgraphRowCode2 = style({
-  '@layer': {
-    [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 0.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const subgraphRowCode3 = style({
-  '@layer': {
-    [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 0.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const subgraphRowArrowRight = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 3)',
-      width: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const subgraphRowCode4 = style({
-  '@layer': {
-    [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 0.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const subgraphRowCode5 = style({
-  '@layer': {
-    [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 0.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const subgraphRowSpan2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-    },
-  },
-});
-
-export const subgraphRowSpan3 = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const subgraphRowSpan4 = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 1.5)',
-      width: 'calc(var(--spacing) * 1.5)',
-      borderRadius: 'calc(infinity * 1px)',
-    },
-  },
-});
-
-export const subgraphRowSpan5 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-medium)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
-
-export const subgraphLinkA = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      width: 'fit-content',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const subgraphLinkExternalLink = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 2.5)',
-      width: 'calc(var(--spacing) * 2.5)',
-    },
-  },
-});
-
-export const genericGraphCardDiv = style({
-  '@layer': {
-    [layer]: {
-      overflow: 'hidden',
-      borderRadius: 'var(--radius-xl)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-    },
-  },
-});
-
-globalStyle(`:where(${genericGraphCardDiv} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      borderBottomStyle: 'var(--tw-border-style)',
-      borderTopStyle: 'var(--tw-border-style)',
-      borderTopWidth: 'calc(1px * var(--tw-divide-y-reverse))',
-      borderBottomWidth: 'calc(1px * calc(1 - var(--tw-divide-y-reverse)))',
-      vars: {
-        '--tw-divide-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const genericGraphCardDiv2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-      backgroundColor: 'var(--color-surface-card)',
-      paddingInline: 'calc(var(--spacing) * 5)',
-      paddingBlock: 'calc(var(--spacing) * 3.5)',
-    },
-  },
-});
-
-export const genericGraphCardSpan = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      height: 'calc(var(--spacing) * 7)',
-      width: 'calc(var(--spacing) * 7)',
-      flexShrink: '0',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 'var(--radius-md)',
-      boxShadow:
-        'var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)',
-      vars: {
-        '--tw-ring-shadow':
-          'var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor)',
-      },
-    },
-  },
-});
-
-export const genericGraphCardSpan2 = style({
-  '@layer': {
-    [layer]: {
-      backgroundColor: 'var(--color-surface-page)',
-    },
-  },
-});
-
-export const genericGraphCardSpan3 = style({
-  '@layer': {
-    [layer]: {
-      vars: {
-        '--tw-ring-color': 'var(--color-line-strong)',
-      },
-    },
-  },
-});
-
-export const genericGraphCardBoxIcon = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 3.5)',
-      width: 'calc(var(--spacing) * 3.5)',
-    },
-  },
-});
-
-export const genericGraphCardDiv3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      minWidth: '0px',
-      flex: '1',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 0.5)',
-    },
-  },
-});
-
-export const genericGraphCardDiv4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      columnGap: 'var(--spacing)',
-      rowGap: 'var(--spacing)',
-    },
-  },
-});
-
-export const genericGraphCardCode = style({
-  '@layer': {
-    [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 0.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const genericGraphCardDiv5 = style({
-  '@layer': {
-    [layer]: {
-      backgroundColor: 'var(--color-surface-inset)',
-    },
-  },
-});
-
-export const breakingChangeTypeModesDotColor = style({
-  '@layer': {
-    [layer]: {
-      backgroundColor: 'var(--color-critical)',
-    },
-  },
-});
-
-export const breakingChangeTypeModesDotColor2 = style({
-  '@layer': {
-    [layer]: {
-      backgroundColor: 'var(--color-warning)',
-    },
-  },
-});
-
-export const breakingChangeTypeModesDotColor3 = style({
-  '@layer': {
-    [layer]: {
-      backgroundColor: 'var(--color-info)',
-    },
-  },
-});
-
 export const kindMetaText = style({
   '@layer': {
     [layer]: {
@@ -2017,3 +1142,186 @@ export const kindMetaDot4 = style({
     },
   },
 });
+
+export const subgraphRowDiv = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'calc(var(--spacing) * 4)',
+      paddingInline: 'calc(var(--spacing) * 5)',
+      paddingBlock: 'calc(var(--spacing) * 3.5)',
+    },
+  },
+});
+
+export const subgraphRowSpan = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      height: 'calc(var(--spacing) * 7)',
+      width: 'calc(var(--spacing) * 7)',
+      flexShrink: '0',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 'var(--radius-md)',
+      boxShadow:
+        'var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)',
+      vars: {
+        '--tw-ring-shadow':
+          'var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor)',
+      },
+    },
+  },
+});
+
+export const subgraphRowIcon = schemaVersionPromotionOriginContentsGitCommit;
+
+export const subgraphRowDiv2 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      minWidth: '0px',
+      flex: '1',
+      flexDirection: 'column',
+    },
+  },
+});
+
+export const subgraphRowDiv3 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      columnGap: 'var(--spacing)',
+    },
+  },
+});
+
+export const subgraphRowCode = style({
+  '@layer': {
+    [layer]: {
+      paddingBlock: 'calc(var(--spacing) * 0.5)',
+      fontSize: 'var(--text-sm)',
+      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
+    },
+  },
+});
+
+export const subgraphRowArrowRight = schemaVersionHeaderGitBranch;
+
+export const subgraphRowSpan2 = style({
+  '@layer': {
+    [layer]: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 'calc(var(--spacing) * 1.5)',
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+    },
+  },
+});
+
+export const subgraphRowSpan3 = style({
+  '@layer': {
+    [layer]: {
+      marginRight: 'calc(var(--spacing) * 2)',
+    },
+  },
+});
+
+export const subgraphRowSpan4 = style({
+  '@layer': {
+    [layer]: {
+      height: 'calc(var(--spacing) * 1.5)',
+      width: 'calc(var(--spacing) * 1.5)',
+      borderRadius: 'calc(infinity * 1px)',
+    },
+  },
+});
+
+export const subgraphRowSpan5 = style({
+  '@layer': {
+    [layer]: {
+      fontWeight: 'var(--font-weight-medium)',
+      vars: {
+        '--tw-font-weight': 'var(--font-weight-medium)',
+      },
+    },
+  },
+});
+
+export const subgraphLinkA = style({
+  '@layer': {
+    [layer]: {
+      display: 'inline-flex',
+      width: 'fit-content',
+      alignItems: 'center',
+      gap: 'var(--spacing)',
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+      color: 'var(--color-fg-default)',
+    },
+  },
+});
+
+export const subgraphLinkExternalLink = style({
+  '@layer': {
+    [layer]: {
+      height: 'calc(var(--spacing) * 2.5)',
+      width: 'calc(var(--spacing) * 2.5)',
+    },
+  },
+});
+
+export const genericGraphCardDiv = subgraphCardDiv;
+
+export const genericGraphCardDiv2 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'calc(var(--spacing) * 4)',
+      backgroundColor: 'var(--color-surface-card)',
+      paddingInline: 'calc(var(--spacing) * 5)',
+      paddingBlock: 'calc(var(--spacing) * 3.5)',
+    },
+  },
+});
+
+export const genericGraphCardSpan = subgraphRowSpan;
+
+export const genericGraphCardSpan2 = kindMetaBg4;
+
+export const genericGraphCardSpan3 = kindMetaRing4;
+
+export const genericGraphCardBoxIcon = schemaVersionPromotionOriginContentsGitCommit;
+
+export const genericGraphCardDiv3 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      minWidth: '0px',
+      flex: '1',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 0.5)',
+    },
+  },
+});
+
+export const genericGraphCardDiv4 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      columnGap: 'var(--spacing)',
+      rowGap: 'var(--spacing)',
+    },
+  },
+});
+
+export const genericGraphCardCode = subgraphRowCode;
+
+export const genericGraphCardDiv5 = subgraphCardDiv2;

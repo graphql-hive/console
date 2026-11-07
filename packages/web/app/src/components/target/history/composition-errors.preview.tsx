@@ -6,6 +6,7 @@ import {
   CompositionErrorsList,
   CompositionErrorsSection_SchemaErrorConnection,
 } from './errors-and-changes';
+import * as styles from './composition-errors.preview.css';
 
 export const nav: NavPath = 'Components/CompositionErrors';
 
@@ -314,11 +315,11 @@ const FIXTURE_IDS = ALL.map(fixture => fixture.id) as [string, ...string[]];
 /** Which fixture sits at which row number, since the containers show only the messages. */
 function Legend(props: { fixtures: readonly Fixture[] }) {
   return (
-    <ol className="grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-0.5 text-xs text-fg-secondary">
+    <ol className={styles.legendOl}>
       {props.fixtures.map((fixture, index) => (
-        <li key={fixture.id} className="contents">
-          <span className="font-mono">{String(index + 1).padStart(2, '0')}</span>
-          <span className="font-mono">{fixture.id}</span>
+        <li key={fixture.id} className={styles.legendLi}>
+          <span className={styles.legendSpan}>{String(index + 1).padStart(2, '0')}</span>
+          <span className={styles.legendSpan}>{fixture.id}</span>
           <span>{fixture.label}</span>
         </li>
       ))}
@@ -339,7 +340,7 @@ function BothContainers(props: { fixtures: readonly Fixture[] }) {
     CompositionErrorsSection_SchemaErrorConnection,
   );
   return (
-    <div className="flex w-[56rem] flex-col gap-8">
+    <div className={styles.bothContainersDiv}>
       <Legend fixtures={props.fixtures} />
       <CallSite
         source="pages/target-history-schema-version.tsx (CompositionErrorsCard)"
@@ -393,26 +394,24 @@ export const Playground = createPreview({
  */
 function RawStringsView(props: { group: keyof typeof GROUPS }) {
   return (
-    <ol className="flex w-[56rem] flex-col gap-6">
+    <ol className={styles.rawStringsViewOl}>
       {GROUPS[props.group].map((fixture, index) => (
-        <li key={fixture.id} className="flex flex-col gap-2">
-          <div className="flex items-baseline gap-3 text-xs text-fg-secondary">
-            <span className="font-mono">{String(index + 1).padStart(2, '0')}</span>
-            <span className="font-mono">{fixture.id}</span>
+        <li key={fixture.id} className={styles.rawStringsViewLi}>
+          <div className={styles.rawStringsViewDiv}>
+            <span className={styles.rawStringsViewSpan}>{String(index + 1).padStart(2, '0')}</span>
+            <span className={styles.rawStringsViewSpan2}>{fixture.id}</span>
             <span>{fixture.label}</span>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-2xs text-fg-subtle">as served</span>
-              <pre className="overflow-x-auto rounded-md border bg-surface-inset px-3 py-2 font-mono text-xs leading-5 break-all whitespace-pre-wrap text-fg-default">
+          <div className={styles.rawStringsViewDiv2}>
+            <div className={styles.rawStringsViewDiv3}>
+              <span className={styles.rawStringsViewSpan3}>as served</span>
+              <pre className={styles.rawStringsViewPre}>
                 {JSON.stringify({ message: fixture.message }, null, 2)}
               </pre>
             </div>
-            <div className="flex min-w-0 flex-col gap-1">
-              <span className="text-2xs text-fg-subtle">same string, whitespace honored</span>
-              <pre className="overflow-x-auto rounded-md border bg-surface-inset px-3 py-2 font-mono text-xs leading-5 whitespace-pre text-fg-default">
-                {fixture.message}
-              </pre>
+            <div className={styles.rawStringsViewDiv3}>
+              <span className={styles.rawStringsViewSpan3}>same string, whitespace honored</span>
+              <pre className={styles.rawStringsViewPre2}>{fixture.message}</pre>
             </div>
           </div>
         </li>

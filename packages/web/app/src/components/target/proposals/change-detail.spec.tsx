@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import * as changesStyles from '@/components/target/history/errors-and-changes.css';
 import { render, screen } from '@testing-library/react';
 import { ChangeBlock } from './change-detail';
 
@@ -21,7 +22,7 @@ describe('ChangeBlock', () => {
     );
 
     const heading = screen.getByRole('heading', { name: /Safe Changes/ });
-    expect(heading.className).toContain('text-base');
+    expect(heading.className).toContain(changesStyles.changesTitleH2);
     expect(screen.getByRole('button', { name: 'More about this change' })).toBeTruthy();
     // Nothing to open: the row is a static heading, not a button.
     expect(screen.queryByRole('button', { name: /was added to object type/ })).toBeNull();

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Card } from '../card/card';
 import { floatingVariants } from '../floating/shared-styles';
 import { ToggleGroup } from './toggle-group';
+import * as styles from './toggle-group.preview.css';
 
 export const nav: NavPath = 'Primitives/FormControls/ToggleGroup';
 
@@ -21,8 +22,8 @@ const ENDPOINTS = [
 export const Text = createPreview(() => {
   const [value, setValue] = useState('mockApi');
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-bold">Query</span>
+    <div className={styles.div}>
+      <span className={styles.span}>Query</span>
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} aria-label="Query" />
     </div>
   );
@@ -39,7 +40,9 @@ export const IconOnly = createPreview(() => {
       value: 'off',
       tooltip: 'Disables a rule defined at the organization level',
       label: (
-        <CircleMinus className={`size-[15px] ${value === 'off' ? 'text-fg' : 'text-fg-subtle'}`} />
+        <CircleMinus
+          className={`${styles.circleMinus} ${value === 'off' ? styles.circleMinus2 : styles.circleMinus3}`}
+        />
       ),
     },
     {
@@ -47,7 +50,7 @@ export const IconOnly = createPreview(() => {
       tooltip: 'Warning',
       label: (
         <TriangleAlert
-          className={`size-[15px] ${value === 'warning' ? 'text-warning' : 'text-fg-subtle'}`}
+          className={`${styles.triangleAlert} ${value === 'warning' ? styles.triangleAlert2 : styles.triangleAlert3}`}
         />
       ),
     },
@@ -56,7 +59,7 @@ export const IconOnly = createPreview(() => {
       tooltip: 'Error',
       label: (
         <CircleX
-          className={`size-[15px] ${value === 'error' ? 'text-critical' : 'text-fg-subtle'}`}
+          className={`${styles.circleX} ${value === 'error' ? styles.circleX2 : styles.circleX3}`}
         />
       ),
     },
@@ -70,7 +73,7 @@ export const IconOnly = createPreview(() => {
 export const Disabled = createPreview(() => {
   const [value, setValue] = useState('mockApi');
   return (
-    <div className="flex items-center gap-6">
+    <div className={styles.div2}>
       <ToggleGroup
         options={[ENDPOINTS[0], { ...ENDPOINTS[1], disabled: true }]}
         value={value}
@@ -91,7 +94,7 @@ export const Disabled = createPreview(() => {
 export const Sizes = createPreview(() => {
   const [value, setValue] = useState('mockApi');
   return (
-    <div className="flex items-center gap-4">
+    <div className={styles.div3}>
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} size="compact" />
       <ToggleGroup options={ENDPOINTS} value={value} onValueChange={setValue} size="default" />
     </div>
@@ -107,22 +110,17 @@ export const OnSurface = createPreview(() => {
     </>
   );
   return (
-    <div className="flex flex-wrap gap-6">
-      <div className="w-[20rem]">
+    <div className={styles.div4}>
+      <div className={styles.div5}>
         <Card variants={{ onSurface: 'raised' }}>
-          <div className="flex flex-col items-start gap-3">
-            <span className="text-xs text-fg-default">A card</span>
+          <div className={styles.div6}>
+            <span className={styles.span2}>A card</span>
             {pair}
           </div>
         </Card>
       </div>
-      <div
-        className={cn(
-          floatingVariants({ padding: 'md' }),
-          'flex w-[20rem] flex-col items-start gap-3 p-4',
-        )}
-      >
-        <span className="text-xs text-fg-default">A floating panel</span>
+      <div className={cn(floatingVariants({ padding: 'md' }), styles.div7)}>
+        <span className={styles.span2}>A floating panel</span>
         {pair}
       </div>
     </div>

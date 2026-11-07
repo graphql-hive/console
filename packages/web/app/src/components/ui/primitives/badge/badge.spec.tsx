@@ -23,7 +23,7 @@ describe('Badge', () => {
     );
     const badge = container.firstElementChild!;
     expect(badge.tagName).toBe('SPAN');
-    expect(badge.className).toContain('bg-critical-tint');
+    expect(badge.className).toContain(styles.badgeVariants.classNames.variants.variant.critical);
     expect(badge.textContent).toBe('2 clients');
     expect(container.children).toHaveLength(1);
   });

@@ -144,6 +144,29 @@ globalStyle(`:where(${cardDiv} > :not(:last-child))`, {
   },
 });
 
+export const cardDiv2 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 'calc(var(--spacing) * 4)',
+    },
+  },
+});
+
+export const cardDiv3 = style({
+  '@layer': {
+    [layer]: {
+      marginLeft: 'auto',
+      display: 'flex',
+      flexShrink: '0',
+      alignItems: 'center',
+      gap: 'calc(var(--spacing) * 2)',
+    },
+  },
+});
+
 export const cardP = style({
   '@layer': {
     [layer]: {
@@ -154,7 +177,7 @@ export const cardP = style({
   },
 });
 
-export const cardDiv2 = style({
+export const cardDiv4 = style({
   '@layer': {
     [layer]: {
       paddingTop: '0px',

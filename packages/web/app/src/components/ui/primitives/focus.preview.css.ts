@@ -24,17 +24,6 @@ export const div2 = style({
   },
 });
 
-export const div3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
 export const p = style({
   '@layer': {
     [layer]: {
@@ -44,43 +33,10 @@ export const p = style({
   },
 });
 
-export const p2 = style({
+export const div3 = style({
   '@layer': {
     [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const p3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const div4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
       width: '26rem',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 3)',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line-subtle)',
-      backgroundColor: 'var(--color-neutral-2)',
-      padding: 'calc(var(--spacing) * 4)',
-      selectors: {
-        '&:where(.dark, .dark *)': {
-          backgroundColor: 'var(--color-neutral-3)',
-        },
-      },
     },
   },
 });

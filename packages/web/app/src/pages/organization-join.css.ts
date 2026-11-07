@@ -97,14 +97,6 @@ export const joinOrganizationPageDiv5 = style({
   },
 });
 
-export const joinOrganizationPageDiv6 = style({
-  '@layer': {
-    [layer]: {
-      backgroundColor: 'var(--color-surface-inset)',
-    },
-  },
-});
-
 export const joinOrganizationPageSpan = style({
   '@layer': {
     [layer]: {
@@ -125,7 +117,7 @@ export const joinOrganizationPageP = style({
   },
 });
 
-export const joinOrganizationPageDiv7 = style({
+export const joinOrganizationPageDiv6 = style({
   '@layer': {
     [layer]: {
       marginTop: 'calc(var(--spacing) * 6)',

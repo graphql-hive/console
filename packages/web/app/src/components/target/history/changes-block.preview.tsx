@@ -283,7 +283,7 @@ const USAGE_LABEL_CHANGES = [
 /** Breaking changes the check found no usage for, labelled by whether usage is recorded at all. */
 export const UsageLabels = createPreview(() => (
   <RouterAt path={PATH}>
-    <div className="w-[72rem]">
+    <div className={styles.div}>
       <ChangesBlock
         schemaCheckId="check-1"
         title="Breaking Changes"
@@ -367,7 +367,7 @@ const VERSION_CHANGES = [
  */
 export const ExplorerLinks = createPreview(() => (
   <RouterAt path={PATH}>
-    <div className="w-[72rem] space-y-8">
+    <div className={styles.div2}>
       <ChangesBlock
         schemaCheckId="check-1"
         title="Breaking Changes"

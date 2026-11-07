@@ -887,7 +887,7 @@ export function TraceSheet(props: TraceSheetProps) {
                   {activeView === 'operation' ? (
                     <div className={styles.traceSheetDiv10}>
                       <GraphQLHighlight
-                        className="h-full max-h-none [--diffs-font-size:10px]"
+                        className={styles.traceSheetGraphQLHighlight}
                         code={rootSpanUnmasked.spanAttributes['graphql.document'] as string}
                       />
                     </div>
@@ -1588,7 +1588,7 @@ function SpanSheet(props: SpanSheetProps) {
           )}
           {activeView === 'operation' && (
             <GraphQLHighlight
-              className="h-full max-h-none [--diffs-font-size:10px]"
+              className={styles.spanSheetGraphQLHighlight}
               code={span.spanAttributes['graphql.document'] as string}
             />
           )}

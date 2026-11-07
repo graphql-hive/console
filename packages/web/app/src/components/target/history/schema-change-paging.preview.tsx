@@ -17,6 +17,7 @@ import {
   PagedChanges_SafeChangeGroupFragment,
   SafeChangeGroups,
 } from './paged-changes';
+import * as styles from './schema-change-paging.preview.css';
 
 export const nav: NavPath = 'Components/SchemaChangePaging';
 
@@ -91,7 +92,7 @@ const delay = <T,>(value: T) =>
 function DetailsTab(props: { children: ReactNode }) {
   return (
     <RouterAt path={PATH}>
-      <div className="w-[72rem]">
+      <div className={styles.detailsTabDiv3}>
         <TabbedView
           defaultValue="details"
           bodyPadding="none"
@@ -100,7 +101,7 @@ function DetailsTab(props: { children: ReactNode }) {
               value: 'details',
               label: 'Details',
               icon: ListIcon,
-              content: <div className="p-5">{props.children}</div>,
+              content: <div className={styles.detailsTabDiv4}>{props.children}</div>,
             },
             { value: 'service', label: 'Service', icon: FileDiffIcon, content: null },
             { value: 'public', label: 'Public Schema', icon: FileDiffIcon, content: null },
@@ -125,7 +126,7 @@ function TodayView(props: { rendered: number }) {
   );
   return (
     <DetailsTab>
-      <div className="mb-5">
+      <div className={styles.todayViewDiv2}>
         <ChangesBlock
           schemaCheckId="check-1"
           title="Breaking Changes"
@@ -133,7 +134,7 @@ function TodayView(props: { rendered: number }) {
           conditionBreakingChangeMetadata={metadata(usage.targets)}
         />
       </div>
-      <div className="mb-5">
+      <div className={styles.todayViewDiv2}>
         <ChangesBlock schemaCheckId="check-1" title="Safe Changes" changes={changes} />
       </div>
     </DetailsTab>
@@ -160,7 +161,7 @@ function GroupedView(props: { breaking: number; descriptions: number }) {
   return (
     <DetailsTab>
       {props.breaking > 0 ? (
-        <div className="mb-5">
+        <div className={styles.groupedViewDiv3}>
           <PagedBreakingChanges
             schemaCheckId="check-1"
             title={<>Breaking Changes</>}
@@ -174,7 +175,7 @@ function GroupedView(props: { breaking: number; descriptions: number }) {
           />
         </div>
       ) : null}
-      <div className="mb-5">
+      <div className={styles.groupedViewDiv4}>
         <SafeChangeGroups
           schemaCheckId="check-1"
           resetKey={`safe-${props.descriptions}`}

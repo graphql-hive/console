@@ -36,16 +36,6 @@ export const span = style({
   },
 });
 
-export const span2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
 export const div3 = style({
   '@layer': {
     [layer]: {
@@ -79,7 +69,7 @@ export const div5 = style({
   },
 });
 
-export const span3 = style({
+export const span2 = style({
   '@layer': {
     [layer]: {
       color: 'var(--color-fg-default)',
@@ -88,42 +78,6 @@ export const span3 = style({
 });
 
 export const div6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const span4 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const span5 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const div8 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -178,7 +132,7 @@ globalStyle(`${compositionErrorTextLi} ::-webkit-details-marker`, {
   },
 });
 
-export const div9 = style({
+export const div7 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -188,27 +142,7 @@ export const div9 = style({
   },
 });
 
-export const div10 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const div11 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const div12 = style({
+export const div8 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -217,7 +151,7 @@ export const div12 = style({
   },
 });
 
-export const div13 = style({
+export const div9 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -227,7 +161,7 @@ export const div13 = style({
   },
 });
 
-export const span6 = style({
+export const span3 = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-xs)',
@@ -237,27 +171,7 @@ export const span6 = style({
   },
 });
 
-export const div14 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const span7 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const div15 = style({
+export const div10 = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 48)',

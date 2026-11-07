@@ -9,6 +9,7 @@ import { useSlugs } from '@/lib/hooks';
 import { ConnectSingleSignOnProviderSheet } from './connect-single-sign-on-provider-sheet';
 import { OIDCIntegrationConfiguration } from './oidc-integration-configuration';
 import { SingleSignOnLoadingSkeleton } from './single-sign-on-loading-skeleton';
+import * as styles from './single-sign-on-subpage.css';
 
 export const SingleSignOnSubpageQuery = graphql(`
   query SingleSignOnSubpageQuery($organizationSlug: String!) {
@@ -85,7 +86,7 @@ export function SingleSignOnSubpage(): React.ReactNode {
           text: 'Documentation',
         }}
       />
-      <div className="max-w-[800px] space-y-4 text-fg-secondary">
+      <div className={styles.singleSignOnSubpageDiv}>
         {(query.fetching || query.stale) && !oidcIntegration ? (
           <SingleSignOnLoadingSkeleton />
         ) : oidcIntegration ? (
@@ -95,12 +96,12 @@ export function SingleSignOnSubpage(): React.ReactNode {
           />
         ) : (
           <>
-            <div className="mt-5">
+            <div className={styles.singleSignOnSubpageDiv2}>
               <Button
                 onClick={() => setModalState(ConnectSingleSignOnProviderState.open)}
                 data-button-connect-open-id-provider
               >
-                <KeyIcon className="mr-2" />
+                <KeyIcon className={styles.singleSignOnSubpageKeyIcon} />
                 Connect Open ID Connect Provider
               </Button>
             </div>

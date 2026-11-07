@@ -27,28 +27,6 @@ export const span = style({
   },
 });
 
-export const span2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const span3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
 export const div2 = style({
   '@layer': {
     [layer]: {
@@ -81,63 +59,13 @@ export const div4 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
-      height: 'calc(var(--spacing) * 9)',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line-subtle)',
-      backgroundColor: 'var(--color-neutral-2)',
-      paddingInline: 'calc(var(--spacing) * 4)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      selectors: {
-        '&:where(.dark, .dark *)': {
-          backgroundColor: 'var(--color-neutral-3)',
-        },
-      },
-    },
-  },
-});
-
-export const span4 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const span5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const span6 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const div5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
     },
   },
 });
 
-export const div6 = style({
+export const div5 = style({
   '@layer': {
     [layer]: {
       marginTop: 'calc(var(--spacing) * 2)',
@@ -147,7 +75,7 @@ export const div6 = style({
   },
 });
 
-export const div7 = style({
+export const div6 = style({
   '@layer': {
     [layer]: {
       display: 'flex',

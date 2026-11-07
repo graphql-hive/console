@@ -32,6 +32,46 @@ export const queryBackedDiv = style({
   },
 });
 
+export const panelWidthCard = style({
+  '@layer': {
+    [layer]: {
+      width: '28rem',
+    },
+  },
+});
+
+export const panelWidthDialog = style({
+  '@layer': {
+    [layer]: {
+      width: '520px',
+    },
+  },
+});
+
+export const panelWidthDialogLg = style({
+  '@layer': {
+    [layer]: {
+      width: '640px',
+    },
+  },
+});
+
+export const panelWidthDialogXl = style({
+  '@layer': {
+    [layer]: {
+      width: '960px',
+    },
+  },
+});
+
+export const panelWidthSheet = style({
+  '@layer': {
+    [layer]: {
+      width: '700px',
+    },
+  },
+});
+
 export const raisedDiv = style({
   '@layer': {
     [layer]: {
@@ -39,7 +79,7 @@ export const raisedDiv = style({
       borderStyle: 'var(--tw-border-style)',
       borderWidth: '1px',
       borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-3)',
+      backgroundColor: 'var(--color-surface-overlay)',
       padding: 'calc(var(--spacing) * 6)',
     },
   },
@@ -85,16 +125,6 @@ export const createOrganizationExampleDiv = style({
   },
 });
 
-export const div2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
 export const slugExampleDiv = style({
   '@layer': {
     [layer]: {
@@ -103,170 +133,20 @@ export const slugExampleDiv = style({
   },
 });
 
-export const div3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
+export const auditLogsExampleDiv = slugExampleDiv;
 
-export const auditLogsExampleDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '36rem',
-    },
-  },
-});
+export const externalCompositionExampleDiv = slugExampleDiv;
 
-export const div4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
+export const graphqlEndpointExampleDiv = slugExampleDiv;
 
-export const div5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
+export const dangerousChangesExampleDiv = slugExampleDiv;
 
-export const div6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const externalCompositionExampleDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '36rem',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const graphqlEndpointExampleDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '36rem',
-    },
-  },
-});
-
-export const dangerousChangesExampleDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '36rem',
-    },
-  },
-});
-
-export const dangerousChangesExampleSpan = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const appDeploymentProtectionExampleDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '36rem',
-    },
-  },
-});
+export const appDeploymentProtectionExampleDiv = slugExampleDiv;
 
 export const breakingChangesExampleDiv = style({
   '@layer': {
     [layer]: {
       width: '48rem',
-    },
-  },
-});
-
-export const div8 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const div9 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const panelWidthCard = style({
-  '@layer': {
-    [layer]: {
-      width: '28rem',
-    },
-  },
-});
-
-export const panelWidthDialog = style({
-  '@layer': {
-    [layer]: {
-      width: '520px',
-    },
-  },
-});
-
-export const panelWidthDialogLg = style({
-  '@layer': {
-    [layer]: {
-      width: '640px',
-    },
-  },
-});
-
-export const panelWidthDialogXl = style({
-  '@layer': {
-    [layer]: {
-      width: '960px',
-    },
-  },
-});
-
-export const panelWidthSheet = style({
-  '@layer': {
-    [layer]: {
-      width: '700px',
     },
   },
 });

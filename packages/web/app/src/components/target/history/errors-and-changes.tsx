@@ -24,6 +24,7 @@ import { useSlugs } from '@/lib/hooks';
 import { formatCount } from '@/lib/utils';
 import { Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+import * as styles from './errors-and-changes.css';
 
 function ChangeBadge({ content }: { content: string }) {
   return <Badge content={content} variants={{ padding: 'tight', variant: 'warning' }} />;
@@ -36,8 +37,8 @@ export function labelize(message: string) {
 }
 
 const severityLevelMapping = {
-  [SeverityLevelType.Safe]: clsx('text-success'),
-  [SeverityLevelType.Dangerous]: clsx('text-warning'),
+  [SeverityLevelType.Safe]: clsx(styles.class2),
+  [SeverityLevelType.Dangerous]: clsx(styles.class3),
 } as Record<SeverityLevelType, string>;
 
 export const ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment = graphql(`
@@ -202,8 +203,8 @@ export function ChangesBlock(
       {props.title && <ChangesTitle>{props.title}</ChangesTitle>}
       <div
         className={clsx(
-          'text-sm/relaxed',
-          props.changesWithUsage ? 'flex flex-col gap-4' : 'list-inside list-disc space-y-2',
+          styles.changesBlockDiv,
+          props.changesWithUsage ? styles.changesBlockDiv2 : styles.changesBlockDiv3,
         )}
       >
         {props.changesWithUsage?.map((change, index) => (
@@ -233,7 +234,7 @@ export function ChangesBlock(
 
 export function ChangesTitle(props: { children: ReactNode; 'data-testid'?: string }) {
   return (
-    <h2 className="mb-3 text-base font-bold text-fg" data-testid={props['data-testid']}>
+    <h2 className={styles.changesTitleH2} data-testid={props['data-testid']}>
       {props.children}
     </h2>
   );
@@ -316,8 +317,8 @@ function ChangeItem(
         coordinate={targetUsage.coordinate}
         period={targetUsage.metadata.period}
       />
-      <section className="space-y-2">
-        <h4 className="text-sm font-medium text-fg">Affected operations and clients</h4>
+      <section className={styles.changeItemSection}>
+        <h4 className={styles.changeItemH4}>Affected operations and clients</h4>
         <UsageStatisticsPanels
           usageStatistics={targetUsage.statistics}
           targets={targetUsage.metadata.settings.targets}
@@ -337,11 +338,11 @@ function ChangeItem(
     </>
   ) : 'usageStatistics' in change && change.usageStatistics && metadata ? (
     <div>
-      <h4 className="mb-1 text-sm font-medium text-fg">Affected Operations (based on usage)</h4>
-      <div className="mb-2 flex justify-between text-sm text-fg-secondary">
+      <h4 className={styles.changeItemH42}>Affected Operations (based on usage)</h4>
+      <div className={styles.changeItemDiv}>
         <span>Top 10 operations and clients affected by this change based on usage data.</span>
         {metadata && (
-          <span className="text-xs text-fg-default">
+          <span className={styles.changeItemSpan}>
             See{' '}
             {metadata.settings.targets.map((target, index, arr) => (
               <>
@@ -355,7 +356,7 @@ function ChangeItem(
                   <Link
                     key={index}
                     preload={false}
-                    className="text-accent-muted hover:text-accent"
+                    className={styles.changeItemLink}
                     to="/$organizationSlug/$projectSlug/$targetSlug/insights/schema-coordinate/$coordinate"
                     params={{
                       organizationSlug,
@@ -384,7 +385,7 @@ function ChangeItem(
       {props.schemaCheckId &&
       'affectedAppDeployments' in change &&
       change.affectedAppDeployments?.edges?.length ? (
-        <div className="mt-6">
+        <div className={styles.changeItemDiv2}>
           <AffectedAppDeploymentsPanel
             schemaCheckId={props.schemaCheckId}
             coordinate={change.path?.join('.')}
@@ -414,12 +415,12 @@ function ChangeItem(
           label: (
             <div
               className={clsx(
-                'text-left',
-                (change.approval && 'text-accent') ||
-                  (severityLevelMapping[change.severityLevel] ?? 'text-critical'),
+                styles.changeItemDiv3,
+                (change.approval && styles.changeItemDiv4) ||
+                  (severityLevelMapping[change.severityLevel] ?? styles.changeItemDiv5),
               )}
             >
-              <span className="text-fg-secondary">{labelize(change.message)}</span>
+              <span className={styles.changeItemSpan2}>{labelize(change.message)}</span>
             </div>
           ),
           trailing:
@@ -427,7 +428,7 @@ function ChangeItem(
             usageStatistics ||
             affectedDeployments ||
             change.approval ? (
-              <span className="flex items-center gap-2">
+              <span className={styles.changeItemSpan3}>
                 {change.isSafeBasedOnUsage ? (
                   // Zero usage only means "safe" where usage is recorded.
                   change.isUsageTracked ? (
@@ -481,14 +482,18 @@ function ChangeItem(
               }
             >
               Explorer
-              <ExternalLinkIcon className="size-3" />
+              <ExternalLinkIcon className={styles.changeItemExternalLinkIcon} />
             </Button>
           ) : undefined,
           content:
             change.approval || details ? (
               <div
                 className={
-                  targetUsage ? 'space-y-5' : props.changeWithUsage ? undefined : 'pt-4 pb-4'
+                  targetUsage
+                    ? styles.changeItemDiv6
+                    : props.changeWithUsage
+                      ? undefined
+                      : styles.changeItemDiv7
                 }
               >
                 {change.approval && (
@@ -607,8 +612,8 @@ function UsageStatisticsPanels(props: {
   ];
 
   return (
-    <div className="flex gap-4">
-      <div className="min-w-0 flex-1">
+    <div className={styles.usageStatisticsPanelsDiv}>
+      <div className={styles.usageStatisticsPanelsDiv2}>
         <DataTable
           data={props.usageStatistics.topAffectedOperations}
           columns={operationColumns}
@@ -618,7 +623,7 @@ function UsageStatisticsPanels(props: {
           emptyMessage="No affected operations."
         />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className={styles.usageStatisticsPanelsDiv2}>
         <DataTable
           data={props.usageStatistics.topAffectedClients}
           columns={clientColumns}
@@ -707,12 +712,12 @@ function AffectedAppDeploymentsPanel(props: {
                 width="md"
                 arrow
                 content={
-                  <div className="space-y-2">
-                    <h5 className="font-medium text-fg">Affected Operations</h5>
+                  <div className={styles.affectedAppDeploymentsPanelDiv}>
+                    <h5 className={styles.affectedAppDeploymentsPanelH5}>Affected Operations</h5>
                     <ScrollArea maxHeight="sm">
-                      <ul className="space-y-1 text-sm">
+                      <ul className={styles.affectedAppDeploymentsPanelUl}>
                         {deployment.affectedOperations.edges.map(({ node: op }) => (
-                          <li key={op.hash} className="text-fg-default">
+                          <li key={op.hash} className={styles.affectedAppDeploymentsPanelLi}>
                             {op.name || `[anonymous] (${op.hash.substring(0, 8)}...)`}
                           </li>
                         ))}
@@ -720,7 +725,7 @@ function AffectedAppDeploymentsPanel(props: {
                     </ScrollArea>
                     <Link
                       {...appVersionLink(deployment)}
-                      className="block pt-2 text-sm text-accent hover:underline"
+                      className={styles.affectedAppDeploymentsPanelLink}
                     >
                       Show all ({deployment.totalAffectedOperations}) affected operations
                     </Link>
@@ -736,8 +741,8 @@ function AffectedAppDeploymentsPanel(props: {
 
   return (
     <div>
-      <h4 className="mb-1 text-sm font-medium text-fg">Affected App Deployments</h4>
-      <p className="mb-2 text-sm text-fg-secondary">
+      <h4 className={styles.affectedAppDeploymentsPanelH4}>Affected App Deployments</h4>
+      <p className={styles.affectedAppDeploymentsPanelP}>
         Top 5 active app deployments that have operations using this schema coordinate (snapshot
         from when the check was run).
       </p>
@@ -757,7 +762,7 @@ function AffectedAppDeploymentsPanel(props: {
             schemaCheckId: props.schemaCheckId,
           }}
           search={{ coordinate: props.coordinate }}
-          className="mt-2 block text-sm text-warning hover:underline"
+          className={styles.affectedAppDeploymentsPanelLink2}
         >
           View all ({props.connection.totalCount}) affected app deployments
         </Link>
@@ -811,7 +816,7 @@ function SchemaChangeApproval(props: {
     '/' + [organizationSlug, projectSlug, targetSlug, 'checks', approval.schemaCheckId].join('/');
 
   return (
-    <div className="mb-3">
+    <div className={styles.schemaChangeApprovalDiv}>
       This breaking change was manually{' '}
       {approval.schemaCheckId === props.schemaCheckId ? (
         <>
@@ -819,7 +824,7 @@ function SchemaChangeApproval(props: {
           approved by {approvalName} in this schema check on {approvalDate}.
         </>
       ) : (
-        <a href={schemaCheckPath} className="text-accent hover:underline">
+        <a href={schemaCheckPath} className={styles.schemaChangeApprovalA}>
           approved by {approvalName} on {approvalDate}.
         </a>
       )}
@@ -859,17 +864,17 @@ export function CompositionErrorsList(props: {
   description?: string;
 }) {
   return (
-    <div className="mb-2">
+    <div className={styles.compositionErrorsListDiv}>
       <ChangesTitle data-testid="composition-errors-title">
         {props.title}
         <CompositionErrorsPopover />
       </ChangesTitle>
       {props.description ? (
-        <p className="mb-2 text-sm text-fg-default">{props.description}</p>
+        <p className={styles.compositionErrorsListP}>{props.description}</p>
       ) : null}
       <ul>
         {props.errors.map((error, index) => (
-          <li key={index} className="mb-1 ml-[1.25em] list-[square] pl-0 marker:pl-1">
+          <li key={index} className={styles.compositionErrorsListLi}>
             <CompositionErrorMessage message={error.message} />
           </li>
         ))}
@@ -880,14 +885,12 @@ export function CompositionErrorsList(props: {
 
 export function NoGraphChanges() {
   return (
-    <div className="cursor-default">
-      <div className="mb-3 flex items-center gap-3">
-        <CircleCheckIcon className="size-4 text-success" />
-        <h2 className="text-base font-medium text-fg">No Graph Changes</h2>
+    <div className={styles.noGraphChangesDiv}>
+      <div className={styles.noGraphChangesDiv2}>
+        <CircleCheckIcon className={styles.noGraphChangesCircleCheckIcon} />
+        <h2 className={styles.noGraphChangesH2}>No Graph Changes</h2>
       </div>
-      <p className="text-xs text-fg-secondary">
-        There are no changes in this graph for this graph.
-      </p>
+      <p className={styles.noGraphChangesP}>There are no changes in this graph for this graph.</p>
     </div>
   );
 }

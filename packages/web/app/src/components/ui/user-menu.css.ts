@@ -54,15 +54,3 @@ export const leaveOrganizationModalContentSpan = style({
     },
   },
 });
-
-export const leaveOrganizationModalContentSpan2 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-semibold)',
-      color: 'var(--color-fg)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-    },
-  },
-});

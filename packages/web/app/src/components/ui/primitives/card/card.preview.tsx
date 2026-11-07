@@ -54,18 +54,18 @@ export const ContentOnly = createPreview(() => (
 
 /** `actions` sit at the trailing edge of the title row; the description runs full width under both. */
 export const WithActions = createPreview(() => (
-  <div className="flex w-[36rem] flex-col gap-4">
+  <div className={styles.div8}>
     <Card
       variants={{ onSurface: 'raised', titleSize: 'large' }}
       title="Operation body"
       actions={
         <Button variant="outline" size="compact">
-          <CopyIcon className="size-3.5" />
+          <CopyIcon className={styles.copyIcon} />
           Copy
         </Button>
       }
     >
-      <pre className="text-xs text-fg-default">{'query Me {\n  me {\n    id\n  }\n}'}</pre>
+      <pre className={styles.pre}>{'query Me {\n  me {\n    id\n  }\n}'}</pre>
     </Card>
     <Card
       title="Members"

@@ -1764,3 +1764,17 @@ export const exceptionTeaserPre = style({
     },
   },
 });
+
+export const traceSheetGraphQLHighlight = style({
+  '@layer': {
+    [layer]: {
+      height: '100%',
+      maxHeight: 'none',
+      vars: {
+        '--diffs-font-size': '10px',
+      },
+    },
+  },
+});
+
+export const spanSheetGraphQLHighlight = traceSheetGraphQLHighlight;

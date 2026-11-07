@@ -12,6 +12,11 @@ export const panelVariants = recipe({
         vars: {
           '--tw-outline-style': 'none',
         },
+        selectors: {
+          '&[data-ending-style]': {
+            display: 'none',
+          },
+        },
       },
     },
   },

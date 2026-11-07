@@ -86,6 +86,116 @@ export const headerRowVariants = recipe({
   },
 });
 
+export const staticHeaderRowVariants = recipe({
+  base: {
+    '@layer': {
+      [layer]: {
+        display: 'flex',
+        alignItems: 'center',
+      },
+    },
+  },
+  variants: {
+    variant: {
+      list: {},
+      boxed: {
+        '@layer': {
+          [layer]: {
+            paddingInline: 'calc(var(--spacing) * 4)',
+          },
+        },
+      },
+      plain: {},
+    },
+  },
+});
+
+export const staticRowVariants = recipe({
+  base: {
+    '@layer': {
+      [layer]: {
+        display: 'flex',
+        width: '100%',
+        alignItems: 'center',
+        gap: 'calc(var(--spacing) * 2)',
+        textAlign: 'left',
+        fontWeight: 'var(--font-weight-medium)',
+        vars: {
+          '--tw-font-weight': 'var(--font-weight-medium)',
+        },
+      },
+    },
+  },
+  variants: {
+    size: {
+      default: {
+        '@layer': {
+          [layer]: {
+            paddingBlock: 'calc(var(--spacing) * 3)',
+            fontSize: 'var(--text-sm)',
+            lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
+          },
+        },
+      },
+      sm: {
+        '@layer': {
+          [layer]: {
+            paddingBlock: 'calc(var(--spacing) * 2)',
+            fontSize: 'var(--text-xs)',
+            lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+          },
+        },
+      },
+    },
+    tone: {
+      default: {
+        '@layer': {
+          [layer]: {
+            color: 'var(--color-fg)',
+          },
+        },
+      },
+      accent: {
+        '@layer': {
+          [layer]: {
+            color: 'var(--color-accent)',
+          },
+        },
+      },
+    },
+  },
+});
+
+export const chevronSpacerVariants = recipe({
+  base: {
+    '@layer': {
+      [layer]: {
+        flexShrink: '0',
+      },
+    },
+  },
+  variants: {
+    size: {
+      default: {
+        '@layer': {
+          [layer]: {
+            width: 'calc(var(--spacing) * 4)',
+            height: 'calc(var(--spacing) * 4)',
+          },
+        },
+      },
+      sm: {
+        '@layer': {
+          [layer]: {
+            width: 'calc(var(--spacing) * 3)',
+            height: 'calc(var(--spacing) * 3)',
+          },
+        },
+      },
+    },
+  },
+});
+
 export const chevronVariants = recipe({
   base: {
     '@layer': {
@@ -233,7 +343,7 @@ export const panelInnerVariants = recipe({
   },
 });
 
-export const accordionHeader = style({
+export const accordionH3 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -269,6 +379,8 @@ export const accordionDiv = style({
     },
   },
 });
+
+export const accordionHeader = accordionH3;
 
 export const triggerVariants = recipe({
   base: [

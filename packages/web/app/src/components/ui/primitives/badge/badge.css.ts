@@ -24,6 +24,11 @@ export const badgeVariants = recipe({
         vars: {
           '--tw-font-weight': 'var(--font-weight-medium)',
         },
+        selectors: {
+          ':where(:is(:is(a, button, [role=button]))) &': {
+            cursor: 'inherit',
+          },
+        },
       },
     },
   },

@@ -3,6 +3,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { DataTable } from './data-table';
 import { DataTableCell, formatAbsolute, formatRelative } from './data-table-cell';
+import * as badgeStyles from '../primitives/badge/badge.css';
 import * as cellStyles from './data-table-cell.css';
 import * as partStyles from './data-table-components.css';
 import * as tableStyles from './data-table.css';
@@ -626,8 +627,8 @@ describe('DataTableCell', () => {
     ]);
     // The second row would take the stripe; the critical tint replaces it.
     expect(rows[1].className).not.toContain('bg-neutral-2/60');
-    expect(screen.getByText('beta').className).toContain(cellStyles.dataTableCellSpan23);
-    expect(screen.getByText('alpha').className).not.toContain(cellStyles.dataTableCellSpan23);
+    expect(screen.getByText('beta').className).toContain(cellStyles.dataTableCellSpan17);
+    expect(screen.getByText('alpha').className).not.toContain(cellStyles.dataTableCellSpan17);
   });
 
   it('shows only the label when a link-out cell has nowhere to go', () => {
@@ -649,7 +650,9 @@ describe('DataTableCell', () => {
     const { container } = render(<DataTableCell kind="badge" items={items} maxLength={16} />);
     const badges = [...container.querySelectorAll('span > span')];
     expect(badges.map(badge => badge.textContent)).toEqual(['Guild Members', 'Handcrafted Gran…']);
-    expect(badges.every(badge => badge.className.includes('rounded-md'))).toBe(true);
+    expect(
+      badges.every(badge => badge.className.includes(badgeStyles.badgeVariants.classNames.base)),
+    ).toBe(true);
   });
 
   it('cuts by code point and drops a trailing space before the ellipsis', () => {
@@ -678,7 +681,7 @@ describe('DataTableCell', () => {
   it('lights at least one bar segment for any share above zero', () => {
     const lit = (container: HTMLElement) =>
       [...container.querySelectorAll('[role="meter"] span')].filter(segment =>
-        segment.className.includes(cellStyles.dataTableCellSpan30),
+        segment.className.includes(cellStyles.dataTableCellSpan22),
       ).length;
     const { container, rerender } = render(<DataTableCell kind="bar" value={0.09} max={100} />);
     expect(lit(container)).toBe(1);

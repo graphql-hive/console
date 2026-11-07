@@ -3,6 +3,7 @@ import { createPreview, type NavPath } from 'react-foundry';
 import { cn } from '@/lib/utils';
 import { FloatingSearch } from './floating-search';
 import { floatingVariants, itemVariants } from './shared-styles';
+import * as styles from './floating-search.preview.css';
 
 export const nav: NavPath = 'Primitives/Floating/Search';
 
@@ -14,11 +15,11 @@ export const Default = createPreview(() => {
   const matches = ITEMS.filter(item => item.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className={cn(floatingVariants({ padding: 'menu' }), 'w-64')}>
+    <div className={cn(floatingVariants({ padding: 'menu' }), styles.div)}>
       <FloatingSearch label="targets" value={search} onSearch={setSearch} />
-      <div className="pt-2">
+      <div className={styles.div2}>
         {matches.length === 0 ? (
-          <div className="px-2 py-4 text-center text-sm text-fg-subtle italic">No matches</div>
+          <div className={styles.div3}>No matches</div>
         ) : (
           matches.map(item => (
             <div key={item} className={itemVariants()}>
@@ -39,7 +40,7 @@ export const Standalone = createPreview(() => {
   const [search, setSearch] = useState('');
 
   return (
-    <div className={cn(floatingVariants({ padding: 'none' }), 'w-64')}>
+    <div className={cn(floatingVariants({ padding: 'none' }), styles.div)}>
       <FloatingSearch
         label="fields"
         value={search}
@@ -55,7 +56,7 @@ export const WithValue = createPreview(() => {
   const [search, setSearch] = useState('prod');
 
   return (
-    <div className={cn(floatingVariants({ padding: 'none' }), 'w-64')}>
+    <div className={cn(floatingVariants({ padding: 'none' }), styles.div)}>
       <FloatingSearch
         label="targets"
         value={search}

@@ -3,6 +3,7 @@ import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Tooltip } from '@/components/ui/primitives/floating/tooltip/tooltip';
 import { FragmentType, graphql, useFragment } from '@/gql';
+import * as styles from './member-groups.css';
 
 export const MemberGroups_GroupFragment = graphql(`
   fragment MemberGroups_GroupFragment on Group {
@@ -27,9 +28,9 @@ export function MemberGroups(props: {
     return (
       <Tooltip
         trigger={
-          <div className="flex w-fit items-center gap-1.5">
-            <UsersIcon className="h-3.5 w-3.5" />
-            <span className="text-xs">Groups: none</span>
+          <div className={styles.memberGroupsDiv5}>
+            <UsersIcon className={styles.memberGroupsUsersIcon2} />
+            <span className={styles.memberGroupsSpan2}>Groups: none</span>
           </div>
         }
         content="Groups can be assigned via the SCIM provider."
@@ -38,14 +39,10 @@ export function MemberGroups(props: {
   }
 
   return (
-    <div
-      className={
-        layout === 'all' ? 'flex flex-wrap items-center gap-2' : 'flex w-fit items-center gap-2'
-      }
-    >
-      <div className="flex items-center gap-1.5">
-        <UsersIcon className="h-3.5 w-3.5" />
-        <span className="text-xs">Groups:</span>
+    <div className={layout === 'all' ? styles.memberGroupsDiv6 : styles.memberGroupsDiv7}>
+      <div className={styles.memberGroupsDiv8}>
+        <UsersIcon className={styles.memberGroupsUsersIcon2} />
+        <span className={styles.memberGroupsSpan2}>Groups:</span>
       </div>
 
       {layout === 'all' ? (

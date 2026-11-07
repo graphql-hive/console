@@ -22,6 +22,12 @@ attributes, whose tokens are all known classes and not a single plain word. That
 maps in data constants (`{ success: 'text-success' }`) that only Tailwind's source scanner used to
 see. Run it once, with `--append`, after the directory passes.
 
+`--candidates-from <git ref>` also counts the class strings at that ref towards
+`tailwind-defaults.css`, which is otherwise computed from the current source alone. Pass the
+pre-migration commit and `main`: once a directory is converted its source holds no Tailwind classes,
+and the defaults would otherwise lose the `@property` registrations the converted styles rely on (an
+unregistered `--tw-leading` inherits into children, for one).
+
 ## How it works
 
 1. **Scan** every source file for class strings: a `className` attribute, any string inside a call

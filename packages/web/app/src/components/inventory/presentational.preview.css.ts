@@ -49,32 +49,12 @@ export const span = style({
   },
 });
 
-export const span2 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-bold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
-    },
-  },
-});
-
 export const alert2 = style({
   '@layer': {
     [layer]: {
       borderColor: 'var(--color-info-line-subtle)',
       backgroundColor: 'var(--color-info-tint-subtle)',
       color: 'var(--color-info)',
-    },
-  },
-});
-
-export const alertTriangleIcon2 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
     },
   },
 });
@@ -119,26 +99,6 @@ export const div3 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const div4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
       width: '28rem',
       flexDirection: 'column',
       gap: 'calc(var(--spacing) * 3)',
@@ -164,7 +124,7 @@ export const heading2 = style({
   },
 });
 
-export const div6 = style({
+export const div4 = style({
   '@layer': {
     [layer]: {
       width: '28rem',
@@ -189,7 +149,7 @@ export const a = style({
   },
 });
 
-export const div7 = style({
+export const div5 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -199,17 +159,7 @@ export const div7 = style({
   },
 });
 
-export const div8 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const div9 = style({
+export const div6 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -219,7 +169,7 @@ export const div9 = style({
   },
 });
 
-export const div10 = style({
+export const div7 = style({
   '@layer': {
     [layer]: {
       borderRadius: 'var(--radius-md)',
@@ -237,7 +187,7 @@ export const div10 = style({
   },
 });
 
-export const div11 = style({
+export const div8 = style({
   '@layer': {
     [layer]: {
       width: '32rem',

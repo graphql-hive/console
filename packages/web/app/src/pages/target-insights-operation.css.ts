@@ -11,6 +11,15 @@ export const graphQLOperationBodyGraphQLHighlight = style({
   },
 });
 
+export const copyOperationButtonCopyIcon = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 3.5)',
+      height: 'calc(var(--spacing) * 3.5)',
+    },
+  },
+});
+
 export const operationViewDiv = style({
   '@layer': {
     [layer]: {

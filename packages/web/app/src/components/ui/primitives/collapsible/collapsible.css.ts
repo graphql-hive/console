@@ -146,12 +146,4 @@ export const collapsibleSpan = style({
   },
 });
 
-export const collapsiblePanel = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      minHeight: '0px',
-      flexDirection: 'column',
-    },
-  },
-});
+export const collapsiblePanel = collapsibleRoot;

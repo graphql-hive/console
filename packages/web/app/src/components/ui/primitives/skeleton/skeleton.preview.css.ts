@@ -29,16 +29,6 @@ export const span = style({
 export const span2 = style({
   '@layer': {
     [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const span3 = style({
-  '@layer': {
-    [layer]: {
       display: 'block',
       height: 'calc(var(--spacing) * 16)',
       width: 'calc(var(--spacing) * 32)',
@@ -46,7 +36,7 @@ export const span3 = style({
   },
 });
 
-export const span4 = style({
+export const span3 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -70,7 +60,7 @@ export const div2 = style({
   },
 });
 
-export const span5 = style({
+export const span4 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -80,7 +70,7 @@ export const span5 = style({
   },
 });
 
-export const span6 = style({
+export const span5 = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 14)',
@@ -102,17 +92,7 @@ export const div3 = style({
   },
 });
 
-export const span7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const span8 = style({
+export const span6 = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 14)',
@@ -124,21 +104,16 @@ export const span8 = style({
 export const div4 = style({
   '@layer': {
     [layer]: {
-      display: 'flex',
-      width: '48rem',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 12)',
+      maxWidth: '800px',
     },
   },
 });
 
-export const section = style([]);
-
-globalStyle(`:where(${section} > :not(:last-child))`, {
+globalStyle(`:where(${div4} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 8) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-y-reverse)))',
+      marginBlockStart: 'calc(calc(var(--spacing) * 4) * var(--tw-space-y-reverse))',
+      marginBlockEnd: 'calc(calc(var(--spacing) * 4) * calc(1 - var(--tw-space-y-reverse)))',
       vars: {
         '--tw-space-y-reverse': '0',
       },
@@ -146,264 +121,7 @@ globalStyle(`:where(${section} > :not(:last-child))`, {
   },
 });
 
-export const span9 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 24)',
-    },
-  },
-});
-
-export const span10 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 72)',
-    },
-  },
-});
-
-export const div5 = style([]);
-
-globalStyle(`:where(${div5} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const div6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const span11 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 36)',
-    },
-  },
-});
-
-export const span12 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 80)',
-    },
-  },
-});
-
-export const section2 = style([]);
-
-globalStyle(`:where(${section2} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 8) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const span13 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 40)',
-    },
-  },
-});
-
-export const div7 = style([]);
-
-globalStyle(`:where(${div7} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 3) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 3) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const div8 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const span14 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 36)',
-    },
-  },
-});
-
-export const span15 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 72)',
-    },
-  },
-});
-
-export const section3 = style([]);
-
-globalStyle(`:where(${section3} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 8) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const span16 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 44)',
-    },
-  },
-});
-
-export const span17 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 96)',
-    },
-  },
-});
-
-export const div9 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 8)',
-    },
-  },
-});
-
-export const span18 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 24)',
-    },
-  },
-});
-
-export const span19 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 24)',
-    },
-  },
-});
-
-export const section4 = style([]);
-
-globalStyle(`:where(${section4} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 8) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 8) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const span20 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 36)',
-    },
-  },
-});
-
-export const div10 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-    },
-  },
-});
-
-export const div11 = style([]);
-
-globalStyle(`:where(${div11} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const span21 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 40)',
-    },
-  },
-});
-
-export const span22 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 72)',
-    },
-  },
-});
-
-export const span23 = style({
-  '@layer': {
-    [layer]: {
-      display: 'block',
-      height: 'calc(var(--spacing) * 6)',
-      width: 'calc(var(--spacing) * 11)',
-    },
-  },
-});
-
-export const span24 = style({
+export const span7 = style({
   '@layer': {
     [layer]: {
       display: 'block',

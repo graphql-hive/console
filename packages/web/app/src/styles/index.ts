@@ -1,6 +1,7 @@
 /**
  * The app's global stylesheets, in the one order that works. Import this module, never the files.
  *
+ * 0. The UI font's `@font-face` rules, from the self-hosted variable build.
  * 1. `layers.css` declares the cascade layers before anything can use them.
  * 2. `preflight.css` is the reset. It goes before Tailwind so that Tailwind's own base rules
  *    (such as `* { border-color }`) still come later in source order and win their ties, exactly
@@ -14,6 +15,8 @@
  * 6. `utilities.css` and `patterns.css` export classes for call sites to adopt; importing them
  *    here only fixes their position in the bundle.
  */
+import '@fontsource-variable/instrument-sans/wght.css';
+import '@fontsource-variable/instrument-sans/wght-italic.css';
 import './layers.css';
 import './preflight.css';
 import '../index.css';

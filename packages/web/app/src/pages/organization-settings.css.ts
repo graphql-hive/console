@@ -22,29 +22,9 @@ export const gitHubIntegrationSectionGitHubIcon = style({
   },
 });
 
-export const gitHubIntegrationSectionGitHubIcon2 = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
+export const slackIntegrationSectionSlackIcon = gitHubIntegrationSectionGitHubIcon;
 
-export const slackIntegrationSectionSlackIcon = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const slackIntegrationSectionSlackIcon2 = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
+export const slackIntegrationSectionSlackIcon2 = gitHubIntegrationSectionGitHubIcon;
 
 export const organizationSettingsContentDiv = style([]);
 
@@ -104,16 +84,4 @@ export const organizationSettingsPageLayoutContent = style({
   },
 });
 
-export const organizationSettingsPageDiv = style([]);
-
-globalStyle(`:where(${organizationSettingsPageDiv} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 12) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 12) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
+export const organizationSettingsPageDiv = organizationSettingsContentDiv;

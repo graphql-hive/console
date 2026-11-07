@@ -40,14 +40,6 @@ export const span = style({
   },
 });
 
-export const div3 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
 export const p = style({
   '@layer': {
     [layer]: {
@@ -58,7 +50,7 @@ export const p = style({
   },
 });
 
-export const div4 = style({
+export const div3 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -68,25 +60,7 @@ export const div4 = style({
   },
 });
 
-export const p2 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const ul = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
+export const ul = p;
 
 export const li = style({
   '@layer': {
@@ -106,17 +80,7 @@ export const li = style({
   },
 });
 
-export const p3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const div5 = style({
+export const div4 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -127,154 +91,14 @@ export const div5 = style({
   },
 });
 
-export const p4 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const p5 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const p6 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const p7 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const p8 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const div6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const p9 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const p10 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const p11 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const p12 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const p13 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const p14 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const div8 = style({
+export const div5 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
       width: 'calc(var(--spacing) * 72)',
       flexDirection: 'column',
       gap: 'calc(var(--spacing) * 3)',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-2)',
       padding: 'calc(var(--spacing) * 4)',
-      selectors: {
-        '&:where(.dark, .dark *)': {
-          backgroundColor: 'var(--color-neutral-3)',
-        },
-      },
     },
   },
 });
@@ -289,7 +113,7 @@ export const span2 = style({
   },
 });
 
-export const div9 = style({
+export const div6 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -299,17 +123,7 @@ export const div9 = style({
   },
 });
 
-export const p15 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const div10 = style({
+export const div7 = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 64)',
@@ -317,55 +131,7 @@ export const div10 = style({
   },
 });
 
-export const ul2 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 48)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const li2 = style({
-  '@layer': {
-    [layer]: {
-      cursor: 'pointer',
-      paddingInline: 'calc(var(--spacing) * 3)',
-      paddingBlock: 'calc(var(--spacing) * 1.5)',
-      '@media': {
-        '(hover: hover)': {
-          selectors: {
-            '&:hover': {
-              backgroundColor: 'var(--color-neutral-4)',
-            },
-          },
-        },
-      },
-    },
-  },
-});
-
-export const div11 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const span3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
+export const span3 = p;
 
 export const button = style({
   '@layer': {
@@ -380,63 +146,6 @@ export const info = style({
     [layer]: {
       width: 'calc(var(--spacing) * 4)',
       height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const p16 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const div12 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const p17 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const button2 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const info2 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const p18 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-default)',
     },
   },
 });

@@ -18,24 +18,13 @@ export const div2 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const div3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
       flexDirection: 'column',
       gap: 'calc(var(--spacing) * 4)',
     },
   },
 });
 
-export const div4 = style({
+export const div3 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -56,74 +45,11 @@ export const span = style({
   },
 });
 
-export const div5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const span2 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 16)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-muted)',
-    },
-  },
-});
-
-export const div6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const span3 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 16)',
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-muted)',
-    },
-  },
-});
-
 export const x = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 4)',
       height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const div8 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
     },
   },
 });
@@ -149,7 +75,7 @@ export const p = style({
   },
 });
 
-export const div9 = style({
+export const div4 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -160,28 +86,7 @@ export const div9 = style({
   },
 });
 
-export const div10 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const div11 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 96)',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div12 = style({
+export const div5 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -190,7 +95,7 @@ export const div12 = style({
   },
 });
 
-export const div13 = style({
+export const div6 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -200,29 +105,25 @@ export const div13 = style({
   },
 });
 
-export const div14 = style({
+export const div7 = style({
   '@layer': {
     [layer]: {
-      display: 'flex',
       width: '24rem',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 3)',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line-subtle)',
-      backgroundColor: 'var(--color-neutral-2)',
-      padding: 'calc(var(--spacing) * 6)',
-      selectors: {
-        '&:where(.dark, .dark *)': {
-          backgroundColor: 'var(--color-neutral-3)',
-        },
-      },
     },
   },
 });
 
-export const div15 = style({
+export const div8 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 3)',
+    },
+  },
+});
+
+export const div9 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -233,13 +134,13 @@ export const div15 = style({
       borderStyle: 'var(--tw-border-style)',
       borderWidth: '1px',
       borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-3)',
+      backgroundColor: 'var(--color-surface-overlay)',
       padding: 'calc(var(--spacing) * 6)',
     },
   },
 });
 
-export const div16 = style({
+export const div10 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -249,16 +150,7 @@ export const div16 = style({
   },
 });
 
-export const div17 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const div18 = style({
+export const div11 = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 80)',

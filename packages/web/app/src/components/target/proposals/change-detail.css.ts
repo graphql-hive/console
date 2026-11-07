@@ -30,23 +30,15 @@ export const proposalChangeDetailDiv2 = style({
   },
 });
 
-export const changeBlockH2 = style({
+export const changeBlockDiv = style({
   '@layer': {
     [layer]: {
       marginTop: 'calc(var(--spacing) * 6)',
-      marginBottom: 'calc(var(--spacing) * 2)',
-      display: 'flex',
-      alignItems: 'center',
-      fontWeight: 'var(--font-weight-bold)',
-      color: 'var(--color-fg-secondary)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
     },
   },
 });
 
-export const changeBlockDiv = style({
+export const changeBlockDiv2 = style({
   '@layer': {
     [layer]: {
       listStylePosition: 'inside',
@@ -60,7 +52,7 @@ export const changeBlockDiv = style({
   },
 });
 
-globalStyle(`:where(${changeBlockDiv} > :not(:last-child))`, {
+globalStyle(`:where(${changeBlockDiv2} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
@@ -106,21 +98,13 @@ export const changeBlockSpan2 = style({
   },
 });
 
-export const changeBlockDiamond = style({
-  '@layer': {
-    [layer]: {
-      marginRight: 'calc(var(--spacing) * 2)',
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
+export const changeBlockDiamond = changeBlockTriangleAlert;
 
 export const changesBlockTooltipInfo = style({
   '@layer': {
     [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
+      width: 'calc(var(--spacing) * 3)',
+      height: 'calc(var(--spacing) * 3)',
     },
   },
 });

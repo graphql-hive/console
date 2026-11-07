@@ -65,13 +65,14 @@ import { useSlugs } from '@/lib/hooks';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { cn, formatCount } from '@/lib/utils';
 import { SDLDiffView, SDLView } from './target-history-schema-version';
+import * as styles from './target-checks-single.css';
 
 /** A status icon inside a tab, explained on hover. */
 function StatusTooltip(props: { icon: ReactNode; label: string }) {
   return (
     <Tooltip
       trigger={
-        <span className="inline-flex" role="img" aria-label={props.label}>
+        <span className={styles.statusTooltipSpan} role="img" aria-label={props.label}>
           {props.icon}
         </span>
       }
@@ -91,7 +92,7 @@ function AnnotatedSDLView(props: {
 }) {
   return (
     <CodeScrollArea>
-      <div className="max-w-[inherit]">
+      <div className={styles.annotatedSDLViewDiv}>
         <File
           file={{
             name: 'schema.graphql',
@@ -107,17 +108,17 @@ function AnnotatedSDLView(props: {
           renderAnnotation={annotation => (
             <div
               className={cn(
-                'flex items-center border-l-5 pl-1',
+                styles.annotatedSDLViewDiv2,
                 annotation.metadata.severity === 'warning'
-                  ? 'border-warning-line bg-warning-tint text-warning-text'
-                  : 'border-critical bg-critical-tint text-critical-text',
+                  ? styles.annotatedSDLViewDiv3
+                  : styles.annotatedSDLViewDiv4,
               )}
             >
               <span>{annotation.metadata.message}</span>
               {annotation.metadata.severity === 'warning' ? (
-                <TriangleAlertIcon className="mr-2 ml-auto size-4 text-warning" />
+                <TriangleAlertIcon className={styles.annotatedSDLViewTriangleAlertIcon} />
               ) : (
-                <ShieldAlertIcon className="mr-2 ml-auto size-4 text-critical" />
+                <ShieldAlertIcon className={styles.annotatedSDLViewShieldAlertIcon} />
               )}
             </div>
           )}
@@ -162,12 +163,12 @@ function SDLSingleDiffToggleView(props: {
       actions={
         <>
           {props.sorted && showDiff ? (
-            <span className="mr-2 text-xs text-fg-muted">Sorted by kind and name</span>
+            <span className={styles.sDLSingleDiffToggleViewSpan}>Sorted by kind and name</span>
           ) : null}
           {props.after && props.downloadFileName && (
             <DownloadButton fileName={props.downloadFileName} contents={props.after} />
           )}
-          <div className="ml-2 flex items-center space-x-2">
+          <div className={styles.sDLSingleDiffToggleViewDiv}>
             <Label variant="inline" htmlFor="toggle-diff-mode" label="Toggle Diff" />
             <Switch
               id="toggle-diff-mode"
@@ -235,10 +236,12 @@ function ApproveFailedSchemaCheckModal(props: {
 
   if (mutation.error) {
     return (
-      <div className="space-y-2">
-        <h4 className="leading-none font-medium">Oops. Something unexpected happened</h4>
-        <p className="text-sm text-fg-secondary">{mutation.error.message}</p>
-        <div className="text-right">
+      <div className={styles.approveFailedSchemaCheckModalDiv}>
+        <h4 className={styles.approveFailedSchemaCheckModalH4}>
+          Oops. Something unexpected happened
+        </h4>
+        <p className={styles.approveFailedSchemaCheckModalP}>{mutation.error.message}</p>
+        <div className={styles.approveFailedSchemaCheckModalDiv2}>
           <Button onSurface="raised" onClick={props.onClose}>
             Close
           </Button>
@@ -249,12 +252,12 @@ function ApproveFailedSchemaCheckModal(props: {
 
   if (mutation.data?.approveFailedSchemaCheck.error) {
     return (
-      <div className="space-y-2">
-        <h4 className="leading-none font-medium">Approval failed</h4>
-        <p className="text-sm text-fg-secondary">
+      <div className={styles.approveFailedSchemaCheckModalDiv}>
+        <h4 className={styles.approveFailedSchemaCheckModalH4}>Approval failed</h4>
+        <p className={styles.approveFailedSchemaCheckModalP}>
           {mutation.data.approveFailedSchemaCheck.error.message}
         </p>
-        <div className="text-right">
+        <div className={styles.approveFailedSchemaCheckModalDiv2}>
           <Button onSurface="raised" onClick={props.onClose}>
             Close
           </Button>
@@ -265,11 +268,11 @@ function ApproveFailedSchemaCheckModal(props: {
 
   if (mutation.data?.approveFailedSchemaCheck.ok) {
     return (
-      <div className="space-y-2">
-        <h4 className="leading-none font-medium">
+      <div className={styles.approveFailedSchemaCheckModalDiv}>
+        <h4 className={styles.approveFailedSchemaCheckModalH4}>
           The schema check has been approved successfully!
         </h4>
-        <div className="text-right">
+        <div className={styles.approveFailedSchemaCheckModalDiv2}>
           <Button onSurface="raised" onClick={props.onClose}>
             Close
           </Button>
@@ -279,24 +282,27 @@ function ApproveFailedSchemaCheckModal(props: {
   }
 
   return (
-    <div className="space-y-2">
-      <h4 className="leading-none font-medium">Finish your approval</h4>
+    <div className={styles.approveFailedSchemaCheckModalDiv}>
+      <h4 className={styles.approveFailedSchemaCheckModalH4}>Finish your approval</h4>
       <div>
-        <p className="text-sm text-fg-secondary">Acknowledge and accept breaking changes.</p>
+        <p className={styles.approveFailedSchemaCheckModalP}>
+          Acknowledge and accept breaking changes.
+        </p>
         {props?.contextId ? (
-          <p className="text-sm text-fg-secondary">
+          <p className={styles.approveFailedSchemaCheckModalP}>
             Approval applies to all future changes within the context of a pull request or branch
-            lifecycle: <span className="font-medium">{props?.contextId}</span>
+            lifecycle:{' '}
+            <span className={styles.approveFailedSchemaCheckModalSpan}>{props?.contextId}</span>
           </p>
         ) : null}
       </div>
-      <div className="space-y-2">
+      <div className={styles.approveFailedSchemaCheckModalDiv}>
         <Textarea
           value={approvalComment}
           onChange={onApprovalCommentChange}
           placeholder="(Optional)  Add a comment..."
         />
-        <div className="text-right">
+        <div className={styles.approveFailedSchemaCheckModalDiv2}>
           <Button
             variant="destructive"
             disabled={mutation.fetching}
@@ -316,7 +322,7 @@ function ApproveFailedSchemaCheckModal(props: {
           >
             {mutation.fetching ? (
               <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className={styles.approveFailedSchemaCheckModalLoader2} />
                 Please wait
               </>
             ) : (
@@ -336,22 +342,24 @@ const BreakingChangesTitle = () => {
       <Popover
         trigger={
           <Button variant="ghost" size="icon-sm" aria-label="About breaking changes">
-            <InfoIcon className="size-3" />
+            <InfoIcon className={styles.breakingChangesTitleInfoIcon} />
           </Button>
         }
         openOnHover
         align="start"
         width="xl"
         content={
-          <div className="font-normal text-fg-default">
-            <h5 className="mb-1 text-lg font-bold">Breaking Changes</h5>
-            <p className="mb-2 text-sm">Schema changes that can potentially break clients.</p>
-            <h6 className="mb-1 font-bold">Breaking Change Approval</h6>
-            <p className="mb-2">
+          <div className={styles.breakingChangesTitleDiv}>
+            <h5 className={styles.breakingChangesTitleH5}>Breaking Changes</h5>
+            <p className={styles.breakingChangesTitleP}>
+              Schema changes that can potentially break clients.
+            </p>
+            <h6 className={styles.breakingChangesTitleH6}>Breaking Change Approval</h6>
+            <p className={styles.breakingChangesTitleP2}>
               Approve this schema check for adding the changes to the list of allowed changes and
               change the status of this schema check to successful.
             </p>
-            <h6 className="mb-1 font-bold">Conditional Breaking Changes</h6>
+            <h6 className={styles.breakingChangesTitleH6}>Conditional Breaking Changes</h6>
             <p>
               Configure conditional breaking changes, to automatically mark breaking changes as safe
               based on live usage data collected from your GraphQL Gateway.
@@ -368,13 +376,13 @@ const PolicyInfo = () => {
     <Popover
       trigger={
         <Button variant="ghost" size="icon-sm" aria-label="About policy line numbers">
-          <InfoIcon className="size-3" />
+          <InfoIcon className={styles.policyInfoInfoIcon} />
         </Button>
       }
       openOnHover
       width="lg"
       content={
-        <p className="text-xs text-fg-default">
+        <p className={styles.policyInfoP}>
           Schema policy checks run on the composed API schema. Line numbers reflect that and will
           not match the lines from the source schema.
         </p>
@@ -396,18 +404,21 @@ const PolicyBlock = (props: {
         {props.title}
         <PolicyInfo />
       </ChangesTitle>
-      <ul className="list-inside list-disc pl-3 text-sm/relaxed">
+      <ul className={styles.policyBlockUl}>
         {policies.edges.map((edge, key) => (
           <li
             key={key}
-            className={cn(props.type === 'warning' ? 'text-warning' : 'text-critical', 'my-1')}
+            className={cn(
+              props.type === 'warning' ? styles.policyBlockLi : styles.policyBlockLi2,
+              styles.policyBlockLi3,
+            )}
           >
-            <span className="text-left text-fg-secondary">
+            <span className={styles.policyBlockSpan}>
               {labelize(edge.node.message.replace(/\.$/, ''))}{' '}
             </span>
             {edge.node.start?.line ? (
               <span
-                className="ml-1 cursor-default text-xs text-fg-muted hover:underline"
+                className={styles.policyBlockSpan2}
                 onClick={() => props.goToline?.(edge.node.start?.line || undefined)}
               >
                 on line {edge.node.start.line}
@@ -415,19 +426,15 @@ const PolicyBlock = (props: {
             ) : null}
             <Popover
               trigger={
-                <button
-                  type="button"
-                  aria-label="Which rule"
-                  className="ml-2 inline-block text-fg-subtle"
-                >
+                <button type="button" aria-label="Which rule" className={styles.policyBlockButton}>
                   <CircleQuestionMarkIcon size={16} />
                 </button>
               }
               openOnHover
               width="auto"
               content={
-                <p className="text-sm text-fg-default">
-                  rule: <span className="text-fg">{edge.node.ruleId}</span>
+                <p className={styles.policyBlockP}>
+                  rule: <span className={styles.policyBlockSpan3}>{edge.node.ruleId}</span>
                 </p>
               }
             />
@@ -475,7 +482,7 @@ function ConditionalBreakingChangesMetadataSection(props: {
 
   if (!schemaCheck.conditionalBreakingChangeMetadata) {
     return (
-      <div className="mt-10 mb-5 text-sm text-fg-secondary">
+      <div className={styles.conditionalBreakingChangesMetadataSectionDiv}>
         Get more out of schema checks by enabling conditional breaking changes based on usage data.
         <br />
         <DocsLink
@@ -495,10 +502,10 @@ function ConditionalBreakingChangesMetadataSection(props: {
   const allTargets = schemaCheck.conditionalBreakingChangeMetadata.settings.targets;
 
   return (
-    <div className="mt-10 mb-5 text-sm text-fg-secondary">
+    <div className={styles.conditionalBreakingChangesMetadataSectionDiv}>
       <p>
         Based on{' '}
-        <span className="text-fg">
+        <span className={styles.conditionalBreakingChangesMetadataSectionSpan}>
           {schemaCheck.conditionalBreakingChangeMetadata.usage.totalRequestCountFormatted} requests
         </span>{' '}
         from target
@@ -507,7 +514,9 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {allTargets.map((target, index) => (
               <Fragment key={target.slug}>
-                <span className="text-fg">{target.slug}</span>
+                <span className={styles.conditionalBreakingChangesMetadataSectionSpan2}>
+                  {target.slug}
+                </span>
                 {index === allTargets.length - 1 ? null : ', '}
               </Fragment>
             ))}
@@ -517,7 +526,9 @@ function ConditionalBreakingChangesMetadataSection(props: {
           <>
             {truncatedTargets.map((target, index) => (
               <Fragment key={target.slug}>
-                <span className="text-fg">{target.slug}</span>
+                <span className={styles.conditionalBreakingChangesMetadataSectionSpan3}>
+                  {target.slug}
+                </span>
                 {index === truncatedTargets.length - 1 ? null : ', '}
               </Fragment>
             ))}
@@ -525,13 +536,18 @@ function ConditionalBreakingChangesMetadataSection(props: {
             <Popover
               trigger={<Button variant="link">{excludedTargets.length} more</Button>}
               content={
-                <div className="p-2">
-                  <h4 className="mb-2 text-sm font-semibold text-fg">All Targets</h4>
+                <div className={styles.conditionalBreakingChangesMetadataSectionDiv2}>
+                  <h4 className={styles.conditionalBreakingChangesMetadataSectionH4}>
+                    All Targets
+                  </h4>
                   <ScrollArea height="sm">
-                    <div className="grid grid-cols-1 divide-y divide-line">
+                    <div className={styles.conditionalBreakingChangesMetadataSectionDiv3}>
                       {allTargets.map((target, index) => (
-                        <div key={index} className="py-2">
-                          <div className="line-clamp-3 text-sm text-fg-secondary">
+                        <div
+                          key={index}
+                          className={styles.conditionalBreakingChangesMetadataSectionDiv4}
+                        >
+                          <div className={styles.conditionalBreakingChangesMetadataSectionDiv5}>
                             {target.slug}
                           </div>
                         </div>
@@ -545,11 +561,11 @@ function ConditionalBreakingChangesMetadataSection(props: {
         )}
         . <br />
         Usage data ranges from{' '}
-        <span className="text-fg">
+        <span className={styles.conditionalBreakingChangesMetadataSectionSpan4}>
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.from, 'do MMM yyyy HH:mm')}
         </span>{' '}
         to{' '}
-        <span className="text-fg">
+        <span className={styles.conditionalBreakingChangesMetadataSectionSpan5}>
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.to, 'do MMM yyyy HH:mm')} (
           {format(schemaCheck.conditionalBreakingChangeMetadata.period.to, 'z')})
         </span>{' '}
@@ -670,7 +686,7 @@ function useDefaultSchemaView(props: {
       icon: ListIcon,
       attrs: { 'data-testid': 'details-view-btn' },
       content: (
-        <div className="p-5">
+        <div className={styles.useDefaultSchemaViewDiv}>
           {!schemaCheck.schemaPolicyWarnings?.edges?.length &&
             !schemaCheck.hasSchemaChanges &&
             !schemaCheck.schemaPolicyErrors?.edges?.length &&
@@ -687,7 +703,7 @@ function useDefaultSchemaView(props: {
             <CompositionErrorsSection compositionErrors={schemaCheck.compositionErrors} />
           )}
           {schemaCheck.breakingSchemaChanges?.totalCount ? (
-            <div className="mb-5">
+            <div className={styles.useDefaultSchemaViewDiv2}>
               <PagedBreakingChanges
                 schemaCheckId={schemaCheck.id}
                 title={<BreakingChangesTitle />}
@@ -700,7 +716,7 @@ function useDefaultSchemaView(props: {
             </div>
           ) : null}
           {schemaCheck.safeSchemaChangeGroups.length ? (
-            <div className="mb-5">
+            <div className={styles.useDefaultSchemaViewDiv2}>
               <SafeChangeGroups
                 schemaCheckId={schemaCheck.id}
                 groups={schemaCheck.safeSchemaChangeGroups}
@@ -710,7 +726,7 @@ function useDefaultSchemaView(props: {
             </div>
           ) : null}
           {schemaCheck.schemaPolicyErrors?.edges.length ? (
-            <div className="mb-5">
+            <div className={styles.useDefaultSchemaViewDiv2}>
               <PolicyBlock
                 title="Schema Policy Errors"
                 policies={schemaCheck.schemaPolicyErrors}
@@ -719,7 +735,7 @@ function useDefaultSchemaView(props: {
             </div>
           ) : null}
           {schemaCheck.schemaPolicyWarnings?.edges.length ? (
-            <div className="mb-5">
+            <div className={styles.useDefaultSchemaViewDiv2}>
               <PolicyBlock
                 title="Schema Policy Warnings"
                 policies={schemaCheck.schemaPolicyWarnings}
@@ -750,17 +766,20 @@ function useDefaultSchemaView(props: {
             downloadFileName="service.graphqls"
             title={
               schemaCheck.serviceName ? (
-                <span className="flex items-center gap-1">
+                <span className={styles.useDefaultSchemaViewSpan}>
                   {schemaCheck.baseline?.meta ? (
                     <>
-                      <span className="font-mono" data-testid="schema-title-before">
+                      <span
+                        className={styles.useDefaultSchemaViewSpan2}
+                        data-testid="schema-title-before"
+                      >
                         {schemaCheck.serviceName}@
                         {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                       </span>
-                      <ArrowRight className="inline size-3" />
+                      <ArrowRight className={styles.useDefaultSchemaViewArrowRight} />
                     </>
                   ) : null}
-                  <span className="font-mono" data-testid="schema-title">
+                  <span className={styles.useDefaultSchemaViewSpan2} data-testid="schema-title">
                     {schemaCheck.serviceName}@
                     {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                   </span>
@@ -773,17 +792,17 @@ function useDefaultSchemaView(props: {
           <SDLSingleDiffToggleView
             title={
               schemaCheck.serviceName ? (
-                <span className="flex items-center gap-1">
+                <span className={styles.useDefaultSchemaViewSpan}>
                   {schemaCheck.baseline?.meta ? (
                     <>
-                      <span className="font-mono">
+                      <span className={styles.useDefaultSchemaViewSpan2}>
                         {schemaCheck.serviceName}@
                         {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                       </span>
-                      <ArrowRight className="inline size-3" />
+                      <ArrowRight className={styles.useDefaultSchemaViewArrowRight} />
                     </>
                   ) : null}
-                  <span className="font-mono">
+                  <span className={styles.useDefaultSchemaViewSpan2}>
                     {schemaCheck.serviceName}@
                     {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                   </span>
@@ -814,17 +833,20 @@ function useDefaultSchemaView(props: {
           downloadFileName="schema.graphqls"
           title={
             schemaCheck.serviceName ? (
-              <span className="flex items-center gap-1">
+              <span className={styles.useDefaultSchemaViewSpan}>
                 {schemaCheck.baseline?.meta ? (
                   <>
-                    <span className="font-mono" data-testid="schema-title-before">
+                    <span
+                      className={styles.useDefaultSchemaViewSpan2}
+                      data-testid="schema-title-before"
+                    >
                       schema@
                       {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                     </span>
-                    <ArrowRight className="inline size-3" />
+                    <ArrowRight className={styles.useDefaultSchemaViewArrowRight} />
                   </>
                 ) : null}
-                <span className="font-mono" data-testid="schema-title">
+                <span className={styles.useDefaultSchemaViewSpan2} data-testid="schema-title">
                   schema@
                   {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                 </span>
@@ -860,17 +882,20 @@ function useDefaultSchemaView(props: {
             downloadFileName="supergraph.graphqls"
             title={
               schemaCheck.serviceName ? (
-                <span className="flex items-center gap-1">
+                <span className={styles.useDefaultSchemaViewSpan}>
                   {schemaCheck.baseline?.meta ? (
                     <>
-                      <span className="font-mono" data-testid="schema-title-before">
+                      <span
+                        className={styles.useDefaultSchemaViewSpan2}
+                        data-testid="schema-title-before"
+                      >
                         supergraph@
                         {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                       </span>
-                      <ArrowRight className="inline size-3" />
+                      <ArrowRight className={styles.useDefaultSchemaViewArrowRight} />
                     </>
                   ) : null}
-                  <span className="font-mono" data-testid="schema-title">
+                  <span className={styles.useDefaultSchemaViewSpan2} data-testid="schema-title">
                     supergraph@
                     {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                   </span>
@@ -903,7 +928,7 @@ function useDefaultSchemaView(props: {
       ),
     content: (
       <>
-        <div className="px-5 py-3">
+        <div className={styles.useDefaultSchemaViewDiv3}>
           <Heading>Schema Policy</Heading>
         </div>
         <SchemaPolicyEditor
@@ -1024,7 +1049,7 @@ function useContractCheckView(props: {
       label: 'Details',
       icon: ListIcon,
       content: (
-        <div className="p-5">
+        <div className={styles.useContractCheckViewDiv}>
           {contractCheck.baseline?.compositionErrors?.length ? (
             <CompositionErrorsList
               title="Baseline Composition Errors"
@@ -1036,7 +1061,7 @@ function useContractCheckView(props: {
             <CompositionErrorsSection compositionErrors={contractCheck.schemaCompositionErrors} />
           )}
           {contractCheck.breakingSchemaChanges?.totalCount ? (
-            <div className="mb-2">
+            <div className={styles.useContractCheckViewDiv2}>
               <PagedBreakingChanges
                 schemaCheckId={schemaCheck.id}
                 title={<BreakingChangesTitle />}
@@ -1049,7 +1074,7 @@ function useContractCheckView(props: {
             </div>
           ) : null}
           {contractCheck.safeSchemaChangeGroups.length ? (
-            <div className="mb-2">
+            <div className={styles.useContractCheckViewDiv3}>
               <SafeChangeGroups
                 schemaCheckId={schemaCheck.id}
                 groups={contractCheck.safeSchemaChangeGroups}
@@ -1083,17 +1108,17 @@ function useContractCheckView(props: {
             downloadFileName="schema.graphqls"
             title={
               schemaCheck.serviceName ? (
-                <span className="flex items-center gap-1">
+                <span className={styles.useContractCheckViewSpan}>
                   {schemaCheck.baseline?.meta ? (
                     <>
-                      <span className="font-mono">
+                      <span className={styles.useContractCheckViewSpan2}>
                         schema@
                         {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                       </span>
-                      <ArrowRight className="inline size-3" />
+                      <ArrowRight className={styles.useContractCheckViewArrowRight} />
                     </>
                   ) : null}
-                  <span className="font-mono">
+                  <span className={styles.useContractCheckViewSpan3}>
                     schema@
                     {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                   </span>
@@ -1129,17 +1154,17 @@ function useContractCheckView(props: {
             downloadFileName="supergraph.graphqls"
             title={
               schemaCheck.serviceName ? (
-                <span className="flex items-center gap-1">
+                <span className={styles.useContractCheckViewSpan4}>
                   {schemaCheck.baseline?.meta ? (
                     <>
-                      <span className="font-mono">
+                      <span className={styles.useContractCheckViewSpan5}>
                         supergraph@
                         {schemaCheck.baseline?.meta.commit?.substring(0, 7) ?? 'unknown'}
                       </span>
-                      <ArrowRight className="inline size-3" />
+                      <ArrowRight className={styles.useContractCheckViewArrowRight2} />
                     </>
                   ) : null}
-                  <span className="font-mono">
+                  <span className={styles.useContractCheckViewSpan6}>
                     supergraph@
                     {schemaCheck.meta?.commit.substring(0, 7) ?? <>unknown</>}
                   </span>
@@ -1286,7 +1311,7 @@ function SchemaChecksView(props: {
   const contractChecks = schemaCheck.contractChecks?.edges ?? [];
   // Without contracts there is nothing to pick, but the default graph keeps its status glyph.
   const contractPicker = !contractChecks.length ? (
-    <span className="inline-flex items-center gap-1.5 px-2 text-xs text-fg-default">
+    <span className={styles.schemaChecksViewSpan}>
       {checkStatusIcon(schemaCheck, 'Schema changed')}
       Default Graph
     </span>
@@ -1296,7 +1321,7 @@ function SchemaChecksView(props: {
       value={selectedItem}
       onValueChange={setSelectedItem}
       label={
-        <span className="inline-flex items-center gap-1.5">
+        <span className={styles.schemaChecksViewSpan2}>
           {selectedContractCheckNode
             ? checkStatus(selectedContractCheckNode, 'Contract schema changed').icon
             : checkStatus(schemaCheck, 'Schema changed').icon}
@@ -1346,9 +1371,9 @@ function SchemaChecksView(props: {
   const active = contractView ?? defaultView;
   // The picker opens on the default graph, so a contract that failed is named here first.
   return (
-    <div className="mt-3 flex flex-col gap-3">
+    <div className={styles.schemaChecksViewDiv}>
       {failures.length ? (
-        <div className="mb-3">
+        <div className={styles.schemaChecksViewDiv2}>
           <ContractFailuresTable
             title={`${failures.length} of ${contractChecks.length} contracts failed`}
             aside={`${contractChecks.length - failures.length} passed`}
@@ -1414,40 +1439,40 @@ type CheckStatusFlags = {
 function checkStatus(check: CheckStatusFlags, changedLabel: string) {
   if (check.hasSchemaCompositionErrors) {
     return {
-      icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
+      icon: <TriangleAlertIcon className={styles.checkStatusTriangleAlertIcon} />,
       label: 'Composition failed.',
       state: 'Failed',
     };
   }
   if (check.hasUnapprovedBreakingChanges) {
     return {
-      icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
+      icon: <TriangleAlertIcon className={styles.checkStatusTriangleAlertIcon} />,
       label: 'Unapproved breaking changes!',
       state: 'Failed',
     };
   }
   if (check.schemaPolicyErrors?.edges.length) {
     return {
-      icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
+      icon: <TriangleAlertIcon className={styles.checkStatusTriangleAlertIcon} />,
       label: 'Schema policy errors.',
     };
   }
   if (check.baseline?.compositionErrors?.length) {
     return {
-      icon: <TriangleAlertIcon className="size-3.5 text-critical" />,
+      icon: <TriangleAlertIcon className={styles.checkStatusTriangleAlertIcon} />,
       label: 'Baseline composition failed.',
       state: 'Failed',
     };
   }
   if (check.hasSchemaChanges) {
     return {
-      icon: <GitCompareIcon className="size-3.5" />,
+      icon: <GitCompareIcon className={styles.checkStatusGitCompareIcon} />,
       label: changedLabel,
       state: 'Schema changed',
     };
   }
   return {
-    icon: <CheckIcon className="size-3.5 text-success" />,
+    icon: <CheckIcon className={styles.checkStatusCheckIcon} />,
     label: 'Composition succeeded.',
     state: 'No changes',
   };
@@ -1464,7 +1489,7 @@ function checkStatusTrailing(check: CheckStatusFlags, changedLabel: string) {
   return (
     <StatusTooltip
       icon={
-        <span className="inline-flex items-center gap-1.5 text-xs text-fg-muted">
+        <span className={styles.checkStatusTrailingSpan}>
           {status.icon}
           {status.state}
         </span>
@@ -1591,9 +1616,9 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
 
   if (query.fetching || query.stale) {
     return (
-      <div className="flex h-fit flex-1 items-center justify-center self-center">
-        <div className="flex flex-col items-center text-sm text-fg-secondary">
-          <span className="mb-3">
+      <div className={styles.activeSchemaCheckDiv}>
+        <div className={styles.activeSchemaCheckDiv2}>
+          <span className={styles.activeSchemaCheckSpan}>
             <Spinner variants={{ size: 'lg' }} />
           </span>
           Loading Schema Check...
@@ -1615,7 +1640,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
   if (!schemaCheck || !query.data?.project) {
     return (
       <EmptyList
-        className="border-0"
+        className={styles.activeSchemaCheckEmptyList}
         title="Check not found"
         description="Learn how to check your schema with Hive CLI"
         docsUrl="/schema-registry#check-a-schema"
@@ -1626,14 +1651,14 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
   const reasons = failureReasons(schemaCheck);
 
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col">
-      <div className="py-6">
+    <div className={styles.activeSchemaCheckDiv3}>
+      <div className={styles.activeSchemaCheckDiv4}>
         <Title>Check {schemaCheck.id}</Title>
         <Subtitle>Detailed view of the schema check</Subtitle>
       </div>
-      <div className="mb-3">
-        <div className="flex items-center gap-4 rounded-md border bg-surface-card px-5 py-4">
-          <div className="min-w-0 flex-1">
+      <div className={styles.activeSchemaCheckDiv5}>
+        <div className={styles.activeSchemaCheckDiv6}>
+          <div className={styles.activeSchemaCheckDiv7}>
             <DescriptionList
               variants={{ termStyle: 'title', columns: 'auto' }}
               rows={[
@@ -1644,9 +1669,9 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                       description:
                         schemaCheck.__typename === 'FailedSchemaCheck' ? (
                           <>
-                            <span className="text-critical">Failed</span>
+                            <span className={styles.activeSchemaCheckSpan2}>Failed</span>
                             {reasons.length ? (
-                              <span className="block text-xs text-fg-secondary">
+                              <span className={styles.activeSchemaCheckSpan3}>
                                 {reasons.join(' · ')}
                               </span>
                             ) : null}
@@ -1706,7 +1731,7 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
             />
           </div>
           {schemaCheck.__typename === 'FailedSchemaCheck' && schemaCheck.canBeApproved ? (
-            <div className="shrink-0">
+            <div className={styles.activeSchemaCheckDiv8}>
               {schemaCheck.canBeApprovedByViewer ? (
                 <Popover
                   open={approvalOpen}
@@ -1715,9 +1740,9 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                     <Button variant="destructive" disabled={approvalOpen}>
                       Approve{' '}
                       {approvalOpen ? (
-                        <ChevronUp className="ml-2 size-4" />
+                        <ChevronUp className={styles.activeSchemaCheckChevronUp} />
                       ) : (
-                        <ChevronDown className="ml-2 size-4" />
+                        <ChevronDown className={styles.activeSchemaCheckChevronDown} />
                       )}
                     </Button>
                   }
@@ -1737,13 +1762,13 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
           ) : null}
         </div>
         {schemaCheck.__typename === 'SuccessfulSchemaCheck' && schemaCheck.isApproved ? (
-          <div className="py-6">
-            <div className="flex flex-row items-center gap-x-6 rounded-md border border-line-subtle p-4 font-medium text-fg-secondary">
+          <div className={styles.activeSchemaCheckDiv4}>
+            <div className={styles.activeSchemaCheckDiv9}>
               <div>
                 <Tooltip
                   trigger={
-                    <span className="inline-flex">
-                      <BadgeCheck className="size-6 text-success" />
+                    <span className={styles.activeSchemaCheckSpan4}>
+                      <BadgeCheck className={styles.activeSchemaCheckBadgeCheck} />
                     </span>
                   }
                   content={
@@ -1758,25 +1783,25 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                 />
               </div>
               <div>
-                <p className="text-sm leading-none font-medium">
+                <p className={styles.activeSchemaCheckP}>
                   {schemaCheck.approvedBy?.displayName ??
                     schemaCheck.cliApprovalMetadata?.displayName ??
                     'unknown'}
                 </p>
-                <p className="text-sm text-fg-secondary">
+                <p className={styles.activeSchemaCheckP2}>
                   {schemaCheck.approvedBy?.email ??
                     schemaCheck.cliApprovalMetadata?.email ??
                     'unknown'}
                 </p>
               </div>
               {schemaCheck.approvalComment ? (
-                <div className="text-sm text-fg italic">
+                <div className={styles.activeSchemaCheckDiv10}>
                   <span>„ </span>
                   {schemaCheck.approvalComment}
                   <span> ”</span>
                 </div>
               ) : (
-                <div className="text-sm italic">
+                <div className={styles.activeSchemaCheckDiv11}>
                   manually approved this schema check without a comment
                 </div>
               )}

@@ -24,14 +24,6 @@ export const extendBaseSchemaDiv = style({
 export const extendBaseSchemaDiv2 = style({
   '@layer': {
     [layer]: {
-      color: 'var(--color-critical)',
-    },
-  },
-});
-
-export const extendBaseSchemaDiv3 = style({
-  '@layer': {
-    [layer]: {
       display: 'flex',
       alignItems: 'center',
       columnGap: 'calc(var(--spacing) * 3)',
@@ -102,71 +94,6 @@ globalStyle(`:where(${targetSettingsPageDiv} > :not(:last-child))`, {
       vars: {
         '--tw-space-y-reverse': '0',
       },
-    },
-  },
-});
-
-export const justSavedLabelDiv = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-      color: 'var(--color-success)',
-      fontStyle: 'italic',
-      WebkitFontSmoothing: 'auto',
-      MozOsxFontSmoothing: 'auto',
-    },
-  },
-});
-
-export const justSavedIndicatorCheck = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 5)',
-      height: 'calc(var(--spacing) * 5)',
-      color: 'var(--color-success)',
-    },
-  },
-});
-
-export const savedLabelDiv = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-      color: 'var(--color-fg-secondary)',
-      fontStyle: 'italic',
-      WebkitFontSmoothing: 'auto',
-      MozOsxFontSmoothing: 'auto',
-    },
-  },
-});
-
-export const savedIndicatorCheck = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 5)',
-      height: 'calc(var(--spacing) * 5)',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const unsavedChangesLabelDiv = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-      color: 'var(--color-accent)',
-      fontStyle: 'italic',
-      WebkitFontSmoothing: 'auto',
-      MozOsxFontSmoothing: 'auto',
     },
   },
 });

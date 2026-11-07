@@ -31,6 +31,7 @@ import { FragmentType, graphql, useFragment } from '@/gql';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Outlet, useRouter } from '@tanstack/react-router';
+import * as styles from './organization-settings.css';
 
 const DeleteSlackIntegrationMutation = graphql(`
   mutation Integrations_DeleteSlackIntegration($input: OrganizationSelectorInput!) {
@@ -72,7 +73,7 @@ function GitHubIntegrationSection(props: {
   );
 
   return organization.hasGitHubIntegration ? (
-    <div className="flex flex-row justify-start gap-3">
+    <div className={styles.gitHubIntegrationSectionDiv}>
       <Button
         variant="destructive"
         disabled={deleteGitHubMutation.fetching}
@@ -84,7 +85,7 @@ function GitHubIntegrationSection(props: {
           });
         }}
       >
-        <GitHubIcon className="mr-2" />
+        <GitHubIcon className={styles.gitHubIntegrationSectionGitHubIcon} />
         Disconnect GitHub
       </Button>
       <Button
@@ -96,7 +97,7 @@ function GitHubIntegrationSection(props: {
     </div>
   ) : (
     <Button anchor={{ href: `${env.graphqlPublicOrigin}/api/github/connect/${organization.slug}` }}>
-      <GitHubIcon className="mr-2" />
+      <GitHubIcon className={styles.gitHubIntegrationSectionGitHubIcon} />
       Connect GitHub
     </Button>
   );
@@ -131,12 +132,12 @@ function SlackIntegrationSection(props: {
         });
       }}
     >
-      <SlackIcon className="mr-2" />
+      <SlackIcon className={styles.slackIntegrationSectionSlackIcon} />
       Disconnect Slack
     </Button>
   ) : (
     <Button anchor={{ href: `${env.graphqlPublicOrigin}/api/slack/connect/${organization.slug}` }}>
-      <SlackIcon className="mr-2" />
+      <SlackIcon className={styles.slackIntegrationSectionSlackIcon2} />
       Connect Slack
     </Button>
   );
@@ -243,7 +244,7 @@ const OrganizationSettingsContent = (props: {
   );
 
   return (
-    <div className="space-y-12">
+    <div className={styles.organizationSettingsContentDiv}>
       <ResourceDetails id={organization.id} label="Organization ID" />
       {organization.viewerCanModifySlug && (
         <>
@@ -252,8 +253,8 @@ const OrganizationSettingsContent = (props: {
             description={
               <p>
                 This is your organization's URL namespace on Hive Console. Changing it{' '}
-                <span className="font-bold">will invalidate</span> any existing links to your
-                organization.
+                <span className={styles.organizationSettingsContentSpan}>will invalidate</span> any
+                existing links to your organization.
               </p>
             }
             docsLink={{
@@ -477,7 +478,7 @@ function OrganizationPolicySettings(props: {
         currentState={currentOrganization.schemaPolicy}
       >
         {({ allowOverrides, setAllowOverrides }) => (
-          <div className="flex items-center pt-2 pl-1">
+          <div className={styles.organizationPolicySettingsDiv}>
             <Checkbox
               id="allowOverrides"
               checked={allowOverrides}
@@ -485,7 +486,7 @@ function OrganizationPolicySettings(props: {
               onCheckedChange={setAllowOverrides}
               disabled={!currentOrganization.viewerCanModifySchemaPolicy}
             />
-            <label htmlFor="allowOverrides" className="ml-2 inline-block text-sm text-fg-default">
+            <label htmlFor="allowOverrides" className={styles.organizationPolicySettingsLabel}>
               Allow projects to override or disable rules
             </label>
           </div>
@@ -577,7 +578,7 @@ export function OrganizationSettingsPage() {
     <>
       <Meta title="Organization settings" />
       {currentOrganization ? (
-        <LayoutContent className="flex flex-col gap-y-10">
+        <LayoutContent className={styles.organizationSettingsPageLayoutContent}>
           <PageLayout>
             <Navigation
               aria-label="Settings"
@@ -591,7 +592,7 @@ export function OrganizationSettingsPage() {
               }))}
             />
             <PageLayoutContent>
-              <div className="space-y-12">
+              <div className={styles.organizationSettingsPageDiv}>
                 <Outlet />
               </div>
             </PageLayoutContent>

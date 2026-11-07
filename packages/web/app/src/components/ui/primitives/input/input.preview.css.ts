@@ -18,24 +18,13 @@ export const div2 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
-      width: 'calc(var(--spacing) * 72)',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
       flexWrap: 'wrap',
       gap: 'calc(var(--spacing) * 6)',
     },
   },
 });
 
-export const div4 = style({
+export const div3 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -49,7 +38,7 @@ export const div4 = style({
   },
 });
 
-export const div5 = style({
+export const div4 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -60,34 +49,23 @@ export const div5 = style({
       borderStyle: 'var(--tw-border-style)',
       borderWidth: '1px',
       borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-3)',
+      backgroundColor: 'var(--color-surface-overlay)',
       padding: 'calc(var(--spacing) * 6)',
     },
   },
 });
 
+export const div5 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 3)',
+    },
+  },
+});
+
 export const div6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: 'calc(var(--spacing) * 72)',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div8 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -101,7 +79,7 @@ export const div8 = style({
   },
 });
 
-export const div9 = style({
+export const div7 = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 80)',
@@ -109,25 +87,7 @@ export const div9 = style({
   },
 });
 
-export const div10 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div11 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 80)',
-    },
-  },
-});
-
-export const div12 = style({
+export const div8 = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 96)',

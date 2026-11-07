@@ -82,8 +82,8 @@ export function PendingIndicator() {
 
 export function JustSavedLabel() {
   return (
-    <div className="inline-flex flex-row items-center gap-1 text-success italic subpixel-antialiased">
-      <Check className="size-5 text-success" />
+    <div className={styles.justSavedLabelDiv}>
+      <Check className={styles.justSavedLabelCheck} />
       <span>Saved just now</span>
     </div>
   );
@@ -91,8 +91,8 @@ export function JustSavedLabel() {
 
 export function SavedLabel() {
   return (
-    <div className="inline-flex flex-row items-center gap-1 text-fg-secondary italic subpixel-antialiased">
-      <Check className="size-5 text-fg-secondary" />
+    <div className={styles.savedLabelDiv}>
+      <Check className={styles.savedLabelCheck} />
       <span>All changes saved</span>
     </div>
   );
@@ -100,7 +100,7 @@ export function SavedLabel() {
 
 export function UnsavedChangesLabel() {
   return (
-    <div className="inline-flex flex-row items-center gap-2 text-accent italic subpixel-antialiased">
+    <div className={styles.unsavedChangesLabelDiv}>
       <PendingIndicator />
       <span>Unsaved changes</span>
     </div>

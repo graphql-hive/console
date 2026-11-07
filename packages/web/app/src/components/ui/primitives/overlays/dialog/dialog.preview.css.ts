@@ -13,26 +13,12 @@ export const collectionFieldsDiv = style({
   },
 });
 
-export const collectionFieldsLabel = style({
+export const collectionFieldsDiv2 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
       flexDirection: 'column',
       gap: 'calc(var(--spacing) * 1.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const collectionFieldsLabel2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 1.5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
     },
   },
 });

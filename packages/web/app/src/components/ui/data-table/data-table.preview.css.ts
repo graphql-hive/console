@@ -19,51 +19,13 @@ export const div2 = style({
       borderStyle: 'var(--tw-border-style)',
       borderWidth: '1px',
       borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-3)',
+      backgroundColor: 'var(--color-surface-overlay)',
       padding: 'calc(var(--spacing) * 6)',
     },
   },
 });
 
-export const div3 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div4 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div5 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div6 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const serverSortedTableDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
+export const serverSortedTableDiv = div;
 
 export const serverSortedTableP = style({
   '@layer': {
@@ -76,21 +38,7 @@ export const serverSortedTableP = style({
   },
 });
 
-export const sortLoadingTableDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
+export const sortLoadingTableDiv = div;
 
 export const headerlessListDiv = style({
   '@layer': {
@@ -100,31 +48,9 @@ export const headerlessListDiv = style({
   },
 });
 
-export const div8 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
+export const cursorPaginatedTableDiv = div;
 
-export const div9 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const cursorPaginatedTableDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div10 = style({
+export const div3 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -135,58 +61,9 @@ export const div10 = style({
   },
 });
 
-export const div11 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      width: '52rem',
-      flexDirection: 'column',
-      gap: 'calc(var(--spacing) * 6)',
-    },
-  },
-});
+export const rowStatesTableDiv = div;
 
-export const div12 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div13 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div14 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const rowStatesTableDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div15 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
-    },
-  },
-});
-
-export const div16 = style({
+export const div4 = style({
   '@layer': {
     [layer]: {
       padding: 'calc(var(--spacing) * 4)',
@@ -197,7 +74,7 @@ export const div16 = style({
   },
 });
 
-globalStyle(`:where(${div16} > :not(:last-child))`, {
+globalStyle(`:where(${div4} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       marginBlockStart: 'calc(var(--spacing) * var(--tw-space-y-reverse))',
@@ -217,18 +94,10 @@ export const span = style({
   },
 });
 
-export const div17 = style({
+export const div5 = style({
   '@layer': {
     [layer]: {
       color: 'var(--color-fg-muted)',
-    },
-  },
-});
-
-export const div18 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
     },
   },
 });
@@ -271,32 +140,10 @@ export const span5 = style({
   },
 });
 
-export const div19 = style({
+export const div6 = style({
   '@layer': {
     [layer]: {
       width: '60rem',
-    },
-  },
-});
-
-export const div20 = style({
-  '@layer': {
-    [layer]: {
-      width: '56rem',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-3)',
-      padding: 'calc(var(--spacing) * 6)',
-    },
-  },
-});
-
-export const div21 = style({
-  '@layer': {
-    [layer]: {
-      width: '52rem',
     },
   },
 });

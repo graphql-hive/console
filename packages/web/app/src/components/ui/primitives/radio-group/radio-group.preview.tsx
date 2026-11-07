@@ -4,6 +4,7 @@ import { Plan, planCollection } from '@/components/organization/billing/BillingP
 import { BillingPlanType } from '@/gql/graphql';
 import { StatusDot } from '../status-dot/status-dot';
 import { RadioGroup } from './radio-group';
+import * as styles from './radio-group.preview.css';
 
 export const nav: NavPath = 'Primitives/FormControls/RadioGroup';
 
@@ -109,7 +110,7 @@ export const AsCard = createPreview(() => {
   const [value, setValue] = useState('normal');
 
   return (
-    <div className="w-[493px]">
+    <div className={styles.div}>
       <RadioGroup
         variant="as-card"
         onSurface="base"
@@ -127,8 +128,8 @@ export const Orientations = createPreview(() => {
   const [buttons, setButtons] = useState('7d');
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="w-[760px]">
+    <div className={styles.div2}>
+      <div className={styles.div3}>
         <RadioGroup
           variant="as-card"
           orientation="vertical"
@@ -157,7 +158,7 @@ export const AsCardFloating = createPreview(() => {
   const [value, setValue] = useState('high');
 
   return (
-    <div className="w-[533px] rounded-md border border-line bg-surface-overlay p-5">
+    <div className={styles.div4}>
       <RadioGroup
         variant="as-card"
         onSurface="raised"
@@ -179,13 +180,7 @@ export const Playground = createPreview({
   render: v => {
     const [value, setValue] = useState('normal');
     return (
-      <div
-        className={
-          v.onSurface === 'raised'
-            ? 'w-[46rem] rounded-md border border-line bg-surface-overlay p-5'
-            : 'w-[46rem]'
-        }
-      >
+      <div className={v.onSurface === 'raised' ? styles.div5 : styles.div6}>
         <RadioGroup
           variant={v.variant}
           onSurface={v.onSurface}
@@ -208,7 +203,7 @@ export const PlanCards = createPreview(() => {
   const [value, setValue] = useState('pro');
 
   return (
-    <div className="w-[62rem]">
+    <div className={styles.div7}>
       <RadioGroup
         variant="as-card"
         orientation="horizontal"

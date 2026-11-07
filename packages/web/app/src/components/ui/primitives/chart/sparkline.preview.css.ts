@@ -17,40 +17,7 @@ export const div = style({
 export const div2 = style({
   '@layer': {
     [layer]: {
-      paddingTop: 'calc(var(--spacing) * 4)',
-      paddingBottom: 'calc(var(--spacing) * 5)',
-    },
-  },
-});
-
-export const h4 = style({
-  '@layer': {
-    [layer]: {
-      paddingInline: 'calc(var(--spacing) * 4)',
-      paddingTop: 'calc(var(--spacing) * 4)',
-      fontSize: 'var(--text-lg)',
-      lineHeight: 'var(--tw-leading, var(--text-lg--line-height))',
-      fontWeight: 'var(--font-weight-bold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
-    },
-  },
-});
-
-export const div3 = style({
-  '@layer': {
-    [layer]: {
       width: '24rem',
-    },
-  },
-});
-
-export const div4 = style({
-  '@layer': {
-    [layer]: {
-      paddingTop: 'calc(var(--spacing) * 4)',
-      paddingBottom: 'calc(var(--spacing) * 5)',
     },
   },
 });

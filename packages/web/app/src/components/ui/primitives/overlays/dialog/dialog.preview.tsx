@@ -4,6 +4,7 @@ import { Button } from '../../button/button';
 import { Input } from '../../input/input';
 import { Label } from '../../label/label';
 import { Dialog } from './dialog';
+import * as styles from './dialog.preview.css';
 
 export const nav: NavPath = 'Primitives/Overlays/Dialog';
 
@@ -17,12 +18,12 @@ export const nav: NavPath = 'Primitives/Overlays/Dialog';
 
 function CollectionFields() {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
+    <div className={styles.collectionFieldsDiv}>
+      <div className={styles.collectionFieldsDiv2}>
         <Label htmlFor="collection-name" label="Collection Name" />
         <Input id="collection-name" onSurface="raised" placeholder="Checkout" />
       </div>
-      <div className="flex flex-col gap-1.5">
+      <div className={styles.collectionFieldsDiv2}>
         <Label htmlFor="collection-description" label="Collection Description" />
         <Input
           id="collection-description"
@@ -61,7 +62,7 @@ export const Default = createPreview(() => {
 
 /** The four widths. `md` is the default. */
 export const Widths = createPreview(() => (
-  <div className="flex flex-wrap gap-3">
+  <div className={styles.div}>
     {(['sm', 'md', 'lg', 'xl'] as const).map(width => (
       <Dialog
         key={width}
@@ -71,7 +72,7 @@ export const Widths = createPreview(() => (
         description="The dialog is full width below this width's max-width and never wider than it."
         footer={<Button variant="primary">Done</Button>}
       >
-        <p className="text-sm text-fg-default">
+        <p className={styles.p}>
           Contracts, delete confirmations and most forms sit at md. Role editors and the OIDC debug
           view need xl.
         </p>
@@ -101,9 +102,9 @@ export const LongContent = createPreview(() => (
       </>
     }
   >
-    <div className="flex flex-col gap-3 text-sm">
+    <div className={styles.div2}>
       {Array.from({ length: 24 }, (_, i) => (
-        <p key={i} className="text-fg-default">
+        <p key={i} className={styles.p2}>
           Line {i + 1}: lab.environment.set('token', await fetch('/auth').then(r =&gt; r.text()))
         </p>
       ))}

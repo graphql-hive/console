@@ -40,16 +40,6 @@ export const breakingChangesFormSpan = style({
   },
 });
 
-export const breakingChangesFormSpan2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
 export const breakingChangesFormDiv4 = style({
   '@layer': {
     [layer]: {
@@ -152,75 +142,11 @@ export const breakingChangesFormDiv12 = style([]);
 globalStyle(`:where(${breakingChangesFormDiv12} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const breakingChangesFormDiv13 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-semibold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-    },
-  },
-});
-
-export const breakingChangesFormDiv14 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const breakingChangesFormDiv15 = style({
-  '@layer': {
-    [layer]: {
-      maxWidth: '420px',
-    },
-  },
-});
-
-export const breakingChangesFormDiv16 = style([]);
-
-globalStyle(`:where(${breakingChangesFormDiv16} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
       marginBlockStart: 'calc(var(--spacing) * var(--tw-space-y-reverse))',
       marginBlockEnd: 'calc(var(--spacing) * calc(1 - var(--tw-space-y-reverse)))',
       vars: {
         '--tw-space-y-reverse': '0',
       },
-    },
-  },
-});
-
-export const breakingChangesFormDiv17 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-semibold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-    },
-  },
-});
-
-export const breakingChangesFormDiv18 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
     },
   },
 });
@@ -249,40 +175,13 @@ globalStyle(`:where(${breakingChangesFormUl} > :not(:last-child))`, {
   },
 });
 
-export const breakingChangesFormSpan3 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-semibold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-    },
-  },
-});
+export const breakingChangesFormSpan2 = breakingChangesFormDiv8;
 
-export const breakingChangesFormSpan4 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-semibold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-    },
-  },
-});
+export const breakingChangesFormSpan3 = breakingChangesFormDiv8;
 
-export const breakingChangesFormSpan5 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-semibold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-    },
-  },
-});
+export const breakingChangesFormSpan4 = breakingChangesFormDiv8;
 
-export const breakingChangesFormDiv19 = style({
+export const breakingChangesFormDiv13 = style({
   '@layer': {
     [layer]: {
       paddingLeft: 'calc(var(--spacing) * 2)',
@@ -290,7 +189,7 @@ export const breakingChangesFormDiv19 = style({
   },
 });
 
-globalStyle(`:where(${breakingChangesFormDiv19} > :not(:last-child))`, {
+globalStyle(`:where(${breakingChangesFormDiv13} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
@@ -302,7 +201,7 @@ globalStyle(`:where(${breakingChangesFormDiv19} > :not(:last-child))`, {
   },
 });
 
-export const breakingChangesFormDiv20 = style({
+export const breakingChangesFormDiv14 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -312,7 +211,7 @@ export const breakingChangesFormDiv20 = style({
   },
 });
 
-export const breakingChangesFormDiv21 = style({
+export const breakingChangesFormDiv15 = style({
   '@layer': {
     [layer]: {
       width: 'auto',
@@ -329,7 +228,7 @@ export const breakingChangesFormDiv21 = style({
   },
 });
 
-globalStyle(`:where(${breakingChangesFormDiv21} > :not(:last-child))`, {
+globalStyle(`:where(${breakingChangesFormDiv15} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
@@ -341,18 +240,7 @@ globalStyle(`:where(${breakingChangesFormDiv21} > :not(:last-child))`, {
   },
 });
 
-export const breakingChangesFormDiv22 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-semibold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-semibold)',
-      },
-    },
-  },
-});
-
-export const breakingChangesFormDiv23 = style({
+export const breakingChangesFormDiv16 = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-sm)',
@@ -361,25 +249,7 @@ export const breakingChangesFormDiv23 = style({
   },
 });
 
-export const breakingChangesFormDiv24 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const breakingChangesFormDiv25 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-    },
-  },
-});
-
-export const breakingChangesFormDiv26 = style({
+export const breakingChangesFormDiv17 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -389,7 +259,7 @@ export const breakingChangesFormDiv26 = style({
   },
 });
 
-export const breakingChangesFormSpan6 = style({
+export const breakingChangesFormSpan5 = style({
   '@layer': {
     [layer]: {
       color: 'var(--color-critical)',

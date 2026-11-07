@@ -4,31 +4,32 @@ import { Button } from '../button/button';
 import { Card } from '../card/card';
 import { Menu } from '../floating/menu/menu';
 import { Switch } from './switch';
+import * as styles from './switch.preview.css';
 
 export const nav: NavPath = 'Primitives/FormControls/Switch';
 
 export const Sizes = createPreview(() => (
-  <div className="flex items-center gap-6">
+  <div className={styles.div}>
     <Switch size="standard" defaultChecked />
     <Switch size="small" defaultChecked />
   </div>
 ));
 
 export const States = createPreview(() => (
-  <div className="flex flex-col gap-4 text-control">
-    <label className="flex items-center gap-3">
+  <div className={styles.div2}>
+    <label className={styles.label}>
       <Switch />
       Off
     </label>
-    <label className="flex items-center gap-3">
+    <label className={styles.label}>
       <Switch defaultChecked />
       On
     </label>
-    <label className="flex items-center gap-3">
+    <label className={styles.label}>
       <Switch disabled />
       Disabled, off
     </label>
-    <label className="flex items-center gap-3">
+    <label className={styles.label}>
       <Switch disabled defaultChecked />
       Disabled, on
     </label>
@@ -39,12 +40,12 @@ export const InSettingsRow = createPreview(() => {
   const [enabled, setEnabled] = useState(true);
 
   return (
-    <div className="w-96">
+    <div className={styles.div3}>
       <Card>
-        <div className="flex items-center justify-between">
+        <div className={styles.div4}>
           <div>
-            <div className="text-sm font-medium text-fg">Alert enabled</div>
-            <div className="text-control text-fg-secondary">
+            <div className={styles.div5}>Alert enabled</div>
+            <div className={styles.div6}>
               {enabled ? 'Evaluating every 5 minutes.' : 'Paused, no notifications will be sent.'}
             </div>
           </div>

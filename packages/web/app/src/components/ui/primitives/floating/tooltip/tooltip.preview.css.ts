@@ -24,23 +24,6 @@ export const div = style({
   },
 });
 
-export const button = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-warning)',
-    },
-  },
-});
-
-export const circleHelp = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
 export const p = style({
   '@layer': {
     [layer]: {
@@ -76,45 +59,9 @@ export const div4 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div5 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div6 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
       alignItems: 'center',
       gap: 'calc(var(--spacing) * 3)',
       paddingTop: 'calc(var(--spacing) * 10)',
-    },
-  },
-});
-
-export const div7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const div8 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      gap: 'calc(var(--spacing) * 3)',
     },
   },
 });
@@ -127,7 +74,7 @@ export const span2 = style({
   },
 });
 
-export const div9 = style({
+export const div5 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -156,7 +103,7 @@ export const p2 = style({
   },
 });
 
-export const div10 = style({
+export const div6 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -168,21 +115,12 @@ export const div10 = style({
 export const span3 = style({
   '@layer': {
     [layer]: {
-      color: 'var(--color-warning)',
+      color: 'var(--color-fg-default)',
     },
   },
 });
 
-export const info2 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const div11 = style({
+export const div7 = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-sm)',
@@ -196,15 +134,7 @@ export const div11 = style({
   },
 });
 
-export const p3 = style({
-  '@layer': {
-    [layer]: {
-      marginTop: 'var(--spacing)',
-    },
-  },
-});
-
-export const div12 = style({
+export const div8 = style({
   '@layer': {
     [layer]: {
       padding: 'calc(var(--spacing) * 16)',

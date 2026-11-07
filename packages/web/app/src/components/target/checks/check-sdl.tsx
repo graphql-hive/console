@@ -3,6 +3,7 @@ import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import type { TabbedViewItem } from '@/components/ui/tabbed-view/tabbed-view';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
+import * as styles from './check-sdl.css';
 
 const CheckSdlQuery = graphql(`
   query CheckSdlQuery($selector: TargetSelectorInput!, $schemaCheckId: ID!) {
@@ -143,11 +144,7 @@ export function withContractCheckSdl<
 }
 
 function TabMessage(props: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 px-5 py-3 text-xs text-fg-secondary">
-      {props.children}
-    </div>
-  );
+  return <div className={styles.tabMessageDiv2}>{props.children}</div>;
 }
 
 // The body fills the viewport below the tab strip and toolbar (5rem), whatever it holds, so the
@@ -158,12 +155,12 @@ export function SdlPane(props: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full [--code-max-h:calc(100vh-5rem)]">
-      <div className="flex items-center justify-between border-b border-line-subtle px-2 py-1">
-        <div className="px-2 font-bold">{props.title}</div>
-        <div className="ml-auto flex h-[36px] items-center px-2">{props.actions}</div>
+    <div className={styles.sdlPaneDiv6}>
+      <div className={styles.sdlPaneDiv7}>
+        <div className={styles.sdlPaneDiv8}>{props.title}</div>
+        <div className={styles.sdlPaneDiv9}>{props.actions}</div>
       </div>
-      <div className="flex min-h-[var(--code-max-h)] flex-col">{props.children}</div>
+      <div className={styles.sdlPaneDiv10}>{props.children}</div>
     </div>
   );
 }
@@ -195,7 +192,7 @@ export function withSdlState<T>(
         {message ? (
           <TabMessage>{message}</TabMessage>
         ) : (
-          <div className="flex grow flex-col items-center justify-center gap-3 text-sm text-fg-secondary">
+          <div className={styles.withSdlStateDiv2}>
             <Spinner variants={{ size: 'lg' }} label="Loading schema" />
             Loading schema…
           </div>

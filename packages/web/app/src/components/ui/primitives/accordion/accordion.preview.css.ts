@@ -60,15 +60,7 @@ export const div3 = style({
   },
 });
 
-export const span = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
+export const span = labelledSpan;
 
 export const p = style({
   '@layer': {
@@ -131,17 +123,6 @@ export const div7 = style({
   '@layer': {
     [layer]: {
       width: '28rem',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-2)',
-      padding: 'calc(var(--spacing) * 4)',
-      selectors: {
-        '&:where(.dark, .dark *)': {
-          backgroundColor: 'var(--color-neutral-3)',
-        },
-      },
     },
   },
 });
@@ -173,41 +154,7 @@ export const folderOpenIcon = style({
   },
 });
 
-export const folderIcon = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
-
-export const button = style({
-  '@layer': {
-    [layer]: {
-      borderRadius: 'var(--radius-sm)',
-      padding: 'var(--spacing)',
-      '@media': {
-        '(hover: hover)': {
-          selectors: {
-            '&:hover': {
-              backgroundColor: 'var(--color-neutral-4)',
-            },
-          },
-        },
-      },
-    },
-  },
-});
-
-export const moreHorizontal = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
+export const folderIcon = folderOpenIcon;
 
 export const ul = style({
   '@layer': {
@@ -232,20 +179,23 @@ globalStyle(`:where(${ul} > :not(:last-child))`, {
   },
 });
 
-export const div9 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 96)',
-    },
-  },
-});
-
 export const span3 = style({
   '@layer': {
     [layer]: {
       display: 'inline-flex',
       alignItems: 'center',
       gap: 'calc(var(--spacing) * 2)',
+    },
+  },
+});
+
+export const div9 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
+      width: '56rem',
+      flexDirection: 'column',
+      gap: 'calc(var(--spacing) * 10)',
     },
   },
 });
@@ -258,12 +208,4 @@ export const div10 = style({
   },
 });
 
-export const span4 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
+export const span4 = labelledSpan;

@@ -194,3 +194,68 @@ export const dangerousChangesFormSpan5 = style({
     },
   },
 });
+
+export const justSavedLabelDiv = style({
+  '@layer': {
+    [layer]: {
+      display: 'inline-flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'var(--spacing)',
+      color: 'var(--color-success)',
+      fontStyle: 'italic',
+      WebkitFontSmoothing: 'auto',
+      MozOsxFontSmoothing: 'auto',
+    },
+  },
+});
+
+export const justSavedLabelCheck = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 5)',
+      height: 'calc(var(--spacing) * 5)',
+      color: 'var(--color-success)',
+    },
+  },
+});
+
+export const savedLabelDiv = style({
+  '@layer': {
+    [layer]: {
+      display: 'inline-flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'var(--spacing)',
+      color: 'var(--color-fg-secondary)',
+      fontStyle: 'italic',
+      WebkitFontSmoothing: 'auto',
+      MozOsxFontSmoothing: 'auto',
+    },
+  },
+});
+
+export const savedLabelCheck = style({
+  '@layer': {
+    [layer]: {
+      width: 'calc(var(--spacing) * 5)',
+      height: 'calc(var(--spacing) * 5)',
+      color: 'var(--color-fg-secondary)',
+    },
+  },
+});
+
+export const unsavedChangesLabelDiv = style({
+  '@layer': {
+    [layer]: {
+      display: 'inline-flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 'calc(var(--spacing) * 2)',
+      color: 'var(--color-accent)',
+      fontStyle: 'italic',
+      WebkitFontSmoothing: 'auto',
+      MozOsxFontSmoothing: 'auto',
+    },
+  },
+});

@@ -75,101 +75,18 @@ export const annotatedSDLViewShieldAlertIcon = style({
   },
 });
 
-export const sDLSingleViewDiv = style({
+export const sDLSingleDiffToggleViewSpan = style({
   '@layer': {
     [layer]: {
-      width: '100%',
-    },
-  },
-});
-
-export const sDLSingleViewDiv2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderBottomStyle: 'var(--tw-border-style)',
-      borderBottomWidth: '1px',
-      borderColor: 'var(--color-line-subtle)',
-      paddingInline: 'calc(var(--spacing) * 2)',
-      paddingBlock: 'var(--spacing)',
-    },
-  },
-});
-
-export const sDLSingleViewDiv3 = style({
-  '@layer': {
-    [layer]: {
-      paddingInline: 'calc(var(--spacing) * 2)',
-      fontWeight: 'var(--font-weight-bold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
-    },
-  },
-});
-
-export const sDLSingleViewDiv4 = style({
-  '@layer': {
-    [layer]: {
-      marginLeft: 'auto',
-      display: 'flex',
-      height: '36px',
-      alignItems: 'center',
-      paddingInline: 'calc(var(--spacing) * 2)',
+      marginRight: 'calc(var(--spacing) * 2)',
+      fontSize: 'var(--text-xs)',
+      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
+      color: 'var(--color-fg-muted)',
     },
   },
 });
 
 export const sDLSingleDiffToggleViewDiv = style({
-  '@layer': {
-    [layer]: {
-      width: '100%',
-    },
-  },
-});
-
-export const sDLSingleDiffToggleViewDiv2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderBottomStyle: 'var(--tw-border-style)',
-      borderBottomWidth: '1px',
-      borderColor: 'var(--color-line-subtle)',
-      paddingInline: 'calc(var(--spacing) * 2)',
-      paddingBlock: 'var(--spacing)',
-    },
-  },
-});
-
-export const sDLSingleDiffToggleViewDiv3 = style({
-  '@layer': {
-    [layer]: {
-      paddingInline: 'calc(var(--spacing) * 2)',
-      fontWeight: 'var(--font-weight-bold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
-    },
-  },
-});
-
-export const sDLSingleDiffToggleViewDiv4 = style({
-  '@layer': {
-    [layer]: {
-      marginLeft: 'auto',
-      display: 'flex',
-      height: '36px',
-      alignItems: 'center',
-      paddingInline: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
-
-export const sDLSingleDiffToggleViewDiv5 = style({
   '@layer': {
     [layer]: {
       marginLeft: 'calc(var(--spacing) * 2)',
@@ -179,7 +96,7 @@ export const sDLSingleDiffToggleViewDiv5 = style({
   },
 });
 
-globalStyle(`:where(${sDLSingleDiffToggleViewDiv5} > :not(:last-child))`, {
+globalStyle(`:where(${sDLSingleDiffToggleViewDiv} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       marginInlineStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-x-reverse))',
@@ -236,133 +153,6 @@ export const approveFailedSchemaCheckModalDiv2 = style({
   },
 });
 
-export const approveFailedSchemaCheckModalDiv3 = style([]);
-
-globalStyle(`:where(${approveFailedSchemaCheckModalDiv3} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalH42 = style({
-  '@layer': {
-    [layer]: {
-      lineHeight: '1',
-      fontWeight: 'var(--font-weight-medium)',
-      vars: {
-        '--tw-leading': '1',
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalP2 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalDiv4 = style({
-  '@layer': {
-    [layer]: {
-      textAlign: 'right',
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalDiv5 = style([]);
-
-globalStyle(`:where(${approveFailedSchemaCheckModalDiv5} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalH43 = style({
-  '@layer': {
-    [layer]: {
-      lineHeight: '1',
-      fontWeight: 'var(--font-weight-medium)',
-      vars: {
-        '--tw-leading': '1',
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalDiv6 = style({
-  '@layer': {
-    [layer]: {
-      textAlign: 'right',
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalDiv7 = style([]);
-
-globalStyle(`:where(${approveFailedSchemaCheckModalDiv7} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalH44 = style({
-  '@layer': {
-    [layer]: {
-      lineHeight: '1',
-      fontWeight: 'var(--font-weight-medium)',
-      vars: {
-        '--tw-leading': '1',
-        '--tw-font-weight': 'var(--font-weight-medium)',
-      },
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalP3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalP4 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
 export const approveFailedSchemaCheckModalSpan = style({
   '@layer': {
     [layer]: {
@@ -370,28 +160,6 @@ export const approveFailedSchemaCheckModalSpan = style({
       vars: {
         '--tw-font-weight': 'var(--font-weight-medium)',
       },
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalDiv8 = style([]);
-
-globalStyle(`:where(${approveFailedSchemaCheckModalDiv8} > :not(:last-child))`, {
-  '@layer': {
-    [layer]: {
-      marginBlockStart: 'calc(calc(var(--spacing) * 2) * var(--tw-space-y-reverse))',
-      marginBlockEnd: 'calc(calc(var(--spacing) * 2) * calc(1 - var(--tw-space-y-reverse)))',
-      vars: {
-        '--tw-space-y-reverse': '0',
-      },
-    },
-  },
-});
-
-export const approveFailedSchemaCheckModalDiv9 = style({
-  '@layer': {
-    [layer]: {
-      textAlign: 'right',
     },
   },
 });
@@ -472,26 +240,7 @@ export const breakingChangesTitleP2 = style({
   },
 });
 
-export const breakingChangesTitleH62 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'var(--spacing)',
-      fontWeight: 'var(--font-weight-bold)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
-    },
-  },
-});
-
-export const policyInfoInfoIcon = style({
-  '@layer': {
-    [layer]: {
-      height: 'calc(var(--spacing) * 3)',
-      width: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
+export const policyInfoInfoIcon = breakingChangesTitleInfoIcon;
 
 export const policyInfoP = style({
   '@layer': {
@@ -499,29 +248,6 @@ export const policyInfoP = style({
       fontSize: 'var(--text-xs)',
       lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
       color: 'var(--color-fg-default)',
-    },
-  },
-});
-
-export const policyBlockDiv = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'calc(var(--spacing) * 1.5)',
-    },
-  },
-});
-
-export const policyBlockH2 = style({
-  '@layer': {
-    [layer]: {
-      fontWeight: 'var(--font-weight-bold)',
-      color: 'var(--color-fg-default)',
-      vars: {
-        '--tw-font-weight': 'var(--font-weight-bold)',
-      },
     },
   },
 });
@@ -632,43 +358,13 @@ export const conditionalBreakingChangesMetadataSectionDiv = style({
   },
 });
 
+export const conditionalBreakingChangesMetadataSectionSpan = policyBlockSpan3;
+
+export const conditionalBreakingChangesMetadataSectionSpan2 = policyBlockSpan3;
+
+export const conditionalBreakingChangesMetadataSectionSpan3 = policyBlockSpan3;
+
 export const conditionalBreakingChangesMetadataSectionDiv2 = style({
-  '@layer': {
-    [layer]: {
-      marginTop: 'calc(var(--spacing) * 10)',
-      marginBottom: 'calc(var(--spacing) * 5)',
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
-
-export const conditionalBreakingChangesMetadataSectionSpan = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg)',
-    },
-  },
-});
-
-export const conditionalBreakingChangesMetadataSectionSpan2 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg)',
-    },
-  },
-});
-
-export const conditionalBreakingChangesMetadataSectionSpan3 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg)',
-    },
-  },
-});
-
-export const conditionalBreakingChangesMetadataSectionDiv3 = style({
   '@layer': {
     [layer]: {
       padding: 'calc(var(--spacing) * 2)',
@@ -691,7 +387,7 @@ export const conditionalBreakingChangesMetadataSectionH4 = style({
   },
 });
 
-export const conditionalBreakingChangesMetadataSectionDiv4 = style({
+export const conditionalBreakingChangesMetadataSectionDiv3 = style({
   '@layer': {
     [layer]: {
       display: 'grid',
@@ -700,7 +396,7 @@ export const conditionalBreakingChangesMetadataSectionDiv4 = style({
   },
 });
 
-globalStyle(`:where(${conditionalBreakingChangesMetadataSectionDiv4} > :not(:last-child))`, {
+globalStyle(`:where(${conditionalBreakingChangesMetadataSectionDiv3} > :not(:last-child))`, {
   '@layer': {
     [layer]: {
       borderBottomStyle: 'var(--tw-border-style)',
@@ -715,7 +411,7 @@ globalStyle(`:where(${conditionalBreakingChangesMetadataSectionDiv4} > :not(:las
   },
 });
 
-export const conditionalBreakingChangesMetadataSectionDiv5 = style({
+export const conditionalBreakingChangesMetadataSectionDiv4 = style({
   '@layer': {
     [layer]: {
       paddingBlock: 'calc(var(--spacing) * 2)',
@@ -723,7 +419,7 @@ export const conditionalBreakingChangesMetadataSectionDiv5 = style({
   },
 });
 
-export const conditionalBreakingChangesMetadataSectionDiv6 = style({
+export const conditionalBreakingChangesMetadataSectionDiv5 = style({
   '@layer': {
     [layer]: {
       overflow: 'hidden',
@@ -737,21 +433,9 @@ export const conditionalBreakingChangesMetadataSectionDiv6 = style({
   },
 });
 
-export const conditionalBreakingChangesMetadataSectionSpan4 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg)',
-    },
-  },
-});
+export const conditionalBreakingChangesMetadataSectionSpan4 = policyBlockSpan3;
 
-export const conditionalBreakingChangesMetadataSectionSpan5 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg)',
-    },
-  },
-});
+export const conditionalBreakingChangesMetadataSectionSpan5 = policyBlockSpan3;
 
 export const useDefaultSchemaViewDiv = style({
   '@layer': {
@@ -762,30 +446,6 @@ export const useDefaultSchemaViewDiv = style({
 });
 
 export const useDefaultSchemaViewDiv2 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 5)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewDiv3 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 5)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewDiv4 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 5)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewDiv5 = style({
   '@layer': {
     [layer]: {
       marginBottom: 'calc(var(--spacing) * 5)',
@@ -821,123 +481,7 @@ export const useDefaultSchemaViewArrowRight = style({
   },
 });
 
-export const useDefaultSchemaViewSpan3 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan5 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewArrowRight2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline',
-      width: 'calc(var(--spacing) * 3)',
-      height: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan6 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan7 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan8 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewArrowRight3 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline',
-      width: 'calc(var(--spacing) * 3)',
-      height: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan9 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan10 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan11 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewArrowRight4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline',
-      width: 'calc(var(--spacing) * 3)',
-      height: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewSpan12 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
-
-export const useDefaultSchemaViewDiv6 = style({
+export const useDefaultSchemaViewDiv3 = style({
   '@layer': {
     [layer]: {
       paddingInline: 'calc(var(--spacing) * 5)',
@@ -946,101 +490,27 @@ export const useDefaultSchemaViewDiv6 = style({
   },
 });
 
-export const useContractCheckViewDiv = style({
-  '@layer': {
-    [layer]: {
-      padding: 'calc(var(--spacing) * 5)',
-    },
-  },
-});
+export const useContractCheckViewDiv = useDefaultSchemaViewDiv;
 
-export const useContractCheckViewDiv2 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
+export const useContractCheckViewDiv2 = breakingChangesTitleP2;
 
-export const useContractCheckViewDiv3 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 2)',
-    },
-  },
-});
+export const useContractCheckViewDiv3 = breakingChangesTitleP2;
 
-export const useContractCheckViewSpan = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-    },
-  },
-});
+export const useContractCheckViewSpan = useDefaultSchemaViewSpan;
 
-export const useContractCheckViewSpan2 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
+export const useContractCheckViewSpan2 = useDefaultSchemaViewSpan2;
 
-export const useContractCheckViewArrowRight = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline',
-      width: 'calc(var(--spacing) * 3)',
-      height: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
+export const useContractCheckViewArrowRight = useDefaultSchemaViewArrowRight;
 
-export const useContractCheckViewSpan3 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
+export const useContractCheckViewSpan3 = useDefaultSchemaViewSpan2;
 
-export const useContractCheckViewSpan4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 'var(--spacing)',
-    },
-  },
-});
+export const useContractCheckViewSpan4 = useDefaultSchemaViewSpan;
 
-export const useContractCheckViewSpan5 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
+export const useContractCheckViewSpan5 = useDefaultSchemaViewSpan2;
 
-export const useContractCheckViewArrowRight2 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline',
-      width: 'calc(var(--spacing) * 3)',
-      height: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
+export const useContractCheckViewArrowRight2 = useDefaultSchemaViewArrowRight;
 
-export const useContractCheckViewSpan6 = style({
-  '@layer': {
-    [layer]: {
-      fontFamily: 'var(--font-mono)',
-    },
-  },
-});
+export const useContractCheckViewSpan6 = useDefaultSchemaViewSpan2;
 
 export const schemaChecksViewSpan = style({
   '@layer': {
@@ -1086,36 +556,6 @@ export const schemaChecksViewDiv2 = style({
 });
 
 export const checkStatusTriangleAlertIcon = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 3.5)',
-      height: 'calc(var(--spacing) * 3.5)',
-      color: 'var(--color-critical)',
-    },
-  },
-});
-
-export const checkStatusTriangleAlertIcon2 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 3.5)',
-      height: 'calc(var(--spacing) * 3.5)',
-      color: 'var(--color-critical)',
-    },
-  },
-});
-
-export const checkStatusTriangleAlertIcon3 = style({
-  '@layer': {
-    [layer]: {
-      width: 'calc(var(--spacing) * 3.5)',
-      height: 'calc(var(--spacing) * 3.5)',
-      color: 'var(--color-critical)',
-    },
-  },
-});
-
-export const checkStatusTriangleAlertIcon4 = style({
   '@layer': {
     [layer]: {
       width: 'calc(var(--spacing) * 3.5)',
@@ -1183,13 +623,7 @@ export const activeSchemaCheckDiv2 = style({
   },
 });
 
-export const activeSchemaCheckSpan = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
+export const activeSchemaCheckSpan = schemaChecksViewDiv2;
 
 export const activeSchemaCheckEmptyList = style({
   '@layer': {
@@ -1220,13 +654,7 @@ export const activeSchemaCheckDiv4 = style({
   },
 });
 
-export const activeSchemaCheckDiv5 = style({
-  '@layer': {
-    [layer]: {
-      marginBottom: 'calc(var(--spacing) * 3)',
-    },
-  },
-});
+export const activeSchemaCheckDiv5 = schemaChecksViewDiv2;
 
 export const activeSchemaCheckDiv6 = style({
   '@layer': {
@@ -1253,13 +681,7 @@ export const activeSchemaCheckDiv7 = style({
   },
 });
 
-export const activeSchemaCheckSpan2 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-critical)',
-    },
-  },
-});
+export const activeSchemaCheckSpan2 = policyBlockLi2;
 
 export const activeSchemaCheckSpan3 = style({
   '@layer': {
@@ -1290,25 +712,9 @@ export const activeSchemaCheckChevronUp = style({
   },
 });
 
-export const activeSchemaCheckChevronDown = style({
-  '@layer': {
-    [layer]: {
-      marginLeft: 'calc(var(--spacing) * 2)',
-      width: 'calc(var(--spacing) * 4)',
-      height: 'calc(var(--spacing) * 4)',
-    },
-  },
-});
+export const activeSchemaCheckChevronDown = activeSchemaCheckChevronUp;
 
 export const activeSchemaCheckDiv9 = style({
-  '@layer': {
-    [layer]: {
-      paddingBlock: 'calc(var(--spacing) * 6)',
-    },
-  },
-});
-
-export const activeSchemaCheckDiv10 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -1329,13 +735,7 @@ export const activeSchemaCheckDiv10 = style({
   },
 });
 
-export const activeSchemaCheckSpan4 = style({
-  '@layer': {
-    [layer]: {
-      display: 'inline-flex',
-    },
-  },
-});
+export const activeSchemaCheckSpan4 = statusTooltipSpan;
 
 export const activeSchemaCheckBadgeCheck = style({
   '@layer': {
@@ -1361,17 +761,9 @@ export const activeSchemaCheckP = style({
   },
 });
 
-export const activeSchemaCheckP2 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-sm)',
-      lineHeight: 'var(--tw-leading, var(--text-sm--line-height))',
-      color: 'var(--color-fg-secondary)',
-    },
-  },
-});
+export const activeSchemaCheckP2 = approveFailedSchemaCheckModalP;
 
-export const activeSchemaCheckDiv11 = style({
+export const activeSchemaCheckDiv10 = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-sm)',
@@ -1382,7 +774,7 @@ export const activeSchemaCheckDiv11 = style({
   },
 });
 
-export const activeSchemaCheckDiv12 = style({
+export const activeSchemaCheckDiv11 = style({
   '@layer': {
     [layer]: {
       fontSize: 'var(--text-sm)',

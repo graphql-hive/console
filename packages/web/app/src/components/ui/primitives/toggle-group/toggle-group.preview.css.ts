@@ -51,14 +51,7 @@ export const circleMinus3 = style({
   },
 });
 
-export const triangleAlert = style({
-  '@layer': {
-    [layer]: {
-      width: '15px',
-      height: '15px',
-    },
-  },
-});
+export const triangleAlert = circleMinus;
 
 export const triangleAlert2 = style({
   '@layer': {
@@ -68,22 +61,9 @@ export const triangleAlert2 = style({
   },
 });
 
-export const triangleAlert3 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-subtle)',
-    },
-  },
-});
+export const triangleAlert3 = circleMinus3;
 
-export const circleX = style({
-  '@layer': {
-    [layer]: {
-      width: '15px',
-      height: '15px',
-    },
-  },
-});
+export const circleX = circleMinus;
 
 export const circleX2 = style({
   '@layer': {
@@ -93,13 +73,7 @@ export const circleX2 = style({
   },
 });
 
-export const circleX3 = style({
-  '@layer': {
-    [layer]: {
-      color: 'var(--color-fg-subtle)',
-    },
-  },
-});
+export const circleX3 = circleMinus3;
 
 export const div2 = style({
   '@layer': {
@@ -134,22 +108,18 @@ export const div4 = style({
 export const div5 = style({
   '@layer': {
     [layer]: {
-      display: 'flex',
       width: '20rem',
+    },
+  },
+});
+
+export const div6 = style({
+  '@layer': {
+    [layer]: {
+      display: 'flex',
       flexDirection: 'column',
       alignItems: 'flex-start',
       gap: 'calc(var(--spacing) * 3)',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line-subtle)',
-      backgroundColor: 'var(--color-neutral-2)',
-      padding: 'calc(var(--spacing) * 4)',
-      selectors: {
-        '&:where(.dark, .dark *)': {
-          backgroundColor: 'var(--color-neutral-3)',
-        },
-      },
     },
   },
 });
@@ -164,7 +134,7 @@ export const span2 = style({
   },
 });
 
-export const div6 = style({
+export const div7 = style({
   '@layer': {
     [layer]: {
       display: 'flex',
@@ -172,33 +142,7 @@ export const div6 = style({
       flexDirection: 'column',
       alignItems: 'flex-start',
       gap: 'calc(var(--spacing) * 3)',
-      borderRadius: 'var(--radius-md)',
-      borderStyle: 'var(--tw-border-style)',
-      borderWidth: '1px',
-      borderColor: 'var(--color-line)',
-      backgroundColor: 'var(--color-neutral-2)',
       padding: 'calc(var(--spacing) * 4)',
-      boxShadow:
-        'var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)',
-      vars: {
-        '--tw-shadow':
-          '0 4px 6px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 2px 4px -2px var(--tw-shadow-color, rgb(0 0 0 / 0.1))',
-      },
-      selectors: {
-        '&:where(.dark, .dark *)': {
-          backgroundColor: 'var(--color-neutral-4)',
-        },
-      },
-    },
-  },
-});
-
-export const span3 = style({
-  '@layer': {
-    [layer]: {
-      fontSize: 'var(--text-xs)',
-      lineHeight: 'var(--tw-leading, var(--text-xs--line-height))',
-      color: 'var(--color-fg-default)',
     },
   },
 });

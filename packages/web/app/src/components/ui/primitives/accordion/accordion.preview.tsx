@@ -6,6 +6,7 @@ import { Button } from '../button/button';
 import { Card } from '../card/card';
 import { Menu } from '../floating/menu/menu';
 import { Accordion } from './accordion';
+import * as styles from './accordion.preview.css';
 
 export const nav: NavPath = 'Primitives/Accordion';
 
@@ -15,13 +16,13 @@ export const nav: NavPath = 'Primitives/Accordion';
  */
 
 function Copy({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-fg-default">{children}</p>;
+  return <p className={styles.copyP}>{children}</p>;
 }
 
 function Labelled(props: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2">
-      <span className="text-xs text-fg-secondary">{props.label}</span>
+    <div className={styles.labelledDiv}>
+      <span className={styles.labelledSpan}>{props.label}</span>
       {props.children}
     </div>
   );
@@ -42,7 +43,7 @@ const CHANGES = [
 ];
 
 export const Default = createPreview(() => (
-  <div className="w-96">
+  <div className={styles.div}>
     <Accordion
       items={CHANGES.map(change => ({
         value: change.value,
@@ -55,7 +56,7 @@ export const Default = createPreview(() => (
 
 /** `defaultValue` opens items on mount; `multiple` lets more than one stay open. */
 export const DefaultOpen = createPreview(() => (
-  <div className="flex w-96 flex-col gap-10">
+  <div className={styles.div2}>
     <Labelled label="single, the default: opening one closes the other">
       <Accordion
         defaultValue={['breaking']}
@@ -93,7 +94,7 @@ const PERMISSION_GROUPS = [
 export const Controlled = createPreview(() => {
   const [open, setOpen] = useState<string[]>([]);
   return (
-    <div className="w-[36rem]">
+    <div className={styles.div3}>
       <Accordion
         multiple
         value={open}
@@ -102,12 +103,12 @@ export const Controlled = createPreview(() => {
           value: group.value,
           label: group.value,
           trailing: group.selected ? (
-            <span className="text-xs text-fg-secondary">{group.selected} selected</span>
+            <span className={styles.span}>{group.selected} selected</span>
           ) : undefined,
           content: <Copy>{group.total} permissions in this group.</Copy>,
         }))}
       />
-      <p className="mt-3 text-xs text-fg-secondary">Open: {open.join(', ') || 'none'}</p>
+      <p className={styles.p}>Open: {open.join(', ') || 'none'}</p>
     </div>
   );
 });
@@ -119,22 +120,18 @@ const SERVICES = [
 
 /** pages/target.tsx: `boxed`, each service a card with a two-line header and its SDL inside. */
 export const Boxed = createPreview(() => (
-  <div className="w-[40rem]">
+  <div className={styles.div4}>
     <Accordion
       variant="boxed"
       items={SERVICES.map(schema => ({
         value: schema.id,
         label: (
           <div>
-            <div className="text-base text-fg">{schema.service}</div>
-            <div className="text-xs font-normal text-fg-secondary">{schema.url}</div>
+            <div className={styles.div5}>{schema.service}</div>
+            <div className={styles.div6}>{schema.url}</div>
           </div>
         ),
-        content: (
-          <pre className="font-mono text-xs leading-relaxed text-fg-default">
-            {'type Query {\n  me: User\n}'}
-          </pre>
-        ),
+        content: <pre className={styles.pre}>{'type Query {\n  me: User\n}'}</pre>,
       }))}
     />
   </div>
@@ -145,7 +142,7 @@ export const Boxed = createPreview(() => (
  * small, the chevron at the start, and the accent tone to call it out.
  */
 export const SmallAccentDisclosure = createPreview(() => (
-  <div className="w-[28rem]">
+  <div className={styles.div7}>
     <Card variants={{ onSurface: 'raised' }}>
       <Accordion
         variant="plain"
@@ -176,7 +173,7 @@ const COLLECTIONS = [
 export const WithAction = createPreview(() => {
   const [open, setOpen] = useState<string[]>(['c1']);
   return (
-    <div className="w-72">
+    <div className={styles.div8}>
       <Accordion
         multiple
         chevron="none"
@@ -185,11 +182,11 @@ export const WithAction = createPreview(() => {
         items={COLLECTIONS.map(collection => ({
           value: collection.id,
           label: (
-            <span className="inline-flex items-center gap-x-3">
+            <span className={styles.span2}>
               {open.includes(collection.id) ? (
-                <FolderOpenIcon className="size-4" />
+                <FolderOpenIcon className={styles.folderOpenIcon} />
               ) : (
-                <FolderIcon className="size-4" />
+                <FolderIcon className={styles.folderIcon} />
               )}
               {collection.name}
             </span>
@@ -211,7 +208,7 @@ export const WithAction = createPreview(() => {
             />
           ),
           content: (
-            <ul className="space-y-1 pl-2 text-sm text-fg-default">
+            <ul className={styles.ul}>
               {collection.operations.map(name => (
                 <li key={name}>{name}</li>
               ))}
@@ -226,14 +223,14 @@ export const WithAction = createPreview(() => {
 
 /** A disabled item keeps its place and its label, and cannot open. */
 export const Disabled = createPreview(() => (
-  <div className="w-96">
+  <div className={styles.div}>
     <Accordion
       items={[
         { value: 'a', label: 'Composition errors', content: <Copy>None.</Copy> },
         {
           value: 'b',
           label: (
-            <span className="inline-flex items-center gap-2">
+            <span className={styles.span3}>
               Breaking changes
               <Badge content="approved" variants={{ variant: 'secondary', size: 'sm' }} />
             </span>
@@ -330,7 +327,7 @@ const SAFE: Row[] = [
  * label and trailing line up with the rows around it that do open.
  */
 export const StaticRows = createPreview(() => (
-  <div className="flex w-[56rem] flex-col gap-10">
+  <div className={styles.div9}>
     <Labelled label="Breaking changes on a check: boxed, one accordion per change (ChangeItem)">
       <OnePerChange variant="boxed" rows={BREAKING} gap="flex flex-col gap-4" />
     </Labelled>
@@ -357,7 +354,7 @@ export const Playground = createPreview({
     keepMounted: { type: 'boolean', default: false },
   }),
   render: v => (
-    <div className="w-[32rem]">
+    <div className={styles.div10}>
       <Accordion
         variant={v.variant}
         size={v.size}
@@ -368,7 +365,7 @@ export const Playground = createPreview({
         items={CHANGES.map((change, index) => ({
           value: change.value,
           label: change.label,
-          trailing: index === 0 ? <span className="text-xs text-fg-secondary">2</span> : undefined,
+          trailing: index === 0 ? <span className={styles.span4}>2</span> : undefined,
           content: <Copy>{change.body}</Copy>,
         }))}
       />

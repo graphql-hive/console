@@ -20,6 +20,7 @@ import { WorkerPoolManager } from '@pierre/diffs/worker';
 import WorkerUrl from '@pierre/diffs/worker/worker.js?worker&url';
 import { captureException } from '@sentry/react';
 import { useTheme, type ResolvedTheme } from '../theme/theme-provider';
+import * as styles from './diffs.css';
 
 type PierreTheme = ReturnType<typeof pierreTheme>;
 
@@ -93,7 +94,7 @@ function useWorkerPool(theme: PierreTheme) {
 // that fills the viewport raises the cap through the variable.
 export function CodeScrollArea(props: { className?: string; children: ReactNode }) {
   return (
-    <Virtualizer className={cn('max-h-[var(--code-max-h,70vh)] overflow-auto', props.className)}>
+    <Virtualizer className={cn(styles.codeScrollAreaVirtualizer, props.className)}>
       {props.children}
     </Virtualizer>
   );

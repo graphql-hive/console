@@ -13,6 +13,7 @@ import {
   ChangesBlock_SchemaCheckConditionalBreakingChangeMetadataFragment,
   ChangesTitle,
 } from './errors-and-changes';
+import * as styles from './paged-changes.css';
 
 export { CHANGES_PAGE_SIZE };
 
@@ -99,15 +100,15 @@ function PageControls(props: {
 }) {
   const { paging } = props;
   return (
-    <div className="flex flex-col gap-3">
+    <div className={styles.pageControlsDiv4}>
       <div
         aria-busy={paging.loading}
-        className={cn('transition-opacity', paging.loading && 'opacity-50')}
+        className={cn(styles.pageControlsDiv5, paging.loading && styles.pageControlsDiv6)}
       >
         {props.children}
       </div>
       {paging.failed ? (
-        <p className="text-xs text-critical">This page could not be loaded. Try again.</p>
+        <p className={styles.pageControlsP2}>This page could not be loaded. Try again.</p>
       ) : null}
       <DataTablePagination
         pageIndex={paging.pageIndex}
@@ -124,7 +125,7 @@ export function CountedTitle(props: { children: ReactNode; count: number }) {
   return (
     <>
       {props.children}{' '}
-      <span className="font-normal text-fg-muted">· {formatTotal(props.count)}</span>
+      <span className={styles.countedTitleSpan2}>· {formatTotal(props.count)}</span>
     </>
   );
 }
@@ -208,7 +209,9 @@ export function SafeChangeGroups(props: {
         items={groups.map(group => ({
           value: group.kind,
           label: changeKindLabel(group.kind),
-          trailing: <span className="text-xs text-fg-muted">{formatTotal(group.totalCount)}</span>,
+          trailing: (
+            <span className={styles.safeChangeGroupsSpan2}>{formatTotal(group.totalCount)}</span>
+          ),
           content: (
             <SafeChangeGroupPage
               kind={group.kind}
