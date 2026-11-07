@@ -3,7 +3,7 @@ import { Select } from '@/components/ui/primitives/floating/select/select';
 import { graphql, useFragment } from '@/gql';
 import { useViewer } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';
-import * as styles from './project-selector.css';
+import { projectSelectorStyles } from './project-selector.css';
 
 const ProjectSelector_OrganizationConnectionFragment = graphql(`
   fragment ProjectSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -53,11 +53,11 @@ export function ProjectSelector(props: {
           linkText={currentOrganization.slug}
         />
       ) : (
-        <div className={styles.projectSelectorDiv} />
+        <div className={projectSelectorStyles.organizationSkeleton} />
       )}
       {projectEdges?.length && currentProject ? (
         <>
-          <div className={styles.projectSelectorDiv2}>/</div>
+          <div className={projectSelectorStyles.separator}>/</div>
           <Select
             aria-label="Project"
             options={projectEdges.map(edge => ({ value: edge.node.slug, label: edge.node.slug }))}
@@ -75,7 +75,7 @@ export function ProjectSelector(props: {
           />
         </>
       ) : (
-        <div className={styles.projectSelectorDiv3} />
+        <div className={projectSelectorStyles.projectSkeleton} />
       )}
     </>
   );

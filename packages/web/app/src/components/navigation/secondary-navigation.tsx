@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Navigation, type NavigationItem } from '../ui/navigation/navigation';
-import * as styles from './secondary-navigation.css';
+import { secondaryNavigationStyles } from './secondary-navigation.css';
 
 /** The bar under the organization, project and target headers: base Navigation in the app's chrome. */
 export function SecondaryNavigation({
@@ -13,8 +13,8 @@ export function SecondaryNavigation({
   links: NavigationItem[];
 }) {
   return (
-    <div className={styles.secondaryNavigationDiv}>
-      <div className={styles.secondaryNavigationDiv2}>
+    <div className={secondaryNavigationStyles.root}>
+      <div className={secondaryNavigationStyles.container}>
         <Navigation items={links} loading={loading} actions={actions} />
       </div>
     </div>

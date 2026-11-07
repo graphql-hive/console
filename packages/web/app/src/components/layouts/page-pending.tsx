@@ -1,11 +1,11 @@
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { LayoutContent } from './layout-content';
-import * as styles from './page-pending.css';
+import { pagePendingStyles } from './page-pending.css';
 
 // The route is still deciding what the page is, so nothing here promises a shape.
 export function PagePending() {
   return (
-    <LayoutContent className={styles.pagePendingLayoutContent}>
+    <LayoutContent className={pagePendingStyles.page}>
       <Spinner variants={{ size: 'lg' }} />
     </LayoutContent>
   );
@@ -14,7 +14,7 @@ export function PagePending() {
 // A pane or section deciding inside a page that already rendered.
 export function SectionPending() {
   return (
-    <div className={styles.sectionPendingDiv}>
+    <div className={pagePendingStyles.section}>
       <Spinner variants={{ size: 'lg' }} />
     </div>
   );

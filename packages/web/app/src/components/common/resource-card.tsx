@@ -7,7 +7,7 @@ import { subDays } from '@/lib/date-time';
 import { useFormattedNumber } from '@/lib/hooks';
 import { pluralize } from '@/lib/utils';
 import * as shared from '@/styles/shared.css';
-import * as styles from './resource-card.css';
+import { resourceCardStyles } from './resource-card.css';
 
 export function ResourceCard(props: {
   /** Names the resource in the schema-versions tooltip, and reserves a skeleton line for `subtitle`. */
@@ -46,11 +46,11 @@ export function ResourceCard(props: {
   const schemaVersionsInDateRange = useFormattedNumber(totalNumberOfVersions);
 
   return (
-    <div className={styles.resourceCardDiv}>
+    <div className={resourceCardStyles.root}>
       <Card variants={{ onSurface: 'raised', interactive: true, bodyPadding: 'none' }}>
         {props.renderLink(
           <>
-            <div className={styles.resourceCardDiv2}>
+            <div className={resourceCardStyles.body}>
               <div className={shared.grow}>
                 <div>
                   <Sparkline
@@ -60,30 +60,30 @@ export function ResourceCard(props: {
                     animation={props.name != null}
                   />
                 </div>
-                <div className={styles.resourceCardDiv4}>
+                <div className={resourceCardStyles.details}>
                   {props.name != null ? (
                     <div>
-                      <h4 className={styles.resourceCardH4}>{props.name}</h4>
+                      <h4 className={resourceCardStyles.name}>{props.name}</h4>
                       {props.subtitle ? (
-                        <p className={styles.resourceCardP}>{props.subtitle}</p>
+                        <p className={resourceCardStyles.subtitle}>{props.subtitle}</p>
                       ) : null}
                     </div>
                   ) : (
                     <div>
-                      <div className={styles.resourceCardDiv5} />
+                      <div className={resourceCardStyles.nameSkeleton} />
                       {/* Only reserve the second line for a kind that has a subtitle to load into. */}
                       {props.kind === 'project' ? (
-                        <div className={styles.resourceCardDiv6} />
+                        <div className={resourceCardStyles.subtitleSkeleton} />
                       ) : null}
                     </div>
                   )}
-                  <div className={styles.resourceCardDiv7}>
+                  <div className={resourceCardStyles.stats}>
                     {props.name != null ? (
                       <>
                         <Tooltip
                           trigger={
-                            <div className={styles.resourceCardDiv8}>
-                              <Globe className={styles.resourceCardGlobe} />
+                            <div className={resourceCardStyles.stat}>
+                              <Globe className={resourceCardStyles.statIcon} />
                               <div className={shared.text.xs}>
                                 {requestsInDateRange}{' '}
                                 {pluralize(totalNumberOfRequests, 'request', 'requests')}
@@ -94,8 +94,8 @@ export function ResourceCard(props: {
                         />
                         <Tooltip
                           trigger={
-                            <div className={styles.resourceCardDiv10}>
-                              <History className={styles.resourceCardHistory} />
+                            <div className={resourceCardStyles.stat}>
+                              <History className={resourceCardStyles.statIcon} />
                               <div className={shared.text.xs}>
                                 {schemaVersionsInDateRange}{' '}
                                 {pluralize(totalNumberOfVersions, 'commit', 'commits')}
@@ -107,8 +107,8 @@ export function ResourceCard(props: {
                       </>
                     ) : (
                       <>
-                        <div className={styles.resourceCardDiv12} />
-                        <div className={styles.resourceCardDiv13} />
+                        <div className={resourceCardStyles.statSkeleton} />
+                        <div className={resourceCardStyles.statSkeleton} />
                       </>
                     )}
                   </div>

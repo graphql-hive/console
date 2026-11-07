@@ -2,7 +2,7 @@ import { Select } from '@/components/ui/primitives/floating/select/select';
 import { graphql, useFragment } from '@/gql';
 import { useViewer } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';
-import * as styles from './organization-selectors.css';
+import { organizationSelectorStyles } from './organization-selectors.css';
 
 const OrganizationSelector_OrganizationConnectionFragment = graphql(`
   fragment OrganizationSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -21,7 +21,7 @@ export function OrganizationSelector(props: { currentOrganizationSlug: string })
   )?.nodes;
 
   if (!organizations) {
-    return <div className={styles.organizationSelectorDiv} />;
+    return <div className={organizationSelectorStyles.skeleton} />;
   }
 
   return (

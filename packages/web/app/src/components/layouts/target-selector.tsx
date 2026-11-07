@@ -4,7 +4,7 @@ import { graphql, useFragment } from '@/gql';
 import { useViewer } from '@/lib/hooks';
 import { useRouter } from '@tanstack/react-router';
 import { resolveTargetSwitchTo, TARGET_ROUTE_PREFIX } from './target-selector.utils';
-import * as styles from './target-selector.css';
+import { targetSelectorStyles } from './target-selector.css';
 
 const TargetSelector_OrganizationConnectionFragment = graphql(`
   fragment TargetSelector_OrganizationConnectionFragment on OrganizationConnection {
@@ -83,9 +83,9 @@ export function TargetSelector(props: {
           linkText={currentOrganization.slug}
         />
       ) : (
-        <div className={styles.targetSelectorDiv} />
+        <div className={targetSelectorStyles.skeleton} />
       )}
-      <div className={styles.targetSelectorDiv2}>/</div>
+      <div className={targetSelectorStyles.separator}>/</div>
       {currentOrganization && currentProject ? (
         <PrimaryNavigationLink
           linkProps={{
@@ -98,9 +98,9 @@ export function TargetSelector(props: {
           linkText={currentProject.slug}
         />
       ) : (
-        <div className={styles.targetSelectorDiv3} />
+        <div className={targetSelectorStyles.skeleton} />
       )}
-      <div className={styles.targetSelectorDiv4}>/</div>
+      <div className={targetSelectorStyles.separator}>/</div>
       {targetEdges?.length && currentOrganization && currentProject && currentTarget ? (
         <Select
           aria-label="Target"
@@ -110,7 +110,7 @@ export function TargetSelector(props: {
           data-testid="target-picker-trigger"
         />
       ) : (
-        <div className={styles.targetSelectorDiv5} />
+        <div className={targetSelectorStyles.skeleton} />
       )}
     </>
   );

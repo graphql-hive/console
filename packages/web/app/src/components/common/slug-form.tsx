@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from '@/components/ui/primitives/form/form';
 import { Input } from '@/components/ui/primitives/input/input';
-import * as styles from './slug-form.css';
+import { slugFormStyles } from './slug-form.css';
 
 /** The slug rules shared by the organization, project and target settings pages. */
 export function slugFormSchema(noun: 'Organization' | 'Project' | 'Target') {
@@ -51,7 +51,7 @@ export function SlugForm(props: {
           </FormItem>
         )}
       />
-      <div className={styles.slugFormDiv}>
+      <div className={slugFormStyles.preview}>
         <Button disabled={form.formState.isSubmitting} type="submit">
           Save
         </Button>

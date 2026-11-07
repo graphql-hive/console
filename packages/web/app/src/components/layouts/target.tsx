@@ -23,7 +23,7 @@ import { useLastVisitedOrganizationWriter } from '@/lib/last-visited-org';
 import { useLocation } from '@tanstack/react-router';
 import { Tabs } from '../ui/primitives/tabs/tabs';
 import { TargetLayoutQuery } from './queries';
-import * as styles from './target.css';
+import { targetLayoutStyles } from './target.css';
 
 export const TargetLayout = ({ children }: { children: ReactNode }): ReactElement | null => {
   const params = useSlugs('target');
@@ -143,10 +143,10 @@ export const TargetLayout = ({ children }: { children: ReactNode }): ReactElemen
             actions={
               currentTarget && isCDNEnabled ? (
                 <>
-                  <div className={styles.targetLayoutDiv}>
+                  <div className={targetLayoutStyles.cdnAction}>
                     <Button onClick={toggleModalOpen} variant="link">
-                      <span className={styles.targetLayoutSpan}>
-                        <LinkIcon size={16} className={styles.targetLayoutLinkIcon} />
+                      <span className={targetLayoutStyles.cdnActionLabel}>
+                        <LinkIcon size={16} className={targetLayoutStyles.cdnActionIcon} />
                         Connect to CDN
                       </span>
                     </Button>
@@ -259,10 +259,10 @@ export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: ()
         </>
       }
     >
-      <div className={styles.connectSchemaModalDiv}>
+      <div className={targetLayoutStyles.connectModal}>
         {target && (
           <>
-            <div className={styles.connectSchemaModalDiv2}>
+            <div className={targetLayoutStyles.connectModalControls}>
               <div>
                 <Label htmlFor="cdn-graph" label="Graph Variant" />
                 <Select
@@ -311,7 +311,7 @@ export function ConnectSchemaModal(props: { isOpen: boolean; toggleModalOpen: ()
             {selectedArtifact === 'supergraph' ? (
               <FederationModalContent cdnUrl={selectedContract?.cdnUrl ?? target.cdnUrl} />
             ) : (
-              <div className={styles.connectSchemaModalDiv3}>
+              <div className={targetLayoutStyles.connectModalEndpoint}>
                 <p>To access your schema from Hive's CDN, use the following endpoint:</p>
                 <InputCopy
                   onSurface="raised"
@@ -372,7 +372,7 @@ function FederationModalContent(props: { cdnUrl: string }) {
     </p>
   );
   return (
-    <div className={styles.federationModalContentDiv}>
+    <div className={targetLayoutStyles.federationModal}>
       <Tabs
         defaultValue="hive-gateway"
         items={[
@@ -380,13 +380,13 @@ function FederationModalContent(props: { cdnUrl: string }) {
             value: 'hive-gateway',
             label: 'Hive Gateway',
             content: (
-              <div className={styles.federationModalContentDiv2}>
+              <div className={targetLayoutStyles.federationModalTab}>
                 <p>
                   Start up a Hive Gateway instance polling the supergraph from the Hive CDN using
                   the following command.
                 </p>
                 {authenticateSection}
-                <div className={styles.federationModalContentDiv3}>
+                <div className={targetLayoutStyles.federationModalCommand}>
                   <InputCopy
                     onSurface="raised"
                     multiline
@@ -415,7 +415,7 @@ function FederationModalContent(props: { cdnUrl: string }) {
             value: 'hive-router',
             label: 'Hive Router',
             content: (
-              <div className={styles.federationModalContentDiv4}>
+              <div className={targetLayoutStyles.federationModalTab}>
                 <p>
                   Start up a Hive Router instance polling the supergraph from the Hive CDN using the
                   following command.
@@ -448,7 +448,7 @@ function FederationModalContent(props: { cdnUrl: string }) {
             value: 'apollo-router',
             label: 'Apollo Router',
             content: (
-              <div className={styles.federationModalContentDiv5}>
+              <div className={targetLayoutStyles.federationModalTab}>
                 <p>
                   Start up a Apollo Router instance polling the supergraph from the Hive CDN using
                   the following command.
@@ -481,7 +481,7 @@ function FederationModalContent(props: { cdnUrl: string }) {
             value: 'grafbase-gateway',
             label: 'Grafbase Gateway',
             content: (
-              <div className={styles.federationModalContentDiv6}>
+              <div className={targetLayoutStyles.federationModalTab}>
                 <p>
                   Start up a Grafbase Gateway instance polling the supergraph from the Hive CDN
                   using the following command.
@@ -514,7 +514,7 @@ function FederationModalContent(props: { cdnUrl: string }) {
             value: 'cdn',
             label: 'Custom / HTTP',
             content: (
-              <div className={styles.federationModalContentDiv7}>
+              <div className={targetLayoutStyles.federationModalTab}>
                 <p>
                   For other tooling you can access the raw supergraph by sending a HTTP request.
                 </p>
@@ -524,7 +524,7 @@ function FederationModalContent(props: { cdnUrl: string }) {
                 </div>
                 <p>Here is an example calling the endpoint using curl.</p>
                 {authenticateSection}
-                <div className={styles.federationModalContentDiv8}>
+                <div className={targetLayoutStyles.federationModalCommand}>
                   <InputCopy
                     onSurface="raised"
                     multiline

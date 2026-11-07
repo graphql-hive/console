@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { Link, LinkProps } from '@tanstack/react-router';
-import * as styles from './back-link.css';
+import { backLinkStyles } from './back-link.css';
 
 export function BackLink({
   copy,
@@ -14,8 +14,8 @@ export function BackLink({
   };
 }) {
   return (
-    <Link to={to} params={params} search={search} className={styles.backLinkLink}>
-      <ArrowLeft className={styles.backLinkArrowLeft} /> {copy}
+    <Link to={to} params={params} search={search} className={backLinkStyles.root}>
+      <ArrowLeft className={backLinkStyles.icon} /> {copy}
     </Link>
   );
 }

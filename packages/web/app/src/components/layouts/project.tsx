@@ -20,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from '@tanstack/react-router';
 import { LegacyCompositionWarn } from '../project/LegacyCompositionWarn';
 import { ProjectLayoutQuery } from './queries';
-import * as styles from './project.css';
+import { projectLayoutStyles } from './project.css';
 
 export function ProjectLayout({ children }: { children: ReactNode }) {
   const { organizationSlug, projectSlug } = useSlugs('project');
@@ -83,7 +83,7 @@ export function ProjectLayout({ children }: { children: ReactNode }) {
                 <>
                   <Button onClick={toggleModalOpen} variant="link">
                     <span className={shared.row.base}>
-                      <PlusIcon size={16} className={styles.projectLayoutPlusIcon} />
+                      <PlusIcon size={16} className={projectLayoutStyles.createIcon} />
                       New target
                     </span>
                   </Button>
@@ -93,7 +93,7 @@ export function ProjectLayout({ children }: { children: ReactNode }) {
             }
           />
           {currentProject ? (
-            <div className={styles.projectLayoutDiv}>
+            <div className={projectLayoutStyles.container}>
               <LegacyCompositionWarn project={currentProject} />
             </div>
           ) : null}
