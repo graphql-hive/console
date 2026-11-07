@@ -6,7 +6,7 @@ import { DataTable } from './data-table';
 import { DataTableCell, formatAbsolute, formatRelative } from './data-table-cell';
 import { badgeStyles } from '../primitives/badge/badge.css';
 import { dataTableCellStyles } from './data-table-cell.css';
-import * as partStyles from './data-table-components.css';
+import { dataTableComponentsStyles } from './data-table-components.css';
 import { dataTableStyles } from './data-table.css';
 
 type Row = { id: string; name: string; count: number; status: 'open' | 'solved' };
@@ -160,14 +160,14 @@ describe('DataTable', () => {
     expect(screen.queryByRole('status', { name: 'Loading' })).toBeNull();
     expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true');
     expect(screen.getByText('alpha').closest('tbody')!.className).toContain(
-      partStyles.dataTableBodyTbody2,
+      dataTableComponentsStyles.bodyRefreshing,
     );
   });
 
   it('dims the rows it keeps while refreshing, without touching the header', () => {
     render(<DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} refreshing />);
     expect(screen.getByText('alpha').closest('tbody')!.className).toContain(
-      partStyles.dataTableBodyTbody2,
+      dataTableComponentsStyles.bodyRefreshing,
     );
     expect(screen.getByRole('table').getAttribute('aria-busy')).toBe('true');
     expect(screen.queryByRole('status')).toBeNull();
@@ -233,8 +233,8 @@ describe('DataTable', () => {
       <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} />,
     );
     const wrapper = () => container.firstElementChild as HTMLElement;
-    expect(wrapper().className).toContain(partStyles.wrapperClassClass2);
-    expect(wrapper().className).toContain(partStyles.surfaceWrapper);
+    expect(wrapper().className).toContain(dataTableComponentsStyles.wrapperBorder);
+    expect(wrapper().className).toContain(dataTableComponentsStyles.surface.base.wrapper);
 
     rerender(
       <DataTable
@@ -244,7 +244,7 @@ describe('DataTable', () => {
         variants={{ bordered: false }}
       />,
     );
-    expect(wrapper().className).not.toContain(partStyles.wrapperClassClass2);
+    expect(wrapper().className).not.toContain(dataTableComponentsStyles.wrapperBorder);
     expect(wrapper().className).not.toContain('bg-');
   });
 
@@ -263,7 +263,7 @@ describe('DataTable', () => {
       <DataTable data={ROWS} columns={columns} getRowId={row => row.id} />,
     );
     const cell = container.querySelector('tbody td') as HTMLElement;
-    expect(cell.className).toContain(partStyles.widthClassFill);
+    expect(cell.className).toContain(dataTableComponentsStyles.width.fill);
     const link = cell.querySelector('a') as HTMLElement;
     expect(link.className).toContain(dataTableCellStyles.link.classNames.variants.truncate.true);
     expect(link.title).toBe('alpha');
@@ -286,8 +286,8 @@ describe('DataTable', () => {
       />,
     );
     const rows = [...container.querySelectorAll('tbody tr')];
-    expect(rows[0].className).toContain(partStyles.dataTableRowTr8);
-    expect(rows[1].className).toContain(partStyles.dataTableRowTr7);
+    expect(rows[0].className).toContain(dataTableComponentsStyles.rowDisabled);
+    expect(rows[1].className).toContain(dataTableComponentsStyles.rowMuted);
     expect(rows[2].getAttribute('data-state')).toBe('selected');
   });
 
@@ -371,12 +371,12 @@ describe('DataTable', () => {
       <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} />,
     );
     const row = () => container.querySelector('tbody tr')!;
-    expect(row().className).not.toContain(partStyles.dataTableRowTr6);
+    expect(row().className).not.toContain(dataTableComponentsStyles.rowClickable);
 
     rerender(
       <DataTable data={ROWS} columns={COLUMNS} getRowId={row => row.id} onRowClick={() => {}} />,
     );
-    expect(row().className).toContain(partStyles.dataTableRowTr6);
+    expect(row().className).toContain(dataTableComponentsStyles.rowClickable);
   });
 
   it('shows no paging bar when a cursor connection has a single page', () => {
@@ -426,9 +426,13 @@ describe('DataTable', () => {
       />,
     );
     const wrapper = () => container.firstElementChild as HTMLElement;
-    expect(wrapper().className).toContain(partStyles.tonedWrapper);
-    expect(container.querySelector('th')?.className).toContain(partStyles.tonedHead);
-    expect(container.querySelector('tbody tr')?.className).toContain(partStyles.tonedLine);
+    expect(wrapper().className).toContain(dataTableComponentsStyles.toned.critical.wrapper);
+    expect(container.querySelector('th')?.className).toContain(
+      dataTableComponentsStyles.toned.critical.head,
+    );
+    expect(container.querySelector('tbody tr')?.className).toContain(
+      dataTableComponentsStyles.toned.critical.line,
+    );
 
     rerender(
       <DataTable
@@ -438,8 +442,10 @@ describe('DataTable', () => {
         variants={{ tone: 'critical', bordered: false }}
       />,
     );
-    expect(wrapper().className).not.toContain(partStyles.tonedWrapper);
-    expect(container.querySelector('th')?.className).not.toContain(partStyles.tonedHead);
+    expect(wrapper().className).not.toContain(dataTableComponentsStyles.toned.critical.wrapper);
+    expect(container.querySelector('th')?.className).not.toContain(
+      dataTableComponentsStyles.toned.critical.head,
+    );
 
     rerender(
       <DataTable
@@ -450,7 +456,9 @@ describe('DataTable', () => {
         footer={{ label: 'Total', value: 6 }}
       />,
     );
-    expect(container.querySelector('tfoot tr')?.className).toContain(partStyles.tonedTitleLine);
+    expect(container.querySelector('tfoot tr')?.className).toContain(
+      dataTableComponentsStyles.toned.critical.titleLine,
+    );
   });
 
   it('renders the footer, the loading row and the empty message', () => {
@@ -591,7 +599,8 @@ describe('DataTableCell', () => {
       [...container.querySelectorAll('tbody > tr')].filter(
         tr => !tr.textContent?.startsWith('panel'),
       );
-    const striped = () => dataRows().map(tr => tr.className.includes(partStyles.surfaceStripe));
+    const striped = () =>
+      dataRows().map(tr => tr.className.includes(dataTableComponentsStyles.surface.base.stripe));
     expect(striped()).toEqual([false, true, false]);
 
     fireEvent.click(dataRows()[0]);
@@ -621,7 +630,7 @@ describe('DataTableCell', () => {
       />,
     );
     const rows = [...container.querySelectorAll('tbody > tr')];
-    expect(rows.map(tr => tr.className.includes(partStyles.dataTableRowTr3))).toEqual([
+    expect(rows.map(tr => tr.className.includes(dataTableComponentsStyles.rowCritical))).toEqual([
       false,
       true,
       false,
