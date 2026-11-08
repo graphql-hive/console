@@ -103,8 +103,22 @@ export type RangeFilterDimension = FilterDimensionBase & {
   onChange: (next: RangeValue) => void;
 };
 
+/**
+ * A list of exact values typed or pasted in, for identifiers too many to list as items (e.g. trace
+ * IDs). The chip shows the count.
+ */
+export type TextListFilterDimension = FilterDimensionBase & {
+  kind: 'text-list';
+  values: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+  /** Singular noun for the chip count, e.g. "id" for "3 ids". Defaults to "value". */
+  countNoun?: string;
+};
+
 export type FilterDimension =
   | ItemsFilterDimension
   | TextFilterDimension
   | ToggleFilterDimension
-  | RangeFilterDimension;
+  | RangeFilterDimension
+  | TextListFilterDimension;

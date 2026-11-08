@@ -129,13 +129,14 @@ const TYPES: FilterItem[] = [
 
 /**
  * Every kind together: a single-select dimension addressing a route param, a
- * free-text dimension, a range, and a toggle. Toggles group into their own
+ * free-text dimension, a range, a list of exact values, and a toggle. Toggles group into their own
  * section below the divider and never produce a chip.
  */
 export const AllDimensionKinds = createPreview(() => {
   const [type, setType] = useState<FilterSelection[]>([{ name: 'Product', values: null }]);
   const [field, setField] = useState('price');
   const [duration, setDuration] = useState<RangeValue>({ min: 100, max: 500 });
+  const [ids, setIds] = useState<string[]>([]);
   const [descriptions, setDescriptions] = useState(false);
   const [targets, setTargets] = useState<FilterSelection[]>([]);
 
@@ -165,6 +166,15 @@ export const AllDimensionKinds = createPreview(() => {
       unit: 'ms',
       value: duration,
       onChange: setDuration,
+    },
+    {
+      key: 'id',
+      label: 'ID',
+      kind: 'text-list',
+      values: ids,
+      onChange: setIds,
+      placeholder: 'Paste or type an id',
+      countNoun: 'id',
     },
     {
       key: 'target',
@@ -382,6 +392,43 @@ export const RangeOpenEnded = createPreview(() => {
         <FilterChips dimensions={dimensions} />
       </div>
       <RangeReadout dimension={dimensions[0]} />
+    </div>
+  );
+});
+
+const TRACE_IDS = [
+  '4bf92f3577b34da6a3ce929d0e0e4736',
+  '00f067aa0ba902b7a3ce929d0e0e4736',
+  'd4cda95b652f4a1592b449d5929fda1b',
+];
+
+/** Trace IDs as the traces page will take them: typed one at a time or pasted in bulk. */
+export const TextListDimension = createPreview(() => {
+  const [ids, setIds] = useState<string[]>(TRACE_IDS.slice(0, 1));
+  const dimensions: FilterDimension[] = [
+    {
+      key: 'traceId',
+      label: 'Trace ID',
+      kind: 'text-list',
+      values: ids,
+      onChange: setIds,
+      placeholder: 'Paste or type a trace ID',
+      countNoun: 'id',
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="max-w-prose text-xs text-fg-secondary">
+        Open Filter, then Trace ID. Enter adds what is typed. Pasting several ids separated by
+        spaces, commas or new lines adds them all at once. Duplicates and blanks are skipped.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterMenu dimensions={dimensions} />
+        <FilterChips dimensions={dimensions} />
+      </div>
+      <code className="max-w-prose font-mono text-xs break-all text-fg-subtle">
+        Copy to paste: {TRACE_IDS.join(', ')}
+      </code>
     </div>
   );
 });

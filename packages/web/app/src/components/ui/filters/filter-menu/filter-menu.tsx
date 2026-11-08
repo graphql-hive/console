@@ -8,6 +8,8 @@ import { FilterDropdown } from '../filter-dropdown/filter-dropdown';
 import { RangeFilterChip } from '../filter-dropdown/range-filter-chip';
 import { RangeFilterPanel } from '../filter-dropdown/range-filter-panel';
 import { TextFilterChip } from '../filter-dropdown/text-filter-chip';
+import { TextListFilterChip } from '../filter-dropdown/text-list-filter-chip';
+import { TextListPanel } from '../filter-dropdown/text-list-panel';
 import type { FilterDimension, ToggleFilterDimension } from './types';
 
 export type {
@@ -18,6 +20,7 @@ export type {
   RangeFilterDimension,
   RangeValue,
   TextFilterDimension,
+  TextListFilterDimension,
   ToggleFilterDimension,
 } from './types';
 
@@ -52,6 +55,15 @@ function submenuContent(d: SubmenuDimension) {
           unit={d.unit}
           value={d.value}
           onChange={d.onChange}
+        />
+      );
+    case 'text-list':
+      return (
+        <TextListPanel
+          label={d.label}
+          values={d.values}
+          onChange={d.onChange}
+          placeholder={d.placeholder}
         />
       );
     case undefined:
@@ -171,6 +183,18 @@ export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
                 value={d.value}
                 onChange={d.onChange}
                 onRemove={() => d.onChange({ min: null, max: null })}
+              />
+            ) : null;
+          case 'text-list':
+            return d.values.length > 0 ? (
+              <TextListFilterChip
+                key={d.key}
+                label={d.label}
+                values={d.values}
+                onChange={d.onChange}
+                onRemove={() => d.onChange([])}
+                placeholder={d.placeholder}
+                countNoun={d.countNoun}
               />
             ) : null;
           case undefined:
