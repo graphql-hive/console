@@ -11,7 +11,7 @@ export default gql`
   extend type Project {
     alertChannels: [AlertChannel!]
     """
-    A single alert channel of this project. Null when the id does not belong to this project.
+    A single alert channel of this project. Null when the alert with the provided ID cannot be found in the project.
     """
     alertChannel(id: ID!): AlertChannel
     alerts: [Alert!]
