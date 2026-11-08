@@ -46,6 +46,38 @@ export const Range = createPreview(() => {
   );
 });
 
+/** `onValueCommitted` fires once per drag or key press, so costly work (a URL write) skips the ticks. */
+export const Committed = createPreview(() => {
+  const [range, setRange] = useState<[number, number]>([2000, 60_000]);
+  const [committed, setCommitted] = useState<[number, number]>(range);
+  const [commits, setCommits] = useState(0);
+  return (
+    <div className="flex w-[28rem] flex-col gap-2">
+      <p className="text-xs text-fg-secondary">
+        Drag a thumb. Live follows every tick, while Committed updates once when you release. Arrow
+        keys commit once per press.
+      </p>
+      <Slider
+        min={0}
+        max={100_000}
+        value={range}
+        onValueChange={setRange}
+        onValueCommitted={value => {
+          setCommitted(value);
+          setCommits(count => count + 1);
+        }}
+        aria-label="Duration"
+      />
+      <span className="font-mono text-xs text-fg-default">
+        Live: {range[0]} to {range[1]} ms
+      </span>
+      <span className="font-mono text-xs text-fg-default">
+        Committed: {committed[0]} to {committed[1]} ms ({commits} commits)
+      </span>
+    </div>
+  );
+});
+
 export const Disabled = createPreview(() => (
   <div className="w-[28rem]">
     <Slider
