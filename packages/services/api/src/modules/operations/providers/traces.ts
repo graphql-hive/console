@@ -344,6 +344,115 @@ export class Traces {
   async getTraceFilterOptions(targetId: string, filter: GraphQLSchema.TracesFilterInput | null) {
     return new TraceBreakdownLoader(this.logger, this.clickHouse, targetId, filter);
   }
+
+  async getTraceFilterValues(
+    organizationId: string,
+    targetId: string,
+    period: GraphQLSchema.DateRangeInput,
+  ) {
+    await this._guardViewerCanAccessTraces(organizationId);
+    return new TracesFilterValuesLoader(this.clickHouse, targetId, parseDateRangeInput(period));
+  }
+}
+
+export const TRACES_FILTER_VALUES_CAP = 1000;
+
+const tracesFilterValueColumns = {
+  operationNames: { column: 'graphql_operation_name' },
+  clientNames: { column: 'client_name' },
+  subgraphNames: { arrayColumn: 'subgraph_names' },
+  errorCodes: { arrayColumn: 'graphql_error_codes' },
+  httpStatusCodes: { column: 'http_status_code' },
+  httpMethods: { column: 'http_method' },
+  httpHosts: { column: 'http_host' },
+  httpRoutes: { column: 'http_route' },
+  httpUrls: { column: 'http_url' },
+} as const satisfies Record<string, { column: string } | { arrayColumn: string }>;
+
+export type TracesFilterDimension = keyof typeof tracesFilterValueColumns;
+
+export type TracesFilterValueList = { values: string[]; truncated: boolean };
+
+export function toValueList(
+  raw: ReadonlyArray<string>,
+  cap = TRACES_FILTER_VALUES_CAP,
+): TracesFilterValueList {
+  return { values: raw.slice(0, cap), truncated: raw.length > cap };
+}
+
+export function buildTracesFilterValuesQuery(
+  targetId: string,
+  period: { from: Date; to: Date },
+  dimensions: ReadonlyArray<TracesFilterDimension>,
+) {
+  const arrJoinColumnAlias = 'arr_join_column_value';
+  const statements = dimensions.map((dimension, index) => {
+    const source: { column: string } | { arrayColumn: string } = tracesFilterValueColumns[dimension];
+    const isArray = 'arrayColumn' in source;
+    // Single PREWHERE, no WHERE, for the same query condition cache reason as findTracesForTargetId.
+    return sql`
+      SELECT
+        '${sql.raw(`d${index}`)}' AS "key"
+        , toString(${sql.raw(isArray ? arrJoinColumnAlias : `"${source.column}"`)}) AS "value"
+        , count(*) AS "count"
+      FROM "otel_traces_normalized"
+        ${sql.raw(isArray ? `ARRAY JOIN "${source.arrayColumn}" AS "${arrJoinColumnAlias}"` : '')}
+      PREWHERE "target_id" = ${targetId}
+        AND "timestamp" >= toDateTime(${formatDate(period.from)}, 'UTC')
+        AND "timestamp" <= toDateTime(${formatDate(period.to)}, 'UTC')
+      GROUP BY
+        "value"
+      HAVING
+        "value" != ''
+      ORDER BY
+        "count" DESC, "value" ASC
+      LIMIT ${sql.raw(String(TRACES_FILTER_VALUES_CAP + 1))}
+    `;
+  });
+
+  return sql`
+    ${sql.join(statements, ' UNION ALL ')}
+    SETTINGS max_threads = 8
+  `;
+}
+
+export class TracesFilterValuesLoader {
+  private loader = new DataLoader<TracesFilterDimension, TracesFilterValueList>(
+    async dimensions => {
+      const result = await this.clickhouse.query<{
+        key: string;
+        value: string;
+        count: number | string;
+      }>({
+        query: buildTracesFilterValuesQuery(this.targetId, this.period, dimensions),
+        queryId: 'traces_filter_values',
+        timeout: 30_000,
+      });
+      const rowsByKey = new Map<string, Array<{ value: string; count: number }>>();
+      for (const row of result.data) {
+        const rows = rowsByKey.get(row.key) ?? [];
+        rows.push({ value: row.value, count: Number(row.count) });
+        rowsByKey.set(row.key, rows);
+      }
+      return dimensions.map((_, index) =>
+        toValueList(
+          (rowsByKey.get(`d${index}`) ?? [])
+            .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
+            .map(row => row.value),
+        ),
+      );
+    },
+  );
+
+  constructor(
+    private clickhouse: ClickHouse,
+    private targetId: string,
+    private period: { from: Date; to: Date },
+  ) {}
+
+  load(dimension: TracesFilterDimension) {
+    return this.loader.load(dimension);
+  }
 }
 
 export class TraceBreakdownLoader {
