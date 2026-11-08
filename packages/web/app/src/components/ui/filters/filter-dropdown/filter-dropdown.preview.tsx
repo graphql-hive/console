@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import type { RangeValue } from '../filter-menu/types';
 import { FilterDropdown } from './filter-dropdown';
+import { RangeFilterChip } from './range-filter-chip';
 import type { FilterItem, FilterSelection } from './types';
 
 export const nav: NavPath = 'Components/Filters/FilterDropdown';
@@ -133,6 +135,32 @@ export const FlatItems = createPreview(() => (
     labelPlural="severities"
     initial={[{ name: 'Breaking', values: null }]}
   />
+));
+
+function RangeChipHarness(props: { initial: RangeValue }) {
+  const [value, setValue] = useState(props.initial);
+  return (
+    <RangeFilterChip
+      label="Duration"
+      bounds={{ min: 0, max: 100_000 }}
+      unit="ms"
+      value={value}
+      onChange={setValue}
+      onRemove={() => setValue(props.initial)}
+    />
+  );
+}
+
+/** The range chip in its three shapes: both bounds, a minimum only, a maximum only. */
+export const RangeChip = createPreview(() => (
+  <div className="flex flex-col items-start gap-3">
+    <p className="text-xs text-fg-secondary">
+      The middle segment reopens the Min/Max panel. X resets each example to its starting range.
+    </p>
+    <RangeChipHarness initial={{ min: 100, max: 500 }} />
+    <RangeChipHarness initial={{ min: 2000, max: null }} />
+    <RangeChipHarness initial={{ min: null, max: 60_000 }} />
+  </div>
 ));
 
 export const Playground = createPreview({

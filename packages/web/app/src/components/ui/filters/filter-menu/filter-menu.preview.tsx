@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { FilterChips, FilterMenu } from './filter-menu';
-import type { FilterDimension, FilterItem, FilterSelection } from './types';
+import type { FilterDimension, FilterItem, FilterSelection, RangeValue } from './types';
 
 export const nav: NavPath = 'Components/Filters/FilterMenu';
 
@@ -128,14 +128,14 @@ const TYPES: FilterItem[] = [
 ].map(name => ({ name, values: [] }));
 
 /**
- * The three non-item kinds together, as the schema explorer uses them: a
- * single-select dimension addressing a route param, a free-text dimension, and
- * a toggle. Toggles group into their own section below the divider and never
- * produce a chip.
+ * Every kind together: a single-select dimension addressing a route param, a
+ * free-text dimension, a range, and a toggle. Toggles group into their own
+ * section below the divider and never produce a chip.
  */
 export const AllDimensionKinds = createPreview(() => {
   const [type, setType] = useState<FilterSelection[]>([{ name: 'Product', values: null }]);
   const [field, setField] = useState('price');
+  const [duration, setDuration] = useState<RangeValue>({ min: 100, max: 500 });
   const [descriptions, setDescriptions] = useState(false);
   const [targets, setTargets] = useState<FilterSelection[]>([]);
 
@@ -156,6 +156,15 @@ export const AllDimensionKinds = createPreview(() => {
       value: field,
       onChange: setField,
       placeholder: 'Find field',
+    },
+    {
+      key: 'duration',
+      label: 'Duration',
+      kind: 'range',
+      bounds: { min: 0, max: 100_000 },
+      unit: 'ms',
+      value: duration,
+      onChange: setDuration,
     },
     {
       key: 'target',
@@ -314,6 +323,65 @@ export const TextFilterEmpty = createPreview(() => {
     <div className="flex flex-wrap items-center gap-2">
       <FilterMenu dimensions={dimensions} />
       <FilterChips dimensions={dimensions} />
+    </div>
+  );
+});
+
+function useDuration(initial: RangeValue): FilterDimension[] {
+  const [value, setValue] = useState(initial);
+  return [
+    {
+      key: 'duration',
+      label: 'Duration',
+      kind: 'range',
+      bounds: { min: 0, max: 100_000 },
+      unit: 'ms',
+      value,
+      onChange: setValue,
+    },
+  ];
+}
+
+function RangeReadout(props: { dimension: FilterDimension }) {
+  const value = props.dimension.kind === 'range' ? props.dimension.value : null;
+  return (
+    <span className="font-mono text-xs text-fg-secondary">value: {JSON.stringify(value)}</span>
+  );
+}
+
+/** A range with both bounds set, as the traces Duration filter will use it. */
+export const RangeDimension = createPreview(() => {
+  const dimensions = useDuration({ min: 100, max: 500 });
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="max-w-prose text-xs text-fg-secondary">
+        Open Filter, then Duration. Typing commits on Enter or blur, and the slider commits on
+        release, so the value below changes once per edit rather than per keystroke or drag tick.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterMenu dimensions={dimensions} />
+        <FilterChips dimensions={dimensions} />
+      </div>
+      <RangeReadout dimension={dimensions[0]} />
+    </div>
+  );
+});
+
+/** Starts unbounded, so there is no chip until a bound is set. */
+export const RangeOpenEnded = createPreview(() => {
+  const dimensions = useDuration({ min: null, max: null });
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="max-w-prose text-xs text-fg-secondary">
+        Set only a minimum to get a "≥" chip, or only a maximum for "≤". Dragging a thumb back to
+        its end, or clearing its input, makes that side unbounded again. With both sides unbounded
+        the chip goes away.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterMenu dimensions={dimensions} />
+        <FilterChips dimensions={dimensions} />
+      </div>
+      <RangeReadout dimension={dimensions[0]} />
     </div>
   );
 });

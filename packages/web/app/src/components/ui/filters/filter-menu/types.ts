@@ -85,4 +85,26 @@ export type ToggleFilterDimension = FilterDimensionBase & {
   onChange: (next: boolean) => void;
 };
 
-export type FilterDimension = ItemsFilterDimension | TextFilterDimension | ToggleFilterDimension;
+/** A numeric range. `null` on either side means unbounded on that side. */
+export type RangeValue = { min: number | null; max: number | null };
+
+/**
+ * A numeric range, edited with Min/Max inputs and a two-thumb slider. A bound typed or dragged to
+ * the edge of `bounds` becomes `null`, so the chip only appears while the range narrows results.
+ */
+export type RangeFilterDimension = FilterDimensionBase & {
+  kind: 'range';
+  /** The slider's track. Values are clamped to it. */
+  bounds: { min: number; max: number };
+  step?: number;
+  /** Suffix on the inputs and in the chip, e.g. "ms". */
+  unit?: string;
+  value: RangeValue;
+  onChange: (next: RangeValue) => void;
+};
+
+export type FilterDimension =
+  | ItemsFilterDimension
+  | TextFilterDimension
+  | ToggleFilterDimension
+  | RangeFilterDimension;
