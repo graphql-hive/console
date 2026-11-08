@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { captureException } from '@sentry/node';
+import { HiveConsoleReleaseVersion } from '../../shared/providers/tokens';
 import { deliveryOutcome, DeliveryRecorder } from './delivery-recorder';
 
 vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
@@ -20,7 +21,11 @@ function createRecorder() {
   const insert = vi.fn().mockResolvedValue(undefined);
   const errorLog = vi.fn();
   const logger = { child: () => ({ debug: vi.fn(), error: errorLog }) };
-  const recorder = new DeliveryRecorder({ insert } as any, logger as any, '1.2.3');
+  const recorder = new DeliveryRecorder(
+    { insert } as any,
+    logger as any,
+    new HiveConsoleReleaseVersion('1.2.3'),
+  );
 
   return { recorder, insert, errorLog };
 }

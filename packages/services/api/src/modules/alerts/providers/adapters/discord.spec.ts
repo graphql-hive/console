@@ -2,6 +2,7 @@ import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { beforeEach, vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
 import { HiveHttpClientError } from '../../../shared/providers/http-client';
+import { HiveConsoleReleaseVersion } from '../../../shared/providers/tokens';
 import { DeliveryRecorder } from '../delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
 import { describeDiscordError, DiscordCommunicationAdapter } from './discord';
@@ -35,7 +36,7 @@ function createAdapter() {
   const recorder = new DeliveryRecorder(
     { postQuery: vi.fn().mockResolvedValue(undefined) } as any,
     logger as any,
-    '1.2.3',
+    new HiveConsoleReleaseVersion('1.2.3'),
   );
   const record = vi.spyOn(recorder, 'record').mockResolvedValue(undefined);
   const adapter = new DiscordCommunicationAdapter(

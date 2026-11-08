@@ -64,7 +64,11 @@ import { RedisRateLimiter } from './modules/shared/providers/redis-rate-limiter'
 import { S3Config } from './modules/shared/providers/s3-config';
 import { S3Writer } from './modules/shared/providers/s3-writer';
 import { Storage } from './modules/shared/providers/storage';
-import { RateLimitConfig, RELEASE, WEB_APP_URL } from './modules/shared/providers/tokens';
+import {
+  HiveConsoleReleaseVersion,
+  RateLimitConfig,
+  WEB_APP_URL,
+} from './modules/shared/providers/tokens';
 import { supportModule } from './modules/support';
 import { provideSupportConfig, SupportConfig } from './modules/support/providers/config';
 import { targetModule } from './modules/target';
@@ -298,8 +302,8 @@ export function createRegistry({
       scope: Scope.Singleton,
     },
     {
-      provide: RELEASE,
-      useValue: release,
+      provide: HiveConsoleReleaseVersion,
+      useValue: new HiveConsoleReleaseVersion(release),
       scope: Scope.Singleton,
     },
     {

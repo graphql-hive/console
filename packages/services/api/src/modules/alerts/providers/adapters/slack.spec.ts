@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import { HiveConsoleReleaseVersion } from '../../../shared/providers/tokens';
 import { DeliveryRecorder } from '../delivery-recorder';
 import type { ChannelConfirmationInput } from './common';
 import { describeSlackError, SlackCommunicationAdapter } from './slack';
@@ -36,7 +37,7 @@ function createAdapter() {
   const recorder = new DeliveryRecorder(
     { postQuery: vi.fn().mockResolvedValue(undefined) } as any,
     logger as any,
-    '1.2.3',
+    new HiveConsoleReleaseVersion('1.2.3'),
   );
   const record = vi.spyOn(recorder, 'record').mockResolvedValue(undefined);
   const adapter = new SlackCommunicationAdapter(logger as any, 'app-base-url', recorder);

@@ -1,10 +1,10 @@
-import { Inject, Injectable } from 'graphql-modules';
+import { Injectable } from 'graphql-modules';
 import { getRequestId } from '@hive/service-common';
 import { captureException } from '@sentry/node';
 import type { AlertChannel } from '../../../shared/entities';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
 import { Logger } from '../../shared/providers/logger';
-import { RELEASE } from '../../shared/providers/tokens';
+import { HiveConsoleReleaseVersion } from '../../shared/providers/tokens';
 import type { AlertChannelDeliveryEvent, DeliveryMetadataInput } from '../lib/delivery-metadata';
 
 const MAX_STATUS_TEXT_LENGTH = 512;
@@ -69,13 +69,13 @@ export class DeliveryRecorder {
   constructor(
     private clickHouse: ClickHouse,
     logger: Logger,
-    @Inject(RELEASE) private release: string,
+    private release: HiveConsoleReleaseVersion,
   ) {
     this.logger = logger.child({ source: 'DeliveryRecorder' });
   }
 
   describe(input: Omit<DeliveryMetadataInput, 'requestId' | 'release'>): DeliveryMetadataInput {
-    return { requestId: getRequestId() ?? null, release: this.release, ...input };
+    return { requestId: getRequestId() ?? null, release: this.release.valueOf(), ...input };
   }
 
   /**

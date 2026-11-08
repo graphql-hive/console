@@ -1,6 +1,7 @@
 import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
+import { HiveConsoleReleaseVersion } from '../../../shared/providers/tokens';
 import { DeliveryRecorder } from '../delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
 import { describeTeamsError, TeamsCommunicationAdapter, TeamsWebhookError } from './msteams';
@@ -26,7 +27,7 @@ function createAdapter() {
   const recorder = new DeliveryRecorder(
     { postQuery: vi.fn().mockResolvedValue(undefined) } as any,
     logger as any,
-    '1.2.3',
+    new HiveConsoleReleaseVersion('1.2.3'),
   );
   const record = vi.spyOn(recorder, 'record').mockResolvedValue(undefined);
   const adapter = new TeamsCommunicationAdapter(logger as any, appBaseUrl, recorder);
