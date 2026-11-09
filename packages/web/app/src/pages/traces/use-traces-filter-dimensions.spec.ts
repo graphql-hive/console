@@ -30,10 +30,14 @@ const values = (overrides: Partial<TracesFilterValues> = {}): TracesFilterValues
   ...overrides,
 });
 
-function dimensionsFor(search: TracesFilter, lists = values()) {
+function dimensionsFor(search: TracesFilter, lists: TracesFilterValues | 'loading' = values()) {
   const navigate = vi.fn();
   const { result } = renderHook(() =>
-    useTracesFilterDimensions({ search, navigate: navigate as never, values: lists }),
+    useTracesFilterDimensions({
+      search,
+      navigate: navigate as never,
+      values: lists === 'loading' ? undefined : lists,
+    }),
   );
   const byKey = (key: string) => result.current.find(d => d.key === key) as FilterDimension;
   // The URL the dimension's last write would produce, from `prev`.
@@ -48,6 +52,10 @@ describe('nameItems', () => {
       { name: 'GetUser', values: [] },
       { name: 'RequestInfo', values: [], unavailable: true },
     ]);
+  });
+
+  it('lists the selected values unmarked until the values arrive', () => {
+    expect(nameItems(undefined, ['RequestInfo'])).toEqual([{ name: 'RequestInfo', values: [] }]);
   });
 });
 
@@ -89,6 +97,13 @@ describe('useTracesFilterDimensions', () => {
       values: [],
       unavailable: true,
     });
+  });
+
+  it('does not strike through a selected name while the values load', () => {
+    const { byKey } = dimensionsFor({ operationNames: ['GetUser'] }, 'loading');
+    const operations = byKey('operationNames') as ItemsFilterDimension;
+    expect(operations.items).toEqual([{ name: 'GetUser', values: [] }]);
+    expect(operations.truncatedTo).toBeUndefined();
   });
 
   it('writes duration bounds as flat params, clearing an unbounded side', () => {

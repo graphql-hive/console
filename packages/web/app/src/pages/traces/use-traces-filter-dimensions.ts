@@ -41,8 +41,17 @@ const OPERATION_TYPE_ITEMS: FilterItem[] = [
   { id: 'unknown', name: 'Unknown', values: [] },
 ];
 
-/** The range's values, plus any selected value the range lacks, kept and struck through. */
-export function nameItems(values: string[], selected: string[] | undefined): FilterItem[] {
+/**
+ * The range's values, plus any selected value the range lacks, kept and struck through. Until the
+ * values arrive (`undefined`), the selected values are listed as they are.
+ */
+export function nameItems(
+  values: string[] | undefined,
+  selected: string[] | undefined,
+): FilterItem[] {
+  if (!values) {
+    return (selected ?? []).map(name => ({ name, values: [] }));
+  }
   const items = values.map<FilterItem>(name => ({ name, values: [] }));
   const known = new Set(values);
   for (const name of selected ?? []) {
@@ -70,8 +79,6 @@ const NAME_DIMENSIONS: Array<{ key: ValueKey; label: string; labelPlural?: strin
   { key: 'httpRoutes', label: 'HTTP route', labelPlural: 'HTTP routes' },
   { key: 'httpUrls', label: 'HTTP URL', labelPlural: 'HTTP URLs' },
 ];
-
-const EMPTY_LIST: TracesFilterValueList = { values: [], truncated: false };
 
 /**
  * The traces filters, in the order of the `TracesDimensions` preview, each wired to its flat URL
@@ -130,7 +137,7 @@ export function useTracesFilterDimensions({
     });
 
     const names = NAME_DIMENSIONS.map<FilterDimension>(({ key, label, labelPlural }) => {
-      const list = values?.[key] ?? EMPTY_LIST;
+      const list = values?.[key];
       return {
         ...urlFilterDimension({
           navigate,
@@ -138,12 +145,12 @@ export function useTracesFilterDimensions({
           searchKey: key,
           key,
           label,
-          items: nameItems(list.values, search[key]),
+          items: nameItems(list?.values, search[key]),
           encode: encodeNames,
           decode: decodeNames,
         }),
         labelPlural,
-        truncatedTo: list.truncated ? list.values.length : undefined,
+        truncatedTo: list?.truncated ? list.values.length : undefined,
       };
     });
 
