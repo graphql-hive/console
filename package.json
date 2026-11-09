@@ -209,7 +209,8 @@
       "@envelop/response-cache@10>@graphql-tools/utils": "13.2.1",
       "@graphql-tools/executor@4>@graphql-tools/utils": "13.2.1",
       "@graphql-tools/schema@11>@graphql-tools/utils": "13.2.1",
-      "@graphql-tools/merge@10>@graphql-tools/utils": "13.2.1"
+      "@graphql-tools/merge@10>@graphql-tools/utils": "13.2.1",
+      "follow-redirects": "1.16.2"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
