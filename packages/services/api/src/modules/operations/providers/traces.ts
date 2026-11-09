@@ -387,7 +387,8 @@ export function buildTracesFilterValuesQuery(
 ) {
   const arrJoinColumnAlias = 'arr_join_column_value';
   const statements = dimensions.map((dimension, index) => {
-    const source: { column: string } | { arrayColumn: string } = tracesFilterValueColumns[dimension];
+    const source: { column: string } | { arrayColumn: string } =
+      tracesFilterValueColumns[dimension];
     const isArray = 'arrayColumn' in source;
     // Single PREWHERE, no WHERE, for the same query condition cache reason as findTracesForTargetId.
     return sql`
