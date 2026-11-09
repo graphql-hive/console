@@ -26,6 +26,13 @@ export const AuditLogModel = z.union([
     eventType: z.literal('USER_SIGNED_IN'),
     metadata: z.object({
       method: z.enum(['emailpassword', 'github', 'google', 'okta', 'oidc']),
+      email: z.string(),
+      /**
+       * Whether the email address is proven (verified by us or the identity provider).
+       * If `false`, the event has no actor, as it can not be attributed to the owner of the email.
+       * `null` for OIDC sign ins, where the organization's own identity provider asserts the identity.
+       */
+      emailVerified: z.boolean().nullable(),
       oidcIntegrationId: z.string().nullable(),
     }),
   }),

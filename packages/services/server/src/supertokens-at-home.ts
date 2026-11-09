@@ -90,10 +90,9 @@ export async function registerSupertokensAtHome(
    * - Otherwise, the organization that verified the domain of `email`, as it proved ownership
    *   of that domain via DNS and therefore of every account (and attempt) using an email
    *   address on it. A verified domain belongs to at most one organization.
-   *   Callers must only pass an `email` that is proven for successful sign ins (see
-   *   `recordSignInAuditLog`), as the event attributes the sign in to that user.
-   *   For failed attempts the (unproven) attempted email address is used, as the event does not
-   *   claim an identity.
+   *   The email address may be unproven (failed attempts, or successful sign ins with an
+   *   unverified email address). In that case the event must not claim an identity (empty
+   *   actor), see `recordSignInSuccessAuditLog`.
    *
    * We deliberately do not attribute sign ins to all organizations the user is a member of,
    * as this would share the IP address and user agent of the user with organizations that
@@ -118,20 +117,24 @@ export async function registerSupertokensAtHome(
     return verifiedDomain ? [verifiedDomain.organizationId] : [];
   }
 
+  /**
+   * Record a sign in attempt in the background, so it does not delay the response.
+   */
   function recordSignInAttemptAuditLog(
     req: FastifyRequest,
-    args: {
-      /** Resolves the email address used for attributing the attempt to the verified domain owner. */
-      resolveEmail: () => Promise<string | null>;
+    resolveArgs: () => Promise<{
+      /** The email address used for attributing the attempt to the verified domain owner. */
+      email: string | null;
       oidcIntegration: OIDCIntegration | null;
       actor: Actor | null;
       event: AuditLogSchemaEvent;
-    },
+    }>,
   ) {
     void (async () => {
+      const args = await resolveArgs();
       const organizationIds = await resolveSignInAuditLogOrganizationIds({
         oidcIntegration: args.oidcIntegration,
-        email: args.oidcIntegration ? null : await args.resolveEmail(),
+        email: args.email,
       });
 
       if (organizationIds.length === 0) {
@@ -161,11 +164,12 @@ export async function registerSupertokensAtHome(
   /**
    * Record a successful sign in.
    *
-   * For non-OIDC sign ins the event is only attributed to the verified domain owner if the email
-   * address of the user is proven, as signing in succeeds before the email address is verified
-   * (verification is enforced afterwards by the GraphQL API).
-   * Otherwise, anyone could create an account (or use a provider account) with an arbitrary email
-   * address on a verified domain and inject spoofed sign in events for that user.
+   * For non-OIDC sign ins, signing in succeeds before the email address is verified
+   * (verification is enforced afterwards by the GraphQL API). Anyone can create an account
+   * (or use a provider account) with an arbitrary email address on a verified domain.
+   * The domain owner should still see these sign ins, but the event must not claim that the user
+   * owning the email address signed in. So if the email address is not proven, the actor is
+   * empty and the event is flagged with `emailVerified: false`.
    */
   function recordSignInSuccessAuditLog(
     req: FastifyRequest,
@@ -181,34 +185,54 @@ export async function registerSupertokensAtHome(
       providerVerifiedEmail: string | null;
     },
   ) {
-    recordSignInAttemptAuditLog(req, {
-      resolveEmail: async () => {
-        const email = args.user.email.toLowerCase();
-
-        if (args.method === 'emailpassword') {
-          const result = await auditLog.emailVerification.checkUserEmailVerified({
-            userIdentityId: args.superTokensUserId,
-            email,
-          });
-          return result.verified ? email : null;
-        }
-
-        // the stored email can differ from the email currently reported by the provider
-        return args.providerVerifiedEmail?.toLowerCase() === email ? email : null;
-      },
-      oidcIntegration: args.oidcIntegration,
-      actor: {
+    recordSignInAttemptAuditLog(req, async () => {
+      const email = args.user.email.toLowerCase();
+      const actor: Actor = {
         type: 'user',
         user: args.user,
         oidcIntegrationId: args.oidcIntegration?.id ?? null,
-      },
-      event: {
-        eventType: 'USER_SIGNED_IN',
-        metadata: {
-          method: args.method,
-          oidcIntegrationId: args.oidcIntegration?.id ?? null,
+      };
+
+      if (args.oidcIntegration) {
+        // The identity is asserted by the identity provider of the organization receiving the event.
+        return {
+          email: null,
+          oidcIntegration: args.oidcIntegration,
+          actor,
+          event: {
+            eventType: 'USER_SIGNED_IN',
+            metadata: {
+              method: args.method,
+              email,
+              emailVerified: null,
+              oidcIntegrationId: args.oidcIntegration.id,
+            },
+          },
+        };
+      }
+
+      const emailVerified =
+        args.method === 'emailpassword'
+          ? await auditLog.emailVerification
+              .checkUserEmailVerified({ userIdentityId: args.superTokensUserId, email })
+              .then(result => result.verified)
+          : // the stored email can differ from the email currently reported by the provider
+            args.providerVerifiedEmail?.toLowerCase() === email;
+
+      return {
+        email,
+        oidcIntegration: null,
+        actor: emailVerified ? actor : null,
+        event: {
+          eventType: 'USER_SIGNED_IN',
+          metadata: {
+            method: args.method,
+            email,
+            emailVerified,
+            oidcIntegrationId: null,
+          },
         },
-      },
+      };
     });
   }
 
@@ -225,8 +249,9 @@ export async function registerSupertokensAtHome(
       oidcIntegration: OIDCIntegration | null;
     },
   ) {
-    recordSignInAttemptAuditLog(req, {
-      resolveEmail: async () => args.email,
+    recordSignInAttemptAuditLog(req, async () => ({
+      // OIDC attempts are only attributed to the organization linked to the OIDC integration
+      email: args.oidcIntegration ? null : args.email,
       oidcIntegration: args.oidcIntegration,
       actor: null,
       event: {
@@ -238,7 +263,7 @@ export async function registerSupertokensAtHome(
           oidcIntegrationId: args.oidcIntegration?.id ?? null,
         },
       },
-    });
+    }));
   }
 
   const accessTokenKey = new AccessTokenKeyContainer(secrets.accessTokenKey);

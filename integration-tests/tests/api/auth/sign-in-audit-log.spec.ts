@@ -35,6 +35,7 @@ const SignInAuditLogMetadataModel = z.object({
   oidcIntegrationId: z.string().nullable(),
   reason: z.string().optional(),
   email: z.string().nullable().optional(),
+  emailVerified: z.boolean().nullable().optional(),
 });
 
 const SignInAuditLogListModel = z.array(
@@ -87,6 +88,8 @@ test.concurrent(
         userAgent: 'sign-in-audit-log-test',
         metadata: {
           method: 'emailpassword',
+          email,
+          emailVerified: true,
           oidcIntegrationId: null,
         },
       });
@@ -117,6 +120,8 @@ test.concurrent(
         userEmail: email,
         metadata: {
           method: 'oidc',
+          email,
+          emailVerified: null,
           oidcIntegrationId: oidcIntegration.oidcIntegration.id,
         },
       });
@@ -207,7 +212,7 @@ test.concurrent(
 );
 
 test.concurrent(
-  'email/password sign in with an unverified email is not recorded for the organization that verified the email domain',
+  'email/password sign in with an unverified email is recorded without an actor for the organization that verified the email domain',
   async ({ expect }) => {
     const seed = initSeed();
     const domain = humanId({ separator: '', capitalize: false }) + '.local';
@@ -220,16 +225,22 @@ test.concurrent(
     await seed.authenticate(email, { verifyEmail: false });
 
     expect(await signIn(email, password)).toMatchObject({ status: 'OK' });
-    // The failed attempt is always recorded for the domain owner.
-    // Once it is visible, the preceding sign in was processed as well.
-    expect(await signIn(email, 'wrong-password')).toMatchObject({
-      status: 'WRONG_CREDENTIALS_ERROR',
-    });
-    await waitForExpectations(async () => {
-      expect(await getSignInAuditLogs(org.organization.id, 'USER_SIGN_IN_FAILED')).toHaveLength(1);
-    });
 
-    expect(await getSignInAuditLogs(org.organization.id, 'USER_SIGNED_IN')).toHaveLength(0);
+    await waitForExpectations(async () => {
+      const logs = await getSignInAuditLogs(org.organization.id, 'USER_SIGNED_IN');
+      expect(logs).toHaveLength(1);
+      expect(logs[0]).toMatchObject({
+        // the sign in is not attributed to the owner of the email address, as it is not proven
+        userEmail: '',
+        userAgent: 'sign-in-audit-log-test',
+        metadata: {
+          method: 'emailpassword',
+          email,
+          emailVerified: false,
+          oidcIntegrationId: null,
+        },
+      });
+    });
   },
 );
 
