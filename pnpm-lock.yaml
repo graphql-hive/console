@@ -2346,9 +2346,6 @@ importers:
       '@types/js-cookie':
         specifier: 3.0.6
         version: 3.0.6
-      '@types/lodash.debounce':
-        specifier: 4.0.9
-        version: 4.0.9
       '@types/react':
         specifier: 'catalog:'
         version: 18.3.18
@@ -2430,9 +2427,6 @@ importers:
       lodash:
         specifier: ^4.17.23
         version: 4.18.1
-      lodash.debounce:
-        specifier: 4.0.8
-        version: 4.0.8
       lucide-react:
         specifier: 'catalog:'
         version: 1.51.0(@types/react@18.3.18)(react@18.3.1)
@@ -9531,9 +9525,6 @@ packages:
   '@types/keyv@3.1.4':
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
 
-  '@types/lodash.debounce@4.0.9':
-    resolution: {integrity: sha512-Ma5JcgTREwpLRwMM+XwBR7DaWe96nC38uCBDFKZWbNKD+osjVzdpnUSwBcqCptrp16sSOLBAUb50Car5I0TCsQ==}
-
   '@types/lodash.lowercase@4.3.7':
     resolution: {integrity: sha512-cyjXwXsUW8jj+aONNwOeOfuod4cqxmZvXwLp+MZvjdcvXSve1+fRxC0aT/Yx0bbP3L36SGPwr1Kv3uVV8k8AjQ==}
 
@@ -12502,6 +12493,7 @@ packages:
   image-size@0.5.5:
     resolution: {integrity: sha512-6TDAlDPZxUFCv+fuOkIoXT/V/f3Qbq8e37p+YOiYrUv3v9cc3/6x78VdfPgFVaB9dZYeLUfKgHRebpkm/oP2VQ==}
     engines: {node: '>=0.10.0'}
+    deprecated: Please migrate to image-size@2.x
     hasBin: true
 
   immediate@3.0.6:
@@ -13379,9 +13371,6 @@ packages:
 
   lodash.clonedeep@4.5.0:
     resolution: {integrity: sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ==}
-
-  lodash.debounce@4.0.8:
-    resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
 
   lodash.get@4.4.2:
     resolution: {integrity: sha512-z+Uw/vLuy6gQe8cfaFWD7p0wVv8fJl3mbzXh33RS+0oW2wvUqiRXiQ69gLWSLpgB5/6sU+r6BlQR0MBILadqTQ==}
@@ -26409,10 +26398,6 @@ snapshots:
     dependencies:
       '@types/node': 25.9.9
 
-  '@types/lodash.debounce@4.0.9':
-    dependencies:
-      '@types/lodash': 4.17.23
-
   '@types/lodash.lowercase@4.3.7':
     dependencies:
       '@types/lodash': 4.17.23
@@ -30736,8 +30721,6 @@ snapshots:
   lodash.camelcase@4.3.0: {}
 
   lodash.clonedeep@4.5.0: {}
-
-  lodash.debounce@4.0.8: {}
 
   lodash.get@4.4.2: {}
 
