@@ -23,6 +23,9 @@ RUN CGO_ENABLED=0 builder --config=/build/builder-config.yaml
 # Stage 2: Final Image
 FROM alpine:3.24
 
+# zlib 1.4-r0 addresses CVE-2026-4738; remove once the alpine base image ships it
+RUN apk upgrade --no-cache zlib
+
 WORKDIR /app
 
 # Copy the generated collector binary from the builder stage
