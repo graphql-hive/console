@@ -1,4 +1,5 @@
 import { Injectable } from 'graphql-modules';
+import { formatDateTime } from '@hive/clickhouse';
 import { getRequestId } from '@hive/service-common';
 import { captureException } from '@sentry/node';
 import type { AlertChannel } from '../../../shared/entities';
@@ -138,7 +139,7 @@ export class DeliveryRecorder {
           FORMAT CSV`,
         data: [
           [
-            formatClickHouseDateTime(new Date()),
+            formatDateTime(new Date()),
             attempt.organizationId,
             attempt.deliveryType,
             attempt.destination,
@@ -203,8 +204,4 @@ function toMapLiteral(map: Record<string, string>): string {
 
 function truncateStatusText(text: string): string {
   return text.length > MAX_STATUS_TEXT_LENGTH ? text.slice(0, MAX_STATUS_TEXT_LENGTH) : text;
-}
-
-function formatClickHouseDateTime(date: Date): string {
-  return date.toISOString().slice(0, 19).replace('T', ' ');
 }

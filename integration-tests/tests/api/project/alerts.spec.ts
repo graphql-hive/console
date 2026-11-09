@@ -2,7 +2,9 @@ import 'reflect-metadata';
 import asyncRetry from 'async-retry';
 import { clickHouseQuery, flushAsyncInserts } from 'testkit/clickhouse';
 import { addAlertChannel } from 'testkit/flow';
+import { graphql } from 'testkit/gql';
 import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
+import { execute } from 'testkit/graphql';
 import { generateMockEndpoint, getRecordedRequests } from 'testkit/mock-server';
 import { initSeed } from '../../../testkit/seed';
 
@@ -262,7 +264,7 @@ test.concurrent(
 test.concurrent(
   'records each channel confirmation delivery with the status and the headers Hive sent',
   async ({ expect }) => {
-    const { createOrg } = await initSeed().createOwner();
+    const { createOrg, ownerToken } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
     const { project, addAlertChannel } = await createProject(ProjectType.Single);
 
@@ -352,5 +354,115 @@ test.concurrent(
         'user-agent': acceptedRow?.metadata['User-Agent'],
       }),
     );
+
+    const period = {
+      from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      to: new Date(Date.now() + 60 * 1000).toISOString(),
+    };
+    const readDeliveries = (channelId: string) =>
+      execute({
+        document: AlertChannelDeliveriesQuery,
+        variables: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          channelId,
+          ...period,
+        },
+        authToken: ownerToken,
+      })
+        .then(r => r.expectNoGraphQLErrors())
+        .then(r => r.project?.alertChannel ?? null);
+
+    const acceptedChannel = await readDeliveries(acceptedId);
+    expect(acceptedChannel?.deliveryHealth).toEqual({
+      status: 'HEALTHY',
+      lastSuccessAt: expect.any(String),
+      lastFailureAt: null,
+      lastStatusCode: null,
+      lastStatusText: null,
+      failingSince: null,
+    });
+    expect(acceptedChannel?.deliveryStats).toEqual(
+      expect.objectContaining({ totalDeliveries: 1, totalFailures: 0 }),
+    );
+    expect(
+      acceptedChannel?.deliveryStats?.deliveriesOverTime.reduce(
+        (sum, bucket) => sum + bucket.value,
+        0,
+      ),
+    ).toBe(1);
+    expect(acceptedChannel?.deliveryLog).toEqual([
+      {
+        event: 'CHANNEL_CONFIRMATION',
+        destination: acceptedId,
+        ok: true,
+        statusCode: 200,
+        statusText: 'OK',
+        attempt: 1,
+        maxAttempts: 1,
+        metadata: acceptedRow?.metadata,
+      },
+    ]);
+
+    const rejectedChannel = await readDeliveries(rejectedId);
+    expect(rejectedChannel?.deliveryHealth).toEqual({
+      status: 'FAILING',
+      lastSuccessAt: null,
+      lastFailureAt: expect.any(String),
+      lastStatusCode: 404,
+      lastStatusText: 'Not Found',
+      failingSince: rejectedChannel?.deliveryHealth?.lastFailureAt,
+    });
+    expect(rejectedChannel?.deliveryStats).toEqual(
+      expect.objectContaining({ totalDeliveries: 1, totalFailures: 1 }),
+    );
+
+    await expect(readDeliveries('00000000-0000-4000-8000-000000000000')).resolves.toBeNull();
   },
 );
+
+const AlertChannelDeliveriesQuery = graphql(`
+  query IntegrationTests_AlertChannelDeliveries(
+    $organizationSlug: String!
+    $projectSlug: String!
+    $channelId: ID!
+    $from: DateTime!
+    $to: DateTime!
+  ) {
+    project(
+      reference: { bySelector: { organizationSlug: $organizationSlug, projectSlug: $projectSlug } }
+    ) {
+      alertChannel(id: $channelId) {
+        id
+        deliveryHealth {
+          status
+          lastSuccessAt
+          lastFailureAt
+          lastStatusCode
+          lastStatusText
+          failingSince
+        }
+        deliveryStats(period: { from: $from, to: $to }) {
+          totalDeliveries
+          totalFailures
+          deliveriesOverTime(resolution: 24) {
+            value
+          }
+          failuresOverTime(resolution: 24) {
+            value
+          }
+        }
+        deliveryLog(period: { from: $from, to: $to }) {
+          event
+          destination
+          ok
+          statusCode
+          statusText
+          attempt
+          maxAttempts
+          metadata
+        }
+      }
+    }
+  }
+`);

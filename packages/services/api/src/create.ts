@@ -22,6 +22,7 @@ import {
   CommerceConfig,
   provideCommerceConfig,
 } from './modules/commerce/providers/commerce-client';
+import { deliveriesModule } from './modules/deliveries';
 import { graphModule } from './modules/graph';
 import { integrationsModule } from './modules/integrations';
 import {
@@ -86,6 +87,7 @@ const modules = [
   labModule,
   integrationsModule,
   alertsModule,
+  deliveriesModule,
   cdnModule,
   adminModule,
   commerceModule,

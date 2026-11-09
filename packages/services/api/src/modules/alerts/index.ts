@@ -1,4 +1,5 @@
 import { createModule } from 'graphql-modules';
+import { DeliveryReader } from '../deliveries/providers/delivery-reader';
 import { ClickHouse } from '../operations/providers/clickhouse-client';
 import { SavedFiltersStorage } from '../saved-filters/providers/saved-filters-storage';
 import { DiscordCommunicationAdapter } from './providers/adapters/discord';
@@ -27,6 +28,7 @@ export const alertsModule = createModule({
     TeamsCommunicationAdapter,
     DiscordCommunicationAdapter,
     DeliveryRecorder,
+    DeliveryReader,
     ClickHouse,
   ],
 });

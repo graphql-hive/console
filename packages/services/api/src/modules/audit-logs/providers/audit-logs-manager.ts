@@ -1,6 +1,7 @@
 import { stringify } from 'csv-stringify';
 import { endOfDay, startOfDay } from 'date-fns';
 import { Injectable, Scope } from 'graphql-modules';
+import { formatDateTime } from '@hive/clickhouse';
 import { traceFn } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { AuditLogExportTask } from '@hive/workflows/tasks/audit-log-export';
@@ -12,7 +13,6 @@ import { Logger } from '../../shared/providers/logger';
 import { S3Config } from '../../shared/providers/s3-config';
 import { S3Writer } from '../../shared/providers/s3-writer';
 import { Storage } from '../../shared/providers/storage';
-import { formatToClickhouseDateTime } from './audit-log-recorder';
 import { AuditLogClickhouseArrayModel } from './audit-logs-types';
 
 export class AuditLogS3Config {
@@ -71,8 +71,8 @@ export class AuditLogManager {
         "audit_logs"
       WHERE
         "organization_id" = ${organizationId}
-        AND "timestamp" >= ${formatToClickhouseDateTime(startOfDay(filter.startDate))}
-        AND "timestamp" <= ${formatToClickhouseDateTime(endOfDay(filter.endDate))}
+        AND "timestamp" >= ${formatDateTime(startOfDay(filter.startDate))}
+        AND "timestamp" <= ${formatDateTime(endOfDay(filter.endDate))}
       ORDER BY
         "timestamp" DESC
         , "id" DESC
