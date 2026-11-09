@@ -1,7 +1,7 @@
-import { memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
+import { Clock, ExternalLinkIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -26,20 +26,11 @@ import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, usePagedConnection, useSlugs } from '@/lib/hooks';
 import { carriedRange, useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { cn } from '@/lib/utils';
-import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
-import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
-import {
-  flattenLegacyTracesFilter,
-  TRACES_DURATION_BOUNDS,
-  tracesFilterKeys,
-  withoutTracesFilter,
-  type LegacyTracesFilter,
-  type TracesFilter,
-} from './traces/traces-search';
+import { tracesFilterKeys, withoutTracesFilter, type TracesFilter } from './traces/traces-search';
 import { useTracesFilterDimensions } from './traces/use-traces-filter-dimensions';
 
 const tracesRoute = getRouteApi(
@@ -394,231 +385,9 @@ const TracesList = memo(function TracesList(
   );
 });
 
-function LabelWithColor(props: { className: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-x-2">
-      <div className={cn('h-[11px] w-[2px] rounded-xs', props.className)} />
-      <div>{props.children}</div>
-    </div>
-  );
-}
-
-type FilterState = Required<LegacyTracesFilter>;
-
-/** The sidebar still reads the old nested shape; this builds it from the flat params. */
-function toSidebarFilter(filter: TracesFilter): FilterState {
-  const hasDuration = filter.durationMin !== undefined || filter.durationMax !== undefined;
-  return {
-    duration: hasDuration
-      ? [
-          filter.durationMin ?? TRACES_DURATION_BOUNDS.min,
-          filter.durationMax ?? TRACES_DURATION_BOUNDS.max,
-        ]
-      : [],
-    'trace.id': filter.traceIds ?? [],
-    'graphql.status': filter.status ? [filter.status] : [],
-    'graphql.kind': (filter.operationTypes ?? []).map(type =>
-      type === 'unknown' ? null : type.toUpperCase(),
-    ),
-    'graphql.subgraph': filter.subgraphNames ?? [],
-    'graphql.operation': filter.operationNames ?? [],
-    'graphql.client': filter.clientNames ?? [],
-    'graphql.errorCode': filter.errorCodes ?? [],
-    'http.status': filter.httpStatusCodes ?? [],
-    'http.method': filter.httpMethods ?? [],
-    'http.host': filter.httpHosts ?? [],
-    'http.route': filter.httpRoutes ?? [],
-    'http.url': filter.httpUrls ?? [],
-  };
-}
-
 type FilterProps = {
   filter: TracesFilter;
 };
-
-type FilterKeys = keyof FilterState;
-
-type FilterOptions = {
-  [key: string]: Array<{
-    value: string | null;
-    searchContent: string;
-    label: ReactNode;
-    count: number;
-  }>;
-};
-
-function SidebarFilters(
-  props: FilterProps & {
-    options: FilterOptions;
-  },
-) {
-  const filters = useMemo(() => toSidebarFilter(props.filter), [props.filter]);
-  const filterOptions = props.options;
-
-  // Stores the update handlers in a ref to prevent unnecessary re-renders
-  const router = useRouter();
-  const navigate = tracesRoute.useNavigate();
-  const updateHandlersRef = useRef(new Map<FilterKeys, (value: any) => void>());
-  const updateFilter = useCallback(
-    <$Key extends FilterKeys>(key: $Key): ((value: FilterState[$Key]) => void) => {
-      if (!updateHandlersRef.current.has(key)) {
-        const handler = (value: FilterState[$Key]) => {
-          void navigate({
-            search(params) {
-              return {
-                ...withoutTracesFilter(params),
-                ...flattenLegacyTracesFilter({ ...toSidebarFilter(params), [key]: value }),
-              };
-            },
-          });
-        };
-        updateHandlersRef.current.set(key, handler);
-      }
-      return updateHandlersRef.current.get(key)!;
-    },
-    [router],
-  );
-
-  const resetFilters = () => {
-    void navigate({
-      search: params => withoutTracesFilter(params),
-    });
-  };
-
-  const filterSelector = <$Key extends FilterKeys>(key: $Key) => filters[key];
-
-  const hasChanges = useMemo(() => {
-    for (const key in filters) {
-      const filterName = key as FilterKeys;
-
-      if (filterName === 'duration') {
-        if (
-          filters[filterName].length === 2 &&
-          (filters[filterName][0] !== 0 || filters[filterName][1] !== 100_000)
-        ) {
-          return true;
-        }
-        continue;
-      }
-
-      if (filters[filterName].length > 0) {
-        return true;
-      }
-    }
-  }, [filters]);
-
-  return (
-    <>
-      <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-fg">
-        <div>Filters</div>
-        {hasChanges ? (
-          <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
-            <XIcon className="size-4" />
-          </Button>
-        ) : null}
-      </div>
-      <DurationFilter value={filterSelector('duration')} onChange={updateFilter('duration')} />
-      <MultiInputFilter
-        key="trace.id"
-        name="Trace ID"
-        selectedValues={filterSelector('trace.id')}
-        onChange={updateFilter('trace.id')}
-      />
-      <MultiSelectFilter
-        key="graphql.status"
-        name="Status"
-        options={filterOptions['graphql.status'].map(option => ({
-          ...option,
-          label: (
-            <LabelWithColor className={option.value === 'ok' ? 'bg-success' : 'bg-critical'}>
-              {option.label}
-            </LabelWithColor>
-          ),
-        }))}
-        selectedValues={filterSelector('graphql.status')}
-        onChange={updateFilter('graphql.status')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="graphql.errorCode"
-        name="Error Code"
-        options={filterOptions['graphql.errorCode'].map(option => ({
-          ...option,
-          label: <LabelWithColor className="bg-critical">{option.label}</LabelWithColor>,
-        }))}
-        selectedValues={filterSelector('graphql.errorCode')}
-        onChange={updateFilter('graphql.errorCode')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="graphql.kind"
-        name="Operation Kind"
-        options={filterOptions['graphql.kind']}
-        selectedValues={filterSelector('graphql.kind')}
-        onChange={updateFilter('graphql.kind')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="graphql.subgraph"
-        name="Subgraph Name"
-        options={filterOptions['graphql.subgraph']}
-        selectedValues={filterSelector('graphql.subgraph')}
-        onChange={updateFilter('graphql.subgraph')}
-      />
-      <MultiSelectFilter
-        key="graphql.name"
-        name="Operation Name"
-        options={filterOptions['graphql.name']}
-        selectedValues={filterSelector('graphql.operation')}
-        onChange={updateFilter('graphql.operation')}
-      />
-      <MultiSelectFilter
-        key="graphql.client"
-        name="Client"
-        options={filterOptions['graphql.client']}
-        selectedValues={filterSelector('graphql.client')}
-        onChange={updateFilter('graphql.client')}
-      />
-      <MultiSelectFilter
-        key="http.status"
-        name="HTTP Status Code"
-        options={filterOptions['http.status']}
-        selectedValues={filterSelector('http.status')}
-        onChange={updateFilter('http.status')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="http.method"
-        name="HTTP Method"
-        options={filterOptions['http.method']}
-        selectedValues={filterSelector('http.method')}
-        onChange={updateFilter('http.method')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="http.host"
-        name="HTTP Host"
-        options={filterOptions['http.host']}
-        selectedValues={filterSelector('http.host')}
-        onChange={updateFilter('http.host')}
-      />
-      <MultiSelectFilter
-        key="http.route"
-        name="HTTP Route"
-        options={filterOptions['http.route']}
-        selectedValues={filterSelector('http.route')}
-        onChange={updateFilter('http.route')}
-      />
-      <MultiSelectFilter
-        key="http.url"
-        name="HTTP URL"
-        options={filterOptions['http.url']}
-        selectedValues={filterSelector('http.url')}
-        onChange={updateFilter('http.url')}
-      />
-    </>
-  );
-}
 
 type SelectedTraceSheetProps = {
   open: boolean;
