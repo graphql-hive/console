@@ -615,6 +615,7 @@ export default gql`
       sort: TracesSortInput
     ): TraceConnection!
     tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
+      @deprecated(reason: "Use Target.tracesFilterValues")
     """
     Values seen per traces filter dimension in the period. Independent of every other filter.
     """
