@@ -26,6 +26,7 @@ export type Action = (
 
 export async function migrateClickHouse(
   isClickHouseMigrator: boolean,
+  enableOperationsV01Rollups: boolean,
   isHiveCloud: boolean,
   hiveCloudEnvironment: 'prod' | 'staging' | 'dev' | null,
   clickhouse: {
@@ -193,6 +194,8 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/019-metric-alert-target-daily-rollup'),
     import('./clickhouse-actions/020-usage-coordinate-counts'),
     import('./clickhouse-actions/021-usage-coordinate-errors'),
+    import('./clickhouse-actions/022-operations-graph-columns'),
+    import('./clickhouse-actions/023-operation-v01-rollups'),
   ]);
 
   async function actionRunner(action: Action, index: number) {
@@ -201,6 +204,12 @@ export async function migrateClickHouse(
 
     if (completedActions.has(index)) {
       console.log('   Skipping because it was already run');
+      return;
+    }
+
+    // Keep the v01 rollup tables opt-in without recording the migration as completed.
+    if (index === 22 && !enableOperationsV01Rollups) {
+      console.log('   Skipping because CLICKHOUSE_OPERATIONS_V01_ROLLUPS_START is not set');
       return;
     }
 

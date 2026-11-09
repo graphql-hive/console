@@ -40,6 +40,10 @@ test('stringify operation in correct format and order', () => {
             name: 'clientName',
             version: 'clientVersion',
           },
+          graph: {
+            graphId: '0f9c3a39-3c4e-4a3b-9a0c-6f1f0b9a2f01',
+            graphVersionId: '6b1d4c2e-8a3f-4e5d-9b7c-1a2b3c4d5e6f',
+          },
         },
       },
       {
@@ -75,6 +79,8 @@ test('stringify operation in correct format and order', () => {
         /* client_name */ `"clientName"`,
         /* client_version */ `"clientVersion"`,
         /* coordinates_total */ `"{'foo':3}"`,
+        /* graph_id */ `"0f9c3a39-3c4e-4a3b-9a0c-6f1f0b9a2f01"`,
+        /* graph_version_id */ `"6b1d4c2e-8a3f-4e5d-9b7c-1a2b3c4d5e6f"`,
       ].join(','),
       [
         /* organization */ `"my-organization"`,
@@ -88,6 +94,8 @@ test('stringify operation in correct format and order', () => {
         /* client_name */ `\\N`,
         /* client_version */ `\\N`,
         /* coordinates_total */ `"{'foo':1}"`,
+        /* graph_id */ `\\N`,
+        /* graph_version_id */ `\\N`,
       ].join(','),
     ].join('\n'),
   );

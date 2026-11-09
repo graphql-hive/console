@@ -1,4 +1,8 @@
+import { randomUUID } from 'node:crypto';
+import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
+import { clickHouseQuery } from '../../testkit/clickhouse';
+import { waitForExpectations } from '../../testkit/flow';
 import { getServiceHost } from '../../testkit/utils';
 
 test('valid operation is accepted', async () => {
@@ -346,5 +350,102 @@ test('reject a report with a too big errorsTotal', async () => {
       ],
     }),
   });
+  expect(response.status).toBe(400);
+});
+
+async function sendUsageReportV2(accessToken: string, report: unknown) {
+  const usageAddress = await getServiceHost('usage', 8081);
+  return fetch(`http://${usageAddress}`, {
+    method: 'POST',
+    headers: {
+      'X-Usage-API-Version': '2',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(report),
+  });
+}
+
+function createReport(operations: Array<{ client: string; graph?: unknown }>) {
+  return {
+    size: operations.length,
+    map: {
+      c3b6d9b0: {
+        operationName: 'me',
+        operation: 'query me { me { id name } }',
+        fields: ['Query', 'Query.me', 'User', 'User.id', 'User.name'],
+      },
+    },
+    operations: operations.map(op => ({
+      operationMapKey: 'c3b6d9b0',
+      timestamp: Date.now(),
+      execution: {
+        ok: true,
+        duration: 150_000_000,
+        errorsTotal: 0,
+      },
+      metadata: {
+        client: { name: op.client, version: '0.0.1' },
+        graph: op.graph,
+      },
+    })),
+  };
+}
+
+test.concurrent(
+  'graph id and graph version id are ingested into ClickHouse',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret: accessToken } = await createTargetAccessToken({});
+
+    const graphId = randomUUID();
+    const graphVersionId = randomUUID();
+
+    const response = await sendUsageReportV2(
+      accessToken,
+      createReport([
+        { client: 'with-graph', graph: { graphId, graphVersionId } },
+        { client: 'without-graph' },
+      ]),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      operations: { accepted: 2, rejected: 0 },
+    });
+
+    await waitForExpectations(async () => {
+      const result = await clickHouseQuery<{
+        client_name: string;
+        graph_id: string;
+        graph_version_id: string;
+      }>(`
+      SELECT client_name, graph_id, graph_version_id
+      FROM operations
+      WHERE target = '${target.id}'
+      ORDER BY client_name
+    `);
+
+      expect(result.data).toEqual([
+        { client_name: 'with-graph', graph_id: graphId, graph_version_id: graphVersionId },
+        { client_name: 'without-graph', graph_id: '', graph_version_id: '' },
+      ]);
+    });
+  },
+);
+
+test.concurrent('report with a non-UUID graph id is rejected', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { secret: accessToken } = await createTargetAccessToken({});
+
+  const response = await sendUsageReportV2(
+    accessToken,
+    createReport([
+      { client: 'invalid-graph', graph: { graphId: 'not-a-uuid', graphVersionId: randomUUID() } },
+    ]),
+  );
   expect(response.status).toBe(400);
 });

@@ -79,6 +79,7 @@ try {
   if (env.clickhouse) {
     await migrateClickHouse(
       env.isClickHouseMigrator,
+      env.enableOperationsV01Rollups,
       env.isHiveCloud,
       env.hiveCloudEnvironment,
       env.clickhouse,
