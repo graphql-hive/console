@@ -6,7 +6,7 @@ COPY extension-statsviz/ ./extension-statsviz/
 
 FROM golang:1.27.3-bookworm AS builder
 
-ARG OTEL_VERSION=0.162.0
+ARG OTEL_VERSION=0.165.0
 
 WORKDIR /build
 
