@@ -212,10 +212,12 @@ test.concurrent(
     const seed = initSeed();
     const domain = humanId({ separator: '', capitalize: false }) + '.local';
     const email = 'admin@' + domain;
-    const owner = await seed.createOwner(false, email);
+    // users with an unverified email can not create organizations, so a separate verified user owns it
+    const owner = await seed.createOwner();
     const org = await owner.createOrg();
     const oidcIntegration = await org.createOIDCIntegration();
     await oidcIntegration.registerFakeDomain(domain);
+    await seed.authenticate(email, { verifyEmail: false });
 
     expect(await signIn(email, password)).toMatchObject({ status: 'OK' });
     // The failed attempt is always recorded for the domain owner.
