@@ -5,7 +5,7 @@ import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { tracesFixtures } from '@/lib/testing/fixtures/traces';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
-import { defaultTracesFilter, defaultTracesSort, tracesPageVariables } from '@/pages/target-traces';
+import { defaultTracesSort, tracesPageVariables } from '@/pages/target-traces';
 import { createAppRouter } from '@/router';
 import { UTCDate } from '@date-fns/utc';
 import { createMemoryHistory } from '@tanstack/react-router';
@@ -61,12 +61,7 @@ describe('traces route', () => {
       );
       expect(
         client.requests(LIST_DOCUMENT).map(o => [o.variables, o.context.requestPolicy]),
-      ).toEqual([
-        [
-          tracesPageVariables(SLUGS, defaultTracesFilter, defaultTracesSort, period),
-          'cache-and-network',
-        ],
-      ]);
+      ).toEqual([[tracesPageVariables(SLUGS, {}, defaultTracesSort, period), 'cache-and-network']]);
     },
   );
 
@@ -96,18 +91,44 @@ describe('traces route', () => {
   });
 
   it('carries the filter and sort from the URL into the list', { timeout: 30_000 }, async () => {
-    const filter = { ...defaultTracesFilter, 'graphql.operation': ['GetUser'], duration: [10, 20] };
-    const sort = { id: 'duration', desc: false };
-    const search = `from=now-1d&to=now&filter=${encodeURIComponent(JSON.stringify(filter))}&sort=${encodeURIComponent(JSON.stringify(sort))}`;
+    const json = (value: unknown) => encodeURIComponent(JSON.stringify(value));
+    const search = [
+      'from=now-1d&to=now',
+      `operationNames=${json(['GetUser'])}`,
+      `operationTypes=${json(['query', 'unknown'])}`,
+      'status=error',
+      'durationMin=10&durationMax=20',
+      `sort=${json({ id: 'duration', desc: false })}`,
+    ].join('&');
     const { client } = await loadedAt(`${TRACES}?${search}`);
 
     expect(client.requests(LIST_DOCUMENT)[0]?.variables).toMatchObject({
-      filter: { operationNames: ['GetUser'], duration: { min: 10, max: 20 } },
+      filter: {
+        operationNames: ['GetUser'],
+        operationTypes: ['QUERY', null],
+        success: [false],
+        duration: { min: 10, max: 20 },
+      },
       sort: { sort: 'DURATION', direction: 'ASC' },
       first: 50,
       filterTopN: 5,
     });
   });
+
+  it(
+    'ignores an unreadable filter param instead of failing the route',
+    { timeout: 30_000 },
+    async () => {
+      const { client, router } = await loadedAt(
+        `${TRACES}?from=now-1d&to=now&status=maybe&operationNames=${encodeURIComponent(JSON.stringify(['GetUser']))}`,
+      );
+
+      expect(router.state.location.pathname).toBe(TRACES);
+      expect(client.requests(LIST_DOCUMENT)[0]?.variables).toMatchObject({
+        filter: { operationNames: ['GetUser'], success: [] },
+      });
+    },
+  );
 });
 
 describe('trace route', () => {

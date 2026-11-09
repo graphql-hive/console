@@ -31,6 +31,13 @@ import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
 import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
+import {
+  flattenLegacyTracesFilter,
+  TRACES_DURATION_BOUNDS,
+  withoutTracesFilter,
+  type LegacyTracesFilter,
+  type TracesFilter,
+} from './traces/traces-search';
 
 const tracesRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
@@ -393,42 +400,37 @@ function LabelWithColor(props: { className: string; children: ReactNode }) {
   );
 }
 
-export const TargetTracesFilterState = z.object({
-  duration: z.union([z.tuple([z.number(), z.number()]), z.tuple([])]).default([]),
-  'trace.id': z.array(z.string()).default([]),
-  'graphql.status': z.array(z.string()).default([]),
-  'graphql.kind': z.array(z.string().nullable()).default([]),
-  'graphql.subgraph': z.array(z.string()).default([]),
-  'graphql.operation': z.array(z.string()).default([]),
-  'graphql.client': z.array(z.string()).default([]),
-  'graphql.errorCode': z.array(z.string()).default([]),
-  'http.status': z.array(z.string()).default([]),
-  'http.method': z.array(z.string()).default([]),
-  'http.host': z.array(z.string()).default([]),
-  'http.route': z.array(z.string()).default([]),
-  'http.url': z.array(z.string()).default([]),
-});
+type FilterState = Required<LegacyTracesFilter>;
 
-export type FilterState = z.infer<typeof TargetTracesFilterState>;
-
-export const defaultTracesFilter: FilterState = {
-  'graphql.client': [],
-  'graphql.errorCode': [],
-  'graphql.kind': [],
-  'graphql.operation': [],
-  'graphql.status': [],
-  'graphql.subgraph': [],
-  'http.host': [],
-  'http.method': [],
-  'http.route': [],
-  'http.status': [],
-  'http.url': [],
-  'trace.id': [],
-  duration: [],
-};
+/** The sidebar still reads the old nested shape; this builds it from the flat params. */
+function toSidebarFilter(filter: TracesFilter): FilterState {
+  const hasDuration = filter.durationMin !== undefined || filter.durationMax !== undefined;
+  return {
+    duration: hasDuration
+      ? [
+          filter.durationMin ?? TRACES_DURATION_BOUNDS.min,
+          filter.durationMax ?? TRACES_DURATION_BOUNDS.max,
+        ]
+      : [],
+    'trace.id': filter.traceIds ?? [],
+    'graphql.status': filter.status ? [filter.status] : [],
+    'graphql.kind': (filter.operationTypes ?? []).map(type =>
+      type === 'unknown' ? null : type.toUpperCase(),
+    ),
+    'graphql.subgraph': filter.subgraphNames ?? [],
+    'graphql.operation': filter.operationNames ?? [],
+    'graphql.client': filter.clientNames ?? [],
+    'graphql.errorCode': filter.errorCodes ?? [],
+    'http.status': filter.httpStatusCodes ?? [],
+    'http.method': filter.httpMethods ?? [],
+    'http.host': filter.httpHosts ?? [],
+    'http.route': filter.httpRoutes ?? [],
+    'http.url': filter.httpUrls ?? [],
+  };
+}
 
 type FilterProps = {
-  filter: FilterState;
+  filter: TracesFilter;
 };
 
 type FilterKeys = keyof FilterState;
@@ -447,7 +449,7 @@ function Filters(
     options: FilterOptions;
   },
 ) {
-  const filters = props.filter;
+  const filters = useMemo(() => toSidebarFilter(props.filter), [props.filter]);
   const filterOptions = props.options;
 
   // Stores the update handlers in a ref to prevent unnecessary re-renders
@@ -461,11 +463,8 @@ function Filters(
           void navigate({
             search(params) {
               return {
-                ...params,
-                filter: {
-                  ...('filter' in params ? params.filter : {}),
-                  [key]: value,
-                },
+                ...withoutTracesFilter(params),
+                ...flattenLegacyTracesFilter({ ...toSidebarFilter(params), [key]: value }),
               };
             },
           });
@@ -479,12 +478,7 @@ function Filters(
 
   const resetFilters = () => {
     void navigate({
-      search(params) {
-        return {
-          ...params,
-          filter: {},
-        };
-      },
+      search: params => withoutTracesFilter(params),
     });
   };
 
@@ -848,9 +842,16 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
 
 const TRACES_PAGE_SIZE = 50;
 
+const operationTypes = {
+  query: GraphQLSchema.GraphQlOperationType.Query,
+  mutation: GraphQLSchema.GraphQlOperationType.Mutation,
+  subscription: GraphQLSchema.GraphQlOperationType.Subscription,
+  unknown: null,
+} as const;
+
 export function tracesPageVariables(
   slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
-  filter: FilterState,
+  filter: TracesFilter,
   sorting: SortState,
   period: { from: string; to: string },
 ) {
@@ -859,21 +860,21 @@ export function tracesPageVariables(
     filter: {
       period,
       duration: {
-        min: filter.duration?.[0] ?? null,
-        max: filter.duration?.[1] ?? null,
+        min: filter.durationMin ?? null,
+        max: filter.durationMax ?? null,
       },
-      traceIds: filter['trace.id'],
-      success: filter['graphql.status']?.map(status => (status === 'ok' ? true : false)),
-      errorCodes: filter['graphql.errorCode'],
-      operationNames: filter['graphql.operation'],
-      operationTypes: filter['graphql.kind'] as any,
-      clientNames: filter['graphql.client'],
-      subgraphNames: filter['graphql.subgraph'],
-      httpStatusCodes: filter['http.status'],
-      httpMethods: filter['http.method'],
-      httpHosts: filter['http.host'],
-      httpRoutes: filter['http.route'],
-      httpUrls: filter['http.url'],
+      traceIds: filter.traceIds ?? [],
+      success: filter.status ? [filter.status === 'ok'] : [],
+      errorCodes: filter.errorCodes ?? [],
+      operationNames: filter.operationNames ?? [],
+      operationTypes: (filter.operationTypes ?? []).map(type => operationTypes[type]),
+      clientNames: filter.clientNames ?? [],
+      subgraphNames: filter.subgraphNames ?? [],
+      httpStatusCodes: filter.httpStatusCodes ?? [],
+      httpMethods: filter.httpMethods ?? [],
+      httpHosts: filter.httpHosts ?? [],
+      httpRoutes: filter.httpRoutes ?? [],
+      httpUrls: filter.httpUrls ?? [],
     } satisfies GraphQLSchema.TracesFilterInput,
     first: TRACES_PAGE_SIZE,
     sort: {
