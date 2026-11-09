@@ -20,6 +20,11 @@ describe('normalizeRange', () => {
   it('puts the ends in order', () => {
     expect(normalizeRange(500, 100, bounds)).toEqual({ min: 100, max: 500 });
   });
+
+  it('snaps to the step', () => {
+    expect(normalizeRange(12.5, 499.4, bounds)).toEqual({ min: 13, max: 499 });
+    expect(normalizeRange(130, 470, bounds, 50)).toEqual({ min: 150, max: 450 });
+  });
 });
 
 describe('formatRange', () => {
@@ -82,6 +87,15 @@ describe('RangeFilterPanel', () => {
     fireEvent.change(max, { target: { value: '' } });
     fireEvent.blur(max);
     expect(onChange).toHaveBeenCalledWith({ min: 100, max: null });
+  });
+
+  it('commits a decimal bound as a whole step', () => {
+    const onChange = renderPanel({ min: null, max: null });
+    const min = screen.getByLabelText('Min');
+
+    fireEvent.change(min, { target: { value: '12.5' } });
+    fireEvent.blur(min);
+    expect(onChange).toHaveBeenCalledWith({ min: 13, max: null });
   });
 
   it('ignores text that is not a number', () => {

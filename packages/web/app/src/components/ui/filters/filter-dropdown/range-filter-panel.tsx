@@ -16,9 +16,15 @@ export type RangeFilterPanelProps = {
   onChange: (next: RangeValue) => void;
 };
 
-/** Clamps to the bounds, puts the ends in order, and turns an end at its bound into `null`. */
-export function normalizeRange(min: number, max: number, bounds: Bounds): RangeValue {
-  const clamp = (n: number) => Math.min(Math.max(n, bounds.min), bounds.max);
+/**
+ * Snaps to `step`, clamps to the bounds, puts the ends in order, and turns an end at its bound into
+ * `null`.
+ */
+export function normalizeRange(min: number, max: number, bounds: Bounds, step = 1): RangeValue {
+  const clamp = (n: number) => {
+    const snapped = bounds.min + Math.round((n - bounds.min) / step) * step;
+    return Math.min(Math.max(snapped, bounds.min), bounds.max);
+  };
   const [low, high] = [clamp(min), clamp(max)].sort((a, b) => a - b);
   return {
     min: low <= bounds.min ? null : low,
@@ -50,7 +56,7 @@ export function RangeFilterPanel({
   const pair = draft && sameRange(draft.from, value) ? draft.pair : toPair(value, bounds);
 
   const commit = (min: number, max: number) => {
-    const next = normalizeRange(min, max, bounds);
+    const next = normalizeRange(min, max, bounds, step);
     if (sameRange(next, value)) {
       setDraft(null);
       return;
