@@ -51,7 +51,7 @@ export function TimeSeriesChart({
   onRangeSelect,
 }: TimeSeriesChartProps) {
   const theme = useChartTheme();
-  const brushable = Boolean(onRangeSelect);
+  const brushable = !!onRangeSelect;
 
   const option = useMemo((): EChartsOption => {
     const first = series[0]?.data;
