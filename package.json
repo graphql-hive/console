@@ -14,7 +14,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
   "engines": {
-    "node": ">=24.22.1",
+    "node": ">=24.22.2",
     "pnpm": ">=10.33.2"
   },
   "scripts": {
@@ -209,7 +209,8 @@
       "@envelop/response-cache@10>@graphql-tools/utils": "13.2.1",
       "@graphql-tools/executor@4>@graphql-tools/utils": "13.2.1",
       "@graphql-tools/schema@11>@graphql-tools/utils": "13.2.1",
-      "@graphql-tools/merge@10>@graphql-tools/utils": "13.2.1"
+      "@graphql-tools/merge@10>@graphql-tools/utils": "13.2.1",
+      "follow-redirects": "1.16.2"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
