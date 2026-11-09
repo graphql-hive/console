@@ -3681,7 +3681,11 @@ export class SchemaPublisher {
         return;
       }
 
-      let artifactPath = `/artifacts/v1/${args.schemaVersion.targetId}/version/`;
+      // The artifact path is relative to the location of the manifest, so it can be resolved
+      // regardless of whether the manifest is read via the CDN or directly from the S3 bucket.
+      // e.g. CDN: /artifacts/v1/<targetId>/manifest.json -> /artifacts/v1/<targetId>/version/<versionId>
+      //      S3:  artifact/<targetId>/manifest.json       -> artifact/<targetId>/version/<versionId>
+      let artifactPath = 'version/';
 
       if (schemaVersion.graphMetadata.type === 'contract') {
         invariant(

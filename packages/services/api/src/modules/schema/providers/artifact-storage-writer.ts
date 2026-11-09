@@ -147,7 +147,7 @@ export class ArtifactStorageWriter {
   })
   async writeGraphManifest(args: {
     targetId: string;
-    manifest: z.TypeOf<typeof GraphManifestModel>;
+    manifest: z.output<typeof GraphManifestModel>;
     /** When the manifest update was initiated. */
     referenceDate: Date;
   }) {
@@ -277,6 +277,10 @@ const GraphManifestGraph = z.object({
   id: z.string(),
   currentVersion: z.object({
     id: z.string(),
+    /**
+     * Path of the graph version artifacts, relative to the location of the manifest.
+     * Relative so it can be resolved via the CDN and when reading directly from the S3 bucket.
+     */
     artifactPath: z.string(),
   }),
 });

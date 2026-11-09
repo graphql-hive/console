@@ -790,7 +790,7 @@ test.concurrent(
           id: expect.any(String),
           currentVersion: {
             id: promotedVersion.id,
-            artifactPath: `/artifacts/v1/${otherTarget.id}/version/${promotedVersion.id}`,
+            artifactPath: `version/${promotedVersion.id}`,
           },
         },
       },
@@ -890,7 +890,7 @@ test.concurrent(
           id: manifestBeforePromotion.graphs['default'].id,
           currentVersion: {
             id: promotedVersion.id,
-            artifactPath: `/artifacts/v1/${target.id}/version/${promotedVersion.id}`,
+            artifactPath: `version/${promotedVersion.id}`,
           },
         },
         public: {
@@ -898,7 +898,7 @@ test.concurrent(
           currentVersion: {
             id: promotedContractVersion.id,
             // contract artifacts are stored under the source (default graph) schema version
-            artifactPath: `/artifacts/v1/${target.id}/version/${promotedVersion.id}/contracts/public`,
+            artifactPath: `version/${promotedVersion.id}/contracts/public`,
           },
         },
       },

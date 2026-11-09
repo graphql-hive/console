@@ -1190,7 +1190,7 @@ function runArtifactsCDNTests(
             id: expect.any(String),
             currentVersion: {
               id: firstVersionId,
-              artifactPath: `/artifacts/v1/${target.id}/version/${firstVersionId}`,
+              artifactPath: `version/${firstVersionId}`,
             },
           },
         },
@@ -1217,7 +1217,7 @@ function runArtifactsCDNTests(
             id: firstManifest.graphs.default.id,
             currentVersion: {
               id: secondVersionId,
-              artifactPath: `/artifacts/v1/${target.id}/version/${secondVersionId}`,
+              artifactPath: `version/${secondVersionId}`,
             },
           },
         },
@@ -1284,7 +1284,8 @@ function runArtifactsCDNTests(
       const cdnAccessResult = await createCdnAccess();
       const endpointBaseUrl = await getBaseEndpoint();
       const headers = { 'x-hive-cdn-key': cdnAccessResult.secretAccessToken };
-      const manifestResponse = await fetch(`${endpointBaseUrl}${target.id}/manifest.json`, {
+      const manifestUrl = `${endpointBaseUrl}${target.id}/manifest.json`;
+      const manifestResponse = await fetch(manifestUrl, {
         headers,
       });
 
@@ -1299,11 +1300,12 @@ function runArtifactsCDNTests(
       for (const graph of Object.values(manifest.graphs)) {
         expect(graph.id).toBeTruthy();
         expect(graph.currentVersion.id).toBeTruthy();
-        expect(graph.currentVersion.artifactPath).toMatch(/^\/artifacts\/v1\//);
+        // The artifact path is relative to the manifest location
+        expect(graph.currentVersion.artifactPath).toMatch(/^version\//);
 
         for (const artifactType of ['sdl', 'supergraph']) {
           const artifactResponse = await fetch(
-            new URL(`${graph.currentVersion.artifactPath}/${artifactType}`, endpointBaseUrl),
+            new URL(`${graph.currentVersion.artifactPath}/${artifactType}`, manifestUrl),
             { headers },
           );
           expect(
@@ -1321,6 +1323,78 @@ function runArtifactsCDNTests(
         }
       }
     });
+
+    test.concurrent(
+      'graph manifest artifact paths can be resolved when reading directly from S3',
+      async ({ expect }) => {
+        const { createOrg, ownerToken } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+        const writeToken = await createTargetAccessToken({});
+
+        const createContractResult = await execute({
+          document: CreateContractMutation,
+          variables: {
+            input: {
+              target: { byId: target.id },
+              contractName: 'my-contract',
+              removeUnreachableTypesFromPublicApiSchema: true,
+              includeTags: ['internal'],
+            },
+          },
+          authToken: ownerToken,
+        }).then(r => r.expectNoGraphQLErrors());
+        expect(createContractResult.createContract.error).toBeNull();
+
+        await writeToken
+          .publishSchema({
+            sdl: /* GraphQL */ `
+              extend schema
+                @link(url: "https://specs.apollo.dev/link/v1.0")
+                @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"])
+
+              type Query {
+                hello: String
+                internal: String @tag(name: "internal")
+              }
+            `,
+            service: 'hello',
+            url: 'http://hello.com',
+          })
+          .then(r => r.expectNoGraphQLErrors());
+
+        // Customers might skip the CDN worker and point their router directly to the S3 bucket.
+        const manifestKey = `artifact/${target.id}/manifest.json`;
+        const manifest = GraphManifestModel.parse(
+          JSON.parse((await fetchS3ObjectArtifact('artifacts', manifestKey)).body),
+        );
+
+        expect(Object.keys(manifest.graphs).sort()).toEqual(['default', 'my-contract']);
+
+        // Resolve the relative artifact path against the S3 object location of the manifest.
+        const s3BaseUrl = 'http://s3.local/';
+        const resolveKey = (artifactPath: string) =>
+          new URL(`${artifactPath}/supergraph`, new URL(manifestKey, s3BaseUrl)).pathname.slice(1);
+
+        expect(resolveKey(manifest.graphs['default'].currentVersion.artifactPath)).toEqual(
+          `artifact/${target.id}/version/${manifest.graphs['default'].currentVersion.id}/supergraph`,
+        );
+
+        for (const graph of Object.values(manifest.graphs)) {
+          const artifact = await fetchS3ObjectArtifact(
+            'artifacts',
+            resolveKey(graph.currentVersion.artifactPath),
+          );
+          expect(artifact.body).toContain('type Query');
+        }
+
+        const contractSupergraph = await fetchS3ObjectArtifact(
+          'artifacts',
+          resolveKey(manifest.graphs['my-contract'].currentVersion.artifactPath),
+        );
+        expect(contractSupergraph.body).toContain('internal');
+      },
+    );
 
     test.concurrent(
       'does not publish a graph manifest if the initial contract composition fails',
@@ -1757,14 +1831,14 @@ function runArtifactsCDNTests(
               id: initialManifest.graphs['default'].id,
               currentVersion: {
                 id: secondVersionId,
-                artifactPath: `/artifacts/v1/${target.id}/version/${secondVersionId}`,
+                artifactPath: `version/${secondVersionId}`,
               },
             },
             'retained-contract': {
               id: initialManifest.graphs['retained-contract'].id,
               currentVersion: {
                 id: expect.any(String),
-                artifactPath: `/artifacts/v1/${target.id}/version/${secondVersionId}/contracts/retained-contract`,
+                artifactPath: `version/${secondVersionId}/contracts/retained-contract`,
               },
             },
           },

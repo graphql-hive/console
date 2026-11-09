@@ -16,12 +16,19 @@ subgraph is deleted, or a contract is deleted, and is only written if all graphs
       "id": "<graph-id>",
       "currentVersion": {
         "id": "<graph-version-id>",
-        "artifactPath": "/artifacts/v1/<targetId>/version/<graph-version-id>"
+        "artifactPath": "version/<graph-version-id>"
       }
     }
   }
 }
 ```
+
+The `artifactPath` is relative to the location of the manifest, so it can be resolved both when
+reading the manifest via the CDN and when reading it directly from the S3 bucket (e.g.
+`new URL(artifactPath + '/supergraph', manifestUrl)`):
+
+- CDN: `/artifacts/v1/<targetId>/manifest.json` → `/artifacts/v1/<targetId>/version/<graph-version-id>/supergraph`
+- S3: `artifact/<targetId>/manifest.json` → `artifact/<targetId>/version/<graph-version-id>/supergraph`
 
 CDN artifact responses now include the following additional headers:
 
