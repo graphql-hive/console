@@ -453,7 +453,6 @@ export const TruncatedItems = createPreview(() => {
     {
       key: 'httpUrl',
       label: 'HTTP URL',
-      labelPlural: 'HTTP URLs',
       items: [...HTTP_URLS, { name: RETIRED_URL, values: [], unavailable: true }],
       selectedItems: urls,
       onChange: setUrls,
@@ -528,7 +527,6 @@ function useTracesDimensions(all: boolean): FilterDimension[] {
     {
       key: 'status',
       label: 'Status',
-      labelPlural: 'statuses',
       items: TRACES_ITEMS.status,
       selectedItems: status,
       onChange: setStatus,
@@ -589,7 +587,6 @@ function useTracesDimensions(all: boolean): FilterDimension[] {
     {
       key: 'httpMethod',
       label: 'HTTP method',
-      labelPlural: 'HTTP methods',
       items: TRACES_ITEMS.httpMethod,
       selectedItems: httpMethod,
       onChange: setHttpMethod,
@@ -597,7 +594,6 @@ function useTracesDimensions(all: boolean): FilterDimension[] {
     {
       key: 'httpHost',
       label: 'HTTP host',
-      labelPlural: 'HTTP hosts',
       items: TRACES_ITEMS.httpHost,
       selectedItems: httpHost,
       onChange: setHttpHost,
@@ -605,7 +601,6 @@ function useTracesDimensions(all: boolean): FilterDimension[] {
     {
       key: 'httpRoute',
       label: 'HTTP route',
-      labelPlural: 'HTTP routes',
       items: TRACES_ITEMS.httpRoute,
       selectedItems: httpRoute,
       onChange: setHttpRoute,
@@ -613,7 +608,6 @@ function useTracesDimensions(all: boolean): FilterDimension[] {
     {
       key: 'httpUrl',
       label: 'HTTP URL',
-      labelPlural: 'HTTP URLs',
       items: HTTP_URLS,
       selectedItems: httpUrl,
       onChange: setHttpUrl,

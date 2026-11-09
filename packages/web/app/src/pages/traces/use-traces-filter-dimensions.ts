@@ -74,10 +74,10 @@ const NAME_DIMENSIONS: Array<{ key: ValueKey; label: string; labelPlural?: strin
   { key: 'subgraphNames', label: 'Subgraph' },
   { key: 'errorCodes', label: 'Error code' },
   { key: 'httpStatusCodes', label: 'HTTP status', labelPlural: 'HTTP statuses' },
-  { key: 'httpMethods', label: 'HTTP method', labelPlural: 'HTTP methods' },
-  { key: 'httpHosts', label: 'HTTP host', labelPlural: 'HTTP hosts' },
-  { key: 'httpRoutes', label: 'HTTP route', labelPlural: 'HTTP routes' },
-  { key: 'httpUrls', label: 'HTTP URL', labelPlural: 'HTTP URLs' },
+  { key: 'httpMethods', label: 'HTTP method' },
+  { key: 'httpHosts', label: 'HTTP host' },
+  { key: 'httpRoutes', label: 'HTTP route' },
+  { key: 'httpUrls', label: 'HTTP URL' },
 ];
 
 /**
@@ -110,7 +110,6 @@ export function useTracesFilterDimensions({
         encode: selections => selections[0]?.id,
         decode: value => decodeIdSelections(value ? [value] : [], STATUS_ITEMS),
       }),
-      labelPlural: 'statuses',
       singleSelect: true,
     };
 
