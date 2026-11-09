@@ -53,9 +53,34 @@ type CDNFetchResult = {
   contents: string;
   /** SHA-256 Hash */
   hash: string;
-  /** Schema Version ID as on Hive Console (optional) */
+  /** Schema Version ID as on Hive Console (optional)
+   * @deprecated Please use `graphVersionId` instead.
+   */
   schemaVersionId: null | string;
+  /** The graph version id of the artifact. */
+  graphVersionId: null | string;
+  /** The graph id of the artifact. */
+  graphId: null | string;
+  /** When the artifact was last modified. */
+  lastModified: null | string;
 };
+
+type CDNFetchResultMetadata = Pick<
+  CDNFetchResult,
+  'schemaVersionId' | 'graphVersionId' | 'graphId' | 'lastModified'
+>;
+
+function readMetadata(headers: Headers): CDNFetchResultMetadata {
+  const graphVersionId =
+    headers.get('x-hive-graph-version-id') ?? headers.get('x-hive-schema-version-id') ?? null;
+
+  return {
+    schemaVersionId: graphVersionId,
+    graphVersionId,
+    graphId: headers.get('x-hive-graph-id') ?? null,
+    lastModified: headers.get('last-modified') ?? null,
+  };
+}
 
 function isRequestOk(response: Response) {
   return response.status === 304 || response.ok;
@@ -126,17 +151,30 @@ export function createCDNArtifactFetcher(args: CreateCDNArtifactFetcherArgs): CD
     const response: Response = await breaker.fire();
 
     if (response.status === 304) {
-      if (cached !== null) {
-        return cached;
+      if (cached === null) {
+        throw new Error('Unexpected 304 with no cache');
       }
-      throw new Error('Unexpected 304 with no cache');
+
+      // The metadata (e.g. graph id or graph version id) might have changed even though the artifact contents did not.
+      // Older CDN versions do not send the metadata with a 304 response, in that case we keep the cached values.
+      const metadata = readMetadata(response.headers);
+      cached = {
+        ...cached,
+        schemaVersionId: metadata.schemaVersionId ?? cached.schemaVersionId,
+        graphVersionId: metadata.graphVersionId ?? cached.graphVersionId,
+        graphId: metadata.graphId ?? cached.graphId,
+        lastModified: metadata.lastModified ?? cached.lastModified,
+      };
+
+      return cached;
     }
 
     const contents = await response.text();
+
     const result: CDNFetchResult = {
       hash: await createHash('SHA-256').update(contents).digest('base64'),
       contents,
-      schemaVersionId: response.headers.get('x-hive-schema-version-id') ?? null,
+      ...readMetadata(response.headers),
     };
 
     const etag = response.headers.get('etag');
