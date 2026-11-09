@@ -28,7 +28,7 @@ const createRollups = async (
   const table = `operations_v01_${granularity}`;
 
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.${table}
+    CREATE TABLE IF NOT EXISTS ${table}
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       graph_id LowCardinality(String) CODEC(ZSTD(1)),
@@ -48,7 +48,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.${table}_mv TO default.${table}
+    CREATE MATERIALIZED VIEW IF NOT EXISTS ${table}_mv TO ${table}
     AS (
       SELECT
         target,
@@ -59,13 +59,13 @@ const createRollups = async (
         client_version,
         graph_version_id,
         ${aggregateStates(granularity)}
-      FROM default.operations
+      FROM operations
       GROUP BY target, graph_id, timestamp, hash, client_name, client_version, graph_version_id
     )
   `);
 
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.${table}_by_timestamp
+    CREATE TABLE IF NOT EXISTS ${table}_by_timestamp
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       graph_id LowCardinality(String) CODEC(ZSTD(1)),
@@ -82,7 +82,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.${table}_by_timestamp_mv TO default.${table}_by_timestamp
+    CREATE MATERIALIZED VIEW IF NOT EXISTS ${table}_by_timestamp_mv TO ${table}_by_timestamp
     AS (
       SELECT
         target,
@@ -90,13 +90,13 @@ const createRollups = async (
         graph_version_id,
         ${bucket}(timestamp) AS timestamp,
         ${aggregateStates(granularity)}
-      FROM default.operations
+      FROM operations
       GROUP BY target, graph_id, timestamp, graph_version_id
     )
   `);
 
   await exec(`
-    CREATE TABLE IF NOT EXISTS default.${table}_by_client
+    CREATE TABLE IF NOT EXISTS ${table}_by_client
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       graph_id LowCardinality(String) CODEC(ZSTD(1)),
@@ -115,7 +115,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS default.${table}_by_client_mv TO default.${table}_by_client
+    CREATE MATERIALIZED VIEW IF NOT EXISTS ${table}_by_client_mv TO ${table}_by_client
     AS (
       SELECT
         target,
@@ -125,19 +125,13 @@ const createRollups = async (
         client_version,
         graph_version_id,
         ${aggregateStates(granularity)}
-      FROM default.operations
+      FROM operations
       GROUP BY target, graph_id, timestamp, client_name, client_version, graph_version_id
     )
   `);
 };
 
 export const action: Action = async exec => {
-  await exec(`
-    ALTER TABLE default.operations
-      ADD COLUMN IF NOT EXISTS graph_id LowCardinality(String) DEFAULT '' CODEC(ZSTD(1)) AFTER target,
-      ADD COLUMN IF NOT EXISTS graph_version_id String DEFAULT '' CODEC(ZSTD(1)) AFTER graph_id
-  `);
-
   await createRollups(exec, 'minutely', 'toStartOfMinute', 'toStartOfHour(timestamp)', '24 HOUR');
   await createRollups(exec, 'hourly', 'toStartOfHour', 'toYYYYMMDD(timestamp)', '30 DAY');
   await createRollups(exec, 'daily', 'toStartOfDay', 'toYYYYMM(timestamp)', '1 YEAR');

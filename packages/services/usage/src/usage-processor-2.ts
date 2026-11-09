@@ -483,6 +483,10 @@ const ClientSchema = tb.Type.Object(
   },
 );
 
+// TypeBox ships without built-in string formats; unregistered formats fail every value.
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+tb.FormatRegistry.Set('uuid', value => uuidRegex.test(value));
+
 const UUIDType = tb.Type.String({ format: 'uuid' });
 
 const GraphSchema = tb.Type.Object(

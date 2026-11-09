@@ -47,6 +47,8 @@ export const operationsOrder = [
   'client_name',
   'client_version',
   'coordinate_totals',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export const subscriptionOperationsOrder = [
@@ -106,6 +108,8 @@ export function stringifyQueryOrMutationOperation(operation: ProcessedOperation)
     client_name: castValue(operation.metadata?.client?.name),
     client_version: castValue(operation.metadata?.client?.version),
     coordinate_totals: castValue(operation.execution.coordinateTotals),
+    graph_id: castValue(operation.metadata?.graph?.graphId),
+    graph_version_id: castValue(operation.metadata?.graph?.graphVersionId),
   };
   return Object.values(mapper).join(',');
 }
