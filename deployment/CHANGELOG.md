@@ -1,5 +1,32 @@
 # hive
 
+## 15.1.1
+
+### Patch Changes
+
+- [#8895](https://github.com/graphql-hive/console/pull/8895)
+  [`686051d`](https://github.com/graphql-hive/console/commit/686051d7c385b5730dd744a670f2cbf0e33dd5fe)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade `zlib` to `1.4-r0` in the `otel-collector`
+  docker image. This addresses `CVE-2026-4738`.
+
+- [#8895](https://github.com/graphql-hive/console/pull/8895)
+  [`686051d`](https://github.com/graphql-hive/console/commit/686051d7c385b5730dd744a670f2cbf0e33dd5fe)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade the OpenTelemetry Collector in the
+  `otel-collector` docker image from `v0.162.0` to `v0.165.0`. This pulls in
+  `github.com/klauspost/compress@1.20.3`, `github.com/andybalholm/brotli@1.2.7` and
+  `golang.org/x/net@0.62.0`, addressing `CVE-2026-116591`, `CVE-2026-78661`, `CVE-2026-97045` and
+  `GHSA-c9gr-gmg4-2vqv`.
+
+- [#8895](https://github.com/graphql-hive/console/pull/8895)
+  [`686051d`](https://github.com/graphql-hive/console/commit/686051d7c385b5730dd744a670f2cbf0e33dd5fe)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-mrwp-f3q8-3g9p](https://github.com/advisories/GHSA-mrwp-f3q8-3g9p).
+
+- [#8895](https://github.com/graphql-hive/console/pull/8895)
+  [`686051d`](https://github.com/graphql-hive/console/commit/686051d7c385b5730dd744a670f2cbf0e33dd5fe)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Use Node.js `24.22.2`. The node docker images now
+  use `node:24.22.2-slim` which addresses `CVE-2026-109518`.
+
 ## 15.1.0
 
 ### Minor Changes
