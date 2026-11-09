@@ -66,7 +66,7 @@ export function flattenLegacyTracesFilter(old: LegacyTracesFilter): TracesFilter
   const [durationMin, durationMax] = old.duration ?? [];
   const statuses = new Set(old['graphql.status']);
   const flat: TracesFilter = {
-    durationMin: durationMin ? durationMin : undefined,
+    durationMin: durationMin || undefined,
     // The old reset wrote 100000, which silently capped traces at 100 s.
     durationMax:
       durationMax !== undefined && durationMax < TRACES_DURATION_BOUNDS.max
