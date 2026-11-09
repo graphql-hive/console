@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { Clock, ExternalLinkIcon } from 'lucide-react';
@@ -71,6 +71,18 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
     ];
   }, [buckets, colors]);
 
+  const navigate = tracesRoute.useNavigate();
+  const selectRange = useCallback(
+    ({ from, to }: { from: Date; to: Date }) => {
+      void navigate({
+        search(params) {
+          return { ...params, from: from.toISOString(), to: to.toISOString() };
+        },
+      });
+    },
+    [navigate],
+  );
+
   return (
     <TimeSeriesChart
       kind="bar"
@@ -78,6 +90,7 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
       height={150}
       valueFormatter={formatNumber}
       series={series}
+      onRangeSelect={selectRange}
     />
   );
 });
