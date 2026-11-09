@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FilterChips, FilterMenu } from './filter-menu';
+import { Filters } from './filters';
 import type { FilterDimension, FilterItem, FilterSelection, RangeValue } from './types';
 
 export const nav: NavPath = 'Components/Filters/FilterMenu';
@@ -429,6 +432,248 @@ export const TextListDimension = createPreview(() => {
       <code className="max-w-prose font-mono text-xs break-all text-fg-subtle">
         Copy to paste: {TRACE_IDS.join(', ')}
       </code>
+    </div>
+  );
+});
+
+const flat = (names: string[]): FilterItem[] => names.map(name => ({ name, values: [] }));
+
+const HTTP_URLS = flat(
+  Array.from({ length: 1000 }, (_, i) => `https://api.acme.dev/graphql?shard=${i + 1}`),
+);
+const RETIRED_URL = 'https://legacy.acme.dev/graphql';
+
+/**
+ * The server sends at most 1,000 values per dimension, most frequent first. `truncatedTo` says so,
+ * and a selection outside those values is kept, struck through.
+ */
+export const TruncatedItems = createPreview(() => {
+  const [urls, setUrls] = useState<FilterSelection[]>([{ name: RETIRED_URL, values: null }]);
+  const dimensions: FilterDimension[] = [
+    {
+      key: 'httpUrl',
+      label: 'HTTP URL',
+      labelPlural: 'HTTP URLs',
+      items: [...HTTP_URLS, { name: RETIRED_URL, values: [], unavailable: true }],
+      selectedItems: urls,
+      onChange: setUrls,
+      truncatedTo: 1000,
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="max-w-prose text-xs text-fg-secondary">
+        Open Filter, then HTTP URL, or the chip. The list notes that it holds only the 1,000 most
+        frequent URLs. The selected legacy URL is not among them, so it stays selected but struck
+        through, and the note says why.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterMenu dimensions={dimensions} />
+        <FilterChips dimensions={dimensions} />
+      </div>
+    </div>
+  );
+});
+
+const TRACES_ITEMS = {
+  status: flat(['Ok', 'Error']),
+  operationType: flat(['Query', 'Mutation', 'Subscription', 'Unknown']),
+  operationName: flat([
+    'GetProduct',
+    'ListProducts',
+    'RequestInfo',
+    'AddToCart',
+    'Checkout',
+    'GetViewer',
+    'SearchProducts',
+    'OnOrderUpdated',
+  ]),
+  client: flat(['storefront-web', 'storefront-ios', 'storefront-android', 'admin-console']),
+  subgraph: flat(['products', 'inventory', 'reviews', 'accounts', 'orders', 'payments']),
+  errorCode: flat([
+    'GRAPHQL_VALIDATION_FAILED',
+    'UNAUTHENTICATED',
+    'FORBIDDEN',
+    'INTERNAL_SERVER_ERROR',
+    'DOWNSTREAM_SERVICE_ERROR',
+  ]),
+  httpStatus: flat(['200', '400', '401', '403', '500', '502', '503']),
+  httpMethod: flat(['POST', 'GET']),
+  httpHost: flat(['api.acme.dev', 'api.eu.acme.dev']),
+  httpRoute: flat(['/graphql', '/graphql/stream']),
+};
+
+const pick = (...names: string[]): FilterSelection[] => names.map(name => ({ name, values: null }));
+
+/**
+ * The traces menu as planned, in order. Each items dimension holds its own selection; `all` starts
+ * every dimension set, to show the chip row at its fullest.
+ */
+function useTracesDimensions(all: boolean): FilterDimension[] {
+  const [status, setStatus] = useState(all ? pick('Error') : []);
+  const [duration, setDuration] = useState<RangeValue>({ min: 100, max: null });
+  const [operationType, setOperationType] = useState(all ? pick('Query', 'Mutation') : []);
+  const [operationName, setOperationName] = useState(all ? pick('RequestInfo') : []);
+  const [client, setClient] = useState(all ? pick('storefront-web') : []);
+  const [subgraph, setSubgraph] = useState(all ? pick('products', 'inventory') : []);
+  const [errorCode, setErrorCode] = useState(all ? pick('UNAUTHENTICATED') : []);
+  const [httpStatus, setHttpStatus] = useState(all ? pick('401', '403') : []);
+  const [httpMethod, setHttpMethod] = useState(all ? pick('POST') : []);
+  const [httpHost, setHttpHost] = useState(all ? pick('api.acme.dev') : []);
+  const [httpRoute, setHttpRoute] = useState(all ? pick('/graphql') : []);
+  const [httpUrl, setHttpUrl] = useState(all ? pick(HTTP_URLS[0].name) : []);
+  const [traceIds, setTraceIds] = useState(TRACE_IDS.slice(0, 2));
+
+  return [
+    {
+      key: 'status',
+      label: 'Status',
+      labelPlural: 'statuses',
+      items: TRACES_ITEMS.status,
+      selectedItems: status,
+      onChange: setStatus,
+      singleSelect: true,
+    },
+    {
+      key: 'duration',
+      label: 'Duration',
+      kind: 'range',
+      bounds: { min: 0, max: 100_000 },
+      unit: 'ms',
+      value: duration,
+      onChange: setDuration,
+    },
+    {
+      key: 'operationType',
+      label: 'Operation type',
+      items: TRACES_ITEMS.operationType,
+      selectedItems: operationType,
+      onChange: setOperationType,
+    },
+    {
+      key: 'operationName',
+      label: 'Operation name',
+      items: TRACES_ITEMS.operationName,
+      selectedItems: operationName,
+      onChange: setOperationName,
+    },
+    {
+      key: 'client',
+      label: 'Client',
+      items: TRACES_ITEMS.client,
+      selectedItems: client,
+      onChange: setClient,
+    },
+    {
+      key: 'subgraph',
+      label: 'Subgraph',
+      items: TRACES_ITEMS.subgraph,
+      selectedItems: subgraph,
+      onChange: setSubgraph,
+    },
+    {
+      key: 'errorCode',
+      label: 'Error code',
+      items: TRACES_ITEMS.errorCode,
+      selectedItems: errorCode,
+      onChange: setErrorCode,
+    },
+    {
+      key: 'httpStatus',
+      label: 'HTTP status',
+      labelPlural: 'HTTP statuses',
+      items: TRACES_ITEMS.httpStatus,
+      selectedItems: httpStatus,
+      onChange: setHttpStatus,
+    },
+    {
+      key: 'httpMethod',
+      label: 'HTTP method',
+      labelPlural: 'HTTP methods',
+      items: TRACES_ITEMS.httpMethod,
+      selectedItems: httpMethod,
+      onChange: setHttpMethod,
+    },
+    {
+      key: 'httpHost',
+      label: 'HTTP host',
+      labelPlural: 'HTTP hosts',
+      items: TRACES_ITEMS.httpHost,
+      selectedItems: httpHost,
+      onChange: setHttpHost,
+    },
+    {
+      key: 'httpRoute',
+      label: 'HTTP route',
+      labelPlural: 'HTTP routes',
+      items: TRACES_ITEMS.httpRoute,
+      selectedItems: httpRoute,
+      onChange: setHttpRoute,
+    },
+    {
+      key: 'httpUrl',
+      label: 'HTTP URL',
+      labelPlural: 'HTTP URLs',
+      items: HTTP_URLS,
+      selectedItems: httpUrl,
+      onChange: setHttpUrl,
+      truncatedTo: 1000,
+    },
+    {
+      key: 'traceId',
+      label: 'Trace ID',
+      kind: 'text-list',
+      values: traceIds,
+      onChange: setTraceIds,
+      placeholder: 'Paste or type a trace ID',
+      countNoun: 'id',
+    },
+  ];
+}
+
+/** The traces filter row: the menu with the date range pinned beside it, Refresh at the far end. */
+function TracesRow(props: { dimensions: FilterDimension[] }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <Filters
+        dimensions={props.dimensions}
+        pinnedControls={
+          <DateRangePicker size="compact" selectedRange={presetLast7Days.range} align="start" />
+        }
+      />
+      <RefreshButton onClick={() => {}} size="compact" />
+    </div>
+  );
+}
+
+/**
+ * The traces page's planned menu: thirteen dimensions, with Duration and Trace ID set and the
+ * HTTP URL list truncated. This is the reference the traces page is built to match.
+ */
+export const TracesDimensions = createPreview(() => {
+  const dimensions = useTracesDimensions(false);
+  return (
+    <div className="flex w-[60rem] flex-col gap-3">
+      <p className="max-w-prose text-xs text-fg-secondary">
+        The planned traces menu, in order. Status picks one value. Duration and Trace ID start set,
+        so their chips show. HTTP URL holds only the 1,000 most frequent values and says so.
+        Operation name includes RequestInfo, which the old top-five list could leave out.
+      </p>
+      <TracesRow dimensions={dimensions} />
+    </div>
+  );
+});
+
+/** Every traces dimension set at once in a narrow row, so the chips wrap onto further lines. */
+export const ManyChips = createPreview(() => {
+  const dimensions = useTracesDimensions(true);
+  return (
+    <div className="flex w-[40rem] flex-col gap-3">
+      <p className="max-w-prose text-xs text-fg-secondary">
+        All thirteen traces chips at once. The row wraps rather than overflowing, and Refresh stays
+        at the top right.
+      </p>
+      <TracesRow dimensions={dimensions} />
     </div>
   );
 });

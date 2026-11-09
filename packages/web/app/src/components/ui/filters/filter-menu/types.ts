@@ -63,6 +63,11 @@ export type ItemsFilterDimension = FilterDimensionBase & {
    * at knowing what they want to type.
    */
   alwaysShowSearch?: boolean;
+  /**
+   * Set when the server capped `items` at its most frequent values, to the cap. The list then says
+   * it is partial, and an unavailable selection reads as "not among the most frequent".
+   */
+  truncatedTo?: number;
 };
 
 /** A free-text dimension. The value is rendered in a chip once non-empty. */

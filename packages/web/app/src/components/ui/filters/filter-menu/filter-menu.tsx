@@ -77,6 +77,7 @@ function submenuContent(d: SubmenuDimension) {
           valuesLabel={d.valuesLabel}
           singleSelect={d.singleSelect}
           alwaysShowSearch={d.alwaysShowSearch}
+          truncatedTo={d.truncatedTo}
         />
       );
     default:
@@ -213,6 +214,7 @@ export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
                 onExcludeModeChange={d.onExcludeModeChange}
                 singleSelect={d.singleSelect}
                 alwaysShowSearch={d.alwaysShowSearch}
+                truncatedTo={d.truncatedTo}
               />
             ) : null;
           default:

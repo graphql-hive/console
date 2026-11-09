@@ -40,6 +40,8 @@ export type FilterDropdownProps = {
   singleSelect?: boolean;
   /** Show the search box regardless of how many items there are. */
   alwaysShowSearch?: boolean;
+  /** Set when `items` holds only the most frequent values. */
+  truncatedTo?: number;
 };
 
 /** Outer shell shared by every filter chip. */
@@ -62,6 +64,7 @@ export function FilterDropdown({
   onExcludeModeChange,
   singleSelect,
   alwaysShowSearch,
+  truncatedTo,
 }: FilterDropdownProps) {
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -136,6 +139,7 @@ export function FilterDropdown({
               valuesLabel={valuesLabel}
               singleSelect={singleSelect}
               alwaysShowSearch={alwaysShowSearch}
+              truncatedTo={truncatedTo}
             />
           }
         />
