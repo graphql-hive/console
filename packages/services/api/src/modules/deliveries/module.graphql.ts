@@ -6,19 +6,25 @@ export default gql`
   """
   type DeliveryStats {
     """
-    Attempts in the period, whatever their outcome.
+    Delivery attempts in the period, successful or not.
     """
     totalDeliveries: SafeInt!
     """
     Attempts the destination did not accept.
     """
     totalFailures: SafeInt!
+    """
+    Delivery attempts per interval, successful or not.
+    """
     deliveriesOverTime(
       """
       How fine of granularity to show
       """
       resolution: Int!
     ): [RequestsOverTime!]!
+    """
+    Attempts the destination did not accept, per interval.
+    """
     failuresOverTime(
       """
       How fine of granularity to show
@@ -78,11 +84,11 @@ export default gql`
     """
     UNKNOWN
     """
-    The most recent attempt succeeded.
+    Attempts were recorded and the ten most recent ones are not all failures.
     """
     HEALTHY
     """
-    The most recent attempt failed; failingSince is the start of the current streak.
+    The ten most recent attempts all failed; failingSince is the start of the current streak.
     """
     FAILING
   }

@@ -44,7 +44,12 @@ import {
   organizationSettingsRoute,
   organizationSettingsSsoRoute,
 } from './organization/settings';
-import { projectAlertsRoute, projectIndexRoute, projectRoute } from './project/route';
+import {
+  projectAlertChannelRoute,
+  projectAlertsRoute,
+  projectIndexRoute,
+  projectRoute,
+} from './project/route';
 import {
   projectSettingsAccessTokensRoute,
   projectSettingsCompositionRoute,
@@ -161,6 +166,7 @@ export const routeTree = root.addChildren([
           projectSettingsAccessTokensRoute,
         ]),
         projectAlertsRoute,
+        projectAlertChannelRoute,
       ]),
       targetRoute.addChildren([
         targetIndexRoute,

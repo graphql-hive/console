@@ -25,12 +25,12 @@ function createReader(rows: unknown[]) {
 }
 
 const healthRow = {
-  total: 3,
+  recent_attempts: 10,
+  recent_failures: 10,
   last_success_at: 1_762_000_000,
   last_failure_at: 1_762_003_600,
   last_status_code: 404,
   last_status_text: 'Not Found',
-  latest_ok: 0,
   failing_since: 1_762_001_800,
 };
 
@@ -38,12 +38,12 @@ describe('toDeliveryHealth', () => {
   test('UNKNOWN when nothing was recorded', () => {
     expect(
       toDeliveryHealth({
-        total: 0,
+        recent_attempts: 0,
+        recent_failures: 0,
         last_success_at: 0,
         last_failure_at: 0,
         last_status_code: 0,
         last_status_text: '',
-        latest_ok: 0,
         failing_since: 0,
       }),
     ).toEqual({
@@ -56,8 +56,8 @@ describe('toDeliveryHealth', () => {
     });
   });
 
-  test('HEALTHY when the latest attempt succeeded, keeping the older failure', () => {
-    expect(toDeliveryHealth({ ...healthRow, latest_ok: 1, failing_since: 0 })).toEqual({
+  test('HEALTHY while any of the last ten attempts succeeded, keeping the older failure', () => {
+    expect(toDeliveryHealth({ ...healthRow, recent_failures: 9, failing_since: 0 })).toEqual({
       status: 'HEALTHY',
       lastSuccessAt: new Date(1_762_000_000_000),
       lastFailureAt: new Date(1_762_003_600_000),
@@ -67,7 +67,20 @@ describe('toDeliveryHealth', () => {
     });
   });
 
-  test('FAILING with the start of the current streak', () => {
+  test('HEALTHY with fewer than ten attempts, even when all of them failed', () => {
+    expect(
+      toDeliveryHealth({
+        ...healthRow,
+        recent_attempts: 3,
+        recent_failures: 3,
+        last_success_at: 0,
+      }),
+    ).toEqual(
+      expect.objectContaining({ status: 'HEALTHY', lastSuccessAt: null, failingSince: null }),
+    );
+  });
+
+  test('FAILING once the last ten attempts all failed, with the start of the streak', () => {
     expect(toDeliveryHealth(healthRow)).toEqual(
       expect.objectContaining({
         status: 'FAILING',
@@ -77,7 +90,7 @@ describe('toDeliveryHealth', () => {
     );
   });
 
-  test('a failure in the same second as the last success starts the streak at that failure', () => {
+  test('a failure in the same second as the last success starts the streak at the latest failure', () => {
     expect(toDeliveryHealth({ ...healthRow, failing_since: 0 }).failingSince).toEqual(
       new Date(1_762_003_600_000),
     );
