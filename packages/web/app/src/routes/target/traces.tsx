@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { z } from 'zod';
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { DiffsWorkerPoolProvider } from '@/components/ui/diffs';
@@ -12,6 +13,7 @@ import {
 import { TargetInsightsNewPageContent_TraceQuery, TargetTracePage } from '@/pages/target-trace';
 import {
   defaultTracesSort,
+  TargetTracesFilterValuesQuery,
   TargetTracesPage,
   TargetTracesPageQuery,
   TargetTracesSort,
@@ -63,11 +65,21 @@ export const targetTracesRoute = createRoute({
       ),
       revalidate(loader),
     );
+    // Cache-first like the insights picker: lists change with the period, not with filters.
+    void loadQuery(loader, TargetTracesFilterValuesQuery, {
+      targetRef: { organizationSlug, projectSlug, targetSlug },
+      period,
+    });
     return { period };
   },
   component: function TargetTracesRoute() {
-    const { filter: _filter, sort = defaultTracesSort, ...filter } = targetTracesRoute.useSearch();
-    return <TargetTracesPage sorting={sort} filter={filter} />;
+    const search = targetTracesRoute.useSearch();
+    // Search is structurally shared, so the filter keeps its identity until a param changes.
+    const filter = useMemo(() => {
+      const { filter: _filter, sort: _sort, from: _from, to: _to, ...rest } = search;
+      return rest;
+    }, [search]);
+    return <TargetTracesPage sorting={search.sort ?? defaultTracesSort} filter={filter} />;
   },
 });
 

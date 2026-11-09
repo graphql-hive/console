@@ -9,6 +9,7 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DataTable, type DataTablePaginationProp } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { Filters } from '@/components/ui/filters/filter-menu/filters';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Badge } from '@/components/ui/primitives/badge/badge';
@@ -34,10 +35,12 @@ import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/ta
 import {
   flattenLegacyTracesFilter,
   TRACES_DURATION_BOUNDS,
+  tracesFilterKeys,
   withoutTracesFilter,
   type LegacyTracesFilter,
   type TracesFilter,
 } from './traces/traces-search';
+import { useTracesFilterDimensions } from './traces/use-traces-filter-dimensions';
 
 const tracesRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
@@ -444,7 +447,7 @@ type FilterOptions = {
   }>;
 };
 
-function Filters(
+function SidebarFilters(
   props: FilterProps & {
     options: FilterOptions;
   },
@@ -746,7 +749,6 @@ export const TargetTracesPageQuery = graphql(`
     $targetRef: TargetSelectorInput!
     $first: Int!
     $filter: TracesFilterInput
-    $filterTopN: Int!
     $sort: TracesSortInput
   ) {
     target(reference: { bySelector: $targetRef }) {
@@ -760,52 +762,6 @@ export const TargetTracesPageQuery = graphql(`
         pageInfo {
           hasNextPage
           endCursor
-        }
-      }
-      tracesFilterOptions(filter: $filter) {
-        success {
-          value
-          count
-        }
-        operationType {
-          value
-          count
-        }
-        operationName(top: $filterTopN) {
-          value
-          count
-        }
-        clientName(top: $filterTopN) {
-          value
-          count
-        }
-        httpStatusCode(top: $filterTopN) {
-          value
-          count
-        }
-        httpMethod(top: $filterTopN) {
-          value
-          count
-        }
-        httpHost(top: $filterTopN) {
-          value
-          count
-        }
-        httpRoute(top: $filterTopN) {
-          value
-          count
-        }
-        httpUrl(top: $filterTopN) {
-          value
-          count
-        }
-        subgraphs(top: $filterTopN) {
-          value
-          count
-        }
-        errorCode {
-          value
-          count
         }
       }
       tracesStatusBreakdown(filter: $filter) {
@@ -886,9 +842,54 @@ export function tracesPageVariables(
         ? GraphQLSchema.SortDirectionType.Desc
         : GraphQLSchema.SortDirectionType.Asc,
     },
-    filterTopN: 5,
   };
 }
+
+export const TargetTracesFilterValuesQuery = graphql(`
+  query TargetTracesFilterValuesQuery($targetRef: TargetSelectorInput!, $period: DateRangeInput!) {
+    target(reference: { bySelector: $targetRef }) {
+      id
+      tracesFilterValues(period: $period) {
+        operationNames {
+          values
+          truncated
+        }
+        clientNames {
+          values
+          truncated
+        }
+        subgraphNames {
+          values
+          truncated
+        }
+        errorCodes {
+          values
+          truncated
+        }
+        httpStatusCodes {
+          values
+          truncated
+        }
+        httpMethods {
+          values
+          truncated
+        }
+        httpHosts {
+          values
+          truncated
+        }
+        httpRoutes {
+          values
+          truncated
+        }
+        httpUrls {
+          values
+          truncated
+        }
+      }
+    }
+  }
+`);
 
 export function TargetTracesPage(props: SortProps & FilterProps) {
   return (
@@ -943,89 +944,18 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
   const sheetTraceId =
     useKeepPreviousData(selectedTraceId ?? undefined, selectedTraceId === null) ?? null;
 
-  const filterOptions = useMemo(() => {
-    const options = query.data?.target?.tracesFilterOptions;
-
-    return {
-      'graphql.status':
-        options?.success.map(option => ({
-          value: option.value ? 'ok' : 'error',
-          searchContent: option.value ? 'ok' : 'error',
-          label: option.value ? 'Ok' : 'Error',
-          count: option.count,
-        })) ?? [],
-      'graphql.kind':
-        options?.operationType.map(option => ({
-          value: option.value === '' ? null : option.value.toUpperCase(),
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'graphql.name':
-        options?.operationName.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.status':
-        options?.httpStatusCode.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.method':
-        options?.httpMethod.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.host':
-        options?.httpHost.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.route':
-        options?.httpRoute.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.url':
-        options?.httpUrl.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'graphql.subgraph':
-        options?.subgraphs.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'graphql.errorCode':
-        options?.errorCode.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'graphql.client':
-        options?.clientName.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-    };
-  }, [query.data?.target?.tracesFilterOptions]);
+  const navigate = tracesRoute.useNavigate();
+  // Keyed by target and period only, so changing a filter is a cache hit.
+  const [valuesQuery] = useQuery({
+    query: TargetTracesFilterValuesQuery,
+    variables: { targetRef: variables.targetRef, period },
+  });
+  const dimensions = useTracesFilterDimensions({
+    search: props.filter,
+    navigate,
+    values: valuesQuery.data?.target?.tracesFilterValues,
+  });
+  const hasFilters = tracesFilterKeys.some(key => props.filter[key] !== undefined);
 
   if (query.error) {
     return (
@@ -1044,43 +974,47 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
       <SubPageLayoutHeader
         subPageTitle="Traces"
         description="Insights into the requests made to your GraphQL API."
-        sideContent={
-          <div className="flex flex-1 justify-end gap-x-4">
+      />
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <Filters
+          dimensions={dimensions}
+          pinnedControls={
             <DateRangePicker
+              size="compact"
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
-              align="end"
+              align="start"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
-            <RefreshButton
-              onClick={() => dateRangeController.refreshResolvedRange()}
-              disabled={isLoading}
-            />
-          </div>
-        }
-      />
-      <div className="mt-4 flex min-h-svh w-full">
-        <aside className="sticky top-4 flex h-full w-64 flex-col text-fg-default">
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
-            <Filters filter={props.filter} options={filterOptions} />
-          </div>
-        </aside>
-        <main className="relative flex min-h-svh flex-1 flex-col">
-          <div className="flex flex-1 flex-col gap-4 pt-0 pl-4">
-            <div>
-              <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
-            </div>
-            <TracesList
-              sorting={props.sorting}
-              traces={traces}
-              onSelectTraceId={setSelectedTraceId}
-              selectedTraceId={selectedTraceId}
-              isFetching={query.fetching}
-              pagination={pagination}
-            />
-          </div>
-        </main>
+          }
+          afterChips={
+            hasFilters ? (
+              <Button
+                label="Clear filters"
+                variant="ghost"
+                size="compact"
+                onClick={() => void navigate({ search: prev => withoutTracesFilter(prev) })}
+              />
+            ) : null
+          }
+        />
+        <RefreshButton
+          size="compact"
+          onClick={() => dateRangeController.refreshResolvedRange()}
+          disabled={isLoading}
+        />
       </div>
+      <main className="mt-4 flex min-h-svh flex-col gap-4">
+        <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
+        <TracesList
+          sorting={props.sorting}
+          traces={traces}
+          onSelectTraceId={setSelectedTraceId}
+          selectedTraceId={selectedTraceId}
+          isFetching={query.fetching}
+          pagination={pagination}
+        />
+      </main>
       <SelectedTraceSheet
         open={selectedTraceId !== null}
         onOpenChange={isOpen => {
