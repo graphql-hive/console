@@ -14,6 +14,13 @@ interface HttpClientOptions extends OptionsOfJSONResponseBody {
 
 type HttpOptions = Omit<HttpClientOptions, 'method' | 'throwHttpErrors' | 'resolveBodyOnly'>;
 
+export interface HttpClientResponse<T> {
+  statusCode: number;
+  /** The reason phrase; empty when the response carried none. */
+  statusText: string;
+  body: T;
+}
+
 const gotInstance = got.extend({
   headers: {
     'user-agent': '',
@@ -37,19 +44,31 @@ export class HttpClient {
   }
 
   get<T>(url: string, opts: HttpOptions, parentSpan?: Span): Promise<T> {
-    return this.request<T>(url, { ...opts, method: 'GET' }, parentSpan);
+    return this.request<T>(url, { ...opts, method: 'GET' }, parentSpan).then(r => r.body);
   }
   post<T>(url: string, opts: HttpOptions = {}, parentSpan?: Span): Promise<T> {
+    return this.request<T>(url, { ...opts, method: 'POST' }, parentSpan).then(r => r.body);
+  }
+  /** Like `post`, but keeps the status of the response. */
+  postWithResponse<T>(
+    url: string,
+    opts: HttpOptions = {},
+    parentSpan?: Span,
+  ): Promise<HttpClientResponse<T>> {
     return this.request<T>(url, { ...opts, method: 'POST' }, parentSpan);
   }
   put<T>(url: string, opts: HttpOptions = {}, parentSpan?: Span): Promise<T> {
-    return this.request<T>(url, { ...opts, method: 'PUT' }, parentSpan);
+    return this.request<T>(url, { ...opts, method: 'PUT' }, parentSpan).then(r => r.body);
   }
   delete<T>(url: string, opts: HttpOptions, parentSpan?: Span): Promise<T> {
-    return this.request<T>(url, { ...opts, method: 'DELETE' }, parentSpan);
+    return this.request<T>(url, { ...opts, method: 'DELETE' }, parentSpan).then(r => r.body);
   }
 
-  private request<T>(url: string, opts: HttpClientOptions, parentSpan?: Span) {
+  private request<T>(
+    url: string,
+    opts: HttpClientOptions,
+    parentSpan?: Span,
+  ): Promise<HttpClientResponse<T>> {
     const logger = opts?.context?.logger ?? console;
     const parsedUrl = new URL(url);
     const span =
@@ -80,7 +99,11 @@ export class HttpClient {
             span.setAttribute('cache', response.headers['x-cache'] as string);
           }
 
-          return Promise.resolve(response.body);
+          return Promise.resolve({
+            statusCode: response.statusCode,
+            statusText: response.statusMessage ?? '',
+            body: response.body,
+          });
         },
         error => {
           let details: string | null = null;
@@ -108,7 +131,18 @@ export class HttpClient {
               details,
             },
           });
-          return Promise.reject(new HiveHttpClientError(error.message, error.code));
+          return Promise.reject(
+            new HiveHttpClientError(
+              error.message,
+              error.code,
+              error instanceof HTTPError
+                ? {
+                    statusCode: error.response.statusCode,
+                    statusText: error.response.statusMessage ?? '',
+                  }
+                : undefined,
+            ),
+          );
         },
       )
       .finally(() => {
@@ -118,11 +152,18 @@ export class HttpClient {
 }
 
 export class HiveHttpClientError extends Error {
+  /** HTTP status of the response, when the destination answered. */
+  public readonly statusCode?: number;
+  public readonly statusText?: string;
+
   constructor(
     message: string,
     public code: string,
+    status?: { statusCode: number; statusText: string },
   ) {
     super(message);
     this.name = 'HiveHttpClientError';
+    this.statusCode = status?.statusCode;
+    this.statusText = status?.statusText;
   }
 }
