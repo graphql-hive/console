@@ -15,6 +15,7 @@ import {
   updateMe,
   updateMemberRole,
 } from 'testkit/flow';
+import { password } from 'testkit/auth';
 import { graphql } from 'testkit/gql';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -4047,7 +4048,7 @@ test.concurrent(
       body: JSON.stringify({
         formFields: [
           { id: 'email', value: ownerEmail },
-          { id: 'password', value: 'ilikebigturtlesandicannotlie47' },
+          { id: 'password', value: password },
         ],
       }),
       headers: {
@@ -4099,7 +4100,7 @@ test.concurrent(
       body: JSON.stringify({
         formFields: [
           { id: 'email', value: adminEmail },
-          { id: 'password', value: 'ilikebigturtlesandicannotlie47' },
+          { id: 'password', value: password },
         ],
       }),
       headers: {
@@ -4164,7 +4165,7 @@ test.concurrent(
         body: JSON.stringify({
           formFields: [
             { id: 'email', value: ownerEmail },
-            { id: 'password', value: 'ilikebigturtlesandicannotlie47' },
+            { id: 'password', value: password },
           ],
         }),
         headers: {
