@@ -393,46 +393,7 @@ input ReviewInput { stars: Int! commentary: String }
 type Mutation { createReview(episode: Episode, review: ReviewInput!): Review }
 `.trim();
 
-// The same schema split into three subgraphs for the federated project, so the Subgraphs
-// filter has something to resolve. Ownership: characters owns Character/Human/Droid fields
-// and Query.hero; starships owns Starship and Human.starships; reviews owns Review and
-// Mutation.createReview. Human.id is a shared key, so it matches characters AND starships,
-// which is the documented caveat of subgraph filters made visible on purpose.
-const SUBGRAPHS: Array<{ service: string; url: string; sdl: string }> = [
-  {
-    service: 'characters',
-    url: 'https://characters.example.com/graphql',
-    sdl: `
-interface Node { id: ID! }
-interface Character implements Node { id: ID! name: String! friends: [Character] appearsIn: [Episode]! }
-type Human implements Character & Node @key(fields: "id") { id: ID! name: String! friends: [Character] appearsIn: [Episode]! totalCredits: Int }
-type Droid implements Character & Node @key(fields: "id") { id: ID! name: String! friends: [Character] appearsIn: [Episode]! primaryFunction: String }
-enum Episode { NEWHOPE EMPIRE JEDI }
-type Query { hero(episode: Episode): Character }
-`.trim(),
-  },
-  {
-    service: 'starships',
-    url: 'https://starships.example.com/graphql',
-    sdl: `
-type Starship { id: ID! name: String! length(unit: LengthUnit = METER): Float }
-enum LengthUnit { METER LIGHT_YEAR }
-type Human @key(fields: "id") { id: ID! starships: [Starship] }
-`.trim(),
-  },
-  {
-    service: 'reviews',
-    url: 'https://reviews.example.com/graphql',
-    sdl: `
-enum Episode { NEWHOPE EMPIRE JEDI }
-type Review { episode: Episode stars: Int! commentary: String }
-input ReviewInput { stars: Int! commentary: String }
-type Mutation { createReview(episode: Episode, review: ReviewInput!): Review }
-`.trim(),
-  },
-];
-
-/** Operations that touch the reviews subgraph, for the rule scoped to it. */
+/** Operations that create a review, for the rule scoped to that mutation. */
 const REVIEW_OPERATIONS = OPERATIONS.filter(op => op.fields.includes('Mutation.createReview'));
 
 // ---------------------------------------------------------------------------
@@ -563,7 +524,7 @@ async function main() {
   const projectResult = await createProject(
     {
       organization: { bySelector: { organizationSlug: organization.slug } },
-      type: ProjectType.Federation,
+      type: ProjectType.Single,
       slug: generateUnique(),
     },
     ownerToken,
@@ -1283,9 +1244,9 @@ async function main() {
       channelKeys: ['slack'],
       desiredState: 'NORMAL',
       scenario: 'business_hours',
-      // Scoped to the reviews subgraph so the alert detail page renders a subgraph chip and
-      // the evaluator exercises the coordinates subquery against seeded data.
-      savedFilterName: 'Reviews subgraph',
+      // Scoped to Mutation.createReview so the alert detail page renders a field chip and the
+      // evaluator exercises the coordinates subquery against seeded data.
+      savedFilterName: 'Review mutations',
       operationPool: REVIEW_OPERATIONS,
     },
     {
@@ -1421,24 +1382,19 @@ async function main() {
 
   const secret = tokenResult.createToken.ok!.secret;
 
-  for (const subgraph of SUBGRAPHS) {
-    const publishResult = await publishSchema(
-      {
-        author: 'seed-insights',
-        commit: `seed-${subgraph.service}`,
-        service: subgraph.service,
-        url: subgraph.url,
-        sdl: subgraph.sdl,
-        force: true,
-      },
-      secret,
-      'authorization',
-    );
-    if (publishResult.rawBody.errors?.length) {
-      console.error(`Schema publish failed (${subgraph.service}):`, publishResult.rawBody.errors);
-      process.exit(1);
-    }
-    console.log(`   Published subgraph "${subgraph.service}".`);
+  const publishResult = await publishSchema(
+    {
+      author: 'seed-insights',
+      commit: 'seed',
+      sdl: SCHEMA_SDL,
+      force: true,
+    },
+    secret,
+    'authorization',
+  );
+  if (publishResult.rawBody.errors?.length) {
+    console.error('Schema publish failed:', publishResult.rawBody.errors);
+    process.exit(1);
   }
 
   // Generate operations spread across the retained range
@@ -1500,46 +1456,6 @@ async function main() {
   // Send baseline ops in batches so downstream saved-filter creation + ingestion wait
   // work. Alert signal ops are flushed separately later.
   await sendOperationsInBatches(allOperations, secret, 'Sending batch');
-
-  // A second, non-federated project in the same org: the negative case for the Subgraphs
-  // filter (hidden in the UI, rejected on save) with enough traffic for Insights to render.
-  console.log('\n📦 Creating a SINGLE project alongside (one day of traffic)...');
-  const singleProjectResult = await createProject(
-    {
-      organization: { bySelector: { organizationSlug: organization.slug } },
-      type: ProjectType.Single,
-      slug: generateUnique(),
-    },
-    ownerToken,
-  ).then(r => r.expectNoGraphQLErrors());
-  const singleProject = singleProjectResult.createProject.ok!.createdProject;
-  const singleTarget = singleProjectResult.createProject.ok!.createdTargets[0];
-  const singleTokenResult = await createToken(
-    {
-      name: generateUnique(),
-      organizationSlug: organization.slug,
-      projectSlug: singleProject.slug,
-      targetSlug: singleTarget.slug,
-      organizationScopes: [],
-      projectScopes: [],
-      targetScopes: [TargetAccessScope.RegistryRead, TargetAccessScope.RegistryWrite],
-    },
-    ownerToken,
-  ).then(r => r.expectNoGraphQLErrors());
-  const singleSecret = singleTokenResult.createToken.ok!.secret;
-  const singlePublish = await publishSchema(
-    { author: 'seed-insights', commit: 'seed-single', sdl: SCHEMA_SDL, force: true },
-    singleSecret,
-    'authorization',
-  );
-  if (singlePublish.rawBody.errors?.length) {
-    console.error('Schema publish failed (single project):', singlePublish.rawBody.errors);
-    process.exit(1);
-  }
-  const singleOperations: CollectedOperation[] = [];
-  generateBaseline(singleOperations, now - Math.min(daysPastMs, ONE_DAY_MS), () => false);
-  await sendOperationsInBatches(singleOperations, singleSecret, 'Sending single-project batch');
-  console.log(`   Project: ${singleProject.slug}, target: ${singleTarget.slug}`);
 
   // Helper for saved filter operations
   const targetSelector = {
@@ -1680,7 +1596,6 @@ async function main() {
     clientFilters?: Array<{ name: string; versions?: string[] }>;
     dateRange?: { from: string; to: string };
     schemaCoordinates?: string[];
-    subgraphNames?: string[];
     views: number;
   }> = [
     {
@@ -1825,11 +1740,11 @@ async function main() {
       views: 203,
     },
     {
-      name: 'Reviews subgraph',
-      description: 'Everything that touches the reviews subgraph',
+      name: 'Review mutations',
+      description: 'Everything that creates a review',
       visibility: SavedFilterVisibilityType.Shared,
       operationNames: [],
-      subgraphNames: ['reviews'],
+      schemaCoordinates: ['Mutation.createReview'],
       dateRange: { from: 'now-7d', to: 'now' },
       views: 88,
     },
@@ -1846,7 +1761,7 @@ async function main() {
       description: 'Starship traffic, web client only',
       visibility: SavedFilterVisibilityType.Shared,
       operationNames: [],
-      subgraphNames: ['starships'],
+      schemaCoordinates: ['Human.starships', 'Starship.name'],
       clientFilters: [{ name: 'web-app' }],
       dateRange: { from: 'now-30d', to: 'now' },
       views: 17,
@@ -1866,7 +1781,6 @@ async function main() {
         ...(def.clientFilters ? { clientFilters: def.clientFilters } : {}),
         ...(def.dateRange ? { dateRange: def.dateRange } : {}),
         ...(def.schemaCoordinates ? { schemaCoordinates: def.schemaCoordinates } : {}),
-        ...(def.subgraphNames ? { subgraphNames: def.subgraphNames } : {}),
       },
     });
     if (result.ok) {
@@ -2154,10 +2068,9 @@ Credentials:
 Navigate to:
   http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/insights
   http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/alerts
-  http://localhost:3000/${organization.slug}/${singleProject.slug}/${singleTarget.slug}/insights  (SINGLE project: no Subgraphs filter)
 
-Subgraphs: ${SUBGRAPHS.map(s => s.service).join(', ')}. Saved filters using them: "Reviews subgraph",
-"Character names", "Starships from the web app". Rule "P95 Latency Above 800ms - Last 30 Min" is on "Reviews subgraph".
+Saved filters on the Fields dimension: "Review mutations", "Character names", "Starships from the web app".
+Rule "P95 Latency Above 800ms - Last 30 Min" is on "Review mutations".
 
 Rules in non-NORMAL states (for polling testing):
 ${createdAlertRules
