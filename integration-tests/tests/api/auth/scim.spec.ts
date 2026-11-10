@@ -1,4 +1,5 @@
 import humanId from 'human-id';
+import { password } from 'testkit/auth';
 import {
   addGroupMappingToGroup,
   assignMemberRole,
@@ -15,7 +16,6 @@ import {
   updateMe,
   updateMemberRole,
 } from 'testkit/flow';
-import { password } from 'testkit/auth';
 import { graphql } from 'testkit/gql';
 import { ResourceAssignmentModeType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
