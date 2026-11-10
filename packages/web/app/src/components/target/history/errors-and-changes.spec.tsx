@@ -45,9 +45,9 @@ describe('CompositionErrorsList', () => {
     getByText('Composition Errors');
     expect(container.querySelector('pre')?.textContent).toBe(query);
     // The same section heading as the change lists, with its explainer beside it.
-    const heading = container.querySelector('[data-cy="composition-errors-title"]')!;
+    const heading = container.querySelector('[data-testid="composition-errors-title"]')!;
     expect(heading.textContent).toContain('Composition Errors');
-    expect(heading.querySelector('[data-cy="composition-errors-info"]')).toBeTruthy();
+    expect(heading.querySelector('[data-testid="composition-errors-info"]')).toBeTruthy();
   });
 });
 

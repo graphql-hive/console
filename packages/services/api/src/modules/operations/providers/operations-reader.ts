@@ -1,10 +1,11 @@
-import { addMinutes, format } from 'date-fns';
 import { Injectable } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
 import {
   buildCoordinateScopeCondition,
   buildOperationsFilterSQLConditions,
+  formatDateTime,
+  parseDateTime,
   RawValue,
   SqlValue,
 } from '@hive/clickhouse';
@@ -24,18 +25,10 @@ const CoordinateClientNamesGroupModel = z.array(
   }),
 );
 
-export function formatDate(date: Date): string {
-  return format(addMinutes(date, date.getTimezoneOffset()), 'yyyy-MM-dd HH:mm:ss');
-}
+export const formatDate = formatDateTime;
 
 function toUnixTimestamp(utcDate: string): number {
-  // 2024-04-26 11:00:00
-  const [date, time] = utcDate.split(' ');
-  const [year, month, day] = date.split('-');
-  const [hour, minute, second] = time.split(':');
-  const iso = `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
-
-  return new UTCDate(iso).getTime();
+  return parseDateTime(utcDate).getTime();
 }
 
 export interface DurationMetrics {

@@ -1,5 +1,5 @@
 import { ReactElement, useMemo } from 'react';
-import { AlertCircleIcon } from 'lucide-react';
+import { AlertCircleIcon, CopyIcon } from 'lucide-react';
 import { useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { RetentionNote } from '@/components/organization/billing/retention-note';
@@ -11,11 +11,12 @@ import { GraphQLHighlight } from '@/components/ui/graphql-block';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';
+import { Button } from '@/components/ui/primitives/button/button';
 import { Card } from '@/components/ui/primitives/card/card';
 import { QueryError } from '@/components/ui/query-error';
 import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { FragmentType, graphql, useFragment } from '@/gql';
-import { useSlugs } from '@/lib/hooks';
+import { useClipboard, usePrettify, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
 
@@ -23,7 +24,7 @@ const operationRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights/$operationName/$operationHash',
 );
 
-const GraphQLOperationBody_OperationFragment = graphql(`
+export const GraphQLOperationBody_OperationFragment = graphql(`
   fragment GraphQLOperationBody_OperationFragment on Operation {
     body
   }
@@ -39,6 +40,31 @@ function GraphQLOperationBody(props: {
   }
 
   return <div>Operation not found.</div>;
+}
+
+// The body view is virtualized, so select-all only reaches the mounted lines.
+export function CopyOperationButton(props: {
+  operation: FragmentType<typeof GraphQLOperationBody_OperationFragment> | null;
+}) {
+  const operation = useFragment(GraphQLOperationBody_OperationFragment, props.operation);
+  const body = usePrettify(operation?.body ?? null);
+  const copy = useClipboard();
+
+  return (
+    <Button
+      variant="outline"
+      size="compact"
+      disabled={!body}
+      onClick={() => {
+        if (body) {
+          void copy(body);
+        }
+      }}
+    >
+      <CopyIcon className="size-3.5" />
+      Copy operation
+    </Button>
+  );
 }
 
 export const Operation_View_OperationBodyQuery = graphql(`
@@ -134,7 +160,11 @@ function OperationView({
         </Alert>
       )}
       <div className="mt-12 w-full">
-        <Card variants={{ onSurface: 'raised', titleSize: 'large' }} title="Operation body">
+        <Card
+          variants={{ onSurface: 'raised', titleSize: 'large' }}
+          title="Operation body"
+          actions={<CopyOperationButton operation={result.data?.target?.operation ?? null} />}
+        >
           {result.fetching ? (
             <div>Loading...</div>
           ) : (

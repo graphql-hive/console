@@ -1,8 +1,20 @@
 import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
+import { HiveConsoleReleaseVersion } from '../../../shared/providers/tokens';
+import { DeliveryRecorder } from '../delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
-import { TeamsCommunicationAdapter } from './msteams';
+import { describeTeamsError, TeamsCommunicationAdapter, TeamsWebhookError } from './msteams';
+
+vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
+vi.mock('@hive/service-common', () => ({ getRequestId: () => 'req-1' }));
+vi.mock('../../../operations/providers/clickhouse-client', () => ({
+  ClickHouse: class {},
+  sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+    sql: strings.join('?'),
+    values,
+  }),
+}));
 
 const logger = {
   child: () => ({
@@ -10,6 +22,23 @@ const logger = {
     error: vi.fn(),
   }),
 };
+
+function createAdapter() {
+  const recorder = new DeliveryRecorder(
+    { postQuery: vi.fn().mockResolvedValue(undefined) } as any,
+    logger as any,
+    new HiveConsoleReleaseVersion('1.2.3'),
+  );
+  const record = vi.spyOn(recorder, 'record').mockResolvedValue(undefined);
+  const adapter = new TeamsCommunicationAdapter(logger as any, appBaseUrl, recorder);
+
+  return { adapter, record };
+}
+
+beforeAll(() => {
+  // @ts-expect-error mocking fetch
+  global.fetch = vi.fn(() => Promise.resolve({ ok: true, status: 200, statusText: 'OK' }));
+});
 
 const appBaseUrl = 'app-base-url';
 const webhookUrl = 'webhook-url';
@@ -142,16 +171,17 @@ describe('TeamsCommunicationAdapter', () => {
           },
         },
         channel: {
+          id: 'channel-id',
           webhookEndpoint: webhookUrl,
         } as AlertChannel,
       } as SchemaChangeNotificationInput;
 
-      const adapter = new TeamsCommunicationAdapter(logger as any, appBaseUrl);
+      const { adapter, record } = createAdapter();
       const sendTeamsMessageSpy = vi.spyOn(adapter as any, 'sendTeamsMessage');
 
       await adapter.sendSchemaChangeNotification(input);
 
-      expect(sendTeamsMessageSpy.mock.calls[0]).toMatchInlineSnapshot(`
+      expect(sendTeamsMessageSpy.mock.calls[0].slice(0, 3)).toMatchInlineSnapshot(`
         [
           webhook-url,
           🐝 Hi, I found *4 changes* in project [project-name](app-base-url/org-clean-id/project-clean-id), target [target-name](app-base-url/org-clean-id/project-clean-id/target-clean-id) ([view details](app-base-url/org-clean-id/project-clean-id/target-clean-id/history/schema-id)):
@@ -166,6 +196,55 @@ describe('TeamsCommunicationAdapter', () => {
           [view full report](app-base-url/org-clean-id/project-clean-id/target-clean-id/history/schema-id),
         ]
       `);
+      expect(sendTeamsMessageSpy.mock.calls[0][3]).toEqual({
+        'Hive-Request-ID': 'req-1',
+        'Hive-Event': 'schema_change',
+        'Hive-Target-ID': 'target-id',
+        'Hive-Schema-ID': 'schema-id',
+        'User-Agent': 'Hive-Webhooks/1.2.3',
+        'Idempotency-Key': 'schema-change:schema-id:channel-id',
+      });
+      expect(record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'org-id',
+          deliveryType: 'MSTEAMS_WEBHOOK',
+          destination: 'channel-id',
+          event: 'schema_change',
+          idempotencyKey: 'schema-change:schema-id:channel-id',
+          ok: true,
+          statusCode: 200,
+          statusText: 'OK',
+          metadata: sendTeamsMessageSpy.mock.calls[0][3],
+        }),
+      );
+    });
+
+    it('records a rejected webhook with the status the destination answered', async () => {
+      // @ts-expect-error types obviously don't account for the fact this is mocked
+      fetch.mockImplementationOnce(() =>
+        Promise.resolve({ ok: false, status: 400, statusText: 'Bad Request' }),
+      );
+      const { adapter, record } = createAdapter();
+
+      await adapter.sendChannelConfirmation({
+        event: {
+          kind: 'created',
+          organization: { id: 'org-id', cleanId: 'org', slug: 'org', name: 'Org' },
+          project: { id: 'project-id', cleanId: 'project', slug: 'project', name: 'Project' },
+        },
+        channel: { id: 'channel-id', webhookEndpoint: webhookUrl } as AlertChannel,
+        integrations: { slack: { token: null } },
+      });
+
+      expect(record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          deliveryType: 'MSTEAMS_WEBHOOK',
+          event: 'channel_confirmation',
+          ok: false,
+          statusCode: 400,
+          statusText: 'Bad Request',
+        }),
+      );
     });
 
     // Add more test cases here if needed
@@ -173,7 +252,6 @@ describe('TeamsCommunicationAdapter', () => {
 });
 describe('sendChannelConfirmation', () => {
   it('should send channel confirmation', async () => {
-    const appBaseUrl = 'app-base-url';
     const webhookUrl = 'webhook-url';
     const input = {
       event: {
@@ -191,13 +269,14 @@ describe('sendChannelConfirmation', () => {
         kind: 'created',
       },
       channel: {
+        id: 'channel-id',
         webhookEndpoint: webhookUrl,
       },
     } as ChannelConfirmationInput;
-    const adapter = new TeamsCommunicationAdapter(logger as any, appBaseUrl);
+    const { adapter } = createAdapter();
     const sendTeamsMessageSpy = vi.spyOn(adapter as any, 'sendTeamsMessage');
     await adapter.sendChannelConfirmation(input);
-    expect(sendTeamsMessageSpy.mock.calls[0]).toMatchInlineSnapshot(`
+    expect(sendTeamsMessageSpy.mock.calls[0].slice(0, 2)).toMatchInlineSnapshot(`
       [
         webhook-url,
         👋 Hi! I'm the notification 🐝.
@@ -205,9 +284,16 @@ describe('sendChannelConfirmation', () => {
       ]
     `);
 
+    expect(sendTeamsMessageSpy.mock.calls[0][3]).toEqual(
+      expect.objectContaining({
+        'Hive-Event': 'channel_confirmation',
+        'Idempotency-Key': 'channel-confirmation:created:channel-id',
+      }),
+    );
+
     input.event.kind = 'deleted';
     await adapter.sendChannelConfirmation(input);
-    expect(sendTeamsMessageSpy.mock.calls[1]).toMatchInlineSnapshot(`
+    expect(sendTeamsMessageSpy.mock.calls[1].slice(0, 2)).toMatchInlineSnapshot(`
       [
         webhook-url,
         👋 Hi! I'm the notification 🐝.
@@ -217,7 +303,7 @@ describe('sendChannelConfirmation', () => {
   });
 
   describe('sendTeamsMessage', () => {
-    const adapter = new TeamsCommunicationAdapter(logger as any, appBaseUrl);
+    const { adapter } = createAdapter();
 
     beforeAll(() => {
       // @ts-expect-error mocking fetch
@@ -260,5 +346,45 @@ describe('sendChannelConfirmation', () => {
         adapter.sendTeamsMessage('http://example.com/webhook', 'Test message'),
       ).rejects.toThrow('Failed to send Microsoft Teams message: Bad Request');
     });
+  });
+});
+
+describe('describeTeamsError', () => {
+  test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
+    [
+      'the webhook answered',
+      new TeamsWebhookError(400, 'Bad Request'),
+      { statusCode: 400, statusText: 'Bad Request' },
+    ],
+    [
+      'connect timeout inside fetch',
+      Object.assign(new TypeError('fetch failed'), {
+        cause: Object.assign(new Error('Connect Timeout Error'), {
+          code: 'UND_ERR_CONNECT_TIMEOUT',
+        }),
+      }),
+      { statusCode: null, statusText: 'Timed out' },
+    ],
+    [
+      'headers timeout inside fetch',
+      Object.assign(new TypeError('fetch failed'), {
+        cause: Object.assign(new Error('Headers Timeout Error'), {
+          code: 'UND_ERR_HEADERS_TIMEOUT',
+        }),
+      }),
+      { statusCode: null, statusText: 'Timed out' },
+    ],
+    [
+      'connection refused inside fetch',
+      Object.assign(new TypeError('fetch failed'), {
+        cause: Object.assign(new Error('connect ECONNREFUSED 10.0.0.5:443'), {
+          code: 'ECONNREFUSED',
+        }),
+      }),
+      null,
+    ],
+    ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
+  ])('%s', (_name, error, expected) => {
+    expect(describeTeamsError(error)).toEqual(expected);
   });
 });

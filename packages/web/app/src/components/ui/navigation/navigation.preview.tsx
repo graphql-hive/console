@@ -155,7 +155,7 @@ const ALERTS_ITEMS: NavigationItem[] = [
     label: 'Alert rules',
     to: '/$organizationSlug/$projectSlug/$targetSlug/alerts/rules',
     params: TARGET,
-    attrs: { 'data-cy': 'alerts-rules-link' },
+    attrs: { 'data-testid': 'alerts-rules-link' },
   },
   {
     label: 'Create a new alert',

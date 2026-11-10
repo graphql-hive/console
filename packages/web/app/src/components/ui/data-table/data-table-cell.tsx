@@ -21,6 +21,7 @@ import { Checkbox } from '../primitives/checkbox/checkbox';
 import { CopyChip } from '../primitives/copy-chip/copy-chip';
 import { Menu } from '../primitives/floating/menu/menu';
 import { Tooltip } from '../primitives/floating/tooltip/tooltip';
+import { focusRingQuiet } from '../primitives/shared-styles';
 import { StatusDot } from '../primitives/status-dot/status-dot';
 
 type BadgeVariant =
@@ -490,8 +491,15 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       );
     case 'status': {
       if ('dot' in props) {
+        const triggerClass = cn(
+          'inline-flex items-center gap-1.5 text-fg',
+          props.tooltip && focusRingQuiet,
+        );
         const body = (
-          <span className="inline-flex items-center gap-1.5 text-fg">
+          // A status is a label, not a control: it is a focus stop only when it carries a tooltip,
+          // so a keyboard user can reach the hint, which opens on focus.
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+          <span tabIndex={props.tooltip ? 0 : undefined} className={triggerClass}>
             <StatusDot color={props.dot} />
             {props.label}
           </span>
@@ -500,8 +508,15 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       }
       if ('icon' in props) {
         const Icon = props.icon;
+        const triggerClass = cn(
+          'inline-flex items-center gap-1.5 text-fg',
+          props.tooltip && focusRingQuiet,
+        );
         const body = (
-          <span className="inline-flex items-center gap-1.5 text-fg">
+          // A status is a label, not a control: it is a focus stop only when it carries a tooltip,
+          // so a keyboard user can reach the hint, which opens on focus.
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+          <span tabIndex={props.tooltip ? 0 : undefined} className={triggerClass}>
             {props.label}
             <Icon className={cn('size-3.5', statusIconTone[props.iconTone ?? 'neutral'])} />
           </span>

@@ -26,7 +26,7 @@ function NameForm(props: {
     <Form
       form={form}
       onSubmit={values => props.onSubmit?.(values)}
-      attrs={{ 'data-cy': 'name-form' }}
+      attrs={{ 'data-testid': 'name-form' }}
     >
       <FormField
         control={form.control}
@@ -68,7 +68,7 @@ describe('Form', () => {
   it('labels the field it wraps and reserves the message line', () => {
     render(<NameForm />);
     // One element: the provider and the form are the same component, and attrs land on the form.
-    expect(document.querySelector('form[data-cy="name-form"]')).not.toBeNull();
+    expect(document.querySelector('form[data-testid="name-form"]')).not.toBeNull();
     const input = screen.getByLabelText('Name');
     expect(input.tagName).toBe('INPUT');
     expect(input.getAttribute('aria-invalid')).not.toBe('true');

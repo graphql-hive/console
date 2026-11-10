@@ -16,7 +16,8 @@ type Event =
         | 'introspection'
         | 'services'
         | 'sdl.graphql'
-        | 'sdl.graphqls';
+        | 'sdl.graphqls'
+        | 'manifest.json';
     }
   | {
       type: 'app-deployment-operation';
@@ -58,6 +59,7 @@ type Event =
       type: 'r2' | 's3';
       action:
         | 'GET artifact'
+        | 'HEAD artifact'
         | 'GET cdn-legacy-keys'
         | 'GET cdn-access-token'
         | 'GET persistedOperation'

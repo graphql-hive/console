@@ -78,12 +78,31 @@ describe('project alerts route', () => {
     expect(client.requests('ProjectLayoutQuery')).toHaveLength(1);
   });
 
-  it('sends a viewer who may not modify alerts to the project', { timeout: 30_000 }, async () => {
-    const fixtures = layoutFixtures();
-    fixtures.set('ProjectLayoutQuery', projectLayout({ viewerCanModifyAlerts: false }));
-    const { router } = await loadedAt(`${PROJECT}/view/alerts`, fixtures);
+  it(
+    'starts the channel page revalidating the channel beside the gate, leaving deliveries to the page',
+    { timeout: 30_000 },
+    async () => {
+      const { client, router } = await loadedAt(`${PROJECT}/view/alerts/channels/channel-1`);
 
-    await waitFor(() => expect(router.state.location.pathname).toBe(PROJECT));
-    expect(router.history.length).toBe(1);
-  });
+      expect(router.state.location.pathname).toBe(`${PROJECT}/view/alerts/channels/channel-1`);
+      const [[variables, policy]] = requestsOf(client, 'ProjectAlertChannelPage_ChannelQuery');
+      expect(variables).toEqual({ ...PROJECT_SLUGS, channelId: 'channel-1' });
+      expect(['cache-and-network', 'network-only']).toContain(policy);
+      expect(client.seen).not.toContain('ProjectAlertChannelPage_DeliveriesQuery');
+      expect(client.requests('ProjectLayoutQuery')).toHaveLength(1);
+    },
+  );
+
+  it.each([`${PROJECT}/view/alerts`, `${PROJECT}/view/alerts/channels/channel-1`])(
+    'sends a viewer who may not modify alerts from %s to the project',
+    { timeout: 30_000 },
+    async url => {
+      const fixtures = layoutFixtures();
+      fixtures.set('ProjectLayoutQuery', projectLayout({ viewerCanModifyAlerts: false }));
+      const { router } = await loadedAt(url, fixtures);
+
+      await waitFor(() => expect(router.state.location.pathname).toBe(PROJECT));
+      expect(router.history.length).toBe(1);
+    },
+  );
 });

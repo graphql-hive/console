@@ -4,9 +4,9 @@ COPY builder-config.yaml .
 COPY extension-hiveauth/ ./extension-hiveauth/
 COPY extension-statsviz/ ./extension-statsviz/
 
-FROM golang:1.27.2-bookworm AS builder
+FROM golang:1.27.3-bookworm AS builder
 
-ARG OTEL_VERSION=0.162.0
+ARG OTEL_VERSION=0.165.0
 
 WORKDIR /build
 
@@ -22,6 +22,9 @@ RUN CGO_ENABLED=0 builder --config=/build/builder-config.yaml
 
 # Stage 2: Final Image
 FROM alpine:3.24
+
+# zlib 1.4-r0 addresses CVE-2026-4738; remove once the alpine base image ships it
+RUN apk upgrade --no-cache zlib
 
 WORKDIR /app
 

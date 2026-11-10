@@ -12,7 +12,6 @@ import {
 } from './anonymous';
 import {
   authenticatedRoute,
-  devRoute,
   indexRoute,
   manageRoute,
   nativeCompositionDiffRoute,
@@ -44,7 +43,12 @@ import {
   organizationSettingsRoute,
   organizationSettingsSsoRoute,
 } from './organization/settings';
-import { projectAlertsRoute, projectIndexRoute, projectRoute } from './project/route';
+import {
+  projectAlertChannelRoute,
+  projectAlertsRoute,
+  projectIndexRoute,
+  projectRoute,
+} from './project/route';
 import {
   projectSettingsAccessTokensRoute,
   projectSettingsCompositionRoute,
@@ -125,7 +129,6 @@ export const routeTree = root.addChildren([
   authenticatedRoute.addChildren([
     indexRoute,
     nativeCompositionDiffRoute,
-    devRoute,
     newOrgPage,
     manageRoute,
     transferOrganizationRoute,
@@ -161,6 +164,7 @@ export const routeTree = root.addChildren([
           projectSettingsAccessTokensRoute,
         ]),
         projectAlertsRoute,
+        projectAlertChannelRoute,
       ]),
       targetRoute.addChildren([
         targetIndexRoute,

@@ -1,8 +1,16 @@
-import { FastifyReply, type FastifyInstance } from 'fastify';
+import { FastifyReply, type FastifyInstance, type FastifyRequest } from 'fastify';
 import * as oidClient from 'openid-client';
 import z from 'zod';
 import cookie from '@fastify/cookie';
-import { Storage, User } from '@hive/api';
+import {
+  AuditLogRecorder,
+  Storage,
+  User,
+  type AuditLogSchemaEvent,
+  type ClickHouse,
+  type Logger,
+} from '@hive/api';
+import type { Actor } from '@hive/api/modules/auth/lib/authz';
 import {
   AccessTokenKeyContainer,
   comparePassword,
@@ -14,6 +22,7 @@ import {
   parseRefreshToken,
   sha256,
 } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
+import type { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
 import {
   EmailPasswordOrThirdPartyUser,
@@ -56,8 +65,214 @@ export async function registerSupertokensAtHome(
   },
   workloadIdentityFederation: WorkloadIdentityFederationProvider | null,
   isSCIMEnabled: boolean,
+  auditLog: {
+    logger: Logger;
+    clickHouse: ClickHouse;
+    emailVerification: EmailVerification;
+  },
 ) {
   const supertokensStore = new SuperTokensStore(storage.pool, server.log);
+
+  /**
+   * Resolve the organizations that should receive the audit log event for a sign in attempt.
+   *
+   * Signing in is not scoped to a single organization, so we attribute the attempt to the
+   * organization with a legitimate interest in it:
+   * - For OIDC sign ins, only the organization linked to the OIDC integration, as the attempt went
+   *   through its identity provider.
+   *   The organization that verified the email domain is intentionally NOT notified. The email
+   *   address is asserted by an identity provider controlled by another organization, so:
+   *   - it would leak the relationship between that other organization and the user (incl. the
+   *     OIDC integration id, which can be mapped to the organization via the public OIDC lookup)
+   *   - any organization could inject spoofed sign in events for arbitrary email addresses into
+   *     the audit log of the domain owner.
+   *   If the domain is verified by the same organization, it is already covered.
+   * - Otherwise, the organization that verified the domain of `email`, as it proved ownership
+   *   of that domain via DNS and therefore of every account (and attempt) using an email
+   *   address on it. A verified domain belongs to at most one organization.
+   *   The email address may be unproven (failed attempts, or successful sign ins with an
+   *   unverified email address). In that case the event must not claim an identity (empty
+   *   actor), see `recordSignInSuccessAuditLog`.
+   *
+   * We deliberately do not attribute sign ins to all organizations the user is a member of,
+   * as this would share the IP address and user agent of the user with organizations that
+   * have no ownership over the account.
+   */
+  async function resolveSignInAuditLogOrganizationIds(args: {
+    email: string | null;
+    oidcIntegration: OIDCIntegration | null;
+  }): Promise<Array<string>> {
+    if (args.oidcIntegration) {
+      return [args.oidcIntegration.linkedOrganizationId];
+    }
+
+    if (!args.email) {
+      return [];
+    }
+
+    const emailDomain = getEmailDomain(args.email);
+
+    if (!emailDomain) {
+      return [];
+    }
+
+    const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
+
+    return verifiedDomain ? [verifiedDomain.organizationId] : [];
+  }
+
+  /**
+   * Record a sign in attempt in the background, so it does not delay the response.
+   */
+  function recordSignInAttemptAuditLog(
+    req: FastifyRequest,
+    resolveArgs: () => Promise<{
+      /** The email address used for attributing the attempt to the verified domain owner. */
+      email: string | null;
+      oidcIntegration: OIDCIntegration | null;
+      actor: Actor | null;
+      event: AuditLogSchemaEvent;
+    }>,
+  ) {
+    void (async () => {
+      const args = await resolveArgs();
+      const organizationIds = await resolveSignInAuditLogOrganizationIds({
+        oidcIntegration: args.oidcIntegration,
+        email: args.email,
+      });
+
+      if (organizationIds.length === 0) {
+        return;
+      }
+
+      const client = AuditLogRecorder.resolveClient(req, env.clientIPHeaderName);
+
+      await Promise.all(
+        organizationIds.map(organizationId =>
+          AuditLogRecorder.record(
+            auditLog,
+            args.actor,
+            {
+              ...args.event,
+              organizationId,
+            },
+            client,
+          ),
+        ),
+      );
+    })().catch(error => {
+      req.log.error(error, 'Failed to record sign in audit log.');
+    });
+  }
+
+  /**
+   * Record a successful sign in.
+   *
+   * For non-OIDC sign ins, signing in succeeds before the email address is verified
+   * (verification is enforced afterwards by the GraphQL API). Anyone can create an account
+   * (or use a provider account) with an arbitrary email address on a verified domain.
+   * The domain owner should still see these sign ins, but the event must not claim that the user
+   * owning the email address signed in. So if the email address is not proven, the actor is
+   * empty and the event is flagged with `emailVerified: false`.
+   */
+  function recordSignInSuccessAuditLog(
+    req: FastifyRequest,
+    args: {
+      user: User;
+      superTokensUserId: string;
+      method: SignInMethod;
+      oidcIntegration: OIDCIntegration | null;
+      /**
+       * The email address the identity provider (GitHub, Google) reports as verified.
+       * `null` if the provider did not verify it or does not report it.
+       */
+      providerVerifiedEmail: string | null;
+      /** Whether the Hive user was created as part of this sign in (sign up). */
+      newUser: boolean;
+    },
+  ) {
+    recordSignInAttemptAuditLog(req, async () => {
+      const email = args.user.email.toLowerCase();
+      const actor: Actor = {
+        type: 'user',
+        user: args.user,
+        oidcIntegrationId: args.oidcIntegration?.id ?? null,
+      };
+
+      if (args.oidcIntegration) {
+        // The identity is asserted by the identity provider of the organization receiving the event.
+        return {
+          email: null,
+          oidcIntegration: args.oidcIntegration,
+          actor,
+          event: {
+            eventType: 'USER_SIGNED_IN',
+            metadata: {
+              method: args.method,
+              email,
+              emailVerified: null,
+              oidcIntegrationId: args.oidcIntegration.id,
+              newUser: args.newUser,
+            },
+          },
+        };
+      }
+
+      const emailVerified =
+        args.method === 'emailpassword'
+          ? await auditLog.emailVerification
+              .checkUserEmailVerified({ userIdentityId: args.superTokensUserId, email })
+              .then(result => result.verified)
+          : // the stored email can differ from the email currently reported by the provider
+            args.providerVerifiedEmail?.toLowerCase() === email;
+
+      return {
+        email,
+        oidcIntegration: null,
+        actor: emailVerified ? actor : null,
+        event: {
+          eventType: 'USER_SIGNED_IN',
+          metadata: {
+            method: args.method,
+            email,
+            emailVerified,
+            oidcIntegrationId: null,
+            newUser: args.newUser,
+          },
+        },
+      };
+    });
+  }
+
+  /**
+   * Record a failed sign in attempt.
+   * The actor is always empty, as the person attempting to sign in is not authenticated.
+   */
+  function recordSignInFailedAuditLog(
+    req: FastifyRequest,
+    args: {
+      email: string | null;
+      method: SignInMethod;
+      reason: SignInFailureReason;
+      oidcIntegration: OIDCIntegration | null;
+    },
+  ) {
+    recordSignInAttemptAuditLog(req, async () => ({
+      // OIDC attempts are only attributed to the organization linked to the OIDC integration
+      email: args.oidcIntegration ? null : args.email,
+      oidcIntegration: args.oidcIntegration,
+      actor: null,
+      event: {
+        eventType: 'USER_SIGN_IN_FAILED',
+        metadata: {
+          method: args.method,
+          reason: args.reason,
+          email: args.email,
+          oidcIntegrationId: args.oidcIntegration?.id ?? null,
+        },
+      },
+    }));
+  }
 
   const accessTokenKey = new AccessTokenKeyContainer(secrets.accessTokenKey);
 
@@ -89,8 +304,10 @@ export async function registerSupertokensAtHome(
     email: string,
     user: EmailPasswordOrThirdPartyUser | null,
   ) {
-    const [, emailDomain] = email.split('@');
-    const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
+    const emailDomain = getEmailDomain(email);
+    const verifiedDomain = emailDomain
+      ? await oidcIntegrations.findVerifiedDomainByName(emailDomain)
+      : null;
 
     if (!verifiedDomain) {
       return {
@@ -246,6 +463,13 @@ export async function registerSupertokensAtHome(
       const result = await isNonOIDCSignUpAllowedForEmailAddress(emailResult.data, user);
 
       if (result.type === 'error') {
+        recordSignInFailedAuditLog(req, {
+          email: emailResult.data,
+          method: 'emailpassword',
+          reason: 'SSO_REQUIRED',
+          oidcIntegration: null,
+        });
+
         return rep.send({
           status: 'SIGN_UP_NOT_ALLOWED',
           reason: 'Please sign in through your organizations identity provider.',
@@ -284,6 +508,13 @@ export async function registerSupertokensAtHome(
       });
 
       if (ensureUserResult.ok === false) {
+        recordSignInFailedAuditLog(req, {
+          email: emailResult.data,
+          method: 'emailpassword',
+          reason: 'NOT_ALLOWED',
+          oidcIntegration: null,
+        });
+
         return rep.send({
           status: 'SIGN_UP_NOT_ALLOWED',
           reason: 'Not allowed.',
@@ -302,6 +533,17 @@ export async function registerSupertokensAtHome(
           accessTokenKey,
         },
       );
+
+      // Signing up creates a session, so it is recorded as a sign in.
+      recordSignInSuccessAuditLog(req, {
+        user: ensureUserResult.user,
+        superTokensUserId: user.userId,
+        method: 'emailpassword',
+        oidcIntegration: null,
+        providerVerifiedEmail: null,
+        newUser: ensureUserResult.action === 'created',
+      });
+
       const frontToken = createFrontToken({
         superTokensUserId: user.userId,
         accessToken,
@@ -374,6 +616,13 @@ export async function registerSupertokensAtHome(
       const user = await supertokensStore.findEmailPasswordUserByEmail(email);
 
       if (!user) {
+        recordSignInFailedAuditLog(req, {
+          email,
+          method: 'emailpassword',
+          reason: 'UNKNOWN_USER',
+          oidcIntegration: null,
+        });
+
         return rep.send({
           status: 'WRONG_CREDENTIALS_ERROR',
         });
@@ -382,6 +631,13 @@ export async function registerSupertokensAtHome(
       const emailResult = await isNonOIDCSignUpAllowedForEmailAddress(email, user);
 
       if (emailResult.type === 'error') {
+        recordSignInFailedAuditLog(req, {
+          email,
+          method: 'emailpassword',
+          reason: 'SSO_REQUIRED',
+          oidcIntegration: null,
+        });
+
         return rep.send({
           status: 'SIGN_IN_NOT_ALLOWED',
           reason: 'Please sign in through your organizations identity provider.',
@@ -391,6 +647,13 @@ export async function registerSupertokensAtHome(
       const passwordMatch = await comparePassword(password, user.passwordHash);
 
       if (!passwordMatch) {
+        recordSignInFailedAuditLog(req, {
+          email,
+          method: 'emailpassword',
+          reason: 'INVALID_CREDENTIALS',
+          oidcIntegration: null,
+        });
+
         return rep.send({
           status: 'WRONG_CREDENTIALS_ERROR',
         });
@@ -406,6 +669,13 @@ export async function registerSupertokensAtHome(
       });
 
       if (!result.ok) {
+        recordSignInFailedAuditLog(req, {
+          email,
+          method: 'emailpassword',
+          reason: 'NOT_ALLOWED',
+          oidcIntegration: null,
+        });
+
         return rep.send({
           status: 'SIGN_IN_NOT_ALLOWED',
           reason: result.reason,
@@ -424,6 +694,16 @@ export async function registerSupertokensAtHome(
           accessTokenKey,
         },
       );
+
+      recordSignInSuccessAuditLog(req, {
+        user: result.user,
+        superTokensUserId: user.userId,
+        method: 'emailpassword',
+        oidcIntegration: null,
+        providerVerifiedEmail: null,
+        newUser: result.action === 'created',
+      });
+
       const frontToken = createFrontToken({
         superTokensUserId: user.userId,
         accessToken,
@@ -952,6 +1232,9 @@ export async function registerSupertokensAtHome(
       let supertokensUser: EmailPasswordOrThirdPartyUser;
       let hiveUser: User;
       let oidcIntegration: OIDCIntegration | null = null;
+      /** Email address verified by the identity provider. Only used for audit log attribution. */
+      let providerVerifiedEmail: string | null = null;
+      let newUser = false;
 
       if (parsedBody.data.thirdPartyId === 'github') {
         if (!env.auth.github) {
@@ -1076,6 +1359,13 @@ export async function registerSupertokensAtHome(
         const emailResult = await isNonOIDCSignUpAllowedForEmailAddress(email.email, user);
 
         if (emailResult.type === 'error') {
+          recordSignInFailedAuditLog(req, {
+            email: email.email,
+            method: 'github',
+            reason: 'SSO_REQUIRED',
+            oidcIntegration: null,
+          });
+
           return rep.send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Please sign in through your organizations identity provider.',
@@ -1099,6 +1389,13 @@ export async function registerSupertokensAtHome(
         });
 
         if (!ensureUserExists.ok) {
+          recordSignInFailedAuditLog(req, {
+            email: user.email,
+            method: 'github',
+            reason: 'NOT_ALLOWED',
+            oidcIntegration: null,
+          });
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in not allowed.',
@@ -1107,6 +1404,8 @@ export async function registerSupertokensAtHome(
 
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
+        newUser = ensureUserExists.action === 'created';
+        providerVerifiedEmail = email.verified ? email.email : null;
       } else if (parsedBody.data.thirdPartyId === 'google') {
         if (!env.auth.google) {
           return rep.status(200).send({
@@ -1167,6 +1466,7 @@ export async function registerSupertokensAtHome(
         const UserInfoBodyModel = z.object({
           sub: z.string(),
           email: z.string(),
+          email_verified: z.boolean().optional(),
         });
 
         const userInfoResponse = await oauthFetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -1195,6 +1495,13 @@ export async function registerSupertokensAtHome(
         const emailResult = await isNonOIDCSignUpAllowedForEmailAddress(userInfo.email, user);
 
         if (emailResult.type === 'error') {
+          recordSignInFailedAuditLog(req, {
+            email: userInfo.email,
+            method: 'google',
+            reason: 'SSO_REQUIRED',
+            oidcIntegration: null,
+          });
+
           return rep.send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Please sign in through your organizations identity provider.',
@@ -1218,6 +1525,13 @@ export async function registerSupertokensAtHome(
         });
 
         if (!ensureUserExists.ok) {
+          recordSignInFailedAuditLog(req, {
+            email: user.email,
+            method: 'google',
+            reason: 'NOT_ALLOWED',
+            oidcIntegration: null,
+          });
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in not allowed.',
@@ -1226,6 +1540,8 @@ export async function registerSupertokensAtHome(
 
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
+        newUser = ensureUserExists.action === 'created';
+        providerVerifiedEmail = userInfo.email_verified === true ? userInfo.email : null;
       } else if (parsedBody.data.thirdPartyId === 'okta') {
         if (!env.auth.okta) {
           return rep.status(200).send({
@@ -1337,6 +1653,13 @@ export async function registerSupertokensAtHome(
         );
 
         if (emailResult.type === 'error') {
+          recordSignInFailedAuditLog(req, {
+            email: profile.profile.email,
+            method: 'okta',
+            reason: 'SSO_REQUIRED',
+            oidcIntegration: null,
+          });
+
           return rep.send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Please sign in through your organizations identity provider.',
@@ -1360,6 +1683,13 @@ export async function registerSupertokensAtHome(
         });
 
         if (!ensureUserExists.ok) {
+          recordSignInFailedAuditLog(req, {
+            email: user.email,
+            method: 'okta',
+            reason: 'NOT_ALLOWED',
+            oidcIntegration: null,
+          });
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in not allowed.',
@@ -1368,6 +1698,10 @@ export async function registerSupertokensAtHome(
 
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
+        newUser = ensureUserExists.action === 'created';
+        // `providerVerifiedEmail` is intentionally left `null`: the Okta users API does not report
+        // whether the email address is verified, so the sign in is recorded without an actor.
+        // We plan to remove Okta login support in the future, so this is not worth further effort.
       } else if (parsedBody.data.thirdPartyId === 'oidc') {
         req.log.debug('perform oidc signinup flow');
         // for backwards-compatibility purposes we support the case where the frontend modifies the state to append the oidc id
@@ -1436,6 +1770,14 @@ export async function registerSupertokensAtHome(
             req.log.error(
               'Workload identity federation is not configured or the token is not yet available',
             );
+
+            recordSignInFailedAuditLog(req, {
+              email: null,
+              method: 'oidc',
+              reason: 'IDENTITY_PROVIDER_ERROR',
+              oidcIntegration: oidcIntegration,
+            });
+
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
               reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1465,6 +1807,13 @@ export async function registerSupertokensAtHome(
             `an unexpected error occurred while calling your token endoint '${oidcIntegration.tokenEndpoint}'. HTTP Status: ${grantResponse.status} Body: ${await grantResponse.text()}.`,
           );
 
+          recordSignInFailedAuditLog(req, {
+            email: null,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1482,6 +1831,13 @@ export async function registerSupertokensAtHome(
             `unexpected body received from the token endpoint '${oidcIntegration.tokenEndpoint}'. Failed parsing JSON. HTTP Status: ${grantResponse.status}.'`,
           );
 
+          recordSignInFailedAuditLog(req, {
+            email: null,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1496,6 +1852,13 @@ export async function registerSupertokensAtHome(
             oidcIntegration.id,
             `the response from your token endpoint '${oidcIntegration.tokenEndpoint}' did not contain a 'access_token' property.`,
           );
+
+          recordSignInFailedAuditLog(req, {
+            email: null,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
@@ -1525,6 +1888,13 @@ export async function registerSupertokensAtHome(
             `an unexpected error occurred while calling the user info endoint '${oidcIntegration.userinfoEndpoint}'. HTTP Status: ${userInfoResponse.status} HTTP Body: ${userInfoBodyRaw}.`,
           );
 
+          recordSignInFailedAuditLog(req, {
+            email: null,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1539,6 +1909,13 @@ export async function registerSupertokensAtHome(
             oidcIntegration.id,
             `unexpected body received from the user info endpoint '${oidcIntegration.userinfoEndpoint}'. Failed parsing JSON. HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
           );
+
+          recordSignInFailedAuditLog(req, {
+            email: null,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
@@ -1556,6 +1933,13 @@ export async function registerSupertokensAtHome(
               ` Expected '${oidcIntegration.userIdClaim}' and 'email' grant.` +
               ` HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
           );
+
+          recordSignInFailedAuditLog(req, {
+            email: null,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
@@ -1577,6 +1961,13 @@ export async function registerSupertokensAtHome(
             `missing email grant received from user info endpoint '${oidcIntegration.userinfoEndpoint}. HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
           );
 
+          recordSignInFailedAuditLog(req, {
+            email: null,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1584,19 +1975,30 @@ export async function registerSupertokensAtHome(
         }
 
         // Check whether the email is allowed to sign-up via this idetity provider
-        const [, emailDomain] = email.data.split('@');
-        const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
+        const emailDomain = getEmailDomain(email.data);
+        const verifiedDomain = emailDomain
+          ? await oidcIntegrations.findVerifiedDomainByName(emailDomain)
+          : null;
+
         if (verifiedDomain && verifiedDomain.oidcIntegrationId !== oidcIntegration.id) {
-          const oidcIntegration = await storage.getOIDCIntegrationById({
+          const enforcingOIDCIntegration = await storage.getOIDCIntegrationById({
             oidcIntegrationId: verifiedDomain.oidcIntegrationId,
           });
 
-          if (oidcIntegration?.oidcForVerifiedDomainsRequired) {
+          if (enforcingOIDCIntegration?.oidcForVerifiedDomainsRequired) {
             req.log.debug(
               'the resolved domain of this user is verified with another organization that enforces login through its identity provider. (domain=%s, oidcIntegrationId=%s)',
               emailDomain,
-              oidcIntegration.id,
+              enforcingOIDCIntegration.id,
             );
+
+            recordSignInFailedAuditLog(req, {
+              email: email.data,
+              method: 'oidc',
+              reason: 'SSO_REQUIRED',
+              oidcIntegration: oidcIntegration,
+            });
+
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
               reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1619,6 +2021,13 @@ export async function registerSupertokensAtHome(
               ` HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
           );
 
+          recordSignInFailedAuditLog(req, {
+            email: email.data,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
+
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
             reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1638,6 +2047,13 @@ export async function registerSupertokensAtHome(
               ` Expected '${oidcIntegration.userIdClaim}' claim to be a string.` +
               ` HTTP Status: ${grantResponse.status}. HTTP Body: '${userInfoBodyRaw}'`,
           );
+
+          recordSignInFailedAuditLog(req, {
+            email: email.data,
+            method: 'oidc',
+            reason: 'IDENTITY_PROVIDER_ERROR',
+            oidcIntegration: oidcIntegration,
+          });
 
           return rep.status(200).send({
             status: 'SIGN_IN_UP_NOT_ALLOWED',
@@ -1661,6 +2077,14 @@ export async function registerSupertokensAtHome(
             oidcIntegration.userProvisioningRequired
           ) {
             req.log.debug('oidc integration settings requires user being provisioned.');
+
+            recordSignInFailedAuditLog(req, {
+              email: email.data,
+              method: 'oidc',
+              reason: 'USER_NOT_PROVISIONED',
+              oidcIntegration: oidcIntegration,
+            });
+
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
               reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1682,6 +2106,14 @@ export async function registerSupertokensAtHome(
         if (organization.featureFlags.scim || isSCIMEnabled) {
           if (maybeHiveUser?.provisioningStatus === 'active' && maybeHiveUser.deactivatedAt) {
             req.log.debug('user is deactivated.');
+
+            recordSignInFailedAuditLog(req, {
+              email: email.data,
+              method: 'oidc',
+              reason: 'USER_DEACTIVATED',
+              oidcIntegration: oidcIntegration,
+            });
+
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
               reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1696,6 +2128,14 @@ export async function registerSupertokensAtHome(
                 organization.ownerId !== maybeHiveUser.id))
           ) {
             req.log.debug('oidc integration settings requires user being provisioned.');
+
+            recordSignInFailedAuditLog(req, {
+              email: email.data,
+              method: 'oidc',
+              reason: 'USER_NOT_PROVISIONED',
+              oidcIntegration: oidcIntegration,
+            });
+
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
               reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1717,6 +2157,13 @@ export async function registerSupertokensAtHome(
             });
 
             if (!supertokenUser) {
+              recordSignInFailedAuditLog(req, {
+                email: email.data,
+                method: 'oidc',
+                reason: 'NOT_ALLOWED',
+                oidcIntegration: oidcIntegration,
+              });
+
               return rep.status(200).send({
                 status: 'SIGN_IN_UP_NOT_ALLOWED',
                 reason: 'Sign in failed. Please contact your organization administrator.',
@@ -1741,12 +2188,21 @@ export async function registerSupertokensAtHome(
 
           if (!ensureUserExists.ok) {
             req.log.debug('creating hive user is not allowed. Reason: %s', ensureUserExists.reason);
+
+            recordSignInFailedAuditLog(req, {
+              email: email.data,
+              method: 'oidc',
+              reason: 'NOT_ALLOWED',
+              oidcIntegration: oidcIntegration,
+            });
+
             return rep.status(200).send({
               status: 'SIGN_IN_UP_NOT_ALLOWED',
               reason: 'Sign in not allowed.',
             });
           }
           hiveUser = ensureUserExists.user;
+          newUser = ensureUserExists.action === 'created';
           supertokensUser = supertokenUser;
         } else {
           hiveUser = maybeHiveUser;
@@ -1773,6 +2229,16 @@ export async function registerSupertokensAtHome(
           accessTokenKey,
         },
       );
+
+      recordSignInSuccessAuditLog(req, {
+        user: hiveUser,
+        superTokensUserId: supertokensUser.userId,
+        method: parsedBody.data.thirdPartyId,
+        oidcIntegration,
+        providerVerifiedEmail,
+        newUser,
+      });
+
       const frontToken = createFrontToken({
         superTokensUserId: supertokensUser.userId,
         accessToken,
@@ -1852,6 +2318,18 @@ const AuthorisationurlQueryParamsModel = z.object({
   oidc_id: z.string().optional(),
 });
 
+const SignInMethodModel = z.enum(['emailpassword', 'github', 'google', 'okta', 'oidc']);
+type SignInMethod = z.output<typeof SignInMethodModel>;
+
+type SignInFailureReason =
+  | 'UNKNOWN_USER'
+  | 'INVALID_CREDENTIALS'
+  | 'SSO_REQUIRED'
+  | 'USER_NOT_PROVISIONED'
+  | 'USER_DEACTIVATED'
+  | 'IDENTITY_PROVIDER_ERROR'
+  | 'NOT_ALLOWED';
+
 const ThirdPartySigninupModel = z.object({
   thirdPartyId: z.string(),
   redirectURIInfo: z.object({
@@ -1888,4 +2366,17 @@ function parseJSONSafe(input: string):
       error,
     };
   }
+}
+
+/**
+ * Get the domain part of an email address.
+ * Returns `null` for input that is not shaped like an email address (e.g. `foo`, `foo@` or `a@b@c`),
+ * as callers might receive unvalidated user input.
+ */
+function getEmailDomain(email: string): string | null {
+  const parts = email.split('@');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return null;
+  }
+  return parts[1];
 }

@@ -120,34 +120,36 @@ export class Contracts {
     };
   }
 
-  async deleteContractGraph(graph: ContractGraph) {
-    this.logger.debug('Delete contract (graphId=%s)', graph.id);
+  async deleteContractGraph(args: { graph: ContractGraph; writeGraphManifest(): Promise<void> }) {
+    this.logger.debug('Delete contract (graphId=%s)', args.graph.id);
 
-    await this.graphStore.deleteGraph(graph);
+    this.logger.debug('Deleting contract graph. (graphId=%s)', args.graph.id);
 
-    this.logger.debug('Deleted contract graph. (graphId=%s)', graph.id);
+    await this.graphStore.deleteGraph(args.graph);
 
     this.logger.debug(
       'Delete contract graph artifacts sdl and supergraph from CDN. (graphId=%s)',
-      graph.id,
+      args.graph.id,
     );
+
+    await args.writeGraphManifest();
 
     await Promise.all([
       this.artifactStorageWriter.deleteArtifact({
-        targetId: graph.targetId,
+        targetId: args.graph.targetId,
         artifactType: 'sdl',
-        contractName: graph.name,
+        contractName: args.graph.name,
       }),
       this.artifactStorageWriter.deleteArtifact({
-        targetId: graph.targetId,
+        targetId: args.graph.targetId,
         artifactType: 'supergraph',
-        contractName: graph.name,
+        contractName: args.graph.name,
       }),
     ]);
 
     return {
       type: 'success' as const,
-      contractId: graph.id,
+      contractId: args.graph.id,
     };
   }
 
@@ -741,7 +743,10 @@ const CreateContractInputModel = z
       .max(64, 'Contract name must be at most 64 characters long')
       .min(2, 'Contract name must be at least 2 characters long')
       .toLowerCase()
-      .regex(/^[a-zA-Z0-9_-]+$/, "Can only contain letters, numbers, '_', and '-'"),
+      .regex(/^[a-zA-Z0-9_-]+$/, "Can only contain letters, numbers, '_', and '-'")
+      .refine(name => name !== 'default', {
+        error: "The contract name 'default' is reserved",
+      }),
     includeTags: z.array(z.string()).nullable(),
     excludeTags: z.array(z.string()).nullable(),
     removeUnreachableTypesFromPublicApiSchema: z.boolean(),

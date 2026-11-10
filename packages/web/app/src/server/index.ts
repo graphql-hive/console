@@ -4,7 +4,6 @@ import cors from '@fastify/cors';
 import FastifyStatic from '@fastify/static';
 import { env, getPublicEnvVars } from '../env/backend';
 import { connectLab } from './lab';
-import { registerPreflightWorkerEmbedRoute } from './preflight-embed';
 
 const __dirname = new URL('.', import.meta.url).pathname;
 // The root directory of @hive/app (where the package.json is located)
@@ -84,22 +83,6 @@ async function main() {
   });
 
   connectLab(server);
-
-  registerPreflightWorkerEmbedRoute(
-    server,
-    isDev
-      ? {
-          appRoot,
-          transformHtml: (url, html) => {
-            const devServer = server.vite.devServer;
-            if (!devServer) {
-              throw new Error('Vite dev server is not ready');
-            }
-            return devServer.transformIndexHtml(url, html);
-          },
-        }
-      : null,
-  );
 
   server.get('*', (req, reply) => {
     // Never serve the SPA shell for a missing asset. Browsers require JavaScript

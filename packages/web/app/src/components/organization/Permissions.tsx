@@ -25,7 +25,7 @@ export const PermissionScopeItem = <
   canManageScope: boolean;
   noDowngrade?: boolean;
   possibleScope: T[];
-  dataCy?: string;
+  dataTestId?: string;
   onSurface?: OnSurface;
 }): React.ReactElement => {
   const initialScope = props.initialScope ?? NoAccess;
@@ -37,7 +37,7 @@ export const PermissionScopeItem = <
         'flex flex-row items-center justify-between space-x-4 py-2',
         props.canManageScope === false ? 'cursor-not-allowed opacity-50' : null,
       )}
-      data-cy={props.dataCy}
+      data-testid={props.dataTestId}
     >
       <div>
         <div className="font-semibold text-fg">{props.scope.name}</div>
@@ -74,7 +74,7 @@ export const PermissionScopeItem = <
               label: item.label,
               disabled: isDisabled,
               description: isDisabled ? "Can't downgrade" : undefined,
-              'data-cy': `select-option-${item.value}`,
+              'data-testid': `select-option-${item.value}`,
             };
           })}
         disabled={!props.canManageScope || props.disabled}
@@ -84,8 +84,8 @@ export const PermissionScopeItem = <
         }}
         width="sm"
         onSurface={props.onSurface}
-        data-cy="select-trigger"
-        popupDataCy={props.dataCy ? `${props.dataCy}-select-content` : undefined}
+        data-testid="select-trigger"
+        popupDataTestId={props.dataTestId ? `${props.dataTestId}-select-content` : undefined}
       />
     </div>
   );

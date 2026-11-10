@@ -33,27 +33,31 @@ export function createUsageHelper(
           `a[href="/${params.organizationSlug}/${params.projectSlug}/${params.targetSlug}/settings"]`,
         )
         .click();
-      await page.locator('[data-cy="target-settings-registry-token-link"]').click();
+      await page.locator('[data-testid="target-settings-registry-token-link"]').click();
       await page
-        .locator('[data-cy="target-settings-registry-token"] [data-cy="new-button"]')
+        .locator('[data-testid="target-settings-registry-token"] [data-testid="new-button"]')
         .click();
       await page
-        .locator('[data-cy="create-registry-token-form"] [data-cy="description"]')
+        .locator('[data-testid="create-registry-token-form"] [data-testid="description"]')
         .fill('test-token');
-      await page.locator('[data-cy="registry-access-scope"] [data-cy="select-trigger"]').click();
+      await page
+        .locator('[data-testid="registry-access-scope"] [data-testid="select-trigger"]')
+        .click();
       await page
         .locator(
-          '[data-cy="registry-access-scope-select-content"] [data-cy="select-option-REGISTRY_WRITE"]',
+          '[data-testid="registry-access-scope-select-content"] [data-testid="select-option-REGISTRY_WRITE"]',
         )
         .click();
-      await page.locator('[data-cy="create-registry-token-form"] [data-cy="submit"]').click();
+      await page
+        .locator('[data-testid="create-registry-token-form"] [data-testid="submit"]')
+        .click();
 
       const token = await page
-        .locator('[data-cy="registry-token-created"] input[type="text"]')
+        .locator('[data-testid="registry-token-created"] input[type="text"]')
         .inputValue();
       expect(token).toHaveLength(32);
       await page
-        .locator('[data-cy="registry-token-created"] [data-cy="close"]')
+        .locator('[data-testid="registry-token-created"] [data-testid="close"]')
         .getByText('Ok, got it!')
         .click();
 

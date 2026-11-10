@@ -5,6 +5,8 @@ import { z } from 'zod';
  */
 export const SchemaChangeNotification = z.object({
   endpoint: z.string().nonempty(),
+  /** Optional only for jobs enqueued before it was added; those are sent but not recorded. */
+  channelId: z.string().optional(),
   event: z.object({
     organization: z.object({
       id: z.string().nonempty(),

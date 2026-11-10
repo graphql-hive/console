@@ -140,7 +140,7 @@ export function BreakingChangesForm(props: {
                       withIndicator: true,
                       content: (
                         <span
-                          data-cy="target-cbc-breakingChangeFormula-option-percentage"
+                          data-testid="target-cbc-breakingChangeFormula-option-percentage"
                           className="inline-flex items-center gap-2"
                         >
                           {number('percentage', 'Percent of traffic', { step: 0.01 })}
@@ -154,7 +154,7 @@ export function BreakingChangesForm(props: {
                       withIndicator: true,
                       content: (
                         <span
-                          data-cy="target-cbc-breakingChangeFormula-option-requestCount"
+                          data-testid="target-cbc-breakingChangeFormula-option-requestCount"
                           className="inline-flex items-center gap-2"
                         >
                           {number('requestCount', 'Total operations', { step: 1 })}

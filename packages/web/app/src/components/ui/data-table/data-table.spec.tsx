@@ -662,6 +662,15 @@ describe('DataTableCell', () => {
     expect(getByText('+1').getAttribute('tabindex')).toBe('0');
   });
 
+  it('makes a status a focus stop only when it carries a tooltip, so the hint is reachable by keyboard', () => {
+    const { getByText, rerender } = render(
+      <DataTableCell kind="status" label="Sent" dot="success" tooltip="Accepted by the provider" />,
+    );
+    expect(getByText('Sent').getAttribute('tabindex')).toBe('0');
+    rerender(<DataTableCell kind="status" label="Sent" dot="success" />);
+    expect(getByText('Sent').hasAttribute('tabindex')).toBe(false);
+  });
+
   it('leaves a label at exactly maxLength alone', () => {
     const { container } = render(
       <DataTableCell kind="badge" items={{ content: 'sixteen chars ok' }} maxLength={16} />,
