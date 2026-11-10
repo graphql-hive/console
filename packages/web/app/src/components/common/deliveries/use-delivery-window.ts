@@ -7,7 +7,7 @@ import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 export const DELIVERY_WINDOW_HOURS = 72;
 export const DELIVERY_WINDOW_LABEL = `the last ${DELIVERY_WINDOW_HOURS} hours`;
 
-/** The window's period and resolution, moved forward on every poll tick. */
+/** The hour-aligned window and its resolution, with the poll tick `now` consumers refetch on. */
 export function useDeliveryWindow(pollIntervalMs: number) {
   const now = useRollingNow(pollIntervalMs);
   const window = useMemo(() => {

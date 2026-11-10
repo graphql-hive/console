@@ -12,6 +12,7 @@ import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useRefetchOnTick } from '@/lib/hooks/use-refetch-on-tick';
 import { EmailDeliveriesTable } from './email-deliveries-table';
 
 // The window moves with the clock, so the section fetches for itself rather than through the
@@ -59,13 +60,14 @@ export const EmailDeliveriesSubPage_Query = graphql(`
 
 export function EmailDeliveriesSubPage() {
   const { organizationSlug } = useSlugs('organization');
-  const { from, to, resolution } = useDeliveryWindow(ALERTS_POLL_INTERVAL_MS);
+  const { now, from, to, resolution } = useDeliveryWindow(ALERTS_POLL_INTERVAL_MS);
 
-  const [result] = useQuery({
+  const [result, reexecuteQuery] = useQuery({
     query: EmailDeliveriesSubPage_Query,
     variables: { organizationSlug, period: { from, to }, resolution },
     requestPolicy: 'cache-and-network',
   });
+  useRefetchOnTick(now, reexecuteQuery);
 
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
   const organization = data?.organization ?? null;

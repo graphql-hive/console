@@ -2,6 +2,7 @@
 import { PersonalAccessTokensTable_MoreAccessTokensQuery } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-table';
 import { layoutFixtures, organizationLayout, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
+import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory } from '@tanstack/react-router';
@@ -19,6 +20,8 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
   SchemaEditor: () => null,
 }));
 vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
+// Polls every 200 ms here, so a spec sees a few ticks with real timers.
+vi.mock('@/components/target/alerts/alert-polling', () => ({ ALERTS_POLL_INTERVAL_MS: 200 }));
 
 const SETTINGS = `/${SLUGS.organizationSlug}/view/settings`;
 const SLUG = { organizationSlug: SLUGS.organizationSlug };
@@ -55,6 +58,10 @@ const SECTIONS = [
 ] as const;
 
 describe('organization settings loaders', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it.each(SECTIONS)(
     '%s loads the page document once and starts its own, revalidating',
     { timeout: 30_000 },
@@ -107,6 +114,41 @@ describe('organization settings loaders', () => {
         organizationLayout({ viewerCanSeeEmailDeliveries: false }),
       );
       await waitFor(() => expect(router.state.location.pathname).toBe(SETTINGS));
+    },
+  );
+
+  // Only the clock is faked; timers stay real so the router, the poll and waitFor run as usual.
+  it(
+    'polls email deliveries on every tick, asking for the same hour-aligned window',
+    { timeout: 30_000 },
+    async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-09-28T15:30:00.000Z'));
+      const client = createTestClient(layoutFixtures());
+      client.fixtures.set(PAGE, organizationSettings());
+      client.fixtures.set('EmailDeliveriesSubPage_Query', {
+        __typename: 'Query',
+        organization: {
+          __typename: 'Organization',
+          id: 'organization-1',
+          emailDeliveryStats: null,
+          emailDeliveryHealth: null,
+          emailDeliveryLog: null,
+        },
+      });
+      renderAtUrl(`${SETTINGS}/emails`, { client });
+      const polls = () => client.requests('EmailDeliveriesSubPage_Query');
+      // The mount settles at two: the synchronous fixture answers the cache-and-network miss during
+      // render, then the effect's subscription hits the cache and refetches as network-only.
+      await waitFor(() => expect(polls().length).toBeGreaterThanOrEqual(1));
+      const mounted = polls().length;
+
+      vi.setSystemTime(new Date('2026-09-28T15:30:15.000Z'));
+      await waitFor(() => expect(polls()).toHaveLength(mounted + 1));
+      vi.setSystemTime(new Date('2026-09-28T15:30:30.000Z'));
+      await waitFor(() => expect(polls()).toHaveLength(mounted + 2));
+
+      expect(new Set(polls().map(o => JSON.stringify(o.variables))).size).toBe(1);
     },
   );
 

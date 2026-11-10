@@ -25,6 +25,7 @@ import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { graphql } from '@/gql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
+import { useRefetchOnTick } from '@/lib/hooks/use-refetch-on-tick';
 import { useNavigate } from '@tanstack/react-router';
 
 // The channel's configuration, revalidated by the route; the live delivery data below is the
@@ -199,7 +200,7 @@ function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDe
   const { organizationSlug, projectSlug } = useSlugs('project');
   const { now, from, to, resolution } = useDeliveryWindow(ALERTS_POLL_INTERVAL_MS);
 
-  const [result] = useQuery({
+  const [result, reexecuteQuery] = useQuery({
     query: ProjectAlertChannelPage_DeliveriesQuery,
     variables: {
       organizationSlug,
@@ -210,6 +211,7 @@ function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDe
     },
     requestPolicy: 'cache-and-network',
   });
+  useRefetchOnTick(now, reexecuteQuery);
 
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
   const channel = data?.project?.alertChannel ?? null;

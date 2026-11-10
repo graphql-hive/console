@@ -318,7 +318,8 @@ test.concurrent(
         delivery: {
           ok: false,
           statusCode: 422,
-          statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+          statusText:
+            'You tried to send to a recipient that has been marked as inactive. (error code 406)',
           attempt: expect.any(Number),
           maxAttempts: 25,
         },
