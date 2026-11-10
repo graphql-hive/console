@@ -13,14 +13,19 @@ export const task = implementTask(SchemaChangeNotificationTask, async args => {
   const { input, context, helpers } = args;
   // Jobs enqueued before the channel id was part of the payload are still delivered, but
   // cannot be attributed to a channel, so they are not recorded.
-  const channelId = input.channelId ?? null;
+  const channel = input.channelId
+    ? {
+        id: input.channelId,
+        idempotencyKey: `schema-change:${input.event.schema.id}:${input.channelId}`,
+      }
+    : null;
   const headers = buildHiveWebhookHeaders({
     requestId: args.requestId ?? randomUUID(),
     event: 'schema_change',
     targetId: input.event.target.id,
     schemaId: input.event.schema.id,
     release: context.release,
-    idempotencyKey: channelId ? `schema-change:${input.event.schema.id}:${channelId}` : undefined,
+    idempotencyKey: channel?.idempotencyKey,
   });
 
   await sendWebhook(context.logger, context.requestBroker, {
@@ -29,14 +34,15 @@ export const task = implementTask(SchemaChangeNotificationTask, async args => {
     data: input.event,
     endpoint: input.endpoint,
     headers,
-    delivery: channelId
+    delivery: channel
       ? {
           recorder: context.deliveries,
           meta: {
             organizationId: input.event.organization.id,
             deliveryType: 'WEBHOOK',
-            destination: channelId,
+            destination: channel.id,
             event: 'schema_change',
+            idempotencyKey: channel.idempotencyKey,
             attempt: helpers.job.attempts,
             maxAttempts: helpers.job.max_attempts,
             metadata: headers,

@@ -7,6 +7,18 @@ import { DeliveryReader, type Delivery } from './delivery-reader';
 /** Recipients one lookup covers: the invitations page is at most this long. */
 const INVITATION_BATCH_SIZE = 50;
 
+/**
+ * The idempotency key of the email inviting someone. The API hands it to the workflows
+ * `organizationInvitation` job when it schedules it, the job records it with every attempt, and
+ * the invitation's status is read back by it. Inviting an address again deletes and re-creates
+ * the invitation while the first job may still be retrying; the creation time keeps the two apart.
+ */
+export function invitationDeliveryKey(
+  invitation: Pick<OrganizationInvitation, 'email' | 'createdAt'>,
+): string {
+  return `organization-invitation:${invitation.createdAt}:${invitation.email}`;
+}
+
 /** Reads the email deliveries behind an organization's invitations. */
 @Injectable({ scope: Scope.Operation })
 export class EmailDeliveries {
@@ -22,23 +34,24 @@ export class EmailDeliveries {
   /**
    * The most recent attempt to email an invitation: null before one is recorded, or when the
    * history could not be read. The invitations resolved in one tick share one query per
-   * organization. An attempt older than the invitation belongs to an earlier invitation of the
-   * same address and does not count.
+   * organization. Only the attempts under this invitation's key count, so the retries of an
+   * earlier invitation of the same address are not shown as this one's status.
    */
   getLatestInvitationDelivery = batchBy<OrganizationInvitation, Delivery | null>(
     invitation => invitation.organizationId,
     async invitations => {
       const organizationId = invitations[0].organizationId;
-      const createdAt = invitations.map(invitation => toSeconds(invitation.createdAt));
+      const keys = invitations.map(invitationDeliveryKey);
 
       let latest: Map<string, Delivery>;
       try {
-        latest = await this.reader.getLatestByDestination({
+        latest = await this.reader.getLatestByKey({
           organizationId,
           deliveryType: 'EMAIL',
-          event: 'organization_invitation',
-          destinations: invitations.map(invitation => invitation.email),
-          since: new Date(Math.min(...createdAt) * 1000),
+          keys,
+          since: new Date(
+            Math.min(...invitations.map(invitation => new Date(invitation.createdAt).getTime())),
+          ),
         });
       } catch (error) {
         this.logger.error(
@@ -49,16 +62,8 @@ export class EmailDeliveries {
         return invitations.map(() => null);
       }
 
-      return invitations.map((invitation, index) => {
-        const delivery = latest.get(invitation.email.toLowerCase()) ?? null;
-        return delivery && toSeconds(delivery.timestamp) >= createdAt[index] ? delivery : null;
-      });
+      return keys.map(key => latest.get(key) ?? null);
     },
     INVITATION_BATCH_SIZE,
   );
-}
-
-/** Recorded timestamps have second precision; the invitation's creation is compared at that precision. */
-function toSeconds(value: Date | string): number {
-  return Math.floor(new Date(value).getTime() / 1000);
 }

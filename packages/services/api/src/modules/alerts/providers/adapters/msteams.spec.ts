@@ -210,6 +210,7 @@ describe('TeamsCommunicationAdapter', () => {
           deliveryType: 'MSTEAMS_WEBHOOK',
           destination: 'channel-id',
           event: 'schema_change',
+          idempotencyKey: 'schema-change:schema-id:channel-id',
           ok: true,
           statusCode: 200,
           statusText: 'OK',

@@ -20,6 +20,11 @@ export interface SendTrackedEmailArgs {
   organizationId: string;
   event: EmailDeliveryEvent;
   email: Parameters<EmailProvider['send']>[0];
+  /**
+   * Identifies the message across the job's attempts, recorded with each: what the API assigned
+   * when it scheduled the job. Absent for emails that have none yet.
+   */
+  idempotencyKey?: string;
   /** Extra details that identify the message, recorded with it. Never a link, a code or a body. */
   metadata?: Record<string, string>;
 }
@@ -40,6 +45,7 @@ export async function sendTrackedEmail(args: SendTrackedEmailArgs): Promise<void
       deliveryType: 'EMAIL',
       destination: email.to,
       event: args.event,
+      idempotencyKey: args.idempotencyKey ?? null,
       attempt: helpers.job.attempts,
       maxAttempts: helpers.job.max_attempts,
       metadata: {

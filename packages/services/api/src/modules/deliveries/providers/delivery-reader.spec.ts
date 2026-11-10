@@ -113,6 +113,7 @@ describe('toDelivery', () => {
         unix_timestamp: 1_762_000_000,
         event: 'schema_change',
         destination: 'c1',
+        idempotency_key: 'schema-change:v1:c1',
         ok: 0,
         status_code: 404,
         status_text: 'Not Found',
@@ -125,6 +126,7 @@ describe('toDelivery', () => {
       timestamp: new Date(1_762_000_000_000),
       event: 'SCHEMA_CHANGE',
       destination: 'c1',
+      idempotencyKey: 'schema-change:v1:c1',
       ok: false,
       statusCode: 404,
       statusText: 'Not Found',
@@ -141,6 +143,7 @@ describe('toDelivery', () => {
         unix_timestamp: 1_762_000_000,
         event: 'metric_alert',
         destination: 'c1',
+        idempotency_key: 'metric-alert:s1:c1',
         ok: 1,
         status_code: 0,
         status_text: 'ok',
@@ -150,6 +153,24 @@ describe('toDelivery', () => {
         metadata: {},
       }),
     ).toEqual(expect.objectContaining({ event: 'METRIC_ALERT', ok: true, statusCode: null }));
+  });
+
+  test('an attempt recorded without a key has none', () => {
+    expect(
+      toDelivery({
+        unix_timestamp: 1_762_000_000,
+        event: 'audit_log_export',
+        destination: 'auditor@example.com',
+        idempotency_key: '',
+        ok: 1,
+        status_code: 200,
+        status_text: 'OK',
+        duration_ms: 90,
+        attempt: 1,
+        max_attempts: 25,
+        metadata: {},
+      }),
+    ).toEqual(expect.objectContaining({ idempotencyKey: null }));
   });
 });
 
@@ -195,6 +216,7 @@ describe('DeliveryReader', () => {
         unix_timestamp: 1_762_000_000,
         event: 'channel_confirmation',
         destination: 'c1',
+        idempotency_key: 'channel-confirmation:created:c1',
         ok: 1,
         status_code: 200,
         status_text: 'OK',
@@ -218,11 +240,12 @@ describe('DeliveryReader', () => {
   });
 });
 
-describe('getLatestByDestination', () => {
+describe('getLatestByKey', () => {
   const row = {
     unix_timestamp: 1_762_171_205,
     event: 'organization_invitation',
-    destination: 'Alice@Example.com',
+    destination: 'alice@example.com',
+    idempotency_key: 'organization-invitation:2026-11-03T10:00:00.000Z:alice@example.com',
     ok: 1,
     status_code: 200,
     status_text: 'OK',
@@ -232,19 +255,38 @@ describe('getLatestByDestination', () => {
     metadata: { subject: 'You have been invited to join Acme', message_id: 'pm-1' },
   };
 
-  test('keys the newest attempt by the lowercased address', async () => {
-    const { reader } = createReader([row, { ...row, destination: 'bob@example.com', ok: 0 }]);
+  test('keys the newest attempt by its idempotency key', async () => {
+    const bobRow = {
+      ...row,
+      destination: 'bob@example.com',
+      idempotency_key: 'organization-invitation:2026-11-03T10:00:00.000Z:bob@example.com',
+      ok: 0,
+    };
+    const { reader } = createReader([row, bobRow]);
 
-    const latest = await reader.getLatestByDestination({
+    const latest = await reader.getLatestByKey({
       organizationId: 'o1',
       deliveryType: 'EMAIL',
-      event: 'organization_invitation',
-      destinations: ['alice@example.com', 'bob@example.com'],
+      keys: [row.idempotency_key, bobRow.idempotency_key],
       since: new Date('2026-11-03T10:00:00Z'),
     });
 
-    expect([...latest.keys()]).toEqual(['alice@example.com', 'bob@example.com']);
-    expect(latest.get('alice@example.com')).toEqual(toDelivery(row));
-    expect(latest.get('bob@example.com')?.ok).toBe(false);
+    expect([...latest.keys()]).toEqual([row.idempotency_key, bobRow.idempotency_key]);
+    expect(latest.get(row.idempotency_key)).toEqual(toDelivery(row));
+    expect(latest.get(bobRow.idempotency_key)?.ok).toBe(false);
+  });
+
+  test('asks ClickHouse nothing when there are no keys', async () => {
+    const { reader, query } = createReader([]);
+
+    await expect(
+      reader.getLatestByKey({
+        organizationId: 'o1',
+        deliveryType: 'EMAIL',
+        keys: [],
+        since: new Date('2026-11-03T10:00:00Z'),
+      }),
+    ).resolves.toEqual(new Map());
+    expect(query).not.toHaveBeenCalled();
   });
 });

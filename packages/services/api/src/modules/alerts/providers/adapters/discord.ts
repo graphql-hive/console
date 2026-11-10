@@ -113,12 +113,13 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       );
       const hasErrors = input.event.errors.length > 0;
 
+      const idempotencyKey = `schema-change:${input.event.schema.id}:${input.channel.id}`;
       const headers = buildHiveWebhookHeaders(
         this.deliveries.describe({
           event: 'schema_change',
           targetId: input.event.target.id,
           schemaId: input.event.schema.id,
-          idempotencyKey: `schema-change:${input.event.schema.id}:${input.channel.id}`,
+          idempotencyKey,
         }),
       );
 
@@ -128,6 +129,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
           deliveryType: 'DISCORD',
           destination: input.channel.id,
           event: 'schema_change',
+          idempotencyKey,
           metadata: headers,
         },
         async () => ({
@@ -200,10 +202,11 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
         url: `${this.appBaseUrl}/${input.event.organization.slug}/${input.event.project.slug}`,
       });
 
+      const idempotencyKey = `channel-confirmation:${input.event.kind}:${input.channel.id}`;
       const headers = buildHiveWebhookHeaders(
         this.deliveries.describe({
           event: 'channel_confirmation',
-          idempotencyKey: `channel-confirmation:${input.event.kind}:${input.channel.id}`,
+          idempotencyKey,
         }),
       );
 
@@ -213,6 +216,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
           deliveryType: 'DISCORD',
           destination: input.channel.id,
           event: 'channel_confirmation',
+          idempotencyKey,
           metadata: headers,
         },
         async () => ({

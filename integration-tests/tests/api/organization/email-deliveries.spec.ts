@@ -31,6 +31,7 @@ type DeliveryRow = {
   delivery_type: string;
   destination: string;
   event: string;
+  idempotency_key: string;
   ok: number;
   status_code: number;
   status_text: string;
@@ -63,7 +64,7 @@ test.concurrent(
     await pollFor(async () => {
       await flushAsyncInserts();
       const result = await clickHouseQuery<DeliveryRow>(
-        `SELECT delivery_type, destination, event, ok, status_code, status_text, attempt, max_attempts, metadata
+        `SELECT delivery_type, destination, event, idempotency_key, ok, status_code, status_text, attempt, max_attempts, metadata
          FROM outbound_deliveries
          WHERE organization_id = '${organization.id}'
            AND delivery_type = 'EMAIL'
@@ -81,6 +82,7 @@ test.concurrent(
       delivery_type: 'EMAIL',
       destination: accepted,
       event: 'organization_invitation',
+      idempotency_key: `organization-invitation:${acceptedInvitation.ok!.createdOrganizationInvitation.createdAt}:${accepted}`,
       ok: 1,
       status_code: 200,
       status_text: 'OK',
@@ -103,6 +105,7 @@ test.concurrent(
       delivery_type: 'EMAIL',
       destination: refused,
       event: 'organization_invitation',
+      idempotency_key: `organization-invitation:${refusedInvitation.ok!.createdOrganizationInvitation.createdAt}:${refused}`,
       ok: 0,
       status_code: 422,
       status_text: '406: You tried to send to a recipient that has been marked as inactive.',

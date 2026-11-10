@@ -136,11 +136,12 @@ test.concurrent(
         const { data } = await clickHouseQuery<{
           delivery_type: string;
           event: string;
+          idempotency_key: string;
           ok: number;
           status_code: number;
           metadata: Record<string, string>;
         }>(
-          `SELECT delivery_type, event, ok, status_code, metadata
+          `SELECT delivery_type, event, idempotency_key, ok, status_code, metadata
            FROM outbound_deliveries
            WHERE destination = '${channelId}' AND event = 'schema_change'`,
         );
@@ -148,6 +149,7 @@ test.concurrent(
           expect.objectContaining({
             delivery_type: 'WEBHOOK',
             event: 'schema_change',
+            idempotency_key: sentHeaders['idempotency-key'],
             ok: 1,
             status_code: 200,
             metadata: expect.objectContaining({

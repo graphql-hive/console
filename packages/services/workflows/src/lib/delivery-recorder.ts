@@ -51,6 +51,11 @@ export interface DeliveryMeta {
   /** Where it went: the alert channel id, or the recipient address. */
   destination: string;
   event: DeliveryEvent;
+  /**
+   * Identifies the notification across its attempts: the Idempotency-Key sent to the channel, or
+   * the key the API assigned to the email. Null for an email that has none.
+   */
+  idempotencyKey: string | null;
   /** graphile-worker attempt number of the job making the call. */
   attempt: number;
   /** The retry budget of that job. */
@@ -94,6 +99,7 @@ export function createDeliveryRecorder(
             , "delivery_type"
             , "destination"
             , "event"
+            , "idempotency_key"
             , "attempt"
             , "max_attempts"
             , "ok"
@@ -108,6 +114,7 @@ export function createDeliveryRecorder(
             , ${attempt.deliveryType}
             , ${attempt.destination}
             , ${attempt.event}
+            , ${attempt.idempotencyKey ?? ''}
             , toUInt8(${String(Math.min(255, Math.max(1, attempt.attempt)))})
             , toUInt8(${String(Math.min(255, Math.max(1, attempt.maxAttempts)))})
             , toUInt8(${attempt.ok ? '1' : '0'})

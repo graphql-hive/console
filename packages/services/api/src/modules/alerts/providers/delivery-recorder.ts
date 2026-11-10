@@ -50,6 +50,8 @@ export interface DeliveryMeta {
   /** Where it went: the alert channel id. */
   destination: string;
   event: DeliveryEvent;
+  /** Identifies the notification across its attempts: the Idempotency-Key sent with it. */
+  idempotencyKey: string;
   /** Exactly what was sent to identify the call: the request headers, or the Slack metadata flattened. */
   metadata: Record<string, string>;
 }
@@ -128,6 +130,7 @@ export class DeliveryRecorder {
             , "delivery_type"
             , "destination"
             , "event"
+            , "idempotency_key"
             , "attempt"
             , "max_attempts"
             , "ok"
@@ -144,6 +147,7 @@ export class DeliveryRecorder {
             attempt.deliveryType,
             attempt.destination,
             attempt.event,
+            attempt.idempotencyKey,
             1,
             1,
             attempt.ok ? 1 : 0,

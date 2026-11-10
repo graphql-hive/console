@@ -11,6 +11,12 @@ export const OrganizationInvitationTask = defineTask({
     code: z.string(),
     email: z.string(),
     link: z.string(),
+    /**
+     * Identifies this invitation's email across the job's attempts, recorded with each delivery.
+     * The API builds it from the recipient and the invitation's creation time and reads the
+     * invitation's status back by it. Absent on jobs enqueued before it was added.
+     */
+    idempotencyKey: z.string().optional(),
   }),
 });
 
@@ -30,5 +36,6 @@ export const task = implementTask(OrganizationInvitationTask, async args => {
         organizationName: args.input.organizationName,
       }),
     },
+    idempotencyKey: args.input.idempotencyKey,
   });
 });

@@ -21,22 +21,26 @@ const rateLimit = {
 
 // The invitation, transfer and export jobs are scheduled by an API request; the rate limit ones by
 // the commerce cron, so they carry no request id.
+const invitation = {
+  organizationId: 'o1',
+  organizationName: 'Acme',
+  code: 'secret-code',
+  email: 'invitee@example.com',
+  link: 'https://app/join/secret-code',
+  idempotencyKey: 'organization-invitation:2026-11-03T10:00:00.000Z:invitee@example.com',
+};
+
 const cases = [
   {
     name: 'organization invitation',
     requestId: 'req-1',
     task: organizationInvitation,
-    input: {
-      organizationId: 'o1',
-      organizationName: 'Acme',
-      code: 'secret-code',
-      email: 'invitee@example.com',
-      link: 'https://app/join/secret-code',
-    },
+    input: invitation,
     event: 'organization_invitation',
     to: 'invitee@example.com',
     subject: 'You have been invited to join Acme',
     secrets: ['secret-code'],
+    idempotencyKey: invitation.idempotencyKey,
   },
   {
     name: 'ownership transfer',
@@ -52,6 +56,7 @@ const cases = [
     event: 'organization_ownership_transfer',
     to: 'new-owner@example.com',
     subject: 'Organization transfer from Ada (Acme)',
+    idempotencyKey: null,
     secrets: ['secret-code'],
   },
   {
@@ -69,6 +74,7 @@ const cases = [
     event: 'audit_log_export',
     to: 'auditor@example.com',
     subject: 'Hive - Audit Log Report',
+    idempotencyKey: null,
     secrets: ['secret-signed-url'],
     extra: { period: '2026-11-01..2026-11-03' },
   },
@@ -80,6 +86,7 @@ const cases = [
     event: 'usage_rate_limit_warning',
     to: 'owner@example.com',
     subject: 'Acme is approaching its rate limit',
+    idempotencyKey: null,
     secrets: ['secret-link'],
     extra: { limit: '1000', current_usage: '950' },
   },
@@ -91,34 +98,40 @@ const cases = [
     event: 'usage_rate_limit_exceeded',
     to: 'owner@example.com',
     subject: 'GraphQL-Hive operations quota for Acme exceeded',
+    idempotencyKey: null,
     secrets: ['secret-link'],
     extra: { limit: '1000', current_usage: '950' },
   },
 ];
 
+function createJob() {
+  const record = vi.fn<DeliveryRecorder['record']>(async () => {});
+  const send = vi
+    .fn()
+    .mockResolvedValue({ statusCode: 200, statusText: 'OK', messageId: 'mock-1' });
+  const context = {
+    email: { id: 'mock', send, history: [] },
+    deliveries: { record },
+    logger: makeLogger().logger,
+  } as unknown as Context;
+  const helpers = {
+    job: {
+      id: 'job-1',
+      attempts: 1,
+      max_attempts: 25,
+      job_queue_id: null,
+      priority: 0,
+      task_id: 1,
+    },
+  } as unknown as JobHelpers;
+  return { record, send, context, helpers };
+}
+
 describe('email tasks record their delivery', () => {
   test.each(cases)(
     '$name',
-    async ({ task, requestId, input, event, to, subject, secrets, extra }) => {
-      const record = vi.fn<DeliveryRecorder['record']>(async () => {});
-      const send = vi
-        .fn()
-        .mockResolvedValue({ statusCode: 200, statusText: 'OK', messageId: 'mock-1' });
-      const context = {
-        email: { id: 'mock', send, history: [] },
-        deliveries: { record },
-        logger: makeLogger().logger,
-      } as unknown as Context;
-      const helpers = {
-        job: {
-          id: 'job-1',
-          attempts: 1,
-          max_attempts: 25,
-          job_queue_id: null,
-          priority: 0,
-          task_id: 1,
-        },
-      } as unknown as JobHelpers;
+    async ({ task, requestId, input, event, to, subject, secrets, extra, idempotencyKey }) => {
+      const { record, send, context, helpers } = createJob();
 
       const [, run] = task(context);
       await run({ requestId, input }, helpers);
@@ -132,6 +145,7 @@ describe('email tasks record their delivery', () => {
           event,
           attempt: 1,
           maxAttempts: 25,
+          idempotencyKey,
           ok: true,
         }),
       );
@@ -148,4 +162,15 @@ describe('email tasks record their delivery', () => {
       }
     },
   );
+
+  test('an invitation job enqueued before the key was in the payload still sends, recorded without one', async () => {
+    const { record, send, context, helpers } = createJob();
+    const { idempotencyKey: _, ...legacyInput } = invitation;
+
+    const [, run] = organizationInvitation(context);
+    await expect(run({ requestId: 'req-1', input: legacyInput }, helpers)).resolves.toBeUndefined();
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(record).toHaveBeenCalledWith(expect.objectContaining({ idempotencyKey: null }));
+  });
 });

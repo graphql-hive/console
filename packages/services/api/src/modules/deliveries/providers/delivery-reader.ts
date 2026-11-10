@@ -54,6 +54,11 @@ export interface Delivery {
   event: DeliveryEventName;
   /** Where it went: the alert channel id, or the recipient address as it was sent. */
   destination: string;
+  /**
+   * Identifies the notification across its attempts: the Idempotency-Key sent to the channel, or
+   * the key the API assigned to the email. Null for an email that has none.
+   */
+  idempotencyKey: string | null;
   ok: boolean;
   statusCode: number | null;
   statusText: string;
@@ -96,6 +101,7 @@ const LogRowModel = z.object({
   unix_timestamp: z.coerce.number(),
   event: z.string(),
   destination: z.string(),
+  idempotency_key: z.string(),
   ok: z.coerce.number(),
   status_code: z.coerce.number(),
   status_text: z.string(),
@@ -281,6 +287,7 @@ export class DeliveryReader {
           toUnixTimestamp("timestamp") AS unix_timestamp
           , "event"
           , "destination"
+          , "idempotency_key"
           , "ok"
           , "status_code"
           , "status_text"
@@ -304,33 +311,28 @@ export class DeliveryReader {
   }
 
   /**
-   * The most recent attempt for each of the given destinations, for one event, since a point in
-   * time: one query for a page of recipients. Addresses are matched case-insensitively, and the
-   * result is keyed by the lowercased destination.
+   * The most recent attempt for each of the given idempotency keys since a point in time: one
+   * query for a page of notifications, keyed by idempotency key. `since` bounds the scan.
    */
-  async getLatestByDestination(input: {
+  async getLatestByKey(input: {
     organizationId: string;
     deliveryType: DeliveryType;
-    event: Lowercase<DeliveryEventName>;
-    destinations: string[];
+    keys: string[];
     since: Date;
   }): Promise<Map<string, Delivery>> {
-    const destinations = [...new Set(input.destinations.map(value => value.toLowerCase()))];
-    if (destinations.length === 0) {
+    const keys = [...new Set(input.keys)];
+    if (keys.length === 0) {
       return new Map();
     }
 
-    this.logger.debug(
-      'Reading latest deliveries by destination (event=%s, destinations=%s)',
-      input.event,
-      destinations.length,
-    );
+    this.logger.debug('Reading latest deliveries by key (keys=%s)', keys.length);
     const result = await this.clickHouse.query<unknown>({
       query: sql`
         SELECT
           toUnixTimestamp("timestamp") AS unix_timestamp
           , "event"
           , "destination"
+          , "idempotency_key"
           , "ok"
           , "status_code"
           , "status_text"
@@ -341,20 +343,19 @@ export class DeliveryReader {
         FROM "outbound_deliveries"
         WHERE
           ${this.whereSelector({ organizationId: input.organizationId, deliveryType: input.deliveryType })}
-          AND lower("destination") IN (${sql.array(destinations, 'String')})
-          AND "event" = ${input.event}
+          AND "idempotency_key" IN (${sql.array(keys, 'String')})
           AND "timestamp" >= toDateTime(${formatDateTime(input.since)}, 'UTC')
         ORDER BY "timestamp" DESC
-        LIMIT 1 BY lower("destination")
+        LIMIT 1 BY "idempotency_key"
       `,
-      queryId: 'latest_deliveries_by_destination',
+      queryId: 'latest_deliveries_by_key',
       timeout: 10_000,
     });
 
     return new Map(
-      result.data.map(row => {
-        const delivery = toDelivery(LogRowModel.parse(row));
-        return [delivery.destination.toLowerCase(), delivery];
+      result.data.map(data => {
+        const row = LogRowModel.parse(data);
+        return [row.idempotency_key, toDelivery(row)];
       }),
     );
   }
@@ -396,6 +397,7 @@ export function toDelivery(row: LogRow): Delivery {
     timestamp: new Date(row.unix_timestamp * 1000),
     event: DeliveryEventModel.parse(row.event.toUpperCase()),
     destination: row.destination,
+    idempotencyKey: row.idempotency_key === '' ? null : row.idempotency_key,
     ok: row.ok === 1,
     statusCode: row.status_code === 0 ? null : row.status_code,
     statusText: row.status_text,

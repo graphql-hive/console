@@ -11,6 +11,7 @@ import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder'
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
 import { BillingProvider } from '../../commerce/providers/billing.provider';
+import { invitationDeliveryKey } from '../../deliveries/providers/email-deliveries';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -682,6 +683,7 @@ export class OrganizationManager {
           email,
           code: invitation.code,
           link: `${this.appBaseUrl}/join/${invitation.code}`,
+          idempotencyKey: invitationDeliveryKey(invitation),
         },
         { requestId: getRequestId() },
       ),
