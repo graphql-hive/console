@@ -210,6 +210,14 @@ describe('DeliveryReader', () => {
     ).resolves.toEqual({ total: 5, failed: 3 });
   });
 
+  test('getLastOutcomes maps the epoch seconds and leaves an outcome that never happened null', async () => {
+    const { reader } = createReader([{ last_success_at: '1762000000', last_failure_at: 0 }]);
+
+    await expect(
+      reader.getLastOutcomes({ organizationId: 'o1', deliveryType: 'EMAIL' }),
+    ).resolves.toEqual({ lastSuccessAt: new Date(1_762_000_000 * 1000), lastFailureAt: null });
+  });
+
   test('getLog returns the parsed attempts', async () => {
     const { reader } = createReader([
       {

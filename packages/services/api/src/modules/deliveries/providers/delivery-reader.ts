@@ -49,6 +49,9 @@ export interface DeliveryHealth {
   failingSince: Date | null;
 }
 
+/** When a selection last succeeded and last failed. */
+export type LastOutcomes = Pick<DeliveryHealth, 'lastSuccessAt' | 'lastFailureAt'>;
+
 export interface Delivery {
   timestamp: Date;
   event: DeliveryEventName;
@@ -95,6 +98,11 @@ const HealthRowModel = z.object({
   last_status_code: z.coerce.number(),
   last_status_text: z.string(),
   failing_since: z.coerce.number(),
+});
+
+const LastOutcomesRowModel = z.object({
+  last_success_at: z.coerce.number(),
+  last_failure_at: z.coerce.number(),
 });
 
 const LogRowModel = z.object({
@@ -196,11 +204,9 @@ export class DeliveryReader {
   }
 
   /**
-   * The most recent attempts decide the status. With a destination, the lookups around them walk
-   * the sort key and stop early, so the scan grows with the current streak rather than with the
-   * destination's history. Without one (an organization's email) they cannot: each lookup reads
-   * the organization's rows of the type within the table's 75-day TTL, which email volumes keep
-   * small. A period on the selector would be the bound to add if that stops being true.
+   * The most recent attempts decide the status. The lookups around them walk the sort key and stop
+   * early, so the scan grows with the current streak rather than with the destination's history.
+   * That needs a destination; a selector without one gets `getLastOutcomes` instead.
    */
   async getHealth(input: DeliverySelector): Promise<DeliveryHealth> {
     this.logger.debug('Reading delivery health (destination=%s)', input.destination ?? '*');
@@ -268,6 +274,31 @@ export class DeliveryReader {
     });
 
     return toDeliveryHealth(HealthRowModel.parse(result.data[0]));
+  }
+
+  /**
+   * When the selection last succeeded and last failed, in one aggregation pass with no ordering,
+   * so a selector without a destination reads its rows once rather than once per lookup.
+   */
+  async getLastOutcomes(input: DeliverySelector): Promise<LastOutcomes> {
+    this.logger.debug('Reading last delivery outcomes (destination=%s)', input.destination ?? '*');
+    const result = await this.clickHouse.query<unknown>({
+      query: sql`
+        SELECT
+          toUnixTimestamp(maxIf("timestamp", "ok" = 1)) AS last_success_at
+          , toUnixTimestamp(maxIf("timestamp", "ok" = 0)) AS last_failure_at
+        FROM "outbound_deliveries"
+        WHERE ${this.whereSelector(input)}
+      `,
+      queryId: 'delivery_last_outcomes',
+      timeout: 10_000,
+    });
+
+    const row = LastOutcomesRowModel.parse(result.data[0]);
+    return {
+      lastSuccessAt: epochToDate(row.last_success_at),
+      lastFailureAt: epochToDate(row.last_failure_at),
+    };
   }
 
   /** The most recent attempts within the period, newest first. */

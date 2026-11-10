@@ -6,8 +6,8 @@ import { Logger } from '../../shared/providers/logger';
 import {
   DeliveryReader,
   type Delivery,
-  type DeliveryHealth,
   type DeliverySelector,
+  type LastOutcomes,
 } from './delivery-reader';
 
 /** Recipients one lookup covers: the invitations page is at most this long. */
@@ -57,11 +57,9 @@ export class EmailDeliveries {
   }
 
   /** Only the timestamps hold across recipients; the status and streak describe one destination. */
-  async getHealth(
-    organizationId: string,
-  ): Promise<Pick<DeliveryHealth, 'lastSuccessAt' | 'lastFailureAt'>> {
+  async getHealth(organizationId: string): Promise<LastOutcomes> {
     await this.assertCanRead(organizationId);
-    return this.reader.getHealth(emailDeliverySelector(organizationId));
+    return this.reader.getLastOutcomes(emailDeliverySelector(organizationId));
   }
 
   async getLog(input: {
