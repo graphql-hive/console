@@ -277,8 +277,6 @@ export interface InsightsFilterData {
   excludeClientFilters?: boolean;
   /** Schema coordinates as reported by usage; scopes to operations whose document uses any. */
   schemaCoordinates?: string[];
-  /** Federation subgraph names, resolved to the fields they own when the filter is applied. */
-  subgraphNames?: string[];
 }
 
 export interface SavedFilter {

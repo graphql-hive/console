@@ -21,7 +21,6 @@ export const GetSavedFilterQuery = graphql(`
           excludeOperations
           excludeClientFilters
           schemaCoordinates
-          subgraphNames
         }
         visibility
         viewsCount
@@ -101,7 +100,6 @@ export const CreateSavedFilterMutation = graphql(`
             excludeOperations
             excludeClientFilters
             schemaCoordinates
-            subgraphNames
           }
           visibility
           viewsCount
@@ -141,7 +139,6 @@ export const UpdateSavedFilterMutation = graphql(`
             excludeOperations
             excludeClientFilters
             schemaCoordinates
-            subgraphNames
           }
           visibility
           viewsCount

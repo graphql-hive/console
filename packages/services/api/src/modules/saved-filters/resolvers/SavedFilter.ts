@@ -28,7 +28,6 @@ export const SavedFilter: Pick<
       excludeOperations?: boolean;
       excludeClientFilters?: boolean;
       schemaCoordinates?: string[];
-      subgraphNames?: string[];
     };
     return {
       operationHashes: filters.operationHashes ?? [],
@@ -41,7 +40,6 @@ export const SavedFilter: Pick<
       excludeOperations: filters.excludeOperations ?? false,
       excludeClientFilters: filters.excludeClientFilters ?? false,
       schemaCoordinates: filters.schemaCoordinates ?? [],
-      subgraphNames: filters.subgraphNames ?? [],
     };
   },
   visibility: filter => (filter.visibility === 'private' ? 'PRIVATE' : 'SHARED'),
