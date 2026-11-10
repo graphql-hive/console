@@ -2,9 +2,8 @@ import { printWithValues, type SqlValue } from '@hive/clickhouse';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
-  countSkippedByReason,
   DAILY_THRESHOLD_MINUTES,
-  EMPTY_RESOLVED_FILTER,
+  EMPTY_PARSED_FILTER,
   evaluateRule,
   evaluationIntervalMinutes,
   extractMetricValue,
@@ -13,15 +12,10 @@ import {
   isRuleDue,
   parseSavedFilter,
   previousValueForRule,
-  pruneSkipState,
   queryClickHouseWindows,
   resolutionFor,
-  resolveSavedFilter,
-  type ParsedSavedFilter,
-  type SavedFilterSkipReason,
 } from './metric-alert-evaluator.js';
 import { makeLogger, makeRule } from './metric-alert-test-utils.js';
-import type { SupergraphOwnershipLoader } from './supergraph-ownership.js';
 
 const render = (conds: SqlValue[]) => conds.map(c => printWithValues(c));
 
@@ -153,7 +147,7 @@ describe('parseSavedFilter', () => {
   test('null filters -> an empty filter', () => {
     const { logger } = makeLogger();
     const parsed = parseSavedFilter(null, logger);
-    expect(parsed).toEqual({ conditions: [], schemaCoordinates: [], subgraphNames: [] });
+    expect(parsed).toEqual(EMPTY_PARSED_FILTER);
     expect(isFilteredFilter(parsed)).toBe(false);
   });
 
@@ -202,121 +196,23 @@ describe('parseSavedFilter', () => {
     const { logger, warnings } = makeLogger();
     // clientFilters must be an array of objects; a string is malformed.
     const parsed = parseSavedFilter({ clientFilters: 'oops' }, logger);
-    expect(parsed).toEqual({ conditions: [], schemaCoordinates: [], subgraphNames: [] });
+    expect(parsed).toEqual(EMPTY_PARSED_FILTER);
     expect(warnings.length).toBe(1);
   });
 
-  test('keeps schema coordinates and subgraph names for resolution', () => {
+  test('turns schema coordinates into one any-of coordinate scope', () => {
     const { logger } = makeLogger();
-    const parsed = parseSavedFilter(
-      { schemaCoordinates: ['Query.me'], subgraphNames: ['reviews'] },
-      logger,
-    );
+    const parsed = parseSavedFilter({ schemaCoordinates: ['Query.me', 'User.name'] }, logger);
     expect(parsed.conditions).toEqual([]);
-    expect(parsed.schemaCoordinates).toEqual(['Query.me']);
-    expect(parsed.subgraphNames).toEqual(['reviews']);
+    expect(parsed.coordinateScopes).toEqual([['Query.me', 'User.name']]);
     // Narrows the query even though no hash/client condition exists.
     expect(isFilteredFilter(parsed)).toBe(true);
   });
 
-  test('a legacy blob without the new keys reads as empty lists', () => {
+  test('a legacy blob without the key reads as no scope', () => {
     const { logger } = makeLogger();
     const parsed = parseSavedFilter({ operationHashes: ['h1'] }, logger);
-    expect(parsed.schemaCoordinates).toEqual([]);
-    expect(parsed.subgraphNames).toEqual([]);
-  });
-});
-
-describe('resolveSavedFilter', () => {
-  const parsed = (over: Partial<ParsedSavedFilter> = {}): ParsedSavedFilter => ({
-    conditions: [],
-    schemaCoordinates: [],
-    subgraphNames: [],
-    ...over,
-  });
-  function fakeLoader(result: Awaited<ReturnType<SupergraphOwnershipLoader['load']>>) {
-    let loads = 0;
-    const ownership: SupergraphOwnershipLoader = {
-      load: async () => {
-        loads += 1;
-        return result;
-      },
-    };
-    return { ownership, loads: () => loads };
-  }
-  const info = {
-    schemaCoordinateServicesMappings: new Map([
-      ['Query', ['users', 'reviews']],
-      ['Query.me', ['users']],
-      ['Query.reviews', ['reviews']],
-      ['Review.body', ['reviews']],
-      ['Sort.ASC', ['users', 'reviews']],
-    ]),
-    objectFieldCoordinates: new Set(['Query.me', 'Query.reviews', 'Review.body']),
-  };
-
-  test('no subgraph names -> ok without loading ownership', async () => {
-    const { ownership, loads } = fakeLoader({ info, versionId: 'v1' });
-    const result = await resolveSavedFilter(parsed({ schemaCoordinates: ['Query.me'] }), {
-      targetId: 't1',
-      ownership,
-    });
-    expect(result).toEqual({
-      kind: 'ok',
-      filter: { conditions: [], coordinateScopes: [['Query.me']] },
-    });
-    expect(loads()).toBe(0);
-  });
-
-  test('subgraph names resolve to the object fields they own, as their own scope', async () => {
-    const { ownership } = fakeLoader({ info, versionId: 'v1' });
-    const result = await resolveSavedFilter(
-      parsed({ schemaCoordinates: ['Query.me'], subgraphNames: ['reviews'] }),
-      { targetId: 't1', ownership },
-    );
-    expect(result).toEqual({
-      kind: 'ok',
-      filter: {
-        conditions: [],
-        coordinateScopes: [['Query.me'], ['Query.reviews', 'Review.body']],
-      },
-    });
-  });
-
-  test('an unknown subgraph skips the group and names it', async () => {
-    const { ownership } = fakeLoader({ info, versionId: 'v1' });
-    const result = await resolveSavedFilter(parsed({ subgraphNames: ['reviews', 'inventory'] }), {
-      targetId: 't1',
-      ownership,
-    });
-    expect(result).toEqual({ kind: 'skip', reason: 'unknown-subgraph', details: ['inventory'] });
-  });
-
-  test.each(['no-composable-version', 'no-supergraph-sdl', 'supergraph-parse-failed'] as const)(
-    'a load failure (%s) skips with that reason',
-    async reason => {
-      const { ownership } = fakeLoader({ info: null, reason });
-      const result = await resolveSavedFilter(parsed({ subgraphNames: ['reviews'] }), {
-        targetId: 't1',
-        ownership,
-      });
-      expect(result).toEqual({ kind: 'skip', reason });
-    },
-  );
-
-  test('a resolved set over the budget skips as scope-too-large', async () => {
-    const big = {
-      schemaCoordinateServicesMappings: new Map(
-        Array.from({ length: 3001 }, (_, i) => [`T${i}.f`, ['users']] as [string, string[]]),
-      ),
-      objectFieldCoordinates: new Set(Array.from({ length: 3001 }, (_, i) => `T${i}.f`)),
-    };
-    const { ownership } = fakeLoader({ info: big, versionId: 'v1' });
-    const result = await resolveSavedFilter(parsed({ subgraphNames: ['users'] }), {
-      targetId: 't1',
-      ownership,
-    });
-    expect(result).toEqual({ kind: 'skip', reason: 'scope-too-large', details: ['3001'] });
+    expect(parsed.coordinateScopes).toEqual([]);
   });
 });
 
@@ -337,7 +233,7 @@ describe('queryClickHouseWindows', () => {
 
   test('no filter -> target-keyed minutely rollup, no hash/client predicate, only target bound', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, EMPTY_RESOLVED_FILTER, evalTime);
+    await queryClickHouseWindows(clickhouse, target, 60, EMPTY_PARSED_FILTER, evalTime);
     const { sql, params } = calls[0];
     // Unfiltered -> the target-keyed rollup. It dropped the hash/client
     // dimensions, so the query must emit no hash/client predicate.
@@ -379,19 +275,19 @@ describe('queryClickHouseWindows', () => {
 
   test('window > 360 minutes reads the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 720, EMPTY_RESOLVED_FILTER, evalTime);
+    await queryClickHouseWindows(clickhouse, target, 720, EMPTY_PARSED_FILTER, evalTime);
     expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
   });
 
   test('windows below 7 days stay on the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 1440, EMPTY_RESOLVED_FILTER, evalTime);
-    await queryClickHouseWindows(clickhouse, target, 4320, EMPTY_RESOLVED_FILTER, evalTime);
+    await queryClickHouseWindows(clickhouse, target, 1440, EMPTY_PARSED_FILTER, evalTime);
+    await queryClickHouseWindows(clickhouse, target, 4320, EMPTY_PARSED_FILTER, evalTime);
     await queryClickHouseWindows(
       clickhouse,
       target,
       DAILY_THRESHOLD_MINUTES - 1,
-      EMPTY_RESOLVED_FILTER,
+      EMPTY_PARSED_FILTER,
       evalTime,
     );
     for (const call of calls) {
@@ -405,7 +301,7 @@ describe('queryClickHouseWindows', () => {
       clickhouse,
       target,
       DAILY_THRESHOLD_MINUTES,
-      EMPTY_RESOLVED_FILTER,
+      EMPTY_PARSED_FILTER,
       evalTime,
     );
     const { sql } = calls[0];
@@ -420,7 +316,7 @@ describe('queryClickHouseWindows', () => {
       clickhouse,
       target,
       DAILY_THRESHOLD_MINUTES,
-      EMPTY_RESOLVED_FILTER,
+      EMPTY_PARSED_FILTER,
       evalTime,
       true,
       true,
@@ -534,7 +430,7 @@ describe('queryClickHouseWindows', () => {
       clickhouse,
       target,
       60,
-      EMPTY_RESOLVED_FILTER,
+      EMPTY_PARSED_FILTER,
       evalTime,
       false,
     );
@@ -554,7 +450,7 @@ describe('queryClickHouseWindows', () => {
 
   test('groups needing the previous window fetch both (default)', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, EMPTY_RESOLVED_FILTER, evalTime, true);
+    await queryClickHouseWindows(clickhouse, target, 60, EMPTY_PARSED_FILTER, evalTime, true);
     const { sql } = calls[0];
     expect(sql).toContain("ELSE 'previous'");
     const anchor = evalTime.getTime();
@@ -570,7 +466,7 @@ describe('queryClickHouseWindows', () => {
       clickhouse,
       target,
       60,
-      EMPTY_RESOLVED_FILTER,
+      EMPTY_PARSED_FILTER,
       evalTime,
       true,
       false,
@@ -589,7 +485,7 @@ describe('queryClickHouseWindows', () => {
       clickhouse,
       target,
       60,
-      EMPTY_RESOLVED_FILTER,
+      EMPTY_PARSED_FILTER,
       evalTime,
       true,
       false,
@@ -606,7 +502,7 @@ describe('queryClickHouseWindows', () => {
       clickhouse,
       target,
       60,
-      EMPTY_RESOLVED_FILTER,
+      EMPTY_PARSED_FILTER,
       evalTime,
       true,
       true,
@@ -769,31 +665,5 @@ describe('evaluateRule incident queries', () => {
     expect(resolve?.sql).toContain('ORDER BY "started_at" DESC LIMIT 1');
     const logged = calls.find(c => c.sql.includes('INSERT INTO "metric_alert_state_log"'));
     expect(logged?.values).toContain('incident-new');
-  });
-});
-
-describe('skip state for the gauge', () => {
-  test('pruneSkipState drops only groups that no longer exist', () => {
-    const state = new Map<string, SavedFilterSkipReason>([
-      ['live', 'unknown-subgraph'],
-      ['gone', 'scope-too-large'],
-    ]);
-    pruneSkipState(state, new Set(['live', 'other']));
-    expect([...state.keys()]).toEqual(['live']);
-  });
-
-  test('countSkippedByReason seeds every reason with 0 and tallies the rest', () => {
-    const counts = countSkippedByReason([
-      'unknown-subgraph',
-      'unknown-subgraph',
-      'no-supergraph-sdl',
-    ]);
-    expect([...counts.entries()]).toEqual([
-      ['no-composable-version', 0],
-      ['no-supergraph-sdl', 1],
-      ['supergraph-parse-failed', 0],
-      ['unknown-subgraph', 2],
-      ['scope-too-large', 0],
-    ]);
   });
 });
