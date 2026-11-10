@@ -10,7 +10,8 @@ export type DeliveryStatsData = {
 };
 
 export type DeliveryHealthData = {
-  status: DeliveryHealthStatus;
+  /** Sets the tone of the "Last success" card; without it the card stays neutral. */
+  status?: DeliveryHealthStatus;
   lastSuccessAt?: string | null;
   lastFailureAt?: string | null;
 };

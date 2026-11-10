@@ -125,6 +125,15 @@ export default gql`
     failingSince: DateTime
   }
 
+  """
+  When an organization's emails last succeeded and last failed, across every recipient. A
+  DeliveryHealth status describes one destination, so there is none here.
+  """
+  type EmailDeliveryHealth {
+    lastSuccessAt: DateTime
+    lastFailureAt: DateTime
+  }
+
   extend type OrganizationInvitation {
     """
     The most recent attempt to email this invitation; null before one is recorded or when the
@@ -146,10 +155,10 @@ export default gql`
       period: DateRangeInput!
     ): DeliveryStats
     """
-    Health derived across every recipient: lastSuccessAt and lastFailureAt are meaningful, status
-    is not. Requires member:modify. Null when the delivery history could not be read.
+    When an email to any recipient last succeeded and last failed. Requires member:modify. Null
+    when the delivery history could not be read.
     """
-    emailDeliveryHealth: DeliveryHealth
+    emailDeliveryHealth: EmailDeliveryHealth
     """
     The most recent email attempts within the period, newest first. limit defaults to 50, at most
     200. Requires member:modify. Null when the delivery history could not be read.

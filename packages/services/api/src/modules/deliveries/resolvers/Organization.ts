@@ -2,7 +2,10 @@ import { parseDateRangeInput } from '../../../shared/helpers';
 import { EmailDeliveries, emailDeliverySelector } from '../providers/email-deliveries';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 
-/** The organization's email deliveries, shaped like the delivery fields of an AlertChannel. */
+/**
+ * The organization's email deliveries: stats and log shaped like an AlertChannel's, health
+ * reduced to the last success and failure across recipients.
+ */
 export const Organization: Pick<
   OrganizationResolvers,
   'emailDeliveryHealth' | 'emailDeliveryLog' | 'emailDeliveryStats' | 'viewerCanSeeEmailDeliveries'

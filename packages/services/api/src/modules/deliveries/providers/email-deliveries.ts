@@ -56,7 +56,10 @@ export class EmailDeliveries {
     });
   }
 
-  async getHealth(organizationId: string): Promise<DeliveryHealth> {
+  /** Only the timestamps hold across recipients; the status and streak describe one destination. */
+  async getHealth(
+    organizationId: string,
+  ): Promise<Pick<DeliveryHealth, 'lastSuccessAt' | 'lastFailureAt'>> {
     await this.assertCanRead(organizationId);
     return this.reader.getHealth(emailDeliverySelector(organizationId));
   }

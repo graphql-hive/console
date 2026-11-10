@@ -38,7 +38,6 @@ export const EmailDeliveriesSubPage_Query = graphql(`
         }
       }
       emailDeliveryHealth {
-        status
         lastSuccessAt
         lastFailureAt
       }
