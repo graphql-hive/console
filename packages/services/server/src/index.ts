@@ -278,6 +278,7 @@ export async function main() {
     const logger = createGraphQLLogger();
     const registry = createRegistry({
       release: env.release,
+      clientIPHeaderName: env.clientIPHeaderName,
       app: env.hiveServices.webApp
         ? {
             baseUrl: env.hiveServices.webApp.url,
@@ -546,6 +547,8 @@ export async function main() {
       return;
     });
 
+    const auditLogClickHouse = new ClickHouse(env.clickhouse, new HttpClient(), logger);
+
     await registerSupertokensAtHome(
       server,
       storage,
@@ -558,6 +561,11 @@ export async function main() {
       env.supertokens.secrets,
       workloadIdentityFederation,
       env.organizationSCIM,
+      {
+        logger,
+        clickHouse: auditLogClickHouse,
+        emailVerification: registry.injector.get(EmailVerification),
+      },
     );
 
     if (env.cdn.providers.api !== null) {
@@ -653,9 +661,10 @@ export async function main() {
       storage,
       registry.injector.get(OIDCIntegrationStore),
       registry.injector.get(RedisRateLimiter),
-      new ClickHouse(env.clickhouse, new HttpClient(), logger),
+      auditLogClickHouse,
       env.graphql.origin + '/scim/v2',
       env.organizationSCIM,
+      env.clientIPHeaderName,
     );
     await server.register(scimPlugin, { prefix: '/scim/v2' });
 

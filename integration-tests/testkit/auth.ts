@@ -87,7 +87,7 @@ const createSessionAtHome = async (
  * seed scripts can print it to operators alongside the email they should
  * sign in with.
  */
-export const password = 'ilikebigturtlesandicannotlie47';
+export const password = 'ILikeBigTurtlesAndICannotLie47!';
 const hashedPassword = await hashPassword(password);
 
 export function userEmail(userId: string) {

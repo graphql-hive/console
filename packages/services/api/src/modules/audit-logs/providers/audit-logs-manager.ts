@@ -66,6 +66,8 @@ export class AuditLogManager {
         , "user_id" AS "userId"
         , "user_email" AS "userEmail"
         , "access_token_id" AS "accessTokenId"
+        , "ip_address" AS "ipAddress"
+        , "user_agent" AS "userAgent"
         , "metadata"
       FROM
         "audit_logs"
@@ -149,6 +151,8 @@ export class AuditLogManager {
               userId: 'user_id',
               userEmail: 'user_email',
               accessTokenId: 'access_token_id',
+              ipAddress: 'ip_address',
+              userAgent: 'user_agent',
               metadata: 'metadata',
             },
           },

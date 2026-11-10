@@ -14,6 +14,7 @@ import {
   type ProvisionedUser,
 } from '@hive/api/modules/organization/providers/provisioned-users-store';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
+import { ClientIPHeaderName } from '@hive/api/modules/shared/providers/tokens';
 import { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { invariant, metrics } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
@@ -230,6 +231,7 @@ export const createSCIMPlugin =
     clickHouse: ClickHouse,
     baseUri: string,
     isSCIMEnabled: boolean,
+    clientIPHeaderName: string | null,
   ): FastifyPluginAsync =>
   async server => {
     const requestStartTimeMap = new WeakMap<FastifyRequest, bigint>();
@@ -342,6 +344,7 @@ export const createSCIMPlugin =
 
       return {
         type: 'success' as const,
+        req,
         session,
         organizationId: actor.organizationAccessToken.organizationId,
         oidcIntegration,
@@ -350,10 +353,16 @@ export const createSCIMPlugin =
     }
 
     async function recordAuditLog(
-      auth: { logger: Logger; organizationId: string; session: Session },
+      auth: { logger: Logger; organizationId: string; session: Session; req: FastifyRequest },
       event: AuditLogSchemaEvent,
     ) {
-      await new AuditLogRecorder(auth.logger, clickHouse, auth.session).record({
+      await new AuditLogRecorder(
+        auth.logger,
+        clickHouse,
+        auth.session,
+        { req: auth.req },
+        new ClientIPHeaderName(clientIPHeaderName),
+      ).record({
         ...event,
         organizationId: auth.organizationId,
       });
