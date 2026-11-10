@@ -27,7 +27,7 @@ export function describeInvitationDelivery(
 ): InvitationDeliveryState {
   if (!delivery) {
     return {
-      label: 'Not sent yet',
+      label: 'No delivery record',
       dot: 'neutral',
       tooltip: 'No delivery attempt has been recorded yet.',
     };

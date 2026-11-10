@@ -21,9 +21,9 @@ function delivery(overrides: Partial<InvitationDelivery> = {}): InvitationDelive
 }
 
 describe('describeInvitationDelivery', () => {
-  it('reports a missing attempt as not sent yet', () => {
+  it('reports a missing attempt as having no delivery record', () => {
     expect(describeInvitationDelivery(null, now)).toEqual({
-      label: 'Not sent yet',
+      label: 'No delivery record',
       dot: 'neutral',
       tooltip: 'No delivery attempt has been recorded yet.',
     });
