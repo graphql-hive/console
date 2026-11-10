@@ -36,6 +36,7 @@ const SignInAuditLogMetadataModel = z.object({
   reason: z.string().optional(),
   email: z.string().nullable().optional(),
   emailVerified: z.boolean().nullable().optional(),
+  newUser: z.boolean().optional(),
 });
 
 const SignInAuditLogListModel = z.array(
@@ -52,6 +53,22 @@ const SignInAuditLogListModel = z.array(
 
 function signIn(email: string, password: string) {
   return fetch(baseUrl + '/auth-api/signin', {
+    method: 'POST',
+    body: JSON.stringify({
+      formFields: [
+        { id: 'email', value: email },
+        { id: 'password', value: password },
+      ],
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'sign-in-audit-log-test',
+    },
+  }).then(res => res.json());
+}
+
+function signUp(email: string, password: string) {
+  return fetch(baseUrl + '/auth-api/signup', {
     method: 'POST',
     body: JSON.stringify({
       formFields: [
@@ -91,6 +108,7 @@ test.concurrent(
           email,
           emailVerified: true,
           oidcIntegrationId: null,
+          newUser: false,
         },
       });
     });
@@ -123,6 +141,8 @@ test.concurrent(
           email,
           emailVerified: null,
           oidcIntegrationId: oidcIntegration.oidcIntegration.id,
+          // the user signs in through the OIDC integration for the first time
+          newUser: true,
         },
       });
     });
@@ -238,6 +258,7 @@ test.concurrent(
           email,
           emailVerified: false,
           oidcIntegrationId: null,
+          newUser: false,
         },
       });
     });
@@ -308,6 +329,96 @@ test.concurrent(
           email,
         },
       });
+    });
+  },
+);
+
+test.concurrent(
+  'email/password sign up is recorded without an actor for the organization that verified the email domain',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const domain = humanId({ separator: '', capitalize: false }) + '.local';
+    const email = 'new-user@' + domain;
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const oidcIntegration = await org.createOIDCIntegration();
+    await oidcIntegration.registerFakeDomain(domain);
+
+    expect(await signUp(email, password)).toMatchObject({ status: 'OK' });
+
+    await waitForExpectations(async () => {
+      const logs = await getSignInAuditLogs(org.organization.id, 'USER_SIGNED_IN');
+      expect(logs).toHaveLength(1);
+      expect(logs[0]).toMatchObject({
+        // the email address of a freshly signed up user is never verified
+        userEmail: '',
+        ipAddress: expect.stringMatching(/.+/),
+        userAgent: 'sign-in-audit-log-test',
+        metadata: {
+          method: 'emailpassword',
+          email,
+          emailVerified: false,
+          oidcIntegrationId: null,
+          newUser: true,
+        },
+      });
+    });
+  },
+);
+
+test.concurrent(
+  'email/password sign up blocked by enforced SSO is recorded for the organization that verified the email domain',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const oidcIntegration = await org.createOIDCIntegration();
+    const domain = await oidcIntegration.registerFakeDomain();
+    await oidcIntegration.createMockServerAndUpdateIntegrationEndpoints({
+      oidcForVerifiedDomainsRequired: true,
+    });
+    const email = 'new-user@' + domain;
+
+    expect(await signUp(email, password)).toMatchObject({ status: 'SIGN_UP_NOT_ALLOWED' });
+
+    await waitForExpectations(async () => {
+      const logs = await getSignInAuditLogs(org.organization.id, 'USER_SIGN_IN_FAILED');
+      expect(logs).toHaveLength(1);
+      expect(logs[0]).toMatchObject({
+        userEmail: '',
+        userAgent: 'sign-in-audit-log-test',
+        metadata: {
+          method: 'emailpassword',
+          reason: 'SSO_REQUIRED',
+          email,
+          oidcIntegrationId: null,
+        },
+      });
+    });
+  },
+);
+
+test.concurrent(
+  'subsequent OIDC sign in of an existing user is not flagged as a new user',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const oidcIntegration = await org.createOIDCIntegration();
+    const oidcAuth = await oidcIntegration.createMockServerAndUpdateIntegrationEndpoints();
+    const email = 'marty.mcfly@' + humanId({ separator: '', capitalize: false }) + '.local';
+    oidcAuth.setUser({ email, userIdClaim: email });
+
+    for (let i = 0; i < 2; i++) {
+      const authPayload = await oidcAuth.runGetAuthorizationUrl();
+      const signInUpResult = await oidcAuth.runSignInUp({ state: authPayload.state });
+      assertSignInUpSucceeded(signInUpResult, 'Expected sign in/up to succeed.');
+    }
+
+    await waitForExpectations(async () => {
+      const logs = await getSignInAuditLogs(org.organization.id, 'USER_SIGNED_IN');
+      expect(logs).toHaveLength(2);
+      expect(logs.map(log => log.metadata.newUser).sort()).toEqual([false, true]);
     });
   },
 );

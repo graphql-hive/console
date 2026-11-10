@@ -34,6 +34,10 @@ export const AuditLogModel = z.union([
        */
       emailVerified: z.boolean().nullable(),
       oidcIntegrationId: z.string().nullable(),
+      /**
+       * Whether the user was created as part of this sign in (sign up).
+       */
+      newUser: z.boolean(),
     }),
   }),
   z.object({

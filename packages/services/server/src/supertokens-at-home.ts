@@ -187,6 +187,8 @@ export async function registerSupertokensAtHome(
        * `null` if the provider did not verify it or does not report it.
        */
       providerVerifiedEmail: string | null;
+      /** Whether the Hive user was created as part of this sign in (sign up). */
+      newUser: boolean;
     },
   ) {
     recordSignInAttemptAuditLog(req, async () => {
@@ -210,6 +212,7 @@ export async function registerSupertokensAtHome(
               email,
               emailVerified: null,
               oidcIntegrationId: args.oidcIntegration.id,
+              newUser: args.newUser,
             },
           },
         };
@@ -234,6 +237,7 @@ export async function registerSupertokensAtHome(
             email,
             emailVerified,
             oidcIntegrationId: null,
+            newUser: args.newUser,
           },
         },
       };
@@ -459,6 +463,13 @@ export async function registerSupertokensAtHome(
       const result = await isNonOIDCSignUpAllowedForEmailAddress(emailResult.data, user);
 
       if (result.type === 'error') {
+        recordSignInFailedAuditLog(req, {
+          email: emailResult.data,
+          method: 'emailpassword',
+          reason: 'SSO_REQUIRED',
+          oidcIntegration: null,
+        });
+
         return rep.send({
           status: 'SIGN_UP_NOT_ALLOWED',
           reason: 'Please sign in through your organizations identity provider.',
@@ -497,6 +508,13 @@ export async function registerSupertokensAtHome(
       });
 
       if (ensureUserResult.ok === false) {
+        recordSignInFailedAuditLog(req, {
+          email: emailResult.data,
+          method: 'emailpassword',
+          reason: 'NOT_ALLOWED',
+          oidcIntegration: null,
+        });
+
         return rep.send({
           status: 'SIGN_UP_NOT_ALLOWED',
           reason: 'Not allowed.',
@@ -515,6 +533,17 @@ export async function registerSupertokensAtHome(
           accessTokenKey,
         },
       );
+
+      // Signing up creates a session, so it is recorded as a sign in.
+      recordSignInSuccessAuditLog(req, {
+        user: ensureUserResult.user,
+        superTokensUserId: user.userId,
+        method: 'emailpassword',
+        oidcIntegration: null,
+        providerVerifiedEmail: null,
+        newUser: ensureUserResult.action === 'created',
+      });
+
       const frontToken = createFrontToken({
         superTokensUserId: user.userId,
         accessToken,
@@ -672,6 +701,7 @@ export async function registerSupertokensAtHome(
         method: 'emailpassword',
         oidcIntegration: null,
         providerVerifiedEmail: null,
+        newUser: result.action === 'created',
       });
 
       const frontToken = createFrontToken({
@@ -1204,6 +1234,7 @@ export async function registerSupertokensAtHome(
       let oidcIntegration: OIDCIntegration | null = null;
       /** Email address verified by the identity provider. Only used for audit log attribution. */
       let providerVerifiedEmail: string | null = null;
+      let newUser = false;
 
       if (parsedBody.data.thirdPartyId === 'github') {
         if (!env.auth.github) {
@@ -1373,6 +1404,7 @@ export async function registerSupertokensAtHome(
 
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
+        newUser = ensureUserExists.action === 'created';
         providerVerifiedEmail = email.verified ? email.email : null;
       } else if (parsedBody.data.thirdPartyId === 'google') {
         if (!env.auth.google) {
@@ -1508,6 +1540,7 @@ export async function registerSupertokensAtHome(
 
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
+        newUser = ensureUserExists.action === 'created';
         providerVerifiedEmail = userInfo.email_verified === true ? userInfo.email : null;
       } else if (parsedBody.data.thirdPartyId === 'okta') {
         if (!env.auth.okta) {
@@ -1665,6 +1698,7 @@ export async function registerSupertokensAtHome(
 
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
+        newUser = ensureUserExists.action === 'created';
         // `providerVerifiedEmail` is intentionally left `null`: the Okta users API does not report
         // whether the email address is verified, so the sign in is recorded without an actor.
         // We plan to remove Okta login support in the future, so this is not worth further effort.
@@ -2168,6 +2202,7 @@ export async function registerSupertokensAtHome(
             });
           }
           hiveUser = ensureUserExists.user;
+          newUser = ensureUserExists.action === 'created';
           supertokensUser = supertokenUser;
         } else {
           hiveUser = maybeHiveUser;
@@ -2201,6 +2236,7 @@ export async function registerSupertokensAtHome(
         method: parsedBody.data.thirdPartyId,
         oidcIntegration,
         providerVerifiedEmail,
+        newUser,
       });
 
       const frontToken = createFrontToken({
