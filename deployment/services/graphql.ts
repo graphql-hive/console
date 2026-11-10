@@ -169,7 +169,7 @@ export function deployGraphQL({
         AUTH_ORGANIZATION_SCIM: '1',
         AUTH_REQUIRE_EMAIL_VERIFICATION: '1',
         // set by Cloudflare, used for rate limiting and audit logs
-        CLIENT_IP_HEADER_NAME: 'CF-Connecting-IP',
+        CLIENT_IP_HEADER_NAME: 'cf-connecting-ip',
         // Traces (OTLP)
         OPENTELEMETRY_COLLECTOR_ENDPOINT:
           observability.enabled && observability.tracingEndpoint
