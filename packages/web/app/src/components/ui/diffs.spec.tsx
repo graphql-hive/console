@@ -33,7 +33,7 @@ vi.mock('@pierre/diffs/react', async importOriginal => {
     ...actual,
     File: () => {
       const pool = useContext(actual.WorkerPoolContext);
-      return <div data-cy="file">{pool ? 'pooled' : 'main thread'}</div>;
+      return <div data-testid="file">{pool ? 'pooled' : 'main thread'}</div>;
     },
   };
 });

@@ -16,12 +16,14 @@ describe('AlertDialog', () => {
           label: 'Remove',
           variant: 'destructive',
           onClick: onConfirm,
-          'data-cy': 'confirm',
+          'data-testid': 'confirm',
         }}
       />,
     );
     expect(screen.getByRole('alertdialog')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Remove' }).getAttribute('data-cy')).toBe('confirm');
+    expect(screen.getByRole('button', { name: 'Remove' }).getAttribute('data-testid')).toBe(
+      'confirm',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onOpenChange).not.toHaveBeenCalled();

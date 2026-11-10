@@ -1,7 +1,13 @@
 import { Injectable, Scope } from 'graphql-modules';
-import type { Alert, AlertChannel } from '../../../shared/entities';
+import type { Alert, AlertChannel, DateRange } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
+import {
+  DeliveryReader,
+  type Delivery,
+  type DeliveryHealth,
+  type DeliverySelector,
+} from '../../deliveries/providers/delivery-reader';
 import { IntegrationsAccessContext } from '../../integrations/providers/integrations-access-context';
 import { SlackIntegrationManager } from '../../integrations/providers/slack-integration-manager';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
@@ -33,6 +39,7 @@ export class AlertsManager {
     private organizationManager: OrganizationManager,
     private projectManager: ProjectManager,
     private storage: Storage,
+    private deliveryReader: DeliveryReader,
   ) {
     this.logger = logger.child({ source: 'AlertsManager' });
   }
@@ -135,6 +142,47 @@ export class AlertsManager {
       },
     });
     return this.storage.getAlertChannels(selector);
+  }
+
+  async getChannel(
+    selector: ProjectSelector & { channelId: string },
+  ): Promise<AlertChannel | null> {
+    const channels = await this.getChannels(selector);
+    return channels.find(channel => channel.id === selector.channelId) ?? null;
+  }
+
+  async getChannelDeliveryHealth(input: ChannelDeliveryRef): Promise<DeliveryHealth> {
+    await this.assertCanReadChannelDeliveries(input);
+    return this.deliveryReader.getHealth(channelDeliverySelector(input));
+  }
+
+  async getChannelDeliveryLog(
+    input: ChannelDeliveryRef & { period: DateRange; limit?: number },
+  ): Promise<Delivery[]> {
+    await this.assertCanReadChannelDeliveries(input);
+    return this.deliveryReader.getLog({
+      ...channelDeliverySelector(input),
+      period: input.period,
+      limit: input.limit,
+    });
+  }
+
+  // `alert:modify` is the only alerts permission; reads such as `getChannels` use it too.
+  async assertCanReadChannelDeliveries(selector: ProjectSelector & { channelId: string }) {
+    this.logger.debug(
+      'Fetching Alert Channel deliveries (organization=%s, project=%s, channel=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.channelId,
+    );
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
+    });
   }
 
   async addAlert(input: {
@@ -393,4 +441,19 @@ export class AlertsManager {
       await this.webhook.sendChannelConfirmation();
     }
   }
+}
+
+/** A channel whose deliveries are read, with the project the viewer reached it through. */
+export type ChannelDeliveryRef = ProjectSelector & {
+  channelId: string;
+  channelType: AlertChannel['type'];
+};
+
+/** The channel's deliveries, as the delivery reader keys them. */
+export function channelDeliverySelector(ref: ChannelDeliveryRef): DeliverySelector {
+  return {
+    organizationId: ref.organizationId,
+    deliveryType: ref.channelType,
+    destination: ref.channelId,
+  };
 }

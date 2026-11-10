@@ -1,5 +1,14 @@
 # @graphql-hive/core
 
+## 0.23.3
+
+### Patch Changes
+
+- [#8864](https://github.com/graphql-hive/console/pull/8864)
+  [`0bb0a5c`](https://github.com/graphql-hive/console/commit/0bb0a5c3c017cf469b4bcbe63f1cdc52e3e4095b)
+  Thanks [@nyxs1874](https://github.com/nyxs1874)! - Stop retrying HTTP requests after a 4xx
+  response or an abort by the caller.
+
 ## 0.23.2
 
 ### Patch Changes

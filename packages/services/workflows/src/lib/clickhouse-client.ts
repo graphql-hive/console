@@ -82,4 +82,46 @@ export class ClickHouseClient {
       span.end();
     }
   }
+
+  /**
+   * Runs a statement that returns no rows (an INSERT). Not retried: a retried insert after a
+   * timeout duplicates the row, and a dropped stats row is the cheaper failure.
+   */
+  async command(sql: string, queryId = 'command', params?: Record<string, string>): Promise<void> {
+    const span = tracer.startSpan(`ClickHouse: ${queryId}`, {
+      kind: SpanKind.CLIENT,
+      attributes: {
+        'db.type': 'ClickHouse',
+        'db.query': sql,
+        'db.query.id': queryId,
+      },
+    });
+
+    try {
+      await got.post(this.baseUrl, {
+        searchParams: {
+          database: this.config.database ?? 'default',
+          ...params,
+        },
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+        username: this.config.username,
+        password: this.config.password,
+        body: sql,
+        timeout: {
+          request: 5_000,
+        },
+        retry: {
+          limit: 0,
+        },
+      });
+    } catch (error) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: 'clickhouse command failed' });
+      span.setAttribute('error.type', error instanceof Error ? error.name : 'unknown');
+      throw error;
+    } finally {
+      span.end();
+    }
+  }
 }

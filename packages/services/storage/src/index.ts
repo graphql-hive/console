@@ -1606,6 +1606,11 @@ export async function createStorage(
     },
 
     async getOIDCIntegrationById(args) {
+      // Postgres throws on malformed uuids, so treat them as "not found".
+      if (!z.uuid().safeParse(args.oidcIntegrationId).success) {
+        return null;
+      }
+
       return shared.getOIDCIntegrationById(args, pool);
     },
 

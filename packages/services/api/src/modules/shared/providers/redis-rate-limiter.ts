@@ -1,10 +1,11 @@
 import { timingSafeEqual } from 'node:crypto';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { invariant, type FastifyRequest } from '@hive/service-common';
+import { resolveClientIP } from '../../../shared/resolve-client-ip';
 import { sha256 } from '../../auth/lib/supertokens-at-home/crypto';
 import { Logger } from './logger';
 import { REDIS_INSTANCE, type Redis } from './redis';
-import { RateLimitConfig } from './tokens';
+import { ClientIPHeaderName, RateLimitConfig } from './tokens';
 
 @Injectable({
   scope: Scope.Singleton,
@@ -16,6 +17,7 @@ export class RedisRateLimiter {
   constructor(
     @Inject(REDIS_INSTANCE) private redis: Redis,
     private config: RateLimitConfig,
+    private clientIPHeaderName: ClientIPHeaderName,
     logger: Logger,
   ) {
     this.logger = logger.child({ module: 'RateLimiter' });
@@ -40,36 +42,25 @@ export class RedisRateLimiter {
     return false;
   }
 
-  private resolveIP(req: FastifyRequest, config: Exclude<RateLimitConfig['config'], null>) {
-    let ip = req.ip;
-
-    if (config.ipHeaderName && req.headers[config.ipHeaderName]) {
-      this.logger.debug('rate limit based on forwarded ip header %s', config.ipHeaderName);
-      ip = req.headers[config.ipHeaderName] as string;
-    }
-
-    return ip;
-  }
-
   private async applyRateLimit(
-    ip: string,
+    identifier: string,
     action: string,
     timeWindowSeconds: number,
     maxActionsPerTimeWindow: number,
   ) {
-    const ipHash = sha256(ip);
-    const key = `server-rate-limiter:${action}:${ipHash}`;
+    const identifierHash = sha256(identifier);
+    const key = `server-rate-limiter:${action}:${identifierHash}`;
 
     const current = await this.redis.incr(key);
     if (current === 1) {
       await this.redis.expire(key, timeWindowSeconds);
     }
     if (current > maxActionsPerTimeWindow) {
-      this.logger.debug('request is rate limited (ip_hash=%s)', ipHash);
+      this.logger.debug('request is rate limited (identifier_hash=%s)', identifierHash);
       return true;
     }
 
-    this.logger.debug('request is not rate limited (ip_hash=%s)', ipHash);
+    this.logger.debug('request is not rate limited (identifier_hash=%s)', identifierHash);
     return false;
   }
 
@@ -90,8 +81,38 @@ export class RedisRateLimiter {
       return false;
     }
 
-    const ip = this.resolveIP(req, this.config.config);
+    const ip = resolveClientIP(req, this.clientIPHeaderName.headerName);
     return await this.applyRateLimit(ip, actionName, timeWindowSeconds, maxActionsPerTimeWindow);
+  }
+
+  /**
+   * Rate limit an action based on the user performing it (instead of the IP address).
+   */
+  async isUserActionRateLimited(
+    req: FastifyRequest,
+    userId: string,
+    actionName: string,
+    /** duration of the time window */
+    timeWindowSeconds = 5 * 60,
+    /** maximum amount of requests allowed in the time window */
+    maxActionsPerTimeWindow = 30,
+  ) {
+    if (!this.config.config) {
+      this.logger.debug('rate limiting is disabled');
+      return false;
+    }
+
+    if (this.isRateLimitBypassed(req)) {
+      this.logger.debug('rate limiting is bypassed');
+      return false;
+    }
+
+    return await this.applyRateLimit(
+      `user:${userId}`,
+      actionName,
+      timeWindowSeconds,
+      maxActionsPerTimeWindow,
+    );
   }
 
   /**
@@ -115,7 +136,7 @@ export class RedisRateLimiter {
     }
 
     invariant(req.routeOptions.url, 'URL must exist.');
-    const ip = this.resolveIP(req, this.config.config);
+    const ip = resolveClientIP(req, this.clientIPHeaderName.headerName);
 
     return await this.applyRateLimit(
       ip,

@@ -49,20 +49,28 @@ const cardTitleVariants = cva('text-fg font-medium leading-none', {
 type CardProps = {
   title?: string;
   description?: ReactElement | string;
+  actions?: ReactNode;
   children?: ReactNode;
   variants?: VariantProps<typeof cardVariants> &
     VariantProps<typeof cardTitleVariants> &
     VariantProps<typeof cardBodyVariants>;
 };
 
-export function Card({ children, title, description, variants }: CardProps) {
-  const hasHeader = !!(title || description);
+export function Card({ children, title, description, actions, variants }: CardProps) {
+  const hasHeader = !!(title || description || actions);
 
   return (
     <div className={cardVariants({ ...variants })}>
       {hasHeader ? (
         <div className="flex flex-col space-y-1.5 p-5">
-          {title ? <h3 className={cardTitleVariants({ ...variants })}>{title}</h3> : null}
+          {title || actions ? (
+            <div className="flex items-center justify-between gap-4">
+              {title ? <h3 className={cardTitleVariants({ ...variants })}>{title}</h3> : null}
+              {actions ? (
+                <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>
+              ) : null}
+            </div>
+          ) : null}
           {description ? <p className="text-control text-fg-secondary">{description}</p> : null}
         </div>
       ) : null}

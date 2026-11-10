@@ -1,7 +1,8 @@
-import type { init } from '@sentry/react';
+import type { ErrorEvent, init } from '@sentry/react';
 
-/** @sentry/react re-exports no event types, so derive the beforeSend event from init's options. */
-export type ErrorEvent = Parameters<NonNullable<Parameters<typeof init>[0]['beforeSend']>>[0];
+export type { ErrorEvent };
+
+type InitOptions = Parameters<typeof init>[0];
 
 export const sentryIgnoreErrors: Array<string | RegExp> = [
   // Suppress specific monaco editor internal errors
@@ -39,4 +40,24 @@ export function tagMonacoErrors(event: ErrorEvent): ErrorEvent {
   }
 
   return event;
+}
+
+export function buildSentryInitOptions(env: {
+  sentry: { dsn: string };
+  release: string;
+  environment: string;
+}): InitOptions {
+  return {
+    dsn: env.sentry.dsn,
+    enabled: true,
+    dist: 'webapp',
+    release: env.release,
+    environment: env.environment,
+    ignoreErrors: sentryIgnoreErrors,
+    beforeSend: tagMonacoErrors,
+    // Both flipped in v11. Keep captureMessage grouping, and keep the SDK from rewriting the
+    // message of "Failed to fetch" errors the app shows to users.
+    attachStacktrace: false,
+    enhanceFetchErrorMessages: false,
+  };
 }

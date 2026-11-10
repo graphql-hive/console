@@ -192,7 +192,7 @@ function RegistryAccessTokens() {
   ];
 
   return (
-    <SubPageLayout data-cy="target-settings-registry-token">
+    <SubPageLayout data-testid="target-settings-registry-token">
       <SubPageLayoutHeader
         subPageTitle="Registry Access Tokens"
         description="Registry Access Tokens are used to access to Hive Registry and perform actions on your targets/projects. In most cases, this token is used from the Hive CLI."
@@ -201,7 +201,7 @@ function RegistryAccessTokens() {
           text: 'Learn more about Registry Access Tokens',
         }}
         sideContent={
-          <Button data-cy="new-button" onClick={toggleModalOpen}>
+          <Button data-testid="new-button" onClick={toggleModalOpen}>
             Create new registry token
           </Button>
         }
@@ -209,7 +209,7 @@ function RegistryAccessTokens() {
       <div className="my-3.5 flex justify-end">
         {checked.length === 0 ? null : (
           <Button
-            data-cy="delete-button"
+            data-testid="delete-button"
             variant="destructive"
             disabled={deleting}
             onClick={deleteTokens}
@@ -1359,7 +1359,7 @@ export function TargetSettingsPage() {
                 to: section.to,
                 params: slugs,
                 exact: section.exact,
-                attrs: { 'data-cy': `target-settings-${section.id}-link` },
+                attrs: { 'data-testid': `target-settings-${section.id}-link` },
               }))}
             />
             <PageLayoutContent>

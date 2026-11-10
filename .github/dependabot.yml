@@ -11,10 +11,6 @@ updates:
     schedule:
       interval: 'daily'
     groups:
-      graphiql:
-        patterns:
-          - 'graphiql'
-          - '@graphiql/*'
       yoga:
         patterns:
           - 'envelop'
@@ -38,8 +34,7 @@ updates:
           - 'urql'
       sentry:
         patterns:
-          - '@sentry/'
-          - 'sentry'
+          - '@sentry/*'
       trpc:
         patterns:
           - '@trpc/'

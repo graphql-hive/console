@@ -14,7 +14,7 @@
   "private": true,
   "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
   "engines": {
-    "node": ">=24.22.1",
+    "node": ">=24.22.2",
     "pnpm": ">=10.33.2"
   },
   "scripts": {
@@ -93,7 +93,7 @@
     "@manypkg/get-packages": "catalog:",
     "@parcel/watcher": "2.5.1",
     "@playwright/test": "1.60.0",
-    "@sentry/cli": "2.40.0",
+    "@sentry/cli": "3.8.2",
     "@swc/core": "catalog:",
     "@theguild/eslint-config": "0.12.1",
     "@theguild/federation-composition": "catalog:",
@@ -203,15 +203,20 @@
       "body-parser@<=1.20.9": "1.20.9",
       "pg": "8.23.1",
       "@whatwg-node/fetch": "0.12.1",
-      "@graphql-tools/utils": "catalog:"
+      "@graphql-tools/utils": "catalog:",
+      "graphql-yoga@6>@graphql-tools/utils": "13.2.1",
+      "@graphql-yoga/plugin-defer-stream@4>@graphql-tools/utils": "13.2.1",
+      "@envelop/response-cache@10>@graphql-tools/utils": "13.2.1",
+      "@graphql-tools/executor@4>@graphql-tools/utils": "13.2.1",
+      "@graphql-tools/schema@11>@graphql-tools/utils": "13.2.1",
+      "@graphql-tools/merge@10>@graphql-tools/utils": "13.2.1",
+      "follow-redirects": "1.16.2"
     },
     "patchedDependencies": {
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
       "@apollo/federation@0.38.1": "patches/@apollo__federation@0.38.1.patch",
       "got@16.1.0": "patches/got@16.1.0.patch",
       "oclif@4.22.65": "patches/oclif@4.22.65.patch",
-      "graphiql@4.0.0-alpha.5": "patches/graphiql@4.0.0-alpha.5.patch",
-      "@graphiql/react@1.0.0-alpha.4": "patches/@graphiql__react@1.0.0-alpha.4.patch",
       "@slonik/pg-driver@48.19.0": "patches/@slonik__pg-driver@48.19.0.patch",
       "@whatwg-node/fetch@0.12.1": "patches/@whatwg-node__fetch@0.12.1.patch",
       "@graphql-tools/executor@1.5.0": "patches/@graphql-tools__executor@1.5.0.patch"

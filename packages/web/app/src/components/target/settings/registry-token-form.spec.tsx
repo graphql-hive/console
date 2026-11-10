@@ -30,7 +30,7 @@ function Harness(props: {
 }
 
 const formElement = () =>
-  document.querySelector('form[data-cy="create-registry-token-form"]') as HTMLFormElement;
+  document.querySelector('form[data-testid="create-registry-token-form"]') as HTMLFormElement;
 const descriptionInput = () => screen.getByLabelText('Token description') as HTMLInputElement;
 const submitButton = () =>
   screen.getByRole('button', { name: 'Generate Token' }) as HTMLButtonElement;
@@ -44,8 +44,8 @@ async function type(value: string) {
 describe('RegistryTokenForm', () => {
   it('keeps the e2e hooks inside the form and shows the scope picker under its disclosure', () => {
     render(<Harness onSubmit={() => {}} />);
-    expect(formElement().querySelector('[data-cy="description"]')).toBe(descriptionInput());
-    expect(formElement().querySelector('[data-cy="submit"]')).toBe(submitButton());
+    expect(formElement().querySelector('[data-testid="description"]')).toBe(descriptionInput());
+    expect(formElement().querySelector('[data-testid="submit"]')).toBe(submitButton());
     expect(screen.getByText('Registry & Usage')).toBeTruthy();
     expect(screen.getByText('scope picker')).toBeTruthy();
   });

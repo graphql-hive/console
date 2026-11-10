@@ -25,10 +25,10 @@ const submitButton = () =>
 describe('CreateProjectForm', () => {
   it('keeps the e2e hooks on the form, the slug and the submit', () => {
     render(<Harness onSubmit={() => {}} />);
-    const form = document.querySelector('form[data-cy="create-project-form"]');
+    const form = document.querySelector('form[data-testid="create-project-form"]');
     expect(form).not.toBeNull();
-    expect(form!.querySelector('[data-cy="slug"]')).toBe(slugInput());
-    expect(form!.querySelector('[data-cy="submit"]')).toBe(submitButton());
+    expect(form!.querySelector('[data-testid="slug"]')).toBe(slugInput());
+    expect(form!.querySelector('[data-testid="submit"]')).toBe(submitButton());
   });
 
   it('offers the three project types as a named group with Monolith picked', () => {

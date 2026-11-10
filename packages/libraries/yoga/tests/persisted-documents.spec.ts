@@ -1,9 +1,11 @@
 import { createServer, Server } from 'http';
-import { createLogger, createSchema, createYoga } from 'graphql-yoga';
+import { createSchema, createYoga } from 'graphql-yoga';
 import { expect, test, vi } from 'vitest';
+import { Logger } from '@graphql-hive/logger';
 import { useHive } from '../src';
 
-const logger = createLogger('silent');
+const createLogger = () => new Logger({ level: false });
+const logger = createLogger();
 
 test('use persisted documents (GraphQL over HTTP "documentId")', async () => {
   let url: string | undefined;

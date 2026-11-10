@@ -1,7 +1,8 @@
 import { stringify } from 'csv-stringify';
 import { endOfDay, startOfDay } from 'date-fns';
 import { Injectable, Scope } from 'graphql-modules';
-import { traceFn } from '@hive/service-common';
+import { formatDateTime } from '@hive/clickhouse';
+import { getRequestId, traceFn } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { AuditLogExportTask } from '@hive/workflows/tasks/audit-log-export';
 import { captureException } from '@sentry/node';
@@ -12,7 +13,6 @@ import { Logger } from '../../shared/providers/logger';
 import { S3Config } from '../../shared/providers/s3-config';
 import { S3Writer } from '../../shared/providers/s3-writer';
 import { Storage } from '../../shared/providers/storage';
-import { formatToClickhouseDateTime } from './audit-log-recorder';
 import { AuditLogClickhouseArrayModel } from './audit-logs-types';
 
 export class AuditLogS3Config {
@@ -66,13 +66,15 @@ export class AuditLogManager {
         , "user_id" AS "userId"
         , "user_email" AS "userEmail"
         , "access_token_id" AS "accessTokenId"
+        , "ip_address" AS "ipAddress"
+        , "user_agent" AS "userAgent"
         , "metadata"
       FROM
         "audit_logs"
       WHERE
         "organization_id" = ${organizationId}
-        AND "timestamp" >= ${formatToClickhouseDateTime(startOfDay(filter.startDate))}
-        AND "timestamp" <= ${formatToClickhouseDateTime(endOfDay(filter.endDate))}
+        AND "timestamp" >= ${formatDateTime(startOfDay(filter.startDate))}
+        AND "timestamp" <= ${formatDateTime(endOfDay(filter.endDate))}
       ORDER BY
         "timestamp" DESC
         , "id" DESC
@@ -149,6 +151,8 @@ export class AuditLogManager {
               userId: 'user_id',
               userEmail: 'user_email',
               accessTokenId: 'access_token_id',
+              ipAddress: 'ip_address',
+              userAgent: 'user_agent',
               metadata: 'metadata',
             },
           },
@@ -227,14 +231,18 @@ export class AuditLogManager {
         organizationId,
       });
 
-      await this.taskScheduler.scheduleTask(AuditLogExportTask, {
-        email: email,
-        organizationName: organization.name,
-        organizationId: organization.id,
-        formattedStartDate: cleanStartDate,
-        formattedEndDate: cleanEndDate,
-        url: getPresignedUrl.url,
-      });
+      await this.taskScheduler.scheduleTask(
+        AuditLogExportTask,
+        {
+          email: email,
+          organizationName: organization.name,
+          organizationId: organization.id,
+          formattedStartDate: cleanStartDate,
+          formattedEndDate: cleanEndDate,
+          url: getPresignedUrl.url,
+        },
+        { requestId: getRequestId() },
+      );
 
       return {
         ok: {

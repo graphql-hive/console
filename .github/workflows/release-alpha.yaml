@@ -65,13 +65,13 @@ jobs:
     steps:
       - name: Pull artifact for macos
         if: matrix.os == 'macos-latest'
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: hive-cli-darwin-x64
 
       - name: Pull artifact for ubuntu
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
+        uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
         with:
           name: hive-cli-linux-x64
 

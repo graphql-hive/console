@@ -77,8 +77,23 @@ export function composeFederationV1(
     name: string;
     url: string | undefined;
   }>,
+  logger?: ServiceLogger,
 ): ComposerMethodResult {
-  const result = composeAndValidate(subgraphs);
+  let result: ReturnType<typeof composeAndValidate>;
+  try {
+    result = composeAndValidate(subgraphs);
+  } catch (error) {
+    if (!isCompositionOrValidationError(error)) {
+      return unexpectedCompositionFailure(error, logger);
+    }
+
+    return {
+      type: 'failure',
+      result: { errors: [toValidationError(error, 'composition')], sdl: undefined },
+      includesNetworkError: false,
+      includesException: false,
+    };
+  }
 
   if (compositionHasErrors(result)) {
     return {
@@ -149,25 +164,32 @@ export function composeFederationV2(
       },
     } as const;
   } catch (error) {
-    logger?.error('Unexpected error during composition.');
-    logger?.error(error);
-    Sentry.captureException(error);
-
-    return {
-      type: 'failure',
-      result: {
-        errors: [
-          {
-            message: 'Unexpected composition error.',
-            source: 'composition',
-          },
-        ],
-        sdl: undefined,
-      },
-      includesNetworkError: false,
-      includesException: true,
-    } as const;
+    return unexpectedCompositionFailure(error, logger);
   }
+}
+
+function unexpectedCompositionFailure(
+  error: unknown,
+  logger: ServiceLogger | undefined,
+): ComposerMethodResultError {
+  logger?.error('Unexpected error during composition.');
+  logger?.error(error);
+  Sentry.captureException(error);
+
+  return {
+    type: 'failure',
+    result: {
+      errors: [
+        {
+          message: 'Unexpected composition error.',
+          source: 'composition',
+        },
+      ],
+      sdl: undefined,
+    },
+    includesNetworkError: false,
+    includesException: true,
+  };
 }
 
 export async function composeExternalFederation(args: {
@@ -327,6 +349,20 @@ async function checkExternalCompositionCompatibility(
       logger?.debug(`External composition GraphQL validity check passed.`);
     }
   }
+}
+
+/**
+ * Whether an error thrown by `composeAndValidate` is an expected composition or validation error.
+ * The only ones it throws are for an invalid `@key`, `@requires` or `@provides` field set, from
+ * `parseFieldSet`: a `GraphQLError` for a syntax error, a plain `Error` for the two rules below.
+ */
+function isCompositionOrValidationError(error: unknown) {
+  return (
+    error instanceof GraphQLError ||
+    (error instanceof Error &&
+      (error.message.startsWith('Invalid FieldSet provided:') ||
+        error.message.startsWith('Field sets may not contain fragment spreads')))
+  );
 }
 
 function errorWithPossibleCode(error: unknown) {

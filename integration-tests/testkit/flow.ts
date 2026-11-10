@@ -417,6 +417,7 @@ export function getOrganizationTransferRequest(
           organization {
             id
           }
+          ownerName
         }
       }
     `),
