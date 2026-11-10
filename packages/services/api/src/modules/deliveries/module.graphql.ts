@@ -62,7 +62,8 @@ export default gql`
     statusCode: Int
     """
     One line describing the outcome: the reason phrase, the Slack API result code, the mail
-    provider's "<code>: <message>" refusal, or "<error code>: <message>" when nothing answered.
+    provider's refusal with its error code, or "Timed out" or "Unexpected error" when nothing
+    usable answered. Never an exception's message.
     """
     statusText: String!
     durationMs: Int!
@@ -113,6 +114,9 @@ export default gql`
     Slack, the SMTP reply code for email; null when nothing answered.
     """
     lastStatusCode: Int
+    """
+    The status text of the last failure, as Delivery.statusText describes it.
+    """
     lastStatusText: String
     """
     First failure after the last success, at the earliest as far back as retention reaches.
@@ -121,11 +125,72 @@ export default gql`
     failingSince: DateTime
   }
 
+  """
+  When an organization's emails last succeeded and last failed, across every recipient. A
+  DeliveryHealth status describes one destination, so there is none here.
+  """
+  type EmailDeliveryHealth {
+    lastSuccessAt: DateTime
+    lastFailureAt: DateTime
+  }
+
+  """
+  Which kinds of email the viewer may see among those Hive sends for the organization.
+  """
+  type EmailDeliveryVisibility {
+    """
+    The kinds the viewer may see (as emailDeliveryStats describes them), in the order Hive lists
+    them. Empty when the viewer may see none.
+    """
+    events: [DeliveryEvent!]!
+    """
+    Whether a kind Hive sends is missing from events because the viewer may not see it.
+    """
+    isLimited: Boolean!
+  }
+
   extend type OrganizationInvitation {
     """
     The most recent attempt to email this invitation; null before one is recorded or when the
     delivery history could not be read.
     """
     delivery: Delivery
+  }
+
+  extend type Organization {
+    """
+    Attempts to email the organization's members and invitees in the period, limited to the kinds
+    the viewer may see: invitations with member:modify, audit log exports with auditLog:export,
+    usage rate limit notices with billing:describe, and ownership transfers as the organization
+    owner. Errors when the viewer may see none of them. Null when the delivery history could not
+    be read.
+    """
+    emailDeliveryStats(
+      """
+      The period for retrieving the statistics.
+      """
+      period: DateRangeInput!
+    ): DeliveryStats
+    """
+    When an email to any recipient last succeeded and last failed, among the kinds of email the
+    viewer may see (as emailDeliveryStats describes them). Errors when the viewer may see none of
+    them. Null when the delivery history could not be read.
+    """
+    emailDeliveryHealth: EmailDeliveryHealth
+    """
+    The most recent attempts within the period, newest first, of the kinds of email the viewer may
+    see (as emailDeliveryStats describes them). limit defaults to 50, at most 200. Errors when the
+    viewer may see none of them. Null when the delivery history could not be read.
+    """
+    emailDeliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
+    """
+    Whether the viewer may see at least one kind of email delivery.
+    """
+    viewerCanSeeEmailDeliveries: Boolean!
+    """
+    Which kinds of email the viewer may see on emailDeliveryStats, emailDeliveryHealth and
+    emailDeliveryLog. Never errors.
+    """
+    viewerEmailDeliveryVisibility: EmailDeliveryVisibility!
   }
 `;

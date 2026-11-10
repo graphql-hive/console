@@ -8,10 +8,10 @@ describe('describeEmailError', () => {
       new EmailSendError('Invalid email request', {
         provider: 'postmark',
         statusCode: 422,
-        statusText: '300: Invalid email request',
+        statusText: 'Invalid email request (error code 300)',
         errorCode: '300',
       }),
-      { statusCode: 422, statusText: '300: Invalid email request' },
+      { statusCode: 422, statusText: 'Invalid email request (error code 300)' },
     ],
     [
       'the SMTP server refused the recipient',

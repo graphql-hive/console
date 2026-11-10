@@ -1,9 +1,13 @@
 import { useMemo } from 'react';
-import { subHours } from 'date-fns';
 import { useQuery } from 'urql';
+import { DeliveriesOverTime } from '@/components/common/deliveries/deliveries-over-time';
+import { DeliveryStatCards } from '@/components/common/deliveries/delivery-stat-cards';
+import {
+  DELIVERY_WINDOW_LABEL,
+  useDeliveryWindow,
+} from '@/components/common/deliveries/use-delivery-window';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { BackLink } from '@/components/navigation/back-link';
-import { ChannelDeliveriesChart } from '@/components/project/alerts/channel-deliveries-chart';
 import {
   ChannelDeliveriesTable,
   type ChannelDeliveryTarget,
@@ -17,18 +21,11 @@ import { Meta } from '@/components/ui/meta';
 import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
 import { PageLead } from '@/components/ui/page-lead';
 import { Badge } from '@/components/ui/primitives/badge/badge';
-import type { TimeSeries } from '@/components/ui/primitives/chart/time-series-chart';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
-import { StatCard } from '@/components/ui/stat-card/stat-card';
-import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
-import { DeliveryHealthStatus } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
-import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller';
-import { toDecimal } from '@/lib/hooks/use-decimal';
-import { formatNumber } from '@/lib/hooks/use-formatted-number';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { useRollingNow } from '@/lib/hooks/use-rolling-now';
+import { useRefetchOnTick } from '@/lib/hooks/use-refetch-on-tick';
 import { useNavigate } from '@tanstack/react-router';
 
 // The channel's configuration, revalidated by the route; the live delivery data below is the
@@ -109,10 +106,6 @@ const ProjectAlertChannelPage_DeliveriesQuery = graphql(`
     }
   }
 `);
-
-/** The page always shows the most recent three days of deliveries. */
-const DELIVERY_WINDOW_HOURS = 72;
-const DELIVERY_WINDOW_LABEL = `the last ${DELIVERY_WINDOW_HOURS} hours`;
 
 export function ProjectAlertChannelPage(props: { channelId: string }) {
   const { organizationSlug, projectSlug } = useSlugs('project');
@@ -205,20 +198,9 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
 
 function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDeliveryTarget[] }) {
   const { organizationSlug, projectSlug } = useSlugs('project');
-  const now = useRollingNow(ALERTS_POLL_INTERVAL_MS);
-  const { from, to, resolution } = useMemo(() => {
-    const resolved = resolveRangeAndResolution({
-      from: subHours(now, DELIVERY_WINDOW_HOURS),
-      to: now,
-    });
-    return {
-      from: resolved.range.from.toISOString(),
-      to: resolved.range.to.toISOString(),
-      resolution: resolved.resolution,
-    };
-  }, [now]);
+  const { now, from, to, resolution } = useDeliveryWindow(ALERTS_POLL_INTERVAL_MS);
 
-  const [result] = useQuery({
+  const [result, reexecuteQuery] = useQuery({
     query: ProjectAlertChannelPage_DeliveriesQuery,
     variables: {
       organizationSlug,
@@ -229,6 +211,7 @@ function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDe
     },
     requestPolicy: 'cache-and-network',
   });
+  useRefetchOnTick(now, reexecuteQuery);
 
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
   const channel = data?.project?.alertChannel ?? null;
@@ -266,9 +249,16 @@ function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDe
           <DeliveryStatCards
             stats={channel?.deliveryStats ?? null}
             health={channel?.deliveryHealth ?? null}
+            windowLabel={DELIVERY_WINDOW_LABEL}
+            headline={{ title: 'Total calls' }}
           />
 
-          <DeliveryCharts stats={channel?.deliveryStats ?? null} />
+          <DeliveriesOverTime
+            stats={channel?.deliveryStats ?? null}
+            title="Deliveries over time"
+            description={`Total calls and failures per interval, over ${DELIVERY_WINDOW_LABEL}`}
+            totalLabel="Total calls"
+          />
 
           <section className="space-y-2">
             <ChannelDeliveriesTable
@@ -279,112 +269,5 @@ function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDe
         </>
       )}
     </>
-  );
-}
-
-type DeliveryStats = {
-  totalDeliveries: number;
-  totalFailures: number;
-  deliveriesOverTime: ReadonlyArray<{ date: string; value: number }>;
-  failuresOverTime: ReadonlyArray<{ date: string; value: number }>;
-};
-
-type DeliveryHealth = {
-  status: DeliveryHealthStatus;
-  lastSuccessAt?: string | null;
-  lastFailureAt?: string | null;
-  lastStatusCode?: number | null;
-  lastStatusText?: string | null;
-};
-
-function DeliveryStatCards({
-  stats,
-  health,
-}: {
-  stats: DeliveryStats | null;
-  health: DeliveryHealth | null;
-}) {
-  if (!stats && !health) {
-    return null;
-  }
-
-  const errorRate =
-    stats && stats.totalFailures > 0
-      ? `${toDecimal((stats.totalFailures * 100) / stats.totalDeliveries)}%`
-      : null;
-
-  return (
-    <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-      <StatCard
-        title="Total calls"
-        value={stats ? formatNumber(stats.totalDeliveries) : '-'}
-        caption={`in ${DELIVERY_WINDOW_LABEL}`}
-      />
-      <StatCard
-        title="Failed"
-        value={
-          stats ? (
-            <>
-              {formatNumber(stats.totalFailures)}
-              {errorRate ? (
-                <span className="ml-2 text-sm font-normal text-critical">({errorRate})</span>
-              ) : null}
-            </>
-          ) : (
-            '-'
-          )
-        }
-        caption={`in ${DELIVERY_WINDOW_LABEL}`}
-        variants={{ tone: errorRate ? 'danger' : 'default' }}
-      />
-      <StatCard
-        title="Last success"
-        value={health?.lastSuccessAt ? <TimeAgo date={health.lastSuccessAt} /> : 'Never'}
-        variants={{
-          tone:
-            health?.status === DeliveryHealthStatus.Failing
-              ? 'danger'
-              : health?.status === DeliveryHealthStatus.Healthy
-                ? 'success'
-                : 'default',
-        }}
-      />
-      <StatCard
-        title="Last failure"
-        value={health?.lastFailureAt ? <TimeAgo date={health.lastFailureAt} /> : 'Never'}
-        variants={{ tone: 'danger' }}
-      />
-    </div>
-  );
-}
-
-function DeliveryCharts({ stats }: { stats: DeliveryStats | null }) {
-  const series = useMemo(() => {
-    const deliveries = stats?.deliveriesOverTime ?? [];
-    const failures = stats?.failuresOverTime ?? [];
-    const total: TimeSeries['data'] = deliveries.map(point => [point.date, point.value]);
-    const errors: TimeSeries['data'] = failures.map(point => [point.date, point.value]);
-    return { total, errors };
-  }, [stats]);
-
-  if (!stats) {
-    return null;
-  }
-
-  return (
-    <section className="space-y-2">
-      <h2 className="m-0 text-sm font-medium text-fg">Deliveries over time</h2>
-      <p className="m-0 text-sm text-fg-secondary">
-        Total calls and failures per interval, over {DELIVERY_WINDOW_LABEL}
-      </p>
-      {series.total.length === 0 ? (
-        // Zero deliveries still draw as a flat line, like the rule page; the box is for no buckets at all.
-        <div className="flex h-[200px] items-center justify-center rounded-md border border-line bg-surface-card">
-          <span className="text-sm text-fg-subtle italic">No data available for this range.</span>
-        </div>
-      ) : (
-        <ChannelDeliveriesChart deliveries={series.total} errors={series.errors} />
-      )}
-    </section>
   );
 }

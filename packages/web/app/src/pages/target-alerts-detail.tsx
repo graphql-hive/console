@@ -28,6 +28,7 @@ import { resolveRangeAndResolution } from '@/lib/hooks/use-date-range-controller
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useLayoutQuery } from '@/lib/hooks/use-layout-query';
+import { useRefetchOnTick } from '@/lib/hooks/use-refetch-on-tick';
 import { useRollingNow } from '@/lib/hooks/use-rolling-now';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -301,11 +302,12 @@ function RuleStateLogSection(props: {
     };
   }, [now, viewRangeMinutes]);
 
-  const [result] = useQuery({
+  const [result, reexecuteQuery] = useQuery({
     query: TargetAlertsDetailPage_StateLogQuery,
     variables: { organizationSlug, projectSlug, targetSlug, ruleId, from, to, resolution },
     requestPolicy: 'cache-and-network',
   });
+  useRefetchOnTick(now, reexecuteQuery);
 
   const data = useKeepPreviousData(result.data, result.fetching || result.stale);
   const stateLog = data?.target?.metricAlertRule?.stateLog ?? [];
