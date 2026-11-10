@@ -34,9 +34,6 @@ export const updateSavedFilter: NonNullable<MutationResolvers['updateSavedFilter
             schemaCoordinates: input.insightsFilter.schemaCoordinates
               ? [...input.insightsFilter.schemaCoordinates]
               : null,
-            subgraphNames: input.insightsFilter.subgraphNames
-              ? [...input.insightsFilter.subgraphNames]
-              : null,
           }
         : null,
     });

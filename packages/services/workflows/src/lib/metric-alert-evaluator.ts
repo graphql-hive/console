@@ -9,10 +9,8 @@ import {
 } from '@hive/clickhouse';
 import type { CommonQueryMethods, PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
-import { fieldCoordinatesOwnedBy, MAX_RESOLVED_SUBGRAPH_COORDINATES } from '@hive/supergraph';
 import { metricAlertClickHouseQueryDuration } from '../metrics.js';
 import type { ClickHouseClient } from './clickhouse-client.js';
-import type { SupergraphOwnershipLoader } from './supergraph-ownership.js';
 
 // Schema is the single source of truth for the row shape we read from
 // Postgres in `fetchEnabledRules` below. The exported `MetricAlertRuleRow`
@@ -290,26 +288,20 @@ const SavedFilterConditionsSchema = z.looseObject({
   excludeOperations: z.boolean().optional(),
   excludeClientFilters: z.boolean().optional(),
   schemaCoordinates: z.array(z.string()).optional(),
-  subgraphNames: z.array(z.string()).optional(),
 });
 
-/** A saved filter read from its jsonb: the sync conditions plus the parts that resolve later. */
+/** What the window query consumes: ANDed conditions plus any-of coordinate scopes, also ANDed. */
 export type ParsedSavedFilter = {
   conditions: SqlValue[];
-  schemaCoordinates: readonly string[];
-  subgraphNames: readonly string[];
+  coordinateScopes: ReadonlyArray<readonly string[]>;
 };
 
-const EMPTY_PARSED_FILTER: ParsedSavedFilter = {
-  conditions: [],
-  schemaCoordinates: [],
-  subgraphNames: [],
-};
+export const EMPTY_PARSED_FILTER: ParsedSavedFilter = { conditions: [], coordinateScopes: [] };
 
 /**
  * Reads a saved filter's raw `filters` jsonb. Hash and client conditions come from the
  * same shared builder the analytics API uses (so an alert filters identically to what
- * users see on Insights); coordinates and subgraph names are kept for `resolveSavedFilter`.
+ * users see on Insights); schema coordinates become one any-of scope.
  *
  * Never throws: a null/malformed blob yields an empty filter (the alert evaluates
  * unfiltered) and is logged, so one bad filter can't break the whole batch.
@@ -326,6 +318,7 @@ export function parseSavedFilter(rawFilters: unknown, logger: Logger): ParsedSav
     );
     return EMPTY_PARSED_FILTER;
   }
+  const schemaCoordinates = parsed.data.schemaCoordinates ?? [];
   return {
     conditions: buildOperationsFilterSQLConditions({
       operations: parsed.data.operationHashes,
@@ -336,112 +329,20 @@ export function parseSavedFilter(rawFilters: unknown, logger: Logger): ParsedSav
       excludeOperations: parsed.data.excludeOperations,
       excludeClientVersionFilters: parsed.data.excludeClientFilters,
     }),
-    schemaCoordinates: parsed.data.schemaCoordinates ?? [],
-    subgraphNames: parsed.data.subgraphNames ?? [],
+    coordinateScopes: schemaCoordinates.length > 0 ? [schemaCoordinates] : [],
   };
 }
 
 /** True when the filter narrows the query at all (and so forces the legacy-table path). */
 export function isFilteredFilter(filter: ParsedSavedFilter): boolean {
-  return (
-    filter.conditions.length > 0 ||
-    filter.schemaCoordinates.length > 0 ||
-    filter.subgraphNames.length > 0
-  );
-}
-
-/** What the window query consumes: ANDed conditions plus any-of coordinate scopes, also ANDed. */
-export type ResolvedSavedFilter = {
-  conditions: SqlValue[];
-  coordinateScopes: ReadonlyArray<readonly string[]>;
-};
-
-export const EMPTY_RESOLVED_FILTER: ResolvedSavedFilter = { conditions: [], coordinateScopes: [] };
-
-export const SAVED_FILTER_SKIP_REASONS = [
-  'no-composable-version',
-  'no-supergraph-sdl',
-  'supergraph-parse-failed',
-  'unknown-subgraph',
-  'scope-too-large',
-] as const;
-
-export type SavedFilterSkipReason = (typeof SAVED_FILTER_SKIP_REASONS)[number];
-
-/** Drops skip state for groups that no longer exist (rules deleted or disabled while skipped). */
-export function pruneSkipState(
-  state: Map<string, SavedFilterSkipReason>,
-  live: { has(key: string): boolean },
-): void {
-  for (const key of state.keys()) {
-    if (!live.has(key)) {
-      state.delete(key);
-    }
-  }
-}
-
-/** Every reason is present (0 when absent) so a fixed filter clears its gauge series. */
-export function countSkippedByReason(
-  reasons: Iterable<SavedFilterSkipReason>,
-): Map<SavedFilterSkipReason, number> {
-  const counts = new Map<SavedFilterSkipReason, number>(
-    SAVED_FILTER_SKIP_REASONS.map(reason => [reason, 0]),
-  );
-  for (const reason of reasons) {
-    counts.set(reason, (counts.get(reason) ?? 0) + 1);
-  }
-  return counts;
-}
-
-export type SavedFilterResolution =
-  | { kind: 'ok'; filter: ResolvedSavedFilter }
-  | { kind: 'skip'; reason: SavedFilterSkipReason; details?: string[] };
-
-/**
- * Turns subgraph names into the field coordinates they own in the target's latest
- * composable version. Short-circuits without touching Postgres when there are none.
- *
- * Unlike the API, which answers an unresolvable subgraph with empty stats, this returns a
- * skip: evaluating against an empty set would make BELOW rules fire and FIRING ABOVE rules
- * recover on a subgraph rename. The caller leaves the group's rules untouched instead.
- */
-export async function resolveSavedFilter(
-  parsed: ParsedSavedFilter,
-  args: { targetId: string; ownership: SupergraphOwnershipLoader },
-): Promise<SavedFilterResolution> {
-  const coordinateScopes: Array<readonly string[]> = [];
-  if (parsed.schemaCoordinates.length > 0) {
-    coordinateScopes.push(parsed.schemaCoordinates);
-  }
-
-  if (parsed.subgraphNames.length > 0) {
-    const loaded = await args.ownership.load(args.targetId);
-    if (!loaded.info) {
-      return { kind: 'skip', reason: loaded.reason };
-    }
-    const { coordinates, unknownSubgraphs } = fieldCoordinatesOwnedBy(
-      loaded.info,
-      parsed.subgraphNames,
-    );
-    if (unknownSubgraphs.length > 0) {
-      return { kind: 'skip', reason: 'unknown-subgraph', details: unknownSubgraphs };
-    }
-    if (coordinates.length > MAX_RESOLVED_SUBGRAPH_COORDINATES) {
-      return { kind: 'skip', reason: 'scope-too-large', details: [String(coordinates.length)] };
-    }
-    // A known subgraph owning no object fields resolves to [] and evaluates against
-    // zero traffic (1 = 0), the same as the API. Only an unknown name skips.
-    coordinateScopes.push(coordinates);
-  }
-
-  return { kind: 'ok', filter: { conditions: parsed.conditions, coordinateScopes } };
+  return filter.conditions.length > 0 || filter.coordinateScopes.length > 0;
 }
 
 export async function queryClickHouseWindows(
   clickhouse: ClickHouseClient,
   targetId: string,
   timeWindowMinutes: number,
-  filter: ResolvedSavedFilter,
+  filter: ParsedSavedFilter,
   // Anchor windows to the cron's scheduled run time (graphile-worker's
   // job.run_at), not wall-clock now. If the worker is backed up and picks
   // this job up late, using wall-clock would shift the queried window
@@ -471,7 +372,7 @@ export async function queryClickHouseWindows(
   // reference columns that don't exist. Deriving this from `filter` (rather than
   // a separate flag/param) makes the filtered-query-on-rollup combination
   // unrepresentable.
-  const useTargetRollup = filter.conditions.length === 0 && filter.coordinateScopes.length === 0;
+  const useTargetRollup = !isFilteredFilter(filter);
   const resolution = resolutionFor(timeWindowMinutes, allowDailyRollup);
   const tableName = useTargetRollup
     ? `operations_by_target_${resolution}`

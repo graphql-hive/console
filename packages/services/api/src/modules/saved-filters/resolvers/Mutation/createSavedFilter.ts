@@ -28,9 +28,6 @@ export const createSavedFilter: NonNullable<MutationResolvers['createSavedFilter
           schemaCoordinates: input.insightsFilter.schemaCoordinates
             ? [...input.insightsFilter.schemaCoordinates]
             : null,
-          subgraphNames: input.insightsFilter.subgraphNames
-            ? [...input.insightsFilter.subgraphNames]
-            : null,
         }
       : null,
   });

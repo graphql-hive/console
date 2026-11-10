@@ -4315,7 +4315,7 @@ describe('exclude filters', () => {
   );
 });
 
-describe('schema coordinate and subgraph filters', () => {
+describe('schema coordinate filters', () => {
   const op = (
     operation: string,
     operationName: string,
@@ -4391,160 +4391,6 @@ describe('schema coordinate and subgraph filters', () => {
     },
   );
 
-  test.concurrent(
-    'subgraphNames resolves to the object fields each subgraph owns',
-    { timeout: 30_000 },
-    async ({ expect }) => {
-      const { createOrg } = await initSeed().createOwner();
-      const { createProject } = await createOrg();
-      const { createTargetAccessToken, readOperationsStats, waitForOperationsCollected } =
-        await createProject(ProjectType.Federation);
-      const token = await createTargetAccessToken({});
-
-      await token
-        .publishSchema({
-          service: 'users',
-          url: 'https://api.com/users',
-          sdl: /* GraphQL */ `
-            type Query {
-              me: User
-            }
-            type User @key(fields: "id") {
-              id: ID!
-              name: String
-            }
-          `,
-        })
-        .then(r => r.expectNoGraphQLErrors());
-      await token
-        .publishSchema({
-          service: 'reviews',
-          url: 'https://api.com/reviews',
-          sdl: /* GraphQL */ `
-            type Query {
-              reviews: [Review!]!
-            }
-            type Review {
-              id: ID!
-              body: String
-            }
-            type User @key(fields: "id") {
-              id: ID!
-              reviews: [Review!]!
-            }
-          `,
-        })
-        .then(r => r.expectNoGraphQLErrors());
-
-      const collectResult = await token.collectLegacyOperations([
-        // Selects no key field, so only the users subgraph is involved.
-        op('query me { me { name } }', 'me', ['Query', 'Query.me', 'User', 'User.name']),
-        op('query reviews { reviews { id body } }', 'reviews', [
-          'Query',
-          'Query.reviews',
-          'Review',
-          'Review.id',
-          'Review.body',
-        ]),
-        op('query userReviews { me { id reviews { id } } }', 'userReviews', [
-          'Query',
-          'Query.me',
-          'User',
-          'User.id',
-          'User.reviews',
-          'Review',
-          'Review.id',
-        ]),
-      ]);
-      expect(collectResult.status).toEqual(200);
-      await waitForOperationsCollected(3);
-
-      const from = formatISO(subHours(Date.now(), 6));
-      const to = formatISO(Date.now());
-
-      const reviews = await readOperationsStats(from, to, undefined, {
-        subgraphNames: ['reviews'],
-      });
-      expect(names(reviews)).toEqual(['reviews', 'userReviews']);
-
-      const users = await readOperationsStats(from, to, undefined, {
-        subgraphNames: ['users'],
-      });
-      expect(names(users)).toEqual(['me', 'userReviews']);
-
-      const usersAnyCase = await readOperationsStats(from, to, undefined, {
-        subgraphNames: ['Users'],
-      });
-      expect(names(usersAnyCase)).toEqual(['me', 'userReviews']);
-
-      const both = await readOperationsStats(from, to, undefined, {
-        subgraphNames: ['users', 'reviews'],
-      });
-      expect(both.totalOperations).toBe(3);
-
-      // Subgraphs and fields are separate dimensions, ANDed.
-      const reviewsViaMe = await readOperationsStats(from, to, undefined, {
-        subgraphNames: ['reviews'],
-        schemaCoordinates: ['Query.me'],
-      });
-      expect(names(reviewsViaMe)).toEqual(['userReviews']);
-    },
-  );
-
-  test.concurrent(
-    'subgraphNames is rejected when the latest valid version lacks one',
-    async ({ expect }) => {
-      const { ownerToken, createOrg } = await initSeed().createOwner();
-      const { createProject } = await createOrg();
-      const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
-      const token = await createTargetAccessToken({});
-      await token
-        .publishSchema({
-          service: 'users',
-          url: 'https://api.com/users',
-          sdl: /* GraphQL */ `
-            type Query {
-              me: User
-            }
-            type User @key(fields: "id") {
-              id: ID!
-              name: String
-            }
-          `,
-        })
-        .then(r => r.expectNoGraphQLErrors());
-
-      const from = formatISO(subHours(Date.now(), 6));
-      const to = formatISO(Date.now());
-      for (const subgraphNames of [['inventory'], ['users', 'inventory']]) {
-        const errors = await readOperationsStats(
-          { byId: target.id },
-          { from, to },
-          { subgraphNames },
-          ownerToken,
-        ).then(r => r.expectGraphQLErrors());
-        expect(errors[0].message).toBe('Unknown subgraph: inventory.');
-      }
-    },
-  );
-
-  test.concurrent('subgraphNames is rejected on a non-Federation project', async ({ expect }) => {
-    const { ownerToken, createOrg } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { target } = await createProject(ProjectType.Single);
-
-    const from = formatISO(subHours(Date.now(), 6));
-    const to = formatISO(Date.now());
-    const errors = await readOperationsStats(
-      { byId: target.id },
-      { from, to },
-      { subgraphNames: ['users'] },
-      ownerToken,
-    ).then(r => r.expectGraphQLErrors());
-
-    expect(errors[0].message).toContain('only available on Federation projects');
-  });
-
   test.concurrent('caps the number of schema coordinates', async ({ expect }) => {
     const { ownerToken, createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
@@ -4562,28 +4408,20 @@ describe('schema coordinate and subgraph filters', () => {
     expect(errors[0].message).toContain('must contain at most 100 elements');
   });
 
-  test.concurrent('caps the length of each coordinate and subgraph name', async ({ expect }) => {
+  test.concurrent('caps the length of each coordinate', async ({ expect }) => {
     const { ownerToken, createOrg } = await initSeed().createOwner();
     const { createProject } = await createOrg();
-    const { target } = await createProject(ProjectType.Federation);
+    const { target } = await createProject(ProjectType.Single);
 
     const from = formatISO(subHours(Date.now(), 6));
     const to = formatISO(Date.now());
-    const coordinateErrors = await readOperationsStats(
+    const errors = await readOperationsStats(
       { byId: target.id },
       { from, to },
       { schemaCoordinates: [`Query.${'f'.repeat(195)}`] },
       ownerToken,
     ).then(r => r.expectGraphQLErrors());
-    expect(coordinateErrors[0].message).toContain('at most 200 characters');
-
-    const nameErrors = await readOperationsStats(
-      { byId: target.id },
-      { from, to },
-      { subgraphNames: ['s'.repeat(101)] },
-      ownerToken,
-    ).then(r => r.expectGraphQLErrors());
-    expect(nameErrors[0].message).toContain('at most 100 characters');
+    expect(errors[0].message).toContain('at most 200 characters');
   });
 });
 test.concurrent(

@@ -38,9 +38,8 @@ service is dispatching.
 3. Starts the webhook receiver on port 9999.
 4. Creates a dedicated `live-alerts-demo-{timestamp}` org / project / target via GraphQL mutations.
 5. Enables the per-org `metricAlertRules` feature flag (direct PG `UPDATE`).
-6. Publishes two tiny subgraphs, `products` and `orders`, to a Federation project (so the usage
-   service will accept operations against the target, and so a subgraph filter has something to
-   resolve), then creates a shared saved filter "Orders subgraph" (`subgraphNames: ['orders']`).
+6. Publishes one tiny schema (so the usage service will accept operations against the target), then
+   creates a shared saved filter "Orders field" (`schemaCoordinates: ['Query.orders']`).
 7. Creates a webhook channel pointing at port 9999 (plus a preview-only `SLACK` channel — see
    "Slack" below), and (unless started with `--no-rules`) 8 short-window alert rules each
    `timeWindowMinutes: 1`.
@@ -68,16 +67,16 @@ refresh.
 
 The rule mix is intentionally varied so the demo exercises the feature surface:
 
-| #   | Type        | Direction | Threshold type            | Confirmation | Severity | What it demos                                                                                                                                    |
-| --- | ----------- | --------- | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | TRAFFIC     | ABOVE     | FIXED_VALUE (50)          | 0 min        | INFO     | Baseline path; fastest state cycle                                                                                                               |
-| 2   | ERROR_RATE  | ABOVE     | PERCENTAGE_CHANGE (+200%) | 0 min        | WARNING  | PERCENTAGE_CHANGE thresholding. Fires transiently on the first BREACH then settles to 0% as the prior window itself becomes "high errors".       |
-| 3   | LATENCY P95 | ABOVE     | FIXED_VALUE (1500ms)      | 1 min        | CRITICAL | Non-zero confirmation period: rule sits in PENDING for 1 evaluator tick before reaching FIRING.                                                  |
-| 4   | TRAFFIC     | BELOW     | FIXED_VALUE (10)          | 0 min        | WARNING  | BELOW direction. Fires during NORMAL phases (silence) and recovers during BREACH. Exercises the zero-window-synthesis fix.                       |
-| 5   | ERROR_RATE  | ABOVE     | FIXED_VALUE (25%)         | 0 min        | CRITICAL | Absolute error-rate threshold (the steady-state firing counterpart to rule 2).                                                                   |
-| 6   | LATENCY AVG | ABOVE     | FIXED_VALUE (800ms)       | 0 min        | WARNING  | Avg-latency variant; fires alongside P95 during BREACH.                                                                                          |
-| 7   | TRAFFIC     | ABOVE     | FIXED_VALUE (100)         | 0 min        | WARNING  | Higher traffic threshold so two different INFO/WARNING severities fire concurrently.                                                             |
-| 8   | TRAFFIC     | ABOVE     | FIXED_VALUE (20)          | 0 min        | INFO     | On the "Orders subgraph" saved filter. Reads only `orders` traffic (~120/min in BREACH) through the evaluator's `coordinates_minutely` subquery. |
+| #   | Type        | Direction | Threshold type            | Confirmation | Severity | What it demos                                                                                                                                 |
+| --- | ----------- | --------- | ------------------------- | ------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | TRAFFIC     | ABOVE     | FIXED_VALUE (50)          | 0 min        | INFO     | Baseline path; fastest state cycle                                                                                                            |
+| 2   | ERROR_RATE  | ABOVE     | PERCENTAGE_CHANGE (+200%) | 0 min        | WARNING  | PERCENTAGE_CHANGE thresholding. Fires transiently on the first BREACH then settles to 0% as the prior window itself becomes "high errors".    |
+| 3   | LATENCY P95 | ABOVE     | FIXED_VALUE (1500ms)      | 1 min        | CRITICAL | Non-zero confirmation period: rule sits in PENDING for 1 evaluator tick before reaching FIRING.                                               |
+| 4   | TRAFFIC     | BELOW     | FIXED_VALUE (10)          | 0 min        | WARNING  | BELOW direction. Fires during NORMAL phases (silence) and recovers during BREACH. Exercises the zero-window-synthesis fix.                    |
+| 5   | ERROR_RATE  | ABOVE     | FIXED_VALUE (25%)         | 0 min        | CRITICAL | Absolute error-rate threshold (the steady-state firing counterpart to rule 2).                                                                |
+| 6   | LATENCY AVG | ABOVE     | FIXED_VALUE (800ms)       | 0 min        | WARNING  | Avg-latency variant; fires alongside P95 during BREACH.                                                                                       |
+| 7   | TRAFFIC     | ABOVE     | FIXED_VALUE (100)         | 0 min        | WARNING  | Higher traffic threshold so two different INFO/WARNING severities fire concurrently.                                                          |
+| 8   | TRAFFIC     | ABOVE     | FIXED_VALUE (20)          | 0 min        | INFO     | On the "Orders field" saved filter. Reads only `orders` traffic (~120/min in BREACH) through the evaluator's `coordinates_minutely` subquery. |
 
 ## Prerequisites
 
@@ -176,12 +175,9 @@ running. Kill it (or any other process listening on 9999) and re-run.
 `pnpm dev:hive`, or one of those services failed to come up. Check the `pnpm dev:hive` terminal
 output for errors.
 
-**Checking the subgraph filter end to end** Rule 8 should log `filter.applied=true` on its
-`evaluate-group` span and settle at roughly half of rule 1's value. To see the skip path, delete the
-`orders` service from the target (`hive schema:delete orders` with the demo's write token, or the
-registry UI): the next tick logs `Skipping metric alert group: its saved filter cannot be resolved`
-with `reason=unknown-subgraph`, rule 8's `last_evaluated_at` stops advancing while the other rules
-keep going, and `hive_metric_alert_groups_skipped{reason="unknown-subgraph"}` reads 1.
+**Checking the fields filter end to end** Rule 8 should log `filter.applied=true` on its
+`evaluate-group` span and settle at roughly half of rule 1's value, since only the `orders`
+operation reports the `Query.orders` coordinate.
 
 **No state transitions happen after several minutes**
 

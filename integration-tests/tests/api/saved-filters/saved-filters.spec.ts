@@ -559,70 +559,26 @@ describe('Saved Filters', () => {
     );
   });
 
-  describe('Fields and subgraphs', () => {
-    const usersSubgraph = {
-      service: 'users',
-      url: 'https://api.com/users',
-      sdl: /* GraphQL */ `
-        type Query {
-          me: User
-        }
-        type User @key(fields: "id") {
-          id: ID!
-          name: String
-        }
-      `,
-    };
-    const reviewsSubgraph = {
-      service: 'reviews',
-      url: 'https://api.com/reviews',
-      sdl: /* GraphQL */ `
-        type Query {
-          reviews: [Review!]!
-        }
-        type Review {
-          id: ID!
-          body: String
-        }
-        type User @key(fields: "id") {
-          id: ID!
-          reviews: [Review!]!
-        }
-      `,
-    };
-
-    async function federatedProject() {
+  describe('Fields', () => {
+    test.concurrent('round-trips schema coordinates, deduplicated', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
-      const project = await createProject(ProjectType.Federation);
-      const token = await project.createTargetAccessToken({});
-      await token.publishSchema(usersSubgraph).then(r => r.expectNoGraphQLErrors());
-      await token.publishSchema(reviewsSubgraph).then(r => r.expectNoGraphQLErrors());
-      return { ...project, token };
-    }
-
-    test.concurrent('round-trips schema coordinates and subgraph names', async ({ expect }) => {
-      const { createSavedFilter, getSavedFilter } = await federatedProject();
+      const { createSavedFilter, getSavedFilter } = await createProject(ProjectType.Single);
 
       const created = await createSavedFilter({
-        name: 'Reviews team',
+        name: 'Viewer fields',
         visibility: SavedFilterVisibilityType.Shared,
-        insightsFilter: {
-          schemaCoordinates: ['User.name', 'Query.me', 'User.name'],
-          subgraphNames: ['Reviews', 'reviews'],
-        },
+        insightsFilter: { schemaCoordinates: ['User.name', 'Query.me', 'User.name'] },
       });
 
       expect(created.error).toBeNull();
       expect(created.ok?.savedFilter.filters.schemaCoordinates).toEqual(['User.name', 'Query.me']);
-      expect(created.ok?.savedFilter.filters.subgraphNames).toEqual(['reviews']);
 
       const fetched = await getSavedFilter({ filterId: created.ok?.savedFilter.id! });
       expect(fetched?.filters.schemaCoordinates).toEqual(['User.name', 'Query.me']);
-      expect(fetched?.filters.subgraphNames).toEqual(['reviews']);
     });
 
-    test.concurrent('filters created without the keys read as empty lists', async ({ expect }) => {
+    test.concurrent('filters created without the key read as an empty list', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();
       const { createProject } = await createOrg();
       const { createSavedFilter, getSavedFilter } = await createProject(ProjectType.Single);
@@ -634,25 +590,27 @@ describe('Saved Filters', () => {
       });
 
       expect(created.ok?.savedFilter.filters.schemaCoordinates).toEqual([]);
-      expect(created.ok?.savedFilter.filters.subgraphNames).toEqual([]);
       const fetched = await getSavedFilter({ filterId: created.ok?.savedFilter.id! });
       expect(fetched?.filters.schemaCoordinates).toEqual([]);
-      expect(fetched?.filters.subgraphNames).toEqual([]);
     });
 
     test.concurrent(
-      'update keeps the keys a client did not send and clears on an empty list',
+      'update keeps the key a client did not send and clears on an empty list',
       async ({ expect }) => {
-        const { createSavedFilter, updateSavedFilter, getSavedFilter } = await federatedProject();
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createSavedFilter, updateSavedFilter, getSavedFilter } = await createProject(
+          ProjectType.Single,
+        );
 
         const created = await createSavedFilter({
-          name: 'Reviews team',
+          name: 'Viewer fields',
           visibility: SavedFilterVisibilityType.Private,
-          insightsFilter: { schemaCoordinates: ['User.name'], subgraphNames: ['reviews'] },
+          insightsFilter: { schemaCoordinates: ['User.name'] },
         });
         const filterId = created.ok?.savedFilter.id!;
 
-        // A client built before these keys existed only sends the old ones.
+        // A client built before this key existed only sends the old ones.
         const kept = await updateSavedFilter({
           filterId,
           insightsFilter: { operationHashes: ['op1'] },
@@ -660,15 +618,13 @@ describe('Saved Filters', () => {
         expect(kept.error).toBeNull();
         expect(kept.ok?.savedFilter.filters.operationHashes).toEqual(['op1']);
         expect(kept.ok?.savedFilter.filters.schemaCoordinates).toEqual(['User.name']);
-        expect(kept.ok?.savedFilter.filters.subgraphNames).toEqual(['reviews']);
 
         const cleared = await updateSavedFilter({
           filterId,
-          insightsFilter: { operationHashes: ['op1'], schemaCoordinates: [], subgraphNames: [] },
+          insightsFilter: { operationHashes: ['op1'], schemaCoordinates: [] },
         });
         expect(cleared.error).toBeNull();
         expect(cleared.ok?.savedFilter.filters.schemaCoordinates).toEqual([]);
-        expect(cleared.ok?.savedFilter.filters.subgraphNames).toEqual([]);
 
         const fetched = await getSavedFilter({ filterId });
         expect(fetched?.filters.operationHashes).toEqual(['op1']);
@@ -705,91 +661,6 @@ describe('Saved Filters', () => {
 
       expect(result.error?.message).toBe('At most 100 schema coordinates can be selected');
     });
-
-    test.concurrent('rejects subgraph names on a non-Federation project', async ({ expect }) => {
-      const { createOrg } = await initSeed().createOwner();
-      const { createProject } = await createOrg();
-      const { createSavedFilter } = await createProject(ProjectType.Single);
-
-      const result = await createSavedFilter({
-        name: 'Single project',
-        visibility: SavedFilterVisibilityType.Private,
-        insightsFilter: { subgraphNames: ['users'] },
-      });
-
-      expect(result.error?.message).toContain('only available on Federation projects');
-    });
-
-    test.concurrent(
-      'rejects a subgraph the latest valid version does not have',
-      async ({ expect }) => {
-        const { createSavedFilter, updateSavedFilter } = await federatedProject();
-
-        const created = await createSavedFilter({
-          name: 'Unknown subgraph',
-          visibility: SavedFilterVisibilityType.Private,
-          insightsFilter: { subgraphNames: ['reviews', 'inventory'] },
-        });
-        expect(created.error?.message).toBe('Unknown subgraph: inventory.');
-
-        const valid = await createSavedFilter({
-          name: 'Reviews',
-          visibility: SavedFilterVisibilityType.Private,
-          insightsFilter: { subgraphNames: ['reviews'] },
-        });
-        const updated = await updateSavedFilter({
-          filterId: valid.ok?.savedFilter.id!,
-          insightsFilter: { subgraphNames: ['inventory'] },
-        });
-        expect(updated.error?.message).toBe('Unknown subgraph: inventory.');
-      },
-    );
-
-    test.concurrent(
-      'update checks only the subgraph names the client sends',
-      async ({ expect }) => {
-        const { createSavedFilter, updateSavedFilter, token } = await federatedProject();
-
-        const created = await createSavedFilter({
-          name: 'Reviews',
-          visibility: SavedFilterVisibilityType.Private,
-          insightsFilter: { subgraphNames: ['reviews'] },
-        });
-        const filterId = created.ok?.savedFilter.id!;
-
-        await token.deleteSchema('reviews').then(r => r.expectNoGraphQLErrors());
-
-        const kept = await updateSavedFilter({
-          filterId,
-          insightsFilter: { operationHashes: ['op1'] },
-        });
-        expect(kept.error).toBeNull();
-        expect(kept.ok?.savedFilter.filters.subgraphNames).toEqual(['reviews']);
-
-        const resent = await updateSavedFilter({
-          filterId,
-          insightsFilter: { subgraphNames: ['reviews'] },
-        });
-        expect(resent.error?.message).toBe('Unknown subgraph: reviews.');
-      },
-    );
-
-    test.concurrent(
-      'rejects subgraph names when nothing composable was published',
-      async ({ expect }) => {
-        const { createOrg } = await initSeed().createOwner();
-        const { createProject } = await createOrg();
-        const { createSavedFilter } = await createProject(ProjectType.Federation);
-
-        const result = await createSavedFilter({
-          name: 'No schema yet',
-          visibility: SavedFilterVisibilityType.Private,
-          insightsFilter: { subgraphNames: ['users'] },
-        });
-
-        expect(result.error?.message).toContain('no composable schema version');
-      },
-    );
   });
 
   describe('Alert usage', () => {

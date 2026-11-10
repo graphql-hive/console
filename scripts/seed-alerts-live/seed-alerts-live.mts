@@ -190,7 +190,7 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
   const projectResult = await createProject(
     {
       organization: { bySelector: { organizationSlug: organization.slug } },
-      type: ProjectType.Federation,
+      type: ProjectType.Single,
       slug: 'demo',
     },
     ownerToken,
@@ -214,25 +214,17 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
   ).then(r => r.expectNoGraphQLErrors());
   const writeSecret = tokenResult.createToken.ok!.secret;
 
-  // The usage service rejects operations against a target with no schema. Two tiny
-  // subgraphs, one per synthetic operation, so a saved filter on the `orders` subgraph
-  // sees exactly half of the loop's traffic (rule 8 below).
-  for (const [service, sdl] of [
-    ['products', `type Query { products: [String!]! status: String! }`],
-    ['orders', `type Query { orders: [String!]! ping: String }`],
-  ] as const) {
-    await publishSchema(
-      {
-        author: 'live-alerts-demo',
-        commit: `demo-${timestamp}-${service}`,
-        service,
-        url: `https://${service}.example.com/graphql`,
-        sdl,
-      },
-      writeSecret,
-    ).then(r => r.expectNoGraphQLErrors());
-  }
-  console.log('   ✓ Schema published (subgraphs: products, orders)');
+  // The usage service rejects operations against a target with no schema.
+  // One tiny schema is enough for the demo's synthetic operations.
+  await publishSchema(
+    {
+      author: 'live-alerts-demo',
+      commit: `demo-${timestamp}`,
+      sdl: `type Query { products: [String!]! orders: [String!]! status: String! ping: String }`,
+    },
+    writeSecret,
+  ).then(r => r.expectNoGraphQLErrors());
+  console.log('   ✓ Schema published');
 
   const targetSelector = {
     organizationSlug: organization.slug,
@@ -244,10 +236,10 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
     variables: {
       input: {
         target: { bySelector: targetSelector },
-        name: 'Orders subgraph',
-        description: 'Traffic that touches the orders subgraph',
+        name: 'Orders field',
+        description: 'Traffic that reads Query.orders',
         visibility: SavedFilterVisibilityType.Shared,
-        insightsFilter: { subgraphNames: ['orders'] },
+        insightsFilter: { schemaCoordinates: ['Query.orders'] },
       },
     },
     authToken: ownerToken,
@@ -258,7 +250,7 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
       `Saved filter creation failed: ${savedFilterResult.createSavedFilter.error?.message}`,
     );
   }
-  console.log('   ✓ Saved filter "Orders subgraph" created');
+  console.log('   ✓ Saved filter "Orders field" created');
 
   // One webhook channel pointing at our local receiver.
   const channelResult = await addAlertChannel(
@@ -425,14 +417,14 @@ async function setup(ownerEmail: string, options: { noRules: boolean }): Promise
       ).then(r => r.expectNoGraphQLErrors())
     ).addMetricAlertRule.ok!.addedMetricAlertRule.id;
 
-    // Scoped to the orders subgraph through the saved filter. Every other op in a BREACH
-    // report is `orders`, so this reads about half of rule 1's value each tick; that is
-    // the live check of the evaluator's coordinates subquery.
+    // Scoped to Query.orders through the saved filter. Every other op in a BREACH report
+    // is `orders`, so this reads about half of rule 1's value each tick; that is the live
+    // check of the evaluator's coordinates subquery.
     const ruleOrdersTraffic = (
       await addMetricAlertRule(
         {
           ...baseRuleInput,
-          name: 'Orders subgraph traffic (> 20 req/min, on saved filter)',
+          name: 'Orders field traffic (> 20 req/min, on saved filter)',
           type: MetricAlertRuleType.Traffic,
           direction: MetricAlertRuleDirection.Above,
           thresholdType: MetricAlertRuleThresholdType.FixedValue,
