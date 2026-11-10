@@ -21,7 +21,9 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
 }));
 vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 // Polls every 200 ms here, so a spec sees a few ticks with real timers.
-vi.mock('@/components/target/alerts/alert-polling', () => ({ ALERTS_POLL_INTERVAL_MS: 200 }));
+vi.mock('@/components/organization/settings/emails/email-polling', () => ({
+  EMAIL_DELIVERIES_POLL_INTERVAL_MS: 200,
+}));
 
 const SETTINGS = `/${SLUGS.organizationSlug}/view/settings`;
 const SLUG = { organizationSlug: SLUGS.organizationSlug };
@@ -143,9 +145,9 @@ describe('organization settings loaders', () => {
       await waitFor(() => expect(polls().length).toBeGreaterThanOrEqual(1));
       const mounted = polls().length;
 
-      vi.setSystemTime(new Date('2026-09-28T15:30:15.000Z'));
+      vi.setSystemTime(new Date('2026-09-28T15:31:00.000Z'));
       await waitFor(() => expect(polls()).toHaveLength(mounted + 1));
-      vi.setSystemTime(new Date('2026-09-28T15:30:30.000Z'));
+      vi.setSystemTime(new Date('2026-09-28T15:32:00.000Z'));
       await waitFor(() => expect(polls()).toHaveLength(mounted + 2));
 
       expect(new Set(polls().map(o => JSON.stringify(o.variables))).size).toBe(1);

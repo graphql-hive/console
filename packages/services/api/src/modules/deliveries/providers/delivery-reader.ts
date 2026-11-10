@@ -196,8 +196,11 @@ export class DeliveryReader {
   }
 
   /**
-   * The most recent attempts decide the status. The lookups around them walk the sort key and stop
-   * early, so the scan grows with the current streak rather than with the channel's history.
+   * The most recent attempts decide the status. With a destination, the lookups around them walk
+   * the sort key and stop early, so the scan grows with the current streak rather than with the
+   * destination's history. Without one (an organization's email) they cannot: each lookup reads
+   * the organization's rows of the type within the table's 75-day TTL, which email volumes keep
+   * small. A period on the selector would be the bound to add if that stops being true.
    */
   async getHealth(input: DeliverySelector): Promise<DeliveryHealth> {
     this.logger.debug('Reading delivery health (destination=%s)', input.destination ?? '*');

@@ -5,7 +5,6 @@ import {
   DELIVERY_WINDOW_LABEL,
   useDeliveryWindow,
 } from '@/components/common/deliveries/use-delivery-window';
-import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
 import { Callout } from '@/components/ui/callout';
 import { SubPageLayout, SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
@@ -14,6 +13,7 @@ import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useRefetchOnTick } from '@/lib/hooks/use-refetch-on-tick';
 import { EmailDeliveriesTable } from './email-deliveries-table';
+import { EMAIL_DELIVERIES_POLL_INTERVAL_MS } from './email-polling';
 
 // The window moves with the clock, so the section fetches for itself rather than through the
 // route loader, like the alert channel page.
@@ -59,7 +59,7 @@ export const EmailDeliveriesSubPage_Query = graphql(`
 
 export function EmailDeliveriesSubPage() {
   const { organizationSlug } = useSlugs('organization');
-  const { now, from, to, resolution } = useDeliveryWindow(ALERTS_POLL_INTERVAL_MS);
+  const { now, from, to, resolution } = useDeliveryWindow(EMAIL_DELIVERIES_POLL_INTERVAL_MS);
 
   const [result, reexecuteQuery] = useQuery({
     query: EmailDeliveriesSubPage_Query,
