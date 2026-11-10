@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
+import { EMAIL_MAX_ATTEMPTS } from '../lib/emails/retry-policy.js';
 import { sendTrackedEmail } from '../lib/emails/send-tracked-email.js';
 import { renderRateLimitExceededEmail } from '../lib/emails/templates/rate-limit-exceeded.js';
 
 export const UsageRateLimitExceededTask = defineTask({
   name: 'usageRateLimitExceeded',
+  maxAttempts: EMAIL_MAX_ATTEMPTS,
   schema: z.object({
     organizationId: z.string(),
     organizationName: z.string(),

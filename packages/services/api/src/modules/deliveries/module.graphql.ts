@@ -72,7 +72,9 @@ export default gql`
     """
     attempt: Int!
     """
-    The retry budget of the job that made this attempt.
+    The retry budget of the job that made this attempt. When the sender gave the message up after
+    this attempt, because the refusal could not change, this is the attempt's own number: attempt
+    equals maxAttempts and nothing follows.
     """
     maxAttempts: Int!
     """

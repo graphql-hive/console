@@ -1,6 +1,7 @@
 import type { JobHelpers } from 'graphile-worker';
 import type { Context } from '../context';
 import type { DeliveryRecorder } from '../lib/delivery-recorder';
+import { EMAIL_MAX_ATTEMPTS } from '../lib/emails/retry-policy';
 import { makeLogger } from '../lib/metric-alert-test-utils';
 import { task as auditLogExport } from './audit-log-export';
 import { task as organizationInvitation } from './organization-invitation';
@@ -118,7 +119,7 @@ function createJob() {
     job: {
       id: 'job-1',
       attempts: 1,
-      max_attempts: 25,
+      max_attempts: EMAIL_MAX_ATTEMPTS,
       job_queue_id: null,
       priority: 0,
       task_id: 1,
@@ -144,7 +145,7 @@ describe('email tasks record their delivery', () => {
           destination: to,
           event,
           attempt: 1,
-          maxAttempts: 25,
+          maxAttempts: EMAIL_MAX_ATTEMPTS,
           idempotencyKey,
           ok: true,
         }),

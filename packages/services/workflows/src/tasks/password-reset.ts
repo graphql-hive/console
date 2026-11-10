@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
+import { EMAIL_MAX_ATTEMPTS } from '../lib/emails/retry-policy.js';
 import { renderPasswordResetEmail } from '../lib/emails/templates/password-reset.js';
 
 /** How long a password reset link stays valid; the email states it and the server enforces it. */
@@ -7,6 +8,7 @@ export const PASSWORD_RESET_LINK_VALID_MINUTES = 15;
 
 export const PasswordResetTask = defineTask({
   name: 'passwordReset',
+  maxAttempts: EMAIL_MAX_ATTEMPTS,
   schema: z.object({
     user: z.object({
       email: z.string(),

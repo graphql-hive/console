@@ -139,7 +139,7 @@ test.concurrent(
       status_code: 200,
       status_text: 'OK',
       attempt: 1,
-      max_attempts: 25,
+      max_attempts: 5,
       metadata: {
         subject: `You have been invited to join ${organization.slug}`,
         job_id: expect.any(String),
@@ -152,24 +152,27 @@ test.concurrent(
       acceptedInvitation.ok!.createdOrganizationInvitation.code,
     );
 
-    // The refused address is retried, so there may be more than one row by now.
-    expect(rows.filter(row => row.destination === refused)).toContainEqual({
-      delivery_type: 'EMAIL',
-      destination: refused,
-      event: 'organization_invitation',
-      idempotency_key: `organization-invitation:${refusedInvitation.ok!.createdOrganizationInvitation.createdAt}:${refused}`,
-      ok: 0,
-      status_code: 422,
-      status_text:
-        'You tried to send to a recipient that has been marked as inactive. (error code 406)',
-      attempt: 1,
-      max_attempts: 25,
-      metadata: {
-        subject: `You have been invited to join ${organization.slug}`,
-        job_id: expect.any(String),
-        hive_request_id: expect.any(String),
+    // An inactive recipient cannot change, so the job gives up after this attempt: the row
+    // records it as the last one, and no further attempt follows.
+    expect(rows.filter(row => row.destination === refused)).toEqual([
+      {
+        delivery_type: 'EMAIL',
+        destination: refused,
+        event: 'organization_invitation',
+        idempotency_key: `organization-invitation:${refusedInvitation.ok!.createdOrganizationInvitation.createdAt}:${refused}`,
+        ok: 0,
+        status_code: 422,
+        status_text:
+          'You tried to send to a recipient that has been marked as inactive. (error code 406)',
+        attempt: 1,
+        max_attempts: 1,
+        metadata: {
+          subject: `You have been invited to join ${organization.slug}`,
+          job_id: expect.any(String),
+          hive_request_id: expect.any(String),
+        },
       },
-    });
+    ]);
 
     const result = await execute({
       document: InvitationDeliveriesQuery,
@@ -180,7 +183,7 @@ test.concurrent(
 
     expect(invitations).toContainEqual({
       email: accepted,
-      delivery: { ok: true, statusCode: 200, statusText: 'OK', attempt: 1, maxAttempts: 25 },
+      delivery: { ok: true, statusCode: 200, statusText: 'OK', attempt: 1, maxAttempts: 5 },
     });
     expect(invitations).toContainEqual({
       email: refused,
@@ -189,8 +192,8 @@ test.concurrent(
         statusCode: 422,
         statusText:
           'You tried to send to a recipient that has been marked as inactive. (error code 406)',
-        attempt: expect.any(Number),
-        maxAttempts: 25,
+        attempt: 1,
+        maxAttempts: 1,
       },
     });
 
@@ -213,10 +216,8 @@ test.concurrent(
       ],
       isLimited: false,
     });
-    // The refused address keeps being retried, so only the accepted count is exact.
     const stats = deliveries.emailDeliveryStats!;
-    expect(stats.totalFailures).toBeGreaterThanOrEqual(1);
-    expect(stats.totalDeliveries - stats.totalFailures).toBe(1);
+    expect(stats).toEqual({ totalDeliveries: 2, totalFailures: 1 });
     expect(deliveries.emailDeliveryHealth).toEqual({
       lastSuccessAt: expect.any(String),
       lastFailureAt: expect.any(String),
@@ -227,7 +228,7 @@ test.concurrent(
       ok: true,
       statusCode: 200,
       attempt: 1,
-      maxAttempts: 25,
+      maxAttempts: 5,
     });
     expect(deliveries.emailDeliveryLog).toContainEqual(
       expect.objectContaining({ destination: refused, ok: false, statusCode: 422 }),
@@ -330,8 +331,9 @@ test.concurrent(
     expect(secondKey).not.toBe(firstKey);
     await pollFor(async () => (await countAttempts(secondKey)) > 0);
 
-    // The first invitation's job keeps retrying for hours after the re-invite, on an exponential
-    // backoff. This is the row it writes later: newer than anything the new job has recorded.
+    // A job that was refused for a transient reason keeps retrying for a while after the
+    // re-invite. This is the row the first invitation's job would write later: newer than anything
+    // the new job has recorded.
     await clickHouseInsert(`
       INSERT INTO "outbound_deliveries" (
         "timestamp", "organization_id", "delivery_type", "destination", "event", "idempotency_key",
@@ -339,7 +341,7 @@ test.concurrent(
       )
       VALUES (
         now() + toIntervalMinute(1), '${organization.id}', 'EMAIL', '${refused}',
-        'organization_invitation', '${firstKey}', 9, 25, 0, 422, 'Retry of the earlier invitation',
+        'organization_invitation', '${firstKey}', 3, 5, 0, 503, 'Service Unavailable',
         5, map('subject', 'You have been invited to join ${organization.slug}')
       )
     `);
@@ -359,8 +361,8 @@ test.concurrent(
           statusCode: 422,
           statusText:
             'You tried to send to a recipient that has been marked as inactive. (error code 406)',
-          attempt: expect.any(Number),
-          maxAttempts: 25,
+          attempt: 1,
+          maxAttempts: 1,
         },
       },
     ]);

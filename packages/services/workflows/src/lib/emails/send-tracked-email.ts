@@ -10,6 +10,7 @@ import {
 } from '../delivery-recorder.js';
 import { EmailSendError } from './email-send-error.js';
 import type { EmailProvider } from './providers.js';
+import { isPermanentRefusal } from './retry-policy.js';
 
 export interface SendTrackedEmailArgs {
   context: Pick<Context, 'email' | 'deliveries'>;
@@ -33,9 +34,34 @@ export interface SendTrackedEmailArgs {
  * Sends one email through the configured vendor and records the attempt as an `EMAIL` delivery
  * to the recipient address: the vendor's answer, the job's attempt and retry budget, and the
  * subject and ids that locate the message (job, request, message id). The body and the links in
- * it are never recorded. A refusal is recorded and rethrown so graphile retries the job.
+ * it are never recorded. A refusal is recorded and rethrown so graphile retries the job, unless
+ * it cannot change (see `isPermanentRefusal`): then it is recorded as the job's last attempt and
+ * the job ends.
  */
 export async function sendTrackedEmail(args: SendTrackedEmailArgs): Promise<void> {
+  const { context, helpers } = args;
+
+  try {
+    await sendAndRecord(args);
+  } catch (error) {
+    if (error instanceof EmailSendError && isPermanentRefusal(error)) {
+      args.logger.warn(
+        {
+          'email.provider': context.email.id,
+          'email.event': args.event,
+          'email.statusCode': error.statusCode,
+          'email.statusText': error.statusText,
+          'job.attempts': helpers.job.attempts,
+        },
+        'email refused for good; the job will not retry it',
+      );
+      return;
+    }
+    throw error;
+  }
+}
+
+async function sendAndRecord(args: SendTrackedEmailArgs): Promise<void> {
   const { context, helpers, email } = args;
 
   await trackDelivery(
@@ -71,7 +97,12 @@ export async function sendTrackedEmail(args: SendTrackedEmailArgs): Promise<void
         metadata: result.messageId ? { message_id: result.messageId } : undefined,
       };
     },
-    describeEmailError,
+    error => {
+      const outcome = describeEmailError(error);
+      return outcome && error instanceof EmailSendError && isPermanentRefusal(error)
+        ? { ...outcome, final: true }
+        : outcome;
+    },
   );
 }
 
