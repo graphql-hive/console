@@ -2,7 +2,7 @@ import { endOfMonth, startOfMonth } from 'date-fns';
 import type { Storage } from '@hive/api';
 import type { ServiceLogger } from '@hive/service-common';
 import { traceInline } from '@hive/service-common';
-import { TaskScheduler } from '@hive/workflows/kit';
+import type { TaskScheduler } from '@hive/workflows/kit';
 import * as Sentry from '@sentry/node';
 import { UsageEstimator } from '../usage-estimator/estimator';
 import { createEmailScheduler } from './emails';
@@ -48,6 +48,27 @@ export type RateLimiter = ReturnType<typeof createRateLimiter>;
 type OrganizationId = string;
 type TargetId = string;
 
+type LimitInfoRecord = Awaited<
+  ReturnType<Storage['getGetOrganizationsAndTargetsWithLimitInfo']>
+>[number];
+
+/** The organization's cache entry before this month's usage is applied. */
+function createCachedRateLimitInfo(record: LimitInfoRecord): CachedRateLimitInfo {
+  return {
+    orgName: record.org_name,
+    orgEmail: record.owner_email,
+    orgPlan: record.org_plan_name,
+    orgSlug: record.org_clean_id,
+    operations: {
+      current: 0,
+      quota: record.limit_operations_monthly,
+      limited: false,
+      usagePercentage: 0,
+    },
+    retentionInDays: record.limit_retention_days,
+  };
+}
+
 export function createRateLimiter(config: {
   logger: ServiceLogger;
   rateLimitConfig: {
@@ -64,6 +85,10 @@ export function createRateLimiter(config: {
 
   let targetIdToOrgLookup = new Map<TargetId, OrganizationId>();
   let cachedResult = new Map<OrganizationId, CachedRateLimitInfo>();
+  // Targets that storage could not find, e.g. deleted while the usage service still reports them.
+  // Reset on every refresh so a re-created id is looked up again.
+  let unknownTargetIds = new Set<TargetId>();
+  const inflightTargetLookups = new Map<TargetId, Promise<OrganizationId | undefined>>();
 
   const fetchAndCalculateUsageInformation = traceInline('Calculate Rate Limit', {}, async () => {
     const now = new Date();
@@ -100,19 +125,7 @@ export function createRateLimiter(config: {
         newTargetIdToOrgLookup.set(target, record.organization);
       }
       if (!newCachedResult.has(record.organization)) {
-        newCachedResult.set(record.organization, {
-          orgName: record.org_name,
-          orgEmail: record.owner_email,
-          orgPlan: record.org_plan_name,
-          orgSlug: record.org_clean_id,
-          operations: {
-            current: 0,
-            quota: record.limit_operations_monthly,
-            limited: false,
-            usagePercentage: 0,
-          },
-          retentionInDays: record.limit_retention_days,
-        });
+        newCachedResult.set(record.organization, createCachedRateLimitInfo(record));
       }
 
       const orgRecord = newCachedResult.get(record.organization)!;
@@ -173,6 +186,7 @@ export function createRateLimiter(config: {
 
     cachedResult = newCachedResult;
     targetIdToOrgLookup = newTargetIdToOrgLookup;
+    unknownTargetIds = new Set();
 
     const scheduledEmails = emails.drain();
     if (scheduledEmails.length > 0) {
@@ -181,10 +195,53 @@ export function createRateLimiter(config: {
     }
   });
 
-  function getOrganizationFromCache(targetId: string) {
-    const orgId = targetIdToOrgLookup.get(targetId);
+  async function lookupTargetInStorage(targetId: TargetId): Promise<OrganizationId | undefined> {
+    let record: LimitInfoRecord | null;
+    try {
+      record = await storage.getOrganizationWithLimitInfoByTargetId({ targetId });
+    } catch (error) {
+      logger.error(error, `Failed to look up rate limit information for targetId=${targetId}`);
+      Sentry.captureException(error, {
+        level: 'error',
+      });
+      return undefined;
+    }
 
-    return orgId ? cachedResult.get(orgId) : undefined;
+    if (!record) {
+      unknownTargetIds.add(targetId);
+      logger.warn(
+        `No organization found for targetId=${targetId}, using fallback rate limit information`,
+      );
+      return undefined;
+    }
+
+    for (const target of record.targets) {
+      targetIdToOrgLookup.set(target, record.organization);
+    }
+    if (!cachedResult.has(record.organization)) {
+      cachedResult.set(record.organization, createCachedRateLimitInfo(record));
+    }
+
+    return record.organization;
+  }
+
+  /**
+   * For a target the snapshot does not know (it only has targets that existed at the last refresh):
+   * one storage lookup per id, shared by concurrent callers.
+   */
+  function lookupMissingTarget(targetId: TargetId): Promise<OrganizationId | undefined> {
+    if (unknownTargetIds.has(targetId)) {
+      return Promise.resolve(undefined);
+    }
+
+    let inflight = inflightTargetLookups.get(targetId);
+    if (!inflight) {
+      inflight = lookupTargetInStorage(targetId).finally(() => {
+        inflightTargetLookups.delete(targetId);
+      });
+      inflightTargetLookups.set(targetId, inflight);
+    }
+    return inflight;
   }
 
   let initialized = false;
@@ -194,40 +251,28 @@ export function createRateLimiter(config: {
     readiness() {
       return initialized;
     },
-    getRetention(targetId: string) {
-      const orgData = getOrganizationFromCache(targetId);
+    async getRetention(targetId: string): Promise<number> {
+      const orgId = targetIdToOrgLookup.get(targetId) ?? (await lookupMissingTarget(targetId));
+      const orgData = orgId ? cachedResult.get(orgId) : undefined;
 
       if (!orgData) {
         // This is a safety measure to prevent setting the retention to a lower value then expected,
-        // in case of an organization data not being available yet in the cache.
-        const error = new Error(
-          `Failed to resolve/find retention information for targetId=${targetId}`,
-        );
-        Sentry.captureException(error, {
-          level: 'error',
-        });
-        logger.error(error);
+        // in case of an organization data not being available.
         return RETENTION_IN_DAYS_FALLBACK;
       }
 
       return orgData.retentionInDays;
     },
-    checkLimit(input: {
+    async checkLimit(input: {
       entityType: 'organization' | 'target';
       id: string;
-    }): RateLimitCheckResponse {
+    }): Promise<RateLimitCheckResponse> {
       const orgId =
-        input.entityType === 'organization' ? input.id : targetIdToOrgLookup.get(input.id);
+        input.entityType === 'organization'
+          ? input.id
+          : (targetIdToOrgLookup.get(input.id) ?? (await lookupMissingTarget(input.id)));
 
       if (!orgId) {
-        const error = new Error(
-          `Failed to resolve/find rate limit information for entityId=${input.id} type=${input.entityType}`,
-        );
-        Sentry.captureException(error, {
-          level: 'error',
-        });
-        logger.error(error);
-
         return UNKNOWN_RATE_LIMIT_OBJ;
       }
 
