@@ -134,6 +134,21 @@ export default gql`
     lastFailureAt: DateTime
   }
 
+  """
+  Which kinds of email the viewer may see among those Hive sends for the organization.
+  """
+  type EmailDeliveryVisibility {
+    """
+    The kinds the viewer may see (as emailDeliveryStats describes them), in the order Hive lists
+    them. Empty when the viewer may see none.
+    """
+    events: [DeliveryEvent!]!
+    """
+    Whether a kind Hive sends is missing from events because the viewer may not see it.
+    """
+    isLimited: Boolean!
+  }
+
   extend type OrganizationInvitation {
     """
     The most recent attempt to email this invitation; null before one is recorded or when the
@@ -172,5 +187,10 @@ export default gql`
     Whether the viewer may see at least one kind of email delivery.
     """
     viewerCanSeeEmailDeliveries: Boolean!
+    """
+    Which kinds of email the viewer may see on emailDeliveryStats, emailDeliveryHealth and
+    emailDeliveryLog. Never errors.
+    """
+    viewerEmailDeliveryVisibility: EmailDeliveryVisibility!
   }
 `;

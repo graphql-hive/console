@@ -155,6 +155,34 @@ describe('EmailDeliveries reads only the kinds of email the viewer may see', () 
     expect(reader.getLog).not.toHaveBeenCalled();
     expect(reader.getLastOutcomes).not.toHaveBeenCalled();
   });
+
+  test('names the kinds the viewer may see and whether any kind is kept from them', async () => {
+    const everything = createProvider({
+      actor: 'owner',
+      allowed: ['member:modify', 'auditLog:export', 'billing:describe'],
+    });
+    await expect(everything.provider.getVisibility('o1')).resolves.toEqual({
+      events: [
+        'ORGANIZATION_INVITATION',
+        'ORGANIZATION_OWNERSHIP_TRANSFER',
+        'AUDIT_LOG_EXPORT',
+        'USAGE_RATE_LIMIT_WARNING',
+        'USAGE_RATE_LIMIT_EXCEEDED',
+      ],
+      isLimited: false,
+    });
+
+    const invitationsOnly = createProvider({ allowed: ['member:modify'] });
+    await expect(invitationsOnly.provider.getVisibility('o1')).resolves.toEqual({
+      events: ['ORGANIZATION_INVITATION'],
+      isLimited: true,
+    });
+
+    await expect(createProvider().provider.getVisibility('o1')).resolves.toEqual({
+      events: [],
+      isLimited: true,
+    });
+  });
 });
 
 describe('EmailDeliveries.getLatestInvitationDelivery', () => {

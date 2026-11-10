@@ -35,6 +35,10 @@ const OrganizationEmailDeliveriesQuery = graphql(`
   ) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
+      viewerEmailDeliveryVisibility {
+        events
+        isLimited
+      }
       emailDeliveryStats(period: { from: $from, to: $to }) {
         totalDeliveries
         totalFailures
@@ -55,11 +59,15 @@ const OrganizationEmailDeliveriesQuery = graphql(`
   }
 `);
 
-const ViewerCanSeeEmailDeliveriesQuery = graphql(`
-  query ViewerCanSeeEmailDeliveriesQuery($organizationSlug: String!) {
+const EmailDeliveryAccessQuery = graphql(`
+  query EmailDeliveryAccessQuery($organizationSlug: String!) {
     organization: organizationBySlug(organizationSlug: $organizationSlug) {
       id
       viewerCanSeeEmailDeliveries
+      viewerEmailDeliveryVisibility {
+        events
+        isLimited
+      }
     }
   }
 `);
@@ -195,6 +203,16 @@ test.concurrent(
       .then(r => r.expectNoGraphQLErrors())
       .then(r => r.organization!);
 
+    expect(deliveries.viewerEmailDeliveryVisibility).toEqual({
+      events: [
+        'ORGANIZATION_INVITATION',
+        'ORGANIZATION_OWNERSHIP_TRANSFER',
+        'AUDIT_LOG_EXPORT',
+        'USAGE_RATE_LIMIT_WARNING',
+        'USAGE_RATE_LIMIT_EXCEEDED',
+      ],
+      isLimited: false,
+    });
     // The refused address keeps being retried, so only the accepted count is exact.
     const stats = deliveries.emailDeliveryStats!;
     expect(stats.totalFailures).toBeGreaterThanOrEqual(1);
@@ -228,14 +246,14 @@ test.concurrent(
     const role = await createMemberRole([]);
     await assignMemberRole({ roleId: role.id, userId: member.id });
 
-    const canSee = () =>
+    const access = () =>
       execute({
-        document: ViewerCanSeeEmailDeliveriesQuery,
+        document: EmailDeliveryAccessQuery,
         variables: { organizationSlug: organization.slug },
         authToken: memberToken,
       })
         .then(r => r.expectNoGraphQLErrors())
-        .then(r => r.organization!.viewerCanSeeEmailDeliveries);
+        .then(r => r.organization!);
     const read = () =>
       execute({
         document: OrganizationEmailDeliveriesQuery,
@@ -243,7 +261,11 @@ test.concurrent(
         authToken: memberToken,
       });
 
-    await expect(canSee()).resolves.toBe(false);
+    await expect(access()).resolves.toEqual({
+      id: organization.id,
+      viewerCanSeeEmailDeliveries: false,
+      viewerEmailDeliveryVisibility: { events: [], isLimited: true },
+    });
     const denied = await read();
     expect(denied.expectGraphQLErrors()).not.toHaveLength(0);
     expect(denied.rawBody.data?.organization).toEqual({
@@ -256,14 +278,22 @@ test.concurrent(
     // Audit log exports are visible to this role; the member's own invitation email is not.
     await updateMemberRole(role, ['auditLog:export']);
 
-    await expect(canSee()).resolves.toBe(true);
+    await expect(access()).resolves.toEqual({
+      id: organization.id,
+      viewerCanSeeEmailDeliveries: true,
+      viewerEmailDeliveryVisibility: { events: ['AUDIT_LOG_EXPORT'], isLimited: true },
+    });
     const exportsOnly = await read().then(r => r.expectNoGraphQLErrors());
     expect(exportsOnly.organization!.emailDeliveryStats!.totalDeliveries).toBe(0);
     expect(exportsOnly.organization!.emailDeliveryLog).toEqual([]);
 
     await updateMemberRole(role, ['member:modify']);
 
-    await expect(canSee()).resolves.toBe(true);
+    await expect(access()).resolves.toEqual({
+      id: organization.id,
+      viewerCanSeeEmailDeliveries: true,
+      viewerEmailDeliveryVisibility: { events: ['ORGANIZATION_INVITATION'], isLimited: true },
+    });
     const allowed = await read().then(r => r.expectNoGraphQLErrors());
     // The member's own invitation email is at least one recorded attempt.
     expect(allowed.organization!.emailDeliveryStats!.totalDeliveries).toBeGreaterThanOrEqual(1);

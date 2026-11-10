@@ -83,6 +83,14 @@ export class EmailDeliveries {
     return events.length > 0;
   }
 
+  /** The kinds of email the viewer may see, and whether any kind is kept from them. */
+  async getVisibility(
+    organizationId: string,
+  ): Promise<{ events: EmailDeliveryEventName[]; isLimited: boolean }> {
+    const events = await this.visibleEvents(organizationId);
+    return { events, isLimited: events.length < EMAIL_DELIVERY_EVENT_NAMES.length };
+  }
+
   /** Only the timestamps hold across recipients; the status and streak describe one destination. */
   async getHealth(organizationId: string): Promise<LastOutcomes> {
     const selector = await this.readableSelector(organizationId);

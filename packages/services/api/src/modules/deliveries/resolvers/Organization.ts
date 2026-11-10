@@ -8,7 +8,11 @@ import type { OrganizationResolvers } from './../../../__generated__/types';
  */
 export const Organization: Pick<
   OrganizationResolvers,
-  'emailDeliveryHealth' | 'emailDeliveryLog' | 'emailDeliveryStats' | 'viewerCanSeeEmailDeliveries'
+  | 'emailDeliveryHealth'
+  | 'emailDeliveryLog'
+  | 'emailDeliveryStats'
+  | 'viewerCanSeeEmailDeliveries'
+  | 'viewerEmailDeliveryVisibility'
 > = {
   // Authorized here once; the DeliveryStats fields then read for the selection.
   emailDeliveryStats: async (organization, { period }, { injector }) => ({
@@ -25,4 +29,6 @@ export const Organization: Pick<
     }),
   viewerCanSeeEmailDeliveries: (organization, _arg, { injector }) =>
     injector.get(EmailDeliveries).canRead(organization.id),
+  viewerEmailDeliveryVisibility: (organization, _arg, { injector }) =>
+    injector.get(EmailDeliveries).getVisibility(organization.id),
 };
