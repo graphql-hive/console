@@ -43,6 +43,8 @@ export function DeliveryStatCards({
     stats && stats.totalFailures > 0
       ? `${toDecimal((stats.totalFailures * 100) / stats.totalDeliveries)}%`
       : null;
+  const lastAt = (date: string | null | undefined) =>
+    !health ? '-' : date ? <TimeAgo date={date} /> : 'Never';
 
   return (
     <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
@@ -71,7 +73,7 @@ export function DeliveryStatCards({
       />
       <StatCard
         title="Last success"
-        value={health?.lastSuccessAt ? <TimeAgo date={health.lastSuccessAt} /> : 'Never'}
+        value={lastAt(health?.lastSuccessAt)}
         variants={{
           tone:
             health?.status === DeliveryHealthStatus.Failing
@@ -83,7 +85,7 @@ export function DeliveryStatCards({
       />
       <StatCard
         title="Last failure"
-        value={health?.lastFailureAt ? <TimeAgo date={health.lastFailureAt} /> : 'Never'}
+        value={lastAt(health?.lastFailureAt)}
         variants={{ tone: 'danger' }}
       />
     </div>
