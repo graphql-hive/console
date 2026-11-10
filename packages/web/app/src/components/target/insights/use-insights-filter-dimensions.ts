@@ -16,22 +16,17 @@ import { graphql } from '@/gql';
 import type { useNavigate } from '@tanstack/react-router';
 
 /**
- * Options for the Fields and Subgraphs dimensions, read from the latest valid schema version
- * rather than from usage so a filter can target a field or subgraph with no traffic yet.
- * Period-independent, so it is not part of the picker query a date-range change refetches.
+ * Options for the Fields dimension, read from the latest valid schema version rather than from
+ * usage so a filter can target a field with no traffic yet. Period-independent, so it is not part
+ * of the picker query a date-range change refetches.
  */
 export const InsightsSchemaFilterOptions_Query = graphql(`
   query InsightsSchemaFilterOptions($selector: TargetSelectorInput!) {
     target(reference: { bySelector: $selector }) {
       id
-      project {
-        id
-        type
-      }
       latestValidSchemaVersion {
         id
         explorer {
-          subgraphNames
           types {
             __typename
             ... on GraphQLObjectType {
@@ -61,8 +56,7 @@ type ExplorerType = {
 
 /**
  * Flattens the explorer's types to sorted `Type.field` coordinates. Only object and interface
- * fields: the Subgraphs dimension resolves to the same set server-side, and enum values or input
- * fields are not what people mean by "operations that use this field".
+ * fields: enum values or input fields are not what people mean by "operations that use this field".
  */
 export function explorerTypesToFieldCoordinates(types: ReadonlyArray<ExplorerType>): string[] {
   const coordinates: string[] = [];
@@ -105,10 +99,6 @@ export function schemaFilterItems(
 export const nameSelections = (names: unknown): FilterSelection[] =>
   Array.isArray(names) ? (names as string[]).map(name => ({ name, values: null })) : [];
 
-// Subgraph names are lowercase in the schema; a hand-typed URL may not be.
-const lowercaseNames = (names: unknown): string[] =>
-  Array.isArray(names) ? (names as string[]).map(name => name.toLowerCase()) : [];
-
 /** The `unavailableNote` for dimensions whose options come from the schema. */
 export const SCHEMA_UNAVAILABLE_NOTE = 'not in the current schema';
 
@@ -118,7 +108,6 @@ type InsightsSearchShape = {
   excludeOperations?: boolean;
   excludeClients?: boolean;
   fields?: string[];
-  subgraphs?: string[];
 };
 
 export type InsightsFilterDimensionsInput = {
@@ -129,15 +118,8 @@ export type InsightsFilterDimensionsInput = {
   hashToNameMap: Map<string, string>;
   /** `Type.field` coordinates of the latest valid version. */
   fieldCoordinates: readonly string[];
-  /** Subgraph names of the latest valid version. */
-  subgraphNames: readonly string[];
   /** False while the schema options are loading or failed: nothing is struck through yet. */
   schemaOptionsReady: boolean;
-  /**
-   * False on non-federation projects, which have no subgraphs to filter by. A URL that already
-   * carries subgraphs still gets the dimension so the filter can be seen and removed.
-   */
-  showSubgraphs: boolean;
 };
 
 /** The hook's body, pure so it can be exercised without React. */
@@ -148,9 +130,7 @@ export function insightsFilterDimensions({
   clientFilterItems,
   hashToNameMap,
   fieldCoordinates,
-  subgraphNames,
   schemaOptionsReady,
-  showSubgraphs,
 }: InsightsFilterDimensionsInput): FilterDimension[] {
   const operationsDim = urlFilterDimension({
     navigate,
@@ -203,33 +183,14 @@ export function insightsFilterDimensions({
     unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
   });
 
-  const dimensions: FilterDimension[] = [operationsDim, clientsDim, fieldsDim];
-
-  const selectedSubgraphs = lowercaseNames(search.subgraphs);
-  if (showSubgraphs || selectedSubgraphs.length > 0) {
-    dimensions.push(
-      urlFilterDimension({
-        navigate,
-        search,
-        searchKey: 'subgraphs',
-        key: 'subgraph',
-        label: 'Subgraph',
-        items: schemaFilterItems(subgraphNames, selectedSubgraphs, schemaOptionsReady),
-        encode: encodeIdSelections,
-        decode: value => nameSelections(lowercaseNames(value)),
-        unavailableNote: SCHEMA_UNAVAILABLE_NOTE,
-      }),
-    );
-  }
-
-  return dimensions;
+  return [operationsDim, clientsDim, fieldsDim];
 }
 
 /**
- * Builds the FilterDimension array describing the Insights-page filters (operations, clients,
- * fields and, on federation projects, subgraphs), wired to URL search params via
- * `urlFilterDimension`. The page provides the picker-derived items, a hash→name map (URL-stored
- * operations are hashes shown as names) and the schema-derived option lists.
+ * Builds the FilterDimension array describing the Insights-page filters (operations, clients and
+ * fields), wired to URL search params via `urlFilterDimension`. The page provides the
+ * picker-derived items, a hash→name map (URL-stored operations are hashes shown as names) and the
+ * schema-derived field coordinates.
  */
 export function useInsightsFilterDimensions(
   input: InsightsFilterDimensionsInput,
@@ -241,9 +202,7 @@ export function useInsightsFilterDimensions(
     clientFilterItems,
     hashToNameMap,
     fieldCoordinates,
-    subgraphNames,
     schemaOptionsReady,
-    showSubgraphs,
   } = input;
   return useMemo<FilterDimension[]>(
     () =>
@@ -254,9 +213,7 @@ export function useInsightsFilterDimensions(
         clientFilterItems,
         hashToNameMap,
         fieldCoordinates,
-        subgraphNames,
         schemaOptionsReady,
-        showSubgraphs,
       }),
     [
       navigate,
@@ -265,14 +222,11 @@ export function useInsightsFilterDimensions(
       search.excludeOperations,
       search.excludeClients,
       search.fields,
-      search.subgraphs,
       operationFilterItems,
       clientFilterItems,
       hashToNameMap,
       fieldCoordinates,
-      subgraphNames,
       schemaOptionsReady,
-      showSubgraphs,
     ],
   );
 }

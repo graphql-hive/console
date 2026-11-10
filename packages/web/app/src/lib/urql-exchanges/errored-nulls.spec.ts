@@ -68,7 +68,7 @@ describe('erroredNullsExchange', () => {
 
   const answer = {
     data: { __typename: 'Query', target: null },
-    errors: [{ message: 'Unknown subgraph: gone.', path: ['target', 'operationsStats'] }],
+    errors: [{ message: 'Too many schema coordinates.', path: ['target', 'operationsStats'] }],
   };
 
   it('keeps an errored null out of the cache, so the next read fetches the error again', async () => {
@@ -76,7 +76,7 @@ describe('erroredNullsExchange', () => {
     await client.query(document, {}).toPromise();
     const second = await client.query(document, {}).toPromise();
     expect(calls()).toBe(2);
-    expect(second.error?.graphQLErrors[0]?.message).toBe('Unknown subgraph: gone.');
+    expect(second.error?.graphQLErrors[0]?.message).toBe('Too many schema coordinates.');
   });
 
   it('without it, the cache answers the next read with the null and no error', async () => {

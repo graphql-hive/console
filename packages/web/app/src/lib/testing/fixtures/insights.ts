@@ -56,23 +56,18 @@ export function insightsFilterPicker() {
   };
 }
 
-export const SUBGRAPHS = ['users', 'reviews'] as const;
-export const FIELD_COORDINATES = ['Query.me', 'User.id', 'User.name'] as const;
-
-/** A federation target whose latest version has two subgraphs and three object fields. */
-export function insightsSchemaFilterOptions(projectType: 'FEDERATION' | 'SINGLE' = 'FEDERATION') {
+/** A target whose latest version has three object fields. */
+export function insightsSchemaFilterOptions() {
   return {
     __typename: 'Query' as const,
     target: {
       __typename: 'Target' as const,
       id: TARGET_ID,
-      project: { __typename: 'Project' as const, id: 'project-1', type: projectType },
       latestValidSchemaVersion: {
         __typename: 'SchemaVersion' as const,
         id: 'version-1',
         explorer: {
           __typename: 'SchemaExplorer' as const,
-          subgraphNames: [...SUBGRAPHS],
           types: [
             {
               __typename: 'GraphQLObjectType' as const,
@@ -144,12 +139,11 @@ export function operationBody() {
 
 export const SAVED_FILTER = {
   id: 'filter-1',
-  name: 'Reviews subgraph',
+  name: 'Viewer fields',
   schemaCoordinates: ['Query.me', 'Query.gone'],
-  subgraphNames: ['reviews'],
 } as const;
 
-/** One shared saved filter that uses the Fields and Subgraphs dimensions. */
+/** One shared saved filter that uses the Fields dimension. */
 export function manageFiltersSavedFilters() {
   return {
     __typename: 'Query' as const,
@@ -186,7 +180,6 @@ export function manageFiltersSavedFilters() {
                 excludeOperations: false,
                 excludeClientFilters: false,
                 schemaCoordinates: [...SAVED_FILTER.schemaCoordinates],
-                subgraphNames: [...SAVED_FILTER.subgraphNames],
               },
               createdBy: { __typename: 'User' as const, id: 'user-1', displayName: 'User' },
               viewerCanUpdate: true,

@@ -124,31 +124,30 @@ describe('insights route', () => {
     },
   );
 
-  it(
-    'carries fields and subgraphs from the URL into both stats documents',
-    { timeout: 30_000 },
-    async () => {
-      const client = createTestClient(layoutFixtures());
-      const fields = encodeURIComponent(JSON.stringify(['Query.me', 'User.name']));
-      const subgraphs = encodeURIComponent(JSON.stringify(['reviews']));
-      const router = createAppRouter({
-        history: createMemoryHistory({
-          initialEntries: [`${TARGET}/insights?${RANGE}&fields=${fields}&subgraphs=${subgraphs}`],
-        }),
-        urqlClient: client,
-      });
-      await router.load();
+  it('carries fields from the URL into both stats documents', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    const fields = encodeURIComponent(JSON.stringify(['Query.me', 'User.name']));
+    const router = createAppRouter({
+      history: createMemoryHistory({
+        initialEntries: [`${TARGET}/insights?${RANGE}&fields=${fields}`],
+      }),
+      urqlClient: client,
+    });
+    await router.load();
 
-      const filter = { schemaCoordinates: ['Query.me', 'User.name'], subgraphNames: ['reviews'] };
-      expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toMatchObject({ filter });
-      expect(variablesOf(client, 'OperationsList_OperationsStats')).toMatchObject({ filter });
-    },
-  );
+    const filter = { schemaCoordinates: ['Query.me', 'User.name'] };
+    expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toMatchObject({ filter });
+    expect(variablesOf(client, 'OperationsList_OperationsStats')).toMatchObject({ filter });
+  });
 
-  it('shows the error for a subgraph the schema does not have', { timeout: 30_000 }, async () => {
+  it('shows the error for a field filter the API rejects', { timeout: 30_000 }, async () => {
     // The API answers with the error and a null target, which must not read as empty stats.
     const rejected = new GraphQLResponse({ __typename: 'Query', target: null }, [
-      { message: 'Unknown subgraph: gone.', path: ['target', 'operationsStats'] },
+      {
+        message:
+          "'OperationStatsFilterInput.schemaCoordinates' elements must be at most 200 characters long",
+        path: ['target', 'operationsStats'],
+      },
     ]);
     const client = createTestClient(
       new Map([
@@ -157,11 +156,13 @@ describe('insights route', () => {
         ['OperationsList_OperationsStats', rejected],
       ]),
     );
-    const subgraphs = encodeURIComponent(JSON.stringify(['gone']));
-    renderAtUrl(`${TARGET}/insights?${RANGE}&subgraphs=${subgraphs}`, { client });
+    const fields = encodeURIComponent(JSON.stringify([`Query.${'f'.repeat(195)}`]));
+    renderAtUrl(`${TARGET}/insights?${RANGE}&fields=${fields}`, { client });
 
     await screen.findByRole('button', { name: 'Refresh' });
-    expect((await screen.findAllByText(/Unknown subgraph: gone/)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/must be at most 200 characters/)).length).toBeGreaterThan(
+      0,
+    );
     expect(screen.queryByText('No stats available yet.')).toBeNull();
   });
 
@@ -203,7 +204,7 @@ describe('insights route', () => {
       await waitFor(() => {
         expect(requests(client, 'Stats_GeneralOperationsStats')).toBe(2);
         expect(requests(client, 'OperationsList_OperationsStats')).toBe(2);
-        // Cache-first otherwise, so this is where a newly published subgraph or field appears.
+        // Cache-first otherwise, so this is where a newly published field appears.
         expect(requests(client, 'InsightsSchemaFilterOptions')).toBe(2);
       });
       for (const name of [
@@ -398,28 +399,22 @@ describe('manage filters route', () => {
     await screen.findByText(/not in the current schema/);
   });
 
-  it(
-    'opens a row to the Field and Subgraph editors when the filter uses them',
-    { timeout: 30_000 },
-    async () => {
-      const client = createTestClient(new Map([...layoutFixtures(), ...manageFiltersFixtures()]));
-      renderAtUrl(`${TARGET}/insights/manage-filters`, { client });
-      const row = await screen.findByText(SAVED_FILTER.name);
+  it('opens a row to the Field editor when the filter uses it', { timeout: 30_000 }, async () => {
+    const client = createTestClient(new Map([...layoutFixtures(), ...manageFiltersFixtures()]));
+    renderAtUrl(`${TARGET}/insights/manage-filters`, { client });
+    const row = await screen.findByText(SAVED_FILTER.name);
 
-      fireEvent.click(row);
+    fireEvent.click(row);
 
-      const field = await screen.findByRole('group', { name: 'Field filter' });
-      const subgraph = await screen.findByRole('group', { name: 'Subgraph filter' });
-      // Nothing changed yet, so there is nothing to save.
-      expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Save changes' }).disabled).toBe(
-        true,
-      );
-      // The editor reads its options from the same document the Insights page preloads.
-      expect(requests(client, 'InsightsSchemaFilterOptions')).toBe(1);
-      expect(field.textContent).toContain(`${SAVED_FILTER.schemaCoordinates.length} fields`);
-      expect(subgraph.textContent).toContain('1 subgraph');
-    },
-  );
+    const field = await screen.findByRole('group', { name: 'Field filter' });
+    // Nothing changed yet, so there is nothing to save.
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Save changes' }).disabled).toBe(
+      true,
+    );
+    // The editor reads its options from the same document the Insights page preloads.
+    expect(requests(client, 'InsightsSchemaFilterOptions')).toBe(1);
+    expect(field.textContent).toContain(`${SAVED_FILTER.schemaCoordinates.length} fields`);
+  });
 });
 
 describe('insights preloading', () => {

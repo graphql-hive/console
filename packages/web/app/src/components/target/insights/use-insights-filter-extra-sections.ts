@@ -12,7 +12,6 @@ export type SavedFilterView = {
     excludeOperations: boolean;
     excludeClientFilters: boolean;
     schemaCoordinates: string[];
-    subgraphNames: string[];
   };
 };
 

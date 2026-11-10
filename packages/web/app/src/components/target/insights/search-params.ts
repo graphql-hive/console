@@ -25,7 +25,6 @@ export type SavedFilterFilters = {
   excludeOperations?: boolean | null;
   excludeClientFilters?: boolean | null;
   schemaCoordinates?: readonly string[];
-  subgraphNames?: readonly string[];
 };
 
 /** Build insights search params from a saved filter (or any object with the same shape). */
@@ -44,7 +43,6 @@ export function savedFilterToSearchParams(filter: { id: string; filters: SavedFi
     fields: filter.filters.schemaCoordinates?.length
       ? [...filter.filters.schemaCoordinates]
       : undefined,
-    subgraphs: filter.filters.subgraphNames?.length ? [...filter.filters.subgraphNames] : undefined,
     from: filter.filters.dateRange?.from,
     to: filter.filters.dateRange?.to,
     viewId: filter.id,

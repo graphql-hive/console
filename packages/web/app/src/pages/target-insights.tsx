@@ -25,13 +25,10 @@ import { Subtitle, Title } from '@/components/ui/page';
 import { QueryError } from '@/components/ui/query-error';
 import { RefreshButton } from '@/components/ui/refresh-button/refresh-button';
 import { graphql } from '@/gql';
-import { OperationStatsFilterInput, ProjectType, SavedFilterVisibilityType } from '@/gql/graphql';
+import { OperationStatsFilterInput, SavedFilterVisibilityType } from '@/gql/graphql';
 import { useLayoutQuery, useSlugs } from '@/lib/hooks';
 import { useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { getRouteApi } from '@tanstack/react-router';
-
-// Stable while the schema document is pending, so the dimensions memo does not rebuild each render.
-const NO_SUBGRAPH_NAMES: readonly string[] = [];
 
 const insightsRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/insights',
@@ -49,7 +46,6 @@ export function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFi
     excludeOperations: state.excludeOperations ?? undefined,
     excludeClientVersionFilters: state.excludeClients ?? undefined,
     schemaCoordinates: state.fields?.length ? state.fields : undefined,
-    subgraphNames: state.subgraphs?.length ? state.subgraphs : undefined,
   };
 }
 
@@ -100,7 +96,6 @@ export const InsightsFilterPicker_Query = graphql(`
               excludeOperations
               excludeClientFilters
               schemaCoordinates
-              subgraphNames
             }
           }
         }
@@ -153,10 +148,9 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
       ),
     [schemaOptions?.latestValidSchemaVersion?.explorer?.types],
   );
-  const subgraphNames =
-    schemaOptions?.latestValidSchemaVersion?.explorer?.subgraphNames ?? NO_SUBGRAPH_NAMES;
-  const showSubgraphs = schemaOptions?.project?.type === ProjectType.Federation;
-  const schemaOptionsReady = !schemaOptionsQuery.fetching && !schemaOptionsQuery.error;
+  // A partial cache answer (stale) is not an answer: the field list would strike everything through.
+  const schemaOptionsReady =
+    !schemaOptionsQuery.fetching && !schemaOptionsQuery.stale && !schemaOptionsQuery.error;
 
   const operationFilterItems: FilterItem[] = useMemo(() => {
     const edges = pickerQuery.data?.target?.operationsStats?.operations?.edges ?? [];
@@ -209,7 +203,6 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
           excludeOperations: node.filters.excludeOperations ?? false,
           excludeClientFilters: node.filters.excludeClientFilters ?? false,
           schemaCoordinates: [...node.filters.schemaCoordinates],
-          subgraphNames: [...node.filters.subgraphNames],
         },
       };
 
@@ -261,9 +254,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     clientFilterItems,
     hashToNameMap,
     fieldCoordinates,
-    subgraphNames,
     schemaOptionsReady,
-    showSubgraphs,
   });
 
   const handleClearActiveView = useCallback(() => {
@@ -276,7 +267,6 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
         excludeOperations: undefined,
         excludeClients: undefined,
         fields: undefined,
-        subgraphs: undefined,
         from: presetLast7Days.range.from,
         to: presetLast7Days.range.to,
       }),
@@ -302,10 +292,9 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
       (search.operations && search.operations.length > 0) ||
       (search.clients && search.clients.length > 0) ||
       (search.fields && search.fields.length > 0) ||
-      (search.subgraphs && search.subgraphs.length > 0) ||
       (search.from !== undefined && search.from !== presetLast7Days.range.from) ||
       (search.to !== undefined && search.to !== presetLast7Days.range.to),
-    [search.operations, search.clients, search.fields, search.subgraphs, search.from, search.to],
+    [search.operations, search.clients, search.fields, search.from, search.to],
   );
 
   const filter = useMemo(() => buildGraphQLFilter(search), [search]);
@@ -357,7 +346,6 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
                     excludeOperations: search.excludeOperations ?? false,
                     excludeClientFilters: search.excludeClients ?? false,
                     schemaCoordinates: search.fields ?? [],
-                    subgraphNames: search.subgraphs ?? [],
                   }}
                   onSaved={viewId => {
                     void navigate({

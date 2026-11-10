@@ -17,21 +17,15 @@ describe('savedFilterToSearchParams', () => {
     expect(params.operations).toBeUndefined();
     expect(params.clients).toBeUndefined();
     expect(params.fields).toBeUndefined();
-    expect(params.subgraphs).toBeUndefined();
     expect(params.viewId).toBe('view-1');
   });
 
-  it('maps schema coordinates and subgraph names to the URL keys', () => {
+  it('maps schema coordinates to the fields URL key', () => {
     const params = savedFilterToSearchParams({
       ...base,
-      filters: {
-        ...base.filters,
-        schemaCoordinates: ['Query.me', 'User.name'],
-        subgraphNames: ['reviews'],
-      },
+      filters: { ...base.filters, schemaCoordinates: ['Query.me', 'User.name'] },
     });
     expect(params.fields).toEqual(['Query.me', 'User.name']);
-    expect(params.subgraphs).toEqual(['reviews']);
   });
 
   it('takes nullable exclude flags as the GraphQL result carries them', () => {

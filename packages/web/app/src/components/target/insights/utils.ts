@@ -7,7 +7,6 @@ export type CurrentFilters = {
   excludeOperations: boolean;
   excludeClientFilters: boolean;
   schemaCoordinates: string[];
-  subgraphNames: string[];
 };
 
 export function toInsightsFilterInput(currentFilters: CurrentFilters) {
@@ -24,7 +23,6 @@ export function toInsightsFilterInput(currentFilters: CurrentFilters) {
     excludeOperations: currentFilters.excludeOperations,
     excludeClientFilters: currentFilters.excludeClientFilters,
     schemaCoordinates: currentFilters.schemaCoordinates,
-    subgraphNames: currentFilters.subgraphNames,
   };
 }
 
@@ -43,7 +41,6 @@ function normalizeClients(arr: Array<{ name: string; versions: string[] | null }
 export function hasUnsavedChanges(activeView: SavedFilterView, currentFilters: CurrentFilters) {
   if (!sameSet(currentFilters.operations, activeView.filters.operationHashes)) return true;
   if (!sameSet(currentFilters.schemaCoordinates, activeView.filters.schemaCoordinates)) return true;
-  if (!sameSet(currentFilters.subgraphNames, activeView.filters.subgraphNames)) return true;
   if (
     normalizeClients(currentFilters.clients) !== normalizeClients(activeView.filters.clientFilters)
   )

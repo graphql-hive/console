@@ -92,7 +92,6 @@ export const TargetAlertsActivityPage_Query = graphql(`
               excludeOperations
               excludeClientFilters
               schemaCoordinates
-              subgraphNames
             }
           }
           createdBy {

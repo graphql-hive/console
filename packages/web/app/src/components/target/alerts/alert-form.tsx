@@ -87,7 +87,6 @@ export const AlertForm_SavedFiltersQuery = graphql(`
               excludeOperations
               excludeClientFilters
               schemaCoordinates
-              subgraphNames
             }
           }
         }
@@ -178,7 +177,6 @@ export const AlertForm_UpdateMetricAlertRuleMutation = graphql(`
               excludeOperations
               excludeClientFilters
               schemaCoordinates
-              subgraphNames
             }
           }
           createdAt

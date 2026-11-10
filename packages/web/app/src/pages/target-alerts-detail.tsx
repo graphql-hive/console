@@ -84,7 +84,6 @@ export const TargetAlertsDetailPage_RuleConfigQuery = graphql(`
             excludeOperations
             excludeClientFilters
             schemaCoordinates
-            subgraphNames
           }
         }
         createdAt

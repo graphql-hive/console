@@ -8,12 +8,11 @@ const current: CurrentFilters = {
   excludeOperations: false,
   excludeClientFilters: false,
   schemaCoordinates: ['User.name', 'Query.me'],
-  subgraphNames: ['reviews'],
 };
 
 const view: SavedFilterView = {
   id: 'view-1',
-  name: 'Reviews',
+  name: 'Viewer fields',
   viewerCanUpdate: true,
   filters: {
     operationHashes: ['h2', 'h1'],
@@ -22,16 +21,14 @@ const view: SavedFilterView = {
     excludeOperations: false,
     excludeClientFilters: false,
     schemaCoordinates: ['Query.me', 'User.name'],
-    subgraphNames: ['reviews'],
   },
 };
 
 describe('toInsightsFilterInput', () => {
-  it('carries schema coordinates and subgraph names into the mutation input', () => {
+  it('carries schema coordinates into the mutation input', () => {
     expect(toInsightsFilterInput(current)).toMatchObject({
       operationHashes: ['h1', 'h2'],
       schemaCoordinates: ['User.name', 'Query.me'],
-      subgraphNames: ['reviews'],
     });
   });
 });
@@ -43,9 +40,5 @@ describe('hasUnsavedChanges', () => {
 
   it('sees a changed field selection', () => {
     expect(hasUnsavedChanges(view, { ...current, schemaCoordinates: ['Query.me'] })).toBe(true);
-  });
-
-  it('sees a changed subgraph selection', () => {
-    expect(hasUnsavedChanges(view, { ...current, subgraphNames: [] })).toBe(true);
   });
 });
