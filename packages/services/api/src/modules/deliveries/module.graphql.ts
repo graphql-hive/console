@@ -134,6 +134,21 @@ export default gql`
     lastFailureAt: DateTime
   }
 
+  """
+  Which kinds of email the viewer may see among those Hive sends for the organization.
+  """
+  type EmailDeliveryVisibility {
+    """
+    The kinds the viewer may see (as emailDeliveryStats describes them), in the order Hive lists
+    them. Empty when the viewer may see none.
+    """
+    events: [DeliveryEvent!]!
+    """
+    Whether a kind Hive sends is missing from events because the viewer may not see it.
+    """
+    isLimited: Boolean!
+  }
+
   extend type OrganizationInvitation {
     """
     The most recent attempt to email this invitation; null before one is recorded or when the
@@ -144,9 +159,11 @@ export default gql`
 
   extend type Organization {
     """
-    Attempts to email the organization's members and invitees in the period: invitations,
-    ownership transfers, audit log exports and usage rate limit notices. Requires member:modify.
-    Null when the delivery history could not be read.
+    Attempts to email the organization's members and invitees in the period, limited to the kinds
+    the viewer may see: invitations with member:modify, audit log exports with auditLog:export,
+    usage rate limit notices with billing:describe, and ownership transfers as the organization
+    owner. Errors when the viewer may see none of them. Null when the delivery history could not
+    be read.
     """
     emailDeliveryStats(
       """
@@ -155,15 +172,25 @@ export default gql`
       period: DateRangeInput!
     ): DeliveryStats
     """
-    When an email to any recipient last succeeded and last failed. Requires member:modify. Null
-    when the delivery history could not be read.
+    When an email to any recipient last succeeded and last failed, among the kinds of email the
+    viewer may see (as emailDeliveryStats describes them). Errors when the viewer may see none of
+    them. Null when the delivery history could not be read.
     """
     emailDeliveryHealth: EmailDeliveryHealth
     """
-    The most recent email attempts within the period, newest first. limit defaults to 50, at most
-    200. Requires member:modify. Null when the delivery history could not be read.
+    The most recent attempts within the period, newest first, of the kinds of email the viewer may
+    see (as emailDeliveryStats describes them). limit defaults to 50, at most 200. Errors when the
+    viewer may see none of them. Null when the delivery history could not be read.
     """
     emailDeliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
+    """
+    Whether the viewer may see at least one kind of email delivery.
+    """
     viewerCanSeeEmailDeliveries: Boolean!
+    """
+    Which kinds of email the viewer may see on emailDeliveryStats, emailDeliveryHealth and
+    emailDeliveryLog. Never errors.
+    """
+    viewerEmailDeliveryVisibility: EmailDeliveryVisibility!
   }
 `;

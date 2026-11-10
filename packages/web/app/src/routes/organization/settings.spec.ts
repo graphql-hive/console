@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { PersonalAccessTokensTable_MoreAccessTokensQuery } from '@/components/organization/settings/personal-access-tokens/personal-access-tokens-table';
+import { DeliveryEvent } from '@/gql/graphql';
 import { layoutFixtures, organizationLayout, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { organizationSettings } from '@/lib/testing/fixtures/organization-settings';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory } from '@tanstack/react-router';
-import { waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -51,6 +52,33 @@ function expectRevalidating(client: TestClient, name: string) {
   const policies = client.requests(name).map(o => o.context.requestPolicy);
   expect(policies).toHaveLength(1);
   expect(['cache-and-network', 'network-only']).toContain(policies[0]);
+}
+
+const EVERY_EMAIL_KIND = [
+  DeliveryEvent.OrganizationInvitation,
+  DeliveryEvent.OrganizationOwnershipTransfer,
+  DeliveryEvent.AuditLogExport,
+  DeliveryEvent.UsageRateLimitWarning,
+  DeliveryEvent.UsageRateLimitExceeded,
+];
+
+function emailDeliveriesPage(
+  visibility: { events: DeliveryEvent[]; isLimited: boolean } = {
+    events: EVERY_EMAIL_KIND,
+    isLimited: false,
+  },
+) {
+  return {
+    __typename: 'Query',
+    organization: {
+      __typename: 'Organization',
+      id: 'organization-1',
+      viewerEmailDeliveryVisibility: { __typename: 'EmailDeliveryVisibility', ...visibility },
+      emailDeliveryStats: null,
+      emailDeliveryHealth: null,
+      emailDeliveryLog: null,
+    },
+  };
 }
 
 const SECTIONS = [
@@ -128,16 +156,7 @@ describe('organization settings loaders', () => {
       vi.setSystemTime(new Date('2026-09-28T15:30:00.000Z'));
       const client = createTestClient(layoutFixtures());
       client.fixtures.set(PAGE, organizationSettings());
-      client.fixtures.set('EmailDeliveriesSubPage_Query', {
-        __typename: 'Query',
-        organization: {
-          __typename: 'Organization',
-          id: 'organization-1',
-          emailDeliveryStats: null,
-          emailDeliveryHealth: null,
-          emailDeliveryLog: null,
-        },
-      });
+      client.fixtures.set('EmailDeliveriesSubPage_Query', emailDeliveriesPage());
       renderAtUrl(`${SETTINGS}/emails`, { client });
       const polls = () => client.requests('EmailDeliveriesSubPage_Query');
       // The mount settles at two: the synchronous fixture answers the cache-and-network miss during
@@ -153,6 +172,37 @@ describe('organization settings loaders', () => {
       expect(new Set(polls().map(o => JSON.stringify(o.variables))).size).toBe(1);
     },
   );
+
+  it(
+    'names the kinds of email a viewer with a limited view is shown',
+    { timeout: 30_000 },
+    async () => {
+      const client = createTestClient(layoutFixtures());
+      client.fixtures.set(PAGE, organizationSettings());
+      client.fixtures.set(
+        'EmailDeliveriesSubPage_Query',
+        emailDeliveriesPage({
+          events: [DeliveryEvent.OrganizationInvitation, DeliveryEvent.AuditLogExport],
+          isLimited: true,
+        }),
+      );
+      renderAtUrl(`${SETTINGS}/emails`, { client });
+
+      await screen.findByText(
+        /Showing only the kinds of email you have access to: invitations, audit log exports\./,
+      );
+    },
+  );
+
+  it('does not name the kinds for a viewer who sees every kind', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    client.fixtures.set(PAGE, organizationSettings());
+    client.fixtures.set('EmailDeliveriesSubPage_Query', emailDeliveriesPage());
+    renderAtUrl(`${SETTINGS}/emails`, { client });
+
+    await screen.findByText(/Details for emails Hive sent for this organization/);
+    expect(screen.queryByText(/Showing only/)).toBeNull();
+  });
 
   it('sends a viewer who may not open General to Policy', { timeout: 30_000 }, async () => {
     const { router } = await loadedAt(

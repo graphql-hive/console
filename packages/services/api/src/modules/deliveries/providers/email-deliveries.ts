@@ -1,12 +1,16 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { DateRange, OrganizationInvitation } from '../../../shared/entities';
+import { AccessError } from '../../../shared/errors';
 import { batchBy } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import { Logger } from '../../shared/providers/logger';
+import { Storage } from '../../shared/providers/storage';
 import {
   DeliveryReader,
+  EMAIL_DELIVERY_EVENT_NAMES,
   type Delivery,
   type DeliverySelector,
+  type EmailDeliveryEventName,
   type LastOutcomes,
 } from './delivery-reader';
 
@@ -25,41 +29,72 @@ export function invitationDeliveryKey(
   return `organization-invitation:${invitation.createdAt}:${invitation.email}`;
 }
 
-/** Reads an organization's email deliveries: its page of them, and the ones behind its invitations. */
+type EventGate = 'member:modify' | 'auditLog:export' | 'billing:describe' | 'owner';
+
+/**
+ * What lets a viewer see each kind of email: the permission of the feature that sends it, or
+ * owning the organization for the transfers only the owner can request.
+ */
+const EVENT_GATE = {
+  ORGANIZATION_INVITATION: 'member:modify',
+  ORGANIZATION_OWNERSHIP_TRANSFER: 'owner',
+  AUDIT_LOG_EXPORT: 'auditLog:export',
+  USAGE_RATE_LIMIT_WARNING: 'billing:describe',
+  USAGE_RATE_LIMIT_EXCEEDED: 'billing:describe',
+} satisfies Record<EmailDeliveryEventName, EventGate>;
+
+/**
+ * Reads an organization's email deliveries: the kinds the viewer may see, and the ones behind
+ * its invitations.
+ */
 @Injectable({ scope: Scope.Operation })
 export class EmailDeliveries {
   private logger: Logger;
+  /** Per organization, decided once per request: the fields of one query share it. */
+  private visibleEventsCache = new Map<string, Promise<EmailDeliveryEventName[]>>();
 
   constructor(
     private reader: DeliveryReader,
     private session: Session,
+    private storage: Storage,
     logger: Logger,
   ) {
     this.logger = logger.child({ source: 'EmailDeliveries' });
   }
 
-  /** Reading an organization's email deliveries takes member:modify, like its invitations. */
-  async assertCanRead(organizationId: string): Promise<void> {
+  /**
+   * The organization's email deliveries this viewer may read: the kinds whose feature they may
+   * manage. Throws when there is no such kind.
+   */
+  async readableSelector(organizationId: string): Promise<DeliverySelector> {
     this.logger.debug('Fetching email deliveries (organization=%s)', organizationId);
-    await this.session.assertPerformAction({
-      action: 'member:modify',
-      organizationId,
-      params: { organizationId },
-    });
+    const events = await this.visibleEvents(organizationId);
+    if (events.length === 0) {
+      throw new AccessError(
+        `Insufficient permissions. Either 'member:modify', 'auditLog:export' or 'billing:describe', or organization ownership, is required to read email deliveries.`,
+      );
+    }
+    return { ...emailDeliverySelector(organizationId), events };
   }
 
-  canRead(organizationId: string): Promise<boolean> {
-    return this.session.canPerformAction({
-      action: 'member:modify',
-      organizationId,
-      params: { organizationId },
-    });
+  /** Whether the viewer may see at least one kind of email. */
+  async canRead(organizationId: string): Promise<boolean> {
+    const events = await this.visibleEvents(organizationId);
+    return events.length > 0;
+  }
+
+  /** The kinds of email the viewer may see, and whether any kind is kept from them. */
+  async getVisibility(
+    organizationId: string,
+  ): Promise<{ events: EmailDeliveryEventName[]; isLimited: boolean }> {
+    const events = await this.visibleEvents(organizationId);
+    return { events, isLimited: events.length < EMAIL_DELIVERY_EVENT_NAMES.length };
   }
 
   /** Only the timestamps hold across recipients; the status and streak describe one destination. */
   async getHealth(organizationId: string): Promise<LastOutcomes> {
-    await this.assertCanRead(organizationId);
-    return this.reader.getLastOutcomes(emailDeliverySelector(organizationId));
+    const selector = await this.readableSelector(organizationId);
+    return this.reader.getLastOutcomes(selector);
   }
 
   async getLog(input: {
@@ -67,11 +102,40 @@ export class EmailDeliveries {
     period: DateRange;
     limit?: number;
   }): Promise<Delivery[]> {
-    await this.assertCanRead(input.organizationId);
-    return this.reader.getLog({
-      ...emailDeliverySelector(input.organizationId),
-      period: input.period,
-      limit: input.limit,
+    const selector = await this.readableSelector(input.organizationId);
+    return this.reader.getLog({ ...selector, period: input.period, limit: input.limit });
+  }
+
+  /** The kinds of email the viewer may see, in the order of EMAIL_DELIVERY_EVENT_NAMES. */
+  private visibleEvents(organizationId: string): Promise<EmailDeliveryEventName[]> {
+    let events = this.visibleEventsCache.get(organizationId);
+    if (!events) {
+      events = this.decideVisibleEvents(organizationId);
+      this.visibleEventsCache.set(organizationId, events);
+    }
+    return events;
+  }
+
+  private async decideVisibleEvents(organizationId: string): Promise<EmailDeliveryEventName[]> {
+    const gates = [...new Set(Object.values(EVENT_GATE))];
+    const passed = await Promise.all(gates.map(gate => this.passes(gate, organizationId)));
+    const open = new Set(gates.filter((_, index) => passed[index]));
+    return EMAIL_DELIVERY_EVENT_NAMES.filter(event => open.has(EVENT_GATE[event]));
+  }
+
+  private async passes(gate: EventGate, organizationId: string): Promise<boolean> {
+    if (gate === 'owner') {
+      const actor = await this.session.getActor();
+      if (actor.type !== 'user') {
+        return false;
+      }
+      const ownerId = await this.storage.getOrganizationOwnerId({ organizationId });
+      return actor.user.id === ownerId;
+    }
+    return this.session.canPerformAction({
+      action: gate,
+      organizationId,
+      params: { organizationId },
     });
   }
 
@@ -112,6 +176,6 @@ export class EmailDeliveries {
 }
 
 /** Every email delivery of the organization: the key prefix the reader needs. */
-export function emailDeliverySelector(organizationId: string): DeliverySelector {
+function emailDeliverySelector(organizationId: string): DeliverySelector {
   return { organizationId, deliveryType: 'EMAIL' };
 }
