@@ -112,7 +112,7 @@ export function EmailDeliveriesSubPage() {
       organization.emailDeliveryLog === null);
   const visibility = organization?.viewerEmailDeliveryVisibility;
   const shownKinds = visibility?.isLimited
-    ? ` Showing only the kinds of email you have permission to manage: ${describeKinds(visibility.events)}.`
+    ? ` Showing only the kinds of email you have access to: ${describeKinds(visibility.events)}.`
     : '';
 
   return (

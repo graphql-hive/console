@@ -189,7 +189,7 @@ describe('organization settings loaders', () => {
       renderAtUrl(`${SETTINGS}/emails`, { client });
 
       await screen.findByText(
-        /Showing only the kinds of email you have permission to manage: invitations, audit log exports\./,
+        /Showing only the kinds of email you have access to: invitations, audit log exports\./,
       );
     },
   );
