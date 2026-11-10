@@ -349,7 +349,7 @@ export class DeliveryReader {
         LIMIT 1 BY "idempotency_key"
       `,
       queryId: 'latest_deliveries_by_key',
-      timeout: 10_000,
+      timeout: 5_000,
     });
 
     return new Map(
