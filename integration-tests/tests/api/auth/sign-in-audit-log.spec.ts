@@ -274,3 +274,40 @@ test.concurrent(
     expect(await getSignInAuditLogs(orgA.organization.id, 'USER_SIGNED_IN')).toHaveLength(0);
   },
 );
+
+test.concurrent(
+  'failed email/password sign in attempts with a malformed email are not recorded',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const domain = humanId({ separator: '', capitalize: false }) + '.local';
+    const owner = await seed.createOwner();
+    const org = await owner.createOrg();
+    const oidcIntegration = await org.createOIDCIntegration();
+    await oidcIntegration.registerFakeDomain(domain);
+
+    // the sign in body is not validated as an email address, so these reach the audit log path
+    for (const email of ['foo', 'foo@', 'does-not-exist@' + domain + '@other.local']) {
+      expect(await signIn(email, password)).toMatchObject({
+        status: 'WRONG_CREDENTIALS_ERROR',
+      });
+    }
+    // a well-formed attempt, so we know when the attempts above have been processed
+    const email = 'does-not-exist@' + domain;
+    expect(await signIn(email, password)).toMatchObject({
+      status: 'WRONG_CREDENTIALS_ERROR',
+    });
+
+    await waitForExpectations(async () => {
+      const logs = await getSignInAuditLogs(org.organization.id, 'USER_SIGN_IN_FAILED');
+      // the malformed email addresses must not be attributed to the verified domain owner
+      expect(logs).toHaveLength(1);
+      expect(logs[0]).toMatchObject({
+        metadata: {
+          method: 'emailpassword',
+          reason: 'UNKNOWN_USER',
+          email,
+        },
+      });
+    });
+  },
+);

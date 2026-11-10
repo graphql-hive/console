@@ -110,9 +110,13 @@ export async function registerSupertokensAtHome(
       return [];
     }
 
-    const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(
-      getEmailDomain(args.email),
-    );
+    const emailDomain = getEmailDomain(args.email);
+
+    if (!emailDomain) {
+      return [];
+    }
+
+    const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
 
     return verifiedDomain ? [verifiedDomain.organizationId] : [];
   }
@@ -296,7 +300,10 @@ export async function registerSupertokensAtHome(
     email: string,
     user: EmailPasswordOrThirdPartyUser | null,
   ) {
-    const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(getEmailDomain(email));
+    const emailDomain = getEmailDomain(email);
+    const verifiedDomain = emailDomain
+      ? await oidcIntegrations.findVerifiedDomainByName(emailDomain)
+      : null;
 
     if (!verifiedDomain) {
       return {
@@ -1932,7 +1939,10 @@ export async function registerSupertokensAtHome(
 
         // Check whether the email is allowed to sign-up via this idetity provider
         const emailDomain = getEmailDomain(email.data);
-        const verifiedDomain = await oidcIntegrations.findVerifiedDomainByName(emailDomain);
+        const verifiedDomain = emailDomain
+          ? await oidcIntegrations.findVerifiedDomainByName(emailDomain)
+          : null;
+
         if (verifiedDomain && verifiedDomain.oidcIntegrationId !== oidcIntegration.id) {
           const enforcingOIDCIntegration = await storage.getOIDCIntegrationById({
             oidcIntegrationId: verifiedDomain.oidcIntegrationId,
@@ -2319,7 +2329,15 @@ function parseJSONSafe(input: string):
   }
 }
 
-function getEmailDomain(email: string) {
-  const [, emailDomain] = email.split('@');
-  return emailDomain;
+/**
+ * Get the domain part of an email address.
+ * Returns `null` for input that is not shaped like an email address (e.g. `foo`, `foo@` or `a@b@c`),
+ * as callers might receive unvalidated user input.
+ */
+function getEmailDomain(email: string): string | null {
+  const parts = email.split('@');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return null;
+  }
+  return parts[1];
 }
