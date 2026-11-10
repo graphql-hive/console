@@ -18,8 +18,10 @@ import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { SavedFiltersStorage } from './saved-filters-storage';
 
-// Usage reports coordinates as `Type.field`, `Type.field.arg` or `Enum.VALUE`; a bare type name
-// never appears in the coordinates tables, so it is rejected rather than silently matching nothing.
+// Hive's usage keys, as the collector in @graphql-hive/core spells them: `Type.field`,
+// `Enum.VALUE` and `Type.field.arg` for an argument (the spec's `Type.field(arg:)` is not what
+// the coordinate tables hold). A bare type name is rejected: the picker offers fields, and the
+// only bare names usage records are scalars and field-less input types.
 const schemaCoordinatePattern = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*){1,2}$/;
 
 const uniqueStrings = (values: string[] | null | undefined) =>
