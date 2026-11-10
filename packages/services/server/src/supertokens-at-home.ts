@@ -1665,6 +1665,9 @@ export async function registerSupertokensAtHome(
 
         supertokensUser = user;
         hiveUser = ensureUserExists.user;
+        // `providerVerifiedEmail` is intentionally left `null`: the Okta users API does not report
+        // whether the email address is verified, so the sign in is recorded without an actor.
+        // We plan to remove Okta login support in the future, so this is not worth further effort.
       } else if (parsedBody.data.thirdPartyId === 'oidc') {
         req.log.debug('perform oidc signinup flow');
         // for backwards-compatibility purposes we support the case where the frontend modifies the state to append the oidc id
