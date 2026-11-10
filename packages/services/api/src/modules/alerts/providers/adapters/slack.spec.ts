@@ -96,6 +96,7 @@ describe('SlackCommunicationAdapter', () => {
         deliveryType: 'SLACK',
         destination: 'channel-id',
         event: 'channel_confirmation',
+        idempotencyKey: 'channel-confirmation:created:channel-id',
         ok: true,
         statusCode: null,
         statusText: 'ok',

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { z } from 'zod';
-import { FastifyRequest } from '@hive/service-common';
+import { FastifyRequest, getRequestId } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
 import { OrganizationInvitationTask } from '@hive/workflows/tasks/organization-invitation';
 import { OrganizationOwnershipTransferTask } from '@hive/workflows/tasks/organization-ownership-transfer';
@@ -11,6 +11,7 @@ import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder'
 import { Session } from '../../auth/lib/authz';
 import { AuthManager } from '../../auth/providers/auth-manager';
 import { BillingProvider } from '../../commerce/providers/billing.provider';
+import { invitationDeliveryKey } from '../../deliveries/providers/email-deliveries';
 import { OIDCIntegrationsProvider } from '../../oidc-integrations/providers/oidc-integrations.provider';
 import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
@@ -674,13 +675,18 @@ export class OrganizationManager {
         step: 'invitingMembers',
       }),
       // schedule an email
-      this.taskScheduler.scheduleTask(OrganizationInvitationTask, {
-        organizationId: invitation.organizationId,
-        organizationName: organization.name,
-        email,
-        code: invitation.code,
-        link: `${this.appBaseUrl}/join/${invitation.code}`,
-      }),
+      this.taskScheduler.scheduleTask(
+        OrganizationInvitationTask,
+        {
+          organizationId: invitation.organizationId,
+          organizationName: organization.name,
+          email,
+          code: invitation.code,
+          link: `${this.appBaseUrl}/join/${invitation.code}`,
+          idempotencyKey: invitationDeliveryKey(invitation),
+        },
+        { requestId: getRequestId() },
+      ),
     ]);
 
     await this.auditLog.record({
@@ -806,13 +812,17 @@ export class OrganizationManager {
       userId: member.user.id,
     });
 
-    await this.taskScheduler.scheduleTask(OrganizationOwnershipTransferTask, {
-      email: member.user.email,
-      organizationId: organization.id,
-      organizationName: organization.name,
-      authorName: currentUser.displayName,
-      link: `${this.appBaseUrl}/action/transfer/${organization.slug}/${code}`,
-    });
+    await this.taskScheduler.scheduleTask(
+      OrganizationOwnershipTransferTask,
+      {
+        email: member.user.email,
+        organizationId: organization.id,
+        organizationName: organization.name,
+        authorName: currentUser.displayName,
+        link: `${this.appBaseUrl}/action/transfer/${organization.slug}/${code}`,
+      },
+      { requestId: getRequestId() },
+    );
 
     await this.auditLog.record({
       eventType: 'ORGANIZATION_TRANSFERRED_REQUEST',

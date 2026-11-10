@@ -11,6 +11,7 @@ const meta = {
   deliveryType: 'WEBHOOK' as const,
   destination: 'c1',
   event: 'schema_change' as const,
+  idempotencyKey: 'schema-change:v1:c1',
   attempt: 2,
   maxAttempts: 25,
   metadata: { 'Hive-Request-ID': 'r1' },

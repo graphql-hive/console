@@ -120,12 +120,13 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
         url: `${this.appBaseUrl}/${input.event.organization.slug}/${input.event.project.slug}/${input.event.target.slug}/history/${input.event.schema.id}`,
       });
 
+      const idempotencyKey = `schema-change:${input.event.schema.id}:${input.channel.id}`;
       const metadata = buildHiveSlackMetadata(
         this.deliveries.describe({
           event: 'schema_change',
           targetId: input.event.target.id,
           schemaId: input.event.schema.id,
-          idempotencyKey: `schema-change:${input.event.schema.id}:${input.channel.id}`,
+          idempotencyKey,
         }),
       );
       const message: ChatPostMessageArguments = input.event.initial
@@ -156,6 +157,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
           deliveryType: 'SLACK',
           destination: input.channel.id,
           event: 'schema_change',
+          idempotencyKey,
           metadata: flattenSlackMetadata(metadata),
         },
         async () => ({ outcome: SLACK_OK, value: await client.chat.postMessage(message) }),
@@ -196,10 +198,11 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
       });
 
       const client = new WebClient(token, SLACK_CLIENT_OPTIONS);
+      const idempotencyKey = `channel-confirmation:${input.event.kind}:${input.channel.id}`;
       const metadata = buildHiveSlackMetadata(
         this.deliveries.describe({
           event: 'channel_confirmation',
-          idempotencyKey: `channel-confirmation:${input.event.kind}:${input.channel.id}`,
+          idempotencyKey,
         }),
       );
 
@@ -209,6 +212,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
           deliveryType: 'SLACK',
           destination: input.channel.id,
           event: 'channel_confirmation',
+          idempotencyKey,
           metadata: flattenSlackMetadata(metadata),
         },
         async () => ({

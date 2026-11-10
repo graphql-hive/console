@@ -35,6 +35,7 @@ const meta = {
   deliveryType: 'DISCORD' as const,
   destination: 'c1',
   event: 'schema_change' as const,
+  idempotencyKey: 'schema-change:v1:c1',
   metadata: { 'Hive-Request-ID': 'r1' },
 };
 
@@ -136,6 +137,7 @@ describe('DeliveryRecorder', () => {
           'DISCORD',
           'c1',
           'schema_change',
+          'schema-change:v1:c1',
           1,
           1,
           0,

@@ -127,6 +127,7 @@ function deliveryMeta(args: {
   event: NotificationEvent;
   attempt: number;
   maxAttempts: number;
+  idempotencyKey: string;
   metadata: Record<string, string>;
 }): DeliveryMeta {
   return {
@@ -134,6 +135,7 @@ function deliveryMeta(args: {
     deliveryType: args.channel.type,
     destination: args.channel.id,
     event: 'metric_alert',
+    idempotencyKey: args.idempotencyKey,
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     metadata: args.metadata,
@@ -280,6 +282,7 @@ export async function sendSlackNotification(args: {
       event,
       attempt: args.attempt,
       maxAttempts: args.maxAttempts,
+      idempotencyKey: args.idempotencyKey,
       metadata: flattenSlackMetadata(metadata),
     }),
     async () => ({
@@ -355,6 +358,7 @@ export async function sendWebhookNotification(args: {
         event,
         attempt: args.attempt,
         maxAttempts: args.maxAttempts,
+        idempotencyKey: args.idempotencyKey,
         metadata: headers,
       }),
     },
@@ -426,6 +430,7 @@ export async function sendTeamsNotification(args: {
         event,
         attempt: args.attempt,
         maxAttempts: args.maxAttempts,
+        idempotencyKey: args.idempotencyKey,
         metadata: headers,
       }),
     },
@@ -533,6 +538,7 @@ export async function sendDiscordNotification(args: {
         event,
         attempt: args.attempt,
         maxAttempts: args.maxAttempts,
+        idempotencyKey: args.idempotencyKey,
         metadata: headers,
       }),
     },

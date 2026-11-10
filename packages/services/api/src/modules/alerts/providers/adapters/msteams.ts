@@ -71,12 +71,13 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
         ? ''
         : createAttachmentsText(input.event.changes, input.event.messages);
 
+      const idempotencyKey = `schema-change:${input.event.schema.id}:${input.channel.id}`;
       const headers = buildHiveWebhookHeaders(
         this.deliveries.describe({
           event: 'schema_change',
           targetId: input.event.target.id,
           schemaId: input.event.schema.id,
-          idempotencyKey: `schema-change:${input.event.schema.id}:${input.channel.id}`,
+          idempotencyKey,
         }),
       );
 
@@ -86,6 +87,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
           deliveryType: 'MSTEAMS_WEBHOOK',
           destination: input.channel.id,
           event: 'schema_change',
+          idempotencyKey,
           metadata: headers,
         },
         async () => ({
@@ -143,10 +145,11 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
         `${actionMessage} about your ${projectLink} project.`,
       ].join('\n');
 
+      const idempotencyKey = `channel-confirmation:${input.event.kind}:${input.channel.id}`;
       const headers = buildHiveWebhookHeaders(
         this.deliveries.describe({
           event: 'channel_confirmation',
-          idempotencyKey: `channel-confirmation:${input.event.kind}:${input.channel.id}`,
+          idempotencyKey,
         }),
       );
 
@@ -156,6 +159,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
           deliveryType: 'MSTEAMS_WEBHOOK',
           destination: input.channel.id,
           event: 'channel_confirmation',
+          idempotencyKey,
           metadata: headers,
         },
         async () => ({

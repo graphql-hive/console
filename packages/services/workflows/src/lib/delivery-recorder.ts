@@ -35,21 +35,35 @@ export function deliveryOutcome(statusCode: number | null, statusText: string): 
 /** Slack's API answered `ok: true`; the SDK exposes no HTTP status on success. */
 export const SLACK_OK: DeliveryOutcome = { statusCode: null, statusText: 'ok' };
 
-/** The kind of destination a delivery went to. */
-export type DeliveryType = 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD';
-export type DeliveryEvent = AlertChannelDeliveryEvent;
+/** The kind of destination a delivery went to: an alert channel type, or email. */
+export type DeliveryType = 'SLACK' | 'WEBHOOK' | 'MSTEAMS_WEBHOOK' | 'DISCORD' | 'EMAIL';
+export type EmailDeliveryEvent =
+  | 'organization_invitation'
+  | 'organization_ownership_transfer'
+  | 'audit_log_export'
+  | 'usage_rate_limit_warning'
+  | 'usage_rate_limit_exceeded';
+export type DeliveryEvent = AlertChannelDeliveryEvent | EmailDeliveryEvent;
 
 export interface DeliveryMeta {
   organizationId: string;
   deliveryType: DeliveryType;
-  /** Where it went: the alert channel id. */
+  /** Where it went: the alert channel id, or the recipient address. */
   destination: string;
   event: DeliveryEvent;
+  /**
+   * Identifies the notification across its attempts: the Idempotency-Key sent to the channel, or
+   * the key the API assigned to the email. Null for an email that has none.
+   */
+  idempotencyKey: string | null;
   /** graphile-worker attempt number of the job making the call. */
   attempt: number;
   /** The retry budget of that job. */
   maxAttempts: number;
-  /** Exactly what was sent to identify the call: the request headers, or the Slack metadata flattened. */
+  /**
+   * Exactly what was sent to identify the call: the request headers, the Slack metadata
+   * flattened, or the email's subject and the ids that locate it.
+   */
   metadata: Record<string, string>;
 }
 
@@ -85,6 +99,7 @@ export function createDeliveryRecorder(
             , "delivery_type"
             , "destination"
             , "event"
+            , "idempotency_key"
             , "attempt"
             , "max_attempts"
             , "ok"
@@ -99,6 +114,7 @@ export function createDeliveryRecorder(
             , ${attempt.deliveryType}
             , ${attempt.destination}
             , ${attempt.event}
+            , ${attempt.idempotencyKey ?? ''}
             , toUInt8(${String(Math.min(255, Math.max(1, attempt.attempt)))})
             , toUInt8(${String(Math.min(255, Math.max(1, attempt.maxAttempts)))})
             , toUInt8(${attempt.ok ? '1' : '0'})
@@ -126,18 +142,25 @@ export function createDeliveryRecorder(
 /**
  * Runs `send`, records exactly one attempt for it (success or failure) and rethrows its error.
  * A failure is recorded as `describeError` reads it, or masked when it does not recognise it;
- * the rethrown error reaches graphile-worker, which logs its message and stack.
+ * the rethrown error reaches graphile-worker, which logs its message and stack. `metadata`
+ * learned from the answer (the vendor's message id) is recorded with what was sent.
  */
 export async function trackDelivery<T>(
   recorder: DeliveryRecorder,
   meta: DeliveryMeta,
-  send: () => Promise<{ outcome: DeliveryOutcome; value: T }>,
+  send: () => Promise<{ outcome: DeliveryOutcome; value: T; metadata?: Record<string, string> }>,
   describeError: DescribeDeliveryError,
 ): Promise<T> {
   const startedAt = Date.now();
   try {
-    const { outcome, value } = await send();
-    await recorder.record({ ...meta, ...outcome, ok: true, durationMs: Date.now() - startedAt });
+    const { outcome, value, metadata } = await send();
+    await recorder.record({
+      ...meta,
+      ...outcome,
+      metadata: metadata ? { ...meta.metadata, ...metadata } : meta.metadata,
+      ok: true,
+      durationMs: Date.now() - startedAt,
+    });
     return value;
   } catch (error) {
     const failure = describeError(error) ?? deliveryOutcome(null, UNEXPECTED_ERROR);

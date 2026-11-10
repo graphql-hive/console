@@ -29,6 +29,12 @@ const EVENT_LABEL: Record<DeliveryEvent, string> = {
   [DeliveryEvent.SchemaChange]: 'Schema change',
   [DeliveryEvent.MetricAlert]: 'Metric alert',
   [DeliveryEvent.ChannelConfirmation]: 'Channel confirmation',
+  // Email events: never delivered to an alert channel, listed to cover the enum.
+  [DeliveryEvent.OrganizationInvitation]: 'Invitation',
+  [DeliveryEvent.OrganizationOwnershipTransfer]: 'Ownership transfer',
+  [DeliveryEvent.AuditLogExport]: 'Audit log export',
+  [DeliveryEvent.UsageRateLimitWarning]: 'Usage limit warning',
+  [DeliveryEvent.UsageRateLimitExceeded]: 'Usage limit exceeded',
 };
 
 /** A header's value, by its webhook name or its Slack metadata form (`Hive-Target-ID` / `hive_target_id`). */
