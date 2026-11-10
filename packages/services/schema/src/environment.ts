@@ -1,5 +1,6 @@
 import zod from 'zod';
 import {
+  extractConfig,
   OpenTelemetryConfigurationModel,
   parseRedisConfigFromEnvironment,
   resolveServerListenOptions,
@@ -121,7 +122,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+    environmentErrors.push(zod.prettifyError(config.error));
   }
 }
 
@@ -138,13 +139,6 @@ if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
   process.exit(1);
-}
-
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
-  if (!config.success) {
-    throw new Error('Something went wrong.');
-  }
-  return config.data;
 }
 
 const base = extractConfig(configs.base);
@@ -186,7 +180,7 @@ export const env = {
           labels: {
             instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'schema',
           },
-          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
+          port: prometheus.PROMETHEUS_METRICS_PORT,
         }
       : null,
   timings: {

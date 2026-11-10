@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { Tabs } from '@/components/ui/primitives/tabs/tabs';
@@ -231,9 +232,9 @@ function OIDCMetadataFetcher(props: {
           description: (
             <>
               {[
-                metadataResult.error.formErrors.fieldErrors.authorization_endpoint?.[0],
-                metadataResult.error.formErrors.fieldErrors.token_endpoint?.[0],
-                metadataResult.error.formErrors.fieldErrors.userinfo_endpoint?.[0],
+                z.flattenError(metadataResult.error).fieldErrors.authorization_endpoint?.[0],
+                z.flattenError(metadataResult.error).fieldErrors.token_endpoint?.[0],
+                z.flattenError(metadataResult.error).fieldErrors.userinfo_endpoint?.[0],
               ]
                 .filter(Boolean)
                 .map((msg, i) => (

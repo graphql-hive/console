@@ -15,6 +15,19 @@ import { AlertChannelType } from '@/gql/graphql';
 /** The dialog footer's submit button lives outside the form and targets it by this id. */
 export const CHANNEL_FORM_ID = 'create-channel-form';
 
+/** How each channel type is named in the UI. */
+export const CHANNEL_TYPE_LABEL: Record<AlertChannelType, string> = {
+  [AlertChannelType.Slack]: 'Slack',
+  [AlertChannelType.Webhook]: 'Webhook',
+  [AlertChannelType.MsteamsWebhook]: 'MS Teams Webhook',
+  [AlertChannelType.Discord]: 'Discord Webhook',
+};
+
+const CHANNEL_TYPE_OPTIONS = Object.entries(CHANNEL_TYPE_LABEL).map(([value, label]) => ({
+  value,
+  label,
+}));
+
 export function isWebhookLike(type: AlertChannelType | '') {
   return (
     type === AlertChannelType.Webhook ||
@@ -38,7 +51,7 @@ const WEBHOOK_SETUP_GUIDES: Partial<Record<AlertChannelType, { href: string; lab
 export const ChannelFormSchema = z
   .object({
     name: z.string().min(1, 'Must enter name'),
-    type: z.nativeEnum(AlertChannelType, { errorMap: () => ({ message: 'Must select type' }) }),
+    type: z.enum(AlertChannelType, { error: 'Must select type' }),
     slackChannel: z.string(),
     endpoint: z.string(),
   })
@@ -61,7 +74,7 @@ export const ChannelFormSchema = z
     if (isWebhookLike(values.type)) {
       if (!values.endpoint) {
         ctx.addIssue({ code: 'custom', path: ['endpoint'], message: 'Must enter endpoint' });
-      } else if (!z.string().url().safeParse(values.endpoint).success) {
+      } else if (!z.url().safeParse(values.endpoint).success) {
         ctx.addIssue({ code: 'custom', path: ['endpoint'], message: 'Must be a valid URL' });
       }
     }
@@ -114,12 +127,7 @@ export function ChannelForm(props: {
                 onValueChange={field.onChange}
                 onBlur={field.onBlur}
                 placeholder="Select channel type"
-                options={[
-                  { value: AlertChannelType.Slack, label: 'Slack' },
-                  { value: AlertChannelType.Webhook, label: 'Webhook' },
-                  { value: AlertChannelType.MsteamsWebhook, label: 'MS Teams Webhook' },
-                  { value: AlertChannelType.Discord, label: 'Discord Webhook' },
-                ]}
+                options={CHANNEL_TYPE_OPTIONS}
                 width="full"
                 onSurface="raised"
               />

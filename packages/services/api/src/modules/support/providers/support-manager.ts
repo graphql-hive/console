@@ -21,8 +21,8 @@ export const SupportTicketStatusAPIModel = z.enum([
   'solved',
 ]);
 
-export const SupportTicketPriorityModel = z.nativeEnum(SupportTicketPriority);
-export const SupportTicketStatusModel = z.nativeEnum(SupportTicketStatus);
+export const SupportTicketPriorityModel = z.enum(SupportTicketPriority);
+export const SupportTicketStatusModel = z.enum(SupportTicketStatus);
 
 const SupportTicketModel = z.object({
   id: z.number(),

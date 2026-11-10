@@ -2,6 +2,7 @@ import {
   answerOrganizationTransferRequest,
   getOrganizationTransferRequest,
   requestOrganizationTransfer,
+  updateMe,
 } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
@@ -180,6 +181,44 @@ test.concurrent('recipient should be able to access the transfer request', async
 
   expect(requestResult.organizationTransferRequest).not.toBeNull();
 });
+
+test.concurrent(
+  'recipient without the "View members" permission can see who requested the transfer',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { organization, inviteAndJoinMember } = await createOrg();
+    const { member, memberToken } = await inviteAndJoinMember();
+    expect(member.role.name).toBe('Viewer');
+
+    await updateMe({ fullName: 'Current Owner', displayName: 'Current Owner' }, ownerToken).then(
+      r => r.expectNoGraphQLErrors(),
+    );
+
+    const requestTransferResult = await requestOrganizationTransfer(
+      {
+        organizationSlug: organization.slug,
+        userId: member.user.id,
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    const code = requestTransferResult.requestOrganizationTransfer.ok?.code;
+
+    if (!code) {
+      throw new Error('Could not create transfer request');
+    }
+
+    const requestResult = await getOrganizationTransferRequest(
+      {
+        organizationSlug: organization.slug,
+        code,
+      },
+      memberToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(requestResult.organizationTransferRequest?.ownerName).toBe('Current Owner');
+  },
+);
 
 test.concurrent('recipient should be able to answer the ownership transfer', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();

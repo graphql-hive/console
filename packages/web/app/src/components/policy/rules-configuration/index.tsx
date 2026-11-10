@@ -14,9 +14,10 @@ import { PolicyStringInputConfig } from './string-config';
 export const PolicyFormSchema = z.object({
   allowOverrides: z.boolean(),
   rules: z.record(
+    z.string(),
     z.object({
       enabled: z.boolean(),
-      severity: z.nativeEnum(RuleInstanceSeverityLevel),
+      severity: z.enum(RuleInstanceSeverityLevel),
       config: z.unknown(),
     }),
   ),

@@ -113,6 +113,8 @@ export type DataTableCellProps<TTo extends string = '.'> =
       items: BadgeItem | BadgeItem[];
       /** How many badges show on the row; the rest collapse into a "+N" badge that lists them. */
       max?: number;
+      /** Cut each label at this many characters with an ellipsis; the full label sits in a tooltip. */
+      maxLength?: number;
     }
   /** A yes or no as a check or a cross, for a flag column. */
   | { kind: 'boolean'; value: boolean }
@@ -319,6 +321,14 @@ function LinkOutMenu<TTo extends string>({
  * What a table cell holds, by kind. Column layout (alignment, width, responsive hiding) is the
  * column's, set in its `meta`; this is only the content.
  */
+// Cuts by code point, so an emoji at the boundary is dropped whole rather than split.
+function cutLabel(label: string, maxLength: number | undefined) {
+  if (maxLength === undefined) return label;
+  const chars = Array.from(label);
+  if (chars.length <= maxLength) return label;
+  return chars.slice(0, maxLength).join('').trimEnd() + '…';
+}
+
 export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProps<TTo>) {
   switch (props.kind) {
     case 'text': {
@@ -451,17 +461,22 @@ export function DataTableCell<TTo extends string = '.'>(props: DataTableCellProp
       const rest = items.slice(shown.length);
       return (
         <span className="inline-flex items-center gap-1">
-          {shown.map((item, index) => (
-            <Badge key={index} content={item.content} variants={{ variant: item.variant }} />
-          ))}
+          {shown.map((item, index) => {
+            const cut = cutLabel(item.content, props.maxLength);
+            return (
+              <Badge
+                key={index}
+                content={cut}
+                variants={{ variant: item.variant }}
+                tooltip={cut === item.content ? undefined : item.content}
+              />
+            );
+          })}
           {rest.length > 0 ? (
-            <Tooltip
-              trigger={
-                <span className="inline-flex">
-                  <Badge content={`+${rest.length}`} variants={{ variant: 'outline' }} />
-                </span>
-              }
-              content={rest.map(item => item.content).join(', ')}
+            <Badge
+              content={`+${rest.length}`}
+              variants={{ variant: 'outline' }}
+              tooltip={rest.map(item => item.content).join(', ')}
             />
           ) : null}
         </span>

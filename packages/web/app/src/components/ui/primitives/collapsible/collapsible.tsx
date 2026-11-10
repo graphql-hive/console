@@ -47,7 +47,7 @@ type CollapsibleProps = {
   id?: string;
   /** The panel element, for code that scrolls it. */
   panelRef?: Ref<HTMLDivElement>;
-  panelDataCy?: string;
+  panelDataTestId?: string;
 };
 
 export function Collapsible({
@@ -60,7 +60,7 @@ export function Collapsible({
   onOpenChange,
   id,
   panelRef,
-  panelDataCy,
+  panelDataTestId,
 }: CollapsibleProps) {
   return (
     <BaseCollapsible.Root
@@ -77,7 +77,11 @@ export function Collapsible({
         </BaseCollapsible.Trigger>
         {actions}
       </div>
-      <BaseCollapsible.Panel ref={panelRef} data-cy={panelDataCy} className="flex min-h-0 flex-col">
+      <BaseCollapsible.Panel
+        ref={panelRef}
+        data-testid={panelDataTestId}
+        className="flex min-h-0 flex-col"
+      >
         {children}
       </BaseCollapsible.Panel>
     </BaseCollapsible.Root>

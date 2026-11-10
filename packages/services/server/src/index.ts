@@ -39,7 +39,6 @@ import {
   generateRdsIamAuthToken,
   getRequestId,
   registerShutdown,
-  registerTRPC,
   reportReadiness,
   sentryInit,
   startMetrics,
@@ -56,7 +55,6 @@ import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target
 import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
 import { TargetTokenCache } from '../../api/src/modules/token/providers/target-token-cache';
-import { internalApiRouter } from './api';
 import { CorsError } from './cors-error';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
@@ -279,6 +277,7 @@ export async function main() {
     }
     const logger = createGraphQLLogger();
     const registry = createRegistry({
+      release: env.release,
       app: env.hiveServices.webApp
         ? {
             baseUrl: env.hiveServices.webApp.url,
@@ -477,8 +476,6 @@ export async function main() {
       operationName: 'readiness',
     });
 
-    const crypto = new Encryptor(env.encryptionSecret);
-
     function broadcastLog(oidcId: string, message: string) {
       pubSub.publish('oidcIntegrationLogs', oidcId, {
         timestamp: new Date().toISOString(),
@@ -487,16 +484,6 @@ export async function main() {
     }
 
     await server.register(formDataPlugin);
-
-    await registerTRPC(server, {
-      router: internalApiRouter,
-      createContext() {
-        return {
-          storage,
-          crypto,
-        };
-      },
-    });
 
     server.route({
       method: ['GET', 'HEAD'],

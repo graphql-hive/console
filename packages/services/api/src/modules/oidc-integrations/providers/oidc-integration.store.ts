@@ -6,9 +6,9 @@ import { Logger } from '../../shared/providers/logger';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 
 const SharedOIDCIntegrationDomainFieldsModel = z.object({
-  id: z.string().uuid(),
-  organizationId: z.string().uuid(),
-  oidcIntegrationId: z.string().uuid(),
+  id: z.uuid(),
+  organizationId: z.uuid(),
+  oidcIntegrationId: z.uuid(),
   domainName: z.string().transform(name => name.toLowerCase()),
   createdAt: z.string(),
 });

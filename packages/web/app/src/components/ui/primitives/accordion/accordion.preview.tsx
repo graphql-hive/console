@@ -217,7 +217,7 @@ export const WithAction = createPreview(() => {
               ))}
             </ul>
           ),
-          attrs: { 'data-cy': 'collection-item' },
+          attrs: { 'data-testid': 'collection-item' },
         }))}
       />
     </div>

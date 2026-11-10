@@ -30,7 +30,7 @@ const procedure = t.procedure.use(handleTRPCError);
 
 const ExternalValidationModel = z
   .object({
-    endpoint: z.string().url().min(1),
+    endpoint: z.url().min(1),
     encryptedSecret: z.string().min(1),
   })
   .nullable();
@@ -185,10 +185,9 @@ export const schemaBuilderApiRouter = t.router({
           } satisfies CompositionResponse;
         }
 
-        ctx.req.log.error('Composition timed out. (error=%o)');
-
         // Treat timeouts caused by external composition as "expected errors"
         if (ctx.cache.isTimeoutError(error)) {
+          ctx.req.log.error('Composition timed out. (error=%s)', error);
           return {
             errors: [
               {
@@ -207,6 +206,7 @@ export const schemaBuilderApiRouter = t.router({
           } satisfies CompositionResponse;
         }
 
+        ctx.req.log.error({ err: error }, 'Unexpected composition error.');
         throw error;
       }
 

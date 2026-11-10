@@ -5,10 +5,51 @@ import {
 import { SuperTokensStore } from '@hive/api/modules/auth/providers/supertokens-store';
 import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { PostgresDatabasePool } from '@hive/postgres';
-import type { InternalApi } from '@hive/server';
 import { createNewSession } from '@hive/server/supertokens-at-home/shared';
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
-import { getServiceHost } from './utils';
+import { createStorage } from '@hive/storage';
+import { ensureEnv } from './env';
+
+let storagePromise: ReturnType<typeof createStorage> | null = null;
+
+function getStorage() {
+  if (!storagePromise) {
+    const pg = {
+      user: ensureEnv('POSTGRES_USER'),
+      password: ensureEnv('POSTGRES_PASSWORD'),
+      host: ensureEnv('POSTGRES_HOST'),
+      port: ensureEnv('POSTGRES_PORT'),
+      db: ensureEnv('POSTGRES_DB'),
+    };
+    storagePromise = createStorage(
+      `postgres://${pg.user}:${pg.password}@${pg.host}:${pg.port}/${pg.db}?sslmode=disable`,
+      1,
+    );
+  }
+  return storagePromise;
+}
+
+/**
+ * Ensures the Hive user record for a SuperTokens user exists,
+ * the same way the auth endpoints of the server do on sign in.
+ */
+export async function ensureHiveUser(args: {
+  superTokensUserId: string;
+  email: string;
+  oidcIntegrationId: string | null;
+}) {
+  const storage = await getStorage();
+  const result = await storage.ensureUserExists({
+    superTokensUserId: args.superTokensUserId,
+    email: args.email,
+    oidcIntegration: args.oidcIntegrationId ? { id: args.oidcIntegrationId } : null,
+    firstName: null,
+    lastName: null,
+  });
+  if (!result.ok) {
+    throw new Error(result.reason);
+  }
+  return result.user;
+}
 
 const createSessionAtHome = async (
   supertokensStore: SuperTokensStore,
@@ -16,33 +57,13 @@ const createSessionAtHome = async (
   email: string,
   oidcIntegrationId: string | null,
 ) => {
-  const graphqlAddress = await getServiceHost('server', 8082);
-
-  const internalApi = createTRPCProxyClient<InternalApi>({
-    links: [
-      httpLink({
-        url: `http://${graphqlAddress}/trpc`,
-        fetch,
-      }),
-    ],
-  });
-
-  const ensureUserResult = await internalApi.ensureUser.mutate({
-    superTokensUserId,
-    email,
-    oidcIntegrationId,
-    firstName: null,
-    lastName: null,
-  });
-  if (!ensureUserResult.ok) {
-    throw new Error(ensureUserResult.reason);
-  }
+  const hiveUser = await ensureHiveUser({ superTokensUserId, email, oidcIntegrationId });
 
   const session = await createNewSession(
     supertokensStore,
     {
       superTokensUserId,
-      hiveUser: ensureUserResult.user,
+      hiveUser,
       oidcIntegrationId,
     },
     {

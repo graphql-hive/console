@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { updateOrganizationSlug } from '../../../testkit/flow';
+import { createOrganization, updateOrganizationSlug } from '../../../testkit/flow';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent(
@@ -114,3 +114,100 @@ test.concurrent(
     expect(changeOrganizationSlugResult.updateOrganizationSlug.error?.message).not.toBeNull();
   },
 );
+
+test.concurrent('Mutation.createOrganization: slug with invalid characters', async ({ expect }) => {
+  const { ownerToken } = await initSeed().createOwner();
+  const result = await createOrganization({ slug: 'Invalid Slug!' }, ownerToken).then(r =>
+    r.expectNoGraphQLErrors(),
+  );
+
+  expect(result.createOrganization.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        slug: Slug can only contain lowercase letters, numbers and dashes,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.createOrganization: empty slug', async ({ expect }) => {
+  const { ownerToken } = await initSeed().createOwner();
+  const result = await createOrganization({ slug: '' }, ownerToken).then(r =>
+    r.expectNoGraphQLErrors(),
+  );
+
+  expect(result.createOrganization.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        slug: Organization slug is required,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.createOrganization: slug too long', async ({ expect }) => {
+  const { ownerToken } = await initSeed().createOwner();
+  const result = await createOrganization({ slug: 'a'.repeat(51) }, ownerToken).then(r =>
+    r.expectNoGraphQLErrors(),
+  );
+
+  expect(result.createOrganization.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        slug: Slug must be at most 50 characters long,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent('Mutation.createOrganization: reserved slug', async ({ expect }) => {
+  const { ownerToken } = await initSeed().createOwner();
+  const result = await createOrganization({ slug: 'graphql' }, ownerToken).then(r =>
+    r.expectNoGraphQLErrors(),
+  );
+
+  expect(result.createOrganization.error).toMatchInlineSnapshot(`
+    {
+      inputErrors: {
+        slug: Slug can't be one of the reserved names,
+      },
+      message: Please check your input.,
+    }
+  `);
+});
+
+test.concurrent(
+  'Mutation.updateOrganizationSlug: slug with invalid characters',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { organization } = await createOrg();
+    const result = await updateOrganizationSlug(
+      { organizationSlug: organization.slug, slug: 'Invalid Slug!' },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.updateOrganizationSlug.error).toMatchInlineSnapshot(`
+    {
+      message: Slug can only contain lowercase letters, numbers and dashes,
+    }
+  `);
+  },
+);
+
+test.concurrent('Mutation.updateOrganizationSlug: slug too long', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization } = await createOrg();
+  const result = await updateOrganizationSlug(
+    { organizationSlug: organization.slug, slug: 'a'.repeat(51) },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.updateOrganizationSlug.error).toMatchInlineSnapshot(`
+    {
+      message: Slug must be at most 50 characters long,
+    }
+  `);
+});

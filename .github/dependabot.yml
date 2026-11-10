@@ -34,8 +34,7 @@ updates:
           - 'urql'
       sentry:
         patterns:
-          - '@sentry/'
-          - 'sentry'
+          - '@sentry/*'
       trpc:
         patterns:
           - '@trpc/'

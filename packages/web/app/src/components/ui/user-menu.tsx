@@ -132,7 +132,7 @@ export function UserMenu({ withOrganization = true }: { withOrganization?: boole
             <button
               type="button"
               className={cn('cursor-pointer', currentOrganization ? '' : 'animate-pulse')}
-              data-cy="user-menu-trigger"
+              data-testid="user-menu-trigger"
             >
               <Avatar variant="outlined" alt={me?.displayName} />
             </button>
@@ -229,7 +229,7 @@ export function UserMenu({ withOrganization = true }: { withOrganization?: boole
                       label: 'Log out',
                       icon: LogOutIcon,
                       href: '/logout',
-                      attrs: { 'data-cy': 'user-menu-logout' },
+                      attrs: { 'data-testid': 'user-menu-logout' },
                     },
                   ],
                 ]

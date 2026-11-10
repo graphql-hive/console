@@ -1,5 +1,6 @@
 import zod from 'zod';
 import {
+  extractConfig,
   OpenTelemetryConfigurationModel,
   parseClickHouseConfigFromEnvironment,
   parsePostgresConfigFromEnvironment,
@@ -35,13 +36,15 @@ const EnvironmentModel = zod.object({
   SERVER_HOST_IPV6_ONLY: emptyString(zod.union([zod.literal('1'), zod.literal('0')]).optional()),
   ENVIRONMENT: emptyString(zod.string().optional()),
   RELEASE: emptyString(zod.string().optional()),
-  HEARTBEAT_ENDPOINT: emptyString(zod.string().url().optional()),
-  EMAIL_FROM: zod.string().email(),
-  SCHEMA_ENDPOINT: zod.string().url(),
+  HEARTBEAT_ENDPOINT: emptyString(zod.url().optional()),
+  // Pinged after every successful run of the per-minute metric alert evaluator cron.
+  METRIC_ALERTS_HEARTBEAT_ENDPOINT: emptyString(zod.url().optional()),
+  EMAIL_FROM: zod.email(),
+  SCHEMA_ENDPOINT: zod.url(),
   // Base URL of the Hive Console, used to link alert notifications back to the
   // rule that fired. Optional so an existing self-hosted deployment keeps
   // booting after an upgrade; notifications omit the link when it isn't set.
-  WEB_APP_URL: emptyString(zod.string().url().optional()),
+  WEB_APP_URL: emptyString(zod.url().optional()),
   // Must match the value given to the API service, which is what encrypts
   // `organizations.slack_token`. Optional for the same reason as WEB_APP_URL above;
   // without it, Slack metric-alert notifications are skipped rather than the whole
@@ -153,7 +156,7 @@ const environmentErrors: Array<string> = [];
 
 for (const config of Object.values(configs)) {
   if (config.success === false) {
-    environmentErrors.push(JSON.stringify(config.error.format(), null, 4));
+    environmentErrors.push(zod.prettifyError(config.error));
   }
 }
 
@@ -188,13 +191,6 @@ if (environmentErrors.length) {
   const fullError = environmentErrors.join(`\n`);
   console.error('❌ Invalid environment variables:', fullError);
   process.exit(1);
-}
-
-function extractConfig<Input, Output>(config: zod.SafeParseReturnType<Input, Output>): Output {
-  if (!config.success) {
-    throw new Error('Something went wrong.');
-  }
-  return config.data;
 }
 
 const base = extractConfig(configs.base);
@@ -244,7 +240,7 @@ export const env = {
   environment: base.ENVIRONMENT,
   release: base.RELEASE ?? 'local',
   http: {
-    port: base.PORT ?? 6260,
+    port: base.PORT,
     ...resolveServerListenOptions({
       serverHost: base.SERVER_HOST,
       serverHostIpv6Only: base.SERVER_HOST_IPV6_ONLY,
@@ -274,9 +270,9 @@ export const env = {
     prometheus.PROMETHEUS_METRICS === '1'
       ? {
           labels: {
-            instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE ?? 'workflows',
+            instance: prometheus.PROMETHEUS_METRICS_LABEL_INSTANCE,
           },
-          port: prometheus.PROMETHEUS_METRICS_PORT ?? 10_254,
+          port: prometheus.PROMETHEUS_METRICS_PORT,
         }
       : null,
   postgres:
@@ -299,6 +295,9 @@ export const env = {
         } satisfies RequestBroker)
       : null,
   httpHeartbeat: base.HEARTBEAT_ENDPOINT ? { endpoint: base.HEARTBEAT_ENDPOINT } : null,
+  metricAlertsHeartbeat: base.METRIC_ALERTS_HEARTBEAT_ENDPOINT
+    ? { endpoint: base.METRIC_ALERTS_HEARTBEAT_ENDPOINT }
+    : null,
   redis:
     redisConfigResult?.type === 'ok'
       ? redisConfigResult.config

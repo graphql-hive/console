@@ -20,7 +20,6 @@ import {
   tracesPageVariables,
 } from '@/pages/target-traces';
 import { createRoute } from '@tanstack/react-router';
-import { zodValidator } from '@tanstack/zod-adapter';
 import { targetRoute } from './route';
 
 const TargetTracesRouteSearch = z.object({
@@ -38,7 +37,7 @@ const traces: RangeBounds = {
 export const targetTracesRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'traces',
-  validateSearch: zodValidator(TargetTracesRouteSearch),
+  validateSearch: TargetTracesRouteSearch,
   beforeLoad: defaultRange(traces),
   loaderDeps: ({ search }) => ({
     filter: search.filter ?? defaultTracesFilter,

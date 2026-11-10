@@ -154,7 +154,7 @@ export default gql`
     totalRequests: SafeInt! @tag(name: "public")
     totalVersions: SafeInt! @tag(name: "public")
     operations: OperationStatsValuesConnection! @tag(name: "public")
-    versions(limit: Int!): [ClientVersionStatsValues!]!
+    versions(limit: Int! @tag(name: "public")): [ClientVersionStatsValues!]! @tag(name: "public")
   }
 
   type SchemaCoordinateStats {
@@ -305,9 +305,9 @@ export default gql`
   }
 
   type ClientVersionStatsValues {
-    version: String!
-    count: Float!
-    percentage: Float!
+    version: String! @tag(name: "public")
+    count: Float! @tag(name: "public")
+    percentage: Float! @tag(name: "public")
   }
 
   type ClientNameStatsValues {

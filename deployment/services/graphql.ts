@@ -15,7 +15,7 @@ import { Observability } from './observability';
 import { SchemaPolicy } from './policy';
 import { Postgres } from './postgres';
 import { Redis } from './redis';
-import { S3 } from './s3';
+import { S3, S3Mirror } from './s3';
 import { Schema } from './schema';
 import { Sentry } from './sentry';
 import { SlackApp } from './slack-app';
@@ -65,7 +65,7 @@ export function deployGraphQL({
   redis: Redis;
   cdn: CDN;
   s3: S3;
-  s3Mirror: S3;
+  s3Mirror: S3Mirror;
   s3AuditLog: S3;
   usage: Usage;
   dbMigrations: DbMigrations;
@@ -221,10 +221,10 @@ export function deployGraphQL({
     .withSecret('S3_BUCKET_NAME', s3.secret, 'bucket')
     .withSecret('S3_ENDPOINT', s3.secret, 'endpoint')
     // S3 Mirror
-    .withSecret('S3_MIRROR_ACCESS_KEY_ID', s3Mirror.secret, 'accessKeyId')
-    .withSecret('S3_MIRROR_SECRET_ACCESS_KEY', s3Mirror.secret, 'secretAccessKey')
-    .withSecret('S3_MIRROR_BUCKET_NAME', s3Mirror.secret, 'bucket')
-    .withSecret('S3_MIRROR_ENDPOINT', s3Mirror.secret, 'endpoint')
+    .withSecret('S3_MIRROR_ACCESS_KEY_ID', s3Mirror.readWriteSecret, 'accessKeyId')
+    .withSecret('S3_MIRROR_SECRET_ACCESS_KEY', s3Mirror.readWriteSecret, 'secretAccessKey')
+    .withSecret('S3_MIRROR_BUCKET_NAME', s3Mirror.readWriteSecret, 'bucket')
+    .withSecret('S3_MIRROR_ENDPOINT', s3Mirror.readWriteSecret, 'endpoint')
     // S3 Audit Log
     .withSecret('S3_AUDIT_LOG_ACCESS_KEY_ID', s3AuditLog.secret, 'accessKeyId')
     .withSecret('S3_AUDIT_LOG_SECRET_ACCESS_KEY', s3AuditLog.secret, 'secretAccessKey')
@@ -266,7 +266,7 @@ export function deployGraphQL({
     )
     .allowExternal(deployment, clickhouse.secret.raw.host, clickhouse.secret.raw.port)
     .allowExternal(deployment, s3.secret.raw.endpoint)
-    .allowExternal(deployment, s3Mirror.secret.raw.endpoint)
+    .allowExternal(deployment, s3Mirror.readWriteSecret.raw.endpoint)
     .allowExternal(deployment, s3AuditLog.secret.raw.endpoint)
     .allowExternal(deployment, cdn.secret.raw.baseUrl)
     .allowExternal(deployment, hiveTracingEndpoint)

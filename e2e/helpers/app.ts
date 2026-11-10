@@ -24,21 +24,25 @@ export function createAppHelper(page: Page, auth: AuthHelper): AppHelper {
       await this.waitForOrganizationPage(organizationSlug);
     },
     async createProject(projectSlug) {
-      await page.locator('[data-cy="new-project-button"]').click();
-      await page.locator('form[data-cy="create-project-form"] [data-cy="slug"]').fill(projectSlug);
-      await page.locator('form[data-cy="create-project-form"] [data-cy="submit"]').click();
+      await page.locator('[data-testid="new-project-button"]').click();
+      await page
+        .locator('form[data-testid="create-project-form"] [data-testid="slug"]')
+        .fill(projectSlug);
+      await page.locator('form[data-testid="create-project-form"] [data-testid="submit"]').click();
       await this.waitForProjectPage(projectSlug);
     },
     async waitForOrganizationPage(organizationSlug) {
-      await expect(page.locator('[data-cy="organization-picker-trigger"]')).toContainText(
+      await expect(page.locator('[data-testid="organization-picker-trigger"]')).toContainText(
         organizationSlug,
       );
     },
     async waitForProjectPage(projectSlug) {
-      await expect(page.locator('[data-cy="project-picker-trigger"]')).toContainText(projectSlug);
+      await expect(page.locator('[data-testid="project-picker-trigger"]')).toContainText(
+        projectSlug,
+      );
     },
     async waitForTargetPage(targetSlug) {
-      await expect(page.locator('[data-cy="target-picker-trigger"]')).toContainText(targetSlug);
+      await expect(page.locator('[data-testid="target-picker-trigger"]')).toContainText(targetSlug);
     },
   };
 }

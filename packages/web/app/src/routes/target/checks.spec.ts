@@ -646,23 +646,6 @@ describe('paged changes', () => {
 });
 
 describe('schema tabs', () => {
-  // The SDL viewer virtualizes with observers jsdom does not have; nothing here scrolls.
-  beforeEach(() => {
-    class NoopObserver {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-      takeRecords() {
-        return [];
-      }
-    }
-    vi.stubGlobal('IntersectionObserver', NoopObserver);
-    vi.stubGlobal('ResizeObserver', NoopObserver);
-  });
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it('loads the SDLs once, when a schema tab first opens', { timeout: 30_000 }, async () => {
     const testClient = client();
     testClient.fixtures.set('ActiveSchemaCheck_ActiveSchemaCheckQuery', activeSchemaCheck);

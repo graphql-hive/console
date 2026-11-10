@@ -130,7 +130,7 @@ export default class SchemaPromote extends Command<typeof SchemaPromote> {
       let fromSchemaVersionById: string | null = null;
 
       if (flags.version) {
-        const result = z.string().uuid().safeParse(flags.version);
+        const result = z.uuid().safeParse(flags.version);
         if (result.error) {
           throw new InvalidVersionIdError();
         }

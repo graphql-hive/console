@@ -6,7 +6,7 @@ export const AuditLogModel = z.union([
     eventType: z.literal('USER_INVITED'),
     metadata: z.object({
       inviteeEmail: z.string(),
-      roleId: z.string().uuid(),
+      roleId: z.uuid(),
     }),
   }),
   z.object({
@@ -18,7 +18,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('USER_REMOVED'),
     metadata: z.object({
-      removedUserId: z.string().uuid(),
+      removedUserId: z.uuid(),
       removedUserEmail: z.string(),
     }),
   }),
@@ -31,35 +31,35 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('SCIM_USER_CREATED'),
     metadata: z.object({
-      userId: z.string().uuid(),
+      userId: z.uuid(),
       externalId: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('SCIM_USER_UPDATED'),
     metadata: z.object({
-      userId: z.string().uuid(),
+      userId: z.uuid(),
       updatedFields: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('SCIM_GROUP_CREATED'),
     metadata: z.object({
-      groupId: z.string().uuid(),
+      groupId: z.uuid(),
       externalId: z.string().nullable(),
     }),
   }),
   z.object({
     eventType: z.literal('SCIM_GROUP_UPDATED'),
     metadata: z.object({
-      groupId: z.string().uuid(),
+      groupId: z.uuid(),
       updatedFields: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('SCIM_GROUP_DELETED'),
     metadata: z.object({
-      groupId: z.string().uuid(),
+      groupId: z.uuid(),
     }),
   }),
   z.object({
@@ -79,21 +79,21 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('ORGANIZATION_TRANSFERRED'),
     metadata: z.object({
-      newOwnerId: z.string().uuid(),
+      newOwnerId: z.uuid(),
       newOwnerEmail: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('ORGANIZATION_TRANSFERRED_REQUEST'),
     metadata: z.object({
-      newOwnerId: z.string().uuid(),
+      newOwnerId: z.uuid(),
       newOwnerEmail: z.string().nullable(),
     }),
   }),
   z.object({
     eventType: z.literal('PROJECT_CREATED'),
     metadata: z.object({
-      projectId: z.string().uuid().nullish(),
+      projectId: z.uuid().nullish(),
       projectSlug: z.string(),
       projectType: z.string(),
     }),
@@ -101,7 +101,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('PROJECT_POLICY_UPDATED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
+      projectId: z.uuid(),
       policy: z.string(),
     }),
   }),
@@ -115,23 +115,23 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('PROJECT_DELETED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
+      projectId: z.uuid(),
       projectSlug: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('TARGET_CREATED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       targetSlug: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('TARGET_SLUG_UPDATED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       previousSlug: z.string(),
       newSlug: z.string(),
     }),
@@ -139,24 +139,24 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('TARGET_GRAPHQL_ENDPOINT_URL_UPDATED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       graphqlEndpointUrl: z.string().nullish(),
     }),
   }),
   z.object({
     eventType: z.literal('TARGET_SCHEMA_COMPOSITION_UPDATED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       nativeComposition: z.boolean(),
     }),
   }),
   z.object({
     eventType: z.literal('TARGET_CDN_ACCESS_TOKEN_CREATED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       alias: z.string(),
       token: z.string(),
     }),
@@ -164,16 +164,16 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('TARGET_CDN_ACCESS_TOKEN_DELETED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       alias: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('TARGET_TOKEN_CREATED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       alias: z.string(),
       token: z.string(),
     }),
@@ -181,30 +181,30 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('TARGET_TOKEN_DELETED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       alias: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('TARGET_DELETED'),
     metadata: z.object({
-      projectId: z.string().uuid(),
-      targetId: z.string().uuid(),
+      projectId: z.uuid(),
+      targetId: z.uuid(),
       targetSlug: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('ROLE_CREATED'),
     metadata: z.object({
-      roleId: z.string().uuid(),
+      roleId: z.uuid(),
       roleName: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('ROLE_ASSIGNED'),
     metadata: z.object({
-      roleId: z.string().uuid(),
+      roleId: z.uuid(),
       updatedMember: z.string(),
       previousMemberRole: z.string().nullable(),
       userIdAssigned: z.string(),
@@ -213,14 +213,14 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('ROLE_DELETED'),
     metadata: z.object({
-      roleId: z.string().uuid(),
+      roleId: z.uuid(),
       roleName: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('ROLE_UPDATED'),
     metadata: z.object({
-      roleId: z.string().uuid(),
+      roleId: z.uuid(),
       roleName: z.string(),
       updatedFields: z.string(),
     }),
@@ -244,7 +244,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('COLLECTION_CREATED'),
     metadata: z.object({
-      collectionId: z.string().uuid(),
+      collectionId: z.uuid(),
       collectionName: z.string(),
       targetId: z.string(),
     }),
@@ -252,7 +252,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('COLLECTION_UPDATED'),
     metadata: z.object({
-      collectionId: z.string().uuid(),
+      collectionId: z.uuid(),
       collectionName: z.string(),
       updatedFields: z.string(),
     }),
@@ -260,35 +260,35 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('COLLECTION_DELETED'),
     metadata: z.object({
-      collectionId: z.string().uuid(),
+      collectionId: z.uuid(),
       collectionName: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('OPERATION_IN_DOCUMENT_COLLECTION_CREATED'),
     metadata: z.object({
-      collectionId: z.string().uuid(),
+      collectionId: z.uuid(),
       collectionName: z.string(),
-      targetId: z.string().uuid(),
-      operationId: z.string().uuid(),
+      targetId: z.uuid(),
+      operationId: z.uuid(),
       operationQuery: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('OPERATION_IN_DOCUMENT_COLLECTION_UPDATED'),
     metadata: z.object({
-      collectionId: z.string().uuid(),
+      collectionId: z.uuid(),
       collectionName: z.string(),
-      operationId: z.string().uuid(),
+      operationId: z.uuid(),
       updatedFields: z.string(),
     }),
   }),
   z.object({
     eventType: z.literal('OPERATION_IN_DOCUMENT_COLLECTION_DELETED'),
     metadata: z.object({
-      collectionId: z.string().uuid(),
+      collectionId: z.uuid(),
       collectionName: z.string(),
-      operationId: z.string().uuid(),
+      operationId: z.uuid(),
     }),
   }),
   z.object({
@@ -340,19 +340,19 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('OIDC_INTEGRATION_CREATED'),
     metadata: z.object({
-      integrationId: z.string().uuid(),
+      integrationId: z.uuid(),
     }),
   }),
   z.object({
     eventType: z.literal('OIDC_INTEGRATION_DELETED'),
     metadata: z.object({
-      integrationId: z.string().uuid(),
+      integrationId: z.uuid(),
     }),
   }),
   z.object({
     eventType: z.literal('OIDC_INTEGRATION_UPDATED'),
     metadata: z.object({
-      integrationId: z.string().uuid(),
+      integrationId: z.uuid(),
       updatedFields: z.string(),
     }),
   }),
@@ -365,7 +365,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('ORGANIZATION_ACCESS_TOKEN_CREATED'),
     metadata: z.object({
-      organizationAccessTokenId: z.string().uuid(),
+      organizationAccessTokenId: z.uuid(),
       permissions: z.array(z.string()).nullable(),
       assignedResources: ResourceAssignmentModel,
       userId: z
@@ -385,22 +385,22 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('ORGANIZATION_ACCESS_TOKEN_DELETED'),
     metadata: z.object({
-      organizationAccessTokenId: z.string().uuid(),
+      organizationAccessTokenId: z.uuid(),
     }),
   }),
   z.object({
     eventType: z.literal('SAVED_FILTER_CREATED'),
     metadata: z.object({
-      filterId: z.string().uuid(),
+      filterId: z.uuid(),
       filterName: z.string(),
       visibility: z.string(),
-      projectId: z.string().uuid(),
+      projectId: z.uuid(),
     }),
   }),
   z.object({
     eventType: z.literal('SAVED_FILTER_UPDATED'),
     metadata: z.object({
-      filterId: z.string().uuid(),
+      filterId: z.uuid(),
       filterName: z.string(),
       updatedFields: z.string(),
     }),
@@ -408,7 +408,7 @@ export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('SAVED_FILTER_DELETED'),
     metadata: z.object({
-      filterId: z.string().uuid(),
+      filterId: z.uuid(),
       filterName: z.string(),
     }),
   }),

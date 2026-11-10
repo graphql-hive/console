@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Tooltip } from '../floating/tooltip/tooltip';
+import { focusRingQuiet } from '../shared-styles';
 
 const badgeVariants = cva(
   // Takes the cursor of a trigger it sits in.
@@ -59,13 +61,28 @@ type BadgeProps = {
 };
 
 export function Badge({ content, icon: Icon, variants, tooltip }: BadgeProps) {
-  const badge = (
-    <span className={badgeVariants({ ...variants })}>
+  const children = (
+    <>
       {Icon ? (
         <Icon aria-hidden className={variants?.size === 'sm' ? 'size-3' : 'size-3.5'} />
       ) : null}
       {content}
-    </span>
+    </>
   );
-  return tooltip ? <Tooltip trigger={badge} content={tooltip} /> : badge;
+  if (!tooltip) {
+    return <span className={badgeVariants({ ...variants })}>{children}</span>;
+  }
+  return (
+    <Tooltip
+      trigger={
+        // The focus stop is what lets a keyboard user reach the tooltip; a span is the right
+        // element because the badge is a label, not a control.
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+        <span tabIndex={0} className={cn(badgeVariants({ ...variants }), focusRingQuiet)}>
+          {children}
+        </span>
+      }
+      content={tooltip}
+    />
+  );
 }

@@ -2,12 +2,14 @@ import * as crypto from 'node:crypto';
 import type { MessagePort } from 'node:worker_threads';
 // IMPORTANT: Must use "type" to avoid runtime dependency
 import type { FastifyBaseLogger } from 'fastify';
+import { GraphQLError } from 'graphql';
 import type { Logger } from '@hive/api';
 import { CompositionResponse } from './api';
 import { createComposeFederation, type ComposeFederationArgs } from './composition/federation';
 import { composeSingle, type ComposeSingleArgs } from './composition/single';
 import { composeStitching, type ComposeStitchingArgs } from './composition/stitching';
 import type { env } from './environment';
+import { errorWithSource } from './lib/errors';
 
 export type ErrorResultEvent = {
   event: 'error';
@@ -66,7 +68,7 @@ export function createCompositionWorker(args: {
         if (message.data.type === 'federation') {
           const composeFederation = createComposeFederation({
             decrypt,
-            logger: baseLogger.child({ reqId: message.data.args.requestId }) as FastifyBaseLogger,
+            logger: logger as FastifyBaseLogger,
             requestTimeoutMs: args.env.timings.schemaExternalCompositionTimeout,
             transformToPublicSdl: args.env.transformExternalSupergraphToPublicSdl,
           });
@@ -129,11 +131,30 @@ export function createCompositionWorker(args: {
       }
       assertAllCasesExhausted(message.event);
     } catch (err: unknown) {
-      baseLogger.error(
-        'unexpected error while processing message in worker (messageId=%s)',
+      if (err instanceof GraphQLError) {
+        postResult({
+          event: 'compositionResult',
+          id: message.id,
+          data: {
+            type: message.data.type,
+            result: {
+              errors: [errorWithSource('graphql')(err)],
+              sdl: null,
+              supergraph: null,
+              contracts: null,
+              tags: null,
+              schemaMetadata: null,
+              metadataAttributes: null,
+            },
+          },
+        } satisfies CompositionResultEvent);
+        return;
+      }
+      logger.error(
+        'unexpected error while processing message in worker (messageId=%s, error=%s)',
         message.id,
+        err instanceof Error ? (err.stack ?? err.message) : String(err),
       );
-      baseLogger.error(String(err));
       postResult({
         event: 'error',
         id: message.id,

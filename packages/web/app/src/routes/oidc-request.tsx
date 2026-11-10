@@ -6,7 +6,7 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import { withHeaderRoute } from './with-header';
 
 const OrganizationOIDCRequestRouteSearch = z.object({
-  id: z.string({ required_error: 'OIDC ID is required' }),
+  id: z.string({ error: issue => (issue.input === undefined ? 'OIDC ID is required' : undefined) }),
   redirectToPath: redirectToPathSchema,
 });
 
@@ -24,7 +24,14 @@ export const organizationOIDCRequestRoute = createRoute({
     }
   },
   component: function OrganizationOIDCRequestRoute() {
+    const { organizationSlug } = organizationOIDCRequestRoute.useParams();
     const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
-    return <OrganizationOIDCRequestPage oidcId={id} redirectToPath={redirectToPath} />;
+    return (
+      <OrganizationOIDCRequestPage
+        oidcId={id}
+        slug={organizationSlug}
+        redirectToPath={redirectToPath}
+      />
+    );
   },
 });

@@ -29,7 +29,7 @@ const shouldRunModel = zod.object({
 const envModel = zod.object({
   S3_ACCESS_KEY_ID: zod.string().min(1),
   S3_SECRET_ACCESS_KEY: zod.string().min(1),
-  S3_ENDPOINT: zod.string().url(),
+  S3_ENDPOINT: zod.url(),
   S3_BUCKET_NAME: zod.string().min(1),
   CDN_AUTH_PRIVATE_KEY: zod.string().min(1),
 });

@@ -1,0 +1,72 @@
+diff --git a/cjs/execution/execute.js b/cjs/execution/execute.js
+index c3080a05c7ac6135cf9f06e2c1eed21a14adc96f..d308311e7f8a777ea36a32419795f59aed23978e 100644
+--- a/cjs/execution/execute.js
++++ b/cjs/execution/execute.js
+@@ -25,7 +25,12 @@ const values_js_1 = require("./values.js");
+  * type. Memoizing ensures the subfields are not repeatedly calculated, which
+  * saves overhead when resolving lists of values.
+  */
+-const collectSubfields = (0, utils_1.memoize3)((exeContext, returnType, fieldNodes) => (0, utils_1.collectSubFields)(exeContext.schema, exeContext.fragments, exeContext.variableValues, returnType, fieldNodes));
++/**
++ * @graphql-tools/utils@12 expects `{ coerced, sources }` instead of the flat coerced map for
++ * collectFields/collectSubFields. Memoized so collectSubFields' identity-keyed cache still hits.
++ */
++const toVariableValues = (0, utils_1.memoize1)((coerced) => ({ coerced, sources: {} }));
++const collectSubfields = (0, utils_1.memoize3)((exeContext, returnType, fieldNodes) => (0, utils_1.collectSubFields)(exeContext.schema, exeContext.fragments, toVariableValues(exeContext.variableValues), returnType, fieldNodes));
+ /**
+  * Implements the "Executing requests" section of the GraphQL specification,
+  * including `@defer` and `@stream` as proposed in
+@@ -264,7 +269,7 @@ function executeOperation(exeContext) {
+             nodes: operation,
+         });
+     }
+-    const { fields: rootFields, patches } = (0, utils_1.collectFields)(schema, fragments, variableValues, rootType, operation.selectionSet);
++    const { fields: rootFields, patches } = (0, utils_1.collectFields)(schema, fragments, toVariableValues(variableValues), rootType, operation.selectionSet);
+     const path = undefined;
+     let result;
+     if (operation.operation === 'mutation') {
+@@ -957,7 +962,7 @@ function executeSubscription(exeContext) {
+             nodes: operation,
+         });
+     }
+-    const { fields: rootFields } = (0, utils_1.collectFields)(schema, fragments, variableValues, rootType, operation.selectionSet);
++    const { fields: rootFields } = (0, utils_1.collectFields)(schema, fragments, toVariableValues(variableValues), rootType, operation.selectionSet);
+     const [responseName, fieldNodes] = [...rootFields.entries()][0];
+     const fieldName = fieldNodes[0].name.value;
+     const fieldDef = getFieldDef(schema, rootType, fieldNodes[0]);
+diff --git a/esm/execution/execute.js b/esm/execution/execute.js
+index 7447a2057168f8f4f21334a9c574fb57fc6f291a..6805faefe14a512a24069fbb9abf26a48355a9ef 100644
+--- a/esm/execution/execute.js
++++ b/esm/execution/execute.js
+@@ -12,7 +12,12 @@ import { getVariableValues } from './values.js';
+  * type. Memoizing ensures the subfields are not repeatedly calculated, which
+  * saves overhead when resolving lists of values.
+  */
+-const collectSubfields = memoize3((exeContext, returnType, fieldNodes) => _collectSubfields(exeContext.schema, exeContext.fragments, exeContext.variableValues, returnType, fieldNodes));
++/**
++ * @graphql-tools/utils@12 expects `{ coerced, sources }` instead of the flat coerced map for
++ * collectFields/collectSubFields. Memoized so collectSubFields' identity-keyed cache still hits.
++ */
++const toVariableValues = memoize1((coerced) => ({ coerced, sources: {} }));
++const collectSubfields = memoize3((exeContext, returnType, fieldNodes) => _collectSubfields(exeContext.schema, exeContext.fragments, toVariableValues(exeContext.variableValues), returnType, fieldNodes));
+ /**
+  * Implements the "Executing requests" section of the GraphQL specification,
+  * including `@defer` and `@stream` as proposed in
+@@ -251,7 +256,7 @@ function executeOperation(exeContext) {
+             nodes: operation,
+         });
+     }
+-    const { fields: rootFields, patches } = collectFields(schema, fragments, variableValues, rootType, operation.selectionSet);
++    const { fields: rootFields, patches } = collectFields(schema, fragments, toVariableValues(variableValues), rootType, operation.selectionSet);
+     const path = undefined;
+     let result;
+     if (operation.operation === 'mutation') {
+@@ -942,7 +947,7 @@ function executeSubscription(exeContext) {
+             nodes: operation,
+         });
+     }
+-    const { fields: rootFields } = collectFields(schema, fragments, variableValues, rootType, operation.selectionSet);
++    const { fields: rootFields } = collectFields(schema, fragments, toVariableValues(variableValues), rootType, operation.selectionSet);
+     const [responseName, fieldNodes] = [...rootFields.entries()][0];
+     const fieldName = fieldNodes[0].name.value;
+     const fieldDef = getFieldDef(schema, rootType, fieldNodes[0]);

@@ -15,17 +15,17 @@ import { Input } from '@/components/ui/primitives/input/input';
 export const OIDCMetadataSchema = z.object({
   token_endpoint: z
     .string({
-      required_error: 'Token endpoint not found',
+      error: issue => (issue.input === undefined ? 'Token endpoint not found' : undefined),
     })
     .url('Token endpoint must be a valid URL'),
   userinfo_endpoint: z
     .string({
-      required_error: 'Userinfo endpoint not found',
+      error: issue => (issue.input === undefined ? 'Userinfo endpoint not found' : undefined),
     })
     .url('Userinfo endpoint must be a valid URL'),
   authorization_endpoint: z
     .string({
-      required_error: 'Authorization endpoint not found',
+      error: issue => (issue.input === undefined ? 'Authorization endpoint not found' : undefined),
     })
     .url('Authorization endpoint must be a valid URL'),
 });
@@ -184,7 +184,7 @@ export function ConnectProviderForm(props: {
 }
 
 export const OIDCMetadataUrlFormSchema = z.object({
-  url: z.string().url('Must be a valid URL'),
+  url: z.url({ error: 'Must be a valid URL' }),
 });
 
 export type OIDCMetadataUrlFormValues = z.infer<typeof OIDCMetadataUrlFormSchema>;

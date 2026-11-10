@@ -587,7 +587,7 @@ export function OrganizationSettingsPage() {
                 to: section.to,
                 params: slugs,
                 exact: section.exact,
-                attrs: { 'data-cy': `link-${section.id}` },
+                attrs: { 'data-testid': `link-${section.id}` },
               }))}
             />
             <PageLayoutContent>

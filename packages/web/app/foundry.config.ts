@@ -1,6 +1,5 @@
 import { defineConfig } from 'react-foundry';
 import type { Plugin } from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import tailwindcss from '@tailwindcss/vite';
 
 /**
@@ -142,9 +141,9 @@ export default defineConfig({
     },
   },
   viteConfig: {
-    // Foundry's vite root is inside node_modules and this config is bundled to a cache
-    // dir before it runs, so neither location can anchor tsconfig discovery. cwd is the
-    // app directory, which is where `foundry dev` is invoked from.
-    plugins: [tsconfigPaths({ root: process.cwd() }), tailwindcss(), previewEnv],
+    // Vite finds the nearest tsconfig per imported file, so previews resolve `@/` through
+    // the app's tsconfig even though foundry's vite root is inside node_modules.
+    resolve: { tsconfigPaths: true },
+    plugins: [tailwindcss(), previewEnv],
   },
 });

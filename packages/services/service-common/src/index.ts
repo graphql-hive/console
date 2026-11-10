@@ -13,6 +13,7 @@ export { sentryInit } from './sentry';
 export { scrubBasicAuth } from './scrub';
 export { createMskIamTokenProvider } from './iam-msk';
 export { invariant, fail } from './helpers';
+export { extractConfig } from './environment';
 export {
   generatePresignedToken,
   startTokenRefreshTimer,

@@ -27,6 +27,22 @@ if (typeof window !== 'undefined' && typeof window.ResizeObserver !== 'function'
   };
 }
 
+// The SDL viewers virtualize on IntersectionObserver, which jsdom also lacks. Nothing here
+// scrolls, so a virtualized block keeps its lines unrendered and a spec asserts around it.
+if (typeof window !== 'undefined' && typeof window.IntersectionObserver !== 'function') {
+  window.IntersectionObserver = class {
+    readonly root = null;
+    readonly rootMargin = '';
+    readonly thresholds = [];
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords() {
+      return [];
+    }
+  };
+}
+
 // The router restores scroll on every navigation; jsdom has no scrollTo.
 if (typeof window !== 'undefined') {
   window.scrollTo = () => {};

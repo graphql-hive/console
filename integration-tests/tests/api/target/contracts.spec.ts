@@ -364,7 +364,7 @@ test.concurrent('contractName must be at least 2 characters long', async ({ expe
         createContract: {
           error: {
             details: {
-              contractName: String must contain at least 2 character(s),
+              contractName: Contract name must be at least 2 characters long,
               excludeTags: null,
               includeTags: null,
               target: null,
@@ -399,7 +399,7 @@ test.concurrent('contractName must be at most 64 characters long', async ({ expe
         createContract: {
           error: {
             details: {
-              contractName: String must contain at most 64 character(s),
+              contractName: Contract name must be at most 64 characters long,
               excludeTags: null,
               includeTags: null,
               target: null,

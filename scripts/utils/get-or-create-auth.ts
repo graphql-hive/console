@@ -65,32 +65,19 @@ export async function getOrCreateAuth(
         '@hive/api/modules/auth/lib/supertokens-at-home/crypto'
       );
       const { createNewSession } = await import('@hive/server/supertokens-at-home/shared');
-      const { createTRPCProxyClient, httpLink } = await import('@trpc/client');
-      const { getServiceHost } = await import('../../integration-tests/testkit/utils');
-      const graphqlAddress = await getServiceHost('server', 8082);
-
-      type InternalApi = import('@hive/server').InternalApi;
-      const internalApi = createTRPCProxyClient<InternalApi>({
-        links: [httpLink({ url: `http://${graphqlAddress}/trpc`, fetch })],
-      });
-
-      const ensureUserResult = await internalApi.ensureUser.mutate({
+      const { ensureHiveUser } = await import('../../integration-tests/testkit/auth');
+      const hiveUser = await ensureHiveUser({
         superTokensUserId: existingUserId as string,
         email,
         oidcIntegrationId: null,
-        firstName: null,
-        lastName: null,
       });
-      if (!ensureUserResult.ok) {
-        throw new Error(`ensureUser failed: ${ensureUserResult.reason}`);
-      }
 
       const supertokensStore = new SuperTokensStore(pool, new NoopLogger());
       const session = await createNewSession(
         supertokensStore,
         {
           superTokensUserId: existingUserId as string,
-          hiveUser: ensureUserResult.user,
+          hiveUser,
           oidcIntegrationId: null,
         },
         {

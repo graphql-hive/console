@@ -1516,7 +1516,7 @@ export class AppDeployments {
         z
           .array(
             z.object({
-              id: z.string().uuid(),
+              id: z.uuid(),
               name: z.string(),
               version: z.string(),
               createdAt: z.string(),
@@ -1645,7 +1645,7 @@ export class AppDeployments {
       .array(
         z.object({
           coordinate: z.string(),
-          appDeploymentId: z.string().uuid(),
+          appDeploymentId: z.uuid(),
           affectedDocumentCount: z.coerce.number(),
         }),
       )

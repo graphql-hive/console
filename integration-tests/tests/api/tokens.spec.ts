@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { pollFor, readTokenInfo } from 'testkit/flow';
+import { createToken, pollFor, readTokenInfo } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { TargetTokenStorage } from '@hive/api/modules/token/providers/target-token-storage';
@@ -314,3 +314,31 @@ test.concurrent(
       `);
   },
 );
+
+test.concurrent.each([
+  { label: 'name too short', name: 'a', message: 'Name must contain at least 2 characters' },
+  {
+    label: 'name too long',
+    name: 'a'.repeat(51),
+    message: 'Name must contain at most 50 characters',
+  },
+])('Mutation.createToken: $label', async ({ name, message }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { organization, createProject } = await createOrg();
+  const { project, target } = await createProject(ProjectType.Single);
+
+  const result = await createToken(
+    {
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      targetSlug: target.slug,
+      name,
+      organizationScopes: [],
+      projectScopes: [],
+      targetScopes: [],
+    },
+    ownerToken,
+  ).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createToken.error?.message).toBe(message);
+});

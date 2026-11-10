@@ -85,7 +85,7 @@ const postgres = deployPostgres();
 const redis = deployRedis({ environment });
 const kafka = deployKafka();
 const s3 = deployS3();
-const s3Mirror = deployS3Mirror();
+const s3Mirror = deployS3Mirror(envName);
 const s3AuditLog = deployS3AuditLog();
 
 const cdn = deployCFCDN({
@@ -96,7 +96,7 @@ const cdn = deployCFCDN({
 });
 
 const lambdaFunction = deployAWSArtifactsLambdaFunction({
-  s3Mirror,
+  s3Mirror: { secret: s3Mirror.readWriteSecret },
   environment,
   awsIamAuthEnabled: true,
 });
@@ -192,11 +192,13 @@ deployWorkflows({
   observability,
   sentry,
   heartbeat: heartbeatsConfig.get('webhooks'),
+  metricAlertsHeartbeat: heartbeatsConfig.get('metricAlertsEvaluator'),
   schema,
   redis,
   clickhouse,
   dbMigrations,
   egressManager,
+  broker,
 });
 
 const zendesk = configureZendesk({ environment });
@@ -330,7 +332,6 @@ deployCloudFlareSecurityTransform({
     '/usage',
     '/graphql',
     '/registry',
-    '/server',
     '/api/github',
     '/api/slack',
   ],
@@ -349,3 +350,5 @@ export const appId = app.deployment.id;
 export const otelCollectorId = otelCollector.deployment.id;
 export const publicIp = proxy.get()!.status.loadBalancer.ingress[0].ip;
 export const awsLambdaArtifactsFunctionUrl = lambdaFunction;
+export const s3ReadWriteAccessKeyId = s3Mirror.accessKeys.readWriteId;
+export const s3ReadOnlyAccessKeyId = s3Mirror.accessKeys.readOnlyId;

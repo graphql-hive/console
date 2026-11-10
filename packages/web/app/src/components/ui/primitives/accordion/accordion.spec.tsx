@@ -3,7 +3,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { Accordion } from './accordion';
 
 const ITEMS = [
-  { value: 'a', label: 'Breaking', content: <p>Breaking panel</p>, attrs: { 'data-cy': 'row-a' } },
+  {
+    value: 'a',
+    label: 'Breaking',
+    content: <p>Breaking panel</p>,
+    attrs: { 'data-testid': 'row-a' },
+  },
   { value: 'b', label: 'Safe', content: <p>Safe panel</p> },
   { value: 'c', label: 'Locked', content: <p>Locked panel</p>, disabled: true },
 ];
@@ -43,17 +48,17 @@ describe('Accordion', () => {
             ...ITEMS[0],
             trailing: <span>3 selected</span>,
             action: <button type="button">More</button>,
-            triggerAttrs: { 'data-cy': 'row-a-trigger' },
+            triggerAttrs: { 'data-testid': 'row-a-trigger' },
           },
         ]}
       />,
     );
     const trigger = screen.getByRole('button', { name: /Breaking/ });
     expect(trigger.textContent).toContain('3 selected');
-    expect(trigger.getAttribute('data-cy')).toBe('row-a-trigger');
+    expect(trigger.getAttribute('data-testid')).toBe('row-a-trigger');
     const more = screen.getByRole('button', { name: 'More' });
     expect(trigger.contains(more)).toBe(false);
-    expect(document.querySelector('[data-cy="row-a"]')!.contains(more)).toBe(true);
+    expect(document.querySelector('[data-testid="row-a"]')!.contains(more)).toBe(true);
   });
 
   it('will not open a disabled item', () => {
@@ -88,12 +93,12 @@ describe('Accordion', () => {
             value: 'static',
             label: 'Type removed',
             trailing: <span>Not tracked</span>,
-            attrs: { 'data-cy': 'row-static' },
+            attrs: { 'data-testid': 'row-static' },
           },
         ]}
       />,
     );
-    const row = document.querySelector('[data-cy="row-static"]')!;
+    const row = document.querySelector('[data-testid="row-static"]')!;
     expect(row.querySelector('button')).toBeNull();
     expect(row.querySelector('svg')).toBeNull();
     expect(screen.getByRole('heading', { name: /Type removed/ }).textContent).toContain(

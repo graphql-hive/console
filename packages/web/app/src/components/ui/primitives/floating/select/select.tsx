@@ -37,7 +37,7 @@ export type SelectOption = {
    * selection check, so metadata that would collide with it goes here.
    */
   trailing?: ReactNode;
-  'data-cy'?: string;
+  'data-testid'?: string;
 };
 
 // Select owns its trigger widths. Button only knows `auto | full`, because full-width is the
@@ -93,9 +93,9 @@ type SelectProps = Partial<
   name?: string;
   onBlur?: (event: FocusEvent<HTMLButtonElement>) => void;
   /** Test hook on the trigger. */
-  'data-cy'?: string;
+  'data-testid'?: string;
   /** Test hook on the popup. */
-  popupDataCy?: string;
+  popupDataTestId?: string;
 };
 
 export function Select({
@@ -121,8 +121,8 @@ export function Select({
   id,
   name,
   onBlur,
-  'data-cy': dataCy,
-  popupDataCy,
+  'data-testid': dataTestId,
+  popupDataTestId,
 }: SelectProps) {
   const selectedLabel = options.find(o => o.value === value)?.label;
   const generatedId = useId();
@@ -186,7 +186,7 @@ export function Select({
                 width={width === 'auto' ? 'auto' : 'full'}
                 id={triggerId}
                 onBlur={onBlur}
-                data-cy={dataCy}
+                data-testid={dataTestId}
               />
             )
           }
@@ -205,7 +205,7 @@ export function Select({
                 padding: 'sm',
                 className: matchTriggerWidth ? 'w-[var(--anchor-width)]' : undefined,
               })}
-              data-cy={popupDataCy}
+              data-testid={popupDataTestId}
             >
               {searchable && (
                 <FloatingSearch
@@ -225,7 +225,7 @@ export function Select({
                         key={option.value}
                         value={option.value}
                         disabled={option.disabled}
-                        data-cy={option['data-cy']}
+                        data-testid={option['data-testid']}
                         className={state =>
                           itemVariants({
                             highlighted: state.highlighted,

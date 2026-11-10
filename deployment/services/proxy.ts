@@ -52,12 +52,6 @@ export function deployProxy({
         requestTimeout: '60s',
       },
       {
-        name: 'server',
-        path: '/server',
-        service: graphql.service,
-        requestTimeout: '60s',
-      },
-      {
         name: 'github-integration',
         path: '/api/github',
         customRewrite: '/api/github',

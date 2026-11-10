@@ -692,6 +692,18 @@ const CELL_ROWS: CellRow[] = [
     note: 'The rest collapse into a +N badge that lists them.',
   },
   {
+    id: 'badge-max-length',
+    kind: 'badge, maxLength=16',
+    sample: (
+      <DataTableCell
+        kind="badge"
+        maxLength={16}
+        items={[{ content: 'Guild Members' }, { content: 'Handcrafted Granite Chair' }]}
+      />
+    ),
+    note: 'A long label is cut; hover for the full one.',
+  },
+  {
     id: 'boolean',
     kind: 'boolean',
     sample: (

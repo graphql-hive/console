@@ -4,9 +4,9 @@ COPY builder-config.yaml .
 COPY extension-hiveauth/ ./extension-hiveauth/
 COPY extension-statsviz/ ./extension-statsviz/
 
-FROM golang:1.26-bookworm AS builder
+FROM golang:1.27.3-bookworm AS builder
 
-ARG OTEL_VERSION=0.162.0
+ARG OTEL_VERSION=0.165.0
 
 WORKDIR /build
 
@@ -23,14 +23,22 @@ RUN CGO_ENABLED=0 builder --config=/build/builder-config.yaml
 # Stage 2: Final Image
 FROM alpine:3.24
 
+# zlib 1.4-r0 addresses CVE-2026-4738; remove once the alpine base image ships it
+RUN apk upgrade --no-cache zlib
+
 WORKDIR /app
 
 # Copy the generated collector binary from the builder stage
 COPY --from=builder /build/otelcol-custom .
 COPY config.yaml /etc/otel-config.yaml
 
-# Create directory for queue storage
-RUN mkdir -p /var/lib/otelcol/file_storage
+# Run as an unprivileged user that owns the queue storage (same UID our k8s pods enforce)
+RUN addgroup -S -g 1000 otelcol \
+  && adduser -S -D -H -u 1000 -G otelcol otelcol \
+  && mkdir -p /var/lib/otelcol/file_storage \
+  && chown -R 1000:1000 /var/lib/otelcol
+
+USER 1000
 
 # Expose necessary ports
 EXPOSE 4317/tcp 4318/tcp 13133/tcp 1777/tcp 8081/tcp 55679/tcp

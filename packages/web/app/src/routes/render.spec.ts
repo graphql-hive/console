@@ -61,6 +61,7 @@ const pages: Array<{ url: string; current: string }> = [
   // The subscription pages redirect to the overview while Stripe is disabled, as it is here.
   { url: PROJECT, current: 'Targets' },
   { url: `${PROJECT}/view/alerts`, current: 'Alerts' },
+  { url: `${PROJECT}/view/alerts/channels/channel-1`, current: 'Alerts' },
   { url: `${PROJECT}/view/settings`, current: 'Settings' },
   { url: TARGET, current: 'Schema' },
   { url: `${TARGET}?service=users`, current: 'Schema' },
@@ -228,7 +229,7 @@ describe('chrome at every page', () => {
     at(ORGANIZATION);
     // The trigger pulses until the current organization is known.
     await waitFor(() =>
-      expect(document.querySelector('[data-cy="user-menu-trigger"]')?.className).not.toContain(
+      expect(document.querySelector('[data-testid="user-menu-trigger"]')?.className).not.toContain(
         'animate-pulse',
       ),
     );
@@ -306,12 +307,18 @@ describe('target settings sections', () => {
     },
   );
 
-  it('renders a section at its path and keeps the data-cy hooks', { timeout: 30_000 }, async () => {
-    renderSettings(`${SETTINGS}/cdn`);
-    expect((await sectionNav()).current).toBe('CDN Tokens');
-    expect(await screen.findByText('CDN Access Token')).toBeTruthy();
-    expect(document.querySelector('[data-cy="target-settings-registry-token-link"]')).toBeTruthy();
-  });
+  it(
+    'renders a section at its path and keeps the data-testid hooks',
+    { timeout: 30_000 },
+    async () => {
+      renderSettings(`${SETTINGS}/cdn`);
+      expect((await sectionNav()).current).toBe('CDN Tokens');
+      expect(await screen.findByText('CDN Access Token')).toBeTruthy();
+      expect(
+        document.querySelector('[data-testid="target-settings-registry-token-link"]'),
+      ).toBeTruthy();
+    },
+  );
 
   it(
     'offers Base Schema instead of Schema Contracts outside federation',
@@ -507,12 +514,16 @@ describe('organization settings sections', () => {
     },
   );
 
-  it('renders a section at its path and keeps the data-cy hooks', { timeout: 30_000 }, async () => {
-    renderSettings(`${SETTINGS}/policy`);
-    expect((await sectionNav()).current).toBe('Policy');
-    expect(await screen.findByText('Rules')).toBeTruthy();
-    expect(document.querySelector('[data-cy="link-sso"]')).toBeTruthy();
-  });
+  it(
+    'renders a section at its path and keeps the data-testid hooks',
+    { timeout: 30_000 },
+    async () => {
+      renderSettings(`${SETTINGS}/policy`);
+      expect((await sectionNav()).current).toBe('Policy');
+      expect(await screen.findByText('Rules')).toBeTruthy();
+      expect(document.querySelector('[data-testid="link-sso"]')).toBeTruthy();
+    },
+  );
 
   it('hides sections the viewer may not open', { timeout: 30_000 }, async () => {
     renderSettings(

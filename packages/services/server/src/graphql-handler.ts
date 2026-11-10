@@ -17,11 +17,12 @@ import {
 } from '@graphql-hive/plugin-opentelemetry';
 import { trace } from '@graphql-hive/plugin-opentelemetry/api';
 import { useHive } from '@graphql-hive/yoga';
+import { useCSRFPrevention } from '@graphql-yoga/plugin-csrf-prevention';
 import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { Registry, RegistryContext } from '@hive/api';
 import { SuperTokensCookieBasedSession } from '@hive/api/modules/auth/lib/supertokens-strategy';
 import { requestIdStorage, type TracingInstance } from '@hive/service-common';
-import { captureException, runWithAsyncContext, withScope } from '@sentry/node';
+import { captureException, withIsolationScope, withScope } from '@sentry/node';
 import { AuthN, Session } from '../../api/src/modules/auth/lib/authz';
 import { authenticateRequest } from './authenticate-request';
 import type { HivePersistedDocumentsConfig, HiveUsageConfig } from './environment';
@@ -202,6 +203,11 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
   const server = createYoga<Context>({
     logging: options.logger,
     plugins: [
+      // The session cookie is `SameSite=Lax`, so it is sent along with cross-site top-level GET navigations.
+      // Reject requests that did not go through a CORS preflight unless they carry a custom header.
+      useCSRFPrevention({
+        requestHeaders: ['graphql-client-name'],
+      }),
       useArmor(),
       useHiveErrorHandler(err => {
         options.logger.error(err, 'Unexpected error occurred while handling exception.');
@@ -299,7 +305,9 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
         requestId,
       },
       async () => {
-        const response = await runWithAsyncContext(() => {
+        // Sentry's http integration already isolates each incoming request; this keeps the
+        // GraphQL handling isolated on its own, including under fastify.inject in tests.
+        const response = await withIsolationScope(() => {
           return server.handleNodeRequestAndResponse(req, reply, {
             req,
             reply,

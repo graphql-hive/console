@@ -1,7 +1,11 @@
 import { z } from 'zod';
+import { AuthCard } from '@/components/auth';
 import { authenticated } from '@/components/authenticated-container';
+import { resolveOidcId } from '@/lib/auth/oidc-lookup';
+import { isProviderEnabled } from '@/lib/auth/providers';
 import { requireSession } from '@/lib/auth/require-session';
-import { redirectToPathSchema } from '@/lib/route-utils';
+import { doesSessionExist } from '@/lib/auth/session';
+import { organizationSlugFromPath, redirectToPathSchema } from '@/lib/route-utils';
 import { AuthPage } from '@/pages/auth';
 import { AuthCallbackPage } from '@/pages/auth-callback';
 import { AuthOIDCPage } from '@/pages/auth-oidc';
@@ -72,24 +76,52 @@ export const authSignInRoute = createRoute({
   },
 });
 
+const slugSearch = z
+  .union([z.string(), z.number()])
+  .transform(value => String(value).trim().toLowerCase() || undefined)
+  .optional()
+  .catch(undefined);
+
+const AuthSSORouteSearch = AuthSharedSearch.extend({ slug: slugSearch });
 export const authSSORoute = createRoute({
   getParentRoute: () => authRoute,
   path: 'sso',
   validateSearch(search) {
-    return AuthSharedSearch.parse(search);
+    return AuthSSORouteSearch.parse(search);
+  },
+  loaderDeps: ({ search }) => search,
+  pendingComponent: () => (
+    <AuthCard title="Login with SSO" description="Checking your organization's sign-in method" />
+  ),
+  loader: async ({ deps, preload }) => {
+    const slug = deps.slug ?? organizationSlugFromPath(deps.redirectToPath) ?? '';
+    if (!slug || preload || !isProviderEnabled('oidc') || (await doesSessionExist())) {
+      return { slug };
+    }
+    const result = await resolveOidcId(slug).catch(() => undefined);
+    if (result?.ok) {
+      throw redirect({
+        to: '/auth/oidc',
+        search: { id: result.id, slug, redirectToPath: deps.redirectToPath },
+        replace: true,
+      });
+    }
+    return { slug };
   },
   component: () => {
+    const { slug } = authSSORoute.useLoaderData();
     const { redirectToPath } = authSSORoute.useSearch();
-    return <AuthSSOPage redirectToPath={redirectToPath} />;
+    return <AuthSSOPage redirectToPath={redirectToPath} initialSlug={slug} />;
   },
 });
 
 const AuthOIDCRouteSearch = AuthSharedSearch.extend({
   id: z
     .string({
-      required_error: 'OIDC ID is required',
+      error: issue => (issue.input === undefined ? 'OIDC ID is required' : undefined),
     })
     .optional(),
+  slug: slugSearch,
 });
 export const authOIDCRoute = createRoute({
   getParentRoute: () => authRoute,
@@ -98,8 +130,8 @@ export const authOIDCRoute = createRoute({
     return AuthOIDCRouteSearch.parse(search);
   },
   component: function AuthOIDCRoute() {
-    const { id, redirectToPath } = authOIDCRoute.useSearch();
-    return <AuthOIDCPage oidcId={id} redirectToPath={redirectToPath} />;
+    const { id, slug, redirectToPath } = authOIDCRoute.useSearch();
+    return <AuthOIDCPage oidcId={id} slug={slug} redirectToPath={redirectToPath} />;
   },
 });
 

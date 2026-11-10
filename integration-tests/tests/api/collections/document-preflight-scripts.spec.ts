@@ -38,4 +38,20 @@ describe('Preflight Script', () => {
       });
     });
   });
+
+  describe('Validation', () => {
+    test.concurrent('Mutation.updatePreflightScript: source code too long', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { updatePreflightScript } = await createProject(ProjectType.Single);
+
+      const result = await updatePreflightScript({ sourceCode: 'a'.repeat(5_001) });
+
+      expect(result.error).toMatchInlineSnapshot(`
+        {
+          message: Source code must be less than 5000 characters,
+        }
+      `);
+    });
+  });
 });

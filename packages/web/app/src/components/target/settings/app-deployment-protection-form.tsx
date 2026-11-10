@@ -11,7 +11,10 @@ import { cn } from '@/lib/utils';
 
 const wholeDays = (min: number, minMessage: string) =>
   numberInput(
-    z.number({ required_error: 'Required' }).int('Must be a whole number').min(min, minMessage),
+    z
+      .number({ error: issue => (issue.input === undefined ? 'Required' : undefined) })
+      .int({ error: 'Must be a whole number' })
+      .min(min, minMessage),
   );
 
 export const AppDeploymentProtectionFormSchema = z.object({
@@ -19,12 +22,12 @@ export const AppDeploymentProtectionFormSchema = z.object({
   minDaysInactive: wholeDays(0, 'Must be at least 0'),
   maxTrafficPercentage: numberInput(
     z
-      .number({ required_error: 'Required' })
+      .number({ error: issue => (issue.input === undefined ? 'Required' : undefined) })
       .min(0, 'Must be at least 0')
       .max(100, 'Must be at most 100'),
   ),
   trafficPeriodDays: wholeDays(1, 'Must be at least 1'),
-  ruleLogic: z.nativeEnum(AppDeploymentProtectionRuleLogicType),
+  ruleLogic: z.enum(AppDeploymentProtectionRuleLogicType),
 });
 
 export type AppDeploymentProtectionFormValues = z.infer<typeof AppDeploymentProtectionFormSchema>;

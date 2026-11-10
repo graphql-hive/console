@@ -39,8 +39,8 @@ test.describe('basic user flow', () => {
     await auth.login(user);
     await app.createOrganization(generateRandomSlug());
 
-    await page.locator('[data-cy="user-menu-trigger"]').click();
-    await page.locator('[data-cy="user-menu-logout"]').click();
+    await page.locator('[data-testid="user-menu-trigger"]').click();
+    await page.locator('[data-testid="user-menu-logout"]').click();
     await expect(page).toHaveURL(/\/auth\/sign-in\?redirectToPath=/);
   });
 });
@@ -94,8 +94,8 @@ test.describe('oidc', () => {
     await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
     await oidc.createIntegration();
-    await page.locator('[data-cy="role-selector-trigger"]').click();
-    await page.locator('[data-cy="role-selector-item"]').getByText('Admin').click();
+    await page.locator('[data-testid="role-selector-trigger"]').click();
+    await page.locator('[data-testid="role-selector-item"]').getByText('Admin').click();
 
     await oidc.startSlugLogin(slug);
     await oidc.loginWithMockUser({ username: 'test-user-2', email: 'tom.sailor@gmail.com' });
@@ -158,7 +158,7 @@ test.describe('oidc', () => {
   test('oidc login for invalid url shows correct error message', async ({ page, auth }) => {
     await auth.clearSession();
     await page.goto('/auth/oidc?id=invalid', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-cy="auth-card-header-description"]')).toContainText(
+    await expect(page.locator('[data-testid="auth-card-header-description"]')).toContainText(
       'Something went wrong. Please try again',
     );
   });
@@ -170,7 +170,7 @@ test.describe('oidc', () => {
       await page.goto(`/${slug}`, { waitUntil: 'domcontentloaded' });
 
       await oidc.createIntegration();
-      await page.locator('[data-cy="oidc-require-invitation-toggle"]').click();
+      await page.locator('[data-testid="oidc-require-invitation-toggle"]').click();
       await expect(
         page.getByText('OIDC restrictions updated successfully', { exact: true }).first(),
       ).toBeVisible();
@@ -191,10 +191,10 @@ test.describe('oidc', () => {
       await page.goto(`/${slug}/view/members/invitations`, {
         waitUntil: 'domcontentloaded',
       });
-      await page.locator('button[data-cy="send-invite-trigger"]').click();
+      await page.locator('button[data-testid="send-invite-trigger"]').click();
       await page.locator('input[name="email"]').fill('tom.sailor@gmail.com');
-      await page.locator('button[data-cy="role-selector-trigger"]').click();
-      await page.locator('[data-cy="role-selector-item"]').getByText('Admin').click();
+      await page.locator('button[data-testid="role-selector-trigger"]').click();
+      await page.locator('[data-testid="role-selector-item"]').getByText('Admin').click();
       await page.locator('button[type="submit"]').click();
       await expect(page.locator('.container table')).toContainText('tom.sailor@gmail.com');
 

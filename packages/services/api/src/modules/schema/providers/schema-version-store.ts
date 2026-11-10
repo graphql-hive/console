@@ -996,7 +996,7 @@ export class SchemaVersionStore {
           "sl"."created_at" DESC
       `,
         )
-        .then(z.array(z.object({ schemaVersionId: z.string() }).passthrough()).parse);
+        .then(z.array(z.looseObject({ schemaVersionId: z.string() })).parse);
 
       const schemasByVersionId = new Map<
         string,

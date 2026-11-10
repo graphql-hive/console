@@ -756,22 +756,6 @@ stdout--------------------------------------------:
 __NONE__
 `;
 
-exports[`breaking changes can be upgraded to breaking changes > schemaPublish (initial) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
-exports[`can update the service url and show it in comparison query > schemaPublish (initial) 1`] = `
-:::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
-
-stdout--------------------------------------------:
-✔ Published initial schema.
-ℹ Available at http://__URL__
-`;
-
 exports[`schema:check errors for dangerous changes when upgraded to breaking changes (fail all) > schemaPublish (initial) 1`] = `
 :::::::::::::::: CLI SUCCESS OUTPUT :::::::::::::::::
 

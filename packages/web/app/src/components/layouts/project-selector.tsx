@@ -70,7 +70,7 @@ export function ProjectSelector(props: {
                 },
               });
             }}
-            data-cy="project-picker-trigger"
+            data-testid="project-picker-trigger"
           />
         </>
       ) : (

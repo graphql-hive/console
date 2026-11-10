@@ -15,10 +15,10 @@ describe('TabbedView', () => {
         items={VIEWS}
         defaultValue="details"
         onValueChange={onValueChange}
-        attrs={{ 'data-cy': 'check-view' }}
+        attrs={{ 'data-testid': 'check-view' }}
       />,
     );
-    const view = document.querySelector('[data-cy="check-view"]')!;
+    const view = document.querySelector('[data-testid="check-view"]')!;
     const band = view.firstElementChild!;
     expect(band.querySelectorAll('[role="tab"]')).toHaveLength(2);
     expect(screen.getByRole('tabpanel').textContent).toBe('Details view');

@@ -47,9 +47,9 @@ describe('RegisterDomainForm', () => {
     await submitWith('ab');
     expect(screen.getByText('Must be at least 3 characters long')).toBeTruthy();
     await submitWith('not a domain');
-    expect(screen.getByText('Invalid domain provided.')).toBeTruthy();
+    expect(screen.getByText('Invalid domain provided')).toBeTruthy();
     await submitWith('Example.com');
-    expect(screen.getByText('Invalid domain provided.')).toBeTruthy();
+    expect(screen.getByText('Invalid domain provided')).toBeTruthy();
     expect(onSubmit).not.toHaveBeenCalled();
 
     await submitWith('buzzcheck.dev');

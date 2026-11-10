@@ -73,7 +73,7 @@ const MetricAlertRuleModel = zod
     savedFilterId: zod.string().nullable(),
   })
   .refine(data => (data.type === 'LATENCY') === (data.metric !== null), {
-    message: 'metric must be set for LATENCY type and null for other types',
+    error: 'metric must be set for LATENCY type and null for other types',
   });
 
 const MetricAlertIncidentModel = zod.object({

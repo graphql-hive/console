@@ -13,13 +13,13 @@ import { Input } from '@/components/ui/primitives/input/input';
 export const CreateTargetFormSchema = z.object({
   targetSlug: z
     .string({
-      required_error: 'Target slug is required',
+      error: issue => (issue.input === undefined ? 'Target slug is required' : undefined),
     })
     .min(2, {
-      message: 'Target slug must be at least 2 characters long',
+      error: 'Target slug must be at least 2 characters long',
     })
     .max(50, {
-      message: 'Target slug must be at most 50 characters long',
+      error: 'Target slug must be at most 50 characters long',
     }),
 });
 

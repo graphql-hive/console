@@ -1,8 +1,10 @@
 import { printWithValues, type SqlValue } from '@hive/clickhouse';
+import type { PostgresDatabasePool } from '@hive/postgres';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
   buildSavedFilterConditions,
   DAILY_THRESHOLD_MINUTES,
+  evaluateRule,
   evaluationIntervalMinutes,
   extractMetricValue,
   groupRulesByQuery,
@@ -431,5 +433,86 @@ describe('extractMetricValue', () => {
     expect(() =>
       extractMetricValue(row({ percentiles: null }), makeRule({ type: 'LATENCY', metric: 'P95' })),
     ).toThrow(/duration_quantiles/);
+  });
+});
+
+describe('evaluateRule incident queries', () => {
+  // A transactional pg stub that answers the incident reads and records every statement.
+  type Statement = { sql: string; values: readonly unknown[] };
+  type Trx = {
+    query: (query: Statement) => Promise<void>;
+    oneFirst: (query: Statement) => Promise<string>;
+    maybeOneFirst: (query: Statement) => Promise<string | null>;
+    anyFirst: (query: Statement) => Promise<string[]>;
+    transaction: (name: string, handler: (trx: Trx) => Promise<unknown>) => Promise<unknown>;
+  };
+  function stubPg(openIncidentIds: string[]) {
+    const calls: Statement[] = [];
+    const record = (query: Statement) => calls.push({ sql: query.sql, values: query.values });
+    const methods: Trx = {
+      query: async query => {
+        record(query);
+      },
+      oneFirst: async query => {
+        record(query);
+        return 'state-log-1';
+      },
+      // Mirrors slonik: more than one row is an error unless the statement asked for one.
+      maybeOneFirst: async query => {
+        record(query);
+        if (openIncidentIds.length > 1 && !query.sql.includes('LIMIT 1')) {
+          throw new Error('Query returned multiple rows.');
+        }
+        return openIncidentIds[0] ?? null;
+      },
+      anyFirst: async query => {
+        record(query);
+        return openIncidentIds;
+      },
+      transaction: async (_name, handler) => handler(methods),
+    };
+    return { pg: methods as unknown as PostgresDatabasePool, calls };
+  }
+  const evaluationTime = new Date('2026-10-29T10:00:00.000Z');
+  const quiet = {
+    window: 'current' as const,
+    total: '1',
+    total_ok: '1',
+    average: null,
+    percentiles: null,
+  };
+
+  test('leaving FIRING reads one open incident, the newest, rather than failing on several', async () => {
+    const { pg, calls } = stubPg(['incident-new', 'incident-old']);
+    await evaluateRule({
+      rule: makeRule({ state: 'FIRING', type: 'TRAFFIC', thresholdValue: 100 }),
+      current: quiet,
+      previous: null,
+      pg,
+      logger: makeLogger().logger,
+      evaluationTime,
+    });
+    const read = calls.find(c => c.sql.includes('SELECT "id" FROM "metric_alert_incidents"'));
+    expect(read?.sql).toContain('ORDER BY "started_at" DESC');
+    expect(read?.sql).toContain('LIMIT 1');
+    const logged = calls.find(c => c.sql.includes('INSERT INTO "metric_alert_state_log"'));
+    expect(logged?.values).toContain('incident-new');
+  });
+
+  test('recovering to NORMAL resolves every open incident and logs against one of them', async () => {
+    const { pg, calls } = stubPg(['incident-new', 'incident-old']);
+    await evaluateRule({
+      rule: makeRule({ state: 'RECOVERING', type: 'TRAFFIC', thresholdValue: 100 }),
+      current: quiet,
+      previous: null,
+      pg,
+      logger: makeLogger().logger,
+      evaluationTime,
+    });
+    const resolve = calls.find(c => c.sql.includes('SET "resolved_at" = NOW()'));
+    // The UPDATE itself is unbounded (every open incident resolves); the id read back is the newest.
+    expect(resolve?.sql).toContain('ORDER BY "started_at" DESC LIMIT 1');
+    const logged = calls.find(c => c.sql.includes('INSERT INTO "metric_alert_state_log"'));
+    expect(logged?.values).toContain('incident-new');
   });
 });

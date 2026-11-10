@@ -580,7 +580,7 @@ export class OIDCIntegrationsProvider {
   }
 
   async registerDomain(args: { oidcIntegrationId: string; domain: string }) {
-    const parsedId = zod.string().uuid().safeParse(args.oidcIntegrationId);
+    const parsedId = zod.uuid().safeParse(args.oidcIntegrationId);
 
     if (parsedId.error) {
       this.session.raise('oidc:modify');
@@ -646,7 +646,7 @@ export class OIDCIntegrationsProvider {
   }
 
   async requestDomainChallenge(args: { domainId: string }) {
-    const parsedId = zod.string().uuid().safeParse(args.domainId);
+    const parsedId = zod.uuid().safeParse(args.domainId);
 
     if (parsedId.error) {
       this.logger.debug('the provided domain ID is invalid.');
@@ -713,7 +713,7 @@ export class OIDCIntegrationsProvider {
 
   async verifyDomainChallenge(args: { domainId: string }) {
     this.logger.debug('attempt to verify the domain challenge.');
-    const parsedId = zod.string().uuid().safeParse(args.domainId);
+    const parsedId = zod.uuid().safeParse(args.domainId);
 
     if (parsedId.error) {
       this.logger.debug('invalid it provided.');
@@ -836,7 +836,7 @@ export class OIDCIntegrationsProvider {
   }
 
   async deleteDomain(args: { domainId: string }) {
-    const parsedId = zod.string().uuid().safeParse(args.domainId);
+    const parsedId = zod.uuid().safeParse(args.domainId);
 
     if (parsedId.error) {
       return {
@@ -881,34 +881,34 @@ export class OIDCIntegrationsProvider {
 const OIDCIntegrationClientIdModel = zod
   .string()
   .trim()
-  .min(3, 'Must be at least 3 characters long.')
-  .max(100, 'Can not be longer than 100 characters.');
+  .min(3, 'Must be at least 3 characters long')
+  .max(100, 'Can not be longer than 100 characters');
 
 const OIDCClientSecretModel = zod
   .string()
   .trim()
-  .min(3, 'Must be at least 3 characters long.')
-  .max(200, 'Can not be longer than 200 characters.');
+  .min(3, 'Must be at least 3 characters long')
+  .max(200, 'Can not be longer than 200 characters');
 
-const OAuthAPIUrlModel = zod.string().trim().url('Must be a valid OAuth API url.');
+const OAuthAPIUrlModel = zod.string().trim().url('Must be a valid OAuth API url');
 
 const OIDCScopeModel = zod
   .string()
   .toLowerCase()
-  .nonempty('Must not be empty.')
-  .max(50, 'Can not be longer than 50 characters.')
-  .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.');
+  .nonempty('Must not be empty')
+  .max(50, 'Can not be longer than 50 characters')
+  .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope');
 
 const OIDCClaimModel = zod
   .string()
   .trim()
-  .nonempty('Must not be empty.')
-  .max(50, 'Can not be longer than 50 characters.')
-  .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope.');
+  .nonempty('Must not be empty')
+  .max(50, 'Can not be longer than 50 characters')
+  .regex(/^[a-z0-9](?:[a-z0-9.:/_-]*[a-z0-9])?$/, 'Must be a valid scope');
 
 const OIDCAdditionalScopesModel = zod
   .array(OIDCScopeModel)
-  .max(20, 'Can not be more than 20 items.');
+  .max(20, 'Can not be more than 20 items');
 
 const maybe = <TSchema>(schema: zod.ZodSchema<TSchema>) => zod.union([schema, zod.null()]);
 
@@ -916,5 +916,5 @@ const FQDNModel = zod
   .string()
   .trim()
   .min(3, 'Must be at least 3 characters long')
-  .max(255, 'Must be at most 255 characters long.')
-  .regex(/^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]+$/, 'Invalid domain provided.');
+  .max(255, 'Must be at most 255 characters long')
+  .regex(/^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]+$/, 'Invalid domain provided');

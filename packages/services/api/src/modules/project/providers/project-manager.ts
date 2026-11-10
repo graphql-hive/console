@@ -75,7 +75,7 @@ export class ProjectManager {
         ok: false as const,
         message: 'Please check your input.',
         inputErrors: {
-          slug: inputParseResult.error.formErrors.fieldErrors.slug?.[0],
+          slug: z.flattenError(inputParseResult.error).fieldErrors.slug?.[0],
         },
       };
     }
@@ -325,7 +325,8 @@ export class ProjectManager {
       return {
         ok: false,
         message:
-          inputParseResult.error.formErrors.fieldErrors.slug?.[0] ?? 'Please check your input.',
+          z.flattenError(inputParseResult.error).fieldErrors.slug?.[0] ??
+          'Please check your input.',
       };
     }
 

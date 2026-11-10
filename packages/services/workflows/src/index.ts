@@ -18,6 +18,7 @@ import {
 import { Context } from './context.js';
 import { env } from './environment.js';
 import { ClickHouseClient } from './lib/clickhouse-client.js';
+import { createDeliveryRecorder } from './lib/delivery-recorder.js';
 import { createEmailProvider } from './lib/emails/providers.js';
 import { schemaProvider } from './lib/schema/provider.js';
 import { bridgeFastifyLogger } from './logger.js';
@@ -103,14 +104,18 @@ const crontabLines: string[] = [
   '0 11 * * 0 purgeExpiredSchemaRevisions',
 ];
 if (env.clickhouse) {
+  // One named queue so two pods never evaluate at once (a tick that overruns the minute, or a
+  // retried job, would otherwise race the next cron job into double transitions and duplicate
+  // incidents). max=1 because a retry is pointless for a per-minute task: the next cron job does
+  // the same work, and a backlog of retries is exactly what fuels that race.
   crontabLines.push(
     '# Evaluate metric alert rules every minute',
-    '* * * * * evaluateMetricAlertRules',
+    '* * * * * evaluateMetricAlertRules ?queue=metric-alerts&max=1',
   );
 } else {
   logger.warn(
-    'ClickHouse not configured — metric alert rules will not be evaluated. ' +
-      'Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
+    'ClickHouse not configured — metric alert rules will not be evaluated and outbound ' +
+      'deliveries will not be recorded. Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
   );
 }
 crontabLines.push(
@@ -151,6 +156,7 @@ const pubSub = createHivePubSub({
 const clickhouse = env.clickhouse
   ? new ClickHouseClient(env.clickhouse, logger.child({ source: 'ClickHouse' }))
   : null;
+const deliveries = createDeliveryRecorder(clickhouse, logger.child({ source: 'Deliveries' }));
 
 const encryptor = env.encryptionSecret ? new Encryptor(env.encryptionSecret) : null;
 if (!encryptor) {
@@ -165,6 +171,8 @@ const context: Context = {
   email: createEmailProvider(env.email.provider, env.email.emailFrom),
   pg,
   clickhouse,
+  deliveries,
+  release: env.release,
   requestBroker: env.requestBroker,
   redis,
   schema: schemaProvider({
@@ -174,6 +182,7 @@ const context: Context = {
   pubSub,
   webAppUrl: env.webAppUrl,
   crypto: encryptor,
+  metricAlertsHeartbeatEndpoint: env.metricAlertsHeartbeat?.endpoint ?? null,
 };
 
 server.route({

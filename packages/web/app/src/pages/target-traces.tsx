@@ -81,15 +81,10 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
   );
 });
 
-const TargetTracesSortShape = z
-  .object({
-    desc: z.coerce.boolean(),
-    id: z.union([z.literal('timestamp'), z.literal('duration')]),
-  })
-  .default({
-    desc: true,
-    id: 'timestamp',
-  });
+const TargetTracesSortShape = z.object({
+  desc: z.coerce.boolean(),
+  id: z.union([z.literal('timestamp'), z.literal('duration')]),
+});
 
 export const TargetTracesSort = {
   shape: TargetTracesSortShape,

@@ -360,8 +360,8 @@ export class GroupStore {
 }
 
 const GroupModel = z.object({
-  id: z.string().uuid(),
-  organizationId: z.string().uuid(),
+  id: z.uuid(),
+  organizationId: z.uuid(),
   displayName: z.string(),
   createdAt: z.string(),
   externalId: z.string().nullable(),

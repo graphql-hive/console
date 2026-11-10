@@ -22,7 +22,7 @@
     "pino-pretty": "catalog:",
     "reflect-metadata": "catalog:",
     "stripe": "catalog:",
-    "zod": "3.25.76"
+    "zod": "catalog:"
   },
   "buildOptions": {
     "external": [

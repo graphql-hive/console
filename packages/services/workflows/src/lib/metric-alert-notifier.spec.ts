@@ -1,13 +1,18 @@
 import type { PostgresDatabasePool } from '@hive/postgres';
 import { Encryptor } from '@hive/service-common';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
-import type { AlertChannelRow, NotificationEvent } from './metric-alert-notifier.js';
+import {
+  describeSlackError,
+  type AlertChannelRow,
+  type NotificationEvent,
+} from './metric-alert-notifier.js';
 import { makeLogger, makeRule } from './metric-alert-test-utils.js';
 
 const postMessage = vi.fn(
   async (_args: {
     unfurl_links?: boolean;
     attachments: Array<{ color: string; blocks: Array<{ text: { text: string } }> }>;
+    metadata?: { event_type: string; event_payload: Record<string, string> };
   }) => ({ ok: true }),
 );
 
@@ -15,12 +20,20 @@ const postMessage = vi.fn(
 // the stub has to capture it. It previously ignored the argument, which is exactly how
 // an encrypted token reached Slack unnoticed.
 let constructedWithToken: string | null = null;
+let constructedWithOptions: Record<string, unknown> | null = null;
 
 vi.mock('@slack/web-api', () => ({
+  ErrorCode: {
+    RequestError: 'slack_webapi_request_error',
+    HTTPError: 'slack_webapi_http_error',
+    PlatformError: 'slack_webapi_platform_error',
+    RateLimitedError: 'slack_webapi_rate_limited_error',
+  },
   WebClient: class {
     chat = { postMessage };
-    constructor(token: string) {
+    constructor(token: string, options?: Record<string, unknown>) {
       constructedWithToken = token;
+      constructedWithOptions = options ?? null;
     }
   },
 }));
@@ -55,6 +68,13 @@ function pgReturning(token: string | null) {
   return { maybeOneFirst: async () => token } as unknown as PostgresDatabasePool;
 }
 
+const trackingRecord = vi.fn(async () => {});
+const tracking = {
+  recorder: { record: trackingRecord },
+  release: '1.2.3',
+  requestId: 'req-1',
+};
+
 const channel: AlertChannelRow = {
   id: 'channel-1',
   type: 'SLACK',
@@ -70,6 +90,7 @@ function makeEvent(overrides: Partial<NotificationEvent> = {}): NotificationEven
     rule: makeRule({ type: 'ERROR_RATE', thresholdValue: 2, severity: 'WARNING' }),
     currentValue: 2.15,
     previousValue: null,
+    targetId: 't1',
     organizationSlug: 'the-guild',
     projectSlug: 'graphql-hive',
     targetSlug: 'production',
@@ -115,6 +136,10 @@ async function post(event: NotificationEvent, webAppUrl: string | null = null) {
     logger: makeLogger().logger,
     webAppUrl,
     crypto: encryptor,
+    tracking,
+    attempt: 1,
+    maxAttempts: 25,
+    idempotencyKey: 'key-1',
   });
   const [args] = postMessage.mock.calls[0];
   return { args, attachment: args.attachments[0] };
@@ -165,6 +190,10 @@ describe('sendSlackNotification', () => {
       logger: makeLogger().logger,
       webAppUrl: null,
       crypto: encryptor,
+      tracking,
+      attempt: 1,
+      maxAttempts: 25,
+      idempotencyKey: 'key-1',
     });
 
     expect(result).toEqual({ status: 'sent' });
@@ -181,6 +210,10 @@ describe('sendSlackNotification', () => {
       logger,
       webAppUrl: null,
       crypto: encryptor,
+      tracking,
+      attempt: 1,
+      maxAttempts: 25,
+      idempotencyKey: 'key-1',
     });
 
     expect(result).toEqual({ status: 'skipped-config', reason: 'no-slack-channel' });
@@ -201,6 +234,10 @@ describe('sendSlackNotification', () => {
       logger,
       webAppUrl: null,
       crypto: encryptor,
+      tracking,
+      attempt: 1,
+      maxAttempts: 25,
+      idempotencyKey: 'key-1',
     });
 
     expect(result).toEqual({ status: 'skipped-config', reason: 'no-slack-token' });
@@ -224,6 +261,10 @@ describe('sendSlackNotification token decryption', () => {
       logger,
       webAppUrl: null,
       crypto,
+      tracking,
+      attempt: 1,
+      maxAttempts: 25,
+      idempotencyKey: 'key-1',
     });
 
     return { result, token: constructedWithToken };
@@ -322,6 +363,7 @@ async function postDiscord(
     attempt: 1,
     maxAttempts: 3,
     webAppUrl,
+    tracking,
   });
   const call = sendWebhook.mock.calls[0] as unknown as
     | [unknown, unknown, { data: { embeds: DiscordEmbed[] } }]
@@ -403,5 +445,168 @@ describe('sendDiscordNotification', () => {
     const { result } = await postDiscord(makeEvent(), WEB_APP_URL);
 
     expect(result).toEqual({ status: 'gave-up' });
+  });
+});
+
+describe('delivery tracking', () => {
+  beforeEach(() => {
+    trackingRecord.mockClear();
+  });
+
+  test('Slack messages carry the Hive metadata and the attempt is recorded', async () => {
+    const { args } = await post(makeEvent(), WEB_APP_URL);
+
+    expect(constructedWithOptions).toEqual({ retryConfig: { retries: 3 } });
+    expect(args.metadata).toEqual({
+      event_type: 'metric_alert',
+      event_payload: {
+        hive_request_id: 'req-1',
+        hive_target_id: 't1',
+        idempotency_key: 'key-1',
+        user_agent: 'Hive-Webhooks/1.2.3',
+      },
+    });
+    expect(trackingRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 'o1',
+        deliveryType: 'SLACK',
+        destination: 'channel-1',
+        event: 'metric_alert',
+        attempt: 1,
+        ok: true,
+        statusCode: null,
+        statusText: 'ok',
+        metadata: { event_type: 'metric_alert', ...args.metadata!.event_payload },
+      }),
+    );
+  });
+
+  test('a Slack platform error is recorded and still rejects so the job retries', async () => {
+    const error = {
+      code: 'slack_webapi_platform_error',
+      message: 'An API error occurred: channel_not_found',
+      data: { ok: false, error: 'channel_not_found' },
+    };
+    postMessage.mockRejectedValueOnce(error);
+
+    await expect(
+      sendSlackNotification({
+        channel,
+        event: makeEvent(),
+        pg,
+        logger: makeLogger().logger,
+        webAppUrl: null,
+        crypto: encryptor,
+        tracking,
+        attempt: 2,
+        maxAttempts: 25,
+        idempotencyKey: 'key-1',
+      }),
+    ).rejects.toBe(error);
+
+    expect(trackingRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attempt: 2,
+        ok: false,
+        statusCode: null,
+        statusText: 'channel_not_found',
+      }),
+    );
+  });
+
+  test('Discord webhooks carry the Hive headers and hand the recorder to sendWebhook', async () => {
+    await postDiscord(makeEvent());
+
+    const call = sendWebhook.mock.calls[0] as unknown as [
+      unknown,
+      unknown,
+      { headers: Record<string, string>; delivery: { recorder: unknown; meta: unknown } },
+    ];
+    expect(call[2].headers).toEqual({
+      'Hive-Request-ID': 'req-1',
+      'Hive-Event': 'metric_alert',
+      'Hive-Target-ID': 't1',
+      'User-Agent': 'Hive-Webhooks/1.2.3',
+      'Idempotency-Key': 'key-1',
+    });
+    expect(call[2].delivery).toEqual({
+      recorder: tracking.recorder,
+      meta: expect.objectContaining({
+        organizationId: 'o1',
+        deliveryType: 'DISCORD',
+        destination: 'channel-2',
+        event: 'metric_alert',
+        attempt: 1,
+        metadata: call[2].headers,
+      }),
+    });
+  });
+});
+
+describe('describeSlackError', () => {
+  test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
+    [
+      'platform error',
+      Object.assign(new Error('An API error occurred: channel_not_found'), {
+        code: 'slack_webapi_platform_error',
+        data: { ok: false, error: 'channel_not_found' },
+      }),
+      { statusCode: null, statusText: 'channel_not_found' },
+    ],
+    [
+      'platform error without a result code',
+      Object.assign(new Error('An API error occurred: undefined'), {
+        code: 'slack_webapi_platform_error',
+        data: { ok: false },
+      }),
+      null,
+    ],
+    [
+      'HTTP error',
+      Object.assign(new Error('An HTTP protocol error occurred: statusCode = 500'), {
+        code: 'slack_webapi_http_error',
+        statusCode: 500,
+        statusMessage: 'Internal Server Error',
+      }),
+      { statusCode: 500, statusText: 'Internal Server Error' },
+    ],
+    [
+      'rate limit',
+      Object.assign(new Error('A rate-limit has been reached'), {
+        code: 'slack_webapi_rate_limited_error',
+      }),
+      { statusCode: 429, statusText: 'rate_limited' },
+    ],
+    [
+      'rate limit once the client gave up retrying',
+      new Error(
+        'A rate limit was exceeded (url: https://slack.com/api/chat.postMessage, retry-after: 3)',
+      ),
+      { statusCode: 429, statusText: 'rate_limited' },
+    ],
+    [
+      'request timed out on the socket',
+      Object.assign(new Error('A request error occurred: connect ETIMEDOUT 3.123.4.5:443'), {
+        code: 'slack_webapi_request_error',
+        original: Object.assign(new Error('connect ETIMEDOUT 3.123.4.5:443'), {
+          code: 'ETIMEDOUT',
+        }),
+      }),
+      { statusCode: null, statusText: 'Timed out' },
+    ],
+    [
+      'request failed on DNS',
+      Object.assign(new Error('A request error occurred: getaddrinfo ENOTFOUND slack.com'), {
+        code: 'slack_webapi_request_error',
+        original: Object.assign(new Error('getaddrinfo ENOTFOUND slack.com'), {
+          code: 'ENOTFOUND',
+        }),
+      }),
+      null,
+    ],
+    ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
+    ['not an error', 'nope', null],
+  ])('%s', (_name, error, expected) => {
+    expect(describeSlackError(error)).toEqual(expected);
   });
 });

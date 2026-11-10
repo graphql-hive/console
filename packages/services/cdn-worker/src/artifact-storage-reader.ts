@@ -4,7 +4,7 @@ import { AwsClient } from './aws';
 import type { Breadcrumb } from './breadcrumbs';
 
 export const AppDeploymentManifestModel = zod.object({
-  id: zod.string().uuid(),
+  id: zod.uuid(),
   appName: zod.string(),
   appVersion: zod.string(),
   isActive: zod.boolean(),
@@ -33,7 +33,7 @@ type SDLArtifactTypes = `sdl${'.graphql' | '.graphqls' | ''}`;
 export type ArtifactsType = SDLArtifactTypes | 'metadata' | 'services' | 'supergraph';
 
 const OperationS3BucketKeyModel = zod.tuple([
-  zod.string().uuid(),
+  zod.uuid(),
   zod.string().min(1),
   zod.string().min(1),
   zod.string().min(1),
@@ -50,7 +50,7 @@ export function buildOperationS3BucketKey(
 }
 
 const AppDeploymentIsEnabledKeyModel = zod.tuple([
-  zod.string().uuid(),
+  zod.uuid(),
   zod.string().min(1),
   zod.string().min(1),
 ]);
