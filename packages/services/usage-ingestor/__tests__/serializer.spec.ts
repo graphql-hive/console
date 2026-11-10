@@ -5,6 +5,7 @@ import {
   stringifyOperationErrors,
   stringifyQueryOrMutationOperation,
   stringifyRegistryRecord,
+  stringifySubscriptionOperation,
 } from '../src/serializer';
 
 const timestamp = {
@@ -94,6 +95,63 @@ test('stringify operation in correct format and order', () => {
         /* client_name */ `\\N`,
         /* client_version */ `\\N`,
         /* coordinates_total */ `"{'foo':1}"`,
+        /* graph_id */ `\\N`,
+        /* graph_version_id */ `\\N`,
+      ].join(','),
+    ].join('\n'),
+  );
+});
+
+test('stringify subscription operation in correct format and order', () => {
+  const serialized = joinIntoSingleMessage(
+    [
+      {
+        organization: 'my-organization',
+        target: 'my-target',
+        timestamp: timestamp.asNumber,
+        expiresAt: expiresAt.asNumber,
+        operationHash: 'my-hash',
+        metadata: {
+          client: {
+            name: 'clientName',
+            version: 'clientVersion',
+          },
+          graph: {
+            graphId: '0f9c3a39-3c4e-4a3b-9a0c-6f1f0b9a2f01',
+            graphVersionId: '6b1d4c2e-8a3f-4e5d-9b7c-1a2b3c4d5e6f',
+          },
+        },
+      },
+      {
+        organization: 'my-organization',
+        target: 'my-target',
+        timestamp: timestamp.asNumber,
+        expiresAt: expiresAt.asNumber,
+        operationHash: 'my-hash-1',
+      },
+    ].map(stringifySubscriptionOperation),
+  );
+  expect(serialized).toBe(
+    [
+      [
+        /* organization */ `"my-organization"`,
+        /* target */ `"my-target"`,
+        /* timestamp */ timestamp.asString,
+        /* expires_at */ expiresAt.asString,
+        /* hash */ `"my-hash"`,
+        /* client_name */ `"clientName"`,
+        /* client_version */ `"clientVersion"`,
+        /* graph_id */ `"0f9c3a39-3c4e-4a3b-9a0c-6f1f0b9a2f01"`,
+        /* graph_version_id */ `"6b1d4c2e-8a3f-4e5d-9b7c-1a2b3c4d5e6f"`,
+      ].join(','),
+      [
+        /* organization */ `"my-organization"`,
+        /* target */ `"my-target"`,
+        /* timestamp */ timestamp.asString,
+        /* expires_at */ expiresAt.asString,
+        /* hash */ `"my-hash-1"`,
+        /* client_name */ `\\N`,
+        /* client_version */ `\\N`,
         /* graph_id */ `\\N`,
         /* graph_version_id */ `\\N`,
       ].join(','),

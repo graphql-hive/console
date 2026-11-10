@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
+import z from 'zod';
 import { clickHouseQuery } from '../../testkit/clickhouse';
 import { waitForExpectations } from '../../testkit/flow';
 import { getServiceHost } from '../../testkit/utils';
@@ -353,6 +354,14 @@ test('reject a report with a too big errorsTotal', async () => {
   expect(response.status).toBe(400);
 });
 
+const GraphColumnsRowsModel = z.array(
+  z.object({
+    client_name: z.string(),
+    graph_id: z.string(),
+    graph_version_id: z.string(),
+  }),
+);
+
 async function sendUsageReportV2(accessToken: string, report: unknown) {
   const usageAddress = await getServiceHost('usage', 8081);
   return fetch(`http://${usageAddress}`, {
@@ -416,18 +425,14 @@ test.concurrent(
     });
 
     await waitForExpectations(async () => {
-      const result = await clickHouseQuery<{
-        client_name: string;
-        graph_id: string;
-        graph_version_id: string;
-      }>(`
+      const result = await clickHouseQuery(`
       SELECT client_name, graph_id, graph_version_id
       FROM operations
       WHERE target = '${target.id}'
       ORDER BY client_name
     `);
 
-      expect(result.data).toEqual([
+      expect(GraphColumnsRowsModel.parse(result.data)).toEqual([
         { client_name: 'with-graph', graph_id: graphId, graph_version_id: graphVersionId },
         { client_name: 'without-graph', graph_id: '', graph_version_id: '' },
       ]);
@@ -447,5 +452,89 @@ test.concurrent('report with a non-UUID graph id is rejected', async ({ expect }
       { client: 'invalid-graph', graph: { graphId: 'not-a-uuid', graphVersionId: randomUUID() } },
     ]),
   );
+  expect(response.status).toBe(400);
+});
+
+test.concurrent(
+  'graph id and graph version id of subscription operations are ingested into ClickHouse',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target, createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret: accessToken } = await createTargetAccessToken({});
+
+    const graphId = randomUUID();
+    const graphVersionId = randomUUID();
+
+    const response = await sendUsageReportV2(accessToken, {
+      size: 2,
+      map: {
+        a1b2c3d4: {
+          operationName: 'onUser',
+          operation: 'subscription onUser { user { id name } }',
+          fields: ['Subscription', 'Subscription.user', 'User', 'User.id', 'User.name'],
+        },
+      },
+      subscriptionOperations: [
+        {
+          operationMapKey: 'a1b2c3d4',
+          timestamp: Date.now(),
+          metadata: {
+            client: { name: 'with-graph', version: '0.0.1' },
+            graph: { graphId, graphVersionId },
+          },
+        },
+        {
+          operationMapKey: 'a1b2c3d4',
+          timestamp: Date.now(),
+          metadata: {
+            client: { name: 'without-graph', version: '0.0.1' },
+          },
+        },
+      ],
+    });
+    expect(response.status).toBe(200);
+
+    await waitForExpectations(async () => {
+      const result = await clickHouseQuery(`
+      SELECT client_name, graph_id, graph_version_id
+      FROM subscription_operations
+      WHERE target = '${target.id}'
+      ORDER BY client_name
+    `);
+
+      expect(GraphColumnsRowsModel.parse(result.data)).toEqual([
+        { client_name: 'with-graph', graph_id: graphId, graph_version_id: graphVersionId },
+        { client_name: 'without-graph', graph_id: '', graph_version_id: '' },
+      ]);
+    });
+  },
+);
+
+test.concurrent('subscription report with a non-UUID graph id is rejected', async ({ expect }) => {
+  const { createOrg } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { secret: accessToken } = await createTargetAccessToken({});
+
+  const response = await sendUsageReportV2(accessToken, {
+    size: 1,
+    map: {
+      a1b2c3d4: {
+        operationName: 'onUser',
+        operation: 'subscription onUser { user { id name } }',
+        fields: ['Subscription', 'Subscription.user', 'User', 'User.id', 'User.name'],
+      },
+    },
+    subscriptionOperations: [
+      {
+        operationMapKey: 'a1b2c3d4',
+        timestamp: Date.now(),
+        metadata: {
+          graph: { graphId: 'not-a-uuid', graphVersionId: randomUUID() },
+        },
+      },
+    ],
+  });
   expect(response.status).toBe(400);
 });

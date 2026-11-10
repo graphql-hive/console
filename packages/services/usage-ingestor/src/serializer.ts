@@ -59,6 +59,8 @@ export const subscriptionOperationsOrder = [
   'hash',
   'client_name',
   'client_version',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export const registryOrder = [
@@ -123,6 +125,8 @@ export function stringifySubscriptionOperation(operation: ProcessedSubscriptionO
     hash: castValue(operation.operationHash),
     client_name: castValue(operation.metadata?.client?.name),
     client_version: castValue(operation.metadata?.client?.version),
+    graph_id: castValue(operation.metadata?.graph?.graphId),
+    graph_version_id: castValue(operation.metadata?.graph?.graphVersionId),
   };
 
   return Object.values(mapper).join(',');
