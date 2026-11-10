@@ -310,9 +310,9 @@ export async function composeExternalFederation(args: {
         'External composition returned SDL that cannot be processed. (error=%s)',
         error,
       );
-      const message = error instanceof Error ? error.message : String(error);
+      const detail = error instanceof GraphQLError ? `: ${error.message}` : '';
       return externalCompositionFailure(
-        `External composition failure: invalid SDL returned from service: ${message}`,
+        `External composition failure: invalid SDL returned from service${detail}`,
       );
     }
   }
