@@ -2,7 +2,7 @@ import { pollFor } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { execute } from 'testkit/graphql';
 import { initSeed } from 'testkit/seed';
-import { clickHouseQuery, flushAsyncInserts } from '../../../testkit/clickhouse';
+import { clickHouseInsert, clickHouseQuery, flushAsyncInserts } from '../../../testkit/clickhouse';
 import { history } from '../../../testkit/emails';
 
 const InvitationDeliveriesQuery = graphql(`
@@ -139,5 +139,70 @@ test.concurrent(
         maxAttempts: 25,
       },
     });
+  },
+);
+
+/** How many attempts are recorded under an idempotency key. */
+async function countAttempts(key: string): Promise<number> {
+  await flushAsyncInserts();
+  const result = await clickHouseQuery<{ attempts: string }>(
+    `SELECT count() AS attempts FROM outbound_deliveries WHERE idempotency_key = '${key}'`,
+  );
+  return Number(result.data[0]?.attempts ?? 0);
+}
+
+test.concurrent(
+  "a re-invited address shows the new invitation's attempts, not the retries of the earlier one",
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg, ownerToken } = await seed.createOwner();
+    const { inviteMember, organization } = await createOrg();
+    const refused = seed.generateEmail().replace('@', '+bounce@');
+    const invitationKey = (invitation: { createdAt: string }) =>
+      `organization-invitation:${invitation.createdAt}:${refused}`;
+
+    const first = await inviteMember(refused);
+    const firstKey = invitationKey(first.ok!.createdOrganizationInvitation);
+    await pollFor(async () => (await countAttempts(firstKey)) > 0);
+
+    // Inviting the address again deletes the invitation and creates a new one with its own job.
+    const second = await inviteMember(refused);
+    const secondKey = invitationKey(second.ok!.createdOrganizationInvitation);
+    expect(secondKey).not.toBe(firstKey);
+    await pollFor(async () => (await countAttempts(secondKey)) > 0);
+
+    // The first invitation's job keeps retrying for hours after the re-invite, on an exponential
+    // backoff. This is the row it writes later: newer than anything the new job has recorded.
+    await clickHouseInsert(`
+      INSERT INTO "outbound_deliveries" (
+        "timestamp", "organization_id", "delivery_type", "destination", "event", "idempotency_key",
+        "attempt", "max_attempts", "ok", "status_code", "status_text", "duration_ms", "metadata"
+      )
+      VALUES (
+        now() + toIntervalMinute(1), '${organization.id}', 'EMAIL', '${refused}',
+        'organization_invitation', '${firstKey}', 9, 25, 0, 422, 'Retry of the earlier invitation',
+        5, map('subject', 'You have been invited to join ${organization.slug}')
+      )
+    `);
+
+    const result = await execute({
+      document: InvitationDeliveriesQuery,
+      variables: { organizationSlug: organization.slug },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+    const invitations = result.organization!.invitations!.edges.map(edge => edge.node);
+
+    expect(invitations).toEqual([
+      {
+        email: refused,
+        delivery: {
+          ok: false,
+          statusCode: 422,
+          statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+          attempt: expect.any(Number),
+          maxAttempts: 25,
+        },
+      },
+    ]);
   },
 );

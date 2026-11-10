@@ -255,7 +255,7 @@ describe('getLatestByKey', () => {
     metadata: { subject: 'You have been invited to join Acme', message_id: 'pm-1' },
   };
 
-  test('keys the newest attempt by its idempotency key', async () => {
+  test('maps each returned attempt to its idempotency key', async () => {
     const bobRow = {
       ...row,
       destination: 'bob@example.com',

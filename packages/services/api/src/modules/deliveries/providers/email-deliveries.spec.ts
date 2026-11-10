@@ -55,7 +55,7 @@ describe('invitationDeliveryKey', () => {
 });
 
 describe('EmailDeliveries.getLatestInvitationDelivery', () => {
-  test('gives each invitation its own latest attempt, one query per organization', async () => {
+  test('gives each invitation the attempt recorded under its key, one query per organization', async () => {
     const alice = delivery();
     const bob = delivery({
       destination: 'bob@example.com',
