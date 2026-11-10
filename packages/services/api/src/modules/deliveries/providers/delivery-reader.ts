@@ -12,18 +12,27 @@ export const MAX_DELIVERY_LOG_LIMIT = 200;
 /** A channel is failing once this many attempts in a row, the most recent ones, have failed. */
 export const FAILURE_STREAK_LENGTH = 10;
 
-/** The GraphQL `DeliveryEvent` members; the stored event name is the lowercase form. */
-const DELIVERY_EVENT_NAMES = [
+/** What an alert channel is sent; the stored event name is the lowercase form. */
+const CHANNEL_DELIVERY_EVENT_NAMES = [
   'SCHEMA_CHANGE',
   'METRIC_ALERT',
   'CHANNEL_CONFIRMATION',
+] as const;
+/** What an organization is emailed; the stored event name is the lowercase form. */
+export const EMAIL_DELIVERY_EVENT_NAMES = [
   'ORGANIZATION_INVITATION',
   'ORGANIZATION_OWNERSHIP_TRANSFER',
   'AUDIT_LOG_EXPORT',
   'USAGE_RATE_LIMIT_WARNING',
   'USAGE_RATE_LIMIT_EXCEEDED',
 ] as const;
+/** The GraphQL `DeliveryEvent` members. */
+const DELIVERY_EVENT_NAMES = [
+  ...CHANNEL_DELIVERY_EVENT_NAMES,
+  ...EMAIL_DELIVERY_EVENT_NAMES,
+] as const;
 export type DeliveryEventName = (typeof DELIVERY_EVENT_NAMES)[number];
+export type EmailDeliveryEventName = (typeof EMAIL_DELIVERY_EVENT_NAMES)[number];
 export type DeliveryHealthStatus = 'UNKNOWN' | 'HEALTHY' | 'FAILING';
 /** An alert channel type, or EMAIL for mail sent through the configured provider. */
 export type DeliveryType = AlertChannel['type'] | 'EMAIL';
@@ -71,11 +80,15 @@ export interface Delivery {
   metadata: Record<string, string>;
 }
 
-/** Which deliveries to read: one destination's, or every one of a type for the organization. */
+/**
+ * Which deliveries to read: one destination's, or every one of a type for the organization, and
+ * only the given events when `events` is set (never to an empty list).
+ */
 export type DeliverySelector = {
   organizationId: string;
   deliveryType: DeliveryType;
   destination?: string;
+  events?: readonly DeliveryEventName[];
 };
 
 // UInt64 aggregates arrive quoted (output_format_json_quote_64bit_integers); smaller integers as numbers.
@@ -136,12 +149,17 @@ export class DeliveryReader {
     this.logger = logger.child({ source: 'DeliveryReader' });
   }
 
-  /** The key prefix: the organization and type, then the destination when one is given. */
+  /** The key prefix: the organization and type, then the destination and the events when given. */
   private whereSelector(selector: DeliverySelector) {
-    const prefix = sql`"organization_id" = ${selector.organizationId} AND "delivery_type" = ${selector.deliveryType}`;
-    return selector.destination === undefined
-      ? prefix
-      : sql`${prefix} AND "destination" = ${selector.destination}`;
+    let where = sql`"organization_id" = ${selector.organizationId} AND "delivery_type" = ${selector.deliveryType}`;
+    if (selector.destination !== undefined) {
+      where = sql`${where} AND "destination" = ${selector.destination}`;
+    }
+    if (selector.events !== undefined) {
+      const events = selector.events.map(event => event.toLowerCase());
+      where = sql`${where} AND "event" IN (${sql.array(events, 'String')})`;
+    }
+    return where;
   }
 
   /** Attempts in the period, and how many of them the destination did not accept. */

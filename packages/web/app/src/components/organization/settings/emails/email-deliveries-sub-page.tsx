@@ -92,7 +92,7 @@ export function EmailDeliveriesSubPage() {
     <SubPageLayout>
       <SubPageLayoutHeader
         subPageTitle="Email Deliveries"
-        description={`Details for emails Hive sent for this organization in ${DELIVERY_WINDOW_LABEL}. Email bodies and response bodies are not stored for security reasons.`}
+        description={`Details for emails Hive sent for this organization in ${DELIVERY_WINDOW_LABEL}. Only the kinds of email you have permission to manage are listed. Email bodies and response bodies are not stored for security reasons.`}
       />
       {status ?? (
         <div className="space-y-6">

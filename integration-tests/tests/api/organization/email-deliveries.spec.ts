@@ -218,7 +218,7 @@ test.concurrent(
 );
 
 test.concurrent(
-  'Organization.emailDelivery* and viewerCanSeeEmailDeliveries follow member:modify',
+  'Organization.emailDelivery* show each viewer the kinds of email they may manage',
   async ({ expect }) => {
     const seed = initSeed();
     const { createOrg } = await seed.createOwner();
@@ -252,6 +252,14 @@ test.concurrent(
       emailDeliveryHealth: null,
       emailDeliveryLog: null,
     });
+
+    // Audit log exports are visible to this role; the member's own invitation email is not.
+    await updateMemberRole(role, ['auditLog:export']);
+
+    await expect(canSee()).resolves.toBe(true);
+    const exportsOnly = await read().then(r => r.expectNoGraphQLErrors());
+    expect(exportsOnly.organization!.emailDeliveryStats!.totalDeliveries).toBe(0);
+    expect(exportsOnly.organization!.emailDeliveryLog).toEqual([]);
 
     await updateMemberRole(role, ['member:modify']);
 

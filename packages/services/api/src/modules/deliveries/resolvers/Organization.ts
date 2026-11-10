@@ -1,5 +1,5 @@
 import { parseDateRangeInput } from '../../../shared/helpers';
-import { EmailDeliveries, emailDeliverySelector } from '../providers/email-deliveries';
+import { EmailDeliveries } from '../providers/email-deliveries';
 import type { OrganizationResolvers } from './../../../__generated__/types';
 
 /**
@@ -11,13 +11,10 @@ export const Organization: Pick<
   'emailDeliveryHealth' | 'emailDeliveryLog' | 'emailDeliveryStats' | 'viewerCanSeeEmailDeliveries'
 > = {
   // Authorized here once; the DeliveryStats fields then read for the selection.
-  emailDeliveryStats: async (organization, { period }, { injector }) => {
-    await injector.get(EmailDeliveries).assertCanRead(organization.id);
-    return {
-      selector: emailDeliverySelector(organization.id),
-      period: parseDateRangeInput(period),
-    };
-  },
+  emailDeliveryStats: async (organization, { period }, { injector }) => ({
+    selector: await injector.get(EmailDeliveries).readableSelector(organization.id),
+    period: parseDateRangeInput(period),
+  }),
   emailDeliveryHealth: (organization, _arg, { injector }) =>
     injector.get(EmailDeliveries).getHealth(organization.id),
   emailDeliveryLog: (organization, { period, limit }, { injector }) =>
