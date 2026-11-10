@@ -270,6 +270,7 @@ test.concurrent(
     expect(denied.expectGraphQLErrors()).not.toHaveLength(0);
     expect(denied.rawBody.data?.organization).toEqual({
       id: organization.id,
+      viewerEmailDeliveryVisibility: { events: [], isLimited: true },
       emailDeliveryStats: null,
       emailDeliveryHealth: null,
       emailDeliveryLog: null,
