@@ -460,3 +460,105 @@ test.concurrent('contractName is lowercased', async ({ expect }) => {
 
   expect(result.createContract.ok?.createdContract.contractName).toBe('my_contract-1');
 });
+
+test.concurrent('contractName must not be "default"', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target } = await createProject(ProjectType.Federation);
+
+  const result = await execute({
+    document: CreateContractMutation,
+    variables: {
+      input: {
+        target: { byId: target.id },
+        contractName: 'default',
+        includeTags: ['foo'],
+        removeUnreachableTypesFromPublicApiSchema: true,
+      },
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createContract).toMatchObject({
+    error: {
+      details: {
+        contractName: "The contract name 'default' is reserved",
+      },
+    },
+    ok: null,
+  });
+});
+
+test.concurrent('contractName must not be "default" regardless of casing', async ({ expect }) => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject } = await createOrg();
+  const { target } = await createProject(ProjectType.Federation);
+
+  const result = await execute({
+    document: CreateContractMutation,
+    variables: {
+      input: {
+        target: { byId: target.id },
+        contractName: 'DeFaUlT',
+        includeTags: ['foo'],
+        removeUnreachableTypesFromPublicApiSchema: true,
+      },
+    },
+    authToken: ownerToken,
+  }).then(r => r.expectNoGraphQLErrors());
+
+  expect(result.createContract).toMatchObject({
+    error: {
+      details: {
+        contractName: "The contract name 'default' is reserved",
+      },
+    },
+    ok: null,
+  });
+});
+
+test.concurrent(
+  'conflicting contractName with different casing results in error',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Federation);
+
+    const firstResult = await execute({
+      document: CreateContractMutation,
+      variables: {
+        input: {
+          target: { byId: target.id },
+          contractName: 'toyota',
+          includeTags: ['foo'],
+          removeUnreachableTypesFromPublicApiSchema: true,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(firstResult.createContract.error).toBeNull();
+
+    const result = await execute({
+      document: CreateContractMutation,
+      variables: {
+        input: {
+          target: { byId: target.id },
+          contractName: 'ToYoTa',
+          includeTags: ['foo'],
+          removeUnreachableTypesFromPublicApiSchema: true,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    expect(result.createContract).toMatchObject({
+      error: {
+        details: {
+          contractName: 'Must be unique across all target contracts.',
+        },
+      },
+      ok: null,
+    });
+  },
+);
