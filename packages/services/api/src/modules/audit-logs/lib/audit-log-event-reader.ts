@@ -6,8 +6,7 @@ import type { AuditLogEventType } from '../providers/audit-logs-types';
 import { isPositionAfter, type AuditLogPosition } from './audit-log-cursor';
 import type { AuditLogEventRow } from './audit-log-envelope';
 
-// The unix timestamp is selected as `unixTimestamp`: an alias named `timestamp` would shadow the
-// DateTime column in WHERE and ORDER BY.
+// Aliased as `unixTimestamp`, since `timestamp` would shadow the column in WHERE/ORDER BY.
 const RowModel = z
   .object({
     id: z.string(),
@@ -33,13 +32,8 @@ const PositionRowModel = z
 
 export type AuditLogPage = {
   rows: AuditLogEventRow[];
-  /** Whether more matching rows exist up to `highWater`. */
   hasMore: boolean;
-  /**
-   * Where the next page starts: the last returned row when `hasMore`, otherwise the newest row
-   * scanned up to `highWater` (matching the filter or not), so a narrow filter never rescans a
-   * range. Equal to the input position when nothing was scanned.
-   */
+  /** With a filter, this may be past the last returned row so non-matching rows aren't rescanned. */
   next: AuditLogPosition;
 };
 
@@ -47,10 +41,6 @@ function toDateTime(timestamp: number) {
   return sql`toDateTime(${formatDateTime(new Date(timestamp * 1000))}, 'UTC')`;
 }
 
-/**
- * Reads an organization's audit log in `(timestamp, id)` order, page by page, for the audit log
- * API. Stateless: the caller owns the position.
- */
 @Injectable({
   scope: Scope.Singleton,
   global: true,
@@ -60,11 +50,8 @@ export class AuditLogEventReader {
 
   async readPage(args: {
     organizationId: string;
-    /** Rows strictly after this position are read. */
     after: AuditLogPosition;
-    /** Rows newer than this unix timestamp (seconds) are not read yet (settle lag). */
     highWater: number;
-    /** Only these event types; null for all. */
     eventTypes: readonly AuditLogEventType[] | null;
     limit: number;
   }): Promise<AuditLogPage> {
@@ -74,8 +61,7 @@ export class AuditLogEventReader {
       return { rows: [], hasMore: false, next: after };
     }
 
-    // `timestamp >= after` is implied by the tuple comparison, but stated on its own it lets
-    // ClickHouse use the primary key `(organization_id, timestamp)` and prune partitions.
+    // The redundant `timestamp >=` lets ClickHouse use the primary key; the tuple comparison alone doesn't.
     const range = sql`
       "organization_id" = ${organizationId}
       AND "timestamp" >= ${toDateTime(after.timestamp)}
@@ -114,11 +100,9 @@ export class AuditLogEventReader {
     const lastPosition = last ? { timestamp: last.timestamp, id: last.id } : after;
 
     if (hasMore || !eventTypes) {
-      // Without a filter the last returned row is also the newest scanned one.
       return { rows, hasMore, next: lastPosition };
     }
 
-    // With a filter, move past the rows that did not match, up to `highWater`.
     const newest = await this.clickHouse.query({
       query: sql`
         SELECT "id", toUnixTimestamp("timestamp") AS "unixTimestamp"
