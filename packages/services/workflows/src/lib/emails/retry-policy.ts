@@ -8,18 +8,37 @@ import type { EmailSendError } from './email-send-error.js';
 export const EMAIL_MAX_ATTEMPTS = 5;
 
 /**
- * Whether a refusal rules out the same message ever being accepted, so the job must not retry it.
- * Postmark answers 422 for a request it will never take: an invalid or inactive recipient, or a
- * malformed request. An SMTP server's 5xx reply is permanent by RFC 5321, except 503, which only
- * says the command came in the wrong order. Everything else, rate limits, provider outages, 4xx
- * SMTP replies, is worth another attempt.
+ * Whether a refusal rules out this message ever being accepted, so the job must not retry it.
+ * Only a refusal of the message itself counts: Postmark's "Invalid email request" (error code
+ * 300) and "Inactive recipient" (406), or an SMTP server's permanent reply to the envelope or the
+ * message data (5xx, permanent by RFC 5321, except 503, which only says the command came in the
+ * wrong order). A refusal of Hive's own account, credentials or message stream (Postmark 412,
+ * 413, 1235, 1236; SMTP 535, 530; a refused STARTTLS or greeting) is retried on purpose, like a
+ * rate limit or an outage: it fails the job, so it is counted and logged, and the job stays
+ * reschedulable once the configuration is fixed.
  */
 export function isPermanentRefusal(error: EmailSendError): boolean {
   if (error.statusCode === null) {
     return false;
   }
-  if (error.provider === 'postmark' || error.provider === 'mock') {
-    return error.statusCode === 422;
+  switch (error.provider) {
+    case 'postmark':
+    case 'mock':
+      return error.errorCode === '300' || error.errorCode === '406';
+    case 'smtp':
+      // nodemailer names the step that failed: EENVELOPE for MAIL FROM, RCPT TO and DATA,
+      // EMESSAGE for the message body; EAUTH, ETLS and EPROTOCOL are the connection's own.
+      return (
+        isPermanentSmtpReply(error.statusCode) &&
+        (error.errorCode === 'EENVELOPE' || error.errorCode === 'EMESSAGE')
+      );
+    case 'sendmail':
+      // Delivers straight to the recipient's MX without authenticating, so any reply is about
+      // the message.
+      return isPermanentSmtpReply(error.statusCode);
   }
-  return error.statusCode >= 500 && error.statusCode < 600 && error.statusCode !== 503;
+}
+
+function isPermanentSmtpReply(code: number): boolean {
+  return code >= 500 && code < 600 && code !== 503;
 }
