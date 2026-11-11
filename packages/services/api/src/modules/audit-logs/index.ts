@@ -1,5 +1,6 @@
 import { createModule } from 'graphql-modules';
 import { ClickHouse } from '../operations/providers/clickhouse-client';
+import { AuditLogEventReader } from './lib/audit-log-event-reader';
 import { AuditLogRecorder } from './providers/audit-log-recorder';
 import { AuditLogManager } from './providers/audit-logs-manager';
 import { resolvers } from './resolvers.generated';
@@ -10,5 +11,5 @@ export const auditLogsModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [AuditLogManager, AuditLogRecorder, ClickHouse],
+  providers: [AuditLogManager, AuditLogRecorder, AuditLogEventReader, ClickHouse],
 });

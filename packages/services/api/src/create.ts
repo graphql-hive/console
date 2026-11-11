@@ -8,6 +8,7 @@ import { METRIC_ALERT_RULES_ENABLED } from './modules/alerts/providers/metric-al
 import { appDeploymentsModule } from './modules/app-deployments';
 import { APP_DEPLOYMENTS_ENABLED } from './modules/app-deployments/providers/app-deployments-enabled-token';
 import { auditLogsModule } from './modules/audit-logs';
+import { AuditLogApiConfig } from './modules/audit-logs/providers/audit-log-api-config';
 import { AuditLogRecorder } from './modules/audit-logs/providers/audit-log-recorder';
 import { AuditLogS3Config } from './modules/audit-logs/providers/audit-logs-manager';
 import { authModule } from './modules/auth';
@@ -126,6 +127,7 @@ export function createRegistry({
   schemaProposalsEnabled,
   otelTracingEnabled,
   metricAlertRulesEnabled,
+  auditLogApiConfig,
   prometheus,
   taskScheduler,
   release,
@@ -170,6 +172,7 @@ export function createRegistry({
   schemaProposalsEnabled: boolean;
   otelTracingEnabled: boolean;
   metricAlertRulesEnabled: boolean;
+  auditLogApiConfig: AuditLogApiConfig;
   prometheus: null | Record<string, unknown>;
   taskScheduler: TaskScheduler;
   /** Hive release version, sent as the User-Agent of outbound webhook calls. */
@@ -298,6 +301,11 @@ export function createRegistry({
     {
       provide: METRIC_ALERT_RULES_ENABLED,
       useValue: metricAlertRulesEnabled,
+      scope: Scope.Singleton,
+    },
+    {
+      provide: AuditLogApiConfig,
+      useValue: auditLogApiConfig,
       scope: Scope.Singleton,
     },
     {
