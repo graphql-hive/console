@@ -67,6 +67,10 @@ export class AlertsManager {
       },
     });
 
+    if (input.type === 'SLACK') {
+      await this.assertSlackConnected(input);
+    }
+
     const channel = await this.storage.addAlertChannel({
       slackChannel: input.slackChannel,
       webhookEndpoint: input.webhookEndpoint,
@@ -89,7 +93,8 @@ export class AlertsManager {
   /**
    * Changes a channel's name and/or destination; a null field keeps its value. The type is fixed:
    * the delivery history is kept by it. Null when the project has no such channel. A new
-   * destination gets the confirmation message a new channel gets; a rename sends nothing.
+   * destination gets the confirmation message a new channel gets, so a new Slack destination needs
+   * the organization's Slack integration as a new Slack channel does; a rename sends nothing.
    */
   async updateChannel(input: {
     organizationId: string;
@@ -132,6 +137,9 @@ export class AlertsManager {
     }
     if (input.webhookEndpoint !== null && existing.type === 'SLACK') {
       throw new AlertChannelDestinationError('webhookEndpoint', 'A Slack channel has no endpoint.');
+    }
+    if (input.slackChannel !== null && input.slackChannel !== existing.slackChannel) {
+      await this.assertSlackConnected(input);
     }
 
     const channel = await this.storage.updateAlertChannel({
@@ -455,6 +463,24 @@ export class AlertsManager {
     );
   }
 
+  /**
+   * A Slack destination is confirmed through the organization's Slack integration, so a new one is
+   * refused, before anything is written, while there is none.
+   */
+  private async assertSlackConnected(selector: ProjectSelector): Promise<void> {
+    const token = await this.slackIntegrationManager.getToken({
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      context: IntegrationsAccessContext.ChannelConfirmation,
+    });
+    if (!token) {
+      throw new AlertChannelDestinationError(
+        'slackChannel',
+        'Connect Slack to the organization first.',
+      );
+    }
+  }
+
   async triggerChannelConfirmation(input: {
     kind: ChannelConfirmationInput['event']['kind'];
     channel: AlertChannel;
@@ -533,7 +559,10 @@ export function channelDeliverySelector(ref: ChannelDeliveryRef): DeliverySelect
   };
 }
 
-/** An update names a destination the channel's type does not have. */
+/**
+ * A destination the channel cannot have: one its type does not take, or a Slack channel while
+ * Slack is not connected to the organization.
+ */
 export class AlertChannelDestinationError extends Error {
   constructor(
     public readonly field: 'slackChannel' | 'webhookEndpoint',

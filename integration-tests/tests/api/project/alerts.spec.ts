@@ -687,3 +687,31 @@ test.concurrent(
     expect(errors[0].message).toContain('Missing permission for performing');
   },
 );
+
+test.concurrent(
+  'Mutation.addAlertChannel: a Slack channel needs the Slack integration',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { organization, createProject } = await createOrg();
+    const { project } = await createProject(ProjectType.Single);
+
+    const result = await addAlertChannel(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        name: 'slack',
+        type: AlertChannelType.Slack,
+        slack: { channel: '#alerts' },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(result.addAlertChannel.error).toEqual({
+      message: 'Please check your input.',
+      inputErrors: {
+        name: null,
+        slackChannel: 'Connect Slack to the organization first.',
+        webhookEndpoint: null,
+      },
+    });
+  },
+);
