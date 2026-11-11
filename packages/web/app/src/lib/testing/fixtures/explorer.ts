@@ -50,3 +50,51 @@ export function explorerTypeMissing(options: { hasVersion: boolean }) {
     },
   };
 }
+
+const filterableVersion = {
+  __typename: 'SchemaVersion' as const,
+  id: 'version-42',
+};
+
+/** `TargetExplorerPageQuery` for a version with subgraphs to filter by and no root types to render. */
+export function explorerWithSubgraphs(subgraphNames: string[]) {
+  return {
+    __typename: 'Query' as const,
+    organization,
+    target: {
+      __typename: 'Target' as const,
+      id: 'target-1',
+      slug: SLUGS.targetSlug,
+      latestSchemaVersion: filterableVersion,
+      latestValidSchemaVersion: {
+        ...filterableVersion,
+        explorer: {
+          __typename: 'SchemaExplorer' as const,
+          subgraphNames,
+          metadataAttributes: [],
+          query: null,
+          mutation: null,
+          subscription: null,
+        },
+      },
+      project: { __typename: 'Project' as const, id: 'project-1', type: 'FEDERATION' },
+      operationsStats: { __typename: 'OperationsStats' as const, totalRequests: 0 },
+    },
+  };
+}
+
+/** `TypeFilter_AllTypes` for the same version, with no types to pick. */
+export function explorerTypeFilterEmpty() {
+  return {
+    __typename: 'Query' as const,
+    target: {
+      __typename: 'Target' as const,
+      id: 'target-1',
+      latestValidSchemaVersion: {
+        ...filterableVersion,
+        isValid: true,
+        explorer: { __typename: 'SchemaExplorer' as const, types: [] },
+      },
+    },
+  };
+}
