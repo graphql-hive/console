@@ -255,17 +255,12 @@ export const createAuditLogApiPlugin =
       const nextCursor = encodeAuditLogCursor(page.next);
 
       if (page.hasMore) {
-        // Built from the request, so the link points at the host the client called (e.g.
-        // api.graphql-hive.com behind the proxy, which forwards the path unchanged).
-        // `trustProxy` makes `protocol` and `host` honor X-Forwarded-Proto / X-Forwarded-Host.
-        const nextUrl = new URL(req.url, `${req.protocol}://${req.host}`);
-        nextUrl.search = '';
-        nextUrl.searchParams.set('cursor', nextCursor);
-        nextUrl.searchParams.set('limit', String(limit));
+        // Relative, so clients resolve it against the host they called.
+        const nextQuery = new URLSearchParams({ cursor: nextCursor, limit: String(limit) });
         if (eventTypes) {
-          nextUrl.searchParams.set('eventTypes', eventTypes.join(','));
+          nextQuery.set('eventTypes', eventTypes.join(','));
         }
-        void reply.header('Link', `<${nextUrl.toString()}>; rel="next"`);
+        void reply.header('Link', `</audit-log/v1/events?${nextQuery}>; rel="next"`);
       }
 
       auditLogApiEventsReturned.inc(page.rows.length);

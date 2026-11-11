@@ -272,9 +272,10 @@ describe.concurrent('GET /audit-log/v1/events', () => {
       for (const page of pages.slice(0, -1)) {
         expect(page.body.events).toHaveLength(7);
         expect(page.link).toContain('rel="next"');
-        // Points at the host and path the client called, carrying the cursor and limit.
-        const next = new URL(page.link!.match(/^<([^>]+)>/)![1]);
-        expect(next.origin + next.pathname).toBe(baseUrl + '/events');
+        // Relative to the URL the client called, carrying the cursor and limit.
+        const nextRef = page.link!.match(/^<([^>]+)>/)![1];
+        expect(nextRef.startsWith('/audit-log/v1/events?')).toBe(true);
+        const next = new URL(nextRef, baseUrl);
         expect(next.searchParams.get('cursor')).toBe(page.body.nextCursor);
         expect(next.searchParams.get('limit')).toBe('7');
       }
