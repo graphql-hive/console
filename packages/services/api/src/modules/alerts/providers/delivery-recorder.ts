@@ -116,7 +116,7 @@ export class DeliveryRecorder {
 
   /**
    * Never throws: a lost stats row must not fail the notification. Goes through `insert`, which
-   * does not resend after a timeout: ClickHouse keeps a buffered row whether or not the response
+   * does not resend after a timeout: ClickHouse keeps writing the row whether or not the response
    * arrived, and a resend would count the attempt twice. The statement must end right after
    * `FORMAT CSV`: ClickHouse reads whatever follows it as the first row.
    */
@@ -158,6 +158,9 @@ export class DeliveryRecorder {
           ],
         ],
         queryId: 'record-delivery',
+        // One row that the caller waits for. Written synchronously it costs only itself; in the
+        // async queue it waited behind other tables' flushes and timed out.
+        mode: 'sync',
         timeout: 5_000,
       });
     } catch (error) {
