@@ -1285,6 +1285,43 @@ export async function createStorage(
         .then(z.array(AlertChannelModel).parse);
     },
 
+    async enableAlertChannel({ projectId, channelId }) {
+      const row = await pool.maybeOne(
+        psql`/* enableAlertChannel */
+          UPDATE alert_channels
+          SET
+            "disabled_at" = NULL,
+            "disabled_by_user_id" = NULL,
+            "enabled_at" = NOW()
+          WHERE
+            id = ${channelId} AND
+            project_id = ${projectId} AND
+            "disabled_at" IS NOT NULL
+          RETURNING
+            ${alertChannelFields()}
+        `,
+      );
+      return row ? AlertChannelModel.parse(row) : null;
+    },
+
+    async disableAlertChannel({ projectId, channelId, disabledByUserId }) {
+      const row = await pool.maybeOne(
+        psql`/* disableAlertChannel */
+          UPDATE alert_channels
+          SET
+            "disabled_at" = NOW(),
+            "disabled_by_user_id" = ${disabledByUserId}
+          WHERE
+            id = ${channelId} AND
+            project_id = ${projectId} AND
+            "disabled_at" IS NULL
+          RETURNING
+            ${alertChannelFields()}
+        `,
+      );
+      return row ? AlertChannelModel.parse(row) : null;
+    },
+
     async addAlert({ organizationId, projectId, targetId, channelId, type }) {
       return {
         ...(await pool
@@ -3726,7 +3763,10 @@ const alertChannelFields = (prefix: TaggedTemplateLiteralInvocation = psql``) =>
   ${prefix}"project_id" AS "projectId",
   to_json(${prefix}"created_at") AS "createdAt",
   ${prefix}"slack_channel" AS "slackChannel",
-  ${prefix}"webhook_endpoint" AS "webhookEndpoint"
+  ${prefix}"webhook_endpoint" AS "webhookEndpoint",
+  to_json(${prefix}"disabled_at") AS "disabledAt",
+  ${prefix}"disabled_by_user_id" AS "disabledByUserId",
+  to_json(${prefix}"enabled_at") AS "enabledAt"
 `;
 
 const alertFields = (prefix: TaggedTemplateLiteralInvocation = psql``) => psql`
@@ -3823,6 +3863,9 @@ const AlertChannelModel = z.object({
   createdAt: z.string(),
   slackChannel: z.string().nullable(),
   webhookEndpoint: z.string().nullable(),
+  disabledAt: z.string().nullable(),
+  disabledByUserId: z.string().nullable(),
+  enabledAt: z.string(),
 });
 
 const AlertModel = z.object({

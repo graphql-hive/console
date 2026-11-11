@@ -254,6 +254,20 @@ export interface Storage {
 
   getAlertChannels(_: ProjectSelector): Promise<readonly AlertChannel[]>;
 
+  /**
+   * Clears the disabled state and restarts the channel's health clock. Null when the project has
+   * no such channel or it is not disabled.
+   */
+  enableAlertChannel(_: ProjectSelector & { channelId: string }): Promise<AlertChannel | null>;
+
+  /**
+   * `disabledByUserId` is the member disabling it, or null when Hive does. Null when the project
+   * has no such channel or it is already disabled.
+   */
+  disableAlertChannel(
+    _: ProjectSelector & { channelId: string; disabledByUserId: string | null },
+  ): Promise<AlertChannel | null>;
+
   addAlert(_: {
     channelId: string;
     organizationId: string;

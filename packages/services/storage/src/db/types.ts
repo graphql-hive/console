@@ -25,6 +25,9 @@ export type user_role = 'ADMIN' | 'MEMBER';
 
 export interface alert_channels {
   created_at: Date;
+  disabled_at: Date | null;
+  disabled_by_user_id: string | null;
+  enabled_at: Date;
   id: string;
   name: string;
   project_id: string;

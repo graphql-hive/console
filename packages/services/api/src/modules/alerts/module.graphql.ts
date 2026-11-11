@@ -4,6 +4,8 @@ export default gql`
   extend type Mutation {
     addAlertChannel(input: AddAlertChannelInput!): AddAlertChannelResult!
     deleteAlertChannels(input: DeleteAlertChannelsInput!): DeleteAlertChannelsResult!
+    enableAlertChannel(input: EnableAlertChannelInput!): EnableAlertChannelResult!
+    disableAlertChannel(input: DisableAlertChannelInput!): DisableAlertChannelResult!
     addAlert(input: AddAlertInput!): AddAlertResult!
     deleteAlerts(input: DeleteAlertsInput!): DeleteAlertsResult!
   }
@@ -46,6 +48,44 @@ export default gql`
   }
 
   type DeleteAlertChannelsError implements Error {
+    message: String!
+  }
+
+  input EnableAlertChannelInput {
+    organizationSlug: String!
+    projectSlug: String!
+    channelId: ID!
+  }
+
+  type EnableAlertChannelResult {
+    ok: EnableAlertChannelOk
+    error: EnableAlertChannelError
+  }
+
+  type EnableAlertChannelOk {
+    enabledAlertChannel: AlertChannel!
+  }
+
+  type EnableAlertChannelError implements Error {
+    message: String!
+  }
+
+  input DisableAlertChannelInput {
+    organizationSlug: String!
+    projectSlug: String!
+    channelId: ID!
+  }
+
+  type DisableAlertChannelResult {
+    ok: DisableAlertChannelOk
+    error: DisableAlertChannelError
+  }
+
+  type DisableAlertChannelOk {
+    disabledAlertChannel: AlertChannel!
+  }
+
+  type DisableAlertChannelError implements Error {
     message: String!
   }
 
@@ -139,6 +179,16 @@ export default gql`
     name: String!
     type: AlertChannelType!
     """
+    When the channel was disabled. A disabled channel receives no notifications until it is
+    enabled again.
+    """
+    disabledAt: DateTime
+    """
+    The member who disabled the channel. Null while it is enabled, and when Hive disabled it
+    after it had been failing for 48 hours.
+    """
+    disabledBy: User
+    """
     Delivery attempts recorded for this channel in the period.
     Null when the delivery history could not be read.
     """
@@ -164,6 +214,8 @@ export default gql`
     id: ID!
     name: String!
     type: AlertChannelType!
+    disabledAt: DateTime
+    disabledBy: User
     channel: String!
     deliveryStats(period: DateRangeInput!): DeliveryStats
     deliveryHealth: DeliveryHealth
@@ -174,6 +226,8 @@ export default gql`
     id: ID!
     name: String!
     type: AlertChannelType!
+    disabledAt: DateTime
+    disabledBy: User
     endpoint: String!
     deliveryStats(period: DateRangeInput!): DeliveryStats
     deliveryHealth: DeliveryHealth
@@ -184,6 +238,8 @@ export default gql`
     id: ID!
     name: String!
     type: AlertChannelType!
+    disabledAt: DateTime
+    disabledBy: User
     endpoint: String!
     deliveryStats(period: DateRangeInput!): DeliveryStats
     deliveryHealth: DeliveryHealth
@@ -194,6 +250,8 @@ export default gql`
     id: ID!
     name: String!
     type: AlertChannelType!
+    disabledAt: DateTime
+    disabledBy: User
     endpoint: String!
     deliveryStats(period: DateRangeInput!): DeliveryStats
     deliveryHealth: DeliveryHealth

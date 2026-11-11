@@ -47,7 +47,7 @@ const Callout = React.forwardRef<
       >
         {emoji}
       </div>
-      <div>{children}</div>
+      <div className="grow">{children}</div>
     </div>
   );
 });

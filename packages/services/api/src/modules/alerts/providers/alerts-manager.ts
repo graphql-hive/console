@@ -1,5 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { Alert, AlertChannel, DateRange } from '../../../shared/entities';
+import { HiveError } from '../../../shared/errors';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import {
@@ -151,9 +152,74 @@ export class AlertsManager {
     return channels.find(channel => channel.id === selector.channelId) ?? null;
   }
 
+  /** Lets a disabled channel receive notifications again; its health counts from now on. */
+  async enableChannel(selector: ProjectSelector & { channelId: string }): Promise<AlertChannel> {
+    this.logger.debug(
+      'Enabling Alert Channel (organization=%s, project=%s, channel=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.channelId,
+    );
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
+    });
+    const channel = await this.storage.enableAlertChannel(selector);
+    if (!channel) {
+      throw new HiveError('Alert channel not found or already enabled.');
+    }
+    this.logger.info(
+      'Enabled Alert Channel (organization=%s, project=%s, channel=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.channelId,
+    );
+    return channel;
+  }
+
+  /** Pauses a channel at a member's request; it receives nothing until it is enabled again. */
+  async disableChannel(selector: ProjectSelector & { channelId: string }): Promise<AlertChannel> {
+    this.logger.debug(
+      'Disabling Alert Channel (organization=%s, project=%s, channel=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.channelId,
+    );
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
+    });
+    const viewer = await this.session.getViewer();
+    const channel = await this.storage.disableAlertChannel({
+      ...selector,
+      disabledByUserId: viewer.id,
+    });
+    if (!channel) {
+      throw new HiveError('Alert channel not found or already disabled.');
+    }
+    this.logger.info(
+      'Disabled Alert Channel (organization=%s, project=%s, channel=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.channelId,
+    );
+    return channel;
+  }
+
   async getChannelDeliveryHealth(input: ChannelDeliveryRef): Promise<DeliveryHealth> {
     await this.assertCanReadChannelDeliveries(input);
-    return this.deliveryReader.getHealth(channelDeliverySelector(input));
+    return this.deliveryReader.getHealth({
+      ...channelDeliverySelector(input),
+      since: new Date(input.enabledAt),
+    });
   }
 
   async getChannelDeliveryLog(
@@ -291,11 +357,13 @@ export class AlertsManager {
     const matchingAlerts = alerts.filter(
       alert => alert.type === 'SCHEMA_CHANGE_NOTIFICATIONS' && alert.targetId === target,
     );
-    const pairs = matchingAlerts.map(alert => {
-      return {
-        alert,
-        channel: channels.find(channel => channel.id === alert.channelId)!,
-      };
+    const pairs = matchingAlerts.flatMap(alert => {
+      const channel = channels.find(channel => channel.id === alert.channelId)!;
+      if (channel.disabledAt) {
+        this.logger.debug('Skipping disabled alert channel (channel=%s)', channel.id);
+        return [];
+      }
+      return [{ alert, channel }];
     });
 
     const slackToken = await this.slackIntegrationManager.getToken({
@@ -447,6 +515,8 @@ export class AlertsManager {
 export type ChannelDeliveryRef = ProjectSelector & {
   channelId: string;
   channelType: AlertChannel['type'];
+  /** When the channel was last enabled; its health is read from there. */
+  enabledAt: string;
 };
 
 /** The channel's deliveries, as the delivery reader keys them. */

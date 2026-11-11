@@ -5,6 +5,7 @@ import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { AlertChannelType, DeliveryHealthStatus } from '@/gql/graphql';
+import { ChannelEnabledToggle } from './channel-enabled-toggle';
 import { CHANNEL_TYPE_LABEL } from './channel-form';
 import { DeleteChannelConfirmationDialog } from './delete-channel-confirmation-dialog';
 
@@ -13,6 +14,7 @@ export const ChannelDetailsPanel_AlertChannelFragment = graphql(`
     id
     name
     type
+    disabledAt
     deliveryHealth {
       status
       failingSince
@@ -63,7 +65,12 @@ export function ChannelDetailsPanel(props: {
         rows={[
           {
             items: [
-              { term: 'Status', description: <ChannelStatus health={channel.deliveryHealth} /> },
+              {
+                term: 'Status',
+                description: (
+                  <ChannelStatus health={channel.deliveryHealth} disabledAt={channel.disabledAt} />
+                ),
+              },
             ],
           },
           { items: [{ term: 'Type', description: CHANNEL_TYPE_LABEL[channel.type] }] },
@@ -81,6 +88,16 @@ export function ChannelDetailsPanel(props: {
         ]}
       />
 
+      <div className="flex items-center justify-between border-y border-line py-4">
+        <span className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-fg">Channel status</span>
+          <span className="text-xs text-fg-secondary">
+            {channel.disabledAt ? 'Paused (no notifications sending)' : 'Sending notifications'}
+          </span>
+        </span>
+        <ChannelEnabledToggle channelId={channel.id} enabled={!channel.disabledAt} />
+      </div>
+
       <div className="flex items-center gap-2">
         <DeleteChannelButton
           channelId={channel.id}
@@ -95,15 +112,29 @@ export function ChannelDetailsPanel(props: {
 const STATUS_PRESENTATION = {
   [DeliveryHealthStatus.Healthy]: { color: 'success', label: 'Healthy' },
   [DeliveryHealthStatus.Failing]: { color: 'critical', label: 'Failing' },
-  [DeliveryHealthStatus.Unknown]: { color: 'neutral', label: 'Unknown' },
+  [DeliveryHealthStatus.Unknown]: { color: 'neutral', label: 'No data' },
 } as const;
 
-/** The channel's delivery status; null when the delivery history could not be read. */
+/**
+ * Disabled by Hive, or else the channel's delivery status; a null health means the delivery
+ * history could not be read.
+ */
 function ChannelStatus({
   health,
+  disabledAt,
 }: {
   health: { status: DeliveryHealthStatus; failingSince?: string | null } | null;
+  disabledAt: string | null;
 }) {
+  // Paused rather than broken: the dot stays neutral, and the page's notice tells when.
+  if (disabledAt) {
+    return (
+      <span className="inline-flex items-center gap-0.5">
+        <StatusDot color="neutral" />
+        <span>Paused</span>
+      </span>
+    );
+  }
   if (!health) {
     return <span className="text-fg-subtle">Unavailable</span>;
   }

@@ -147,6 +147,9 @@ const AlertChannelRowSchema = zod.object({
   createdAt: zod.string(),
   slackChannel: zod.string().nullable(),
   webhookEndpoint: zod.string().nullable(),
+  disabledAt: zod.string().nullable(),
+  disabledByUserId: zod.string().nullable(),
+  enabledAt: zod.string(),
 });
 
 const METRIC_ALERT_STATE_LOG_SELECT = psql`
@@ -211,7 +214,10 @@ export class MetricAlertRulesStorage {
           "project_id" AS "projectId",
           to_json("created_at") AS "createdAt",
           "slack_channel" AS "slackChannel",
-          "webhook_endpoint" AS "webhookEndpoint"
+          "webhook_endpoint" AS "webhookEndpoint",
+          to_json("disabled_at") AS "disabledAt",
+          "disabled_by_user_id" AS "disabledByUserId",
+          to_json("enabled_at") AS "enabledAt"
         FROM "alert_channels"
         WHERE "id" = ANY(${psql.array([...channelIds], 'uuid')})
       `);
