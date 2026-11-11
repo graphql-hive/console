@@ -485,8 +485,8 @@ describe('delivery tracking', () => {
   test('a Slack platform error is recorded and still rejects so the job retries', async () => {
     const error = {
       code: 'slack_webapi_platform_error',
-      message: 'An API error occurred: channel_not_found',
-      data: { ok: false, error: 'channel_not_found' },
+      message: 'An API error occurred: internal_error',
+      data: { ok: false, error: 'internal_error' },
     };
     postMessage.mockRejectedValueOnce(error);
 
@@ -510,10 +510,44 @@ describe('delivery tracking', () => {
         attempt: 2,
         ok: false,
         statusCode: null,
-        statusText: 'channel_not_found',
+        statusText: 'internal_error',
       }),
     );
   });
+
+  test.each(['channel_not_found', 'is_archived', 'not_in_channel'])(
+    'a channel that cannot take messages (%s) completes the job instead of retrying',
+    async code => {
+      postMessage.mockRejectedValueOnce({
+        code: 'slack_webapi_platform_error',
+        message: `An API error occurred: ${code}`,
+        data: { ok: false, error: code },
+      });
+
+      await expect(
+        sendSlackNotification({
+          channel,
+          event: makeEvent(),
+          pg,
+          logger: makeLogger().logger,
+          webAppUrl: null,
+          crypto: encryptor,
+          tracking,
+          attempt: 2,
+          maxAttempts: 25,
+          idempotencyKey: 'key-1',
+        }),
+      ).resolves.toEqual({
+        status: 'failed-config',
+        reason: `slack-${code.replaceAll('_', '-')}`,
+      });
+
+      // Recorded as the last attempt, since there won't be another
+      expect(trackingRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ attempt: 2, maxAttempts: 2, ok: false, statusText: code }),
+      );
+    },
+  );
 
   test('Discord webhooks carry the Hive headers and hand the recorder to sendWebhook', async () => {
     await postDiscord(makeEvent());
@@ -546,14 +580,24 @@ describe('delivery tracking', () => {
 });
 
 describe('describeSlackError', () => {
-  test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
+  test.each<
+    [string, unknown, { statusCode: number | null; statusText: string; final?: boolean } | null]
+  >([
     [
       'platform error',
+      Object.assign(new Error('An API error occurred: internal_error'), {
+        code: 'slack_webapi_platform_error',
+        data: { ok: false, error: 'internal_error' },
+      }),
+      { statusCode: null, statusText: 'internal_error' },
+    ],
+    [
+      'platform error retrying cannot fix',
       Object.assign(new Error('An API error occurred: channel_not_found'), {
         code: 'slack_webapi_platform_error',
         data: { ok: false, error: 'channel_not_found' },
       }),
-      { statusCode: null, statusText: 'channel_not_found' },
+      { statusCode: null, statusText: 'channel_not_found', final: true },
     ],
     [
       'platform error without a result code',

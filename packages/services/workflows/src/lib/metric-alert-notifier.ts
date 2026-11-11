@@ -67,13 +67,18 @@ const SLACK_CLIENT_OPTIONS = { retryConfig: { retries: 3 } };
 // the socket's, passed through by axios on `original`.
 const REQUEST_TIMEOUT_CODES = new Set(['ETIMEDOUT']);
 
+// Slack answers these when the channel itself can't take messages: deleted, archived, or the app
+// removed from it. Only editing the alert channel fixes that, so retrying would spend the job's
+// whole budget re-sending a notification that can't arrive.
+const UNDELIVERABLE_SLACK_ERRORS = new Set(['channel_not_found', 'is_archived', 'not_in_channel']);
+
 /**
  * The outcome of a failed `chat.postMessage`: the API's result code, the HTTP status it answered,
  * a rate limit (which the client reports as a plain Error once its retries are spent), or a
  * timeout of the request. Null for anything else, which the recorder masks. The API's Slack
  * adapter has the same function; the services stay independent.
  */
-export function describeSlackError(error: unknown): DeliveryOutcome | null {
+export function describeSlackError(error: unknown): (DeliveryOutcome & { final?: boolean }) | null {
   if (!isRecord(error)) {
     return null;
   }
@@ -81,7 +86,12 @@ export function describeSlackError(error: unknown): DeliveryOutcome | null {
   switch (code) {
     case ErrorCode.PlatformError: {
       const result = isRecord(error.data) ? error.data.error : undefined;
-      return typeof result === 'string' && result.length > 0 ? deliveryOutcome(null, result) : null;
+      if (typeof result !== 'string' || result.length === 0) {
+        return null;
+      }
+      return UNDELIVERABLE_SLACK_ERRORS.has(result)
+        ? { ...deliveryOutcome(null, result), final: true }
+        : deliveryOutcome(null, result);
     }
     case ErrorCode.RateLimitedError:
       return deliveryOutcome(429, 'rate_limited');
@@ -103,6 +113,15 @@ export function describeSlackError(error: unknown): DeliveryOutcome | null {
   return typeof error.message === 'string' && error.message.startsWith('A rate limit was exceeded')
     ? deliveryOutcome(429, 'rate_limited')
     : null;
+}
+
+/** The Slack result code of an error no retry can fix, or null. */
+function undeliverableSlackError(error: unknown): string | null {
+  if (!isRecord(error) || error.code !== ErrorCode.PlatformError || !isRecord(error.data)) {
+    return null;
+  }
+  const result = error.data.error;
+  return typeof result === 'string' && UNDELIVERABLE_SLACK_ERRORS.has(result) ? result : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -275,49 +294,61 @@ export async function sendSlackNotification(args: {
     idempotencyKey: args.idempotencyKey,
   });
 
-  await trackDelivery(
-    args.tracking.recorder,
-    deliveryMeta({
-      channel,
-      event,
-      attempt: args.attempt,
-      maxAttempts: args.maxAttempts,
-      idempotencyKey: args.idempotencyKey,
-      metadata: flattenSlackMetadata(metadata),
-    }),
-    async () => ({
-      outcome: SLACK_OK,
-      value: await client.chat.postMessage({
-        channel: slackChannel,
-        text: `Metric alert ${action}: "${event.rule.name}"`,
-        metadata,
-        // Slack would otherwise attach a preview card for the console link.
-        unfurl_links: false,
-        unfurl_media: false,
-        attachments: [
-          {
-            color,
-            blocks: [
-              {
-                type: 'section',
-                text: {
-                  type: 'mrkdwn',
-                  text: [
-                    `*${event.rule.name}* — ${action}`,
-                    `Type: ${event.rule.type} | Severity: ${event.rule.severity}`,
-                    changeText,
-                    `Target: \`${event.targetSlug}\` in \`${event.projectSlug}\``,
-                    ...(alertUrl ? [`<${alertUrl}|View alert in Hive>`] : []),
-                  ].join('\n'),
-                },
-              },
-            ],
-          },
-        ],
+  try {
+    await trackDelivery(
+      args.tracking.recorder,
+      deliveryMeta({
+        channel,
+        event,
+        attempt: args.attempt,
+        maxAttempts: args.maxAttempts,
+        idempotencyKey: args.idempotencyKey,
+        metadata: flattenSlackMetadata(metadata),
       }),
-    }),
-    describeSlackError,
-  );
+      async () => ({
+        outcome: SLACK_OK,
+        value: await client.chat.postMessage({
+          channel: slackChannel,
+          text: `Metric alert ${action}: "${event.rule.name}"`,
+          metadata,
+          // Slack would otherwise attach a preview card for the console link.
+          unfurl_links: false,
+          unfurl_media: false,
+          attachments: [
+            {
+              color,
+              blocks: [
+                {
+                  type: 'section',
+                  text: {
+                    type: 'mrkdwn',
+                    text: [
+                      `*${event.rule.name}* — ${action}`,
+                      `Type: ${event.rule.type} | Severity: ${event.rule.severity}`,
+                      changeText,
+                      `Target: \`${event.targetSlug}\` in \`${event.projectSlug}\``,
+                      ...(alertUrl ? [`<${alertUrl}|View alert in Hive>`] : []),
+                    ].join('\n'),
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+      describeSlackError,
+    );
+  } catch (error) {
+    const reason = undeliverableSlackError(error);
+    if (reason === null) {
+      throw error;
+    }
+    logger.warn(
+      { channelId: channel.id, slackChannel, reason },
+      'Slack channel cannot receive messages, not retrying',
+    );
+    return { status: 'failed-config', reason: `slack-${reason.replaceAll('_', '-')}` };
+  }
 
   logger.debug({ channelId: channel.id }, 'Slack notification sent');
 
