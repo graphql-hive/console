@@ -246,6 +246,15 @@ export interface Storage {
     webhookEndpoint?: string | null;
   }): Promise<AlertChannel>;
 
+  /** A null field keeps its value. Null when the project has no such channel. */
+  updateAlertChannel(_: {
+    projectId: string;
+    channelId: string;
+    name: string | null;
+    slackChannel: string | null;
+    webhookEndpoint: string | null;
+  }): Promise<AlertChannel | null>;
+
   deleteAlertChannels(_: {
     channelIds: readonly string[];
     projectId: string;

@@ -32,6 +32,7 @@ import type {
   SchemaPublishInput,
   SchemaVersionPromoteInput,
   TargetSelectorInput,
+  UpdateAlertChannelInput,
   UpdateBaseSchemaInput,
   UpdateGroupMappingInput,
   UpdateMemberRoleInput,
@@ -676,6 +677,48 @@ export function addAlertChannel(input: AddAlertChannelInput, authToken: string) 
         addAlertChannel(input: $input) {
           ok {
             addedAlertChannel {
+              id
+              name
+              type
+              ... on AlertSlackChannel {
+                channel
+              }
+              ... on AlertWebhookChannel {
+                endpoint
+              }
+              ... on TeamsWebhookChannel {
+                endpoint
+              }
+              ... on DiscordWebhookChannel {
+                endpoint
+              }
+            }
+          }
+          error {
+            message
+            inputErrors {
+              webhookEndpoint
+              slackChannel
+              name
+            }
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
+  });
+}
+
+export function updateAlertChannel(input: UpdateAlertChannelInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_UpdateAlertChannel($input: UpdateAlertChannelInput!) {
+        updateAlertChannel(input: $input) {
+          ok {
+            updatedAlertChannel {
               id
               name
               type

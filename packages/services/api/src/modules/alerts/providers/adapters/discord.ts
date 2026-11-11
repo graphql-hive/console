@@ -4,7 +4,7 @@ import { SchemaChangeType } from '@hive/storage';
 import { HiveHttpClientError, HttpClient } from '../../../shared/providers/http-client';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
-import { buildHiveWebhookHeaders } from '../../lib/delivery-metadata';
+import { buildHiveWebhookHeaders, channelConfirmationKey } from '../../lib/delivery-metadata';
 import {
   deliveryOutcome,
   DeliveryRecorder,
@@ -192,7 +192,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     }
 
     const actionMessage =
-      input.event.kind === 'created'
+      input.event.kind !== 'deleted'
         ? `I will send notifications here`
         : `I will no longer send notifications here`;
 
@@ -202,7 +202,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
         url: `${this.appBaseUrl}/${input.event.organization.slug}/${input.event.project.slug}`,
       });
 
-      const idempotencyKey = `channel-confirmation:${input.event.kind}:${input.channel.id}`;
+      const idempotencyKey = channelConfirmationKey(input.event.kind, input.channel);
       const headers = buildHiveWebhookHeaders(
         this.deliveries.describe({
           event: 'channel_confirmation',

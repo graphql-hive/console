@@ -86,6 +86,81 @@ export class AlertsManager {
     return channel;
   }
 
+  /**
+   * Changes a channel's name and/or destination; a null field keeps its value. The type is fixed:
+   * the delivery history is kept by it. Null when the project has no such channel. A new
+   * destination gets the confirmation message a new channel gets; a rename sends nothing.
+   */
+  async updateChannel(input: {
+    organizationId: string;
+    projectId: string;
+    channelId: string;
+    name: string | null;
+    slackChannel: string | null;
+    webhookEndpoint: string | null;
+  }): Promise<AlertChannel | null> {
+    this.logger.debug(
+      'Updating Alert Channel (organization=%s, project=%s, channel=%s)',
+      input.organizationId,
+      input.projectId,
+      input.channelId,
+    );
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
+    });
+
+    // Read through storage: `getChannels` is cached for the operation and would keep handing
+    // out the row as it was before the update.
+    const channels = await this.storage.getAlertChannels({
+      organizationId: input.organizationId,
+      projectId: input.projectId,
+    });
+    const existing = channels.find(channel => channel.id === input.channelId);
+    if (!existing) {
+      return null;
+    }
+    if (input.slackChannel !== null && existing.type !== 'SLACK') {
+      throw new AlertChannelDestinationError(
+        'slackChannel',
+        'Only a Slack channel has a Slack channel.',
+      );
+    }
+    if (input.webhookEndpoint !== null && existing.type === 'SLACK') {
+      throw new AlertChannelDestinationError('webhookEndpoint', 'A Slack channel has no endpoint.');
+    }
+
+    const channel = await this.storage.updateAlertChannel({
+      projectId: input.projectId,
+      channelId: input.channelId,
+      name: input.name,
+      slackChannel: input.slackChannel,
+      webhookEndpoint: input.webhookEndpoint,
+    });
+    if (!channel) {
+      return null;
+    }
+
+    const destinationChanged =
+      existing.type === 'SLACK'
+        ? channel.slackChannel !== existing.slackChannel
+        : channel.webhookEndpoint !== existing.webhookEndpoint;
+    if (destinationChanged) {
+      await this.triggerChannelConfirmation({
+        kind: 'updated',
+        channel,
+        organization: input.organizationId,
+        project: input.projectId,
+      });
+    }
+
+    return channel;
+  }
+
   async deleteChannels(input: {
     channelIds: readonly string[];
     organizationId: string;
@@ -381,7 +456,7 @@ export class AlertsManager {
   }
 
   async triggerChannelConfirmation(input: {
-    kind: 'created' | 'deleted';
+    kind: ChannelConfirmationInput['event']['kind'];
     channel: AlertChannel;
     organization: string;
     project: string;
@@ -456,4 +531,15 @@ export function channelDeliverySelector(ref: ChannelDeliveryRef): DeliverySelect
     deliveryType: ref.channelType,
     destination: ref.channelId,
   };
+}
+
+/** An update names a destination the channel's type does not have. */
+export class AlertChannelDestinationError extends Error {
+  constructor(
+    public readonly field: 'slackChannel' | 'webhookEndpoint',
+    message: string,
+  ) {
+    super(message);
+    this.name = 'AlertChannelDestinationError';
+  }
 }

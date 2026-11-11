@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { beforeEach, vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
@@ -277,6 +278,28 @@ describe('DiscordCommunicationAdapter', () => {
           ],
         },
         hiveHeaders('channel_confirmation', 'channel-confirmation:deleted:channel-id'),
+      );
+
+      // A moved channel is confirmed like a new one, under a key that follows the destination.
+      input.event.kind = 'updated';
+      await adapter.sendChannelConfirmation(input);
+
+      expect(sendDiscordMessageSpy).toHaveBeenLastCalledWith(
+        webhookUrl,
+        {
+          embeds: [
+            {
+              title: 'GraphQL Hive notifications',
+              color: 0x5865f2,
+              description:
+                'I will send notifications here about your [project-name](app-base-url/org-clean-id/project-clean-id) project.',
+            },
+          ],
+        },
+        hiveHeaders(
+          'channel_confirmation',
+          `channel-confirmation:updated:channel-id:${createHash('sha256').update(webhookUrl).digest('hex').slice(0, 8)}`,
+        ),
       );
     });
   });

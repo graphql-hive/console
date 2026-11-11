@@ -10,7 +10,11 @@ import {
 } from '@slack/web-api';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
-import { buildHiveSlackMetadata, flattenSlackMetadata } from '../../lib/delivery-metadata';
+import {
+  buildHiveSlackMetadata,
+  channelConfirmationKey,
+  flattenSlackMetadata,
+} from '../../lib/delivery-metadata';
 import {
   deliveryOutcome,
   DeliveryRecorder,
@@ -187,7 +191,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
     }
 
     const actionMessage =
-      input.event.kind === 'created'
+      input.event.kind !== 'deleted'
         ? `I will send here notifications`
         : `I will no longer send here notifications`;
 
@@ -198,7 +202,7 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
       });
 
       const client = new WebClient(token, SLACK_CLIENT_OPTIONS);
-      const idempotencyKey = `channel-confirmation:${input.event.kind}:${input.channel.id}`;
+      const idempotencyKey = channelConfirmationKey(input.event.kind, input.channel);
       const metadata = buildHiveSlackMetadata(
         this.deliveries.describe({
           event: 'channel_confirmation',
