@@ -1,5 +1,5 @@
 import { endOfMonth, startOfMonth } from 'date-fns';
-import type { Storage } from '@hive/api';
+import type { OrganizationWithLimitInfo, Storage } from '@hive/api';
 import type { ServiceLogger } from '@hive/service-common';
 import { traceInline } from '@hive/service-common';
 import type { TaskScheduler } from '@hive/workflows/kit';
@@ -48,12 +48,8 @@ export type RateLimiter = ReturnType<typeof createRateLimiter>;
 type OrganizationId = string;
 type TargetId = string;
 
-type LimitInfoRecord = Awaited<
-  ReturnType<Storage['getGetOrganizationsAndTargetsWithLimitInfo']>
->[number];
-
 /** The organization's cache entry before this month's usage is applied. */
-function createCachedRateLimitInfo(record: LimitInfoRecord): CachedRateLimitInfo {
+function createCachedRateLimitInfo(record: OrganizationWithLimitInfo): CachedRateLimitInfo {
   return {
     orgName: record.org_name,
     orgEmail: record.owner_email,
@@ -196,7 +192,7 @@ export function createRateLimiter(config: {
   });
 
   async function lookupTargetInStorage(targetId: TargetId): Promise<OrganizationId | undefined> {
-    let record: LimitInfoRecord | null;
+    let record: OrganizationWithLimitInfo | null;
     try {
       record = await storage.getOrganizationWithLimitInfoByTargetId({ targetId });
     } catch (error) {
