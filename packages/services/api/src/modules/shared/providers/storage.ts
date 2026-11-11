@@ -44,6 +44,17 @@ export interface TargetSelector extends ProjectSelector {
   targetId: string;
 }
 
+export type OrganizationWithLimitInfo = {
+  organization: string;
+  org_name: string;
+  org_clean_id: string;
+  org_plan_name: string;
+  owner_email: string;
+  targets: string[];
+  limit_operations_monthly: number;
+  limit_retention_days: number;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface Storage {
   pool: PostgresDatabasePool;
@@ -292,18 +303,15 @@ export interface Storage {
     }>
   >;
 
-  getGetOrganizationsAndTargetsWithLimitInfo(): Promise<
-    ReadonlyArray<{
-      organization: string;
-      org_name: string;
-      org_clean_id: string;
-      org_plan_name: string;
-      owner_email: string;
-      targets: string[];
-      limit_operations_monthly: number;
-      limit_retention_days: number;
-    }>
-  >;
+  getGetOrganizationsAndTargetsWithLimitInfo(): Promise<ReadonlyArray<OrganizationWithLimitInfo>>;
+
+  /**
+   * The organization owning the target, in the same shape as
+   * `getGetOrganizationsAndTargetsWithLimitInfo`, or null when the target does not exist.
+   */
+  getOrganizationWithLimitInfoByTargetId(_: {
+    targetId: string;
+  }): Promise<OrganizationWithLimitInfo | null>;
 
   getBillingParticipants(): Promise<ReadonlyArray<OrganizationBilling>>;
 

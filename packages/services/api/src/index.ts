@@ -2,7 +2,7 @@ export type { RegistryContext } from './context';
 export type { Application as Registry } from 'graphql-modules';
 export { createRegistry } from './create';
 export type { LogFn, Logger } from './modules/shared/providers/logger';
-export type { Storage } from './modules/shared/providers/storage';
+export type { OrganizationWithLimitInfo, Storage } from './modules/shared/providers/storage';
 export type {
   Member,
   Organization,
