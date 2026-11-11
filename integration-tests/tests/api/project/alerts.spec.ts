@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { createHash } from 'node:crypto';
 import asyncRetry from 'async-retry';
 import { clickHouseInsert, clickHouseQuery, flushAsyncInserts } from 'testkit/clickhouse';
-import { addAlertChannel } from 'testkit/flow';
+import { addAlertChannel, updateAlertChannel } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -650,5 +650,40 @@ test.concurrent(
         }),
       ]),
     );
+  },
+);
+
+test.concurrent(
+  'rejects an update from outside the organization as a GraphQL error',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject, organization } = await createOrg();
+    const { project, addAlertChannel } = await createProject(ProjectType.Single);
+    const endpoint = await generateMockEndpoint();
+    const created = await addAlertChannel({
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      name: 'webhook',
+      type: AlertChannelType.Webhook,
+      webhook: { endpoint: endpoint.url },
+    });
+    if (!created.ok) {
+      throw new Error(created.error?.message ?? 'Expected ok');
+    }
+
+    // A separate owner with no membership in the organization.
+    const { ownerToken: outsiderToken } = await seed.createOwner();
+    const errors = await updateAlertChannel(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        channelId: created.ok.addedAlertChannel.id,
+        name: 'renamed',
+      },
+      outsiderToken,
+    ).then(r => r.expectGraphQLErrors());
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toContain('Missing permission for performing');
   },
 );

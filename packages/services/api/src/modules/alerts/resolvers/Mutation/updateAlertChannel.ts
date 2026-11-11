@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { HiveError } from '../../../../shared/errors';
 import { isUUID } from '../../../../shared/is-uuid';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import {
@@ -68,9 +67,6 @@ export const updateAlertChannel: NonNullable<MutationResolvers['updateAlertChann
           inputErrors: { [error.field]: error.message },
         },
       };
-    }
-    if (error instanceof HiveError) {
-      return { error: { message: error.message, inputErrors: {} } };
     }
     throw error;
   }
