@@ -1382,7 +1382,6 @@ export async function createStorage(
               WHERE looked_up_target.id = ${targetId}
             )
             GROUP BY o.id
-            LIMIT 1
           `,
         )
         .then(OrganizationWithLimitInfoModel.nullable().parse);
