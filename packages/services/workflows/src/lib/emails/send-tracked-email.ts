@@ -10,7 +10,7 @@ import {
 } from '../delivery-recorder.js';
 import { EmailSendError } from './email-send-error.js';
 import type { EmailProvider } from './providers.js';
-import { isPermanentRefusal } from './retry-policy.js';
+import { attemptEmail, isPermanentRefusal } from './retry-policy.js';
 
 export interface SendTrackedEmailArgs {
   context: Pick<Context, 'email' | 'deliveries'>;
@@ -39,26 +39,7 @@ export interface SendTrackedEmailArgs {
  * the job ends.
  */
 export async function sendTrackedEmail(args: SendTrackedEmailArgs): Promise<void> {
-  const { context, helpers } = args;
-
-  try {
-    await sendAndRecord(args);
-  } catch (error) {
-    if (error instanceof EmailSendError && isPermanentRefusal(error)) {
-      args.logger.warn(
-        {
-          'email.provider': context.email.id,
-          'email.event': args.event,
-          'email.statusCode': error.statusCode,
-          'email.statusText': error.statusText,
-          'job.attempts': helpers.job.attempts,
-        },
-        'email refused for good; the job will not retry it',
-      );
-      return;
-    }
-    throw error;
-  }
+  await attemptEmail(() => sendAndRecord(args), args);
 }
 
 async function sendAndRecord(args: SendTrackedEmailArgs): Promise<void> {

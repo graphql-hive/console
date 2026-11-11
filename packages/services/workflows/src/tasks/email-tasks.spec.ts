@@ -1,11 +1,14 @@
 import type { JobHelpers } from 'graphile-worker';
 import type { Context } from '../context';
 import type { DeliveryRecorder } from '../lib/delivery-recorder';
+import { EmailSendError } from '../lib/emails/email-send-error';
 import { EMAIL_MAX_ATTEMPTS } from '../lib/emails/retry-policy';
 import { makeLogger } from '../lib/metric-alert-test-utils';
 import { task as auditLogExport } from './audit-log-export';
+import { task as emailVerification } from './email-verification';
 import { task as organizationInvitation } from './organization-invitation';
 import { task as organizationOwnershipTransfer } from './organization-ownership-transfer';
+import { task as passwordReset } from './password-reset';
 import { task as usageRateLimitExceeded } from './usage-rate-limit-exceeded';
 import { task as usageRateLimitWarning } from './usage-rate-limit-warning';
 
@@ -110,10 +113,11 @@ function createJob() {
   const send = vi
     .fn()
     .mockResolvedValue({ statusCode: 200, statusText: 'OK', messageId: 'mock-1' });
+  const { logger, warnings } = makeLogger();
   const context = {
     email: { id: 'mock', send, history: [] },
     deliveries: { record },
-    logger: makeLogger().logger,
+    logger,
   } as unknown as Context;
   const helpers = {
     job: {
@@ -125,7 +129,7 @@ function createJob() {
       task_id: 1,
     },
   } as unknown as JobHelpers;
-  return { record, send, context, helpers };
+  return { record, send, context, helpers, warnings };
 }
 
 describe('email tasks record their delivery', () => {
@@ -173,5 +177,46 @@ describe('email tasks record their delivery', () => {
 
     expect(send).toHaveBeenCalledTimes(1);
     expect(record).toHaveBeenCalledWith(expect.objectContaining({ idempotencyKey: null }));
+  });
+});
+
+describe('auth emails', () => {
+  const refused = new EmailSendError('Inactive recipient', {
+    provider: 'mock',
+    statusCode: 422,
+    statusText:
+      'You tried to send to a recipient that has been marked as inactive. (error code 406)',
+    errorCode: '406',
+  });
+  const outage = new EmailSendError('Service Unavailable', {
+    provider: 'mock',
+    statusCode: 503,
+    statusText: 'Service Unavailable',
+  });
+
+  test.each([
+    {
+      name: 'email verification',
+      task: emailVerification,
+      input: { user: { email: 'new@example.com' }, emailVerifyLink: 'https://app/verify/secret' },
+    },
+    {
+      name: 'password reset',
+      task: passwordReset,
+      input: {
+        user: { email: 'new@example.com', id: 'u1' },
+        passwordResetLink: 'https://app/reset/secret',
+      },
+    },
+  ])('$name gives up on a refused address and retries an outage', async ({ task, input }) => {
+    const { send, context, helpers, warnings } = createJob();
+    const [, run] = task(context);
+
+    send.mockRejectedValueOnce(refused);
+    await expect(run({ input }, helpers)).resolves.toBeUndefined();
+    expect(warnings).toHaveLength(1);
+
+    send.mockRejectedValueOnce(outage);
+    await expect(run({ input }, helpers)).rejects.toBe(outage);
   });
 });

@@ -1,4 +1,8 @@
-import type { EmailSendError } from './email-send-error.js';
+import type { JobHelpers } from 'graphile-worker';
+import type { Logger } from '@graphql-hive/logger';
+import type { Context } from '../../context.js';
+import type { EmailDeliveryEvent } from '../delivery-recorder.js';
+import { EmailSendError } from './email-send-error.js';
 
 /**
  * How many times a job hands an email to the provider: the first attempt and four retries, about
@@ -41,4 +45,38 @@ export function isPermanentRefusal(error: EmailSendError): boolean {
 
 function isPermanentSmtpReply(code: number): boolean {
   return code >= 500 && code < 600 && code !== 503;
+}
+
+/**
+ * Runs one attempt of a job to hand an email to the provider. A refusal is rethrown so
+ * graphile-worker retries the job, unless it cannot change (see `isPermanentRefusal`): then it is
+ * logged and the job ends.
+ */
+export async function attemptEmail(
+  send: () => Promise<unknown>,
+  job: {
+    context: Pick<Context, 'email'>;
+    helpers: JobHelpers;
+    logger: Logger;
+    event?: EmailDeliveryEvent;
+  },
+): Promise<void> {
+  try {
+    await send();
+  } catch (error) {
+    if (error instanceof EmailSendError && isPermanentRefusal(error)) {
+      job.logger.warn(
+        {
+          'email.provider': job.context.email.id,
+          'email.event': job.event,
+          'email.statusCode': error.statusCode,
+          'email.statusText': error.statusText,
+          'job.attempts': job.helpers.job.attempts,
+        },
+        'email refused for good; the job will not retry it',
+      );
+      return;
+    }
+    throw error;
+  }
 }
