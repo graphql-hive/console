@@ -65,6 +65,32 @@ describe('trackDelivery', () => {
     );
   });
 
+  test('records a failure the sender will not retry as the last attempt of the job', async () => {
+    const record = vi.fn(async () => {});
+    const error = new Error('Response code 422 (Unprocessable Entity)');
+
+    await expect(
+      trackDelivery(
+        { record },
+        meta,
+        () => Promise.reject(error),
+        () => ({
+          ...deliveryOutcome(422, 'Unprocessable Entity'),
+          final: true,
+        }),
+      ),
+    ).rejects.toBe(error);
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ok: false,
+        statusCode: 422,
+        attempt: meta.attempt,
+        maxAttempts: meta.attempt,
+      }),
+    );
+  });
+
   test('masks an error the sender did not recognise', async () => {
     const record = vi.fn(async () => {});
     const error = new TypeError("Cannot read properties of undefined (reading 'id')");
