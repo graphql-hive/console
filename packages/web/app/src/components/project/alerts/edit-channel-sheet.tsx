@@ -144,10 +144,10 @@ function EditChannelSheetSession({
       }}
       trigger={<Button variant="outline" label="Edit channel" />}
       title="Edit channel"
-      description="Rename the channel or point it at a new destination, which receives a confirmation message. The type cannot change."
+      description="Rename the channel or point it at a new destination. The type cannot change."
       footer={
         <>
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <Button onSurface="raised" type="button" variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button
