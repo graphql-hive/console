@@ -66,7 +66,8 @@ export class RedisRateLimiter {
 
   async isActionRateLimited(
     req: FastifyRequest,
-    actionName: string /** duration of the time window */,
+    actionName: string,
+    /** duration of the time window */
     timeWindowSeconds = 5 * 60,
     /** maximum amount of requests allowed in the time window */
     maxActionsPerTimeWindow = 30,

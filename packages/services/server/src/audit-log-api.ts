@@ -22,7 +22,6 @@ import {
 } from '@hive/api/modules/audit-logs/providers/audit-logs-types';
 import { AuthN, UnauthenticatedSession } from '@hive/api/modules/auth/lib/authz';
 import { RedisRateLimiter } from '@hive/api/modules/shared/providers/redis-rate-limiter';
-import { Storage } from '@hive/api/modules/shared/providers/storage';
 import { metrics } from '@hive/service-common';
 import { captureException } from '@sentry/node';
 
@@ -108,15 +107,10 @@ function parseEventTypes(raw: string | undefined): AuditLogEventType[] | null | 
   return values as AuditLogEventType[];
 }
 
-/**
- * The audit log API: lets SIEMs poll an organization's audit log, oldest first, with an opaque
- * cursor. Authenticated with organization access tokens holding `auditLog:describe`.
- */
 export const createAuditLogApiPlugin =
   (args: { injector: Registry['injector']; authN: AuthN }): FastifyPluginAsync =>
   async server => {
     const reader = args.injector.get(AuditLogEventReader);
-    const storage = args.injector.get(Storage);
     const rateLimiter = args.injector.get(RedisRateLimiter);
     const requestStartTimeMap = new WeakMap<FastifyRequest, bigint>();
 
@@ -180,8 +174,6 @@ export const createAuditLogApiPlugin =
           "The access token is missing the 'auditLog:describe' permission.",
         );
       }
-
-      const organization = await storage.getOrganization({ organizationId });
 
       const query = QueryModel.safeParse(req.query);
       if (!query.success) {
@@ -286,9 +278,8 @@ export const createAuditLogApiPlugin =
         page.hasMore,
       );
 
-      const organizationRef = { id: organization.id, slug: organization.slug };
       const body: AuditLogEventsPage = {
-        events: page.rows.map(row => toAuditLogEnvelopeV1(row, organizationRef)),
+        events: page.rows.map(row => toAuditLogEnvelopeV1(row, organizationId)),
         nextCursor,
         hasMore: page.hasMore,
         cursorExpired,

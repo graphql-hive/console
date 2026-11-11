@@ -15,7 +15,7 @@ export type AuditLogEventRow = {
 
 export function toAuditLogEnvelopeV1(
   row: AuditLogEventRow,
-  organization: { id: string; slug: string },
+  organizationId: string,
 ): AuditLogEnvelopeV1 {
   const { user: _user, accessToken, ...metadata } = parseMetadata(row.metadata);
 
@@ -30,7 +30,7 @@ export function toAuditLogEnvelopeV1(
     id: row.id,
     timestamp: new Date(row.timestamp * 1000).toISOString().replace('.000Z', 'Z'),
     eventType: row.eventAction,
-    organization: { id: organization.id, slug: organization.slug },
+    organization: { id: organizationId },
     actor: {
       type,
       user: row.userId ? { id: row.userId, email: row.userEmail } : null,

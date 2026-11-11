@@ -37,7 +37,6 @@ export const AuditLogEnvelopeV1Model = z
     organization: z
       .object({
         id: z.string().meta({ description: 'Organization id.' }),
-        slug: z.string().meta({ description: 'Organization slug at the time of reading.' }),
       })
       .meta({ description: 'The organization the event belongs to.' }),
     actor: z

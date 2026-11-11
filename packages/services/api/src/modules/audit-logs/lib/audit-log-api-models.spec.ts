@@ -171,14 +171,9 @@ test('JSON Schemas of the audit log API responses', () => {
                     description: Organization id.,
                     type: string,
                   },
-                  slug: {
-                    description: Organization slug at the time of reading.,
-                    type: string,
-                  },
                 },
                 required: [
                   id,
-                  slug,
                 ],
                 type: object,
               },
@@ -336,14 +331,9 @@ test('JSON Schemas of the audit log API responses', () => {
                     description: Organization id.,
                     type: string,
                   },
-                  slug: {
-                    description: Organization slug at the time of reading.,
-                    type: string,
-                  },
                 },
                 required: [
                   id,
-                  slug,
                 ],
                 type: object,
               },

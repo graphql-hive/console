@@ -164,7 +164,7 @@ describe.concurrent('GET /audit-log/v1/events', () => {
       id,
       timestamp: new Date(timestamp * 1000).toISOString().replace('.000Z', 'Z'),
       eventType: 'USER_INVITED',
-      organization: { id: organization.id, slug: organization.slug },
+      organization: { id: organization.id },
       actor: {
         type: 'user',
         user: { id: 'b0a1e7a6-3c3b-4a51-9a8e-0d5f6f1d2c11', email: 'marty@mcfly.dev' },

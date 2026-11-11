@@ -453,7 +453,6 @@ export type AuditLogSchemaEvent = z.infer<typeof AuditLogModel>;
 
 export type AuditLogEventType = AuditLogSchemaEvent['eventType'];
 
-/** Every audit log event type, derived from `AuditLogModel` so the list can never drift from it. */
 export const auditLogEventTypes: readonly AuditLogEventType[] = AuditLogModel.options.map(
   option => option.shape.eventType.value,
 );
