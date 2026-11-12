@@ -515,8 +515,8 @@ describe('delivery tracking', () => {
     );
   });
 
-  test.each(['channel_not_found', 'is_archived', 'not_in_channel'])(
-    'a channel that cannot take messages (%s) completes the job instead of retrying',
+  test.each(['channel_not_found', 'not_in_channel', 'token_revoked', 'invalid_blocks'])(
+    'an error no retry can fix (%s) completes the job instead of retrying',
     async code => {
       postMessage.mockRejectedValueOnce({
         code: 'slack_webapi_platform_error',

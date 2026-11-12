@@ -67,10 +67,53 @@ const SLACK_CLIENT_OPTIONS = { retryConfig: { retries: 3 } };
 // the socket's, passed through by axios on `original`.
 const REQUEST_TIMEOUT_CODES = new Set(['ETIMEDOUT']);
 
-// Slack answers these when the channel itself can't take messages: deleted, archived, or the app
-// removed from it. Only editing the alert channel fixes that, so retrying would spend the job's
-// whole budget re-sending a notification that can't arrive.
-const UNDELIVERABLE_SLACK_ERRORS = new Set(['channel_not_found', 'is_archived', 'not_in_channel']);
+// Slack result codes that no retry can fix, so retrying would only spend the job's whole budget
+// re-sending a notification that can't arrive.
+const UNDELIVERABLE_SLACK_ERRORS = new Set([
+  // The channel can't take the message
+  'channel_not_found',
+  'is_archived',
+  'not_in_channel',
+  'restricted_action',
+  'restricted_action_read_only_channel',
+  'restricted_action_thread_only_channel',
+  'ekm_access_denied',
+  'messages_tab_disabled',
+  'team_not_found',
+
+  // The organization's stored token is dead or insufficient
+  'invalid_auth',
+  'not_authed',
+  'account_inactive',
+  'token_revoked',
+  'token_expired',
+  'missing_scope',
+  'no_permission',
+  'not_allowed_token_type',
+  'team_access_not_granted',
+  'app_access_restricted',
+  'access_denied',
+  'enterprise_is_restricted',
+  'two_factor_setup_required',
+
+  // Slack rejects the payload Hive built: a Hive bug or a Slack deprecation
+  'invalid_blocks',
+  'invalid_blocks_format',
+  'msg_blocks_too_long',
+  'attachment_payload_limit_exceeded',
+  'too_many_attachments',
+  'invalid_metadata_format',
+  'invalid_metadata_schema',
+  'metadata_too_large',
+  'metadata_must_be_sent_from_app',
+  'no_text',
+  'missing_argument',
+  'invalid_arguments',
+  'invalid_arg_name',
+  'invalid_array_arg',
+  'deprecated_endpoint',
+  'method_deprecated',
+]);
 
 /**
  * The outcome of a failed `chat.postMessage`: the API's result code, the HTTP status it answered,
