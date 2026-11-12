@@ -84,7 +84,8 @@ describe('postmark provider', () => {
     expect(error).toMatchObject({
       provider: 'postmark',
       statusCode: 422,
-      statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+      statusText:
+        'You tried to send to a recipient that has been marked as inactive. (error code 406)',
       errorCode: '406',
       message: 'You tried to send to a recipient that has been marked as inactive.',
     });
@@ -217,7 +218,8 @@ describe('mock provider', () => {
     ).rejects.toMatchObject({
       provider: 'mock',
       statusCode: 422,
-      statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+      statusText:
+        'You tried to send to a recipient that has been marked as inactive. (error code 406)',
       errorCode: '406',
     });
     expect(provider.history).toEqual([]);

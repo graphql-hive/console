@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { flattenLegacyTracesFilter, LegacyTracesFilter } from '@/pages/traces/traces-search';
 import { createRoute, redirect, type AnyRoute } from '@tanstack/react-router';
 import { organizationRoute } from './organization/route';
 import { targetAlertsRoute } from './target/alerts';
@@ -64,7 +65,7 @@ export const legacyPaths: LegacyPath[] = [
   },
 ];
 
-export type LegacySearch<Value extends string> = {
+export type LegacySearch<Value> = {
   param: string;
   /** The old values; the owning route's `validateSearch` accepts them and nothing else. */
   values: z.ZodType<Value>;
@@ -75,7 +76,10 @@ export type LegacySearch<Value extends string> = {
   why: string;
 };
 
-const legacySearchEntry = <Value extends string>(entry: LegacySearch<Value>) => entry;
+const legacySearchEntry = <Value>(entry: LegacySearch<Value>) => entry;
+
+const legacyTracesExample = (filter: LegacyTracesFilter) =>
+  `/acme/shop/prod/traces?from=now-1d&to=now&filter=${encodeURIComponent(JSON.stringify(filter))}`;
 
 export const legacySearch = {
   targetSettings: legacySearchEntry({
@@ -152,10 +156,39 @@ export const legacySearch = {
     since: '2026-09',
     why: 'Members sections became child routes; the bare URL is the list, which keeps its search and SCIM filter params.',
   }),
+  targetTraces: legacySearchEntry({
+    param: 'filter',
+    values: LegacyTracesFilter,
+    redirect: (filter, { filter: _filter, ...search }) =>
+      redirect({
+        to: '/$organizationSlug/$projectSlug/$targetSlug/traces',
+        search: { ...search, ...flattenLegacyTracesFilter(filter) },
+      }),
+    examples: [
+      {
+        from: legacyTracesExample({
+          'graphql.operation': ['GetUser'],
+          'graphql.kind': [null, 'QUERY'],
+          duration: [0, 100_000],
+        }),
+        to: '/acme/shop/prod/traces?from=now-1d&to=now&operationTypes=%5B%22unknown%22%2C%22query%22%5D&operationNames=%5B%22GetUser%22%5D',
+      },
+      {
+        from: legacyTracesExample({
+          'graphql.status': ['error'],
+          'trace.id': [],
+          duration: [100, 5000],
+        }),
+        to: '/acme/shop/prod/traces?from=now-1d&to=now&durationMin=100&durationMax=5000&status=error',
+      },
+    ],
+    since: '2026-11',
+    why: 'The traces filter moved from one nested param to one param per dimension, as on Insights.',
+  }),
 };
 
 /** For the `beforeLoad` of the route that owns a legacy search param: redirects when it is set. */
-export function legacySearchRedirect<Value extends string>(
+export function legacySearchRedirect<Value>(
   entry: LegacySearch<Value>,
   search: Record<string, unknown>,
 ) {

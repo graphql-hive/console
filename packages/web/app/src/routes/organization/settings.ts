@@ -3,6 +3,7 @@ import {
   AccessTokensSubPage,
   AccessTokensSubPage_OrganizationQuery,
 } from '@/components/organization/settings/access-tokens/access-tokens-sub-page';
+import { EmailDeliveriesSubPage } from '@/components/organization/settings/emails/email-deliveries-sub-page';
 import {
   PersonalAccessTokensSubPage,
   PersonalAccessTokensSubPage_OrganizationQuery,
@@ -120,4 +121,12 @@ export const organizationSettingsPersonalAccessTokensRoute = createRoute({
     return loadSection(loader, 'personal-access-tokens');
   },
   component: PersonalAccessTokensSubPage,
+});
+
+// The section's query follows the clock, so the component fetches it; the loader only gates it.
+export const organizationSettingsEmailsRoute = createRoute({
+  getParentRoute: () => organizationSettingsRoute,
+  path: 'emails',
+  loader: loader => loadSection(loader, 'emails'),
+  component: EmailDeliveriesSubPage,
 });

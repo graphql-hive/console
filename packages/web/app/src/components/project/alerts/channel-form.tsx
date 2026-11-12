@@ -83,12 +83,14 @@ export const ChannelFormSchema = z
 export type ChannelFormValues = z.infer<typeof ChannelFormSchema>;
 
 /**
- * The body of the create channel dialog: name and type, then the field the type calls for. The
- * dialog owns the form state and the mutation.
+ * The body of the create channel dialog and the edit channel sheet: name and type, then the field
+ * the type calls for. The host owns the form state and the mutation. Editing keeps the type, since
+ * the channel's delivery history is kept by it.
  */
 export function ChannelForm(props: {
   form: UseFormReturn<ChannelFormValues>;
   onSubmit: (values: ChannelFormValues) => void | Promise<void>;
+  typeDisabled?: boolean;
 }) {
   const { form } = props;
   const type = useWatch({ control: form.control, name: 'type' });
@@ -130,6 +132,7 @@ export function ChannelForm(props: {
                 options={CHANNEL_TYPE_OPTIONS}
                 width="full"
                 onSurface="raised"
+                disabled={props.typeDisabled}
               />
             </FormControl>
             <FormMessage />

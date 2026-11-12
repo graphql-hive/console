@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
+import type { RangeValue } from '../filter-menu/types';
 import { FilterDropdown } from './filter-dropdown';
+import { RangeFilterChip } from './range-filter-chip';
+import { TextListFilterChip } from './text-list-filter-chip';
 import type { FilterItem, FilterSelection } from './types';
 
 export const nav: NavPath = 'Components/Filters/FilterDropdown';
@@ -134,6 +137,56 @@ export const FlatItems = createPreview(() => (
     initial={[{ name: 'Breaking', values: null }]}
   />
 ));
+
+function RangeChipHarness(props: { initial: RangeValue }) {
+  const [value, setValue] = useState(props.initial);
+  return (
+    <RangeFilterChip
+      label="Duration"
+      bounds={{ min: 0, max: 100_000 }}
+      unit="ms"
+      value={value}
+      onChange={setValue}
+      onRemove={() => setValue(props.initial)}
+    />
+  );
+}
+
+/** The range chip in its three shapes: both bounds, a minimum only, a maximum only. */
+export const RangeChip = createPreview(() => (
+  <div className="flex flex-col items-start gap-3">
+    <p className="text-xs text-fg-secondary">
+      The middle segment reopens the Min/Max panel. X resets each example to its starting range.
+    </p>
+    <RangeChipHarness initial={{ min: 100, max: 500 }} />
+    <RangeChipHarness initial={{ min: 2000, max: null }} />
+    <RangeChipHarness initial={{ min: null, max: 60_000 }} />
+  </div>
+));
+
+/** The list chip shows a count; its middle segment reopens the list to add or remove values. */
+export const TextListChip = createPreview(() => {
+  const [ids, setIds] = useState([
+    '4bf92f3577b34da6a3ce929d0e0e4736',
+    '00f067aa0ba902b7a3ce929d0e0e4736',
+    'd4cda95b652f4a1592b449d5929fda1b',
+  ]);
+  return (
+    <div className="flex flex-col items-start gap-3">
+      <p className="text-xs text-fg-secondary">
+        Remove ids from the list until one is left to see the singular. X clears the list, and the
+        chip stays here so the empty state is visible.
+      </p>
+      <TextListFilterChip
+        label="Trace ID"
+        values={ids}
+        onChange={setIds}
+        onRemove={() => setIds([])}
+        countNoun="id"
+      />
+    </div>
+  );
+});
 
 export const Playground = createPreview({
   controls: {

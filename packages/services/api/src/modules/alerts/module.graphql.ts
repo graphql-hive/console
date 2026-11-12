@@ -3,6 +3,7 @@ import { gql } from 'graphql-modules';
 export default gql`
   extend type Mutation {
     addAlertChannel(input: AddAlertChannelInput!): AddAlertChannelResult!
+    updateAlertChannel(input: UpdateAlertChannelInput!): UpdateAlertChannelResult!
     deleteAlertChannels(input: DeleteAlertChannelsInput!): DeleteAlertChannelsResult!
     addAlert(input: AddAlertInput!): AddAlertResult!
     deleteAlerts(input: DeleteAlertsInput!): DeleteAlertsResult!
@@ -118,6 +119,39 @@ export default gql`
     organizationSlug: String!
     projectSlug: String!
     channelIds: [ID!]!
+  }
+
+  """
+  What to change on a channel; a field left out keeps its value. The type cannot change, the
+  delivery history is kept by it. A Slack channel takes slack, the webhook kinds take webhook.
+  """
+  input UpdateAlertChannelInput {
+    organizationSlug: String!
+    projectSlug: String!
+    channelId: ID!
+    name: String
+    slack: SlackChannelInput
+    webhook: WebhookChannelInput
+  }
+
+  type UpdateAlertChannelResult {
+    ok: UpdateAlertChannelOk
+    error: UpdateAlertChannelError
+  }
+
+  type UpdateAlertChannelOk {
+    updatedAlertChannel: AlertChannel!
+  }
+
+  type UpdateAlertChannelError implements Error {
+    message: String!
+    inputErrors: UpdateAlertChannelInputErrors!
+  }
+
+  type UpdateAlertChannelInputErrors {
+    name: String
+    webhookEndpoint: String
+    slackChannel: String
   }
 
   input AddAlertInput {

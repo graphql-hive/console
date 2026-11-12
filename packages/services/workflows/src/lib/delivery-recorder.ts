@@ -22,10 +22,12 @@ export interface DeliveryOutcome {
 /**
  * How a sender reads the errors of the client it uses: what the destination answered, or
  * `Timed out` when nothing did. Null for anything it does not recognise, which `trackDelivery`
- * masks as `Unexpected error`. Each sender exports its own, next to the client whose error shapes
- * it knows.
+ * masks as `Unexpected error`. `final` says the sender will not try again after this answer.
+ * Each sender exports its own, next to the client whose error shapes it knows.
  */
-export type DescribeDeliveryError = (error: unknown) => DeliveryOutcome | null;
+export type DescribeDeliveryError = (
+  error: unknown,
+) => (DeliveryOutcome & { final?: boolean }) | null;
 
 /** An outcome whose text is bounded to what the column holds. */
 export function deliveryOutcome(statusCode: number | null, statusText: string): DeliveryOutcome {
@@ -58,7 +60,10 @@ export interface DeliveryMeta {
   idempotencyKey: string | null;
   /** graphile-worker attempt number of the job making the call. */
   attempt: number;
-  /** The retry budget of that job. */
+  /**
+   * The retry budget of that job. A failure the sender will not retry is recorded with the budget
+   * ending at its own attempt, so a reader sees it was the last.
+   */
   maxAttempts: number;
   /**
    * Exactly what was sent to identify the call: the request headers, the Slack metadata
@@ -163,8 +168,15 @@ export async function trackDelivery<T>(
     });
     return value;
   } catch (error) {
-    const failure = describeError(error) ?? deliveryOutcome(null, UNEXPECTED_ERROR);
-    await recorder.record({ ...meta, ...failure, ok: false, durationMs: Date.now() - startedAt });
+    const { final = false, ...failure }: DeliveryOutcome & { final?: boolean } =
+      describeError(error) ?? deliveryOutcome(null, UNEXPECTED_ERROR);
+    await recorder.record({
+      ...meta,
+      ...failure,
+      maxAttempts: final ? meta.attempt : meta.maxAttempts,
+      ok: false,
+      durationMs: Date.now() - startedAt,
+    });
     throw error;
   }
 }

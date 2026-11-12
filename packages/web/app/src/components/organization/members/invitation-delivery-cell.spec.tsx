@@ -44,7 +44,8 @@ describe('describeInvitationDelivery', () => {
         delivery({
           ok: false,
           statusCode: 422,
-          statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+          statusText:
+            'You tried to send to a recipient that has been marked as inactive. (error code 406)',
           attempt: 2,
         }),
         now,
@@ -53,7 +54,7 @@ describe('describeInvitationDelivery', () => {
       label: 'Failed (attempt 2 of 25)',
       dot: 'critical',
       tooltip:
-        '422 406: You tried to send to a recipient that has been marked as inactive. Hive will try again.',
+        '422 You tried to send to a recipient that has been marked as inactive. (error code 406). Hive will try again.',
     });
   });
 

@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
-import { explorerFixtures, explorerTypeMissing } from '@/lib/testing/fixtures/explorer';
+import {
+  explorerFixtures,
+  explorerTypeFilterEmpty,
+  explorerTypeMissing,
+  explorerWithSubgraphs,
+} from '@/lib/testing/fixtures/explorer';
 import { layoutFixtures, SLUGS, targetLayout } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
@@ -343,5 +348,34 @@ describe('explorer type not found', () => {
 
     expect(await screen.findByText('Hive is waiting for your first schema')).toBeTruthy();
     expect(screen.queryByText("Type 'Missing' not found")).toBeNull();
+  });
+});
+
+describe('explorer filters', () => {
+  function subgraphsClient() {
+    const fixtures = new Map([...layoutFixtures(), ...explorerFixtures()]);
+    fixtures.set('TargetExplorerPageQuery', explorerWithSubgraphs(['users', 'products']));
+    fixtures.set('TypeFilter_AllTypes', explorerTypeFilterEmpty());
+    return createTestClient(fixtures);
+  }
+
+  // A search-only change does not re-render the route component, so the filters must subscribe.
+  it('the subgraph chip follows the URL without a reload', { timeout: 30_000 }, async () => {
+    const { router } = renderAtUrl(`${EXPLORER}?from=now-7d&to=now`, { client: subgraphsClient() });
+    await screen.findByRole('button', { name: 'Last 7 days' });
+    await screen.findByRole('button', { name: 'Filter' });
+    expect(screen.queryByRole('button', { name: 'Remove Subgraph filter' })).toBeNull();
+
+    await router.navigate({
+      to: '.',
+      search: { ...LAST_WEEK, subgraph: 'users' },
+      replace: true,
+    });
+    expect(await screen.findByRole('button', { name: 'Remove Subgraph filter' })).toBeTruthy();
+
+    await router.navigate({ to: '.', search: LAST_WEEK, replace: true });
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Remove Subgraph filter' })).toBeNull(),
+    );
   });
 });

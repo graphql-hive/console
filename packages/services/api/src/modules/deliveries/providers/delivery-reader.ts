@@ -12,18 +12,27 @@ export const MAX_DELIVERY_LOG_LIMIT = 200;
 /** A channel is failing once this many attempts in a row, the most recent ones, have failed. */
 export const FAILURE_STREAK_LENGTH = 10;
 
-/** The GraphQL `DeliveryEvent` members; the stored event name is the lowercase form. */
-const DELIVERY_EVENT_NAMES = [
+/** What an alert channel is sent; the stored event name is the lowercase form. */
+const CHANNEL_DELIVERY_EVENT_NAMES = [
   'SCHEMA_CHANGE',
   'METRIC_ALERT',
   'CHANNEL_CONFIRMATION',
+] as const;
+/** What an organization is emailed; the stored event name is the lowercase form. */
+export const EMAIL_DELIVERY_EVENT_NAMES = [
   'ORGANIZATION_INVITATION',
   'ORGANIZATION_OWNERSHIP_TRANSFER',
   'AUDIT_LOG_EXPORT',
   'USAGE_RATE_LIMIT_WARNING',
   'USAGE_RATE_LIMIT_EXCEEDED',
 ] as const;
+/** The GraphQL `DeliveryEvent` members. */
+const DELIVERY_EVENT_NAMES = [
+  ...CHANNEL_DELIVERY_EVENT_NAMES,
+  ...EMAIL_DELIVERY_EVENT_NAMES,
+] as const;
 export type DeliveryEventName = (typeof DELIVERY_EVENT_NAMES)[number];
+export type EmailDeliveryEventName = (typeof EMAIL_DELIVERY_EVENT_NAMES)[number];
 export type DeliveryHealthStatus = 'UNKNOWN' | 'HEALTHY' | 'FAILING';
 /** An alert channel type, or EMAIL for mail sent through the configured provider. */
 export type DeliveryType = AlertChannel['type'] | 'EMAIL';
@@ -49,6 +58,9 @@ export interface DeliveryHealth {
   failingSince: Date | null;
 }
 
+/** When a selection last succeeded and last failed. */
+export type LastOutcomes = Pick<DeliveryHealth, 'lastSuccessAt' | 'lastFailureAt'>;
+
 export interface Delivery {
   timestamp: Date;
   event: DeliveryEventName;
@@ -68,11 +80,15 @@ export interface Delivery {
   metadata: Record<string, string>;
 }
 
-/** Which deliveries to read: one destination's, or every one of a type for the organization. */
+/**
+ * Which deliveries to read: one destination's, or every one of a type for the organization, and
+ * only the given events when `events` is set (never to an empty list).
+ */
 export type DeliverySelector = {
   organizationId: string;
   deliveryType: DeliveryType;
   destination?: string;
+  events?: readonly DeliveryEventName[];
 };
 
 // UInt64 aggregates arrive quoted (output_format_json_quote_64bit_integers); smaller integers as numbers.
@@ -95,6 +111,11 @@ const HealthRowModel = z.object({
   last_status_code: z.coerce.number(),
   last_status_text: z.string(),
   failing_since: z.coerce.number(),
+});
+
+const LastOutcomesRowModel = z.object({
+  last_success_at: z.coerce.number(),
+  last_failure_at: z.coerce.number(),
 });
 
 const LogRowModel = z.object({
@@ -128,12 +149,17 @@ export class DeliveryReader {
     this.logger = logger.child({ source: 'DeliveryReader' });
   }
 
-  /** The key prefix: the organization and type, then the destination when one is given. */
+  /** The key prefix: the organization and type, then the destination and the events when given. */
   private whereSelector(selector: DeliverySelector) {
-    const prefix = sql`"organization_id" = ${selector.organizationId} AND "delivery_type" = ${selector.deliveryType}`;
-    return selector.destination === undefined
-      ? prefix
-      : sql`${prefix} AND "destination" = ${selector.destination}`;
+    let where = sql`"organization_id" = ${selector.organizationId} AND "delivery_type" = ${selector.deliveryType}`;
+    if (selector.destination !== undefined) {
+      where = sql`${where} AND "destination" = ${selector.destination}`;
+    }
+    if (selector.events !== undefined) {
+      const events = selector.events.map(event => event.toLowerCase());
+      where = sql`${where} AND "event" IN (${sql.array(events, 'String')})`;
+    }
+    return where;
   }
 
   /** Attempts in the period, and how many of them the destination did not accept. */
@@ -197,7 +223,8 @@ export class DeliveryReader {
 
   /**
    * The most recent attempts decide the status. The lookups around them walk the sort key and stop
-   * early, so the scan grows with the current streak rather than with the channel's history.
+   * early, so the scan grows with the current streak rather than with the destination's history.
+   * That needs a destination; a selector without one gets `getLastOutcomes` instead.
    */
   async getHealth(input: DeliverySelector): Promise<DeliveryHealth> {
     this.logger.debug('Reading delivery health (destination=%s)', input.destination ?? '*');
@@ -265,6 +292,31 @@ export class DeliveryReader {
     });
 
     return toDeliveryHealth(HealthRowModel.parse(result.data[0]));
+  }
+
+  /**
+   * When the selection last succeeded and last failed, in one aggregation pass with no ordering,
+   * so a selector without a destination reads its rows once rather than once per lookup.
+   */
+  async getLastOutcomes(input: DeliverySelector): Promise<LastOutcomes> {
+    this.logger.debug('Reading last delivery outcomes (destination=%s)', input.destination ?? '*');
+    const result = await this.clickHouse.query<unknown>({
+      query: sql`
+        SELECT
+          toUnixTimestamp(maxIf("timestamp", "ok" = 1)) AS last_success_at
+          , toUnixTimestamp(maxIf("timestamp", "ok" = 0)) AS last_failure_at
+        FROM "outbound_deliveries"
+        WHERE ${this.whereSelector(input)}
+      `,
+      queryId: 'delivery_last_outcomes',
+      timeout: 10_000,
+    });
+
+    const row = LastOutcomesRowModel.parse(result.data[0]);
+    return {
+      lastSuccessAt: epochToDate(row.last_success_at),
+      lastFailureAt: epochToDate(row.last_failure_at),
+    };
   }
 
   /** The most recent attempts within the period, newest first. */

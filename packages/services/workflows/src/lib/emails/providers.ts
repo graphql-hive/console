@@ -113,7 +113,7 @@ function postmark(config: PostmarkEmailProviderConfig, emailFrom: string): Email
           statusCode: response.status,
           statusText:
             details?.errorCode != null
-              ? `${details.errorCode}: ${details.message ?? response.statusText}`
+              ? `${details.message ?? response.statusText} (error code ${details.errorCode})`
               : response.statusText,
           errorCode: details?.errorCode != null ? String(details.errorCode) : null,
         });
@@ -163,7 +163,8 @@ function mock(_config: MockEmailProviderConfig, _emailFrom: string): EmailProvid
         throw new EmailSendError('Inactive recipient', {
           provider: 'mock',
           statusCode: 422,
-          statusText: '406: You tried to send to a recipient that has been marked as inactive.',
+          statusText:
+            'You tried to send to a recipient that has been marked as inactive. (error code 406)',
           errorCode: '406',
         });
       }

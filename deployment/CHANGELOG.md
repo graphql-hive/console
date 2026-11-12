@@ -1,5 +1,282 @@
 # hive
 
+## 15.2.0
+
+### Minor Changes
+
+- [#8865](https://github.com/graphql-hive/console/pull/8865)
+  [`447bdc6`](https://github.com/graphql-hive/console/commit/447bdc6dae12d04c26e8fc66bf44719964cac066)
+  Thanks [@jdolle](https://github.com/jdolle)! - Alert channel deliveries are now recorded in
+  ClickHouse (new table `outbound_deliveries`, created by the migrations service). Every Slack,
+  Microsoft Teams and Discord notification sent by the API records whether the destination accepted
+  it, with the HTTP status and what Hive sent to identify the call. Each attempt is written with a
+  synchronous insert, so recording it waits only for its own row and not for the server-wide
+  asynchronous insert queue.
+
+  Microsoft Teams and Discord webhook calls now carry `Hive-Request-ID`, `Hive-Event`,
+  `Hive-Target-ID`, `Hive-Schema-ID` (schema changes), `Idempotency-Key` and a `User-Agent` of
+  `Hive-Webhooks/<release>`. Slack messages carry the same values as message metadata.
+
+  Slack notifications now retry at most 3 times inside the Slack client, instead of the client
+  default of 10 retries over about 30 minutes.
+
+- [#8879](https://github.com/graphql-hive/console/pull/8879)
+  [`dea5a96`](https://github.com/graphql-hive/console/commit/dea5a9678b34135914d24530955e3b7dc4f22db4)
+  Thanks [@jdolle](https://github.com/jdolle)! - New GraphQL fields for alert channel deliveries:
+  `Project.alertChannel(id)`, `AlertChannel.deliveryStats(period)` (returning
+  `DeliveryStats.totalDeliveries`, `DeliveryStats.totalFailures`,
+  `DeliveryStats.deliveriesOverTime(resolution)` and `DeliveryStats.failuresOverTime(resolution)`,
+  shaped like `Target.operationsStats`), `AlertChannel.deliveryHealth` and
+  `AlertChannel.deliveryLog(period, limit)`. They expose the recorded attempts: bucketed totals, the
+  latest outcome with its status code and text, and the most recent attempts with what Hive sent to
+  identify each call. The three `AlertChannel` fields are nullable: a null means the delivery
+  history could not be read.
+
+- [#8877](https://github.com/graphql-hive/console/pull/8877)
+  [`161490d`](https://github.com/graphql-hive/console/commit/161490d673855448ae426a4a1450c8c33a9ab57b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Webhook deliveries made by the workflows service
+  (schema change notifications to webhook channels, and all metric alert notifications) are now
+  recorded in ClickHouse alongside the ones made by the API, and carry the same identifying headers:
+  `Hive-Request-ID`, `Hive-Event`, `Hive-Target-ID`, `Hive-Schema-ID` (schema changes),
+  `Idempotency-Key` and a `User-Agent` of `Hive-Webhooks/<release>`. Slack metric alert messages
+  carry the same values as message metadata and retry at most 3 times inside the Slack client. Each
+  attempt is written with a synchronous insert, so recording it waits only for its own row and not
+  for the server-wide asynchronous insert queue.
+
+  Recording needs the workflows service to reach ClickHouse: set `CLICKHOUSE=1` and the
+  `CLICKHOUSE_*` variables. The community docker-compose now sets them, which also turns on metric
+  alert rule evaluation there.
+
+- [#8888](https://github.com/graphql-hive/console/pull/8888)
+  [`264aa43`](https://github.com/graphql-hive/console/commit/264aa436b08e897e440512bce37c56ee87312cfd)
+  Thanks [@jdolle](https://github.com/jdolle)! - Every alert channel now has a page of its own:
+  click a channel on the project's Alerts page to see its deliveries and error rate over time, the
+  most recent attempts with the status the destination answered and the headers Hive sent, a warning
+  once it has been failing for more than an hour, and to delete it.
+
+- [#8894](https://github.com/graphql-hive/console/pull/8894)
+  [`c6c2250`](https://github.com/graphql-hive/console/commit/c6c2250cf5e28714660ace6ceb59ef9173c79f10)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Record the IP address and user agent of the client
+  for all audit log events. The values are stored in the new `ip_address` and `user_agent` columns
+  and included in the audit log CSV export.
+
+  Add the `CLIENT_IP_HEADER_NAME` environment variable to the server, which configures the header
+  containing the client IP address set by your CDN/proxy (e.g. `CF-Connecting-IP`). It is used for
+  rate limiting and audit logs. If not set, the IP address of the request is used. Only configure a
+  header that your CDN/proxy always overwrites, as clients can otherwise spoof their IP address.
+
+  `SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME` is deprecated in favor of `CLIENT_IP_HEADER_NAME` and is
+  still respected as a fallback.
+
+  **Note:** Previously `SUPERTOKENS_RATE_LIMIT_IP_HEADER_NAME` defaulted to `CF-Connecting-IP`.
+
+- [#8636](https://github.com/graphql-hive/console/pull/8636)
+  [`53f17d3`](https://github.com/graphql-hive/console/commit/53f17d399271301242668d885de94e4fc16d9d85)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add a graph manifest artifact to the CDN for
+  federation projects.
+
+  The manifest is available at `/artifacts/v1/<targetId>/manifest.json` and lists all graphs of a
+  target (the main graph and its contracts), keyed by graph name, with their graph id and the id and
+  artifact path of their current graph version. It is updated whenever a schema is published, a
+  subgraph is deleted, or a contract is deleted, and is only written if all graphs are composable.
+
+  ```json
+  {
+    "graphs": {
+      "<graph-name>": {
+        "id": "<graph-id>",
+        "currentVersion": {
+          "id": "<graph-version-id>",
+          "artifactPath": "version/<graph-version-id>"
+        }
+      }
+    }
+  }
+  ```
+
+  The `artifactPath` is relative to the location of the manifest, so it can be resolved both when
+  reading the manifest via the CDN and when reading it directly from the S3 bucket (e.g.
+  `new URL(artifactPath + '/supergraph', manifestUrl)`):
+
+  - CDN: `/artifacts/v1/<targetId>/manifest.json` →
+    `/artifacts/v1/<targetId>/version/<graph-version-id>/supergraph`
+  - S3: `artifact/<targetId>/manifest.json` →
+    `artifact/<targetId>/version/<graph-version-id>/supergraph`
+
+  CDN artifact responses now include the following additional headers:
+
+  - `x-hive-graph-id`: the id of the graph the artifact belongs to
+  - `x-hive-graph-version-id`: the id of the graph version the artifact belongs to (same value as
+    the now deprecated `x-hive-schema-version-id` header)
+  - `last-modified`: when the artifact was last updated
+
+  These headers are also sent on `304 Not Modified` responses, as the graph metadata can change
+  while the artifact contents stay the same.
+
+- [#8892](https://github.com/graphql-hive/console/pull/8892)
+  [`2fcbf80`](https://github.com/graphql-hive/console/commit/2fcbf8096bf1e36edc25a01e9c8838b0e96216d5)
+  Thanks [@jdolle](https://github.com/jdolle)! - Organization settings gain an "Email Deliveries"
+  section: the emails Hive sent for the organization in the last 72 hours, how many the mail
+  provider accepted or refused, when it last did either, a chart of attempts and failures over time,
+  and a log of each attempt with the recipient, the provider's answer, the duration, the retry count
+  and the recorded details (subject, message id, request and job ids). Each member sees the kinds of
+  email of the features they may manage: invitations with `member:modify`, audit log exports with
+  `auditLog:export`, usage rate limit notices with `billing:describe`, and ownership transfers as
+  the organization owner. When that leaves a kind out, the section names the kinds it shows. Bodies,
+  links and codes are never shown because they are never stored.
+
+  In GraphQL, `Organization.emailDeliveryStats(period)`, `emailDeliveryHealth` and
+  `emailDeliveryLog(period, limit)` expose the same data, limited the same way and shaped like the
+  delivery fields of an alert channel, `Organization.viewerCanSeeEmailDeliveries` says whether the
+  viewer may see at least one kind, and `Organization.viewerEmailDeliveryVisibility` lists the kinds
+  they may see and whether any kind is kept from them.
+
+- [#8889](https://github.com/graphql-hive/console/pull/8889)
+  [`2f885a7`](https://github.com/graphql-hive/console/commit/2f885a773618d689d64cd0cc423590644d24a3d2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Organization emails are now recorded in ClickHouse
+  `outbound_deliveries` as `EMAIL` deliveries: invitations, ownership transfers, audit log exports,
+  and usage rate limit warning and exceeded notices. Each attempt stores the recipient address, the
+  mail provider's answer (HTTP status or SMTP reply code, and its text), the message id when the
+  provider reports one (Postmark's `MessageID`, or the Message-ID header for SMTP), the subject, the
+  job id, the request id when a request scheduled the job, and the attempt number with the job's
+  retry budget. `outbound_deliveries` gains an `idempotency_key` column that groups the attempts of
+  one notification: the Idempotency-Key alert channel senders already transmit, or for an invitation
+  email a key made of the recipient and the invitation's creation time; a ClickHouse migration adds
+  it and fills existing rows from their recorded metadata. Bodies, links and codes are never stored.
+  Recipient addresses are kept for the table's 75-day retention. Recording needs the workflows
+  service's ClickHouse connection (`CLICKHOUSE=1`, as for webhook deliveries); without it nothing is
+  recorded and invitations show "No delivery record".
+
+  The member invitations table gains an "Email status" column: whether the mail provider accepted
+  each invitation email, with the attempt count while Hive retries a refused one. The status is the
+  invitation's own: inviting an address again shows the new invitation's attempts, not the retries
+  of the earlier one. In GraphQL, `OrganizationInvitation.delivery` exposes that most recent
+  attempt, and `DeliveryEvent` gains `ORGANIZATION_INVITATION`, `ORGANIZATION_OWNERSHIP_TRANSFER`,
+  `AUDIT_LOG_EXPORT`, `USAGE_RATE_LIMIT_WARNING` and `USAGE_RATE_LIMIT_EXCEEDED`.
+
+  Postmark requests now time out after 15 seconds, so a hung connection fails the attempt and the
+  job retries instead of blocking the worker. The `mock` email provider refuses recipients whose
+  local part ends in `+bounce`, for testing.
+
+- [#8905](https://github.com/graphql-hive/console/pull/8905)
+  [`273113d`](https://github.com/graphql-hive/console/commit/273113df3870c0b4701af41fece647cc233dbd0b)
+  Thanks [@jdolle](https://github.com/jdolle)! - Emails are handed to the mail provider at most 5
+  times per job, about 90 seconds of retries, instead of graphile-worker's default of 25 attempts
+  spread over days; the links they carry expire well before that. A refusal of the message itself
+  ends the job at once: Postmark rejecting the recipient or the message (an invalid or inactive
+  recipient, a malformed message) or an SMTP server's permanent reply to the recipient or the
+  message (5xx, except 503). Such an attempt is recorded as the job's last one, so the invitations
+  table and the Email Deliveries page show "attempt 1 of 1" and that Hive has stopped retrying,
+  rather than promising retries that will not come. Rate limits, provider outages and transport
+  failures are still retried, and so is a refusal of Hive's own account, credentials or message
+  stream: that misconfiguration fails the job after its retries and shows up in the job error
+  metrics.
+
+- [#8702](https://github.com/graphql-hive/console/pull/8702)
+  [`0519c74`](https://github.com/graphql-hive/console/commit/0519c743b7c795d1acd101a2f089f43bb9aa8966)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Remove the GraphiQL laboratory
+  tab. The Hive Laboratory is now the only laboratory: it runs the same preflight scripts with a
+  compatible runtime, and on a user's first visit it carries over their GraphiQL environment
+  variables and preflight toggle before clearing the GraphiQL-era browser storage. GraphiQL's own
+  unsaved tabs and run history are not carried over; collections, operations and preflight scripts
+  are stored server-side and are unaffected. The development-only `/dev` GraphiQL page is removed as
+  well.
+
+- [#8894](https://github.com/graphql-hive/console/pull/8894)
+  [`c6c2250`](https://github.com/graphql-hive/console/commit/c6c2250cf5e28714660ace6ceb59ef9173c79f10)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Record `USER_SIGNED_IN` and `USER_SIGN_IN_FAILED`
+  audit log events for email/password, GitHub, Google, Okta and OIDC sign ins, including the sign in
+  method. Failed attempts additionally include the attempted email address and the failure reason
+  (`UNKNOWN_USER`, `INVALID_CREDENTIALS`, `SSO_REQUIRED`, `USER_NOT_PROVISIONED`,
+  `USER_DEACTIVATED`, `IDENTITY_PROVIDER_ERROR` or `NOT_ALLOWED`).
+
+  OIDC sign ins are recorded for the organization linked to the OIDC integration. All other sign ins
+  are recorded for the organization that verified the domain of the email address. Successful sign
+  ins include the email address, whether it is verified (`emailVerified`) and whether the user was
+  created as part of the sign in (`newUser`); sign ins with an unverified email address are recorded
+  without an actor, as they can not be attributed to the owner of the email address.
+
+  Email/password sign ups are recorded as `USER_SIGNED_IN` with `newUser: true`. Sign ups blocked
+  because the organization enforces SSO for its verified domain are recorded as
+  `USER_SIGN_IN_FAILED` with reason `SSO_REQUIRED`.
+
+- [#8906](https://github.com/graphql-hive/console/pull/8906)
+  [`d5e77aa`](https://github.com/graphql-hive/console/commit/d5e77aa7ba70d6438c7fbf4892da91f6832f0bdf)
+  Thanks [@jdolle](https://github.com/jdolle)! - Alert channels can be edited: the new
+  `updateAlertChannel` mutation and the "Edit channel" sheet on the channel page change a channel's
+  name or its destination (the Slack channel or the webhook endpoint). The type is fixed, since the
+  channel's delivery history is kept by it. A new destination receives the same confirmation message
+  a new channel receives, under the `Idempotency-Key`
+  `channel-confirmation:updated:<channel id>:<hash of the destination>`; the previous destination is
+  not told, and a rename sends nothing.
+
+  Creating, editing and deleting an alert channel do not produce audit log events.
+
+### Patch Changes
+
+- [#8892](https://github.com/graphql-hive/console/pull/8892)
+  [`2fcbf80`](https://github.com/graphql-hive/console/commit/2fcbf8096bf1e36edc25a01e9c8838b0e96216d5)
+  Thanks [@jdolle](https://github.com/jdolle)! - The alert channel page and the alert rule detail
+  page refresh their delivery log and state log every 15 seconds again. They used to refresh only
+  when the clock crossed the hour (the channel page) or the minute (the rule page), because the
+  hour- and minute-aligned window the query asks for only changes then.
+
+- [#8823](https://github.com/graphql-hive/console/pull/8823)
+  [`1d4d4b8`](https://github.com/graphql-hive/console/commit/1d4d4b8fd4019161bbedbed9e38741ae356f4646)
+  Thanks [@jdolle](https://github.com/jdolle)! - The "Extend Your Schema" editor in the target
+  settings keeps the Save button disabled while the schema extension has a syntax error.
+
+- [#8823](https://github.com/graphql-hive/console/pull/8823)
+  [`1d4d4b8`](https://github.com/graphql-hive/console/commit/1d4d4b8fd4019161bbedbed9e38741ae356f4646)
+  Thanks [@jdolle](https://github.com/jdolle)! - Updating a target's base schema (schema extensions)
+  now rejects SDL that does not parse, instead of accepting it and breaking every following schema
+  check and publish on that target.
+
+- [#8904](https://github.com/graphql-hive/console/pull/8904)
+  [`88c9eea`](https://github.com/graphql-hive/console/commit/88c9eea8e38f002a4e9bd78705aa3ba09863487d)
+  Thanks [@jdolle](https://github.com/jdolle)! - The commerce service now looks a target up in
+  Postgres when it is missing from its in-memory rate-limit snapshot, which happens for every usage
+  report or schema check of a target created since the last refresh
+  (`LIMIT_CACHE_UPDATE_INTERVAL_MS`, 60 seconds by default). Previously each such request was
+  reported to Sentry as `Failed to resolve/find rate limit information` and
+  `Failed to resolve/find retention information` while the fallback values were used anyway. A
+  target that no longer exists is logged at `warn` level and not looked up again until the next
+  refresh.
+
+- [#8892](https://github.com/graphql-hive/console/pull/8892)
+  [`2fcbf80`](https://github.com/graphql-hive/console/commit/2fcbf8096bf1e36edc25a01e9c8838b0e96216d5)
+  Thanks [@jdolle](https://github.com/jdolle)! - On the alert channel page, the "Last success" and
+  "Last failure" cards show "-" instead of "Never" when the delivery history could not be read;
+  "Never" now only means that no attempt was recorded.
+
+- [#8822](https://github.com/graphql-hive/console/pull/8822)
+  [`922e635`](https://github.com/graphql-hive/console/commit/922e63554123d2d44b0adca94e0feb91cb51a6f7)
+  Thanks [@jdolle](https://github.com/jdolle)! - A malformed response from an external composition
+  service, such as a body that is not JSON or a success result whose supergraph or SDL does not
+  parse, is now reported as a composition failure instead of failing the request with an unexpected
+  error. Only GraphQL syntax error details are included in the reported error message.
+
+- [#8821](https://github.com/graphql-hive/console/pull/8821)
+  [`9afd9da`](https://github.com/graphql-hive/console/commit/9afd9da54ed179a15cf298182e8d6a33d8e05b8b)
+  Thanks [@jdolle](https://github.com/jdolle)! - An exception thrown by the Federation v1 composer
+  for an invalid `@key`, `@requires` or `@provides` field set, for example one that contains a
+  fragment spread or a selection set, is now reported as a composition error instead of failing the
+  request with an unexpected error. Any other exception from the composer is reported as an
+  unexpected composition error.
+
+- [#8906](https://github.com/graphql-hive/console/pull/8906)
+  [`d5e77aa`](https://github.com/graphql-hive/console/commit/d5e77aa7ba70d6438c7fbf4892da91f6832f0bdf)
+  Thanks [@jdolle](https://github.com/jdolle)! - Creating a Slack alert channel, or pointing one at
+  a new Slack channel, now requires the organization's Slack integration. Without it the mutation
+  returns an input error on the Slack channel field and writes nothing. Previously `addAlertChannel`
+  created the channel and then failed on its confirmation message.
+
+- [#8889](https://github.com/graphql-hive/console/pull/8889)
+  [`2f885a7`](https://github.com/graphql-hive/console/commit/2f885a773618d689d64cd0cc423590644d24a3d2)
+  Thanks [@jdolle](https://github.com/jdolle)! - Table status cells that carry a tooltip (the
+  invitation "Email status" column, alert activity and event states) are now keyboard-focusable, so
+  the tooltip opens on focus and its explanation is reachable without a mouse.
+
 ## 15.1.1
 
 ### Patch Changes

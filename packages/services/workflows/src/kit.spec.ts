@@ -1,13 +1,22 @@
 import type { JobHelpers } from 'graphile-worker';
 import { z } from 'zod';
 import type { Context } from './context.js';
-import { defineTask, implementTask, type TaskDefinition } from './kit.js';
+import { defineTask, implementTask, TaskScheduler, type TaskDefinition } from './kit.js';
+import { EMAIL_MAX_ATTEMPTS } from './lib/emails/retry-policy.js';
 import { EvaluateMetricAlertRulesTask } from './tasks/evaluate-metric-alert-rules.js';
 import { FlushTargetTokenLastUsedTask } from './tasks/flush-target-token-last-used.js';
+import { OrganizationInvitationTask } from './tasks/organization-invitation.js';
 import { PurgeExpiredAlertStateLogTask } from './tasks/purge-expired-alert-state-log.js';
 import { PurgeExpiredDedupeKeysTask } from './tasks/purge-expired-dedupe-keys.js';
 import { PurgeExpiredSchemaChecks } from './tasks/purge-expired-schema-checks.js';
 import { PurgeExpiredSchemaRevisions } from './tasks/purge-expired-schema-revisions.js';
+
+const addJob = vi.fn(async () => ({ id: 'job-1' }));
+// Only the worker utils are stubbed; the logger bridge needs the package's own Logger class.
+vi.mock('graphile-worker', async importOriginal => ({
+  ...(await importOriginal<typeof import('graphile-worker')>()),
+  makeWorkerUtils: async () => ({ addJob }),
+}));
 
 const helpers = {
   job: { id: '1', job_queue_id: null, attempts: 1, max_attempts: 25, priority: 0, task_id: 1 },
@@ -47,5 +56,46 @@ describe('implementTask', () => {
 
     // The payload is parsed before the implementation runs, so the throw is synchronous.
     expect(() => task(cronPayload, helpers)).toThrow();
+  });
+});
+
+describe('TaskScheduler', () => {
+  function createScheduler() {
+    const pgPool = { getPgPoolCompat: () => ({}) } as any;
+    const logger = { info: vi.fn(), child: () => logger } as any;
+    return new TaskScheduler(pgPool, logger);
+  }
+
+  test('gives a job the attempts its task definition asks for', async () => {
+    addJob.mockClear();
+
+    await createScheduler().scheduleTask(
+      OrganizationInvitationTask,
+      {
+        organizationId: 'o1',
+        organizationName: 'Acme',
+        code: 'code-1',
+        email: 'invitee@example.com',
+        link: 'https://app/join/code-1',
+      },
+      { requestId: 'req-1' },
+    );
+
+    expect(addJob).toHaveBeenCalledWith(
+      'organizationInvitation',
+      expect.objectContaining({ requestId: 'req-1' }),
+      { maxAttempts: EMAIL_MAX_ATTEMPTS },
+    );
+  });
+
+  test("leaves the attempts to graphile's default for a task without a budget", async () => {
+    addJob.mockClear();
+
+    await createScheduler().scheduleTask(
+      defineTask({ name: 'plain', schema: z.object({ id: z.string() }) }),
+      { id: 'x' },
+    );
+
+    expect(addJob).toHaveBeenCalledWith('plain', expect.anything(), { maxAttempts: undefined });
   });
 });
