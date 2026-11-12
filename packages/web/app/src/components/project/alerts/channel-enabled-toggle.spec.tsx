@@ -18,12 +18,6 @@ vi.mock('urql', async importOriginal => ({
   ],
 }));
 
-const slugs = { organizationSlug: 'acme', projectSlug: 'shop' };
-
-vi.mock('@/lib/hooks', async importOriginal => ({
-  ...(await importOriginal<typeof import('@/lib/hooks')>()),
-  useSlugs: () => slugs,
-}));
 const toast = vi.hoisted(() => vi.fn());
 vi.mock('@/components/ui/primitives/toast/toast', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/ui/primitives/toast/toast')>()),
@@ -48,12 +42,12 @@ describe('ChannelEnabledToggle', () => {
     const { rerender } = render(<ChannelEnabledToggle channelId="c1" enabled />);
 
     await flip('Disable channel');
-    expect(urql.disable).toHaveBeenCalledWith({ input: { ...slugs, channelId: 'c1' } });
+    expect(urql.disable).toHaveBeenCalledWith({ input: { channelId: 'c1' } });
     expect(urql.enable).not.toHaveBeenCalled();
 
     rerender(<ChannelEnabledToggle channelId="c1" enabled={false} />);
     await flip('Enable channel');
-    expect(urql.enable).toHaveBeenCalledWith({ input: { ...slugs, channelId: 'c1' } });
+    expect(urql.enable).toHaveBeenCalledWith({ input: { channelId: 'c1' } });
     expect(toast).not.toHaveBeenCalled();
   });
 

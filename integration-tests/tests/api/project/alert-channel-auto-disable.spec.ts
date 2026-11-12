@@ -91,28 +91,20 @@ function readChannel(
     .then(r => r.project?.alertChannel ?? null);
 }
 
-function disableChannel(
-  selector: { organizationSlug: string; projectSlug: string },
-  channelId: string,
-  authToken: string,
-) {
+function disableChannel(channelId: string, authToken: string) {
   return execute({
     document: DisableAlertChannelMutation,
-    variables: { input: { ...selector, channelId } },
+    variables: { input: { channelId } },
     authToken,
   })
     .then(r => r.expectNoGraphQLErrors())
     .then(r => r.disableAlertChannel);
 }
 
-function enableChannel(
-  selector: { organizationSlug: string; projectSlug: string },
-  channelId: string,
-  authToken: string,
-) {
+function enableChannel(channelId: string, authToken: string) {
   return execute({
     document: EnableAlertChannelMutation,
-    variables: { input: { ...selector, channelId } },
+    variables: { input: { channelId } },
     authToken,
   })
     .then(r => r.expectNoGraphQLErrors())
@@ -215,7 +207,15 @@ test.concurrent(
     const liveId = await channelNotifiedAt(live);
     const deadId = await channelNotifiedAt(dead);
 
-    const disabled = await disableChannel(selector, deadId, ownerToken);
+    // Only a member with alert permissions on the channel's project may change it.
+    const outsider = await seed.createOwner();
+    const refused = await disableChannel(liveId, outsider.ownerToken);
+    expect(refused.error?.message).toBe(
+      'No access (reason: "Missing permission for performing \'alert:modify\' on resource")',
+    );
+    expect((await readChannel(selector, liveId, ownerToken))?.disabledAt).toBeNull();
+
+    const disabled = await disableChannel(deadId, ownerToken);
     expect(disabled.ok?.disabledAlertChannel).toEqual({
       id: deadId,
       disabledAt: expect.any(String),
@@ -227,7 +227,7 @@ test.concurrent(
         disabledBy: { displayName: expect.any(String) },
       }),
     );
-    const twice = await disableChannel(selector, deadId, ownerToken);
+    const twice = await disableChannel(deadId, ownerToken);
     expect(twice.error?.message).toBe('Alert channel not found or already disabled.');
 
     // Schema changes only; the creation confirmation each endpoint received carries another event.
@@ -255,7 +255,7 @@ test.concurrent(
     );
     expect(await schemaChangesAt(dead)).toBe(0);
 
-    const enabled = await enableChannel(selector, deadId, ownerToken);
+    const enabled = await enableChannel(deadId, ownerToken);
     expect(enabled.ok?.enabledAlertChannel).toEqual({ id: deadId, disabledAt: null });
     expect((await readChannel(selector, deadId, ownerToken))?.disabledBy).toBeNull();
 
@@ -276,13 +276,9 @@ test.concurrent(
     expect(liveId).not.toBe(deadId);
 
     // Enabling an active channel, or one the project does not have, is refused.
-    const again = await enableChannel(selector, deadId, ownerToken);
+    const again = await enableChannel(deadId, ownerToken);
     expect(again.error?.message).toBe('Alert channel not found or already enabled.');
-    const unknown = await enableChannel(
-      selector,
-      '00000000-0000-0000-0000-000000000000',
-      ownerToken,
-    );
+    const unknown = await enableChannel('00000000-0000-0000-0000-000000000000', ownerToken);
     expect(unknown.error?.message).toBe('Alert channel not found or already enabled.');
   },
 );

@@ -14,14 +14,7 @@ vi.mock('urql', async importOriginal => ({
   useMutation: () => [urql.mutation, urql.mutate],
 }));
 
-const slugs = { organizationSlug: 'acme', projectSlug: 'shop' };
-
-// The notice reads the current project from the URL and reports through the app's toast
-// provider; here it renders outside both.
-vi.mock('@/lib/hooks', async importOriginal => ({
-  ...(await importOriginal<typeof import('@/lib/hooks')>()),
-  useSlugs: () => slugs,
-}));
+// The notice reports through the app's toast provider; here it renders outside it.
 const toast = vi.hoisted(() => vi.fn());
 vi.mock('@/components/ui/primitives/toast/toast', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/ui/primitives/toast/toast')>()),
@@ -39,7 +32,7 @@ beforeEach(() => {
 });
 
 describe('ChannelDisabledNotice', () => {
-  it('says why the channel is silent and enables it for the project it is on', async () => {
+  it('says why the channel is silent and enables it', async () => {
     urql.mutate.mockResolvedValue({
       data: { enableAlertChannel: { ok: { enabledAlertChannel: { id: 'c1' } }, error: null } },
     });
@@ -49,7 +42,7 @@ describe('ChannelDisabledNotice', () => {
     expect(screen.getByText(/failing for 48 hours/)).toBeTruthy();
     await enable();
 
-    expect(urql.mutate).toHaveBeenCalledWith({ input: { ...slugs, channelId: 'c1' } });
+    expect(urql.mutate).toHaveBeenCalledWith({ input: { channelId: 'c1' } });
     expect(toast).toHaveBeenCalledWith({ title: 'Channel enabled.' });
   });
 

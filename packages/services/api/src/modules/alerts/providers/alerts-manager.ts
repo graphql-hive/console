@@ -21,6 +21,7 @@ import { DiscordCommunicationAdapter } from './adapters/discord';
 import { TeamsCommunicationAdapter } from './adapters/msteams';
 import { SlackCommunicationAdapter } from './adapters/slack';
 import { WebhookCommunicationAdapter } from './adapters/webhook';
+import { AlertChannelsStorage, type AlertChannelWithOrganization } from './alert-channels-storage';
 
 @Injectable({
   scope: Scope.Operation,
@@ -41,6 +42,7 @@ export class AlertsManager {
     private projectManager: ProjectManager,
     private storage: Storage,
     private deliveryReader: DeliveryReader,
+    private alertChannels: AlertChannelsStorage,
   ) {
     this.logger = logger.child({ source: 'AlertsManager' });
   }
@@ -153,64 +155,73 @@ export class AlertsManager {
   }
 
   /** Lets a disabled channel receive notifications again; its health counts from now on. */
-  async enableChannel(selector: ProjectSelector & { channelId: string }): Promise<AlertChannel> {
-    this.logger.debug(
-      'Enabling Alert Channel (organization=%s, project=%s, channel=%s)',
-      selector.organizationId,
-      selector.projectId,
-      selector.channelId,
-    );
-    await this.session.assertPerformAction({
-      action: 'alert:modify',
-      organizationId: selector.organizationId,
-      params: {
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-      },
-    });
-    const channel = await this.storage.enableAlertChannel(selector);
+  async enableChannel(input: { channelId: string }): Promise<AlertChannelWithOrganization> {
+    this.logger.debug('Enabling Alert Channel (channel=%s)', input.channelId);
+    const message = 'Alert channel not found or already enabled.';
+    const channel = await this.getChannelToModify(input.channelId);
     if (!channel) {
-      throw new HiveError('Alert channel not found or already enabled.');
+      throw new HiveError(message);
+    }
+    const enabled = await this.storage.enableAlertChannel({
+      organizationId: channel.organizationId,
+      projectId: channel.projectId,
+      channelId: channel.id,
+    });
+    if (!enabled) {
+      throw new HiveError(message);
     }
     this.logger.info(
       'Enabled Alert Channel (organization=%s, project=%s, channel=%s)',
-      selector.organizationId,
-      selector.projectId,
-      selector.channelId,
+      channel.organizationId,
+      channel.projectId,
+      channel.id,
     );
-    return channel;
+    return { ...enabled, organizationId: channel.organizationId };
   }
 
   /** Pauses a channel at a member's request; it receives nothing until it is enabled again. */
-  async disableChannel(selector: ProjectSelector & { channelId: string }): Promise<AlertChannel> {
-    this.logger.debug(
-      'Disabling Alert Channel (organization=%s, project=%s, channel=%s)',
-      selector.organizationId,
-      selector.projectId,
-      selector.channelId,
-    );
-    await this.session.assertPerformAction({
-      action: 'alert:modify',
-      organizationId: selector.organizationId,
-      params: {
-        organizationId: selector.organizationId,
-        projectId: selector.projectId,
-      },
-    });
+  async disableChannel(input: { channelId: string }): Promise<AlertChannelWithOrganization> {
+    this.logger.debug('Disabling Alert Channel (channel=%s)', input.channelId);
+    const message = 'Alert channel not found or already disabled.';
+    const channel = await this.getChannelToModify(input.channelId);
+    if (!channel) {
+      throw new HiveError(message);
+    }
     const viewer = await this.session.getViewer();
-    const channel = await this.storage.disableAlertChannel({
-      ...selector,
+    const disabled = await this.storage.disableAlertChannel({
+      organizationId: channel.organizationId,
+      projectId: channel.projectId,
+      channelId: channel.id,
       disabledByUserId: viewer.id,
     });
-    if (!channel) {
-      throw new HiveError('Alert channel not found or already disabled.');
+    if (!disabled) {
+      throw new HiveError(message);
     }
     this.logger.info(
       'Disabled Alert Channel (organization=%s, project=%s, channel=%s)',
-      selector.organizationId,
-      selector.projectId,
-      selector.channelId,
+      channel.organizationId,
+      channel.projectId,
+      channel.id,
     );
+    return { ...disabled, organizationId: channel.organizationId };
+  }
+
+  /** The channel once the viewer may modify alerts of its project; null when there is none. */
+  private async getChannelToModify(
+    channelId: string,
+  ): Promise<AlertChannelWithOrganization | null> {
+    const channel = await this.alertChannels.getAlertChannelById(channelId);
+    if (!channel) {
+      return null;
+    }
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: channel.organizationId,
+      params: {
+        organizationId: channel.organizationId,
+        projectId: channel.projectId,
+      },
+    });
     return channel;
   }
 

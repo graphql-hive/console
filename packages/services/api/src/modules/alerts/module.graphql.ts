@@ -52,8 +52,6 @@ export default gql`
   }
 
   input EnableAlertChannelInput {
-    organizationSlug: String!
-    projectSlug: String!
     channelId: ID!
   }
 
@@ -71,8 +69,6 @@ export default gql`
   }
 
   input DisableAlertChannelInput {
-    organizationSlug: String!
-    projectSlug: String!
     channelId: ID!
   }
 

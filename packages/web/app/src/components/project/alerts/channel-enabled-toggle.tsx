@@ -2,7 +2,6 @@ import { useMutation } from 'urql';
 import { Switch } from '@/components/ui/primitives/switch/switch';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
-import { useSlugs } from '@/lib/hooks';
 
 // Both answers carry what the page shows about the state, so the cache updates the header, the
 // panel and the notice at once.
@@ -52,7 +51,6 @@ const ChannelEnabledToggle_DisableAlertChannelMutation = graphql(`
 
 /** Pauses or resumes a channel's notifications. */
 export function ChannelEnabledToggle(props: { channelId: string; enabled: boolean }) {
-  const { organizationSlug, projectSlug } = useSlugs('project');
   const [, enable] = useMutation(ChannelEnabledToggle_EnableAlertChannelMutation);
   const [, disable] = useMutation(ChannelEnabledToggle_DisableAlertChannelMutation);
   const { toast } = useToast();
@@ -62,7 +60,7 @@ export function ChannelEnabledToggle(props: { channelId: string; enabled: boolea
       checked={props.enabled}
       aria-label={props.enabled ? 'Disable channel' : 'Enable channel'}
       onCheckedChange={checked => {
-        const input = { organizationSlug, projectSlug, channelId: props.channelId };
+        const input = { channelId: props.channelId };
         const refusal = checked
           ? enable({ input }).then(
               result => result.error?.message ?? result.data?.enableAlertChannel.error?.message,

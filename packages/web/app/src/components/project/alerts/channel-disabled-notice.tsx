@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/primitives/button/button';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { TimeAgo } from '@/components/ui/time-ago';
 import { graphql } from '@/gql';
-import { useSlugs } from '@/lib/hooks';
 import { CHANNEL_DISABLE_GRACE_HOURS } from './channel-health-warning';
 
 // The health comes back too, so the details panel's status follows from the cache at once.
@@ -34,7 +33,6 @@ const ChannelDisabledNotice_EnableAlertChannelMutation = graphql(`
 
 /** Why Hive stopped sending to the channel, and the way out of it. */
 export function ChannelDisabledNotice(props: { channelId: string; disabledAt: string }) {
-  const { organizationSlug, projectSlug } = useSlugs('project');
   const [mutation, mutate] = useMutation(ChannelDisabledNotice_EnableAlertChannelMutation);
   const { toast } = useToast();
 
@@ -52,9 +50,7 @@ export function ChannelDisabledNotice(props: { channelId: string; disabledAt: st
           label="Enable channel"
           disabled={mutation.fetching}
           onClick={() =>
-            void mutate({
-              input: { organizationSlug, projectSlug, channelId: props.channelId },
-            }).then(result => {
+            void mutate({ input: { channelId: props.channelId } }).then(result => {
               const message =
                 result.error?.message ?? result.data?.enableAlertChannel.error?.message;
               if (message) {
