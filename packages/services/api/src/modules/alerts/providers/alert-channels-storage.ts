@@ -2,6 +2,7 @@ import { Injectable, Scope } from 'graphql-modules';
 import * as zod from 'zod';
 import { PostgresDatabasePool, psql } from '@hive/postgres';
 import type { AlertChannel } from '../../../shared/entities';
+import { isUUID } from '../../../shared/is-uuid';
 
 /** An `alert_channels` row selected as the `AlertChannel` entity. */
 export const AlertChannelRowSchema = zod.object({
@@ -33,6 +34,10 @@ export class AlertChannelsStorage {
 
   /** Null when no channel has the id. */
   async getAlertChannelById(channelId: string): Promise<AlertChannelWithOrganization | null> {
+    // Postgres rejects a malformed uuid; treat it as not found.
+    if (!isUUID(channelId)) {
+      return null;
+    }
     const row = await this.pool.maybeOne(psql`/* getAlertChannelById */
       SELECT
         c."id" AS "id",

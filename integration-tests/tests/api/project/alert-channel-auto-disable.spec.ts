@@ -209,10 +209,18 @@ test.concurrent(
 
     // Only a member with alert permissions on the channel's project may change it.
     const outsider = await seed.createOwner();
-    const refused = await disableChannel(liveId, outsider.ownerToken);
-    expect(refused.error?.message).toBe(
-      'No access (reason: "Missing permission for performing \'alert:modify\' on resource")',
-    );
+    const refused = await execute({
+      document: DisableAlertChannelMutation,
+      variables: { input: { channelId: liveId } },
+      authToken: outsider.ownerToken,
+    }).then(r => r.expectGraphQLErrors());
+    expect(refused).toMatchObject([
+      {
+        extensions: { code: 'UNAUTHORISED' },
+        message: `No access (reason: "Missing permission for performing 'alert:modify' on resource")`,
+        path: ['disableAlertChannel'],
+      },
+    ]);
     expect((await readChannel(selector, liveId, ownerToken))?.disabledAt).toBeNull();
 
     const disabled = await disableChannel(deadId, ownerToken);

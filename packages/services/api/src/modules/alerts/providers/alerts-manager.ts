@@ -1,6 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
 import type { Alert, AlertChannel, DateRange } from '../../../shared/entities';
-import { HiveError } from '../../../shared/errors';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
 import {
@@ -154,13 +153,15 @@ export class AlertsManager {
     return channels.find(channel => channel.id === selector.channelId) ?? null;
   }
 
-  /** Lets a disabled channel receive notifications again; its health counts from now on. */
-  async enableChannel(input: { channelId: string }): Promise<AlertChannelWithOrganization> {
+  /**
+   * Lets a disabled channel receive notifications again; its health counts from now on. Null when
+   * there is no such channel or it is not disabled.
+   */
+  async enableChannel(input: { channelId: string }): Promise<AlertChannelWithOrganization | null> {
     this.logger.debug('Enabling Alert Channel (channel=%s)', input.channelId);
-    const message = 'Alert channel not found or already enabled.';
     const channel = await this.getChannelToModify(input.channelId);
     if (!channel) {
-      throw new HiveError(message);
+      return null;
     }
     const enabled = await this.storage.enableAlertChannel({
       organizationId: channel.organizationId,
@@ -168,7 +169,7 @@ export class AlertsManager {
       channelId: channel.id,
     });
     if (!enabled) {
-      throw new HiveError(message);
+      return null;
     }
     this.logger.info(
       'Enabled Alert Channel (organization=%s, project=%s, channel=%s)',
@@ -179,13 +180,15 @@ export class AlertsManager {
     return { ...enabled, organizationId: channel.organizationId };
   }
 
-  /** Pauses a channel at a member's request; it receives nothing until it is enabled again. */
-  async disableChannel(input: { channelId: string }): Promise<AlertChannelWithOrganization> {
+  /**
+   * Pauses a channel at a member's request; it receives nothing until it is enabled again. Null
+   * when there is no such channel or it is already disabled.
+   */
+  async disableChannel(input: { channelId: string }): Promise<AlertChannelWithOrganization | null> {
     this.logger.debug('Disabling Alert Channel (channel=%s)', input.channelId);
-    const message = 'Alert channel not found or already disabled.';
     const channel = await this.getChannelToModify(input.channelId);
     if (!channel) {
-      throw new HiveError(message);
+      return null;
     }
     const viewer = await this.session.getViewer();
     const disabled = await this.storage.disableAlertChannel({
@@ -195,7 +198,7 @@ export class AlertsManager {
       disabledByUserId: viewer.id,
     });
     if (!disabled) {
-      throw new HiveError(message);
+      return null;
     }
     this.logger.info(
       'Disabled Alert Channel (organization=%s, project=%s, channel=%s)',
