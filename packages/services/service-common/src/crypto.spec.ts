@@ -35,9 +35,10 @@ describe('Encryptor', () => {
     expect(() => new Encryptor('secret').decrypt('foo')).toThrow();
   });
 
+  // The frozen ciphertext, not a fresh one: a wrong key only throws when the garbage padding of
+  // the last AES-CBC block is invalid, so a ciphertext made with a fresh random IV decrypts
+  // silently about one run in 256.
   test('throws when decrypting with a different secret', () => {
-    const encrypted = new Encryptor('secret').encrypt('a');
-
-    expect(() => new Encryptor('other-secret').decrypt(encrypted)).toThrow();
+    expect(() => new Encryptor('other-secret').decrypt(GOLDEN_CIPHERTEXT)).toThrow();
   });
 });
