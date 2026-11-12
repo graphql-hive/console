@@ -5,7 +5,7 @@ license: MIT
 compatibility: '@graphql-hive/cli 0.66.0 or later'
 metadata:
   author: Emily Goodwin
-  version: '1.1.0'
+  version: '0.0.1'
 allowed-tools: WebFetch
 ---
 
