@@ -10,6 +10,7 @@ import type {
   MetricAlertStateLogEntry,
 } from '../../../shared/entities';
 import { METRIC_ALERT_RULES_PER_TARGET_LIMIT } from '../../commerce/constants';
+import { AlertChannelRowSchema } from './alert-channels-storage';
 
 /**
  * Thrown by `addMetricAlertRule` when the per-target cap is reached. The
@@ -135,20 +136,6 @@ const METRIC_ALERT_INCIDENT_SELECT = psql`
   , "threshold_value" as "thresholdValue"
 `;
 
-// Row shape for the `channelByIdLoader` SELECT. Matches the `AlertChannel`
-// entity exactly so the loader can return rows as `AlertChannel`. Kept local
-// rather than reusing the legacy storage's `AlertChannelModel` to avoid
-// pulling that into this provider's dependency surface.
-const AlertChannelRowSchema = zod.object({
-  id: zod.string(),
-  projectId: zod.string(),
-  type: zod.enum(['SLACK', 'WEBHOOK', 'MSTEAMS_WEBHOOK', 'DISCORD']),
-  name: zod.string(),
-  createdAt: zod.string(),
-  slackChannel: zod.string().nullable(),
-  webhookEndpoint: zod.string().nullable(),
-});
-
 const METRIC_ALERT_STATE_LOG_SELECT = psql`
   "id"
   , "metric_alert_rule_id" as "metricAlertRuleId"
@@ -211,7 +198,10 @@ export class MetricAlertRulesStorage {
           "project_id" AS "projectId",
           to_json("created_at") AS "createdAt",
           "slack_channel" AS "slackChannel",
-          "webhook_endpoint" AS "webhookEndpoint"
+          "webhook_endpoint" AS "webhookEndpoint",
+          to_json("disabled_at") AS "disabledAt",
+          "disabled_by_user_id" AS "disabledByUserId",
+          to_json("enabled_at") AS "enabledAt"
         FROM "alert_channels"
         WHERE "id" = ANY(${psql.array([...channelIds], 'uuid')})
       `);

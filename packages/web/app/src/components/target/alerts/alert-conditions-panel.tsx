@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { ExternalLink, Info } from 'lucide-react';
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
-import { Avatar } from '@/components/ui/primitives/avatar/avatar';
 import { Button } from '@/components/ui/primitives/button/button';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { TimeAgo } from '@/components/ui/time-ago';
+import { UserCell } from '@/components/ui/user-cell';
 import {
   AlertChannelType,
   MetricAlertRuleSeverity,
@@ -138,16 +138,6 @@ function RelativeTimestamp({ iso }: { iso: string }) {
         width="auto"
         content={<span className="text-xs text-fg-default">{new Date(iso).toUTCString()}</span>}
       />
-    </span>
-  );
-}
-
-function UserCell({ user }: { user: User }) {
-  if (!user) return <>—</>;
-  return (
-    <span className="inline-flex items-center gap-2">
-      <Avatar size="xs" alt={user.displayName} />
-      <span>{user.displayName}</span>
     </span>
   );
 }
