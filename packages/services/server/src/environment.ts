@@ -128,6 +128,7 @@ const ZendeskSupportModel = zod.union([
 
 const ClickHouseOptionsModel = zod.object({
   CLICKHOUSE_REQUEST_TIMEOUT: emptyString(NumberFromString.optional()),
+  CLICKHOUSE_OPERATIONS_V01_ROLLUPS_START: emptyString(zod.coerce.date().optional()),
 });
 
 const SuperTokensModel = zod.object({
@@ -665,6 +666,7 @@ export const env = {
       ? {
           ...clickhouseConfigResult.config,
           requestTimeout: clickhouseOptions.CLICKHOUSE_REQUEST_TIMEOUT,
+          operationsV01RollupsStart: clickhouseOptions.CLICKHOUSE_OPERATIONS_V01_ROLLUPS_START,
         }
       : raiseInvariant(
           'Unreachable: ClickHouse config errors are caught above via process.exit(1)',
