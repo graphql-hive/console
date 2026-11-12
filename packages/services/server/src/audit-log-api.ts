@@ -222,7 +222,9 @@ export const createAuditLogApiPlugin =
           );
         }
         // `{ timestamp, id: '' }` lies before every event of second `timestamp`, so `since` is inclusive.
-        position = { timestamp: Math.max(0, Math.ceil(since / 1000)), id: '' };
+        // Stored timestamps are truncated to the second, so round down: rounding up would skip events
+        // of the second `since` falls into. This may return events up to 1s before `since`.
+        position = { timestamp: Math.max(0, Math.floor(since / 1000)), id: '' };
       } else {
         position = { timestamp: retentionStart, id: '' };
       }

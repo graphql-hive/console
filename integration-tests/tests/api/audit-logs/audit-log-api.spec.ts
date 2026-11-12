@@ -303,6 +303,25 @@ describe.concurrent('GET /audit-log/v1/events', () => {
     expect(ids).not.toContain(fresh.id);
   });
 
+  test.concurrent(
+    'returns events of the second a fractional `since` falls into',
+    async ({ expect }) => {
+      const { organization, token } = await setup();
+      const timestamp = nowSeconds() - 2 * HOUR;
+      // Stored as `timestamp` (truncated), but may have happened after `since`.
+      const event = { id: crypto.randomUUID(), timestamp, eventAction: 'USER_JOINED' };
+      await insertEvents(organization.id, [event]);
+
+      const pages = await fetchAllPages(
+        { since: new Date(timestamp * 1000 + 500).toISOString(), eventTypes: 'USER_JOINED' },
+        token,
+      );
+      const ids = pages.flatMap(page => page.body.events.map(e => e.id));
+
+      expect(ids).toContain(event.id);
+    },
+  );
+
   test.concurrent('filters by event type', async ({ expect }) => {
     const { organization, token } = await setup();
     const timestamp = nowSeconds() - 2 * HOUR;
