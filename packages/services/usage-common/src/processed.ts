@@ -40,6 +40,8 @@ export interface ProcessedAppDeploymentUsageRecord {
   appName: string;
   appVersion: string;
   lastRequestTimestamp: number;
+  graphId?: string;
+  graphVersionId?: string;
 }
 
 export interface ProcessedOperationErrorRecord {

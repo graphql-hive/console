@@ -244,13 +244,15 @@ export function createProcessor(config: { logger: ServiceLogger }) {
           }
 
           for (const [key, timestamp] of max.entries()) {
-            const [appName, appVersion] = key.split('/');
+            const [appName, appVersion, graphId, graphVersionId] = key.split('/');
             serializedAppDeploymentUsageRecords.push(
               stringifyAppDeploymentUsageRecord({
                 target,
                 appName,
                 appVersion,
                 lastRequestTimestamp: timestamp,
+                graphId,
+                graphVersionId,
               }),
             );
           }
