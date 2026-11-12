@@ -1258,6 +1258,23 @@ export async function createStorage(
         ),
       );
     },
+    async updateAlertChannel({ projectId, channelId, name, slackChannel, webhookEndpoint }) {
+      const row = await pool.maybeOne(
+        psql`/* updateAlertChannel */
+          UPDATE alert_channels
+          SET
+            "name" = COALESCE(${name}, "name"),
+            "slack_channel" = COALESCE(${slackChannel}, "slack_channel"),
+            "webhook_endpoint" = COALESCE(${webhookEndpoint}, "webhook_endpoint")
+          WHERE
+            id = ${channelId} AND
+            project_id = ${projectId}
+          RETURNING
+            ${alertChannelFields()}
+        `,
+      );
+      return row ? AlertChannelModel.parse(row) : null;
+    },
     async deleteAlertChannels({ projectId, channelIds }) {
       return pool
         .any(

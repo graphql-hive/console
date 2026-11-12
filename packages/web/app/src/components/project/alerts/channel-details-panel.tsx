@@ -7,6 +7,7 @@ import { DocumentType, FragmentType, graphql, useFragment } from '@/gql';
 import { AlertChannelType, DeliveryHealthStatus } from '@/gql/graphql';
 import { CHANNEL_TYPE_LABEL } from './channel-form';
 import { DeleteChannelConfirmationDialog } from './delete-channel-confirmation-dialog';
+import { EditChannelSheet } from './edit-channel-sheet';
 
 export const ChannelDetailsPanel_AlertChannelFragment = graphql(`
   fragment ChannelDetailsPanel_AlertChannelFragment on AlertChannel {
@@ -82,6 +83,14 @@ export function ChannelDetailsPanel(props: {
       />
 
       <div className="flex items-center gap-2">
+        <EditChannelSheet
+          channel={{
+            id: channel.id,
+            name: channel.name,
+            type: channel.type,
+            destination: channelDestination(channel),
+          }}
+        />
         <DeleteChannelButton
           channelId={channel.id}
           channelName={channel.name}
