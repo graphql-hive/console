@@ -59,6 +59,9 @@ const confirmation = {
     createdAt: new Date().toISOString(),
     slackChannel: 'general',
     webhookEndpoint: null,
+    disabledAt: null,
+    disabledByUserId: null,
+    enabledAt: new Date().toISOString(),
   },
   integrations: { slack: { token: 'xoxb-token' } },
 } satisfies ChannelConfirmationInput;
