@@ -25,10 +25,14 @@ const createRollups = async (
   partitionBy: string,
   ttlInterval: string,
 ) => {
-  const table = `operations_v01_${granularity}`;
+  // Named `operations_v01_by_<dimensions>_<granularity>`; the granularity goes last,
+  // like the existing rollups (`operations_daily`, `clients_hourly`).
+  const byHashClient = `operations_v01_by_hash_client_${granularity}`;
+  const byTimestamp = `operations_v01_by_timestamp_${granularity}`;
+  const byClient = `operations_v01_by_client_${granularity}`;
 
   await exec(`
-    CREATE TABLE IF NOT EXISTS ${table}_by_hash
+    CREATE TABLE IF NOT EXISTS ${byHashClient}
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       graph_id LowCardinality(String) CODEC(ZSTD(1)),
@@ -48,7 +52,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS ${table}_by_hash_mv TO ${table}_by_hash
+    CREATE MATERIALIZED VIEW IF NOT EXISTS ${byHashClient}_mv TO ${byHashClient}
     AS (
       SELECT
         target,
@@ -65,7 +69,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE TABLE IF NOT EXISTS ${table}_by_timestamp
+    CREATE TABLE IF NOT EXISTS ${byTimestamp}
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       graph_id LowCardinality(String) CODEC(ZSTD(1)),
@@ -82,13 +86,13 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS ${table}_by_timestamp_mv TO ${table}_by_timestamp
+    CREATE MATERIALIZED VIEW IF NOT EXISTS ${byTimestamp}_mv TO ${byTimestamp}
     AS (
       SELECT
         target,
         graph_id,
-        graph_version_id,
         ${bucket}(timestamp) AS timestamp,
+        graph_version_id,
         ${aggregateStates(granularity)}
       FROM operations
       GROUP BY target, graph_id, timestamp, graph_version_id
@@ -96,7 +100,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE TABLE IF NOT EXISTS ${table}_by_client
+    CREATE TABLE IF NOT EXISTS ${byClient}
     (
       target LowCardinality(String) CODEC(ZSTD(1)),
       graph_id LowCardinality(String) CODEC(ZSTD(1)),
@@ -115,7 +119,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS ${table}_by_client_mv TO ${table}_by_client
+    CREATE MATERIALIZED VIEW IF NOT EXISTS ${byClient}_mv TO ${byClient}
     AS (
       SELECT
         target,
