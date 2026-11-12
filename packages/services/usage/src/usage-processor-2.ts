@@ -308,6 +308,12 @@ export const usageProcessorV2 = traceInlineSync(
             ? operation.timestamp + targetRetentionInDays * DAY_IN_MS
             : undefined,
           errors,
+          metadata: {
+            graph: {
+              graphId: operation.metadata?.graph?.graphId,
+              graphVersionId: operation.metadata?.graph?.graphVersionId,
+            },
+          },
         });
         report.errors ??= rawErrors;
       }
@@ -482,6 +488,10 @@ const ClientSchema = tb.Type.Object(
     additionalProperties: false,
   },
 );
+
+// TypeBox ships without built-in string formats; unregistered formats fail every value.
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+tb.FormatRegistry.Set('uuid', value => uuidRegex.test(value));
 
 const UUIDType = tb.Type.String({ format: 'uuid' });
 
