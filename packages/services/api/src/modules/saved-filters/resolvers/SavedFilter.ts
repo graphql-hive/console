@@ -27,6 +27,7 @@ export const SavedFilter: Pick<
       dateRange?: { from: string; to: string } | null;
       excludeOperations?: boolean;
       excludeClientFilters?: boolean;
+      schemaCoordinates?: string[];
     };
     return {
       operationHashes: filters.operationHashes ?? [],
@@ -38,6 +39,7 @@ export const SavedFilter: Pick<
       dateRange: filters.dateRange ?? null,
       excludeOperations: filters.excludeOperations ?? false,
       excludeClientFilters: filters.excludeClientFilters ?? false,
+      schemaCoordinates: filters.schemaCoordinates ?? [],
     };
   },
   visibility: filter => (filter.visibility === 'private' ? 'PRIVATE' : 'SHARED'),

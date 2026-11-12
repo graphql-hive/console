@@ -25,6 +25,9 @@ export const createSavedFilter: NonNullable<MutationResolvers['createSavedFilter
             : null,
           excludeOperations: input.insightsFilter.excludeOperations ?? false,
           excludeClientFilters: input.insightsFilter.excludeClientFilters ?? false,
+          schemaCoordinates: input.insightsFilter.schemaCoordinates
+            ? [...input.insightsFilter.schemaCoordinates]
+            : null,
         }
       : null,
   });

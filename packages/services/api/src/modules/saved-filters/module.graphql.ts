@@ -27,6 +27,10 @@ export const typeDefs = gql`
     dateRange: InsightsDateRange
     excludeOperations: Boolean
     excludeClientFilters: Boolean
+    """
+    Schema coordinates (e.g. "Query.me"). Scopes to operations whose document uses any of them.
+    """
+    schemaCoordinates: [String!]!
   }
 
   type ClientFilter {
@@ -82,6 +86,7 @@ export const typeDefs = gql`
     dateRange: InsightsDateRangeInput
     excludeOperations: Boolean
     excludeClientFilters: Boolean
+    schemaCoordinates: [String!]
   }
 
   input InsightsDateRangeInput {

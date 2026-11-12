@@ -2,13 +2,15 @@ import { printWithValues, type SqlValue } from '@hive/clickhouse';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import type { ClickHouseClient } from './clickhouse-client.js';
 import {
-  buildSavedFilterConditions,
   DAILY_THRESHOLD_MINUTES,
+  EMPTY_PARSED_FILTER,
   evaluateRule,
   evaluationIntervalMinutes,
   extractMetricValue,
   groupRulesByQuery,
+  isFilteredFilter,
   isRuleDue,
+  parseSavedFilter,
   previousValueForRule,
   queryClickHouseWindows,
   resolutionFor,
@@ -141,15 +143,17 @@ describe('isRuleDue', () => {
   });
 });
 
-describe('buildSavedFilterConditions', () => {
-  test('null filters -> no conditions', () => {
+describe('parseSavedFilter', () => {
+  test('null filters -> an empty filter', () => {
     const { logger } = makeLogger();
-    expect(buildSavedFilterConditions(null, logger)).toEqual([]);
+    const parsed = parseSavedFilter(null, logger);
+    expect(parsed).toEqual(EMPTY_PARSED_FILTER);
+    expect(isFilteredFilter(parsed)).toBe(false);
   });
 
   test('builds hash + client-version conditions from a saved filter', () => {
     const { logger } = makeLogger();
-    const conds = buildSavedFilterConditions(
+    const conds = parseSavedFilter(
       {
         operationHashes: ['h1', 'h2'],
         clientFilters: [
@@ -160,7 +164,7 @@ describe('buildSavedFilterConditions', () => {
         excludeClientFilters: false,
       },
       logger,
-    );
+    ).conditions;
     expect(render(conds)).toEqual([
       `(hash) IN (['h1', 'h2'])`,
       `((client_name = 'web' AND client_version IN (['1.0'])) OR (client_name = 'mobile'))`,
@@ -169,10 +173,10 @@ describe('buildSavedFilterConditions', () => {
 
   test('ignores dateRange — the alert uses its own rolling window', () => {
     const { logger } = makeLogger();
-    const conds = buildSavedFilterConditions(
+    const conds = parseSavedFilter(
       { operationHashes: ['h1'], dateRange: { from: '2024-01-01', to: '2024-02-01' } },
       logger,
-    );
+    ).conditions;
     const rendered = render(conds);
     expect(rendered).toEqual([`(hash) IN (['h1'])`]);
     expect(rendered.join(' ')).not.toContain('timestamp');
@@ -182,10 +186,8 @@ describe('buildSavedFilterConditions', () => {
     const { logger } = makeLogger();
     expect(
       render(
-        buildSavedFilterConditions(
-          { clientFilters: [{ name: 'unknown', versions: null }] },
-          logger,
-        ),
+        parseSavedFilter({ clientFilters: [{ name: 'unknown', versions: null }] }, logger)
+          .conditions,
       ),
     ).toEqual([`((client_name = ''))`]);
   });
@@ -193,9 +195,24 @@ describe('buildSavedFilterConditions', () => {
   test('malformed filters -> no conditions + warns, and never throws (isolated)', () => {
     const { logger, warnings } = makeLogger();
     // clientFilters must be an array of objects; a string is malformed.
-    const conds = buildSavedFilterConditions({ clientFilters: 'oops' }, logger);
-    expect(conds).toEqual([]);
+    const parsed = parseSavedFilter({ clientFilters: 'oops' }, logger);
+    expect(parsed).toEqual(EMPTY_PARSED_FILTER);
     expect(warnings.length).toBe(1);
+  });
+
+  test('turns schema coordinates into one any-of coordinate scope', () => {
+    const { logger } = makeLogger();
+    const parsed = parseSavedFilter({ schemaCoordinates: ['Query.me', 'User.name'] }, logger);
+    expect(parsed.conditions).toEqual([]);
+    expect(parsed.coordinateScopes).toEqual([['Query.me', 'User.name']]);
+    // Narrows the query even though no hash/client condition exists.
+    expect(isFilteredFilter(parsed)).toBe(true);
+  });
+
+  test('a legacy blob without the key reads as no scope', () => {
+    const { logger } = makeLogger();
+    const parsed = parseSavedFilter({ operationHashes: ['h1'] }, logger);
+    expect(parsed.coordinateScopes).toEqual([]);
   });
 });
 
@@ -216,7 +233,7 @@ describe('queryClickHouseWindows', () => {
 
   test('no filter -> target-keyed minutely rollup, no hash/client predicate, only target bound', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, 60, EMPTY_PARSED_FILTER, evalTime);
     const { sql, params } = calls[0];
     // Unfiltered -> the target-keyed rollup. It dropped the hash/client
     // dimensions, so the query must emit no hash/client predicate.
@@ -231,11 +248,17 @@ describe('queryClickHouseWindows', () => {
 
   test('with a client filter -> legacy table, predicate composed and bound as a param (not interpolated)', async () => {
     const { clickhouse, calls } = captureClient();
-    const conds = buildSavedFilterConditions(
+    const conds = parseSavedFilter(
       { clientFilters: [{ name: 'web', versions: null }] },
       makeLogger().logger,
+    ).conditions;
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      { conditions: conds, coordinateScopes: [] },
+      evalTime,
     );
-    await queryClickHouseWindows(clickhouse, target, 60, conds, evalTime);
     const { sql, params } = calls[0];
     // A filtered query MUST stay on the legacy table — the rollup has no
     // hash/client columns to predicate on.
@@ -252,15 +275,21 @@ describe('queryClickHouseWindows', () => {
 
   test('window > 360 minutes reads the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 720, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, 720, EMPTY_PARSED_FILTER, evalTime);
     expect(calls[0].sql).toContain('FROM operations_by_target_hourly');
   });
 
   test('windows below 7 days stay on the hourly rollup', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 1440, [], evalTime);
-    await queryClickHouseWindows(clickhouse, target, 4320, [], evalTime);
-    await queryClickHouseWindows(clickhouse, target, DAILY_THRESHOLD_MINUTES - 1, [], evalTime);
+    await queryClickHouseWindows(clickhouse, target, 1440, EMPTY_PARSED_FILTER, evalTime);
+    await queryClickHouseWindows(clickhouse, target, 4320, EMPTY_PARSED_FILTER, evalTime);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      DAILY_THRESHOLD_MINUTES - 1,
+      EMPTY_PARSED_FILTER,
+      evalTime,
+    );
     for (const call of calls) {
       expect(call.sql).toContain('FROM operations_by_target_hourly');
     }
@@ -268,7 +297,13 @@ describe('queryClickHouseWindows', () => {
 
   test('windows >= 7 days read the daily rollup (unfiltered -> by_target)', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, DAILY_THRESHOLD_MINUTES, [], evalTime);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      DAILY_THRESHOLD_MINUTES,
+      EMPTY_PARSED_FILTER,
+      evalTime,
+    );
     const { sql } = calls[0];
     expect(sql).toContain('FROM operations_by_target_daily');
     expect(sql).toContain('quantilesTDigestMerge(');
@@ -281,7 +316,7 @@ describe('queryClickHouseWindows', () => {
       clickhouse,
       target,
       DAILY_THRESHOLD_MINUTES,
-      [],
+      EMPTY_PARSED_FILTER,
       evalTime,
       true,
       true,
@@ -294,11 +329,17 @@ describe('queryClickHouseWindows', () => {
 
   test('windows >= 7 days read the daily rollup (filtered -> legacy operations_daily)', async () => {
     const { clickhouse, calls } = captureClient();
-    const conds = buildSavedFilterConditions(
+    const conds = parseSavedFilter(
       { clientFilters: [{ name: 'web', versions: null }] },
       makeLogger().logger,
+    ).conditions;
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      DAILY_THRESHOLD_MINUTES,
+      { conditions: conds, coordinateScopes: [] },
+      evalTime,
     );
-    await queryClickHouseWindows(clickhouse, target, DAILY_THRESHOLD_MINUTES, conds, evalTime);
     const { sql } = calls[0];
     expect(sql).toContain('FROM operations_daily');
     expect(sql).not.toContain('_by_target');
@@ -307,9 +348,92 @@ describe('queryClickHouseWindows', () => {
     expect(sql).toContain('client_name = {p2: String}');
   });
 
+  test('a coordinate scope -> legacy table with a hash subquery bounded to the scanned window', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      { conditions: [], coordinateScopes: [['Query.me', 'User.name']] },
+      evalTime,
+    );
+    const { sql, params } = calls[0];
+    expect(sql).toContain('FROM operations_minutely');
+    expect(sql).not.toContain('_by_target');
+    expect(sql).toContain(
+      'hash IN (SELECT hash FROM coordinates_minutely PREWHERE target = {p2: String}',
+    );
+    // The subquery prunes by the same scan the outer query reads (previous window start to
+    // current window end); the outer query already carries the same two bounds.
+    const anchor = evalTime.getTime();
+    const previousStart = String(anchor - 60_000 - 2 * 60 * 60_000);
+    const currentEnd = String(anchor - 60_000);
+    const subquery = sql.slice(sql.indexOf('(SELECT hash'));
+    expect(subquery).toContain(`timestamp >= fromUnixTimestamp64Milli(${previousStart})`);
+    expect(subquery).toContain(`timestamp < fromUnixTimestamp64Milli(${currentEnd})`);
+    expect(subquery).toContain('coordinate IN ({p3: Array(String)})');
+    expect(params).toEqual({
+      param_p1: target,
+      param_p2: target,
+      param_p3: `['Query.me', 'User.name']`,
+    });
+  });
+
+  test('two scopes are ANDed; a client condition stays alongside them', async () => {
+    const { clickhouse, calls } = captureClient();
+    const conds = parseSavedFilter(
+      { clientFilters: [{ name: 'web', versions: null }] },
+      makeLogger().logger,
+    ).conditions;
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      { conditions: conds, coordinateScopes: [['Query.me'], ['Review.body']] },
+      evalTime,
+    );
+    const { sql } = calls[0];
+    expect(sql.match(/hash IN \(SELECT hash FROM coordinates_minutely/g)).toHaveLength(2);
+    expect(sql).toContain('client_name = {p2: String}');
+  });
+
+  test('an empty scope matches nothing instead of falling back to the rollup', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      { conditions: [], coordinateScopes: [[]] },
+      evalTime,
+    );
+    const { sql } = calls[0];
+    expect(sql).toContain('FROM operations_minutely');
+    expect(sql).toContain('AND 1 = 0');
+  });
+
+  test('a scope on a >= 7d latency group reads the daily coordinates tier', async () => {
+    const { clickhouse, calls } = captureClient();
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      DAILY_THRESHOLD_MINUTES,
+      { conditions: [], coordinateScopes: [['Query.me']] },
+      evalTime,
+    );
+    expect(calls[0].sql).toContain('FROM operations_daily');
+    expect(calls[0].sql).toContain('FROM coordinates_daily');
+  });
+
   test('absolute-only groups skip the previous window (1x scan, constant label)', async () => {
     const { clickhouse, calls } = captureClient();
-    const result = await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, false);
+    const result = await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      EMPTY_PARSED_FILTER,
+      evalTime,
+      false,
+    );
     const { sql } = calls[0];
     // Single-window query: constant 'current' label, no previous branch.
     expect(sql).toContain("'current' as window");
@@ -326,7 +450,7 @@ describe('queryClickHouseWindows', () => {
 
   test('groups needing the previous window fetch both (default)', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true);
+    await queryClickHouseWindows(clickhouse, target, 60, EMPTY_PARSED_FILTER, evalTime, true);
     const { sql } = calls[0];
     expect(sql).toContain("ELSE 'previous'");
     const anchor = evalTime.getTime();
@@ -338,7 +462,16 @@ describe('queryClickHouseWindows', () => {
   // pass needsPreviousWindow=true so these exercise only the column selection.
   test('groups needing neither duration column select NULL placeholders', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false, false);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      EMPTY_PARSED_FILTER,
+      evalTime,
+      true,
+      false,
+      false,
+    );
     const { sql } = calls[0];
     expect(sql).toContain('NULL as average');
     expect(sql).toContain('NULL as percentiles');
@@ -348,7 +481,16 @@ describe('queryClickHouseWindows', () => {
 
   test('percentile groups select the quantiles column; avg still skipped', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, false, true);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      EMPTY_PARSED_FILTER,
+      evalTime,
+      true,
+      false,
+      true,
+    );
     const { sql } = calls[0];
     expect(sql).toContain('duration_quantiles');
     expect(sql).toContain('NULL as average');
@@ -356,7 +498,16 @@ describe('queryClickHouseWindows', () => {
 
   test('avg groups select avgMerge; percentiles skipped', async () => {
     const { clickhouse, calls } = captureClient();
-    await queryClickHouseWindows(clickhouse, target, 60, [], evalTime, true, true, false);
+    await queryClickHouseWindows(
+      clickhouse,
+      target,
+      60,
+      EMPTY_PARSED_FILTER,
+      evalTime,
+      true,
+      true,
+      false,
+    );
     const { sql } = calls[0];
     expect(sql).toContain('avgMerge(duration_avg) as average');
     expect(sql).toContain('NULL as percentiles');

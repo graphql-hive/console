@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
 import {
+  buildCoordinateScopeCondition,
   buildOperationsFilterSQLConditions,
   sql,
   toQueryParams,
@@ -36,7 +37,7 @@ const MetricAlertRuleRowSchema = z.object({
   savedFilterId: z.string().nullable(),
   // The attached saved filter's `filters` jsonb (or null). Kept as `unknown` so a
   // malformed/legacy blob can't fail the bulk parse and halt evaluation of EVERY
-  // rule...its shape is validated defensively per-group in `buildSavedFilterConditions`.
+  // rule...its shape is validated defensively per-group in `parseSavedFilter`.
   savedFilterFilters: z.unknown().nullable(),
   /** Plan name of the rule's organization. Drives state-log retention. */
   organizationPlanName: z.string().nullable(),
@@ -286,19 +287,28 @@ const SavedFilterConditionsSchema = z.looseObject({
     .optional(),
   excludeOperations: z.boolean().optional(),
   excludeClientFilters: z.boolean().optional(),
+  schemaCoordinates: z.array(z.string()).optional(),
 });
 
+/** What the window query consumes: ANDed conditions plus any-of coordinate scopes, also ANDed. */
+export type ParsedSavedFilter = {
+  conditions: SqlValue[];
+  coordinateScopes: ReadonlyArray<readonly string[]>;
+};
+
+export const EMPTY_PARSED_FILTER: ParsedSavedFilter = { conditions: [], coordinateScopes: [] };
+
 /**
- * Turns a saved filter's raw `filters` jsonb into ClickHouse conditions for the
- * window query, via the same shared builder the analytics API uses (so an alert
- * filters identically to what users see on Insights).
+ * Reads a saved filter's raw `filters` jsonb. Hash and client conditions come from the
+ * same shared builder the analytics API uses (so an alert filters identically to what
+ * users see on Insights); schema coordinates become one any-of scope.
  *
- * Never throws: a null/malformed blob yields NO conditions (the alert evaluates
+ * Never throws: a null/malformed blob yields an empty filter (the alert evaluates
  * unfiltered) and is logged, so one bad filter can't break the whole batch.
  */
-export function buildSavedFilterConditions(rawFilters: unknown, logger: Logger): SqlValue[] {
+export function parseSavedFilter(rawFilters: unknown, logger: Logger): ParsedSavedFilter {
   if (rawFilters == null) {
-    return [];
+    return EMPTY_PARSED_FILTER;
   }
   const parsed = SavedFilterConditionsSchema.safeParse(rawFilters);
   if (!parsed.success) {
@@ -306,24 +316,33 @@ export function buildSavedFilterConditions(rawFilters: unknown, logger: Logger):
       { error: parsed.error },
       'Saved filter on a metric alert rule has an unexpected shape; evaluating unfiltered',
     );
-    return [];
+    return EMPTY_PARSED_FILTER;
   }
-  return buildOperationsFilterSQLConditions({
-    operations: parsed.data.operationHashes,
-    clientVersionFilters: parsed.data.clientFilters?.map(client => ({
-      clientName: client.name,
-      versions: client.versions ?? null,
-    })),
-    excludeOperations: parsed.data.excludeOperations,
-    excludeClientVersionFilters: parsed.data.excludeClientFilters,
-  });
+  const schemaCoordinates = parsed.data.schemaCoordinates ?? [];
+  return {
+    conditions: buildOperationsFilterSQLConditions({
+      operations: parsed.data.operationHashes,
+      clientVersionFilters: parsed.data.clientFilters?.map(client => ({
+        clientName: client.name,
+        versions: client.versions ?? null,
+      })),
+      excludeOperations: parsed.data.excludeOperations,
+      excludeClientVersionFilters: parsed.data.excludeClientFilters,
+    }),
+    coordinateScopes: schemaCoordinates.length > 0 ? [schemaCoordinates] : [],
+  };
+}
+
+/** True when the filter narrows the query at all (and so forces the legacy-table path). */
+export function isFilteredFilter(filter: ParsedSavedFilter): boolean {
+  return filter.conditions.length > 0 || filter.coordinateScopes.length > 0;
 }
 
 export async function queryClickHouseWindows(
   clickhouse: ClickHouseClient,
   targetId: string,
   timeWindowMinutes: number,
-  filterConditions: SqlValue[],
+  filter: ParsedSavedFilter,
   // Anchor windows to the cron's scheduled run time (graphile-worker's
   // job.run_at), not wall-clock now. If the worker is backed up and picks
   // this job up late, using wall-clock would shift the queried window
@@ -350,10 +369,10 @@ export async function queryClickHouseWindows(
   // so the query prunes by time instead of scanning the target's whole slice.
   // Filtered queries MUST stay on the legacy tables...the rollups dropped the
   // hash/client dimensions a filter predicates on, so routing one there would
-  // reference columns that don't exist. Deriving this from `filterConditions`
-  // (rather than a separate flag/param) makes the filtered-query-on-rollup
-  // combination unrepresentable.
-  const useTargetRollup = filterConditions.length === 0;
+  // reference columns that don't exist. Deriving this from `filter` (rather than
+  // a separate flag/param) makes the filtered-query-on-rollup combination
+  // unrepresentable.
+  const useTargetRollup = !isFilteredFilter(filter);
   const resolution = resolutionFor(timeWindowMinutes, allowDailyRollup);
   const tableName = useTargetRollup
     ? `operations_by_target_${resolution}`
@@ -370,11 +389,29 @@ export async function queryClickHouseWindows(
   // string value (`target` and the saved-filter conditions' arbitrary client/
   // operation strings) is bound as a ClickHouse `param_*` value via the `sql` tag
   // + toQueryParams below, never interpolated (so no manual UUID guarding needed).
-  const filterClause =
-    filterConditions.length > 0 ? sql` AND ${sql.join(filterConditions, ' AND ')}` : sql``;
-
   // Scan one window (all rows 'current') when the prior isn't needed, else both.
   const scanStart = needsPreviousWindow ? previousWindowStart : currentWindowStart;
+
+  // Coordinates are a function of the operation document, so one subquery over the whole
+  // scan serves both windows; its time bounds only prune. The ingestor writes a registry
+  // row per report per hash, so a hash active in the window has a row in the window.
+  const scopeBounds = [
+    sql`target = ${targetId}`,
+    sql`timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(scanStart.getTime()))})`,
+    sql`timestamp < fromUnixTimestamp64Milli(${sql.raw(String(currentWindowEnd.getTime()))})`,
+  ];
+  const filterConditions = [
+    ...filter.conditions,
+    ...filter.coordinateScopes.map(coordinates =>
+      buildCoordinateScopeCondition({
+        coordinatesTable: sql.raw(`coordinates_${resolution}`),
+        scopeConditions: scopeBounds,
+        coordinates,
+      }),
+    ),
+  ];
+  const filterClause =
+    filterConditions.length > 0 ? sql` AND ${sql.join(filterConditions, ' AND ')}` : sql``;
   const windowSelector = needsPreviousWindow
     ? sql`CASE WHEN timestamp >= fromUnixTimestamp64Milli(${sql.raw(String(currentWindowStart.getTime()))}) THEN 'current' ELSE 'previous' END`
     : sql`'current'`;

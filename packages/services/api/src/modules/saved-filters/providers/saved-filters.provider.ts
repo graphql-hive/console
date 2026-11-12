@@ -14,6 +14,15 @@ import { IdTranslator } from '../../shared/providers/id-translator';
 import { Logger } from '../../shared/providers/logger';
 import { SavedFiltersStorage } from './saved-filters-storage';
 
+// Hive's usage keys, as the collector in @graphql-hive/core spells them: `Type.field`,
+// `Enum.VALUE` and `Type.field.arg` for an argument (the spec's `Type.field(arg:)` is not what
+// the coordinate tables hold). A bare type name is rejected: the picker offers fields, and the
+// only bare names usage records are scalars and field-less input types.
+const schemaCoordinatePattern = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*){1,2}$/;
+
+const uniqueStrings = (values: string[] | null | undefined) =>
+  values == null ? values : [...new Set(values)];
+
 const InsightsFilterConfigurationModel = zod.object({
   // Use nullish() + transform because the resolver may pass null instead of undefined
   operationHashes: zod
@@ -53,7 +62,27 @@ const InsightsFilterConfigurationModel = zod.object({
     .transform(v => v ?? null),
   excludeOperations: zod.boolean().optional().default(false),
   excludeClientFilters: zod.boolean().optional().default(false),
+  // Both stay nullish (no `?? []`) so an update can tell "not sent" from "cleared".
+  schemaCoordinates: zod
+    .array(
+      zod
+        .string()
+        .max(200, 'Schema coordinate must be at most 200 characters long')
+        .regex(schemaCoordinatePattern, 'Invalid schema coordinate'),
+    )
+    .max(100, 'At most 100 schema coordinates can be selected')
+    .nullish()
+    .transform(uniqueStrings),
 });
+
+type InsightsFilterInput = {
+  operationHashes?: string[] | null;
+  clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
+  dateRange?: { from: string; to: string } | null;
+  excludeOperations?: boolean;
+  excludeClientFilters?: boolean;
+  schemaCoordinates?: string[] | null;
+};
 
 // Transform GraphQL uppercase enum values to lowercase for database storage
 const visibilityEnum = zod
@@ -175,13 +204,7 @@ export class SavedFiltersProvider {
       name: string;
       description: string | null;
       visibility: string;
-      insightsFilter?: {
-        operationHashes?: string[] | null;
-        clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
-        dateRange?: { from: string; to: string } | null;
-        excludeOperations?: boolean;
-        excludeClientFilters?: boolean;
-      } | null;
+      insightsFilter?: InsightsFilterInput | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
     this.logger.info(
@@ -239,6 +262,7 @@ export class SavedFiltersProvider {
       dateRange: data.insightsFilter?.dateRange ?? null,
       excludeOperations: data.insightsFilter?.excludeOperations ?? false,
       excludeClientFilters: data.insightsFilter?.excludeClientFilters ?? false,
+      schemaCoordinates: data.insightsFilter?.schemaCoordinates ?? [],
     };
 
     const savedFilter = await this.savedFiltersStorage.createSavedFilter({
@@ -274,13 +298,7 @@ export class SavedFiltersProvider {
       name?: string | null;
       description?: string | null;
       visibility?: string | null;
-      insightsFilter?: {
-        operationHashes?: string[] | null;
-        clientFilters?: Array<{ name: string; versions?: string[] | null }> | null;
-        dateRange?: { from: string; to: string } | null;
-        excludeOperations?: boolean;
-        excludeClientFilters?: boolean;
-      } | null;
+      insightsFilter?: InsightsFilterInput | null;
     },
   ): Promise<{ type: 'success'; savedFilter: SavedFilter } | { type: 'error'; message: string }> {
     this.logger.info('Updating saved filter (filterId=%s)', filterId);
@@ -360,6 +378,10 @@ export class SavedFiltersProvider {
           dateRange: data.insightsFilter.dateRange ?? null,
           excludeOperations: data.insightsFilter.excludeOperations ?? false,
           excludeClientFilters: data.insightsFilter.excludeClientFilters ?? false,
+          // The whole jsonb is replaced on update, so a client built before this key existed
+          // would wipe it. A key it did not send keeps its stored value; an empty list clears.
+          schemaCoordinates:
+            data.insightsFilter.schemaCoordinates ?? existingFilter.filters.schemaCoordinates ?? [],
         }
       : null;
 

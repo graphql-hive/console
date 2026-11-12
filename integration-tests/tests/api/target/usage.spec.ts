@@ -16,6 +16,7 @@ import { collectSchemaCoordinates } from '../../../../packages/libraries/core/sr
 import { clickHouseQuery } from '../../../testkit/clickhouse';
 import {
   createTarget,
+  readOperationsStats,
   updateTargetValidationSettings,
   waitFor,
   waitForExpectations,
@@ -4314,6 +4315,115 @@ describe('exclude filters', () => {
   );
 });
 
+describe('schema coordinate filters', () => {
+  const op = (
+    operation: string,
+    operationName: string,
+    fields: string[],
+    client = 'web',
+  ): CollectedOperation => ({
+    timestamp: Date.now(),
+    operation,
+    operationName,
+    fields,
+    execution: { ok: true, duration: 100_000_000, errorsTotal: 0 },
+    metadata: { client: { name: client, version: '1.0' } },
+  });
+
+  const names = (stats: { operations: { edges: Array<{ node: { name: string } }> } }) =>
+    stats.operations.edges.map(e => e.node.name.replace(/^.*_/, '')).sort();
+
+  test.concurrent(
+    'schemaCoordinates keeps operations whose document uses any of them',
+    { timeout: 30_000 },
+    async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createTargetAccessToken, readOperationsStats, waitForOperationsCollected } =
+        await createProject(ProjectType.Single);
+      const token = await createTargetAccessToken({});
+
+      const collectResult = await token.collectLegacyOperations([
+        op('query ping { ping }', 'ping', ['Query', 'Query.ping']),
+        op('query me { me { id } }', 'me', ['Query', 'Query.me', 'User', 'User.id'], 'mobile'),
+        op(
+          'query both { ping me { id } }',
+          'both',
+          ['Query', 'Query.ping', 'Query.me', 'User', 'User.id'],
+          'mobile',
+        ),
+      ]);
+      expect(collectResult.status).toEqual(200);
+      await waitForOperationsCollected(3);
+
+      const from = formatISO(subHours(Date.now(), 6));
+      const to = formatISO(Date.now());
+
+      const ping = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['Query.ping'],
+      });
+      expect(names(ping)).toEqual(['both', 'ping']);
+      expect(ping.totalOperations).toBe(2);
+
+      const userId = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['User.id'],
+      });
+      expect(names(userId)).toEqual(['both', 'me']);
+
+      // Any of the coordinates, not all of them.
+      const either = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['Query.ping', 'User.id'],
+      });
+      expect(either.totalOperations).toBe(3);
+
+      // ANDed with the client dimension.
+      const pingFromWeb = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['Query.ping'],
+        clientVersionFilters: [{ clientName: 'web', versions: null }],
+      });
+      expect(names(pingFromWeb)).toEqual(['ping']);
+
+      const unused = await readOperationsStats(from, to, undefined, {
+        schemaCoordinates: ['Query.nothing'],
+      });
+      expect(unused.totalOperations).toBe(0);
+      expect(unused.operations.edges).toEqual([]);
+    },
+  );
+
+  test.concurrent('caps the number of schema coordinates', async ({ expect }) => {
+    const { ownerToken, createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+
+    const from = formatISO(subHours(Date.now(), 6));
+    const to = formatISO(Date.now());
+    const errors = await readOperationsStats(
+      { byId: target.id },
+      { from, to },
+      { schemaCoordinates: Array.from({ length: 101 }, (_, i) => `Query.f${i}`) },
+      ownerToken,
+    ).then(r => r.expectGraphQLErrors());
+
+    expect(errors[0].message).toContain('must contain at most 100 elements');
+  });
+
+  test.concurrent('caps the length of each coordinate', async ({ expect }) => {
+    const { ownerToken, createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { target } = await createProject(ProjectType.Single);
+
+    const from = formatISO(subHours(Date.now(), 6));
+    const to = formatISO(Date.now());
+    const errors = await readOperationsStats(
+      { byId: target.id },
+      { from, to },
+      { schemaCoordinates: [`Query.${'f'.repeat(195)}`] },
+      ownerToken,
+    ).then(r => r.expectGraphQLErrors());
+    expect(errors[0].message).toContain('at most 200 characters');
+  });
+});
 test.concurrent(
   'Mutation.updateTargetConditionalBreakingChangeConfiguration: values below minimum',
   async ({ expect }) => {

@@ -1,17 +1,18 @@
 import pLimit from 'p-limit';
 import { z } from 'zod';
 import type { Logger } from '@graphql-hive/logger';
-import type { SqlValue } from '@hive/clickhouse';
 import { psql } from '@hive/postgres';
 import { SpanKind, SpanStatusCode, trace } from '@hive/service-common';
 import { defineTask, implementTask, type TaskImplementation } from '../kit.js';
 import {
-  buildSavedFilterConditions,
   evaluateRule,
   fetchEnabledRules,
   groupRulesByQuery,
+  isFilteredFilter,
   isRuleDue,
+  parseSavedFilter,
   queryClickHouseWindows,
+  type ParsedSavedFilter,
 } from '../lib/metric-alert-evaluator.js';
 import { metricAlertEnabledRules, metricAlertRuleGroups } from '../metrics.js';
 
@@ -93,16 +94,16 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
   // processGroup, so a filtered group isn't re-parsed within the same tick.
   const groupFilters = [...groups.values()].map(group => ({
     group,
-    filterConditions: buildSavedFilterConditions(group[0].savedFilterFilters, logger),
+    filter: parseSavedFilter(group[0].savedFilterFilters, logger),
   }));
 
   // Population gauges for the expensive with-filter rules. "Filtered" means the
-  // filter yields query conditions (the legacy-table path), not just that a
+  // filter narrows the query (the legacy-table path), not just that a
   // saved_filter_id is set. Both labels set each tick (incl. 0) to avoid staleness.
   let filteredGroups = 0;
   let filteredRules = 0;
-  for (const { group, filterConditions } of groupFilters) {
-    if (filterConditions.length > 0) {
+  for (const { group, filter } of groupFilters) {
+    if (isFilteredFilter(filter)) {
       filteredGroups += 1;
       filteredRules += group.length;
     }
@@ -136,11 +137,8 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
 
   async function processGroup(
     groupRules: (typeof rules)[number][],
-    filterConditions: SqlValue[],
-  ): Promise<{
-    failed: boolean;
-    evaluatedIds: string[];
-  }> {
+    filter: ParsedSavedFilter,
+  ): Promise<{ failed: boolean; evaluatedIds: string[] }> {
     const representative = groupRules[0];
 
     // Only PERCENTAGE_CHANGE rules need the prior window; if none in the group do,
@@ -173,7 +171,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
           // true only when the filter yields the heavier legacy-table query.
           'metric.types': [...new Set(groupRules.map(r => r.type))],
           'threshold.types': [...new Set(groupRules.map(r => r.thresholdType))],
-          'filter.applied': filterConditions.length > 0,
+          'filter.applied': isFilteredFilter(filter),
           'window.needs_previous': needsPreviousWindow,
           'metric.needs_percentiles': needsPercentiles,
         },
@@ -186,7 +184,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
               clickhouse,
               representative.targetId,
               representative.timeWindowMinutes,
-              filterConditions,
+              filter,
               evaluationTime,
               needsPreviousWindow,
               needsAverage,
@@ -281,9 +279,7 @@ async function evaluateMetricAlertRules(args: Parameters<TaskImplementation<unkn
         let groupsFailed = 0;
         const evaluatedRuleIds: string[] = [];
         const results = await Promise.allSettled(
-          dueGroupList.map(({ group, filterConditions }) =>
-            limit(() => processGroup(group, filterConditions)),
-          ),
+          dueGroupList.map(({ group, filter }) => limit(() => processGroup(group, filter))),
         );
         for (const r of results) {
           if (r.status === 'rejected') {

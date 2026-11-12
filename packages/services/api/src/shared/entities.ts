@@ -275,6 +275,8 @@ export interface InsightsFilterData {
   dateRange: { from: string; to: string } | null;
   excludeOperations?: boolean;
   excludeClientFilters?: boolean;
+  /** Schema coordinates as reported by usage; scopes to operations whose document uses any. */
+  schemaCoordinates?: string[];
 }
 
 export interface SavedFilter {
