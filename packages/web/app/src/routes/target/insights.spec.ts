@@ -1,9 +1,15 @@
 // @vitest-environment jsdom
 import { presetLast7Days } from '@/components/ui/date-range-picker';
-import { insightsFixtures, OPERATION } from '@/lib/testing/fixtures/insights';
+import {
+  insightsFixtures,
+  insightsSchemaFilterOptions,
+  manageFiltersFixtures,
+  OPERATION,
+  SAVED_FILTER,
+} from '@/lib/testing/fixtures/insights';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
-import { createTestClient, operationName } from '@/lib/testing/urql';
+import { createTestClient, GraphQLResponse, operationName } from '@/lib/testing/urql';
 import { createAppRouter } from '@/router';
 import { createMemoryHistory } from '@tanstack/react-router';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
@@ -41,6 +47,7 @@ const OPERATION_PAGE = `${TARGET}/insights/${OPERATION.name}/${OPERATION.hash}?$
 const PAGE_DOCUMENTS = [
   'TargetOperationsPageQuery',
   'InsightsFilterPicker',
+  'InsightsSchemaFilterOptions',
   'Stats_GeneralOperationsStats',
   'OperationsList_OperationsStats',
 ];
@@ -93,6 +100,7 @@ describe('insights route', () => {
         expect.arrayContaining([
           ['TargetOperationsPageQuery', 'cache-first'],
           ['InsightsFilterPicker', 'cache-first'],
+          ['InsightsSchemaFilterOptions', 'cache-first'],
           ['Stats_GeneralOperationsStats', 'cache-and-network'],
           ['OperationsList_OperationsStats', 'cache-and-network'],
         ]),
@@ -101,6 +109,8 @@ describe('insights route', () => {
       expect(variablesOf(client, 'TargetOperationsPageQuery')).toEqual(SLUGS);
       expect(variablesOf(client, 'InsightsFilterPicker')).toMatchObject({ selector: SLUGS });
       expectPeriod(variablesOf(client, 'InsightsFilterPicker'));
+      // Schema options do not depend on the period, so a range change never refetches them.
+      expect(variablesOf(client, 'InsightsSchemaFilterOptions')).toEqual({ selector: SLUGS });
       expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toMatchObject({
         targetSelector: SLUGS,
         filter,
@@ -113,6 +123,48 @@ describe('insights route', () => {
       expectPeriod(variablesOf(client, 'OperationsList_OperationsStats'));
     },
   );
+
+  it('carries fields from the URL into both stats documents', { timeout: 30_000 }, async () => {
+    const client = createTestClient(layoutFixtures());
+    const fields = encodeURIComponent(JSON.stringify(['Query.me', 'User.name']));
+    const router = createAppRouter({
+      history: createMemoryHistory({
+        initialEntries: [`${TARGET}/insights?${RANGE}&fields=${fields}`],
+      }),
+      urqlClient: client,
+    });
+    await router.load();
+
+    const filter = { schemaCoordinates: ['Query.me', 'User.name'] };
+    expect(variablesOf(client, 'Stats_GeneralOperationsStats')).toMatchObject({ filter });
+    expect(variablesOf(client, 'OperationsList_OperationsStats')).toMatchObject({ filter });
+  });
+
+  it('shows the error for a field filter the API rejects', { timeout: 30_000 }, async () => {
+    // The API answers with the error and a null target, which must not read as empty stats.
+    const rejected = new GraphQLResponse({ __typename: 'Query', target: null }, [
+      {
+        message:
+          "'OperationStatsFilterInput.schemaCoordinates' elements must be at most 200 characters long",
+        path: ['target', 'operationsStats'],
+      },
+    ]);
+    const client = createTestClient(
+      new Map([
+        ...fixtures(),
+        ['Stats_GeneralOperationsStats', rejected],
+        ['OperationsList_OperationsStats', rejected],
+      ]),
+    );
+    const fields = encodeURIComponent(JSON.stringify([`Query.${'f'.repeat(195)}`]));
+    renderAtUrl(`${TARGET}/insights?${RANGE}&fields=${fields}`, { client });
+
+    await screen.findByRole('button', { name: 'Refresh' });
+    expect((await screen.findAllByText(/must be at most 200 characters/)).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.queryByText('No stats available yet.')).toBeNull();
+  });
 
   it('sends a bare URL to the default range and loads once', { timeout: 30_000 }, async () => {
     const client = createTestClient(layoutFixtures());
@@ -140,7 +192,7 @@ describe('insights route', () => {
   });
 
   it(
-    'Refresh reloads the route: the stats again, nothing else, no remount',
+    'Refresh reloads the route: the stats and the schema options again, nothing else, no remount',
     { timeout: 30_000 },
     async () => {
       const client = createTestClient(fixtures());
@@ -152,6 +204,8 @@ describe('insights route', () => {
       await waitFor(() => {
         expect(requests(client, 'Stats_GeneralOperationsStats')).toBe(2);
         expect(requests(client, 'OperationsList_OperationsStats')).toBe(2);
+        // Cache-first otherwise, so this is where a newly published field appears.
+        expect(requests(client, 'InsightsSchemaFilterOptions')).toBe(2);
       });
       for (const name of [
         'TargetOperationsPageQuery',
@@ -321,6 +375,45 @@ describe('manage filters route', () => {
       organizationSlug: SLUGS.organizationSlug,
       selector: SLUGS,
     });
+    expect(variablesOf(client, 'InsightsSchemaFilterOptions')).toEqual({ selector: SLUGS });
+  });
+
+  it('strikes a missing field through once the schema answers, not before', async () => {
+    let answer: (data: unknown) => void = () => {};
+    const schemaOptions = new Promise(resolve => (answer = resolve));
+    const client = createTestClient(
+      new Map([
+        ...layoutFixtures(),
+        ...manageFiltersFixtures(),
+        ['InsightsSchemaFilterOptions', schemaOptions],
+      ]),
+    );
+    renderAtUrl(`${TARGET}/insights/manage-filters`, { client });
+    fireEvent.click(await screen.findByText(SAVED_FILTER.name));
+    fireEvent.click(await screen.findByRole('button', { name: '2 fields' }));
+    expect(screen.queryByText(/Struck-through/)).toBeNull();
+
+    answer(insightsSchemaFilterOptions());
+
+    // The fixture's schema has Query.me but not Query.gone.
+    await screen.findByText(/not in the current schema/);
+  });
+
+  it('opens a row to the Field editor when the filter uses it', { timeout: 30_000 }, async () => {
+    const client = createTestClient(new Map([...layoutFixtures(), ...manageFiltersFixtures()]));
+    renderAtUrl(`${TARGET}/insights/manage-filters`, { client });
+    const row = await screen.findByText(SAVED_FILTER.name);
+
+    fireEvent.click(row);
+
+    const field = await screen.findByRole('group', { name: 'Field filter' });
+    // Nothing changed yet, so there is nothing to save.
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Save changes' }).disabled).toBe(
+      true,
+    );
+    // The editor reads its options from the same document the Insights page preloads.
+    expect(requests(client, 'InsightsSchemaFilterOptions')).toBe(1);
+    expect(field.textContent).toContain(`${SAVED_FILTER.schemaCoordinates.length} fields`);
   });
 });
 

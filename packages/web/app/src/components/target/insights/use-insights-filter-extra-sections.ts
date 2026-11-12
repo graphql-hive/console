@@ -11,6 +11,7 @@ export type SavedFilterView = {
     dateRange: { from: string; to: string } | null;
     excludeOperations: boolean;
     excludeClientFilters: boolean;
+    schemaCoordinates: string[];
   };
 };
 

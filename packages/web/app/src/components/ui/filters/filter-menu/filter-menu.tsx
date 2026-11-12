@@ -78,6 +78,7 @@ function submenuContent(d: SubmenuDimension) {
           singleSelect={d.singleSelect}
           alwaysShowSearch={d.alwaysShowSearch}
           truncatedTo={d.truncatedTo}
+          unavailableNote={d.unavailableNote}
         />
       );
     default:
@@ -215,6 +216,7 @@ export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
                 singleSelect={d.singleSelect}
                 alwaysShowSearch={d.alwaysShowSearch}
                 truncatedTo={d.truncatedTo}
+                unavailableNote={d.unavailableNote}
               />
             ) : null;
           default:

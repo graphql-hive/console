@@ -28,6 +28,9 @@ export function urlFilterDimension<TSearch extends Record<string, unknown>>(conf
   decode: (value: unknown) => FilterSelection[];
   /** Optional sub-values label (e.g. "versions"). */
   valuesLabel?: string;
+  labelPlural?: string;
+  alwaysShowSearch?: boolean;
+  unavailableNote?: string;
 }): ItemsFilterDimension {
   const {
     navigate,
@@ -40,6 +43,9 @@ export function urlFilterDimension<TSearch extends Record<string, unknown>>(conf
     encode,
     decode,
     valuesLabel,
+    labelPlural,
+    alwaysShowSearch,
+    unavailableNote,
   } = config;
 
   const selectedItems = decode(search[searchKey]);
@@ -84,6 +90,9 @@ export function urlFilterDimension<TSearch extends Record<string, unknown>>(conf
     onChange,
     onRemove,
     valuesLabel,
+    labelPlural,
+    alwaysShowSearch,
+    unavailableNote,
     excludeMode,
     onExcludeModeChange,
   };

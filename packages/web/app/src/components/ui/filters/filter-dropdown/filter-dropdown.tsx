@@ -48,6 +48,8 @@ export type FilterDropdownProps = {
   singleSelect?: boolean;
   /** Show the search box regardless of how many items there are. */
   alwaysShowSearch?: boolean;
+  /** Completes "Struck-through items are ..." for unavailable items. */
+  unavailableNote?: string;
   /** Set when `items` holds only the most frequent values. */
   truncatedTo?: number;
 };
@@ -72,6 +74,7 @@ export function FilterDropdown({
   onExcludeModeChange,
   singleSelect,
   alwaysShowSearch,
+  unavailableNote,
   truncatedTo,
 }: FilterDropdownProps) {
   const [filterOpen, setFilterOpen] = useState(false);
@@ -147,6 +150,7 @@ export function FilterDropdown({
               valuesLabel={valuesLabel}
               singleSelect={singleSelect}
               alwaysShowSearch={alwaysShowSearch}
+              unavailableNote={unavailableNote}
               truncatedTo={truncatedTo}
             />
           }

@@ -8,6 +8,7 @@ import {
 import { filter, fromPromise, fromValue, mergeMap, pipe } from 'wonka';
 import schema from '@/gql/schema';
 import { cacheOptions } from '@/lib/urql-cache';
+import { erroredNullsExchange } from '@/lib/urql-exchanges/errored-nulls';
 import {
   createClient,
   makeErrorResult,
@@ -160,6 +161,14 @@ export function missingSelections(
  * `network-only`, and an invalidated or partial read arrives again. A promise fixture holds its
  * answer until it settles; an `Error` fixture answers with that error, as a failed request would.
  */
+/** A fixture answering as the server does when a field fails: partial data plus the errors. */
+export class GraphQLResponse {
+  constructor(
+    public data: Record<string, unknown> | null,
+    public errors: { message: string; path?: readonly (string | number)[] }[],
+  ) {}
+}
+
 export function createTestClient(fixtures: Fixtures = new Map()) {
   const seen: string[] = [];
   const operations: Operation[] = [];
@@ -200,6 +209,9 @@ export function createTestClient(fixtures: Fixtures = new Map()) {
         if (answer instanceof Error) {
           return fromValue(makeErrorResult(operation, answer));
         }
+        if (answer instanceof GraphQLResponse) {
+          return fromValue(makeResult(operation, { data: answer.data, errors: answer.errors }));
+        }
         const message = uncovered(operation, name, answer);
         if (message) {
           throw new Error(message);
@@ -210,7 +222,7 @@ export function createTestClient(fixtures: Fixtures = new Map()) {
 
   const client = createClient({
     url: 'http://test.invalid/graphql',
-    exchanges: [cacheExchange(cacheOptions), resolve],
+    exchanges: [cacheExchange(cacheOptions), erroredNullsExchange, resolve],
   });
 
   return Object.assign(client, {

@@ -7,7 +7,11 @@ import { SaveFilterButton } from '@/components/target/insights/save-filter-butto
 import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
 import { InsightsFilterState } from '@/components/target/insights/search-schemas';
 import { OperationsStats } from '@/components/target/insights/stats';
-import { useInsightsFilterDimensions } from '@/components/target/insights/use-insights-filter-dimensions';
+import {
+  explorerTypesToFieldCoordinates,
+  InsightsSchemaFilterOptions_Query,
+  useInsightsFilterDimensions,
+} from '@/components/target/insights/use-insights-filter-dimensions';
 import {
   useInsightsFilterExtraSections,
   type SavedFilterView,
@@ -41,6 +45,7 @@ export function buildGraphQLFilter(state: InsightsFilterState): OperationStatsFi
       : undefined,
     excludeOperations: state.excludeOperations ?? undefined,
     excludeClientVersionFilters: state.excludeClients ?? undefined,
+    schemaCoordinates: state.fields?.length ? state.fields : undefined,
   };
 }
 
@@ -90,6 +95,7 @@ export const InsightsFilterPicker_Query = graphql(`
               }
               excludeOperations
               excludeClientFilters
+              schemaCoordinates
             }
           }
         }
@@ -128,6 +134,23 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
       period,
     },
   });
+
+  const [schemaOptionsQuery, reexecuteSchemaOptionsQuery] = useQuery({
+    query: InsightsSchemaFilterOptions_Query,
+    variables: { selector: { organizationSlug, projectSlug, targetSlug } },
+    requestPolicy: 'cache-first',
+  });
+  const schemaOptions = schemaOptionsQuery.data?.target;
+  const fieldCoordinates = useMemo(
+    () =>
+      explorerTypesToFieldCoordinates(
+        schemaOptions?.latestValidSchemaVersion?.explorer?.types ?? [],
+      ),
+    [schemaOptions?.latestValidSchemaVersion?.explorer?.types],
+  );
+  // A partial cache answer (stale) is not an answer: the field list would strike everything through.
+  const schemaOptionsReady =
+    !schemaOptionsQuery.fetching && !schemaOptionsQuery.stale && !schemaOptionsQuery.error;
 
   const operationFilterItems: FilterItem[] = useMemo(() => {
     const edges = pickerQuery.data?.target?.operationsStats?.operations?.edges ?? [];
@@ -179,6 +202,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
           dateRange: node.filters.dateRange ?? null,
           excludeOperations: node.filters.excludeOperations ?? false,
           excludeClientFilters: node.filters.excludeClientFilters ?? false,
+          schemaCoordinates: [...node.filters.schemaCoordinates],
         },
       };
 
@@ -229,6 +253,8 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     operationFilterItems,
     clientFilterItems,
     hashToNameMap,
+    fieldCoordinates,
+    schemaOptionsReady,
   });
 
   const handleClearActiveView = useCallback(() => {
@@ -240,6 +266,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
         clients: undefined,
         excludeOperations: undefined,
         excludeClients: undefined,
+        fields: undefined,
         from: presetLast7Days.range.from,
         to: presetLast7Days.range.to,
       }),
@@ -264,9 +291,10 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
     () =>
       (search.operations && search.operations.length > 0) ||
       (search.clients && search.clients.length > 0) ||
+      (search.fields && search.fields.length > 0) ||
       (search.from !== undefined && search.from !== presetLast7Days.range.from) ||
       (search.to !== undefined && search.to !== presetLast7Days.range.to),
-    [search.operations, search.clients, search.from, search.to],
+    [search.operations, search.clients, search.fields, search.from, search.to],
   );
 
   const filter = useMemo(() => buildGraphQLFilter(search), [search]);
@@ -317,6 +345,7 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
                     },
                     excludeOperations: search.excludeOperations ?? false,
                     excludeClientFilters: search.excludeClients ?? false,
+                    schemaCoordinates: search.fields ?? [],
                   }}
                   onSaved={viewId => {
                     void navigate({
@@ -334,7 +363,12 @@ function OperationsView({ dataRetentionInDays }: { dataRetentionInDays: number }
           <div className="flex items-center gap-x-2">
             <RefreshButton
               size="compact"
-              onClick={() => dateRangeController.refreshResolvedRange()}
+              onClick={() => {
+                dateRangeController.refreshResolvedRange();
+                // Period-independent and cache-first, so a schema published since the page
+                // loaded only shows up here.
+                reexecuteSchemaOptionsQuery({ requestPolicy: 'network-only' });
+              }}
             />
           </div>
         </div>

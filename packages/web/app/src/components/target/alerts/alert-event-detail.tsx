@@ -6,7 +6,10 @@ import {
   CircleX,
   ExternalLink,
 } from 'lucide-react';
-import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
+import {
+  savedFilterToSearchParams,
+  type SavedFilterFilters,
+} from '@/components/target/insights/search-params';
 import { buttonVariants } from '@/components/ui/primitives/button/button';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
 import {
@@ -68,17 +71,7 @@ export type AlertEventRow = {
   createdAt: string;
 };
 
-type SavedFilter = {
-  id: string;
-  name: string;
-  filters: {
-    operationHashes: string[];
-    clientFilters: ReadonlyArray<{ name: string; versions?: string[] | null }>;
-    dateRange?: { from: string; to: string } | null;
-    excludeOperations?: boolean | null;
-    excludeClientFilters?: boolean | null;
-  };
-};
+type SavedFilter = { id: string; name: string; filters: SavedFilterFilters };
 
 export type AlertEventDetailRule = {
   name: string;
@@ -247,16 +240,7 @@ export function AlertEventDetail({
     <Link
       to="/$organizationSlug/$projectSlug/$targetSlug/insights"
       params={{ organizationSlug, projectSlug, targetSlug }}
-      search={savedFilterToSearchParams({
-        id: rule.savedFilter.id,
-        filters: {
-          operationHashes: rule.savedFilter.filters.operationHashes,
-          clientFilters: rule.savedFilter.filters.clientFilters,
-          dateRange: rule.savedFilter.filters.dateRange,
-          excludeOperations: rule.savedFilter.filters.excludeOperations ?? undefined,
-          excludeClientFilters: rule.savedFilter.filters.excludeClientFilters ?? undefined,
-        },
-      })}
+      search={savedFilterToSearchParams(rule.savedFilter)}
       target="_blank"
       rel="noreferrer"
       className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"

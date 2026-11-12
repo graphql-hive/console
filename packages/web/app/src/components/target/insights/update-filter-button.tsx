@@ -32,6 +32,7 @@ const InsightsUpdateSavedFilter_Mutation = graphql(`
             }
             excludeOperations
             excludeClientFilters
+            schemaCoordinates
           }
         }
       }
