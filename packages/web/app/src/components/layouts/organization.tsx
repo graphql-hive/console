@@ -69,7 +69,8 @@ export function OrganizationLayout({ children }: { children: ReactNode }): React
                   visible:
                     currentOrganization.viewerCanAccessSettings ||
                     currentOrganization.viewerCanManageAccessTokens ||
-                    currentOrganization.viewerCanManagePersonalAccessTokens,
+                    currentOrganization.viewerCanManagePersonalAccessTokens ||
+                    currentOrganization.viewerCanSeeEmailDeliveries,
                   to: '/$organizationSlug/view/settings',
                   params: { organizationSlug: currentOrganization.slug },
                 },

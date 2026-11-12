@@ -1,7 +1,7 @@
-import { memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { formatDate, formatISO } from 'date-fns';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
-import { Clock, ExternalLinkIcon, XIcon } from 'lucide-react';
+import { Clock, ExternalLinkIcon } from 'lucide-react';
 import { useClient, useQuery } from 'urql';
 import { z } from 'zod';
 import { LayoutContent } from '@/components/layouts/layout-content';
@@ -9,6 +9,7 @@ import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { DataTable, type DataTablePaginationProp } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
 import { DateRangePicker, presetLast7Days } from '@/components/ui/date-range-picker';
+import { Filters } from '@/components/ui/filters/filter-menu/filters';
 import { Meta } from '@/components/ui/meta';
 import { SubPageLayoutHeader } from '@/components/ui/page-content-layout';
 import { Badge } from '@/components/ui/primitives/badge/badge';
@@ -25,12 +26,12 @@ import { FragmentType, graphql, useFragment, type DocumentType } from '@/gql';
 import { formatNumber, usePagedConnection, useSlugs } from '@/lib/hooks';
 import { carriedRange, useDateRangeController } from '@/lib/hooks/use-date-range-controller';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
-import { cn } from '@/lib/utils';
-import { getRouteApi, Link, useRouter } from '@tanstack/react-router';
+import { getRouteApi, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import * as GraphQLSchema from '../gql/graphql';
 import { formatNanoseconds, TraceSheet as ImportedTraceSheet } from './target-trace';
-import { DurationFilter, MultiInputFilter, MultiSelectFilter } from './traces/target-traces-filter';
+import { tracesFilterKeys, withoutTracesFilter, type TracesFilter } from './traces/traces-search';
+import { useTracesFilterDimensions } from './traces/use-traces-filter-dimensions';
 
 const tracesRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/traces',
@@ -70,6 +71,18 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
     ];
   }, [buckets, colors]);
 
+  const navigate = tracesRoute.useNavigate();
+  const selectRange = useCallback(
+    ({ from, to }: { from: Date; to: Date }) => {
+      void navigate({
+        search(params) {
+          return { ...params, from: from.toISOString(), to: to.toISOString() };
+        },
+      });
+    },
+    [navigate],
+  );
+
   return (
     <TimeSeriesChart
       kind="bar"
@@ -77,6 +90,7 @@ const TrafficBucketDiagram = memo(function Traffic(props: TrafficProps) {
       height={150}
       valueFormatter={formatNumber}
       series={series}
+      onRangeSelect={selectRange}
     />
   );
 });
@@ -384,244 +398,9 @@ const TracesList = memo(function TracesList(
   );
 });
 
-function LabelWithColor(props: { className: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-x-2">
-      <div className={cn('h-[11px] w-[2px] rounded-xs', props.className)} />
-      <div>{props.children}</div>
-    </div>
-  );
-}
-
-export const TargetTracesFilterState = z.object({
-  duration: z.union([z.tuple([z.number(), z.number()]), z.tuple([])]).default([]),
-  'trace.id': z.array(z.string()).default([]),
-  'graphql.status': z.array(z.string()).default([]),
-  'graphql.kind': z.array(z.string().nullable()).default([]),
-  'graphql.subgraph': z.array(z.string()).default([]),
-  'graphql.operation': z.array(z.string()).default([]),
-  'graphql.client': z.array(z.string()).default([]),
-  'graphql.errorCode': z.array(z.string()).default([]),
-  'http.status': z.array(z.string()).default([]),
-  'http.method': z.array(z.string()).default([]),
-  'http.host': z.array(z.string()).default([]),
-  'http.route': z.array(z.string()).default([]),
-  'http.url': z.array(z.string()).default([]),
-});
-
-export type FilterState = z.infer<typeof TargetTracesFilterState>;
-
-export const defaultTracesFilter: FilterState = {
-  'graphql.client': [],
-  'graphql.errorCode': [],
-  'graphql.kind': [],
-  'graphql.operation': [],
-  'graphql.status': [],
-  'graphql.subgraph': [],
-  'http.host': [],
-  'http.method': [],
-  'http.route': [],
-  'http.status': [],
-  'http.url': [],
-  'trace.id': [],
-  duration: [],
-};
-
 type FilterProps = {
-  filter: FilterState;
+  filter: TracesFilter;
 };
-
-type FilterKeys = keyof FilterState;
-
-type FilterOptions = {
-  [key: string]: Array<{
-    value: string | null;
-    searchContent: string;
-    label: ReactNode;
-    count: number;
-  }>;
-};
-
-function Filters(
-  props: FilterProps & {
-    options: FilterOptions;
-  },
-) {
-  const filters = props.filter;
-  const filterOptions = props.options;
-
-  // Stores the update handlers in a ref to prevent unnecessary re-renders
-  const router = useRouter();
-  const navigate = tracesRoute.useNavigate();
-  const updateHandlersRef = useRef(new Map<FilterKeys, (value: any) => void>());
-  const updateFilter = useCallback(
-    <$Key extends FilterKeys>(key: $Key): ((value: FilterState[$Key]) => void) => {
-      if (!updateHandlersRef.current.has(key)) {
-        const handler = (value: FilterState[$Key]) => {
-          void navigate({
-            search(params) {
-              return {
-                ...params,
-                filter: {
-                  ...('filter' in params ? params.filter : {}),
-                  [key]: value,
-                },
-              };
-            },
-          });
-        };
-        updateHandlersRef.current.set(key, handler);
-      }
-      return updateHandlersRef.current.get(key)!;
-    },
-    [router],
-  );
-
-  const resetFilters = () => {
-    void navigate({
-      search(params) {
-        return {
-          ...params,
-          filter: {},
-        };
-      },
-    });
-  };
-
-  const filterSelector = <$Key extends FilterKeys>(key: $Key) => filters[key];
-
-  const hasChanges = useMemo(() => {
-    for (const key in filters) {
-      const filterName = key as FilterKeys;
-
-      if (filterName === 'duration') {
-        if (
-          filters[filterName].length === 2 &&
-          (filters[filterName][0] !== 0 || filters[filterName][1] !== 100_000)
-        ) {
-          return true;
-        }
-        continue;
-      }
-
-      if (filters[filterName].length > 0) {
-        return true;
-      }
-    }
-  }, [filters]);
-
-  return (
-    <>
-      <div className="flex h-8 shrink-0 items-center justify-between rounded-md px-2 text-xs font-medium text-fg">
-        <div>Filters</div>
-        {hasChanges ? (
-          <Button variant="ghost" size="icon-sm" onClick={resetFilters}>
-            <XIcon className="size-4" />
-          </Button>
-        ) : null}
-      </div>
-      <DurationFilter value={filterSelector('duration')} onChange={updateFilter('duration')} />
-      <MultiInputFilter
-        key="trace.id"
-        name="Trace ID"
-        selectedValues={filterSelector('trace.id')}
-        onChange={updateFilter('trace.id')}
-      />
-      <MultiSelectFilter
-        key="graphql.status"
-        name="Status"
-        options={filterOptions['graphql.status'].map(option => ({
-          ...option,
-          label: (
-            <LabelWithColor className={option.value === 'ok' ? 'bg-success' : 'bg-critical'}>
-              {option.label}
-            </LabelWithColor>
-          ),
-        }))}
-        selectedValues={filterSelector('graphql.status')}
-        onChange={updateFilter('graphql.status')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="graphql.errorCode"
-        name="Error Code"
-        options={filterOptions['graphql.errorCode'].map(option => ({
-          ...option,
-          label: <LabelWithColor className="bg-critical">{option.label}</LabelWithColor>,
-        }))}
-        selectedValues={filterSelector('graphql.errorCode')}
-        onChange={updateFilter('graphql.errorCode')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="graphql.kind"
-        name="Operation Kind"
-        options={filterOptions['graphql.kind']}
-        selectedValues={filterSelector('graphql.kind')}
-        onChange={updateFilter('graphql.kind')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="graphql.subgraph"
-        name="Subgraph Name"
-        options={filterOptions['graphql.subgraph']}
-        selectedValues={filterSelector('graphql.subgraph')}
-        onChange={updateFilter('graphql.subgraph')}
-      />
-      <MultiSelectFilter
-        key="graphql.name"
-        name="Operation Name"
-        options={filterOptions['graphql.name']}
-        selectedValues={filterSelector('graphql.operation')}
-        onChange={updateFilter('graphql.operation')}
-      />
-      <MultiSelectFilter
-        key="graphql.client"
-        name="Client"
-        options={filterOptions['graphql.client']}
-        selectedValues={filterSelector('graphql.client')}
-        onChange={updateFilter('graphql.client')}
-      />
-      <MultiSelectFilter
-        key="http.status"
-        name="HTTP Status Code"
-        options={filterOptions['http.status']}
-        selectedValues={filterSelector('http.status')}
-        onChange={updateFilter('http.status')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="http.method"
-        name="HTTP Method"
-        options={filterOptions['http.method']}
-        selectedValues={filterSelector('http.method')}
-        onChange={updateFilter('http.method')}
-        hideSearch
-      />
-      <MultiSelectFilter
-        key="http.host"
-        name="HTTP Host"
-        options={filterOptions['http.host']}
-        selectedValues={filterSelector('http.host')}
-        onChange={updateFilter('http.host')}
-      />
-      <MultiSelectFilter
-        key="http.route"
-        name="HTTP Route"
-        options={filterOptions['http.route']}
-        selectedValues={filterSelector('http.route')}
-        onChange={updateFilter('http.route')}
-      />
-      <MultiSelectFilter
-        key="http.url"
-        name="HTTP URL"
-        options={filterOptions['http.url']}
-        selectedValues={filterSelector('http.url')}
-        onChange={updateFilter('http.url')}
-      />
-    </>
-  );
-}
 
 type SelectedTraceSheetProps = {
   open: boolean;
@@ -752,7 +531,6 @@ export const TargetTracesPageQuery = graphql(`
     $targetRef: TargetSelectorInput!
     $first: Int!
     $filter: TracesFilterInput
-    $filterTopN: Int!
     $sort: TracesSortInput
   ) {
     target(reference: { bySelector: $targetRef }) {
@@ -766,52 +544,6 @@ export const TargetTracesPageQuery = graphql(`
         pageInfo {
           hasNextPage
           endCursor
-        }
-      }
-      tracesFilterOptions(filter: $filter) {
-        success {
-          value
-          count
-        }
-        operationType {
-          value
-          count
-        }
-        operationName(top: $filterTopN) {
-          value
-          count
-        }
-        clientName(top: $filterTopN) {
-          value
-          count
-        }
-        httpStatusCode(top: $filterTopN) {
-          value
-          count
-        }
-        httpMethod(top: $filterTopN) {
-          value
-          count
-        }
-        httpHost(top: $filterTopN) {
-          value
-          count
-        }
-        httpRoute(top: $filterTopN) {
-          value
-          count
-        }
-        httpUrl(top: $filterTopN) {
-          value
-          count
-        }
-        subgraphs(top: $filterTopN) {
-          value
-          count
-        }
-        errorCode {
-          value
-          count
         }
       }
       tracesStatusBreakdown(filter: $filter) {
@@ -848,9 +580,16 @@ const TargetTracesFetchMoreTracesQuery = graphql(`
 
 const TRACES_PAGE_SIZE = 50;
 
+const operationTypes = {
+  query: GraphQLSchema.GraphQlOperationType.Query,
+  mutation: GraphQLSchema.GraphQlOperationType.Mutation,
+  subscription: GraphQLSchema.GraphQlOperationType.Subscription,
+  unknown: null,
+} as const;
+
 export function tracesPageVariables(
   slugs: { organizationSlug: string; projectSlug: string; targetSlug: string },
-  filter: FilterState,
+  filter: TracesFilter,
   sorting: SortState,
   period: { from: string; to: string },
 ) {
@@ -859,21 +598,21 @@ export function tracesPageVariables(
     filter: {
       period,
       duration: {
-        min: filter.duration?.[0] ?? null,
-        max: filter.duration?.[1] ?? null,
+        min: filter.durationMin ?? null,
+        max: filter.durationMax ?? null,
       },
-      traceIds: filter['trace.id'],
-      success: filter['graphql.status']?.map(status => (status === 'ok' ? true : false)),
-      errorCodes: filter['graphql.errorCode'],
-      operationNames: filter['graphql.operation'],
-      operationTypes: filter['graphql.kind'] as any,
-      clientNames: filter['graphql.client'],
-      subgraphNames: filter['graphql.subgraph'],
-      httpStatusCodes: filter['http.status'],
-      httpMethods: filter['http.method'],
-      httpHosts: filter['http.host'],
-      httpRoutes: filter['http.route'],
-      httpUrls: filter['http.url'],
+      traceIds: filter.traceIds ?? [],
+      success: filter.status ? [filter.status === 'ok'] : [],
+      errorCodes: filter.errorCodes ?? [],
+      operationNames: filter.operationNames ?? [],
+      operationTypes: (filter.operationTypes ?? []).map(type => operationTypes[type]),
+      clientNames: filter.clientNames ?? [],
+      subgraphNames: filter.subgraphNames ?? [],
+      httpStatusCodes: filter.httpStatusCodes ?? [],
+      httpMethods: filter.httpMethods ?? [],
+      httpHosts: filter.httpHosts ?? [],
+      httpRoutes: filter.httpRoutes ?? [],
+      httpUrls: filter.httpUrls ?? [],
     } satisfies GraphQLSchema.TracesFilterInput,
     first: TRACES_PAGE_SIZE,
     sort: {
@@ -885,9 +624,54 @@ export function tracesPageVariables(
         ? GraphQLSchema.SortDirectionType.Desc
         : GraphQLSchema.SortDirectionType.Asc,
     },
-    filterTopN: 5,
   };
 }
+
+export const TargetTracesFilterValuesQuery = graphql(`
+  query TargetTracesFilterValuesQuery($targetRef: TargetSelectorInput!, $period: DateRangeInput!) {
+    target(reference: { bySelector: $targetRef }) {
+      id
+      tracesFilterValues(period: $period) {
+        operationNames {
+          values
+          truncated
+        }
+        clientNames {
+          values
+          truncated
+        }
+        subgraphNames {
+          values
+          truncated
+        }
+        errorCodes {
+          values
+          truncated
+        }
+        httpStatusCodes {
+          values
+          truncated
+        }
+        httpMethods {
+          values
+          truncated
+        }
+        httpHosts {
+          values
+          truncated
+        }
+        httpRoutes {
+          values
+          truncated
+        }
+        httpUrls {
+          values
+          truncated
+        }
+      }
+    }
+  }
+`);
 
 export function TargetTracesPage(props: SortProps & FilterProps) {
   return (
@@ -942,89 +726,18 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
   const sheetTraceId =
     useKeepPreviousData(selectedTraceId ?? undefined, selectedTraceId === null) ?? null;
 
-  const filterOptions = useMemo(() => {
-    const options = query.data?.target?.tracesFilterOptions;
-
-    return {
-      'graphql.status':
-        options?.success.map(option => ({
-          value: option.value ? 'ok' : 'error',
-          searchContent: option.value ? 'ok' : 'error',
-          label: option.value ? 'Ok' : 'Error',
-          count: option.count,
-        })) ?? [],
-      'graphql.kind':
-        options?.operationType.map(option => ({
-          value: option.value === '' ? null : option.value.toUpperCase(),
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'graphql.name':
-        options?.operationName.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.status':
-        options?.httpStatusCode.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.method':
-        options?.httpMethod.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.host':
-        options?.httpHost.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.route':
-        options?.httpRoute.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'http.url':
-        options?.httpUrl.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'graphql.subgraph':
-        options?.subgraphs.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'graphql.errorCode':
-        options?.errorCode.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-      'graphql.client':
-        options?.clientName.map(option => ({
-          value: option.value,
-          searchContent: option.value,
-          label: option.value,
-          count: option.count,
-        })) ?? [],
-    };
-  }, [query.data?.target?.tracesFilterOptions]);
+  const navigate = tracesRoute.useNavigate();
+  // Keyed by target and period only, so changing a filter is a cache hit.
+  const [valuesQuery] = useQuery({
+    query: TargetTracesFilterValuesQuery,
+    variables: { targetRef: variables.targetRef, period },
+  });
+  const dimensions = useTracesFilterDimensions({
+    search: props.filter,
+    navigate,
+    values: valuesQuery.data?.target?.tracesFilterValues,
+  });
+  const hasFilters = tracesFilterKeys.some(key => props.filter[key] !== undefined);
 
   if (query.error) {
     return (
@@ -1043,43 +756,47 @@ function TargetTracesPageContent(props: SortProps & FilterProps) {
       <SubPageLayoutHeader
         subPageTitle="Traces"
         description="Insights into the requests made to your GraphQL API."
-        sideContent={
-          <div className="flex flex-1 justify-end gap-x-4">
+      />
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <Filters
+          dimensions={dimensions}
+          pinnedControls={
             <DateRangePicker
+              size="compact"
               selectedRange={dateRangeController.selectedPreset.range}
               startDate={dateRangeController.startDate}
-              align="end"
+              align="start"
               onUpdate={args => dateRangeController.setSelectedPreset(args.preset)}
             />
-            <RefreshButton
-              onClick={() => dateRangeController.refreshResolvedRange()}
-              disabled={isLoading}
-            />
-          </div>
-        }
-      />
-      <div className="mt-4 flex min-h-svh w-full">
-        <aside className="sticky top-4 flex h-full w-64 flex-col text-fg-default">
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
-            <Filters filter={props.filter} options={filterOptions} />
-          </div>
-        </aside>
-        <main className="relative flex min-h-svh flex-1 flex-col">
-          <div className="flex flex-1 flex-col gap-4 pt-0 pl-4">
-            <div>
-              <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
-            </div>
-            <TracesList
-              sorting={props.sorting}
-              traces={traces}
-              onSelectTraceId={setSelectedTraceId}
-              selectedTraceId={selectedTraceId}
-              isFetching={query.fetching}
-              pagination={pagination}
-            />
-          </div>
-        </main>
+          }
+          afterChips={
+            hasFilters ? (
+              <Button
+                label="Clear filters"
+                variant="ghost"
+                size="compact"
+                onClick={() => void navigate({ search: prev => withoutTracesFilter(prev) })}
+              />
+            ) : null
+          }
+        />
+        <RefreshButton
+          size="compact"
+          onClick={() => dateRangeController.refreshResolvedRange()}
+          disabled={isLoading}
+        />
       </div>
+      <main className="mt-4 flex min-h-svh flex-col gap-4">
+        <TrafficBucketDiagram buckets={query.data?.target?.tracesStatusBreakdown ?? []} />
+        <TracesList
+          sorting={props.sorting}
+          traces={traces}
+          onSelectTraceId={setSelectedTraceId}
+          selectedTraceId={selectedTraceId}
+          isFetching={query.fetching}
+          pagination={pagination}
+        />
+      </main>
       <SelectedTraceSheet
         open={selectedTraceId !== null}
         onOpenChange={isOpen => {

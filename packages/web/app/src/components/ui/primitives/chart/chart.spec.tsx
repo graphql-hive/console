@@ -8,6 +8,7 @@ const instance = {
   dispose: vi.fn(),
   on: vi.fn(),
   off: vi.fn(),
+  dispatchAction: vi.fn(),
 };
 const init = vi.fn(() => instance);
 
@@ -85,6 +86,37 @@ describe('Chart', () => {
     unmount();
     expect(instance.off).toHaveBeenCalledWith('click', click);
     expect(instance.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('arms the x brush after every option change when asked, and never otherwise', () => {
+    const arm = {
+      type: 'takeGlobalCursor',
+      key: 'brush',
+      brushOption: { brushType: 'lineX', brushMode: 'single' },
+    };
+    const { rerender } = render(<Chart option={{}} height={200} />);
+    expect(instance.dispatchAction).not.toHaveBeenCalled();
+
+    rerender(<Chart option={{}} height={200} brushX />);
+    expect(instance.dispatchAction).toHaveBeenCalledTimes(1);
+    expect(instance.dispatchAction).toHaveBeenLastCalledWith(arm);
+    expect(instance.setOption.mock.invocationCallOrder.at(-1)).toBeLessThan(
+      instance.dispatchAction.mock.invocationCallOrder[0],
+    );
+
+    rerender(<Chart option={{ series: [] }} height={200} brushX />);
+    expect(instance.dispatchAction).toHaveBeenCalledTimes(2);
+    expect(instance.dispatchAction).toHaveBeenLastCalledWith(arm);
+  });
+
+  it('clears the band when a brush ends, and stops listening on unmount', () => {
+    const { unmount } = render(<Chart option={{}} height={200} brushX />);
+    const [, clear] = instance.on.mock.calls.find(([name]) => name === 'brushEnd')!;
+    instance.dispatchAction.mockClear();
+    clear();
+    expect(instance.dispatchAction).toHaveBeenCalledWith({ type: 'brush', areas: [] });
+    unmount();
+    expect(instance.off).toHaveBeenCalledWith('brushEnd', clear);
   });
 
   it('resizes the instance when its container resizes', () => {

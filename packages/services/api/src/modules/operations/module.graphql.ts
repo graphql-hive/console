@@ -54,7 +54,7 @@ export default gql`
     Filter based on schema coordinates (e.g. "Query.me"): only operations whose document uses
     any of them. Combined with the other filters with AND.
     """
-    schemaCoordinates: [String!] @tag(name: "public")
+    schemaCoordinates: [String!]
   }
 
   extend type Target {
@@ -533,6 +533,32 @@ export default gql`
     count: Int!
   }
 
+  """
+  Values seen per traces filter dimension. Field names match the TracesFilterInput keys.
+  """
+  type TracesFilterValues {
+    operationNames: TracesFilterValueList!
+    clientNames: TracesFilterValueList!
+    subgraphNames: TracesFilterValueList!
+    errorCodes: TracesFilterValueList!
+    httpStatusCodes: TracesFilterValueList!
+    httpMethods: TracesFilterValueList!
+    httpHosts: TracesFilterValueList!
+    httpRoutes: TracesFilterValueList!
+    httpUrls: TracesFilterValueList!
+  }
+
+  type TracesFilterValueList {
+    """
+    Up to 1000 distinct non-empty values, most frequent first.
+    """
+    values: [String!]!
+    """
+    More distinct values exist in the period than \`values\` holds.
+    """
+    truncated: Boolean!
+  }
+
   enum SortDirectionType {
     ASC
     DESC
@@ -594,6 +620,11 @@ export default gql`
       sort: TracesSortInput
     ): TraceConnection!
     tracesFilterOptions(filter: TracesFilterInput): TracesFilterOptions!
+      @deprecated(reason: "Use Target.tracesFilterValues")
+    """
+    Values seen per traces filter dimension in the period. Independent of every other filter.
+    """
+    tracesFilterValues(period: DateRangeInput!): TracesFilterValues!
     tracesStatusBreakdown(filter: TracesFilterInput): [TraceStatusBreakdownBucket!]!
     trace(traceId: ID!): Trace
   }

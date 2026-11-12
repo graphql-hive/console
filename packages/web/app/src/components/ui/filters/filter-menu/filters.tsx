@@ -43,7 +43,7 @@ export function Filters({
     dimensions.length > 0 || !!extraSections?.length || !!(activeLabel && onClearActive);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {hasMenu && (
         <FilterMenu
           dimensions={dimensions}

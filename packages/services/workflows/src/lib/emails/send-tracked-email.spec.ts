@@ -1,5 +1,9 @@
+import type { JobHelpers } from 'graphile-worker';
+import type { Context } from '../../context';
+import type { DeliveryRecorder } from '../delivery-recorder';
+import { makeLogger } from '../metric-alert-test-utils';
 import { EmailSendError } from './email-send-error';
-import { describeEmailError } from './send-tracked-email';
+import { describeEmailError, sendTrackedEmail } from './send-tracked-email';
 
 describe('describeEmailError', () => {
   test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
@@ -8,10 +12,10 @@ describe('describeEmailError', () => {
       new EmailSendError('Invalid email request', {
         provider: 'postmark',
         statusCode: 422,
-        statusText: '300: Invalid email request',
+        statusText: 'Invalid email request (error code 300)',
         errorCode: '300',
       }),
-      { statusCode: 422, statusText: '300: Invalid email request' },
+      { statusCode: 422, statusText: 'Invalid email request (error code 300)' },
     ],
     [
       'the SMTP server refused the recipient',
@@ -65,5 +69,67 @@ describe('describeEmailError', () => {
     ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
   ])('%s', (_name, error, expected) => {
     expect(describeEmailError(error)).toEqual(expected);
+  });
+});
+
+describe('sendTrackedEmail', () => {
+  const email = { to: 'invitee@example.com', subject: 'Invitation', body: '<p>Hi</p>' };
+
+  function job(refusal: EmailSendError) {
+    const record = vi.fn<DeliveryRecorder['record']>(async () => {});
+    const { logger, warnings } = makeLogger();
+    const context = {
+      email: { id: refusal.provider, send: vi.fn().mockRejectedValue(refusal), history: [] },
+      deliveries: { record },
+    } as unknown as Context;
+    const helpers = { job: { id: 'job-7', attempts: 2, max_attempts: 5 } } as unknown as JobHelpers;
+    return {
+      record,
+      warnings,
+      args: {
+        context,
+        helpers,
+        logger,
+        organizationId: 'o1',
+        event: 'organization_invitation' as const,
+        email,
+      },
+    };
+  }
+
+  test('a refusal that cannot change ends the job: recorded as the last attempt, not rethrown', async () => {
+    const { record, warnings, args } = job(
+      new EmailSendError('Inactive recipient', {
+        provider: 'postmark',
+        statusCode: 422,
+        statusText:
+          'You tried to send to a recipient that has been marked as inactive. (error code 406)',
+        errorCode: '406',
+      }),
+    );
+
+    await expect(sendTrackedEmail(args)).resolves.toBeUndefined();
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: false, statusCode: 422, attempt: 2, maxAttempts: 2 }),
+    );
+    expect(warnings).toHaveLength(1);
+  });
+
+  test('a refusal worth retrying is recorded with the full budget and rethrown', async () => {
+    const refusal = new EmailSendError('Service Unavailable', {
+      provider: 'postmark',
+      statusCode: 503,
+      statusText: 'The Postmark API is offline for maintenance. (error code 100)',
+      errorCode: '100',
+    });
+    const { record, warnings, args } = job(refusal);
+
+    await expect(sendTrackedEmail(args)).rejects.toBe(refusal);
+
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ ok: false, statusCode: 503, attempt: 2, maxAttempts: 5 }),
+    );
+    expect(warnings).toHaveLength(0);
   });
 });

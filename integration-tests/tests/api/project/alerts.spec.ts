@@ -1,7 +1,8 @@
 import 'reflect-metadata';
+import { createHash } from 'node:crypto';
 import asyncRetry from 'async-retry';
 import { clickHouseInsert, clickHouseQuery, flushAsyncInserts } from 'testkit/clickhouse';
-import { addAlertChannel } from 'testkit/flow';
+import { addAlertChannel, updateAlertChannel } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -492,3 +493,225 @@ const AlertChannelDeliveriesQuery = graphql(`
     }
   }
 `);
+
+test.concurrent(
+  'can rename a channel and move it, confirming the new destination only',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization } = await createOrg();
+    const { project, addAlertChannel, updateAlertChannel } = await createProject(
+      ProjectType.Single,
+    );
+    const selector = { organizationSlug: organization.slug, projectSlug: project.slug };
+
+    const first = await generateMockEndpoint();
+    const second = await generateMockEndpoint();
+    const created = await addAlertChannel({
+      ...selector,
+      name: 'discord',
+      type: AlertChannelType.Discord,
+      webhook: { endpoint: first.url },
+    });
+    if (!created.ok) {
+      throw new Error(created.error?.message ?? 'Expected ok');
+    }
+    const channelId = created.ok.addedAlertChannel.id;
+
+    // A rename alone changes nothing about where messages go, so nothing is sent.
+    const renamed = await updateAlertChannel({ ...selector, channelId, name: 'discord-ops' });
+    expect(renamed.ok?.updatedAlertChannel).toEqual({
+      id: channelId,
+      name: 'discord-ops',
+      type: AlertChannelType.Discord,
+      endpoint: first.url,
+    });
+
+    const moved = await updateAlertChannel({
+      ...selector,
+      channelId,
+      webhook: { endpoint: second.url },
+    });
+    expect(moved.ok?.updatedAlertChannel).toEqual({
+      id: channelId,
+      name: 'discord-ops',
+      type: AlertChannelType.Discord,
+      endpoint: second.url,
+    });
+
+    // The confirmation is sent and awaited inside the mutation: the new endpoint has it, under a
+    // key that names the destination it confirms, and the old endpoint heard nothing since.
+    const updatedKey = `channel-confirmation:updated:${channelId}:${createHash('sha256')
+      .update(second.url)
+      .digest('hex')
+      .slice(0, 8)}`;
+    const recorded = await getRecordedRequests();
+    const headersOf = (path: string) =>
+      recorded
+        .filter(request => request.path === path)
+        .map(request =>
+          Object.fromEntries(
+            Object.entries(request.headers).map(([name, values]) => [
+              name.toLowerCase(),
+              values[0],
+            ]),
+          ),
+        );
+    expect(headersOf(second.path)).toEqual([
+      expect.objectContaining({
+        'hive-event': 'channel_confirmation',
+        'idempotency-key': updatedKey,
+      }),
+    ]);
+    expect(headersOf(first.path)).toEqual([
+      expect.objectContaining({
+        'idempotency-key': `channel-confirmation:created:${channelId}`,
+      }),
+    ]);
+
+    await flushAsyncInserts();
+    const { data: rows } = await clickHouseQuery<{
+      event: string;
+      ok: number;
+      metadata: Record<string, string>;
+    }>(
+      `SELECT event, ok, metadata
+       FROM outbound_deliveries
+       WHERE destination = '${channelId}'`,
+    );
+    expect(
+      rows
+        .map(row => [row.event, row.ok, row.metadata['Idempotency-Key']] as const)
+        .sort((a, b) => a[2].localeCompare(b[2])),
+    ).toEqual([
+      ['channel_confirmation', 1, `channel-confirmation:created:${channelId}`],
+      ['channel_confirmation', 1, updatedKey],
+    ]);
+
+    // The checks a new channel gets apply to the new values; the type's own destination field is
+    // the only one accepted; an id of no channel of the project is not found.
+    const rejected = await updateAlertChannel({
+      ...selector,
+      channelId,
+      name: '',
+      webhook: { endpoint: 'not-a-url' },
+    });
+    expect(rejected.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          name: Name is required,
+          slackChannel: null,
+          webhookEndpoint: Must be a valid URL, e.g. https://example.com/webhook,
+        },
+        message: Please check your input.,
+      }
+    `);
+    const wrongKind = await updateAlertChannel({
+      ...selector,
+      channelId,
+      slack: { channel: '#x' },
+    });
+    expect(wrongKind.error).toMatchInlineSnapshot(`
+      {
+        inputErrors: {
+          name: null,
+          slackChannel: Only a Slack channel has a Slack channel.,
+          webhookEndpoint: null,
+        },
+        message: Please check your input.,
+      }
+    `);
+    const unknown = await updateAlertChannel({
+      ...selector,
+      channelId: '00000000-0000-0000-0000-000000000000',
+      name: 'x',
+    });
+    expect(unknown.error?.message).toBe('Alert channel not found.');
+
+    // Nothing changed by the failed updates.
+    const page = await execute({
+      document: AlertChannelDeliveriesQuery,
+      variables: {
+        ...selector,
+        channelId,
+        from: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        to: new Date(Date.now() + 60 * 1000).toISOString(),
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(page.project?.alertChannel?.deliveryLog).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metadata: expect.objectContaining({ 'Idempotency-Key': updatedKey }),
+        }),
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            'Idempotency-Key': `channel-confirmation:created:${channelId}`,
+          }),
+        }),
+      ]),
+    );
+  },
+);
+
+test.concurrent(
+  'rejects an update from outside the organization as a GraphQL error',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg } = await seed.createOwner();
+    const { createProject, organization } = await createOrg();
+    const { project, addAlertChannel } = await createProject(ProjectType.Single);
+    const endpoint = await generateMockEndpoint();
+    const created = await addAlertChannel({
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      name: 'webhook',
+      type: AlertChannelType.Webhook,
+      webhook: { endpoint: endpoint.url },
+    });
+    if (!created.ok) {
+      throw new Error(created.error?.message ?? 'Expected ok');
+    }
+
+    // A separate owner with no membership in the organization.
+    const { ownerToken: outsiderToken } = await seed.createOwner();
+    const errors = await updateAlertChannel(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        channelId: created.ok.addedAlertChannel.id,
+        name: 'renamed',
+      },
+      outsiderToken,
+    ).then(r => r.expectGraphQLErrors());
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toContain('Missing permission for performing');
+  },
+);
+
+test.concurrent(
+  'Mutation.addAlertChannel: a Slack channel needs the Slack integration',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { organization, createProject } = await createOrg();
+    const { project } = await createProject(ProjectType.Single);
+
+    const result = await addAlertChannel(
+      {
+        organizationSlug: organization.slug,
+        projectSlug: project.slug,
+        name: 'slack',
+        type: AlertChannelType.Slack,
+        slack: { channel: '#alerts' },
+      },
+      ownerToken,
+    ).then(r => r.expectNoGraphQLErrors());
+    expect(result.addAlertChannel.error).toEqual({
+      message: 'Please check your input.',
+      inputErrors: {
+        name: null,
+        slackChannel: 'Connect Slack to the organization first.',
+        webhookEndpoint: null,
+      },
+    });
+  },
+);

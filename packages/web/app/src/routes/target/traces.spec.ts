@@ -5,7 +5,7 @@ import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { tracesFixtures } from '@/lib/testing/fixtures/traces';
 import { renderAtUrl } from '@/lib/testing/router';
 import { createTestClient } from '@/lib/testing/urql';
-import { defaultTracesFilter, defaultTracesSort, tracesPageVariables } from '@/pages/target-traces';
+import { defaultTracesSort, tracesPageVariables } from '@/pages/target-traces';
 import { createAppRouter } from '@/router';
 import { UTCDate } from '@date-fns/utc';
 import { createMemoryHistory } from '@tanstack/react-router';
@@ -24,10 +24,22 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
 }));
 vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 
+// ECharts never sizes under jsdom, so the chart is stood in for to reach its range handler.
+const chart = vi.hoisted(() => ({
+  onRangeSelect: undefined as ((range: { from: Date; to: Date }) => void) | undefined,
+}));
+vi.mock('@/components/ui/primitives/chart/time-series-chart', () => ({
+  TimeSeriesChart: (props: { onRangeSelect?: typeof chart.onRangeSelect }) => {
+    chart.onRangeSelect = props.onRangeSelect;
+    return null;
+  },
+}));
+
 const TARGET = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 const TRACES = `${TARGET}/traces`;
 const TRACE = `${TRACES}/trace-1`;
 const LIST_DOCUMENT = 'TargetTracesPageQuery';
+const VALUES_DOCUMENT = 'TargetTracesFilterValuesQuery';
 const TRACE_DOCUMENT = 'TargetInsightsNewPageContent_TraceQuery';
 
 async function loadedAt(url: string) {
@@ -61,12 +73,7 @@ describe('traces route', () => {
       );
       expect(
         client.requests(LIST_DOCUMENT).map(o => [o.variables, o.context.requestPolicy]),
-      ).toEqual([
-        [
-          tracesPageVariables(SLUGS, defaultTracesFilter, defaultTracesSort, period),
-          'cache-and-network',
-        ],
-      ]);
+      ).toEqual([[tracesPageVariables(SLUGS, {}, defaultTracesSort, period), 'cache-and-network']]);
     },
   );
 
@@ -95,19 +102,137 @@ describe('traces route', () => {
     await waitFor(() => expect(rowHref()).toContain('now-7d'));
   });
 
+  it(
+    'a drag across the chart sets the range and keeps the filter',
+    { timeout: 30_000 },
+    async () => {
+      const client = createTestClient(new Map([...layoutFixtures(), ...tracesFixtures()]));
+      const { router } = renderAtUrl(
+        `${TRACES}?from=now-7d&to=now&operationNames=${encodeURIComponent(JSON.stringify(['GetUser']))}`,
+        { client },
+      );
+      await waitFor(() => expect(chart.onRangeSelect).toBeDefined());
+
+      chart.onRangeSelect!({
+        from: new Date('2026-09-25T10:00:00.000Z'),
+        to: new Date('2026-09-25T14:00:00.000Z'),
+      });
+
+      await waitFor(() =>
+        expect(router.state.location.search).toMatchObject({
+          from: '2026-09-25T10:00:00.000Z',
+          to: '2026-09-25T14:00:00.000Z',
+          operationNames: ['GetUser'],
+        }),
+      );
+    },
+  );
+
   it('carries the filter and sort from the URL into the list', { timeout: 30_000 }, async () => {
-    const filter = { ...defaultTracesFilter, 'graphql.operation': ['GetUser'], duration: [10, 20] };
-    const sort = { id: 'duration', desc: false };
-    const search = `from=now-1d&to=now&filter=${encodeURIComponent(JSON.stringify(filter))}&sort=${encodeURIComponent(JSON.stringify(sort))}`;
+    const json = (value: unknown) => encodeURIComponent(JSON.stringify(value));
+    const search = [
+      'from=now-1d&to=now',
+      `operationNames=${json(['GetUser'])}`,
+      `operationTypes=${json(['query', 'unknown'])}`,
+      'status=error',
+      'durationMin=10&durationMax=20',
+      `sort=${json({ id: 'duration', desc: false })}`,
+    ].join('&');
     const { client } = await loadedAt(`${TRACES}?${search}`);
 
     expect(client.requests(LIST_DOCUMENT)[0]?.variables).toMatchObject({
-      filter: { operationNames: ['GetUser'], duration: { min: 10, max: 20 } },
+      filter: {
+        operationNames: ['GetUser'],
+        operationTypes: ['QUERY', null],
+        success: [false],
+        duration: { min: 10, max: 20 },
+      },
       sort: { sort: 'DURATION', direction: 'ASC' },
       first: 50,
-      filterTopN: 5,
     });
   });
+
+  it(
+    'ignores an unreadable filter param instead of failing the route',
+    { timeout: 30_000 },
+    async () => {
+      const { client, router } = await loadedAt(
+        `${TRACES}?from=now-1d&to=now&status=maybe&operationNames=${encodeURIComponent(JSON.stringify(['GetUser']))}`,
+      );
+
+      expect(router.state.location.pathname).toBe(TRACES);
+      expect(client.requests(LIST_DOCUMENT)[0]?.variables).toMatchObject({
+        filter: { operationNames: ['GetUser'], success: [] },
+      });
+    },
+  );
+});
+
+describe('traces filter values', () => {
+  const RANGE = `${TRACES}?from=now-1d&to=now`;
+
+  function rendered(url: string) {
+    const client = createTestClient(new Map([...layoutFixtures(), ...tracesFixtures()]));
+    const { router } = renderAtUrl(url, { client });
+    const count = (name: string) => client.requests(name).length;
+    const navigateSearch = (next: Record<string, unknown>) =>
+      router.navigate({
+        to: router.state.location.pathname,
+        search: { ...router.state.location.search, ...next },
+      });
+    return { client, router, count, navigateSearch };
+  }
+
+  it(
+    'starts the filter values for the period alone, cache-first',
+    { timeout: 30_000 },
+    async () => {
+      const { client } = await loadedAt(`${RANGE}&status=error&operationNames=%5B%22GetUser%22%5D`);
+
+      const [values] = client.requests(VALUES_DOCUMENT);
+      const listPeriod = (client.requests(LIST_DOCUMENT)[0]?.variables as any).filter.period;
+      expect(values?.variables).toEqual({ targetRef: SLUGS, period: listPeriod });
+      expect(values?.context.requestPolicy).toBe('cache-first');
+    },
+  );
+
+  it('does not refetch filter values when a filter changes', { timeout: 30_000 }, async () => {
+    const { count, navigateSearch } = rendered(RANGE);
+    await screen.findByRole('link', { name: 'trace-1' });
+
+    await navigateSearch({ status: 'error' });
+
+    await waitFor(() => expect(count(LIST_DOCUMENT)).toBe(2));
+    expect(count(VALUES_DOCUMENT)).toBe(1);
+  });
+
+  it('refetches filter values when the range changes', { timeout: 30_000 }, async () => {
+    const { count, navigateSearch } = rendered(RANGE);
+    await screen.findByRole('link', { name: 'trace-1' });
+
+    await navigateSearch({ from: 'now-7d' });
+
+    await waitFor(() => expect(count(VALUES_DOCUMENT)).toBe(2));
+  });
+
+  it(
+    'shows the filter row with a chip per URL filter, and clears them',
+    { timeout: 30_000 },
+    async () => {
+      const { router } = rendered(
+        `${RANGE}&durationMin=100&operationNames=%5B%22DoesNotExist%22%5D`,
+      );
+
+      expect(await screen.findByRole('button', { name: 'Filter' })).toBeTruthy();
+      expect(screen.getByRole('group', { name: 'Duration filter' })).toBeTruthy();
+      expect(screen.getByRole('group', { name: 'Operation name filter' })).toBeTruthy();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+      await waitFor(() =>
+        expect(router.state.location.search).toEqual({ from: 'now-1d', to: 'now' }),
+      );
+    },
+  );
 });
 
 describe('trace route', () => {

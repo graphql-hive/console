@@ -66,6 +66,53 @@ async function loadedAt(url: string) {
   return { client, router };
 }
 
+/** The detail route's rule document and the page's state log document, both answering rule-1. */
+function ruleFixtures() {
+  const fixtures = layoutFixtures();
+  fixtures.set('TargetAlertsDetailPage_RuleConfigQuery', {
+    __typename: 'Query',
+    target: {
+      ...TARGET_NODE,
+      metricAlertRule: {
+        __typename: 'MetricAlertRule',
+        id: 'rule-1',
+        name: 'Error rate',
+        type: 'ERROR_RATE',
+        metric: null,
+        severity: 'CRITICAL',
+        state: 'NORMAL',
+        enabled: true,
+        timeWindowMinutes: 5,
+        thresholdType: 'FIXED_VALUE',
+        thresholdValue: 5,
+        direction: 'ABOVE',
+        confirmationMinutes: 0,
+        channels: [],
+        savedFilter: null,
+        createdAt: '2026-09-27T10:00:00.000Z',
+        updatedAt: '2026-09-27T10:00:00.000Z',
+        createdBy: null,
+        updatedBy: null,
+      },
+    },
+  });
+  fixtures.set('TargetAlertsDetailPage_StateLogQuery', {
+    __typename: 'Query',
+    target: {
+      ...TARGET_NODE,
+      metricAlertRule: {
+        __typename: 'MetricAlertRule',
+        id: 'rule-1',
+        lastEvaluatedAt: null,
+        stateAt: 'NORMAL',
+        stateLog: [],
+      },
+      operationsStats: null,
+    },
+  });
+  return fixtures;
+}
+
 describe('alerts activity route', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -163,6 +210,10 @@ describe('alerts activity route', () => {
 });
 
 describe('alerts rules and detail routes', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it(
     'start their configuration documents, revalidating, and leave the state log to the page',
     { timeout: 30_000 },
@@ -181,6 +232,30 @@ describe('alerts rules and detail routes', () => {
           .map(o => [o.variables, o.context.requestPolicy]),
       ).toEqual([[{ ...SLUGS, ruleId: 'rule-1' }, 'cache-and-network']]);
       expect(detail.client.seen).not.toContain('TargetAlertsDetailPage_StateLogQuery');
+    },
+  );
+
+  // Only the clock is faked; timers stay real so the router, the poll and waitFor run as usual.
+  it(
+    'polls the state log on every tick, asking for the same minute-aligned window',
+    { timeout: 30_000 },
+    async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-09-28T15:30:00.000Z'));
+      const client = createTestClient(ruleFixtures());
+      renderAtUrl(`${ALERTS}/rule-1`, { client });
+      const polls = () => client.requests('TargetAlertsDetailPage_StateLogQuery');
+      // The mount settles at two: the synchronous fixture answers the cache-and-network miss during
+      // render, then the effect's subscription hits the cache and refetches as network-only.
+      await waitFor(() => expect(polls().length).toBeGreaterThanOrEqual(1));
+      const mounted = polls().length;
+
+      vi.setSystemTime(new Date('2026-09-28T15:30:15.000Z'));
+      await waitFor(() => expect(polls()).toHaveLength(mounted + 1));
+      vi.setSystemTime(new Date('2026-09-28T15:30:30.000Z'));
+      await waitFor(() => expect(polls()).toHaveLength(mounted + 2));
+
+      expect(new Set(polls().map(o => JSON.stringify(o.variables))).size).toBe(1);
     },
   );
 });

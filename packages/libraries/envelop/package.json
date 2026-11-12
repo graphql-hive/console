@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/envelop",
-  "version": "0.40.16",
+  "version": "0.40.17",
   "type": "module",
   "description": "Hive Console + GraphQL Envelop",
   "repository": {

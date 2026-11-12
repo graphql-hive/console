@@ -84,8 +84,10 @@ export class ClickHouseClient {
   }
 
   /**
-   * Runs a statement that returns no rows (an INSERT). Not retried: a retried insert after a
-   * timeout duplicates the row, and a dropped stats row is the cheaper failure.
+   * Runs a statement that returns no rows (an INSERT), written synchronously: the caller waits
+   * for its own rows only, not for the server-wide asynchronous insert queue that is the server
+   * default. Not retried: a retried insert after a timeout duplicates the row, and a dropped
+   * stats row is the cheaper failure.
    */
   async command(sql: string, queryId = 'command', params?: Record<string, string>): Promise<void> {
     const span = tracer.startSpan(`ClickHouse: ${queryId}`, {
@@ -101,6 +103,7 @@ export class ClickHouseClient {
       await got.post(this.baseUrl, {
         searchParams: {
           database: this.config.database ?? 'default',
+          async_insert: '0',
           ...params,
         },
         headers: {

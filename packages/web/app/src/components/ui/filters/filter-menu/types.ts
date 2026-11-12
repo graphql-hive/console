@@ -71,6 +71,11 @@ export type ItemsFilterDimension = FilterDimensionBase & {
    * Defaults to the date-range wording the usage-derived dimensions need.
    */
   unavailableNote?: string;
+  /**
+   * Set when the server capped `items` at its most frequent values, to the cap. The list then says
+   * it is partial, and an unavailable selection reads as "not among the most frequent".
+   */
+  truncatedTo?: number;
 };
 
 /** A free-text dimension. The value is rendered in a chip once non-empty. */
@@ -93,4 +98,40 @@ export type ToggleFilterDimension = FilterDimensionBase & {
   onChange: (next: boolean) => void;
 };
 
-export type FilterDimension = ItemsFilterDimension | TextFilterDimension | ToggleFilterDimension;
+/** A numeric range. `null` on either side means unbounded on that side. */
+export type RangeValue = { min: number | null; max: number | null };
+
+/**
+ * A numeric range, edited with Min/Max inputs and a two-thumb slider. A bound typed or dragged to
+ * the edge of `bounds` becomes `null`, so the chip only appears while the range narrows results.
+ */
+export type RangeFilterDimension = FilterDimensionBase & {
+  kind: 'range';
+  /** The slider's track. Values are clamped to it. */
+  bounds: { min: number; max: number };
+  step?: number;
+  /** Suffix on the inputs and in the chip, e.g. "ms". */
+  unit?: string;
+  value: RangeValue;
+  onChange: (next: RangeValue) => void;
+};
+
+/**
+ * A list of exact values typed or pasted in, for identifiers too many to list as items (e.g. trace
+ * IDs). The chip shows the count.
+ */
+export type TextListFilterDimension = FilterDimensionBase & {
+  kind: 'text-list';
+  values: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+  /** Singular noun for the chip count, e.g. "id" for "3 ids". Defaults to "value". */
+  countNoun?: string;
+};
+
+export type FilterDimension =
+  | ItemsFilterDimension
+  | TextFilterDimension
+  | ToggleFilterDimension
+  | RangeFilterDimension
+  | TextListFilterDimension;

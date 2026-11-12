@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { z } from 'zod';
 import { presetLast7Days } from '@/components/ui/date-range-picker';
 import { DiffsWorkerPoolProvider } from '@/components/ui/diffs';
@@ -11,22 +12,24 @@ import {
 } from '@/lib/route-utils';
 import { TargetInsightsNewPageContent_TraceQuery, TargetTracePage } from '@/pages/target-trace';
 import {
-  defaultTracesFilter,
   defaultTracesSort,
-  TargetTracesFilterState,
+  TargetTracesFilterValuesQuery,
   TargetTracesPage,
   TargetTracesPageQuery,
   TargetTracesSort,
   tracesPageVariables,
 } from '@/pages/target-traces';
+import { TracesFilterSearch } from '@/pages/traces/traces-search';
 import { createRoute } from '@tanstack/react-router';
+import { legacySearch, legacySearchRedirect } from '../legacy';
 import { targetRoute } from './route';
 
-const TargetTracesRouteSearch = z.object({
-  filter: TargetTracesFilterState.optional(),
+const TargetTracesRouteSearch = TracesFilterSearch.extend({
   sort: TargetTracesSort.shape.optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  // Only so `beforeLoad` sees an old link's filter to redirect it.
+  filter: legacySearch.targetTraces.values.optional().catch(undefined),
 });
 
 const traces: RangeBounds = {
@@ -38,12 +41,13 @@ export const targetTracesRoute = createRoute({
   getParentRoute: () => targetRoute,
   path: 'traces',
   validateSearch: TargetTracesRouteSearch,
-  beforeLoad: defaultRange(traces),
-  loaderDeps: ({ search }) => ({
-    filter: search.filter ?? defaultTracesFilter,
-    sort: search.sort ?? defaultTracesSort,
-    from: search.from,
-    to: search.to,
+  beforeLoad: context => {
+    legacySearchRedirect(legacySearch.targetTraces, context.search);
+    return defaultRange(traces)(context);
+  },
+  loaderDeps: ({ search: { filter: _filter, sort, ...deps } }) => ({
+    ...deps,
+    sort: sort ?? defaultTracesSort,
   }),
   preloadStaleTime: 0,
   loader: loader => {
@@ -55,18 +59,27 @@ export const targetTracesRoute = createRoute({
       TargetTracesPageQuery,
       tracesPageVariables(
         { organizationSlug, projectSlug, targetSlug },
-        loader.deps.filter,
+        loader.deps,
         loader.deps.sort,
         period,
       ),
       revalidate(loader),
     );
+    // Cache-first like the insights picker: lists change with the period, not with filters.
+    void loadQuery(loader, TargetTracesFilterValuesQuery, {
+      targetRef: { organizationSlug, projectSlug, targetSlug },
+      period,
+    });
     return { period };
   },
   component: function TargetTracesRoute() {
-    const { filter = defaultTracesFilter, sort = defaultTracesSort } =
-      targetTracesRoute.useSearch();
-    return <TargetTracesPage sorting={sort} filter={filter} />;
+    const search = targetTracesRoute.useSearch();
+    // Search is structurally shared, so the filter keeps its identity until a param changes.
+    const filter = useMemo(() => {
+      const { filter: _filter, sort: _sort, from: _from, to: _to, ...rest } = search;
+      return rest;
+    }, [search]);
+    return <TargetTracesPage sorting={search.sort ?? defaultTracesSort} filter={filter} />;
   },
 });
 

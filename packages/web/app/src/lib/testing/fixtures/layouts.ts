@@ -117,6 +117,7 @@ const organization = {
   viewerCanManageAccessTokens: true,
   viewerCanManagePersonalAccessTokens: true,
   viewerCanManageSupportTickets: true,
+  viewerCanSeeEmailDeliveries: true,
   viewerCanSeeMembers: true,
 };
 

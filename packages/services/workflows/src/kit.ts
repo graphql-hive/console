@@ -10,6 +10,8 @@ import type { Context } from './context';
 export type TaskDefinition<TName extends string, TSchema extends z.ZodType> = {
   name: TName;
   schema: TSchema;
+  /** Attempts graphile-worker gives each job of this task; its default is 25. */
+  maxAttempts?: number;
 };
 
 type TaskImplementationArgs<TPayload> = {
@@ -163,10 +165,11 @@ export class TaskScheduler {
       }
     }
 
-    const job = await tools.addJob(taskDefinition.name, {
-      requestId: opts?.requestId,
-      input,
-    });
+    const job = await tools.addJob(
+      taskDefinition.name,
+      { requestId: opts?.requestId, input },
+      { maxAttempts: taskDefinition.maxAttempts },
+    );
 
     this.logger.info(
       {

@@ -8,6 +8,7 @@ type ChartProps = {
   option: EChartsOption;
   height: number;
   onEvents?: ChartEvents;
+  brushX?: boolean;
 };
 
 /**
@@ -17,7 +18,7 @@ type ChartProps = {
  * instance and waits for it to render before making the real one: a re-render in that gap drew
  * the chart on the throwaway, so every chart animated in twice.
  */
-export function Chart({ option, height, onEvents }: ChartProps) {
+export function Chart({ option, height, onEvents, brushX = false }: ChartProps) {
   const elementRef = useRef<HTMLDivElement>(null);
   const [chart, setChart] = useState<echarts.ECharts | null>(null);
 
@@ -52,9 +53,31 @@ export function Chart({ option, height, onEvents }: ChartProps) {
   }, []);
 
   // Merged, not replaced, so a re-render with the same data does not replay the entry animation.
+  // With no toolbox, a brush ignores drags until it takes the cursor; re-armed per setOption.
   useLayoutEffect(() => {
-    chart?.setOption(option);
-  }, [chart, option]);
+    if (!chart) {
+      return;
+    }
+    chart.setOption(option);
+    if (brushX) {
+      chart.dispatchAction({
+        type: 'takeGlobalCursor',
+        key: 'brush',
+        brushOption: { brushType: 'lineX', brushMode: 'single' },
+      });
+    }
+  }, [chart, option, brushX]);
+
+  useEffect(() => {
+    if (!chart || !brushX) {
+      return;
+    }
+    const clear = () => chart.dispatchAction({ type: 'brush', areas: [] });
+    chart.on('brushEnd', clear);
+    return () => {
+      chart.off('brushEnd', clear);
+    };
+  }, [chart, brushX]);
 
   useEffect(() => {
     if (!chart || !onEvents) {

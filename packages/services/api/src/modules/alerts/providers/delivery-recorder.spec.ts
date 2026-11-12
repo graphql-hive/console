@@ -130,6 +130,7 @@ describe('DeliveryRecorder', () => {
     expect(insert).toHaveBeenCalledTimes(1);
     expect(insert.mock.calls[0][0]).toMatchObject({
       queryId: 'record-delivery',
+      mode: 'sync',
       data: [
         [
           expect.stringMatching(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/),

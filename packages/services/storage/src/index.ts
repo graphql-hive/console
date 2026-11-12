@@ -1258,6 +1258,23 @@ export async function createStorage(
         ),
       );
     },
+    async updateAlertChannel({ projectId, channelId, name, slackChannel, webhookEndpoint }) {
+      const row = await pool.maybeOne(
+        psql`/* updateAlertChannel */
+          UPDATE alert_channels
+          SET
+            "name" = COALESCE(${name}, "name"),
+            "slack_channel" = COALESCE(${slackChannel}, "slack_channel"),
+            "webhook_endpoint" = COALESCE(${webhookEndpoint}, "webhook_endpoint")
+          WHERE
+            id = ${channelId} AND
+            project_id = ${projectId}
+          RETURNING
+            ${alertChannelFields()}
+        `,
+      );
+      return row ? AlertChannelModel.parse(row) : null;
+    },
     async deleteAlertChannels({ projectId, channelIds }) {
       return pool
         .any(
@@ -1351,23 +1368,7 @@ export async function createStorage(
       return pool
         .any(
           psql`/* getGetOrganizationsAndTargetsWithLimitInfo */
-            SELECT
-              o.id as organization,
-              o.clean_id as org_clean_id,
-              o.name as org_name,
-              o.limit_operations_monthly,
-              o.limit_retention_days,
-              o.plan_name as org_plan_name,
-              array_agg(DISTINCT t.id)
-                FILTER (WHERE t.id IS NOT NULL)
-                as targets,
-              split_part(
-                string_agg(
-                  DISTINCT u.email, ','
-                ),
-                ',',
-                1
-              ) AS owner_email
+            SELECT ${organizationWithLimitInfoFields()}
             FROM organizations AS o
             LEFT JOIN projects AS p ON (p.org_id = o.id)
             LEFT JOIN targets as t ON (t.project_id = p.id)
@@ -1375,23 +1376,32 @@ export async function createStorage(
             GROUP BY o.id
           `,
         )
-        .then(
-          z.array(
-            z.object({
-              organization: z.string(),
-              org_name: z.string(),
-              org_clean_id: z.string(),
-              org_plan_name: z.string(),
-              owner_email: z.string(),
-              targets: z
-                .array(z.string())
-                .nullable()
-                .transform(value => value ?? []),
-              limit_operations_monthly: z.number(),
-              limit_retention_days: z.number(),
-            }),
-          ).parse,
-        );
+        .then(z.array(OrganizationWithLimitInfoModel).parse);
+    },
+    async getOrganizationWithLimitInfoByTargetId({ targetId }) {
+      // Postgres throws on malformed uuids, so treat them as "not found".
+      if (!z.uuid().safeParse(targetId).success) {
+        return null;
+      }
+
+      return pool
+        .maybeOne(
+          psql`/* getOrganizationWithLimitInfoByTargetId */
+            SELECT ${organizationWithLimitInfoFields()}
+            FROM organizations AS o
+            LEFT JOIN projects AS p ON (p.org_id = o.id)
+            LEFT JOIN targets as t ON (t.project_id = p.id)
+            LEFT JOIN users AS u ON (u.id = o.user_id)
+            WHERE o.id = (
+              SELECT owner_project.org_id
+              FROM targets AS looked_up_target
+              INNER JOIN projects AS owner_project ON (owner_project.id = looked_up_target.project_id)
+              WHERE looked_up_target.id = ${targetId}
+            )
+            GROUP BY o.id
+          `,
+        )
+        .then(OrganizationWithLimitInfoModel.nullable().parse);
     },
     async adminGetStats(period: { from: Date; to: Date }) {
       // count schema versions by organization
@@ -3692,6 +3702,25 @@ export const userFields = (user: TaggedTemplateLiteralInvocation) => psql`
     ) AS "providers"
 `;
 
+const organizationWithLimitInfoFields = () => psql`
+  o.id as organization,
+  o.clean_id as org_clean_id,
+  o.name as org_name,
+  o.limit_operations_monthly,
+  o.limit_retention_days,
+  o.plan_name as org_plan_name,
+  array_agg(DISTINCT t.id)
+    FILTER (WHERE t.id IS NOT NULL)
+    as targets,
+  split_part(
+    string_agg(
+      DISTINCT u.email, ','
+    ),
+    ',',
+    1
+  ) AS owner_email
+`;
+
 const organizationFields = (prefix: TaggedTemplateLiteralInvocation) => psql`
   ${prefix}"id"
   , ${prefix}"clean_id" AS "slug"
@@ -3930,6 +3959,20 @@ const OrganizationMemberAccessModel = z.object({
   organization_id: z.string(),
   user_id: z.string(),
   scopes: z.array(z.string()).nullable(),
+});
+
+const OrganizationWithLimitInfoModel = z.object({
+  organization: z.string(),
+  org_name: z.string(),
+  org_clean_id: z.string(),
+  org_plan_name: z.string(),
+  owner_email: z.string(),
+  targets: z
+    .array(z.string())
+    .nullable()
+    .transform(value => value ?? []),
+  limit_operations_monthly: z.number(),
+  limit_retention_days: z.number(),
 });
 
 const OrganizationTargetPairModel = z.object({

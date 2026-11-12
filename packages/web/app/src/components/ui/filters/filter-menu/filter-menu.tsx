@@ -1,36 +1,89 @@
 import { ListFilter, X } from 'lucide-react';
+import { exhaustiveGuard } from '@/lib/utils';
 import { Button } from '../../primitives/button/button';
 import { FloatingSearch } from '../../primitives/floating/floating-search';
 import { Menu, type MenuEntry, type MenuSection } from '../../primitives/floating/menu/menu';
 import { FilterContent } from '../filter-dropdown/filter-content';
 import { FilterDropdown } from '../filter-dropdown/filter-dropdown';
+import { RangeFilterChip } from '../filter-dropdown/range-filter-chip';
+import { RangeFilterPanel } from '../filter-dropdown/range-filter-panel';
 import { TextFilterChip } from '../filter-dropdown/text-filter-chip';
-import type {
-  FilterDimension,
-  ItemsFilterDimension,
-  TextFilterDimension,
-  ToggleFilterDimension,
-} from './types';
+import { TextListFilterChip } from '../filter-dropdown/text-list-filter-chip';
+import { TextListPanel } from '../filter-dropdown/text-list-panel';
+import type { FilterDimension, ToggleFilterDimension } from './types';
 
 export type {
   FilterDimension,
   FilterItem,
   FilterSelection,
   ItemsFilterDimension,
+  RangeFilterDimension,
+  RangeValue,
   TextFilterDimension,
+  TextListFilterDimension,
   ToggleFilterDimension,
 } from './types';
+
+type SubmenuDimension = Exclude<FilterDimension, ToggleFilterDimension>;
 
 function isToggle(d: FilterDimension): d is ToggleFilterDimension {
   return d.kind === 'toggle';
 }
 
-function isText(d: FilterDimension): d is TextFilterDimension {
-  return d.kind === 'text';
+function isNotToggle(d: FilterDimension): d is SubmenuDimension {
+  return d.kind !== 'toggle';
 }
 
-function isNotToggle(d: FilterDimension): d is ItemsFilterDimension | TextFilterDimension {
-  return d.kind !== 'toggle';
+function submenuContent(d: SubmenuDimension) {
+  switch (d.kind) {
+    case 'text':
+      return (
+        <FloatingSearch
+          label={d.label.toLowerCase()}
+          value={d.value}
+          onSearch={d.onChange}
+          placeholder={d.placeholder}
+          standalone
+        />
+      );
+    case 'range':
+      return (
+        <RangeFilterPanel
+          label={d.label}
+          bounds={d.bounds}
+          step={d.step}
+          unit={d.unit}
+          value={d.value}
+          onChange={d.onChange}
+        />
+      );
+    case 'text-list':
+      return (
+        <TextListPanel
+          label={d.label}
+          values={d.values}
+          onChange={d.onChange}
+          placeholder={d.placeholder}
+        />
+      );
+    case undefined:
+    case 'items':
+      return (
+        <FilterContent
+          label={d.label.toLowerCase()}
+          items={d.items}
+          selectedItems={d.selectedItems}
+          onChange={d.onChange}
+          valuesLabel={d.valuesLabel}
+          singleSelect={d.singleSelect}
+          alwaysShowSearch={d.alwaysShowSearch}
+          truncatedTo={d.truncatedTo}
+          unavailableNote={d.unavailableNote}
+        />
+      );
+    default:
+      return exhaustiveGuard(d);
+  }
 }
 
 export function FilterMenu({
@@ -50,26 +103,7 @@ export function FilterMenu({
     kind: 'submenu',
     label: d.label,
     maxWidth: 'lg',
-    content: isText(d) ? (
-      <FloatingSearch
-        label={d.label.toLowerCase()}
-        value={d.value}
-        onSearch={d.onChange}
-        placeholder={d.placeholder}
-        standalone
-      />
-    ) : (
-      <FilterContent
-        label={d.label.toLowerCase()}
-        items={d.items}
-        selectedItems={d.selectedItems}
-        onChange={d.onChange}
-        valuesLabel={d.valuesLabel}
-        singleSelect={d.singleSelect}
-        alwaysShowSearch={d.alwaysShowSearch}
-        unavailableNote={d.unavailableNote}
-      />
-    ),
+    content: submenuContent(d),
   }));
 
   // The Switch is a visual indicator only — the row's own click handler drives
@@ -126,40 +160,68 @@ export function FilterChips({ dimensions }: { dimensions: FilterDimension[] }) {
   return (
     <>
       {dimensions.map(d => {
-        if (isToggle(d)) {
-          return null;
+        switch (d.kind) {
+          case 'toggle':
+            return null;
+          case 'text':
+            return d.value ? (
+              <TextFilterChip
+                key={d.key}
+                label={d.label}
+                value={d.value}
+                onChange={d.onChange}
+                onRemove={() => d.onChange('')}
+                placeholder={d.placeholder}
+              />
+            ) : null;
+          case 'range':
+            return d.value.min !== null || d.value.max !== null ? (
+              <RangeFilterChip
+                key={d.key}
+                label={d.label}
+                bounds={d.bounds}
+                step={d.step}
+                unit={d.unit}
+                value={d.value}
+                onChange={d.onChange}
+                onRemove={() => d.onChange({ min: null, max: null })}
+              />
+            ) : null;
+          case 'text-list':
+            return d.values.length > 0 ? (
+              <TextListFilterChip
+                key={d.key}
+                label={d.label}
+                values={d.values}
+                onChange={d.onChange}
+                onRemove={() => d.onChange([])}
+                placeholder={d.placeholder}
+                countNoun={d.countNoun}
+              />
+            ) : null;
+          case undefined:
+          case 'items':
+            return d.selectedItems.length > 0 ? (
+              <FilterDropdown
+                key={d.key}
+                label={d.label}
+                labelPlural={d.labelPlural}
+                items={d.items}
+                selectedItems={d.selectedItems}
+                onChange={d.onChange}
+                onRemove={d.onRemove ?? (() => d.onChange([]))}
+                valuesLabel={d.valuesLabel}
+                excludeMode={d.excludeMode}
+                onExcludeModeChange={d.onExcludeModeChange}
+                singleSelect={d.singleSelect}
+                alwaysShowSearch={d.alwaysShowSearch}
+                truncatedTo={d.truncatedTo}
+                unavailableNote={d.unavailableNote}
+              />
+            ) : null;
+          default:
+            return exhaustiveGuard(d);
         }
-
-        if (isText(d)) {
-          return d.value ? (
-            <TextFilterChip
-              key={d.key}
-              label={d.label}
-              value={d.value}
-              onChange={d.onChange}
-              onRemove={() => d.onChange('')}
-              placeholder={d.placeholder}
-            />
-          ) : null;
-        }
-
-        return d.selectedItems.length > 0 ? (
-          <FilterDropdown
-            key={d.key}
-            label={d.label}
-            labelPlural={d.labelPlural}
-            items={d.items}
-            selectedItems={d.selectedItems}
-            onChange={d.onChange}
-            onRemove={d.onRemove ?? (() => d.onChange([]))}
-            valuesLabel={d.valuesLabel}
-            excludeMode={d.excludeMode}
-            onExcludeModeChange={d.onExcludeModeChange}
-            singleSelect={d.singleSelect}
-            alwaysShowSearch={d.alwaysShowSearch}
-            unavailableNote={d.unavailableNote}
-          />
-        ) : null;
       })}
     </>
   );
