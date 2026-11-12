@@ -421,27 +421,27 @@ test.concurrent(
       expect.objectContaining({ totalDeliveries: 1, totalFailures: 1 }),
     );
 
-    // Nine earlier failures complete the streak of ten that marks the channel as failing.
+    // Nine later failures complete the streak of ten that marks the channel as failing. They follow
+    // the real one because health only counts deliveries since the channel was enabled.
+    const firstFailureAt = rejectedChannel?.deliveryHealth?.lastFailureAt ?? '';
     await clickHouseInsert(`
       INSERT INTO "outbound_deliveries" (
         "timestamp", "organization_id", "delivery_type", "destination", "event", "attempt",
         "max_attempts", "ok", "status_code", "status_text", "duration_ms", "metadata"
       )
       SELECT
-        now() - toIntervalMinute(number + 1), '${organization.id}', 'DISCORD', '${rejectedId}',
-        'channel_confirmation', 1, 1, 0, 404, 'Not Found', 5, map('Hive-Event', 'channel_confirmation')
+        parseDateTimeBestEffort('${firstFailureAt}') + toIntervalSecond(number + 1),
+        '${organization.id}', 'DISCORD', '${rejectedId}', 'channel_confirmation', 1, 1, 0, 404,
+        'Not Found', 5, map('Hive-Event', 'channel_confirmation')
       FROM numbers(9)
     `);
     const failingChannel = await readDeliveries(rejectedId);
     expect(failingChannel?.deliveryHealth).toEqual(
       expect.objectContaining({
         status: 'FAILING',
-        lastFailureAt: rejectedChannel?.deliveryHealth?.lastFailureAt,
-        failingSince: expect.any(String),
+        lastFailureAt: new Date(Date.parse(firstFailureAt) + 9_000).toISOString(),
+        failingSince: firstFailureAt,
       }),
-    );
-    expect(Date.parse(failingChannel?.deliveryHealth?.failingSince ?? '')).toBeLessThan(
-      Date.parse(rejectedChannel?.deliveryHealth?.lastFailureAt ?? ''),
     );
 
     await expect(readDeliveries('00000000-0000-4000-8000-000000000000')).resolves.toBeNull();
