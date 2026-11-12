@@ -221,10 +221,16 @@ export const createAuditLogApiPlugin =
             'since must be an ISO 8601 date-time, e.g. 2026-01-01T00:00:00Z.',
           );
         }
+        const sinceSeconds = Math.floor(since / 1000);
+        // The position would end up in `nextCursor`, which the next request would reject.
+        if (sinceSeconds > now + MAX_CURSOR_CLOCK_SKEW_SECONDS) {
+          return sendError(reply, 400, 'INVALID_PARAMETER', 'since must not be in the future.');
+        }
         // `{ timestamp, id: '' }` lies before every event of second `timestamp`, so `since` is inclusive.
         // Stored timestamps are truncated to the second, so round down: rounding up would skip events
         // of the second `since` falls into. This may return events up to 1s before `since`.
-        position = { timestamp: Math.max(0, Math.floor(since / 1000)), id: '' };
+        // Clamped to the retention start, since expired rows linger until ClickHouse merges apply the TTL.
+        position = { timestamp: Math.max(retentionStart, sinceSeconds), id: '' };
       } else {
         position = { timestamp: retentionStart, id: '' };
       }

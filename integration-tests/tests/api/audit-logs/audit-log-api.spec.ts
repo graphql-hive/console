@@ -419,7 +419,30 @@ describe.concurrent('GET /audit-log/v1/events', () => {
     expect(AuditLogEventsPageModel.parse(response.body).cursorExpired).toBe(true);
   });
 
+  test.concurrent('clamps a since older than the retention period', async ({ expect }) => {
+    const { organization, token } = await setup();
+    const expired = {
+      id: crypto.randomUUID(),
+      timestamp: nowSeconds() - 400 * 24 * HOUR,
+      eventAction: 'USER_JOINED',
+    };
+    await insertEvents(organization.id, [expired]);
+
+    const response = await fetchEvents(
+      { since: new Date((nowSeconds() - 2 * 365 * 24 * HOUR) * 1000).toISOString() },
+      token,
+    );
+    expect(response.status).toBe(200);
+    const body = AuditLogEventsPageModel.parse(response.body);
+    expect(body.events.map(event => event.id)).not.toContain(expired.id);
+    expect(body.cursorExpired).toBe(false);
+    // No events, so the cursor stays at the clamped start position.
+    const cursor = JSON.parse(Buffer.from(body.nextCursor, 'base64url').toString());
+    expect(cursor.timestamp).toBeGreaterThanOrEqual(nowSeconds() - 365 * 24 * HOUR - 60);
+  });
+
   test.concurrent.each([
+    [{ since: new Date((nowSeconds() + 24 * HOUR) * 1000).toISOString() }, 'INVALID_PARAMETER'],
     [{ cursor: 'not-a-cursor' }, 'INVALID_CURSOR'],
     [{ cursor: Buffer.from('not json').toString('base64url') }, 'INVALID_CURSOR'],
     [{ cursor: rawCursor({ v: 2, timestamp: 1, id: 'a' }) }, 'INVALID_CURSOR'],
