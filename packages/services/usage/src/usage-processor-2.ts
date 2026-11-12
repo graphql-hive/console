@@ -308,6 +308,12 @@ export const usageProcessorV2 = traceInlineSync(
             ? operation.timestamp + targetRetentionInDays * DAY_IN_MS
             : undefined,
           errors,
+          metadata: {
+            graph: {
+              graphId: operation.metadata?.graph?.graphId,
+              graphVersionId: operation.metadata?.graph?.graphVersionId,
+            },
+          },
         });
         report.errors ??= rawErrors;
       }

@@ -47,6 +47,9 @@ export interface RawOperationErrors {
   timestamp: number;
   expiresAt?: number;
   errors: { code?: string; coordinate: string }[];
+  metadata?: {
+    graph?: GraphMetadata;
+  };
 }
 
 export type RawSubscriptionOperation = {

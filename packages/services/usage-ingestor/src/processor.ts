@@ -148,6 +148,8 @@ export function createProcessor(config: { logger: ServiceLogger }) {
             hash: raw.operationMapKey,
             target: rawReport.target,
             timestamp: raw.timestamp,
+            graph_id: raw.metadata?.graph?.graphId,
+            graph_version_id: raw.metadata?.graph?.graphVersionId,
           };
           serializedErrorRecords.push(stringifyOperationErrors(err));
         }

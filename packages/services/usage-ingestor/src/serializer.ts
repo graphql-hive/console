@@ -88,6 +88,8 @@ export const operationErrorsOrder = [
   'timestamp',
   'expires_at',
   'errors',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export function joinIntoSingleMessage(items: string[]): string {
@@ -170,6 +172,8 @@ export function stringifyOperationErrors(record: ProcessedOperationErrorRecord):
     errors: record.errors
       ? `"[${record.errors?.map(castTuple).join(',')}]"`
       : castValue(record.errors),
+    graph_id: castValue(record.graph_id),
+    graph_version_id: castValue(record.graph_version_id),
   };
 
   return Object.values(mapper).join(',');

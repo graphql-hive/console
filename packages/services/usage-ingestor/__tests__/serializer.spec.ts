@@ -229,6 +229,8 @@ test('stringify operation_errors in correct format and order', () => {
       timestamp: timestamp.asNumber,
       expires_at: expiresAt.asNumber,
       errors: [['UNEXPECTED_ERROR', 'Query.user'] as [code: string, coord: string]],
+      graph_id: 'my-graph',
+      graph_version_id: 'my-graph-version',
     },
   ];
   const serialized = joinIntoSingleMessage(messages.map(stringifyOperationErrors));
@@ -240,6 +242,8 @@ test('stringify operation_errors in correct format and order', () => {
         timestamp.asString,
         expiresAt.asString,
         `"[('UNEXPECTED_ERROR','Query.foo')]"`,
+        `\\N`,
+        `\\N`,
       ],
       [
         `"my-target"`,
@@ -247,6 +251,8 @@ test('stringify operation_errors in correct format and order', () => {
         timestamp.asString,
         expiresAt.asString,
         `"[('UNEXPECTED_ERROR','Query.user')]"`,
+        `"my-graph"`,
+        `"my-graph-version"`,
       ],
     ]
       .map(r => r.join(','))
