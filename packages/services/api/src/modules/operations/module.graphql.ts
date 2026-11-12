@@ -54,7 +54,7 @@ export default gql`
     Filter based on schema coordinates (e.g. "Query.me"): only operations whose document uses
     any of them. Combined with the other filters with AND.
     """
-    schemaCoordinates: [String!] @tag(name: "public")
+    schemaCoordinates: [String!]
   }
 
   extend type Target {
