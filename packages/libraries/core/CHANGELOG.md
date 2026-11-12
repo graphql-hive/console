@@ -1,5 +1,55 @@
 # @graphql-hive/core
 
+## 0.24.0
+
+### Minor Changes
+
+- [#8694](https://github.com/graphql-hive/console/pull/8694)
+  [`63bd335`](https://github.com/graphql-hive/console/commit/63bd3359c5a63b81bed2c99732545b51e6d50ab5)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Report the `graphId` and `graphVersionId` of the
+  executed graph alongside operations in usage reports.
+
+  **`@graphql-hive/core`**: `collectUsage`, `collectRequest` and `collectSubscriptionUsage` accept a
+  `graph: { graphId, graphVersionId }` option for attributing the operation to the graph version it
+  is executed against. Use the values returned from `createCDNArtifactFetcher().fetch()`. The graph
+  version is only reported if both ids are valid UUIDs.
+
+  ```ts
+  const artifact = await fetcher.fetch()
+  const graph =
+    artifact.graphId && artifact.graphVersionId
+      ? { graphId: artifact.graphId, graphVersionId: artifact.graphVersionId }
+      : null
+
+  // incoming request -> determine graph -> execute
+  const collect = hive.collectUsage({ graph })
+  ```
+
+  **Self-hosting**: The usage service accepts the `graph` operation metadata starting with Hive
+  `15.2.0`. Older versions reject usage reports containing it, so upgrade your self-hosted Hive
+  instance before passing the `graph` option to the SDK.
+
+- [#8636](https://github.com/graphql-hive/console/pull/8636)
+  [`53f17d3`](https://github.com/graphql-hive/console/commit/53f17d399271301242668d885de94e4fc16d9d85)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Expose the graph metadata of CDN artifacts on the
+  result of `createCDNArtifactFetcher`.
+
+  The result now contains the following new properties, which are read from the CDN response
+  headers:
+
+  - `graphId` (`x-hive-graph-id`): the id of the graph the artifact belongs to
+  - `graphVersionId` (`x-hive-graph-version-id`): the id of the graph version the artifact belongs
+    to
+  - `lastModified` (`last-modified`): when the artifact was last modified
+
+  The `schemaVersionId` property is deprecated in favor of `graphVersionId`.
+
+  The graph metadata can change while the artifact contents stay the same (e.g. a new graph version
+  with the same supergraph, or a contract that got re-created with the same filter). When the CDN
+  responds with `304 Not Modified`, the fetcher now updates the cached metadata from the response
+  headers instead of returning stale values, without downloading the artifact again. If a `304`
+  response does not contain the metadata headers, the previously cached values are kept.
+
 ## 0.23.3
 
 ### Patch Changes
