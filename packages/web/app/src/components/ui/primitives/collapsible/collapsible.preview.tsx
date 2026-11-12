@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Eraser } from 'lucide-react';
 import { controlsFor, createPreview, type NavPath } from 'react-foundry';
-import { Filter, FilterOption } from '@/pages/traces/target-traces-filter';
 import { Button } from '../button/button';
+import { Checkbox } from '../checkbox/checkbox';
 import { ScrollArea } from '../scroll-area/scroll-area';
 import { Collapsible } from './collapsible';
 
@@ -23,59 +23,38 @@ function FilterRows(props: { rows: { label: string; count: number }[] }) {
   return (
     <div className="flex w-full min-w-0 flex-col gap-1 text-sm">
       {props.rows.map(row => (
-        <FilterOption
+        <button
           key={row.label}
-          selected={selected.includes(row.label)}
-          count={row.count}
+          type="button"
+          className="flex h-8 w-full items-center justify-between gap-2 rounded-md p-2 text-left hover:bg-surface-hover"
           onClick={() =>
             setSelected(prev =>
               prev.includes(row.label) ? prev.filter(l => l !== row.label) : [...prev, row.label],
             )
           }
         >
-          {row.label}
-        </FilterOption>
+          <span className="flex items-center gap-2">
+            <Checkbox visual checked={selected.includes(row.label)} size="sm" />
+            {row.label}
+          </span>
+          <span className="font-mono text-xs text-fg-secondary">{row.count}</span>
+        </button>
       ))}
     </div>
   );
 }
 
-// `section` as the traces filter column ships it: `Filter` owns the trigger, the reset count in
-// `actions`, and the separator beneath.
-export const Section = createPreview(() => {
-  const [status, setStatus] = useState(['ok']);
-  const [codes, setCodes] = useState<string[]>([]);
-  const toggle = (set: typeof setStatus) => (label: string) =>
-    set(prev => (prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]));
-  return (
-    <div className="flex w-64 flex-col text-fg-default">
-      <Filter name="Status" changes={status.length} onReset={() => setStatus([])}>
-        {STATUS.map(row => (
-          <FilterOption
-            key={row.label}
-            selected={status.includes(row.label)}
-            count={row.count}
-            onClick={() => toggle(setStatus)(row.label)}
-          >
-            {row.label}
-          </FilterOption>
-        ))}
-      </Filter>
-      <Filter name="Error Code" changes={codes.length} onReset={() => setCodes([])}>
-        {ERROR_CODES.map(row => (
-          <FilterOption
-            key={row.label}
-            selected={codes.includes(row.label)}
-            count={row.count}
-            onClick={() => toggle(setCodes)(row.label)}
-          >
-            {row.label}
-          </FilterOption>
-        ))}
-      </Filter>
-    </div>
-  );
-});
+/** `section`: a group heading that toggles the list beneath it, stacked in a column. */
+export const Section = createPreview(() => (
+  <div className="flex w-64 flex-col gap-1 p-2 text-fg-default">
+    <Collapsible trigger="Status" defaultOpen>
+      <FilterRows rows={STATUS} />
+    </Collapsible>
+    <Collapsible trigger="Error Code">
+      <FilterRows rows={ERROR_CODES} />
+    </Collapsible>
+  </div>
+));
 
 const LOGS = [
   'info: 1',

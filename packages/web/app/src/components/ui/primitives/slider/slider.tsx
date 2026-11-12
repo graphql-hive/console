@@ -9,6 +9,8 @@ type SliderValue = number | [number, number];
 type SliderProps<V extends SliderValue> = {
   value: V;
   onValueChange: (value: V) => void;
+  /** Fires once when a drag ends or a key press settles, for work too costly to run per tick. */
+  onValueCommitted?: (value: V) => void;
   min?: number;
   max?: number;
   step?: number;
@@ -23,6 +25,7 @@ type SliderProps<V extends SliderValue> = {
 export function Slider<V extends SliderValue>({
   value,
   onValueChange,
+  onValueCommitted,
   min,
   max,
   step,
@@ -34,6 +37,9 @@ export function Slider<V extends SliderValue>({
     <BaseSlider.Root
       value={value}
       onValueChange={onValueChange as (value: SliderValue) => void}
+      onValueCommitted={
+        onValueCommitted && ((committed: SliderValue) => onValueCommitted(committed as V))
+      }
       min={min}
       max={max}
       step={step}

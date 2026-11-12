@@ -1,4 +1,4 @@
-import { useRouter } from '@tanstack/react-router';
+import { useLocation, useRouter } from '@tanstack/react-router';
 
 type SearchParamsFilter = string | string[];
 
@@ -7,7 +7,8 @@ export function useSearchParamsFilter<TValue extends SearchParamsFilter>(
   defaultState: TValue,
 ): [TValue, (value: TValue) => void] {
   const router = useRouter();
-  const searchParams = router.latestLocation.search as any;
+  // Subscribed: a search-only navigation does not re-render the route component.
+  const searchParams = useLocation({ select: location => location.search }) as any;
 
   const rawSearchValue =
     ((name as string) in searchParams && (searchParams[name] as string)) || null;
@@ -27,7 +28,7 @@ export function useSearchParamsFilter<TValue extends SearchParamsFilter>(
   const setSearchValue = (value: TValue) => {
     void router.navigate({
       search: {
-        ...searchParams,
+        ...router.latestLocation.search,
         [name]: value.length === 0 ? undefined : serializeSearchValue(value),
       },
       replace: true,

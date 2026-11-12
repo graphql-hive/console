@@ -18,6 +18,7 @@ export const Target: Pick<
   | 'trace'
   | 'traces'
   | 'tracesFilterOptions'
+  | 'tracesFilterValues'
   | 'tracesStatusBreakdown'
   | 'viewerCanAccessTraces'
 > = {
@@ -148,6 +149,9 @@ export const Target: Pick<
   },
   tracesFilterOptions(target, { filter }, { injector }) {
     return injector.get(Traces).getTraceFilterOptions(target.id, filter ?? null);
+  },
+  tracesFilterValues(target, { period }, { injector }) {
+    return injector.get(Traces).getTraceFilterValues(target.orgId, target.id, period);
   },
   trace(target, args, { injector }) {
     return injector.get(Traces).findTraceById(target.orgId, target.id, args.traceId);
