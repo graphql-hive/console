@@ -242,10 +242,27 @@ test.concurrent(
     const seed = initSeed();
     const { createOrg } = await seed.createOwner();
     const { organization, inviteAndJoinMember } = await createOrg();
-    const { createMemberRole, assignMemberRole, updateMemberRole, memberToken, member } =
-      await inviteAndJoinMember();
+    const {
+      createMemberRole,
+      assignMemberRole,
+      updateMemberRole,
+      memberToken,
+      member,
+      memberEmail,
+    } = await inviteAndJoinMember();
     const role = await createMemberRole([]);
     await assignMemberRole({ roleId: role.id, userId: member.id });
+
+    // The invitation email is sent by a workflows job after the mutation returns. Wait for its
+    // attempt to be recorded, so every read below sees the same rows.
+    await pollFor(async () => {
+      await flushAsyncInserts();
+      const result = await clickHouseQuery<{ attempts: string }>(
+        `SELECT count() AS attempts FROM outbound_deliveries
+         WHERE organization_id = '${organization.id}' AND destination = '${memberEmail}'`,
+      );
+      return Number(result.data[0]?.attempts ?? 0) > 0;
+    });
 
     const access = () =>
       execute({
@@ -297,8 +314,20 @@ test.concurrent(
       viewerEmailDeliveryVisibility: { events: ['ORGANIZATION_INVITATION'], isLimited: true },
     });
     const allowed = await read().then(r => r.expectNoGraphQLErrors());
-    // The member's own invitation email is at least one recorded attempt.
-    expect(allowed.organization!.emailDeliveryStats!.totalDeliveries).toBeGreaterThanOrEqual(1);
+    expect(allowed.organization!.emailDeliveryStats).toEqual({
+      totalDeliveries: 1,
+      totalFailures: 0,
+    });
+    expect(allowed.organization!.emailDeliveryLog).toEqual([
+      {
+        event: 'ORGANIZATION_INVITATION',
+        destination: memberEmail,
+        ok: true,
+        statusCode: 200,
+        attempt: 1,
+        maxAttempts: 5,
+      },
+    ]);
   },
 );
 

@@ -227,6 +227,10 @@ services:
       timeout: 3s
       retries: 6
       start_period: 5s
+    # Drops the community file's host bind mount, so the broker writes inside the container as it
+    # does in CI. Redpanda 26 refuses the 1 MiB alignment Docker Desktop reports for a macOS
+    # directory and exits at start.
+    volumes: !reset []
 
   db:
     ports:
