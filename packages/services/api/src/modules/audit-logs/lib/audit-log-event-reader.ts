@@ -23,17 +23,10 @@ const RowModel = z
     ({ unixTimestamp, ...row }): AuditLogEventRow => ({ ...row, timestamp: unixTimestamp }),
   );
 
-const PositionRowModel = z
-  .object({
-    id: z.string(),
-    unixTimestamp: z.coerce.number(),
-  })
-  .transform(({ id, unixTimestamp }): AuditLogPosition => ({ id, timestamp: unixTimestamp }));
-
 export type AuditLogPage = {
   rows: AuditLogEventRow[];
   hasMore: boolean;
-  /** With a filter, this may be past the last returned row so non-matching rows aren't rescanned. */
+  /** On the last page, this is past the last returned row, up to the scanned `highWater`. */
   next: AuditLogPosition;
 };
 
@@ -99,27 +92,17 @@ export class AuditLogEventReader {
     const last = rows.at(-1);
     const lastPosition = last ? { timestamp: last.timestamp, id: last.id } : after;
 
-    if (hasMore || !eventTypes) {
+    if (hasMore) {
       return { rows, hasMore, next: lastPosition };
     }
 
-    const newest = await this.clickHouse.query({
-      query: sql`
-        SELECT "id", toUnixTimestamp("timestamp") AS "unixTimestamp"
-        FROM "audit_logs"
-        WHERE ${range}
-        ORDER BY "timestamp" DESC, "id" DESC
-        LIMIT 1
-      `,
-      queryId: 'audit-log-api-scanned-position',
-      timeout: 10_000,
-    });
-    const newestRow = z.array(PositionRowModel).parse(newest.data).at(0);
-    const scanned = newestRow ?? after;
-
+    // Everything up to `highWater` was scanned, so advance there even past non-matching rows or
+    // without any rows, so a quiet organization's cursor never falls behind the retention period.
+    // `{ highWater, '' }` lies before every event of second `highWater`, so none are skipped.
+    const scanned = { timestamp: highWater, id: '' };
     return {
       rows,
-      hasMore: false,
+      hasMore,
       next: isPositionAfter(scanned, lastPosition) ? scanned : lastPosition,
     };
   }

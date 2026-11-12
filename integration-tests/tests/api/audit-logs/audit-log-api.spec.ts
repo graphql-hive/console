@@ -376,24 +376,27 @@ describe.concurrent('GET /audit-log/v1/events', () => {
     },
   );
 
-  test.concurrent('returns a usable cursor on an empty page', async ({ expect }) => {
-    const { organization, token } = await setup();
-    const since = new Date((nowSeconds() - 5 * HOUR) * 1000).toISOString();
-    const first = await fetchEvents({ since, eventTypes: 'SCIM_GROUP_DELETED' }, token);
-    expect(first.status).toBe(200);
-    const firstBody = AuditLogEventsPageModel.parse(first.body);
-    expect(firstBody.events).toEqual([]);
+  test.concurrent(
+    'advances the cursor to the settle boundary on an empty page',
+    async ({ expect }) => {
+      const { token } = await setup();
+      const since = new Date((nowSeconds() - 5 * HOUR) * 1000).toISOString();
+      const before = nowSeconds();
+      const first = await fetchEvents({ since, eventTypes: 'SCIM_GROUP_DELETED' }, token);
+      expect(first.status).toBe(200);
+      const firstBody = AuditLogEventsPageModel.parse(first.body);
+      expect(firstBody.events).toEqual([]);
 
-    const later = {
-      id: crypto.randomUUID(),
-      timestamp: nowSeconds() - 2 * HOUR,
-      eventAction: 'USER_JOINED',
-    };
-    await insertEvents(organization.id, [later]);
+      // A quiet organization's cursor keeps up with time instead of expiring after the retention period.
+      const cursor = JSON.parse(Buffer.from(firstBody.nextCursor, 'base64url').toString());
+      expect(cursor).toEqual({ v: 1, timestamp: expect.any(Number), id: '' });
+      expect(cursor.timestamp).toBeGreaterThanOrEqual(before - 60);
+      expect(cursor.timestamp).toBeLessThanOrEqual(nowSeconds() - 60);
 
-    const pages = await fetchAllPages({ cursor: firstBody.nextCursor }, token);
-    expect(pages.flatMap(page => page.body.events.map(event => event.id))).toContain(later.id);
-  });
+      const next = await fetchEvents({ cursor: firstBody.nextCursor }, token);
+      expect(next.status).toBe(200);
+    },
+  );
 
   test.concurrent('never returns events of another organization', async ({ expect }) => {
     const { token } = await setup();
@@ -436,9 +439,6 @@ describe.concurrent('GET /audit-log/v1/events', () => {
     const body = AuditLogEventsPageModel.parse(response.body);
     expect(body.events.map(event => event.id)).not.toContain(expired.id);
     expect(body.cursorExpired).toBe(false);
-    // No events, so the cursor stays at the clamped start position.
-    const cursor = JSON.parse(Buffer.from(body.nextCursor, 'base64url').toString());
-    expect(cursor.timestamp).toBeGreaterThanOrEqual(nowSeconds() - 365 * 24 * HOUR - 60);
   });
 
   test.concurrent.each([
