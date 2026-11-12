@@ -31,6 +31,8 @@ export interface ProcessedRegistryRecord {
   timestamp: number;
   expires_at: number;
   coordinates: string[];
+  graph_id?: string;
+  graph_version_id?: string;
 }
 
 export interface ProcessedAppDeploymentUsageRecord {
@@ -45,6 +47,8 @@ export interface ProcessedOperationErrorRecord {
   hash: string;
   timestamp: number;
   expires_at: number;
+  graph_id?: string;
+  graph_version_id?: string;
   /** All errors associated with this operation call. If the code isn't defined, use an empty string. */
   errors: [code: string, path: string][];
 }

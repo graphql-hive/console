@@ -1056,3 +1056,60 @@ test('invalid duration and timestamp (-1) gives helpful error response', () => {
     success: false,
   });
 });
+
+function reportWithGraph(graph: unknown) {
+  return {
+    size: 1,
+    map: {
+      op1Key: {
+        operation: 'query op1Name { field1 }',
+        operationName: 'op1Name',
+        fields: ['Query.field1'],
+      },
+    },
+    operations: [
+      {
+        operationMapKey: 'op1Key',
+        timestamp: Date.now(),
+        execution: {
+          ok: true,
+          duration: 123456789,
+          errorsTotal: 0,
+        },
+        metadata: {
+          graph,
+        },
+      },
+    ],
+  };
+}
+
+test('$.operations.metadata.graph accepts valid UUIDs', () => {
+  expect(
+    decodeReport(
+      reportWithGraph({
+        graphId: '0f9c3a39-3c4e-4a3b-9a0c-6f1f0b9a2f01',
+        graphVersionId: '6B1D4C2E-8A3F-4E5D-9B7C-1A2B3C4D5E6F',
+      }),
+    ),
+  ).toMatchObject({ success: true });
+});
+
+test('$.operations.metadata.graph can be missing, undefined or null', () => {
+  expect(decodeReport(reportWithGraph(undefined))).toMatchObject({ success: true });
+  expect(decodeReport(reportWithGraph(null))).toMatchObject({ success: true });
+});
+
+test('$.operations.metadata.graph rejects non-UUID values and missing fields', () => {
+  expect(
+    decodeReport(
+      reportWithGraph({
+        graphId: 'not-a-uuid',
+        graphVersionId: '6b1d4c2e-8a3f-4e5d-9b7c-1a2b3c4d5e6f',
+      }),
+    ),
+  ).toMatchObject({ success: false });
+  expect(
+    decodeReport(reportWithGraph({ graphId: '0f9c3a39-3c4e-4a3b-9a0c-6f1f0b9a2f01' })),
+  ).toMatchObject({ success: false });
+});
