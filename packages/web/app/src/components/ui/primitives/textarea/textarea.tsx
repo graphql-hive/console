@@ -36,7 +36,7 @@ type TextareaProps = NativeTextareaProps &
     invalid?: boolean;
     /** Grow with the text instead of scrolling inside a fixed height. */
     autoSize?: boolean;
-    'data-cy'?: string;
+    'data-testid'?: string;
   };
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(

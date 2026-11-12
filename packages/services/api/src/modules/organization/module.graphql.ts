@@ -827,6 +827,10 @@ export default gql`
 
   type OrganizationTransfer {
     organization: Organization!
+    """
+    Display name of the current owner, who requested the transfer.
+    """
+    ownerName: String!
   }
 
   type MemberRoleEdge {

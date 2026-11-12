@@ -77,8 +77,23 @@ export function composeFederationV1(
     name: string;
     url: string | undefined;
   }>,
+  logger?: ServiceLogger,
 ): ComposerMethodResult {
-  const result = composeAndValidate(subgraphs);
+  let result: ReturnType<typeof composeAndValidate>;
+  try {
+    result = composeAndValidate(subgraphs);
+  } catch (error) {
+    if (!isCompositionOrValidationError(error)) {
+      return unexpectedCompositionFailure(error, logger);
+    }
+
+    return {
+      type: 'failure',
+      result: { errors: [toValidationError(error, 'composition')], sdl: undefined },
+      includesNetworkError: false,
+      includesException: false,
+    };
+  }
 
   if (compositionHasErrors(result)) {
     return {
@@ -149,25 +164,32 @@ export function composeFederationV2(
       },
     } as const;
   } catch (error) {
-    logger?.error('Unexpected error during composition.');
-    logger?.error(error);
-    Sentry.captureException(error);
-
-    return {
-      type: 'failure',
-      result: {
-        errors: [
-          {
-            message: 'Unexpected composition error.',
-            source: 'composition',
-          },
-        ],
-        sdl: undefined,
-      },
-      includesNetworkError: false,
-      includesException: true,
-    } as const;
+    return unexpectedCompositionFailure(error, logger);
   }
+}
+
+function unexpectedCompositionFailure(
+  error: unknown,
+  logger: ServiceLogger | undefined,
+): ComposerMethodResultError {
+  logger?.error('Unexpected error during composition.');
+  logger?.error(error);
+  Sentry.captureException(error);
+
+  return {
+    type: 'failure',
+    result: {
+      errors: [
+        {
+          message: 'Unexpected composition error.',
+          source: 'composition',
+        },
+      ],
+      sdl: undefined,
+    },
+    includesNetworkError: false,
+    includesException: true,
+  };
 }
 
 export async function composeExternalFederation(args: {
@@ -247,21 +269,9 @@ export async function composeExternalFederation(args: {
       'External composition failure: invalid shape of data: %o',
       parseResult.error,
     );
-    return {
-      type: 'failure',
-      result: {
-        supergraph: null,
-        sdl: null,
-        errors: [
-          {
-            message: 'External composition failure: invalid shape of data returned from service',
-            source: 'composition',
-          },
-        ],
-      },
-      includesNetworkError: false,
-      includesException: true,
-    };
+    return externalCompositionFailure(
+      'External composition failure: invalid shape of data returned from service',
+    );
   }
 
   if (parseResult.data.type === 'success') {
@@ -271,29 +281,40 @@ export async function composeExternalFederation(args: {
 
     const supergraph = parseResult.data.result.supergraph;
     let sdl = parseResult.data.result.sdl;
-    const supergraphDocumentNode = parse(supergraph);
+    try {
+      const supergraphDocumentNode = parse(supergraph);
 
-    let sdlDocumentNode: ASTNode;
-    if (args.transformToPublicSdl) {
-      /**
-       * Ensure the externally composed schema doesn't include supergraph SDL
-       * This is done for us in the native composition library
-       * https://github.com/graphql-hive/federation-composition/blob/77d6b4ece2abacf94164beafb4e7f5961f726755/src/compose.ts#L228
-       */
-      sdlDocumentNode = transformSupergraphToPublicSchema(supergraphDocumentNode);
-      sdl = print(sdlDocumentNode);
-    } else {
-      sdlDocumentNode = parse(sdl);
+      let sdlDocumentNode: ASTNode;
+      if (args.transformToPublicSdl) {
+        /**
+         * Ensure the externally composed schema doesn't include supergraph SDL
+         * This is done for us in the native composition library
+         * https://github.com/graphql-hive/federation-composition/blob/77d6b4ece2abacf94164beafb4e7f5961f726755/src/compose.ts#L228
+         */
+        sdlDocumentNode = transformSupergraphToPublicSchema(supergraphDocumentNode);
+        sdl = print(sdlDocumentNode);
+      } else {
+        sdlDocumentNode = parse(sdl);
+      }
+      return {
+        type: 'success',
+        result: {
+          supergraph,
+          supergraphDocumentNode,
+          sdl,
+          sdlDocumentNode,
+        },
+      };
+    } catch (error) {
+      args.logger?.error(
+        'External composition returned SDL that cannot be processed. (error=%s)',
+        error,
+      );
+      const detail = error instanceof GraphQLError ? `: ${error.message}` : '';
+      return externalCompositionFailure(
+        `External composition failure: invalid SDL returned from service${detail}`,
+      );
     }
-    return {
-      type: 'success',
-      result: {
-        supergraph,
-        supergraphDocumentNode,
-        sdl,
-        sdlDocumentNode,
-      },
-    };
   }
 
   return {
@@ -327,6 +348,33 @@ async function checkExternalCompositionCompatibility(
       logger?.debug(`External composition GraphQL validity check passed.`);
     }
   }
+}
+
+/**
+ * Whether an error thrown by `composeAndValidate` is an expected composition or validation error.
+ * The only ones it throws are for an invalid `@key`, `@requires` or `@provides` field set, from
+ * `parseFieldSet`: a `GraphQLError` for a syntax error, a plain `Error` for the two rules below.
+ */
+function isCompositionOrValidationError(error: unknown) {
+  return (
+    error instanceof GraphQLError ||
+    (error instanceof Error &&
+      (error.message.startsWith('Invalid FieldSet provided:') ||
+        error.message.startsWith('Field sets may not contain fragment spreads')))
+  );
+}
+
+function externalCompositionFailure(message: string): ComposerMethodResultError {
+  return {
+    type: 'failure',
+    result: {
+      supergraph: null,
+      sdl: null,
+      errors: [{ message, source: 'composition' }],
+    },
+    includesNetworkError: false,
+    includesException: true,
+  };
 }
 
 function errorWithPossibleCode(error: unknown) {
@@ -459,7 +507,14 @@ async function callExternalService(
     span.setAttribute('http.response.status_code', response.statusCode);
     span.end();
 
-    return { type: 'success', data: JSON.parse(response.body) as unknown };
+    let data: unknown;
+    try {
+      data = JSON.parse(response.body);
+    } catch {
+      data = response.body;
+    }
+
+    return { type: 'success', data };
   } catch (error) {
     if (error instanceof RequestError) {
       if (controller.signal.aborted) {

@@ -1,7 +1,13 @@
 import { Injectable, Scope } from 'graphql-modules';
-import type { Alert, AlertChannel } from '../../../shared/entities';
+import type { Alert, AlertChannel, DateRange } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
+import {
+  DeliveryReader,
+  type Delivery,
+  type DeliveryHealth,
+  type DeliverySelector,
+} from '../../deliveries/providers/delivery-reader';
 import { IntegrationsAccessContext } from '../../integrations/providers/integrations-access-context';
 import { SlackIntegrationManager } from '../../integrations/providers/slack-integration-manager';
 import { OrganizationManager } from '../../organization/providers/organization-manager';
@@ -33,6 +39,7 @@ export class AlertsManager {
     private organizationManager: OrganizationManager,
     private projectManager: ProjectManager,
     private storage: Storage,
+    private deliveryReader: DeliveryReader,
   ) {
     this.logger = logger.child({ source: 'AlertsManager' });
   }
@@ -60,6 +67,10 @@ export class AlertsManager {
       },
     });
 
+    if (input.type === 'SLACK') {
+      await this.assertSlackConnected(input);
+    }
+
     const channel = await this.storage.addAlertChannel({
       slackChannel: input.slackChannel,
       webhookEndpoint: input.webhookEndpoint,
@@ -75,6 +86,85 @@ export class AlertsManager {
       organization: input.organizationId,
       project: input.projectId,
     });
+
+    return channel;
+  }
+
+  /**
+   * Changes a channel's name and/or destination; a null field keeps its value. The type is fixed:
+   * the delivery history is kept by it. Null when the project has no such channel. A new
+   * destination gets the confirmation message a new channel gets, so a new Slack destination needs
+   * the organization's Slack integration as a new Slack channel does; a rename sends nothing.
+   */
+  async updateChannel(input: {
+    organizationId: string;
+    projectId: string;
+    channelId: string;
+    name: string | null;
+    slackChannel: string | null;
+    webhookEndpoint: string | null;
+  }): Promise<AlertChannel | null> {
+    this.logger.debug(
+      'Updating Alert Channel (organization=%s, project=%s, channel=%s)',
+      input.organizationId,
+      input.projectId,
+      input.channelId,
+    );
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
+    });
+
+    // Read through storage: `getChannels` is cached for the operation and would keep handing
+    // out the row as it was before the update.
+    const channels = await this.storage.getAlertChannels({
+      organizationId: input.organizationId,
+      projectId: input.projectId,
+    });
+    const existing = channels.find(channel => channel.id === input.channelId);
+    if (!existing) {
+      return null;
+    }
+    if (input.slackChannel !== null && existing.type !== 'SLACK') {
+      throw new AlertChannelDestinationError(
+        'slackChannel',
+        'Only a Slack channel has a Slack channel.',
+      );
+    }
+    if (input.webhookEndpoint !== null && existing.type === 'SLACK') {
+      throw new AlertChannelDestinationError('webhookEndpoint', 'A Slack channel has no endpoint.');
+    }
+    if (input.slackChannel !== null && input.slackChannel !== existing.slackChannel) {
+      await this.assertSlackConnected(input);
+    }
+
+    const channel = await this.storage.updateAlertChannel({
+      projectId: input.projectId,
+      channelId: input.channelId,
+      name: input.name,
+      slackChannel: input.slackChannel,
+      webhookEndpoint: input.webhookEndpoint,
+    });
+    if (!channel) {
+      return null;
+    }
+
+    const destinationChanged =
+      existing.type === 'SLACK'
+        ? channel.slackChannel !== existing.slackChannel
+        : channel.webhookEndpoint !== existing.webhookEndpoint;
+    if (destinationChanged) {
+      await this.triggerChannelConfirmation({
+        kind: 'updated',
+        channel,
+        organization: input.organizationId,
+        project: input.projectId,
+      });
+    }
 
     return channel;
   }
@@ -135,6 +225,47 @@ export class AlertsManager {
       },
     });
     return this.storage.getAlertChannels(selector);
+  }
+
+  async getChannel(
+    selector: ProjectSelector & { channelId: string },
+  ): Promise<AlertChannel | null> {
+    const channels = await this.getChannels(selector);
+    return channels.find(channel => channel.id === selector.channelId) ?? null;
+  }
+
+  async getChannelDeliveryHealth(input: ChannelDeliveryRef): Promise<DeliveryHealth> {
+    await this.assertCanReadChannelDeliveries(input);
+    return this.deliveryReader.getHealth(channelDeliverySelector(input));
+  }
+
+  async getChannelDeliveryLog(
+    input: ChannelDeliveryRef & { period: DateRange; limit?: number },
+  ): Promise<Delivery[]> {
+    await this.assertCanReadChannelDeliveries(input);
+    return this.deliveryReader.getLog({
+      ...channelDeliverySelector(input),
+      period: input.period,
+      limit: input.limit,
+    });
+  }
+
+  // `alert:modify` is the only alerts permission; reads such as `getChannels` use it too.
+  async assertCanReadChannelDeliveries(selector: ProjectSelector & { channelId: string }) {
+    this.logger.debug(
+      'Fetching Alert Channel deliveries (organization=%s, project=%s, channel=%s)',
+      selector.organizationId,
+      selector.projectId,
+      selector.channelId,
+    );
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+      },
+    });
   }
 
   async addAlert(input: {
@@ -332,8 +463,26 @@ export class AlertsManager {
     );
   }
 
+  /**
+   * A Slack destination is confirmed through the organization's Slack integration, so a new one is
+   * refused, before anything is written, while there is none.
+   */
+  private async assertSlackConnected(selector: ProjectSelector): Promise<void> {
+    const token = await this.slackIntegrationManager.getToken({
+      organizationId: selector.organizationId,
+      projectId: selector.projectId,
+      context: IntegrationsAccessContext.ChannelConfirmation,
+    });
+    if (!token) {
+      throw new AlertChannelDestinationError(
+        'slackChannel',
+        'Connect Slack to the organization first.',
+      );
+    }
+  }
+
   async triggerChannelConfirmation(input: {
-    kind: 'created' | 'deleted';
+    kind: ChannelConfirmationInput['event']['kind'];
     channel: AlertChannel;
     organization: string;
     project: string;
@@ -392,5 +541,34 @@ export class AlertsManager {
     } else {
       await this.webhook.sendChannelConfirmation();
     }
+  }
+}
+
+/** A channel whose deliveries are read, with the project the viewer reached it through. */
+export type ChannelDeliveryRef = ProjectSelector & {
+  channelId: string;
+  channelType: AlertChannel['type'];
+};
+
+/** The channel's deliveries, as the delivery reader keys them. */
+export function channelDeliverySelector(ref: ChannelDeliveryRef): DeliverySelector {
+  return {
+    organizationId: ref.organizationId,
+    deliveryType: ref.channelType,
+    destination: ref.channelId,
+  };
+}
+
+/**
+ * A destination the channel cannot have: one its type does not take, or a Slack channel while
+ * Slack is not connected to the organization.
+ */
+export class AlertChannelDestinationError extends Error {
+  constructor(
+    public readonly field: 'slackChannel' | 'webhookEndpoint',
+    message: string,
+  ) {
+    super(message);
+    this.name = 'AlertChannelDestinationError';
   }
 }

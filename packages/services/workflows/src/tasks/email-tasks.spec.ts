@@ -1,0 +1,222 @@
+import type { JobHelpers } from 'graphile-worker';
+import type { Context } from '../context';
+import type { DeliveryRecorder } from '../lib/delivery-recorder';
+import { EmailSendError } from '../lib/emails/email-send-error';
+import { EMAIL_MAX_ATTEMPTS } from '../lib/emails/retry-policy';
+import { makeLogger } from '../lib/metric-alert-test-utils';
+import { task as auditLogExport } from './audit-log-export';
+import { task as emailVerification } from './email-verification';
+import { task as organizationInvitation } from './organization-invitation';
+import { task as organizationOwnershipTransfer } from './organization-ownership-transfer';
+import { task as passwordReset } from './password-reset';
+import { task as usageRateLimitExceeded } from './usage-rate-limit-exceeded';
+import { task as usageRateLimitWarning } from './usage-rate-limit-warning';
+
+const rateLimit = {
+  organizationId: 'o1',
+  organizationName: 'Acme',
+  limit: 1000,
+  currentUsage: 950,
+  startDate: 1,
+  endDate: 2,
+  subscriptionManagementLink: 'https://app/secret-link',
+  email: 'owner@example.com',
+};
+
+// The invitation, transfer and export jobs are scheduled by an API request; the rate limit ones by
+// the commerce cron, so they carry no request id.
+const invitation = {
+  organizationId: 'o1',
+  organizationName: 'Acme',
+  code: 'secret-code',
+  email: 'invitee@example.com',
+  link: 'https://app/join/secret-code',
+  idempotencyKey: 'organization-invitation:2026-11-03T10:00:00.000Z:invitee@example.com',
+};
+
+const cases = [
+  {
+    name: 'organization invitation',
+    requestId: 'req-1',
+    task: organizationInvitation,
+    input: invitation,
+    event: 'organization_invitation',
+    to: 'invitee@example.com',
+    subject: 'You have been invited to join Acme',
+    secrets: ['secret-code'],
+    idempotencyKey: invitation.idempotencyKey,
+  },
+  {
+    name: 'ownership transfer',
+    requestId: 'req-1',
+    task: organizationOwnershipTransfer,
+    input: {
+      organizationId: 'o1',
+      organizationName: 'Acme',
+      authorName: 'Ada',
+      email: 'new-owner@example.com',
+      link: 'https://app/action/transfer/acme/secret-code',
+    },
+    event: 'organization_ownership_transfer',
+    to: 'new-owner@example.com',
+    subject: 'Organization transfer from Ada (Acme)',
+    idempotencyKey: null,
+    secrets: ['secret-code'],
+  },
+  {
+    name: 'audit log export',
+    requestId: 'req-1',
+    task: auditLogExport,
+    input: {
+      organizationId: 'o1',
+      organizationName: 'Acme',
+      formattedStartDate: '2026-11-01',
+      formattedEndDate: '2026-11-03',
+      url: 'https://s3/secret-signed-url',
+      email: 'auditor@example.com',
+    },
+    event: 'audit_log_export',
+    to: 'auditor@example.com',
+    subject: 'Hive - Audit Log Report',
+    idempotencyKey: null,
+    secrets: ['secret-signed-url'],
+    extra: { period: '2026-11-01..2026-11-03' },
+  },
+  {
+    name: 'usage rate limit warning',
+    requestId: undefined,
+    task: usageRateLimitWarning,
+    input: rateLimit,
+    event: 'usage_rate_limit_warning',
+    to: 'owner@example.com',
+    subject: 'Acme is approaching its rate limit',
+    idempotencyKey: null,
+    secrets: ['secret-link'],
+    extra: { limit: '1000', current_usage: '950' },
+  },
+  {
+    name: 'usage rate limit exceeded',
+    requestId: undefined,
+    task: usageRateLimitExceeded,
+    input: rateLimit,
+    event: 'usage_rate_limit_exceeded',
+    to: 'owner@example.com',
+    subject: 'GraphQL-Hive operations quota for Acme exceeded',
+    idempotencyKey: null,
+    secrets: ['secret-link'],
+    extra: { limit: '1000', current_usage: '950' },
+  },
+];
+
+function createJob() {
+  const record = vi.fn<DeliveryRecorder['record']>(async () => {});
+  const send = vi
+    .fn()
+    .mockResolvedValue({ statusCode: 200, statusText: 'OK', messageId: 'mock-1' });
+  const { logger, warnings } = makeLogger();
+  const context = {
+    email: { id: 'mock', send, history: [] },
+    deliveries: { record },
+    logger,
+  } as unknown as Context;
+  const helpers = {
+    job: {
+      id: 'job-1',
+      attempts: 1,
+      max_attempts: EMAIL_MAX_ATTEMPTS,
+      job_queue_id: null,
+      priority: 0,
+      task_id: 1,
+    },
+  } as unknown as JobHelpers;
+  return { record, send, context, helpers, warnings };
+}
+
+describe('email tasks record their delivery', () => {
+  test.each(cases)(
+    '$name',
+    async ({ task, requestId, input, event, to, subject, secrets, extra, idempotencyKey }) => {
+      const { record, send, context, helpers } = createJob();
+
+      const [, run] = task(context);
+      await run({ requestId, input }, helpers);
+
+      expect(send).toHaveBeenCalledWith(expect.objectContaining({ to, subject }));
+      expect(record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizationId: 'o1',
+          deliveryType: 'EMAIL',
+          destination: to,
+          event,
+          attempt: 1,
+          maxAttempts: EMAIL_MAX_ATTEMPTS,
+          idempotencyKey,
+          ok: true,
+        }),
+      );
+      const { metadata } = record.mock.calls[0][0];
+      expect(metadata).toEqual({
+        subject,
+        job_id: 'job-1',
+        ...(requestId ? { hive_request_id: requestId } : {}),
+        message_id: 'mock-1',
+        ...(extra ?? {}),
+      });
+      for (const secret of secrets) {
+        expect(JSON.stringify(metadata)).not.toContain(secret);
+      }
+    },
+  );
+
+  test('an invitation job enqueued before the key was in the payload still sends, recorded without one', async () => {
+    const { record, send, context, helpers } = createJob();
+    const { idempotencyKey: _, ...legacyInput } = invitation;
+
+    const [, run] = organizationInvitation(context);
+    await expect(run({ requestId: 'req-1', input: legacyInput }, helpers)).resolves.toBeUndefined();
+
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(record).toHaveBeenCalledWith(expect.objectContaining({ idempotencyKey: null }));
+  });
+});
+
+describe('auth emails', () => {
+  const refused = new EmailSendError('Inactive recipient', {
+    provider: 'mock',
+    statusCode: 422,
+    statusText:
+      'You tried to send to a recipient that has been marked as inactive. (error code 406)',
+    errorCode: '406',
+  });
+  const outage = new EmailSendError('Service Unavailable', {
+    provider: 'mock',
+    statusCode: 503,
+    statusText: 'Service Unavailable',
+  });
+
+  test.each([
+    {
+      name: 'email verification',
+      task: emailVerification,
+      input: { user: { email: 'new@example.com' }, emailVerifyLink: 'https://app/verify/secret' },
+    },
+    {
+      name: 'password reset',
+      task: passwordReset,
+      input: {
+        user: { email: 'new@example.com', id: 'u1' },
+        passwordResetLink: 'https://app/reset/secret',
+      },
+    },
+  ])('$name gives up on a refused address and retries an outage', async ({ task, input }) => {
+    const { send, context, helpers, warnings } = createJob();
+    const [, run] = task(context);
+
+    send.mockRejectedValueOnce(refused);
+    await expect(run({ input }, helpers)).resolves.toBeUndefined();
+    expect(warnings).toHaveLength(1);
+
+    send.mockRejectedValueOnce(outage);
+    await expect(run({ input }, helpers)).rejects.toBe(outage);
+  });
+});

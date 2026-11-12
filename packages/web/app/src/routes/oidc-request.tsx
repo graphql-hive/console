@@ -24,7 +24,14 @@ export const organizationOIDCRequestRoute = createRoute({
     }
   },
   component: function OrganizationOIDCRequestRoute() {
+    const { organizationSlug } = organizationOIDCRequestRoute.useParams();
     const { id, redirectToPath } = organizationOIDCRequestRoute.useSearch();
-    return <OrganizationOIDCRequestPage oidcId={id} redirectToPath={redirectToPath} />;
+    return (
+      <OrganizationOIDCRequestPage
+        oidcId={id}
+        slug={organizationSlug}
+        redirectToPath={redirectToPath}
+      />
+    );
   },
 });

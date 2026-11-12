@@ -176,3 +176,82 @@ test('a fast failure of the external composition service is retried within the b
   expect(result.type).toBe('success');
   http.done();
 });
+
+test('a response body that is not JSON is reported as an external composition failure', async ({
+  expect,
+}) => {
+  nock('http://localhost').post('/broker').reply(200, 'not json');
+
+  const result = await composeExternalFederation({
+    decrypt: v => v,
+    external,
+    requestId: '1',
+    deadline: Date.now() + 5_000,
+    subgraphs: [],
+  });
+
+  expect(result.type).toBe('failure');
+  assert(result.type === 'failure');
+  expect(result.includesException).toBe(true);
+  expect(result.result.errors[0].message).toMatch(/invalid shape of data/);
+});
+
+test('a success result whose SDL does not parse is reported as an external composition failure', async ({
+  expect,
+}) => {
+  nock('http://localhost')
+    .post('/broker')
+    .reply(200, {
+      type: 'success',
+      result: { sdl: 'iliketurtles', supergraph: 'iliketurtles' },
+    });
+
+  const result = await composeExternalFederation({
+    decrypt: v => v,
+    external,
+    requestId: '1',
+    deadline: Date.now() + 5_000,
+    subgraphs: [],
+  });
+
+  expect(result.type).toBe('failure');
+  assert(result.type === 'failure');
+  expect(result.includesException).toBe(true);
+  expect(result.result.errors[0].message).toMatch(
+    /invalid SDL returned from service: Syntax Error/,
+  );
+});
+
+test('a success result whose supergraph cannot be transformed is reported without the internal error message', async ({
+  expect,
+}) => {
+  nock('http://localhost')
+    .post('/broker')
+    .reply(200, {
+      type: 'success',
+      result: {
+        sdl: 'type Query { a: String }',
+        supergraph:
+          'schema @link(url: "https://specs.apollo.dev/link/v1.0", import: [{ name: 1 }]) { query: Query } type Query { a: String }',
+      },
+    });
+
+  const result = await composeExternalFederation({
+    decrypt: v => v,
+    external,
+    requestId: '1',
+    deadline: Date.now() + 5_000,
+    subgraphs: [],
+    transformToPublicSdl: true,
+  });
+
+  expect(result.type).toBe('failure');
+  assert(result.type === 'failure');
+  expect(result.includesException).toBe(true);
+  expect(result.result.errors).toEqual([
+    {
+      source: 'composition',
+      message: 'External composition failure: invalid SDL returned from service',
+    },
+  ]);
+});

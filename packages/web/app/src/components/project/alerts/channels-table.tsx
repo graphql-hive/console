@@ -43,8 +43,11 @@ export function ChannelsTable(props: {
   channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[];
   isChecked: (channelId: string) => boolean;
   onCheckedChange: (channelId: string, checked: boolean) => void;
+  /** Opens the channel's own page; the checkbox cell keeps its click to itself. */
+  onRowClick?: (channelId: string) => void;
 }) {
   const channels = useFragment(ChannelsTable_AlertChannelFragment, props.channels);
+  const { onRowClick } = props;
 
   const columns: ColumnDef<ChannelsTable_AlertChannelFragmentFragment, unknown>[] = [
     {
@@ -85,6 +88,7 @@ export function ChannelsTable(props: {
       getRowId={channel => channel.id}
       pagination={{ kind: 'none' }}
       emptyMessage="No channels yet."
+      onRowClick={onRowClick ? channel => onRowClick(channel.id) : undefined}
     />
   );
 }

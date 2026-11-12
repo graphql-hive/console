@@ -23,6 +23,41 @@ export const AuditLogModel = z.union([
     }),
   }),
   z.object({
+    eventType: z.literal('USER_SIGNED_IN'),
+    metadata: z.object({
+      method: z.enum(['emailpassword', 'github', 'google', 'okta', 'oidc']),
+      email: z.string(),
+      /**
+       * Whether the email address is proven (verified by us or the identity provider).
+       * If `false`, the event has no actor, as it can not be attributed to the owner of the email.
+       * `null` for OIDC sign ins, where the organization's own identity provider asserts the identity.
+       */
+      emailVerified: z.boolean().nullable(),
+      oidcIntegrationId: z.string().nullable(),
+      /**
+       * Whether the user was created as part of this sign in (sign up).
+       */
+      newUser: z.boolean(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('USER_SIGN_IN_FAILED'),
+    metadata: z.object({
+      method: z.enum(['emailpassword', 'github', 'google', 'okta', 'oidc']),
+      reason: z.enum([
+        'UNKNOWN_USER',
+        'INVALID_CREDENTIALS',
+        'SSO_REQUIRED',
+        'USER_NOT_PROVISIONED',
+        'USER_DEACTIVATED',
+        'IDENTITY_PROVIDER_ERROR',
+        'NOT_ALLOWED',
+      ]),
+      email: z.string().nullable(),
+      oidcIntegrationId: z.string().nullable(),
+    }),
+  }),
+  z.object({
     eventType: z.literal('USER_SETTINGS_UPDATED'),
     metadata: z.object({
       updatedFields: z.string(),
@@ -426,6 +461,8 @@ const AuditLogClickhouseObjectModel = z.object({
   userId: z.string(),
   userEmail: z.string(),
   accessTokenId: z.string(),
+  ipAddress: z.string(),
+  userAgent: z.string(),
   metadata: z.string(),
 });
 

@@ -3,6 +3,7 @@ import { gql } from 'graphql-modules';
 export default gql`
   extend type Mutation {
     addAlertChannel(input: AddAlertChannelInput!): AddAlertChannelResult!
+    updateAlertChannel(input: UpdateAlertChannelInput!): UpdateAlertChannelResult!
     deleteAlertChannels(input: DeleteAlertChannelsInput!): DeleteAlertChannelsResult!
     addAlert(input: AddAlertInput!): AddAlertResult!
     deleteAlerts(input: DeleteAlertsInput!): DeleteAlertsResult!
@@ -10,6 +11,10 @@ export default gql`
 
   extend type Project {
     alertChannels: [AlertChannel!]
+    """
+    A single alert channel of this project. Null when the alert with the provided ID cannot be found in the project.
+    """
+    alertChannel(id: ID!): AlertChannel
     alerts: [Alert!]
   }
 
@@ -116,6 +121,39 @@ export default gql`
     channelIds: [ID!]!
   }
 
+  """
+  What to change on a channel; a field left out keeps its value. The type cannot change, the
+  delivery history is kept by it. A Slack channel takes slack, the webhook kinds take webhook.
+  """
+  input UpdateAlertChannelInput {
+    organizationSlug: String!
+    projectSlug: String!
+    channelId: ID!
+    name: String
+    slack: SlackChannelInput
+    webhook: WebhookChannelInput
+  }
+
+  type UpdateAlertChannelResult {
+    ok: UpdateAlertChannelOk
+    error: UpdateAlertChannelError
+  }
+
+  type UpdateAlertChannelOk {
+    updatedAlertChannel: AlertChannel!
+  }
+
+  type UpdateAlertChannelError implements Error {
+    message: String!
+    inputErrors: UpdateAlertChannelInputErrors!
+  }
+
+  type UpdateAlertChannelInputErrors {
+    name: String
+    webhookEndpoint: String
+    slackChannel: String
+  }
+
   input AddAlertInput {
     organizationSlug: String!
     projectSlug: String!
@@ -134,6 +172,26 @@ export default gql`
     id: ID!
     name: String!
     type: AlertChannelType!
+    """
+    Delivery attempts recorded for this channel in the period.
+    Null when the delivery history could not be read.
+    """
+    deliveryStats(
+      """
+      The period for retrieving the statistics.
+      """
+      period: DateRangeInput!
+    ): DeliveryStats
+    """
+    Health derived from the most recent recorded attempts.
+    Null when the delivery history could not be read.
+    """
+    deliveryHealth: DeliveryHealth
+    """
+    The most recent attempts within the period, newest first. limit defaults to 50, at most 200.
+    Null when the delivery history could not be read.
+    """
+    deliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
   }
 
   type AlertSlackChannel implements AlertChannel {
@@ -141,6 +199,9 @@ export default gql`
     name: String!
     type: AlertChannelType!
     channel: String!
+    deliveryStats(period: DateRangeInput!): DeliveryStats
+    deliveryHealth: DeliveryHealth
+    deliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
   }
 
   type AlertWebhookChannel implements AlertChannel {
@@ -148,6 +209,9 @@ export default gql`
     name: String!
     type: AlertChannelType!
     endpoint: String!
+    deliveryStats(period: DateRangeInput!): DeliveryStats
+    deliveryHealth: DeliveryHealth
+    deliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
   }
 
   type TeamsWebhookChannel implements AlertChannel {
@@ -155,6 +219,9 @@ export default gql`
     name: String!
     type: AlertChannelType!
     endpoint: String!
+    deliveryStats(period: DateRangeInput!): DeliveryStats
+    deliveryHealth: DeliveryHealth
+    deliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
   }
 
   type DiscordWebhookChannel implements AlertChannel {
@@ -162,6 +229,9 @@ export default gql`
     name: String!
     type: AlertChannelType!
     endpoint: String!
+    deliveryStats(period: DateRangeInput!): DeliveryStats
+    deliveryHealth: DeliveryHealth
+    deliveryLog(period: DateRangeInput!, limit: Int): [Delivery!]
   }
 
   type Alert {

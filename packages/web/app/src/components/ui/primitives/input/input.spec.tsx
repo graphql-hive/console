@@ -38,12 +38,14 @@ function ReactHookFormField(props: { onSubmit: (values: { name: string }) => voi
 describe('Input', () => {
   it('renders a native input with its attributes and forwards the ref', () => {
     const ref = createRef<HTMLInputElement>();
-    render(<Input ref={ref} type="email" placeholder="Email" autoComplete="off" data-cy="email" />);
+    render(
+      <Input ref={ref} type="email" placeholder="Email" autoComplete="off" data-testid="email" />,
+    );
     const input = screen.getByPlaceholderText('Email');
     expect(ref.current).toBe(input);
     expect(input).toHaveProperty('type', 'email');
     expect(input.getAttribute('autocomplete')).toBe('off');
-    expect(input.getAttribute('data-cy')).toBe('email');
+    expect(input.getAttribute('data-testid')).toBe('email');
     // Regression: the merge used to drop the colour next to the theme's own font size.
     expect(input.className).toContain('text-fg');
     expect(input.className).toContain('text-sm');

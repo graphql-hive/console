@@ -30,6 +30,7 @@ export const OrganizationLayoutQuery = graphql(`
       viewerCanAccessSettings
       viewerCanManageAccessTokens
       viewerCanManagePersonalAccessTokens
+      viewerCanSeeEmailDeliveries
       ...UserMenu_OrganizationFragment
       ...ProPlanBilling_OrganizationFragment
       ...RateLimitWarn_OrganizationFragment

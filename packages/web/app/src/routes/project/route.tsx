@@ -3,6 +3,10 @@ import { ProjectLayoutQuery } from '@/components/layouts/queries';
 import { overviewPeriod } from '@/lib/overview-period';
 import { loadQuery, requireLayoutFlag, revalidate, usageRetention } from '@/lib/route-utils';
 import { ProjectIndexRouteSearch, ProjectOverviewPageQuery, ProjectPage } from '@/pages/project';
+import {
+  ProjectAlertChannelPage,
+  ProjectAlertChannelPage_ChannelQuery,
+} from '@/pages/project-alert-channel';
 import { ProjectAlertsPage, ProjectAlertsPageQuery } from '@/pages/project-alerts';
 import { UTCDate } from '@date-fns/utc';
 import { createRoute, Outlet } from '@tanstack/react-router';
@@ -58,4 +62,26 @@ export const projectAlertsRoute = createRoute({
     return requireLayoutFlag.project(loader, 'viewerCanModifyAlerts');
   },
   component: ProjectAlertsPage,
+});
+
+export const projectAlertChannelRoute = createRoute({
+  getParentRoute: () => projectRoute,
+  path: 'view/alerts/channels/$channelId',
+  preloadStaleTime: 0,
+  // The channel's configuration, revalidated on each visit; the live delivery data is the page's
+  // own polling query.
+  loader: loader => {
+    const { organizationSlug, projectSlug, channelId } = loader.params;
+    void loadQuery(
+      loader,
+      ProjectAlertChannelPage_ChannelQuery,
+      { organizationSlug, projectSlug, channelId },
+      revalidate(loader),
+    );
+    return requireLayoutFlag.project(loader, 'viewerCanModifyAlerts');
+  },
+  component: function ProjectAlertChannelRoute() {
+    const { channelId } = projectAlertChannelRoute.useParams();
+    return <ProjectAlertChannelPage channelId={channelId} />;
+  },
 });

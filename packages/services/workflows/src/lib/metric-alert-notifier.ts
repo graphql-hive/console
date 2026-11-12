@@ -2,7 +2,21 @@ import type { Logger } from '@graphql-hive/logger';
 import type { PostgresDatabasePool } from '@hive/postgres';
 import { psql } from '@hive/postgres';
 import type { Encryptor } from '@hive/service-common';
-import { WebClient } from '@slack/web-api';
+import { ErrorCode, WebClient } from '@slack/web-api';
+import {
+  buildHiveSlackMetadata,
+  buildHiveWebhookHeaders,
+  flattenSlackMetadata,
+} from './delivery-metadata.js';
+import {
+  deliveryOutcome,
+  SLACK_OK,
+  TIMED_OUT,
+  trackDelivery,
+  type DeliveryMeta,
+  type DeliveryOutcome,
+  type DeliveryRecorder,
+} from './delivery-recorder.js';
 import type { MetricAlertRuleRow } from './metric-alert-evaluator.js';
 import { sendWebhook, type RequestBroker } from './webhooks/send-webhook.js';
 
@@ -31,10 +45,102 @@ export type NotificationEvent = {
   currentValue: number;
   // Null for absolute-only groups that skip the previous window.
   previousValue: number | null;
+  targetId: string;
   organizationSlug: string;
   projectSlug: string;
   targetSlug: string;
 };
+
+/** How a sender records its attempt and identifies the call to the destination. */
+export type DeliveryTracking = {
+  recorder: DeliveryRecorder;
+  /** Hive release, for the User-Agent. */
+  release: string;
+  requestId: string;
+};
+
+// The client default retries 10 times over about 30 minutes; graphile-worker already retries the
+// job, and each recorded delivery should stand for a handful of calls at most.
+const SLACK_CLIENT_OPTIONS = { retryConfig: { retries: 3 } };
+
+// The client is created without a timeout, so the only timeout its request error can carry is
+// the socket's, passed through by axios on `original`.
+const REQUEST_TIMEOUT_CODES = new Set(['ETIMEDOUT']);
+
+/**
+ * The outcome of a failed `chat.postMessage`: the API's result code, the HTTP status it answered,
+ * a rate limit (which the client reports as a plain Error once its retries are spent), or a
+ * timeout of the request. Null for anything else, which the recorder masks. The API's Slack
+ * adapter has the same function; the services stay independent.
+ */
+export function describeSlackError(error: unknown): DeliveryOutcome | null {
+  if (!isRecord(error)) {
+    return null;
+  }
+  const code = typeof error.code === 'string' ? error.code : null;
+  switch (code) {
+    case ErrorCode.PlatformError: {
+      const result = isRecord(error.data) ? error.data.error : undefined;
+      return typeof result === 'string' && result.length > 0 ? deliveryOutcome(null, result) : null;
+    }
+    case ErrorCode.RateLimitedError:
+      return deliveryOutcome(429, 'rate_limited');
+    case ErrorCode.HTTPError:
+      return typeof error.statusCode === 'number'
+        ? deliveryOutcome(
+            error.statusCode,
+            typeof error.statusMessage === 'string' ? error.statusMessage : '',
+          )
+        : null;
+    case ErrorCode.RequestError: {
+      const original = isRecord(error.original) ? error.original : null;
+      const transportCode = typeof original?.code === 'string' ? original.code : null;
+      return transportCode !== null && REQUEST_TIMEOUT_CODES.has(transportCode)
+        ? deliveryOutcome(null, TIMED_OUT)
+        : null;
+    }
+  }
+  return typeof error.message === 'string' && error.message.startsWith('A rate limit was exceeded')
+    ? deliveryOutcome(429, 'rate_limited')
+    : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function hiveHeaders(
+  args: { tracking: DeliveryTracking; idempotencyKey: string },
+  event: NotificationEvent,
+): Record<string, string> {
+  return buildHiveWebhookHeaders({
+    requestId: args.tracking.requestId,
+    event: 'metric_alert',
+    targetId: event.targetId,
+    release: args.tracking.release,
+    idempotencyKey: args.idempotencyKey,
+  });
+}
+
+function deliveryMeta(args: {
+  channel: AlertChannelRow;
+  event: NotificationEvent;
+  attempt: number;
+  maxAttempts: number;
+  idempotencyKey: string;
+  metadata: Record<string, string>;
+}): DeliveryMeta {
+  return {
+    organizationId: args.event.rule.organizationId,
+    deliveryType: args.channel.type,
+    destination: args.channel.id,
+    event: 'metric_alert',
+    idempotencyKey: args.idempotencyKey,
+    attempt: args.attempt,
+    maxAttempts: args.maxAttempts,
+    metadata: args.metadata,
+  };
+}
 
 /**
  * How a dispatch attempt ended. Only `sent` means the destination actually received
@@ -95,6 +201,10 @@ export async function sendSlackNotification(args: {
   logger: Logger;
   webAppUrl: string | null;
   crypto: Encryptor | null;
+  tracking: DeliveryTracking;
+  attempt: number;
+  maxAttempts: number;
+  idempotencyKey: string;
 }): Promise<NotificationResult> {
   const { channel, event, pg, logger } = args;
 
@@ -102,6 +212,7 @@ export async function sendSlackNotification(args: {
     logger.warn({ channelId: channel.id }, 'Slack channel name not configured');
     return { status: 'skipped-config', reason: 'no-slack-channel' };
   }
+  const slackChannel = channel.slackChannel;
 
   const tokenResult = await pg.maybeOneFirst(psql`
     SELECT "slack_token"
@@ -145,7 +256,7 @@ export async function sendSlackNotification(args: {
     return { status: 'failed-config', reason: 'decrypt-failed' };
   }
 
-  const client = new WebClient(token);
+  const client = new WebClient(token, SLACK_CLIENT_OPTIONS);
 
   const isFiring = event.state === 'firing';
   const action = isFiring ? 'triggered' : 'resolved';
@@ -156,33 +267,57 @@ export async function sendSlackNotification(args: {
   const changeText = formatChangeText(event);
   const alertUrl = buildAlertUrl(args.webAppUrl, event);
 
-  await client.chat.postMessage({
-    channel: channel.slackChannel,
-    text: `Metric alert ${action}: "${event.rule.name}"`,
-    // Slack would otherwise attach a preview card for the console link.
-    unfurl_links: false,
-    unfurl_media: false,
-    attachments: [
-      {
-        color,
-        blocks: [
+  const metadata = buildHiveSlackMetadata({
+    requestId: args.tracking.requestId,
+    event: 'metric_alert',
+    targetId: event.targetId,
+    release: args.tracking.release,
+    idempotencyKey: args.idempotencyKey,
+  });
+
+  await trackDelivery(
+    args.tracking.recorder,
+    deliveryMeta({
+      channel,
+      event,
+      attempt: args.attempt,
+      maxAttempts: args.maxAttempts,
+      idempotencyKey: args.idempotencyKey,
+      metadata: flattenSlackMetadata(metadata),
+    }),
+    async () => ({
+      outcome: SLACK_OK,
+      value: await client.chat.postMessage({
+        channel: slackChannel,
+        text: `Metric alert ${action}: "${event.rule.name}"`,
+        metadata,
+        // Slack would otherwise attach a preview card for the console link.
+        unfurl_links: false,
+        unfurl_media: false,
+        attachments: [
           {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: [
-                `*${event.rule.name}* — ${action}`,
-                `Type: ${event.rule.type} | Severity: ${event.rule.severity}`,
-                changeText,
-                `Target: \`${event.targetSlug}\` in \`${event.projectSlug}\``,
-                ...(alertUrl ? [`<${alertUrl}|View alert in Hive>`] : []),
-              ].join('\n'),
-            },
+            color,
+            blocks: [
+              {
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: [
+                    `*${event.rule.name}* — ${action}`,
+                    `Type: ${event.rule.type} | Severity: ${event.rule.severity}`,
+                    changeText,
+                    `Target: \`${event.targetSlug}\` in \`${event.projectSlug}\``,
+                    ...(alertUrl ? [`<${alertUrl}|View alert in Hive>`] : []),
+                  ].join('\n'),
+                },
+              },
+            ],
           },
         ],
-      },
-    ],
-  });
+      }),
+    }),
+    describeSlackError,
+  );
 
   logger.debug({ channelId: channel.id }, 'Slack notification sent');
 
@@ -198,6 +333,7 @@ export async function sendWebhookNotification(args: {
   attempt: number;
   maxAttempts: number;
   webAppUrl: string | null;
+  tracking: DeliveryTracking;
 }): Promise<NotificationResult> {
   const { channel, event, logger } = args;
 
@@ -208,12 +344,24 @@ export async function sendWebhookNotification(args: {
 
   const payload = buildWebhookPayload(event, args.webAppUrl);
 
+  const headers = hiveHeaders(args, event);
   const result = await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
     data: payload,
-    headers: { 'Idempotency-Key': args.idempotencyKey },
+    headers,
+    delivery: {
+      recorder: args.tracking.recorder,
+      meta: deliveryMeta({
+        channel,
+        event,
+        attempt: args.attempt,
+        maxAttempts: args.maxAttempts,
+        idempotencyKey: args.idempotencyKey,
+        metadata: headers,
+      }),
+    },
   });
 
   if (result.status === 'gave-up') {
@@ -234,6 +382,7 @@ export async function sendTeamsNotification(args: {
   attempt: number;
   maxAttempts: number;
   webAppUrl: string | null;
+  tracking: DeliveryTracking;
 }): Promise<NotificationResult> {
   const { channel, event, logger } = args;
 
@@ -267,12 +416,24 @@ export async function sendTeamsNotification(args: {
     ],
   };
 
+  const headers = hiveHeaders(args, event);
   const result = await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
     data: card,
-    headers: { 'Idempotency-Key': args.idempotencyKey },
+    headers,
+    delivery: {
+      recorder: args.tracking.recorder,
+      meta: deliveryMeta({
+        channel,
+        event,
+        attempt: args.attempt,
+        maxAttempts: args.maxAttempts,
+        idempotencyKey: args.idempotencyKey,
+        metadata: headers,
+      }),
+    },
   });
 
   if (result.status === 'gave-up') {
@@ -317,6 +478,7 @@ export async function sendDiscordNotification(args: {
   attempt: number;
   maxAttempts: number;
   webAppUrl: string | null;
+  tracking: DeliveryTracking;
 }): Promise<NotificationResult> {
   const { channel, event, logger } = args;
 
@@ -362,12 +524,24 @@ export async function sendDiscordNotification(args: {
     ],
   };
 
+  const headers = hiveHeaders(args, event);
   const result = await sendWebhook(logger, args.requestBroker, {
     attempt: args.attempt,
     maxAttempts: args.maxAttempts,
     endpoint: channel.webhookEndpoint,
     data: payload,
-    headers: { 'Idempotency-Key': args.idempotencyKey },
+    headers,
+    delivery: {
+      recorder: args.tracking.recorder,
+      meta: deliveryMeta({
+        channel,
+        event,
+        attempt: args.attempt,
+        maxAttempts: args.maxAttempts,
+        idempotencyKey: args.idempotencyKey,
+        metadata: headers,
+      }),
+    },
   });
 
   if (result.status === 'gave-up') {

@@ -1,9 +1,12 @@
 import { z } from 'zod';
 import { defineTask, implementTask } from '../kit.js';
+import { EMAIL_MAX_ATTEMPTS } from '../lib/emails/retry-policy.js';
+import { sendTrackedEmail } from '../lib/emails/send-tracked-email.js';
 import { renderOrganizationOwnershipTransferEmail } from '../lib/emails/templates/organization-ownership-transfer.js';
 
 export const OrganizationOwnershipTransferTask = defineTask({
   name: 'organizationOwnershipTransfer',
+  maxAttempts: EMAIL_MAX_ATTEMPTS,
   schema: z.object({
     organizationId: z.string(),
     organizationName: z.string(),
@@ -14,13 +17,21 @@ export const OrganizationOwnershipTransferTask = defineTask({
 });
 
 export const task = implementTask(OrganizationOwnershipTransferTask, async args => {
-  await args.context.email.send({
-    to: args.input.email,
-    subject: `Organization transfer from ${args.input.authorName} (${args.input.organizationName})`,
-    body: renderOrganizationOwnershipTransferEmail({
-      link: args.input.link,
-      organizationName: args.input.organizationName,
-      authorName: args.input.authorName,
-    }),
+  await sendTrackedEmail({
+    context: args.context,
+    helpers: args.helpers,
+    logger: args.logger,
+    requestId: args.requestId,
+    organizationId: args.input.organizationId,
+    event: 'organization_ownership_transfer',
+    email: {
+      to: args.input.email,
+      subject: `Organization transfer from ${args.input.authorName} (${args.input.organizationName})`,
+      body: renderOrganizationOwnershipTransferEmail({
+        link: args.input.link,
+        organizationName: args.input.organizationName,
+        authorName: args.input.authorName,
+      }),
+    },
   });
 });

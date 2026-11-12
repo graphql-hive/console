@@ -15,6 +15,10 @@ import { useClipboard, useSlugs } from '@/lib/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
+  INVITATION_DELIVERY_COLUMN_TOOLTIP,
+  InvitationDeliveryStatus,
+} from './invitation-delivery-cell';
+import {
   MemberInvitationForm,
   MemberInvitationFormSchema,
   type MemberInvitationFormValues,
@@ -177,7 +181,7 @@ export function MemberInvitationButton(props: {
       open={open}
       onOpenChange={setOpen}
       trigger={
-        <Button data-cy="send-invite-trigger">
+        <Button data-testid="send-invite-trigger">
           <MailIcon size={14} className="mr-2" /> Send Invite
         </Button>
       }
@@ -217,6 +221,14 @@ const Members_Invitation = graphql(`
       id
       name
     }
+    delivery {
+      timestamp
+      ok
+      statusCode
+      statusText
+      attempt
+      maxAttempts
+    }
   }
 `);
 
@@ -237,6 +249,11 @@ function InvitationEmailCell(props: { invitation: InvitationNode }) {
 function InvitationRoleCell(props: { invitation: InvitationNode }) {
   const invitation = useFragment(Members_Invitation, props.invitation);
   return <DataTableCell kind="text" value={invitation.role.name} />;
+}
+
+function InvitationDeliveryCell(props: { invitation: InvitationNode }) {
+  const invitation = useFragment(Members_Invitation, props.invitation);
+  return <InvitationDeliveryStatus delivery={invitation.delivery ?? null} />;
 }
 
 function InvitationExpiryCell(props: { invitation: InvitationNode }) {
@@ -377,6 +394,12 @@ export function OrganizationInvitations(props: {
         header: 'Assigned role',
         meta: { align: 'center', width: 'md' },
         cell: ({ row }) => <InvitationRoleCell invitation={row.original} />,
+      },
+      {
+        id: 'delivery',
+        header: 'Email status',
+        meta: { align: 'center', width: 'md', tooltip: INVITATION_DELIVERY_COLUMN_TOOLTIP },
+        cell: ({ row }) => <InvitationDeliveryCell invitation={row.original} />,
       },
       {
         id: 'expiresAt',

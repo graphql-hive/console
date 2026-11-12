@@ -120,6 +120,8 @@ test.concurrent('Try to export Audit Logs from an Organization with authorized u
     'user_id',
     'user_email',
     'access_token_id',
+    'ip_address',
+    'user_agent',
     'metadata',
   ];
 
@@ -252,6 +254,9 @@ test.concurrent('access token actions are stored within the audit log', async ()
   expect(logEntries.length).toEqual(1);
   const [logEntry] = logEntries;
   expect(logEntry.event_type).toEqual('ORGANIZATION_ACCESS_TOKEN_CREATED');
+  // the client information is resolved from the GraphQL request
+  expect(logEntry.ip_address).not.toEqual('');
+  expect(logEntry.user_agent).not.toEqual('');
   expect(
     accessToken.privateAccessKey.startsWith(logEntry.metadata.accessToken.firstCharacters),
   ).toEqual(true);

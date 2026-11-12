@@ -69,7 +69,8 @@ export function OrganizationLayout({ children }: { children: ReactNode }): React
                   visible:
                     currentOrganization.viewerCanAccessSettings ||
                     currentOrganization.viewerCanManageAccessTokens ||
-                    currentOrganization.viewerCanManagePersonalAccessTokens,
+                    currentOrganization.viewerCanManagePersonalAccessTokens ||
+                    currentOrganization.viewerCanSeeEmailDeliveries,
                   to: '/$organizationSlug/view/settings',
                   params: { organizationSlug: currentOrganization.slug },
                 },
@@ -91,7 +92,7 @@ export function OrganizationLayout({ children }: { children: ReactNode }): React
         actions={
           currentOrganization?.viewerCanCreateProject ? (
             <>
-              <Button onClick={toggleModalOpen} variant="link" data-cy="new-project-button">
+              <Button onClick={toggleModalOpen} variant="link" data-testid="new-project-button">
                 <span className="flex items-center">
                   <PlusIcon size={16} className="mr-2" />
                   New project

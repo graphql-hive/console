@@ -57,6 +57,7 @@ import {
   readSchemaCoordinateStats,
   readTokenInfo,
   readTotalRequests,
+  updateAlertChannel,
   updateBaseSchema,
   updateMemberRole,
   updateMetricAlertRule,
@@ -907,6 +908,14 @@ export function initSeed() {
                     r.expectNoGraphQLErrors(),
                   );
                   return result.addAlertChannel;
+                },
+                async updateAlertChannel(
+                  input: { token?: string } & Parameters<typeof updateAlertChannel>[0],
+                ) {
+                  const result = await updateAlertChannel(input, input.token || ownerToken).then(
+                    r => r.expectNoGraphQLErrors(),
+                  );
+                  return result.updateAlertChannel;
                 },
                 async addMetricAlertRule(
                   input: { token?: string } & Parameters<typeof addMetricAlertRule>[0],

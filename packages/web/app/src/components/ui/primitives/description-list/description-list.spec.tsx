@@ -37,14 +37,14 @@ describe('DescriptionList', () => {
                 term: 'User ID Claim',
                 tooltip: 'The claim that identifies a user.',
                 description: 'sub',
-                attrs: { 'data-cy': 'user-id-claim' },
+                attrs: { 'data-testid': 'user-id-claim' },
               },
             ],
           },
         ]}
       />,
     );
-    expect(document.querySelector('[data-cy="user-id-claim"]')?.textContent).toBe('sub');
+    expect(document.querySelector('[data-testid="user-id-claim"]')?.textContent).toBe('sub');
     expect(screen.getByText('User ID Claim').querySelector('svg')).not.toBeNull();
   });
 

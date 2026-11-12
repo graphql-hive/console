@@ -1,9 +1,16 @@
 import { Inject, Injectable } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
 import { SchemaChangeType } from '@hive/storage';
-import { HttpClient } from '../../../shared/providers/http-client';
+import { HiveHttpClientError, HttpClient } from '../../../shared/providers/http-client';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
+import { buildHiveWebhookHeaders, channelConfirmationKey } from '../../lib/delivery-metadata';
+import {
+  deliveryOutcome,
+  DeliveryRecorder,
+  TIMED_OUT,
+  type DeliveryOutcome,
+} from '../delivery-recorder';
 import {
   ChannelConfirmationInput,
   CommunicationAdapter,
@@ -54,6 +61,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     logger: Logger,
     private httpClient: HttpClient,
     @Inject(WEB_APP_URL) private appBaseUrl: string,
+    private deliveries: DeliveryRecorder,
   ) {
     this.logger = logger.child({ service: 'DiscordCommunicationAdapter' });
   }
@@ -105,37 +113,65 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       );
       const hasErrors = input.event.errors.length > 0;
 
-      await this.sendDiscordMessage(webhookUrl, {
-        embeds: [
-          {
-            title: input.event.initial
-              ? 'Schema published'
-              : hasBreakingChanges || hasErrors
-                ? 'Breaking schema changes detected'
-                : 'Schema changes detected',
-            url: changeUrl,
-            color: hasBreakingChanges || hasErrors ? DISCORD_RED : DISCORD_GREEN,
-            description: [message, detailsText].filter(Boolean).join('\n\n'),
-            fields: [
-              {
-                name: 'Project',
-                value: input.event.project.name || input.event.project.slug,
-                inline: true,
-              },
-              {
-                name: 'Target',
-                value: input.event.target.name || input.event.target.slug,
-                inline: true,
-              },
-              {
-                name: 'Commit',
-                value: input.event.schema.commit || '—',
-                inline: true,
-              },
-            ],
-          },
-        ],
-      });
+      const idempotencyKey = `schema-change:${input.event.schema.id}:${input.channel.id}`;
+      const headers = buildHiveWebhookHeaders(
+        this.deliveries.describe({
+          event: 'schema_change',
+          targetId: input.event.target.id,
+          schemaId: input.event.schema.id,
+          idempotencyKey,
+        }),
+      );
+
+      await this.deliveries.track(
+        {
+          organizationId: input.event.organization.id,
+          deliveryType: 'DISCORD',
+          destination: input.channel.id,
+          event: 'schema_change',
+          idempotencyKey,
+          metadata: headers,
+        },
+        async () => ({
+          outcome: await this.sendDiscordMessage(
+            webhookUrl,
+            {
+              embeds: [
+                {
+                  title: input.event.initial
+                    ? 'Schema published'
+                    : hasBreakingChanges || hasErrors
+                      ? 'Breaking schema changes detected'
+                      : 'Schema changes detected',
+                  url: changeUrl,
+                  color: hasBreakingChanges || hasErrors ? DISCORD_RED : DISCORD_GREEN,
+                  description: [message, detailsText].filter(Boolean).join('\n\n'),
+                  fields: [
+                    {
+                      name: 'Project',
+                      value: input.event.project.name || input.event.project.slug,
+                      inline: true,
+                    },
+                    {
+                      name: 'Target',
+                      value: input.event.target.name || input.event.target.slug,
+                      inline: true,
+                    },
+                    {
+                      name: 'Commit',
+                      value: input.event.schema.commit || '—',
+                      inline: true,
+                    },
+                  ],
+                },
+              ],
+            },
+            headers,
+          ),
+          value: undefined,
+        }),
+        describeDiscordError,
+      );
     } catch (error) {
       this.logger.error('Failed to send Discord notification (error=%o)', error);
     }
@@ -156,7 +192,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     }
 
     const actionMessage =
-      input.event.kind === 'created'
+      input.event.kind !== 'deleted'
         ? `I will send notifications here`
         : `I will no longer send notifications here`;
 
@@ -166,15 +202,41 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
         url: `${this.appBaseUrl}/${input.event.organization.slug}/${input.event.project.slug}`,
       });
 
-      await this.sendDiscordMessage(webhookUrl, {
-        embeds: [
-          {
-            title: 'GraphQL Hive notifications',
-            color: DISCORD_BLUE,
-            description: `${actionMessage} about your ${projectLink} project.`,
-          },
-        ],
-      });
+      const idempotencyKey = channelConfirmationKey(input.event.kind, input.channel);
+      const headers = buildHiveWebhookHeaders(
+        this.deliveries.describe({
+          event: 'channel_confirmation',
+          idempotencyKey,
+        }),
+      );
+
+      await this.deliveries.track(
+        {
+          organizationId: input.event.organization.id,
+          deliveryType: 'DISCORD',
+          destination: input.channel.id,
+          event: 'channel_confirmation',
+          idempotencyKey,
+          metadata: headers,
+        },
+        async () => ({
+          outcome: await this.sendDiscordMessage(
+            webhookUrl,
+            {
+              embeds: [
+                {
+                  title: 'GraphQL Hive notifications',
+                  color: DISCORD_BLUE,
+                  description: `${actionMessage} about your ${projectLink} project.`,
+                },
+              ],
+            },
+            headers,
+          ),
+          value: undefined,
+        }),
+        describeDiscordError,
+      );
     } catch (error) {
       this.logger.error('Failed to send Discord notification (error=%o)', error);
     }
@@ -184,7 +246,11 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     return word + (num !== 1 ? 's' : '');
   }
 
-  async sendDiscordMessage(webhookUrl: string, payload: DiscordWebhookPayload) {
+  async sendDiscordMessage(
+    webhookUrl: string,
+    payload: DiscordWebhookPayload,
+    headers: Record<string, string> = {},
+  ): Promise<DeliveryOutcome> {
     const normalizedPayload: DiscordWebhookPayload = {
       username: 'GraphQL Hive',
       ...payload,
@@ -192,16 +258,34 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
       embeds: payload.embeds?.slice(0, DISCORD_MAX_EMBEDS).map(limitEmbed),
     };
 
-    await this.httpClient.post(webhookUrl, {
+    const response = await this.httpClient.postWithResponse(webhookUrl, {
       headers: {
         'Content-Type': 'application/json',
+        ...headers,
       },
       json: normalizedPayload,
       context: {
         logger: this.logger,
       },
     });
+
+    return { statusCode: response.statusCode, statusText: response.statusText };
   }
+}
+
+/**
+ * The outcome of a failed webhook call through the HTTP client: the status Discord answered, or
+ * a socket timeout, which the client keeps as its code (it sets no timeout of its own). Null for
+ * anything else, which the recorder masks.
+ */
+export function describeDiscordError(error: unknown): DeliveryOutcome | null {
+  if (!(error instanceof HiveHttpClientError)) {
+    return null;
+  }
+  if (error.statusCode !== undefined) {
+    return deliveryOutcome(error.statusCode, error.statusText ?? '');
+  }
+  return error.code === 'ETIMEDOUT' ? deliveryOutcome(null, TIMED_OUT) : null;
 }
 
 function createDetailsText(

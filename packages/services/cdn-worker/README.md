@@ -70,8 +70,7 @@ The extracted `index.mjs` is an ES module Worker. Create a `wrangler.toml` next 
 is a minimal configuration; the six Analytics Engine bindings are required. Dataset names may be
 changed, but the binding names must remain unchanged.
 
-The current Worker artifact does not read a Workers KV binding. Hive's Pulumi stack still creates a
-legacy `HIVE_DATA` namespace for historical reasons; you do not need it for a working deployment.
+The Worker does not read a Workers KV binding, so none is needed.
 
 ```toml
 name = "hive-cdn"

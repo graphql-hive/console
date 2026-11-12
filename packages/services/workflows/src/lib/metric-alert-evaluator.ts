@@ -710,10 +710,13 @@ async function enqueueChannelNotifications(
   ruleId: string,
   stateLogId: string,
 ) {
+  // The transition's state-log id doubles as the request id: every channel's webhook carries it
+  // as Hive-Request-ID and the task logger binds it, so one firing's deliveries share one id.
   await conn.query(psql`
     SELECT graphile_worker.add_job(
       'sendMetricAlertChannelNotification',
       payload => json_build_object(
+        'requestId', ${stateLogId}::text,
         'input', json_build_object(
           'stateLogId', ${stateLogId}::text,
           'channelId', marc."alert_channel_id"::text

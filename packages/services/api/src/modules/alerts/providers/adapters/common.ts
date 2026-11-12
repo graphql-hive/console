@@ -48,7 +48,8 @@ export interface SchemaChangeNotificationInput {
 
 export interface ChannelConfirmationInput {
   event: {
-    kind: 'created' | 'deleted';
+    /** `updated` is a destination change: the new destination is told like a created one. */
+    kind: 'created' | 'deleted' | 'updated';
     organization: Pick<Organization, 'id' | 'slug' | 'name'> & {
       // For backwards compatibility
       // We moved away from cleanId and replaced it with slug
