@@ -13,9 +13,10 @@ import {
   type ChannelDeliveryTarget,
 } from '@/components/project/alerts/channel-deliveries-table';
 import { ChannelDetailsPanel } from '@/components/project/alerts/channel-details-panel';
+import { ChannelDisabledNotice } from '@/components/project/alerts/channel-disabled-notice';
 import { CHANNEL_TYPE_LABEL } from '@/components/project/alerts/channel-form';
 import { ChannelHealthWarning } from '@/components/project/alerts/channel-health-warning';
-import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
+import { CHANNEL_DELIVERIES_POLL_INTERVAL_MS } from '@/components/project/alerts/channel-polling';
 import { Callout } from '@/components/ui/callout';
 import { Meta } from '@/components/ui/meta';
 import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
@@ -44,6 +45,10 @@ export const ProjectAlertChannelPage_ChannelQuery = graphql(`
         id
         name
         type
+        disabledAt
+        disabledBy {
+          id
+        }
         ...ChannelDetailsPanel_AlertChannelFragment
       }
       targets {
@@ -176,7 +181,15 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
               }
             />
 
-            <ChannelDeliveriesSection channelId={channel.id} targets={targets} />
+            <ChannelDeliveriesSection
+              channelId={channel.id}
+              disabled={
+                channel.disabledAt
+                  ? { at: channel.disabledAt, byHive: channel.disabledBy == null }
+                  : null
+              }
+              targets={targets}
+            />
           </div>
 
           <aside className="shrink-0 self-start xl:sticky xl:top-6 xl:w-94">
@@ -196,9 +209,13 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
   );
 }
 
-function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDeliveryTarget[] }) {
+function ChannelDeliveriesSection(props: {
+  channelId: string;
+  disabled: { at: string; byHive: boolean } | null;
+  targets: ChannelDeliveryTarget[];
+}) {
   const { organizationSlug, projectSlug } = useSlugs('project');
-  const { now, from, to, resolution } = useDeliveryWindow(ALERTS_POLL_INTERVAL_MS);
+  const { now, from, to, resolution } = useDeliveryWindow(CHANNEL_DELIVERIES_POLL_INTERVAL_MS);
 
   const [result, reexecuteQuery] = useQuery({
     query: ProjectAlertChannelPage_DeliveriesQuery,
@@ -235,7 +252,14 @@ function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDe
 
   return (
     <>
-      <ChannelHealthWarning health={channel?.deliveryHealth ?? null} now={now} />
+      {props.disabled ? (
+        // A member's pause needs no explanation; Hive's does.
+        props.disabled.byHive ? (
+          <ChannelDisabledNotice channelId={props.channelId} disabledAt={props.disabled.at} />
+        ) : null
+      ) : (
+        <ChannelHealthWarning health={channel?.deliveryHealth ?? null} now={now} />
+      )}
 
       {status ?? (
         <>

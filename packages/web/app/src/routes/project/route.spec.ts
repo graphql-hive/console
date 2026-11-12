@@ -21,7 +21,9 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
 }));
 vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 // Polls every 200 ms here, so a spec sees a few ticks with real timers.
-vi.mock('@/components/target/alerts/alert-polling', () => ({ ALERTS_POLL_INTERVAL_MS: 200 }));
+vi.mock('@/components/project/alerts/channel-polling', () => ({
+  CHANNEL_DELIVERIES_POLL_INTERVAL_MS: 200,
+}));
 
 const PROJECT = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}`;
 const PROJECT_SLUGS = { organizationSlug: SLUGS.organizationSlug, projectSlug: SLUGS.projectSlug };
@@ -46,7 +48,13 @@ function requestsOf(client: TestClient, name: string) {
 /** The channel route's own document and the page's deliveries document, both answering channel-1. */
 function channelFixtures() {
   const fixtures = layoutFixtures();
-  const channel = { __typename: 'AlertWebhookChannel', id: 'channel-1', deliveryHealth: null };
+  const channel = {
+    __typename: 'AlertWebhookChannel',
+    id: 'channel-1',
+    disabledAt: null,
+    disabledBy: null,
+    deliveryHealth: null,
+  };
   fixtures.set('ProjectAlertChannelPage_ChannelQuery', {
     __typename: 'Query',
     project: {
