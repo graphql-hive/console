@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { createPreview, type NavPath } from 'react-foundry';
 import { Card } from '@/components/ui/primitives/card/card';
 import { formatDuration } from '@/lib/hooks/use-formatted-duration';
@@ -118,6 +118,48 @@ export const StackedBars = createPreview(() => {
           },
         ]}
       />
+    );
+  }
+  return (
+    <div className="w-[48rem]">
+      <Traces />
+    </div>
+  );
+});
+
+/** The traces chart with drag-to-select. */
+export const RangeSelect = createPreview(() => {
+  function Traces() {
+    const { colors } = useChartTheme();
+    const [range, setRange] = useState<{ from: Date; to: Date } | null>(null);
+    return (
+      <div className="flex flex-col gap-2">
+        <TimeSeriesChart
+          kind="bar"
+          stacked
+          height={150}
+          valueFormatter={formatNumber}
+          onRangeSelect={setRange}
+          series={[
+            {
+              name: 'Ok',
+              data: mapValues(REQUESTS, v => Math.round(v * 0.6)),
+              color: colors.primary,
+            },
+            { name: 'Error', data: FAILURES, color: colors.error },
+            {
+              name: 'Filtered out',
+              data: mapValues(REQUESTS, v => Math.round(v * 0.4)),
+              color: 'rgba(170,175,180,0.1)',
+            },
+          ]}
+        />
+        <p className="font-mono text-xs text-fg-muted">
+          {range
+            ? `from ${range.from.toISOString()} to ${range.to.toISOString()}`
+            : 'Drag across the bars to pick a range'}
+        </p>
+      </div>
     );
   }
   return (
