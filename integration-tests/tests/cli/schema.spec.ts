@@ -1165,8 +1165,8 @@ test.concurrent(
       validSchemaPath,
     ]);
 
-    await expect(
-      schemaPublish([
+    try {
+      await schemaPublish([
         '--registry.accessToken',
         secret,
         '--commit',
@@ -1177,8 +1177,13 @@ test.concurrent(
         'http://users.localhost',
         '--fail-on-composition-error',
         invalidSchemaPath,
-      ]),
-    ).rejects.toThrow('- [users] On type User, for @key(fields: missing):');
+      ]);
+      expect.fail('Expected schema:publish to fail on composition errors');
+    } catch (error: any) {
+      expect(stripAnsi(error.message)).toContain(
+        '- [users] On type User, for @key(fields: missing):',
+      );
+    }
   },
 );
 
@@ -1244,8 +1249,8 @@ test.concurrent(
       validSchemaPath,
     ]);
 
-    await expect(
-      schemaPublish([
+    try {
+      await schemaPublish([
         '--registry.accessToken',
         secret,
         '--commit',
@@ -1256,10 +1261,13 @@ test.concurrent(
         'http://hello.localhost',
         '--fail-on-composition-error',
         invalidSchemaPath,
-      ]),
-    ).rejects.toThrow(
-      '[my-contract] Type Query is in the API schema but all of its fields are @inaccessible.',
-    );
+      ]);
+      expect.fail('Expected schema:publish to fail on composition errors');
+    } catch (error: any) {
+      expect(stripAnsi(error.message)).toContain(
+        '[my-contract] Type Query is in the API schema but all of its fields are @inaccessible.',
+      );
+    }
 
     const latest = await latestSchema();
     expect(latest.latestVersion?.schemas.nodes[0]).toMatchObject({

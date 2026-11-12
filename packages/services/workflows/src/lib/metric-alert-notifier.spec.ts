@@ -58,6 +58,11 @@ const {
 
 const SLACK_TOKEN = 'xoxb-test-token';
 const encryptor = new Encryptor('test-secret');
+// SLACK_TOKEN encrypted with 'a-different-secret'. Frozen because a wrong key only throws when
+// the garbage padding of the last AES-CBC block is invalid: a ciphertext made with a fresh random
+// IV decrypts silently about one run in 256.
+const ENCRYPTED_WITH_ANOTHER_SECRET =
+  'a2a8339b468d55238535d743538dc6cb:3510994f988a372dc105681b1566e314';
 
 // Legacy shape: rows written before the token column was encrypted are still plain text.
 const pg = {
@@ -297,9 +302,7 @@ describe('sendSlackNotification token decryption', () => {
   // Retrying cannot fix a wrong secret, so this must resolve rather than throw --
   // throwing would burn all 25 graphile-worker attempts.
   test('reports a config failure without throwing when the secret is wrong', async () => {
-    const encryptedElsewhere = new Encryptor('a-different-secret').encrypt(SLACK_TOKEN);
-
-    const { result, token } = await send(encryptedElsewhere);
+    const { result, token } = await send(ENCRYPTED_WITH_ANOTHER_SECRET);
 
     expect(result).toEqual({ status: 'failed-config', reason: 'decrypt-failed' });
     expect(token).toBeNull();
