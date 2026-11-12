@@ -30,6 +30,52 @@ const TargetTracesQuery = graphql(`
   }
 `);
 
+const TargetTracesFilterValuesQuery = graphql(`
+  query TargetTracesFilterValuesQuery($targetId: ID!, $period: DateRangeInput!) {
+    target(reference: { byId: $targetId }) {
+      id
+      tracesFilterValues(period: $period) {
+        operationNames {
+          values
+          truncated
+        }
+        clientNames {
+          values
+          truncated
+        }
+        subgraphNames {
+          values
+          truncated
+        }
+        errorCodes {
+          values
+          truncated
+        }
+        httpStatusCodes {
+          values
+          truncated
+        }
+        httpMethods {
+          values
+          truncated
+        }
+        httpHosts {
+          values
+          truncated
+        }
+        httpRoutes {
+          values
+          truncated
+        }
+        httpUrls {
+          values
+          truncated
+        }
+      }
+    }
+  }
+`);
+
 const TargetTracesWithFiltersQuery = graphql(`
   query TargetTracesWithFiltersQuery(
     $targetId: ID!
@@ -653,6 +699,87 @@ test('traces can be filtered via GraphQL API', async () => {
       { cause: error },
     );
   }
+});
+
+test('traces filter values are scoped to the period and independent of other filters', async () => {
+  const { createOrg, ownerToken } = await initSeed().createOwner();
+  const { createProject, createOrganizationAccessToken, setFeatureFlag } = await createOrg();
+  const { target } = await createProject();
+
+  await setFeatureFlag('otelTracing', true);
+
+  const otelCollectorAddress = await getServiceHost('otel-collector', 4318);
+  const { privateAccessKey: accessToken } = await createOrganizationAccessToken({
+    permissions: ['traces:report'],
+    resources: { mode: ResourceAssignmentModeType.All },
+  });
+
+  const traces = [
+    { name: 'GetUsers', client: 'web', status: '200', codes: [], subgraphs: ['users'] },
+    { name: 'CreateUser', client: 'mobile', status: '200', codes: [], subgraphs: ['users'] },
+    {
+      name: 'GetProducts',
+      client: '',
+      status: '500',
+      codes: ['INTERNAL'],
+      subgraphs: ['products', 'reviews'],
+    },
+  ].map(trace => ({ ...trace, traceId: generateTraceId() }));
+
+  for (const trace of traces) {
+    const response = await sendTrace({
+      otelCollectorAddress,
+      accessToken,
+      targetRef: target.id,
+      traceId: trace.traceId,
+      spanId: generateSpanId(),
+      spanName: 'POST /graphql',
+      attributes: {
+        'hive.graphql': { stringValue: 'true' },
+        'graphql.operation.name': { stringValue: trace.name },
+        'graphql.operation.type': { stringValue: 'query' },
+        'http.status_code': { stringValue: trace.status },
+        'http.method': { stringValue: 'POST' },
+        'hive.client.name': { stringValue: trace.client },
+        'hive.graphql.error.codes': { stringValue: JSON.stringify(trace.codes) },
+        'hive.gateway.operation.subgraph.names': { stringValue: JSON.stringify(trace.subgraphs) },
+      },
+    });
+    expect(response.status).toBe(200);
+  }
+  for (const trace of traces) {
+    await expect(waitForTraceInNormalized(trace.traceId)).resolves.toBe(true);
+  }
+
+  const hour = 60 * 60 * 1000;
+  const valuesFor = async (from: number, to: number) => {
+    const result = await execute({
+      document: TargetTracesFilterValuesQuery,
+      variables: {
+        targetId: target.id,
+        period: { from: new Date(from).toISOString(), to: new Date(to).toISOString() },
+      },
+      authToken: ownerToken,
+    });
+    return (await result.expectNoGraphQLErrors()).target?.tracesFilterValues;
+  };
+  const sorted = (list: { values: string[] } | undefined) => [...(list?.values ?? [])].sort();
+
+  await waitForExpectations(async () => {
+    const values = await valuesFor(Date.now() - hour, Date.now() + 5 * 60 * 1000);
+    expect(sorted(values?.operationNames)).toEqual(['CreateUser', 'GetProducts', 'GetUsers']);
+    expect(sorted(values?.clientNames)).toEqual(['mobile', 'web']);
+    expect(sorted(values?.subgraphNames)).toEqual(['products', 'reviews', 'users']);
+    expect(values?.errorCodes.values).toEqual(['INTERNAL']);
+    expect(sorted(values?.httpStatusCodes)).toEqual(['200', '500']);
+    expect(values?.httpMethods.values).toEqual(['POST']);
+    expect(values?.httpUrls.values).toEqual([]);
+    expect(values?.operationNames.truncated).toBe(false);
+  });
+
+  const yesterday = await valuesFor(Date.now() - 48 * hour, Date.now() - 24 * hour);
+  expect(yesterday?.operationNames.values).toEqual([]);
+  expect(yesterday?.clientNames.values).toEqual([]);
 });
 
 test('otel-collector populates otel_traces_normalized for GraphQL spans', async () => {

@@ -80,13 +80,11 @@ describe('search params serialization (jsurl2)', () => {
     expect(roundTrip(clients)).toEqual(clients);
   });
 
-  it('round-trips complex objects (traces filter and sort)', () => {
-    const filter = {
-      'graphql.status': ['OK'],
-      'trace.id': [],
-      duration: [100, 5000],
-    };
-    expect(roundTrip(filter)).toEqual(filter);
+  it('round-trips the traces filter params and sort', () => {
+    const operationTypes = ['query', 'unknown'];
+    expect(roundTrip(operationTypes)).toEqual(operationTypes);
+    const traceIds: string[] = [];
+    expect(roundTrip(traceIds)).toEqual(traceIds);
 
     const sort = { id: 'timestamp', desc: true };
     expect(roundTrip(sort)).toEqual(sort);

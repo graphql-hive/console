@@ -11,13 +11,21 @@ import { Menu } from '../../primitives/floating/menu/menu';
 import { FilterContent } from './filter-content';
 import type { FilterItem, FilterSelection } from './types';
 
+/** Lowercases the label for the chip count, keeping acronyms like "HTTP" as they are. */
+export function countNoun(label: string) {
+  return label
+    .split(' ')
+    .map(word => (word.length > 1 && word === word.toUpperCase() ? word : word.toLowerCase()))
+    .join(' ');
+}
+
 export type FilterDropdownProps = {
   /** Singular label shown on the trigger button. */
   label: string;
   /**
    * Plural form of `label` for the chip count (e.g. "severities" for
-   * "severity"). Defaults to `${label.toLowerCase()}s`, which is wrong for
-   * words like "severity" or "status" — provide an explicit plural there.
+   * "severity"). Defaults to the lowercased label plus "s", which is wrong for
+   * words like "severity" or "status", so provide an explicit plural there.
    */
   labelPlural?: string;
   /** Available items and their sub-values */
@@ -40,6 +48,8 @@ export type FilterDropdownProps = {
   singleSelect?: boolean;
   /** Show the search box regardless of how many items there are. */
   alwaysShowSearch?: boolean;
+  /** Set when `items` holds only the most frequent values. */
+  truncatedTo?: number;
 };
 
 /** Outer shell shared by every filter chip. */
@@ -62,11 +72,12 @@ export function FilterDropdown({
   onExcludeModeChange,
   singleSelect,
   alwaysShowSearch,
+  truncatedTo,
 }: FilterDropdownProps) {
   const [filterOpen, setFilterOpen] = useState(false);
 
   const selectedCount = selectedItems.length;
-  const singular = label.toLowerCase();
+  const singular = countNoun(label);
   const plural = labelPlural ?? `${singular}s`;
   const countLabel = `${selectedCount} ${pluralize(selectedCount, singular, plural)}`;
 
@@ -136,6 +147,7 @@ export function FilterDropdown({
               valuesLabel={valuesLabel}
               singleSelect={singleSelect}
               alwaysShowSearch={alwaysShowSearch}
+              truncatedTo={truncatedTo}
             />
           }
         />

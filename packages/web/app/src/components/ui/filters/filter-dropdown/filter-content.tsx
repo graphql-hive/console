@@ -42,6 +42,8 @@ export type FilterContentProps = {
   singleSelect?: boolean;
   /** Show the search box regardless of how many items there are. */
   alwaysShowSearch?: boolean;
+  /** Set when `items` holds only the most frequent values, to say so above the list. */
+  truncatedTo?: number;
 };
 
 export function FilterContent({
@@ -52,6 +54,7 @@ export function FilterContent({
   valuesLabel = 'values',
   singleSelect,
   alwaysShowSearch,
+  truncatedTo,
 }: FilterContentProps) {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -142,11 +145,18 @@ export function FilterContent({
         {hasSubmenus ? <span className="ml-auto size-3.5 shrink-0" /> : null}
       </div>
       {showSearch && <FloatingSearch label={label} onSearch={setSearch} value={search} />}
-      {/* Note about unavailable items */}
+      {truncatedTo !== undefined && (
+        <div className="mt-2 px-4 py-1 text-xs text-fg-secondary">
+          Showing the {truncatedTo.toLocaleString('en-US')} most frequent in the selected date
+          range.
+        </div>
+      )}
       {items.some(item => item.unavailable) && (
         <div className="mt-2 px-4 py-1 text-xs text-fg-default">
-          <span className="line-through">Struck-through</span> items are not found in the selected
-          date range.
+          <span className="line-through">Struck-through</span> items are{' '}
+          {truncatedTo === undefined
+            ? 'not found in the selected date range.'
+            : 'not among the most frequent values in the selected date range.'}
         </div>
       )}
 
