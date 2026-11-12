@@ -82,6 +82,8 @@ export const appDeploymentUsageOrder = [
   'app_name',
   'app_version',
   'last_request',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export const operationErrorsOrder = [
@@ -162,6 +164,8 @@ export function stringifyAppDeploymentUsageRecord(
     app_name: castValue(record.appName),
     app_version: castValue(record.appVersion),
     last_request: castDate(record.lastRequestTimestamp),
+    graph_id: castValue(record.graphId),
+    graph_version_id: castValue(record.graphVersionId),
   };
 
   return Object.values(mapper).join(',');

@@ -3,6 +3,7 @@ import { LRUCache } from 'lru-cache';
 import { ServiceLogger as Logger, traceInlineSync } from '@hive/service-common';
 import type {
   ClientMetadata,
+  GraphMetadata,
   RawOperation,
   RawOperationErrors,
   RawReport,
@@ -177,9 +178,15 @@ export const usageProcessorV2 = traceInlineSync(
     function upsertClientUsageTimestamp(
       clientName: string,
       clientVersion: string,
+      graph: GraphMetadata | null | undefined,
       timestamp: number,
     ) {
-      const key = `${clientName}/${clientVersion}` as const;
+      // The graph ids are appended as additional segments, so ingestors that only read
+      // the first two segments (app name and version) keep working.
+      const key: `${string}/${string}` =
+        graph?.graphId && graph.graphVersionId
+          ? `${clientName}/${clientVersion}/${graph.graphId}/${graph.graphVersionId}`
+          : `${clientName}/${clientVersion}`;
       let latestTimestamp = lastAppDeploymentUsage.get(key);
       if (!latestTimestamp || timestamp > latestTimestamp) {
         lastAppDeploymentUsage.set(key, timestamp);
@@ -264,7 +271,7 @@ export const usageProcessorV2 = traceInlineSync(
           name,
           version,
         };
-        upsertClientUsageTimestamp(name, version, operation.timestamp);
+        upsertClientUsageTimestamp(name, version, operation.metadata?.graph, operation.timestamp);
       } else {
         client = operation.metadata?.client ?? undefined;
       }
@@ -334,7 +341,7 @@ export const usageProcessorV2 = traceInlineSync(
           name,
           version,
         };
-        upsertClientUsageTimestamp(name, version, operation.timestamp);
+        upsertClientUsageTimestamp(name, version, operation.metadata?.graph, operation.timestamp);
       } else {
         client = operation.metadata?.client ?? undefined;
       }

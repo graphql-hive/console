@@ -2,6 +2,7 @@ import { ProcessedOperationErrorRecord } from '@hive/usage-common';
 import {
   formatDate,
   joinIntoSingleMessage,
+  stringifyAppDeploymentUsageRecord,
   stringifyOperationErrors,
   stringifyQueryOrMutationOperation,
   stringifyRegistryRecord,
@@ -263,6 +264,47 @@ test('stringify operation_errors in correct format and order', () => {
     ]
       .map(r => r.join(','))
       .join('\n'),
+  );
+});
+
+test('stringify app deployment usage records in correct format and order', () => {
+  const serialized = joinIntoSingleMessage(
+    [
+      {
+        target: 'my-target',
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        lastRequestTimestamp: timestamp.asNumber,
+        graphId: 'my-graph',
+        graphVersionId: 'my-graph-version',
+      },
+      {
+        target: 'my-target',
+        appName: 'my-app',
+        appVersion: '1.0.0',
+        lastRequestTimestamp: timestamp.asNumber,
+      },
+    ].map(stringifyAppDeploymentUsageRecord),
+  );
+  expect(serialized).toBe(
+    [
+      [
+        /* target_id */ `"my-target"`,
+        /* app_name */ `"my-app"`,
+        /* app_version */ `"1.0.0"`,
+        /* last_request */ timestamp.asString,
+        /* graph_id */ `"my-graph"`,
+        /* graph_version_id */ `"my-graph-version"`,
+      ].join(','),
+      [
+        /* target_id */ `"my-target"`,
+        /* app_name */ `"my-app"`,
+        /* app_version */ `"1.0.0"`,
+        /* last_request */ timestamp.asString,
+        /* graph_id */ `\\N`,
+        /* graph_version_id */ `\\N`,
+      ].join(','),
+    ].join('\n'),
   );
 });
 
