@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: hive-debug-cli-known-error-invalid-sdl
+expected_outcome: |
+  Identifies 301 as an invalid SDL / GraphQL syntax error, grounds the explanation in the CLI error
+  docs, and points at the line/column to fix without running any commands.

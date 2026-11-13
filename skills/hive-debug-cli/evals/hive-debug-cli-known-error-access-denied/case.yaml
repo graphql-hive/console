@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: hive-debug-cli-known-error-access-denied
+expected_outcome: |
+  Identifies 124 as an access denied error, grounds the explanation in the CLI error docs, and
+  explains it's a permissions/scope issue distinct from a missing or malformed token.

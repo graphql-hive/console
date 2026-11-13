@@ -1,0 +1,5 @@
+schema_version: "1.1"
+name: hive-debug-cli-known-error-no-type-definitions
+expected_outcome: |
+  Identifies 201 as a 'no type definitions found' error, grounds the explanation in the CLI error
+  docs, and suggests checking that schema.graphql contains valid SDL content.
