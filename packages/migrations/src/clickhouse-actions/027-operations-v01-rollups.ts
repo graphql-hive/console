@@ -34,13 +34,13 @@ const createRollups = async (
   await exec(`
     CREATE TABLE IF NOT EXISTS ${byHashClient}
     (
-      target LowCardinality(String) CODEC(ZSTD(1)),
-      graph_id LowCardinality(String) CODEC(ZSTD(1)),
+      target UUID CODEC(ZSTD(1)),
+      graph_id UUID CODEC(ZSTD(1)),
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
       hash String CODEC(ZSTD(1)),
       client_name String CODEC(ZSTD(1)),
       client_version String CODEC(ZSTD(1)),
-      graph_version_id String CODEC(ZSTD(1)),
+      graph_version_id UUID CODEC(ZSTD(1)),
       ${aggregateColumns(granularity)}
     )
     ENGINE = SummingMergeTree
@@ -55,7 +55,7 @@ const createRollups = async (
     CREATE MATERIALIZED VIEW IF NOT EXISTS ${byHashClient}_mv TO ${byHashClient}
     AS (
       SELECT
-        target,
+        toUUID(target) AS target,
         graph_id,
         ${bucket}(timestamp) AS timestamp,
         hash,
@@ -71,10 +71,10 @@ const createRollups = async (
   await exec(`
     CREATE TABLE IF NOT EXISTS ${byTimestamp}
     (
-      target LowCardinality(String) CODEC(ZSTD(1)),
-      graph_id LowCardinality(String) CODEC(ZSTD(1)),
+      target UUID CODEC(ZSTD(1)),
+      graph_id UUID CODEC(ZSTD(1)),
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
-      graph_version_id String CODEC(ZSTD(1)),
+      graph_version_id UUID CODEC(ZSTD(1)),
       ${aggregateColumns(granularity)}
     )
     ENGINE = SummingMergeTree
@@ -89,7 +89,7 @@ const createRollups = async (
     CREATE MATERIALIZED VIEW IF NOT EXISTS ${byTimestamp}_mv TO ${byTimestamp}
     AS (
       SELECT
-        target,
+        toUUID(target) AS target,
         graph_id,
         ${bucket}(timestamp) AS timestamp,
         graph_version_id,
@@ -102,12 +102,12 @@ const createRollups = async (
   await exec(`
     CREATE TABLE IF NOT EXISTS ${byClient}
     (
-      target LowCardinality(String) CODEC(ZSTD(1)),
-      graph_id LowCardinality(String) CODEC(ZSTD(1)),
+      target UUID CODEC(ZSTD(1)),
+      graph_id UUID CODEC(ZSTD(1)),
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
       client_name String CODEC(ZSTD(1)),
       client_version String CODEC(ZSTD(1)),
-      graph_version_id String CODEC(ZSTD(1)),
+      graph_version_id UUID CODEC(ZSTD(1)),
       ${aggregateColumns(granularity)}
     )
     ENGINE = SummingMergeTree
@@ -122,7 +122,7 @@ const createRollups = async (
     CREATE MATERIALIZED VIEW IF NOT EXISTS ${byClient}_mv TO ${byClient}
     AS (
       SELECT
-        target,
+        toUUID(target) AS target,
         graph_id,
         ${bucket}(timestamp) AS timestamp,
         client_name,
