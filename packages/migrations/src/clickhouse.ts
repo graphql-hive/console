@@ -196,6 +196,8 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/022-outbound-deliveries'),
     import('./clickhouse-actions/023-audit-logs-client'),
     import('./clickhouse-actions/024-outbound-deliveries-idempotency-key'),
+    import('./clickhouse-actions/025-operations-graph-columns'),
+    import('./clickhouse-actions/026-app-deployment-usage-graph-columns'),
   ]);
 
   async function actionRunner(action: Action, index: number) {

@@ -47,6 +47,8 @@ export const operationsOrder = [
   'client_name',
   'client_version',
   'coordinate_totals',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export const subscriptionOperationsOrder = [
@@ -57,6 +59,8 @@ export const subscriptionOperationsOrder = [
   'hash',
   'client_name',
   'client_version',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export const registryOrder = [
@@ -69,6 +73,8 @@ export const registryOrder = [
   'coordinates',
   'timestamp',
   'expires_at',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export const appDeploymentUsageOrder = [
@@ -76,6 +82,8 @@ export const appDeploymentUsageOrder = [
   'app_name',
   'app_version',
   'last_request',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export const operationErrorsOrder = [
@@ -84,6 +92,8 @@ export const operationErrorsOrder = [
   'timestamp',
   'expires_at',
   'errors',
+  'graph_id',
+  'graph_version_id',
 ] as const;
 
 export function joinIntoSingleMessage(items: string[]): string {
@@ -106,6 +116,8 @@ export function stringifyQueryOrMutationOperation(operation: ProcessedOperation)
     client_name: castValue(operation.metadata?.client?.name),
     client_version: castValue(operation.metadata?.client?.version),
     coordinate_totals: castValue(operation.execution.coordinateTotals),
+    graph_id: castValue(operation.metadata?.graph?.graphId),
+    graph_version_id: castValue(operation.metadata?.graph?.graphVersionId),
   };
   return Object.values(mapper).join(',');
 }
@@ -119,6 +131,8 @@ export function stringifySubscriptionOperation(operation: ProcessedSubscriptionO
     hash: castValue(operation.operationHash),
     client_name: castValue(operation.metadata?.client?.name),
     client_version: castValue(operation.metadata?.client?.version),
+    graph_id: castValue(operation.metadata?.graph?.graphId),
+    graph_version_id: castValue(operation.metadata?.graph?.graphVersionId),
   };
 
   return Object.values(mapper).join(',');
@@ -135,6 +149,8 @@ export function stringifyRegistryRecord(record: ProcessedRegistryRecord): string
     coordinates: castValue(record.coordinates),
     timestamp: castDate(record.timestamp),
     expires_at: castDate(record.expires_at),
+    graph_id: castValue(record.graph_id),
+    graph_version_id: castValue(record.graph_version_id),
   };
 
   return Object.values(mapper).join(',');
@@ -148,6 +164,8 @@ export function stringifyAppDeploymentUsageRecord(
     app_name: castValue(record.appName),
     app_version: castValue(record.appVersion),
     last_request: castDate(record.lastRequestTimestamp),
+    graph_id: castValue(record.graphId),
+    graph_version_id: castValue(record.graphVersionId),
   };
 
   return Object.values(mapper).join(',');
@@ -162,6 +180,8 @@ export function stringifyOperationErrors(record: ProcessedOperationErrorRecord):
     errors: record.errors
       ? `"[${record.errors?.map(castTuple).join(',')}]"`
       : castValue(record.errors),
+    graph_id: castValue(record.graph_id),
+    graph_version_id: castValue(record.graph_version_id),
   };
 
   return Object.values(mapper).join(',');

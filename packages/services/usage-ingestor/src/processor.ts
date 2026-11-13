@@ -126,11 +126,12 @@ export function createProcessor(config: { logger: ServiceLogger }) {
             continue;
           }
 
-          const sample = operationSample.get(rawOperation.operationMapKey);
+          const sampleKey = createOperationSampleKey(rawOperation);
+          const sample = operationSample.get(sampleKey);
 
-          // count operations per operationMapKey
+          // count operations per operationMapKey and graph
           if (!sample) {
-            operationSample.set(rawOperation.operationMapKey, {
+            operationSample.set(sampleKey, {
               operation: rawOperation,
               size: 1,
             });
@@ -148,6 +149,8 @@ export function createProcessor(config: { logger: ServiceLogger }) {
             hash: raw.operationMapKey,
             target: rawReport.target,
             timestamp: raw.timestamp,
+            graph_id: raw.metadata?.graph?.graphId,
+            graph_version_id: raw.metadata?.graph?.graphVersionId,
           };
           serializedErrorRecords.push(stringifyOperationErrors(err));
         }
@@ -168,11 +171,12 @@ export function createProcessor(config: { logger: ServiceLogger }) {
               continue;
             }
 
-            const sample = operationSample.get(rawOperation.operationMapKey);
+            const sampleKey = createOperationSampleKey(rawOperation);
+            const sample = operationSample.get(sampleKey);
 
-            // count operations per operationMapKey
+            // count operations per operationMapKey and graph
             if (!sample) {
-              operationSample.set(rawOperation.operationMapKey, {
+              operationSample.set(sampleKey, {
                 operation: rawOperation,
                 size: 1,
               });
@@ -218,6 +222,8 @@ export function createProcessor(config: { logger: ServiceLogger }) {
               coordinates: normalized.coordinates,
               expires_at: group.operation.expiresAt || timestamp + RETENTION_FALLBACK * DAY_IN_MS,
               timestamp,
+              graph_id: group.operation.metadata?.graph?.graphId,
+              graph_version_id: group.operation.metadata?.graph?.graphVersionId,
             }),
           );
         }
@@ -238,13 +244,15 @@ export function createProcessor(config: { logger: ServiceLogger }) {
           }
 
           for (const [key, timestamp] of max.entries()) {
-            const [appName, appVersion] = key.split('/');
+            const [appName, appVersion, graphId, graphVersionId] = key.split('/');
             serializedAppDeploymentUsageRecords.push(
               stringifyAppDeploymentUsageRecord({
                 target,
                 appName,
                 appVersion,
                 lastRequestTimestamp: timestamp,
+                graphId,
+                graphVersionId,
               }),
             );
           }
@@ -365,4 +373,13 @@ function processSubscriptionOperation(
     metadata,
     operationHash,
   };
+}
+
+/**
+ * Registry records (`operation_collection`) are written once per operation and graph within a report,
+ * so the `coordinates_v01_*` rollups can be scoped by `graph_id` and `graph_version_id`.
+ */
+function createOperationSampleKey(operation: RawOperation | RawSubscriptionOperation): string {
+  const graph = operation.metadata?.graph;
+  return `${operation.operationMapKey}|${graph?.graphId ?? ''}|${graph?.graphVersionId ?? ''}`;
 }

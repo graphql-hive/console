@@ -3,6 +3,7 @@ import { LRUCache } from 'lru-cache';
 import { ServiceLogger as Logger, traceInlineSync } from '@hive/service-common';
 import type {
   ClientMetadata,
+  GraphMetadata,
   RawOperation,
   RawOperationErrors,
   RawReport,
@@ -177,9 +178,15 @@ export const usageProcessorV2 = traceInlineSync(
     function upsertClientUsageTimestamp(
       clientName: string,
       clientVersion: string,
+      graph: GraphMetadata | null | undefined,
       timestamp: number,
     ) {
-      const key = `${clientName}/${clientVersion}` as const;
+      // The graph ids are appended as additional segments, so ingestors that only read
+      // the first two segments (app name and version) keep working.
+      const key: `${string}/${string}` =
+        graph?.graphId && graph.graphVersionId
+          ? `${clientName}/${clientVersion}/${graph.graphId}/${graph.graphVersionId}`
+          : `${clientName}/${clientVersion}`;
       let latestTimestamp = lastAppDeploymentUsage.get(key);
       if (!latestTimestamp || timestamp > latestTimestamp) {
         lastAppDeploymentUsage.set(key, timestamp);
@@ -257,6 +264,8 @@ export const usageProcessorV2 = traceInlineSync(
         continue;
       }
 
+      const graph = normalizeGraphMetadata(operation.metadata?.graph);
+
       let client: ClientMetadata | undefined;
       if (operation.persistedDocumentHash) {
         const [name, version] = operation.persistedDocumentHash.split('~');
@@ -264,7 +273,7 @@ export const usageProcessorV2 = traceInlineSync(
           name,
           version,
         };
-        upsertClientUsageTimestamp(name, version, operation.timestamp);
+        upsertClientUsageTimestamp(name, version, graph, operation.timestamp);
       } else {
         client = operation.metadata?.client ?? undefined;
       }
@@ -284,10 +293,7 @@ export const usageProcessorV2 = traceInlineSync(
         },
         metadata: {
           client,
-          graph: {
-            graphId: operation.metadata?.graph?.graphId,
-            graphVersionId: operation.metadata?.graph?.graphVersionId,
-          },
+          graph,
         },
       });
 
@@ -308,6 +314,9 @@ export const usageProcessorV2 = traceInlineSync(
             ? operation.timestamp + targetRetentionInDays * DAY_IN_MS
             : undefined,
           errors,
+          metadata: {
+            graph,
+          },
         });
         report.errors ??= rawErrors;
       }
@@ -321,6 +330,8 @@ export const usageProcessorV2 = traceInlineSync(
         continue;
       }
 
+      const graph = normalizeGraphMetadata(operation.metadata?.graph);
+
       let client: ClientMetadata | undefined;
       if (operation.persistedDocumentHash) {
         const [name, version] = operation.persistedDocumentHash.split('~');
@@ -328,7 +339,7 @@ export const usageProcessorV2 = traceInlineSync(
           name,
           version,
         };
-        upsertClientUsageTimestamp(name, version, operation.timestamp);
+        upsertClientUsageTimestamp(name, version, graph, operation.timestamp);
       } else {
         client = operation.metadata?.client ?? undefined;
       }
@@ -342,10 +353,7 @@ export const usageProcessorV2 = traceInlineSync(
           : undefined,
         metadata: {
           client,
-          graph: {
-            graphId: operation.metadata?.graph?.graphId,
-            graphVersionId: operation.metadata?.graph?.graphVersionId,
-          },
+          graph,
         },
       });
     }
@@ -483,7 +491,24 @@ const ClientSchema = tb.Type.Object(
   },
 );
 
+// TypeBox ships without built-in string formats; unregistered formats fail every value.
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+tb.FormatRegistry.Set('uuid', value => uuidRegex.test(value));
+
 const UUIDType = tb.Type.String({ format: 'uuid' });
+
+/**
+ * UUIDs are accepted case-insensitively (RFC 9562), but we lowercase them so that
+ * string-based comparisons (e.g. the app deployment usage keys) treat them as equal.
+ */
+function normalizeGraphMetadata(
+  graph: { graphId: string; graphVersionId: string } | null | undefined,
+): GraphMetadata {
+  return {
+    graphId: graph?.graphId.toLowerCase(),
+    graphVersionId: graph?.graphVersionId.toLowerCase(),
+  };
+}
 
 const GraphSchema = tb.Type.Object(
   {
