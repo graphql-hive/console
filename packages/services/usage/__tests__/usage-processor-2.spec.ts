@@ -91,3 +91,43 @@ test('an operation with a persistedDocumentHash and graph appends the graph ids 
     'my-app/1.0.0': expect.any(Number),
   });
 });
+
+test('graph ids are lowercased so differently-cased ids for the same graph are treated as equal', () => {
+  const graphId = '0f9c3a39-3c4e-4a3b-9a0c-6f1f0b9a2f01';
+  const graphVersionId = '6b1d4c2e-8a3f-4e5d-9b7c-1a2b3c4d5e6f';
+  const result = usageProcessorV2(
+    buildLogger(),
+    buildIncomingReport({
+      size: 2,
+      operations: [
+        {
+          operationMapKey: 'op1Key',
+          timestamp: Date.now(),
+          execution: { ok: true, errorsTotal: 0, duration: 1 },
+          persistedDocumentHash: 'my-app~1.0.0~abc123',
+          metadata: {
+            graph: { graphId: graphId.toUpperCase(), graphVersionId: graphVersionId.toUpperCase() },
+          },
+        },
+        {
+          operationMapKey: 'op1Key',
+          timestamp: Date.now(),
+          execution: { ok: true, errorsTotal: 0, duration: 1 },
+          persistedDocumentHash: 'my-app~1.0.0~abc123',
+          metadata: { graph: { graphId, graphVersionId } },
+        },
+      ],
+    }),
+    targetSelector,
+    null,
+  );
+
+  expect(result.success).toBe(true);
+  if (!result.success) return;
+  expect(result.report.appDeploymentUsageTimestamps).toEqual({
+    [`my-app/1.0.0/${graphId}/${graphVersionId}`]: expect.any(Number),
+  });
+  for (const operation of result.report.operations) {
+    expect(operation.metadata?.graph).toEqual({ graphId, graphVersionId });
+  }
+});
