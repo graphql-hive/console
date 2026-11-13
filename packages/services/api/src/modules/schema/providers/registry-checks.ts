@@ -17,6 +17,7 @@ import { buildSortedSchemaFromSchemaObject } from '../../../shared/schema';
 import { AffectAppDeploymentsBySchemaCoordinate } from '../../app-deployments/providers/app-deployments';
 import { OperationsReader } from '../../operations/providers/operations-reader';
 import { SchemaPolicyProvider } from '../../policy/providers/schema-policy.provider';
+import { isSchemaChangeUsageTracked } from '../lib/schema-change-usage-tracking';
 import type {
   ComposeAndValidateResult,
   DateRange,
@@ -566,6 +567,25 @@ export class RegistryChecks {
       inspectorChanges = inspectorChanges.filter(change => !isFederationRelatedChange(change));
     }
 
+    const isFailingDangerousChange = (change: { criticality: CriticalityLevel; type: string }) => {
+      return (
+        args.failDiffOnDangerousChange &&
+        change.criticality === CriticalityLevel.Dangerous &&
+        // if failAll is null or true, or if the list of failing change types includes this type...
+        (args.failAllDangerousChanges === true ||
+          (args.failDangerousChangeTypes as string[])?.includes(change.type))
+      );
+    };
+
+    /**
+     * Usage decides whether these changes fail the check: breaking changes always; a dangerous change
+     * the target fails on only where usage is recorded for its coordinate, otherwise zero usage would
+     * always pass it and silently void the setting.
+     */
+    const isSubjectToUsageCheck = (change: SchemaChangeType) =>
+      change.criticality === CriticalityLevel.Breaking ||
+      (isFailingDangerousChange(change) && isSchemaChangeUsageTracked(change));
+
     if (args.conditionalBreakingChangeConfig) {
       this.logger.debug('Conditional breaking change settings available.');
       const settings = args.conditionalBreakingChangeConfig;
@@ -574,10 +594,7 @@ export class RegistryChecks {
 
       await Promise.all(
         inspectorChanges.map(async change => {
-          if (
-            change.criticality !== CriticalityLevel.Breaking ||
-            !change.breakingChangeSchemaCoordinate
-          ) {
+          if (!isSubjectToUsageCheck(change) || !change.breakingChangeSchemaCoordinate) {
             return;
           }
 
@@ -693,7 +710,7 @@ export class RegistryChecks {
       // Collect all coordinates from breaking changes and initialize affectedAppDeployments to []
       const breakingCoordinates = new Set<string>();
       for (const change of inspectorChanges) {
-        if (change.criticality === CriticalityLevel.Breaking) {
+        if (isSubjectToUsageCheck(change)) {
           // Initialize affectedAppDeployments to empty array for all breaking changes
           change.affectedAppDeployments = [];
           const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
@@ -717,7 +734,7 @@ export class RegistryChecks {
 
             // Mark changes as unsafe if they affect active app deployments
             for (const change of inspectorChanges) {
-              if (change.criticality !== CriticalityLevel.Breaking) {
+              if (!isSubjectToUsageCheck(change)) {
                 continue;
               }
               const coordinate = change.breakingChangeSchemaCoordinate ?? change.path;
@@ -765,16 +782,6 @@ export class RegistryChecks {
     const breakingChanges: Array<SchemaChangeType> = [];
 
     const coordinatesDiff = diffSchemaCoordinates(existingSchema, incomingSchema);
-
-    const isFailingDangerousChange = (change: { criticality: CriticalityLevel; type: string }) => {
-      return (
-        args.failDiffOnDangerousChange &&
-        change.criticality === CriticalityLevel.Dangerous &&
-        // if failAll is null or true, or if the list of failing change types includes this type...
-        (args.failAllDangerousChanges === true ||
-          (args.failDangerousChangeTypes as string[])?.includes(change.type))
-      );
-    };
 
     for (const change of inspectorChanges) {
       if (change.criticality === CriticalityLevel.Breaking || isFailingDangerousChange(change)) {
