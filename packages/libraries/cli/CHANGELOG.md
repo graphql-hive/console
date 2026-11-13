@@ -1,5 +1,16 @@
 # @graphql-hive/cli
 
+## 0.68.5
+
+### Patch Changes
+
+- [#8923](https://github.com/graphql-hive/console/pull/8923)
+  [`0161537`](https://github.com/graphql-hive/console/commit/01615378c4ce641276292f982da65870583eebfe)
+  Thanks [@jdolle](https://github.com/jdolle)! - `operations:check` no longer fails on an operation
+  or fragment whose string literal contains `...`. Fragment spreads were found with a regular
+  expression over the printed document, which mistook the sequence inside a string for a spread;
+  they are now read from the parsed document.
+
 ## 0.68.4
 
 ### Patch Changes
