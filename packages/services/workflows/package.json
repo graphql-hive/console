@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@graphql-hive/logger": "1.1.0",
-    "@graphql-inspector/core": "8.0.0",
+    "@graphql-inspector/core": "catalog:",
     "@graphql-inspector/patch": "catalog:",
     "@graphql-yoga/redis-event-target": "catalog:",
     "@hive/clickhouse": "workspace:*",

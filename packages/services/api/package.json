@@ -31,7 +31,7 @@
     "@date-fns/utc": "catalog:",
     "@graphql-hive/core": "workspace:*",
     "@graphql-hive/signal": "1.0.0",
-    "@graphql-inspector/core": "8.0.0",
+    "@graphql-inspector/core": "catalog:",
     "@graphql-tools/merge": "catalog:",
     "@hive/cdn-script": "workspace:*",
     "@hive/clickhouse": "workspace:*",
