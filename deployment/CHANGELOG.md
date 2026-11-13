@@ -1,5 +1,85 @@
 # hive
 
+## 15.3.0
+
+### Minor Changes
+
+- [#8907](https://github.com/graphql-hive/console/pull/8907)
+  [`41a8afb`](https://github.com/graphql-hive/console/commit/41a8afbdb73c1e318d88db4beff5c26f8fb9a229)
+  Thanks [@jdolle](https://github.com/jdolle)! - Alert channels can be paused. A toggle on the
+  channel page stops a channel from receiving schema change and metric alert notifications until it
+  is enabled again, and the project's Alerts page marks paused channels. In the GraphQL API this is
+  the `disableAlertChannel` and `enableAlertChannel` mutations, with `disabledAt` and `disabledBy`
+  on alert channels. A channel's delivery health starts afresh when it is enabled; its delivery
+  history stays.
+
+- [#8909](https://github.com/graphql-hive/console/pull/8909)
+  [`634d037`](https://github.com/graphql-hive/console/commit/634d037dff879a5d8dfaa1cda1abc89fa75aff6c)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Add an audit log API for SIEM ingestion.
+  `GET /audit-log/v1/events` returns an organization's audit log events oldest first as a stable,
+  versioned JSON envelope, paginated with an opaque cursor (`nextCursor`, `hasMore`, and a
+  `Link: rel="next"` header). Optional parameters: `cursor`, `since` (start of the first sync),
+  `limit` (1–1000, default 100) and `eventTypes` (comma-separated event types). Events are returned
+  once they are 60 seconds old, so events written slightly late are never skipped; delivery is
+  at-least-once and clients dedupe on the event `id`. A cursor older than the retention period is
+  reported with `cursorExpired: true`.
+
+  The API is authenticated with organization access tokens holding the new `auditLog:describe`
+  permission and is rate limited per organization. It is disabled by default and enabled with
+  `FEATURE_FLAGS_AUDIT_LOG_API_ENABLED=1`; while disabled, the endpoint does not exist and the
+  permission is not offered.
+
+- [#8915](https://github.com/graphql-hive/console/pull/8915)
+  [`3b3ea3e`](https://github.com/graphql-hive/console/commit/3b3ea3e320052abad74b7b878360edc9d9503fdd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade Node.js to `24.22.3`.
+
+- [#8897](https://github.com/graphql-hive/console/pull/8897)
+  [`df3b972`](https://github.com/graphql-hive/console/commit/df3b97289382ff58db63459000f54aa870c7f3c0)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - The Traces page now uses the same
+  filter menu as Insights. Each filter lists every value seen in the selected date range instead of
+  the five most frequent under the current filters, so values such as a rarely used operation name
+  can always be found. Links using the old filter format keep working.
+
+### Patch Changes
+
+- [#8907](https://github.com/graphql-hive/console/pull/8907)
+  [`41a8afb`](https://github.com/graphql-hive/console/commit/41a8afbdb73c1e318d88db4beff5c26f8fb9a229)
+  Thanks [@jdolle](https://github.com/jdolle)! - The alert channel page, the metric alert rule page
+  and the alert activity page refresh once a minute instead of every 15 seconds.
+
+- [#8915](https://github.com/graphql-hive/console/pull/8915)
+  [`3b3ea3e`](https://github.com/graphql-hive/console/commit/3b3ea3e320052abad74b7b878360edc9d9503fdd)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Address vulnerability
+  [GHSA-474x-hrwr-fgx4](https://github.com/advisories/GHSA-474x-hrwr-fgx4).
+
+- [#8837](https://github.com/graphql-hive/console/pull/8837)
+  [`11ddcd2`](https://github.com/graphql-hive/console/commit/11ddcd2eaa2490de0cfa68fed6045af703bca536)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Insights filters gain a Fields
+  dimension. Scope a view to operations that use specific schema coordinates, save it, and attach it
+  to a metric alert.
+
+- [#8923](https://github.com/graphql-hive/console/pull/8923)
+  [`0161537`](https://github.com/graphql-hive/console/commit/01615378c4ce641276292f982da65870583eebfe)
+  Thanks [@jdolle](https://github.com/jdolle)! - Schema checks and publishes no longer hide changes
+  to a type, field, input field, union or directive when a description, interface, union member,
+  directive location or directive argument was added to that same node in the same diff. The rule
+  that collapses changes nested under a newly added node treated those additions like the addition
+  of the node itself, so for example a field's type change next to a new description, or fields
+  added to a type that gained an interface, were missing from the list of changes. Such a change is
+  now reported, and a check fails on it when it is breaking.
+
+- [#8910](https://github.com/graphql-hive/console/pull/8910)
+  [`a25f14e`](https://github.com/graphql-hive/console/commit/a25f14e707149a2ad2ac2a31b9d752d1c97d3e6e)
+  Thanks [@Abhist17](https://github.com/Abhist17)! - A Slack metric alert notification that fails
+  with an error no retry can fix (the channel is gone or restricted, the organization's Slack token
+  is revoked or lacks a scope, or Slack rejects the message) now completes instead of retrying until
+  the job's attempts run out. The delivery is recorded as failed on its final attempt.
+
+- [#8898](https://github.com/graphql-hive/console/pull/8898)
+  [`d7caf83`](https://github.com/graphql-hive/console/commit/d7caf836d84a2be89c6d033dff98bffbc41c086c)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Dragging across the chart on the
+  Traces page selects a date range again.
+
 ## 15.2.0
 
 ### Minor Changes
