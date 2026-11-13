@@ -14,6 +14,7 @@ import {
   OrganizationMemberRoles,
   OrganizationMembers,
 } from '@hive/api';
+import { AuditLogApiConfig } from '@hive/api/modules/audit-logs/providers/audit-log-api-config';
 import { AccessTokenKeyContainer } from '@hive/api/modules/auth/lib/supertokens-at-home/crypto';
 import { EmailVerification } from '@hive/api/modules/auth/providers/email-verification';
 import { OAuthCache } from '@hive/api/modules/auth/providers/oauth-cache';
@@ -55,6 +56,7 @@ import { TargetAccessTokenStrategy } from '../../api/src/modules/auth/lib/target
 import { OrganizationAccessTokenValidationCache } from '../../api/src/modules/auth/providers/organization-access-token-validation-cache';
 import { OrganizationAccessTokensCache } from '../../api/src/modules/organization/providers/organization-access-tokens-cache';
 import { TargetTokenCache } from '../../api/src/modules/token/providers/target-token-cache';
+import { createAuditLogApiPlugin } from './audit-log-api';
 import { CorsError } from './cors-error';
 import { env } from './environment';
 import { graphqlHandler } from './graphql-handler';
@@ -276,6 +278,8 @@ export async function main() {
       };
     }
     const logger = createGraphQLLogger();
+    const auditLogApiConfig = new AuditLogApiConfig(env.featureFlags.auditLogApiEnabled);
+
     const registry = createRegistry({
       release: env.release,
       clientIPHeaderName: env.clientIPHeaderName,
@@ -374,6 +378,7 @@ export async function main() {
       schemaProposalsEnabled: env.featureFlags.schemaProposalsEnabled,
       otelTracingEnabled: env.featureFlags.otelTracingEnabled,
       metricAlertRulesEnabled: env.featureFlags.metricAlertRulesEnabled,
+      auditLogApiConfig,
       prometheus: env.prometheus,
       taskScheduler,
     });
@@ -667,6 +672,16 @@ export async function main() {
       env.clientIPHeaderName,
     );
     await server.register(scimPlugin, { prefix: '/scim/v2' });
+
+    if (auditLogApiConfig.isEnabled) {
+      await server.register(
+        createAuditLogApiPlugin({
+          injector: registry.injector,
+          authN,
+        }),
+        { prefix: '/audit-log/v1' },
+      );
+    }
 
     if (env.exposeMemoryUtils) {
       logger.debug('exposing memory utils endpoints');

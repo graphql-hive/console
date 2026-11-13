@@ -382,6 +382,8 @@ function assertAllRulesAreAssigned(excluded: Array<Permission>) {
 assertAllRulesAreAssigned([
   /** SCIM provisioning is only available to organization access tokens. */
   'scim:provision',
+  /** The audit log API is only available to organization access tokens. */
+  'auditLog:describe',
   /** These are CLI only actions for now. */
   'schema:compose',
   'schemaCheck:create',

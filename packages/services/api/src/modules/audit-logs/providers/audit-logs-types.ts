@@ -451,7 +451,11 @@ export const AuditLogModel = z.union([
 
 export type AuditLogSchemaEvent = z.infer<typeof AuditLogModel>;
 
-const auditLogEventTypes = AuditLogModel.options.map(option => option.shape.eventType.value);
+export type AuditLogEventType = AuditLogSchemaEvent['eventType'];
+
+export const auditLogEventTypes: readonly AuditLogEventType[] = AuditLogModel.options.map(
+  option => option.shape.eventType.value,
+);
 
 const AuditLogClickhouseObjectModel = z.object({
   id: z.string(),

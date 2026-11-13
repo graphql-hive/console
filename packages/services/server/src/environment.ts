@@ -88,6 +88,9 @@ const EnvironmentModel = zod.object({
   FEATURE_FLAGS_OTEL_TRACING_ENABLED: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]).optional(),
   ),
+  FEATURE_FLAGS_AUDIT_LOG_API_ENABLED: emptyString(
+    zod.union([zod.literal('1'), zod.literal('0')]).optional(),
+  ),
   FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED: emptyString(
     zod
       .union([zod.literal('1'), zod.literal('0')])
@@ -829,6 +832,8 @@ export const env = {
     otelTracingEnabled: base.FEATURE_FLAGS_OTEL_TRACING_ENABLED === '1',
     /** Whether metric alert rules should be enabled cluster-wide. */
     metricAlertRulesEnabled: base.FEATURE_FLAGS_METRIC_ALERT_RULES_ENABLED === '1',
+    /** Whether the audit log API (SIEM ingestion) should be enabled for all organizations. */
+    auditLogApiEnabled: base.FEATURE_FLAGS_AUDIT_LOG_API_ENABLED === '1',
   },
   oidcWorkloadFederation:
     oidcWorkloadFederation.OIDC_WORKLOAD_FEDERATION_IDENTITY_PROVIDER === 'azure'

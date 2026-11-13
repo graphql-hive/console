@@ -66,7 +66,8 @@ export class RedisRateLimiter {
 
   async isActionRateLimited(
     req: FastifyRequest,
-    actionName: string /** duration of the time window */,
+    actionName: string,
+    /** duration of the time window */
     timeWindowSeconds = 5 * 60,
     /** maximum amount of requests allowed in the time window */
     maxActionsPerTimeWindow = 30,
@@ -109,6 +110,38 @@ export class RedisRateLimiter {
 
     return await this.applyRateLimit(
       `user:${userId}`,
+      actionName,
+      timeWindowSeconds,
+      maxActionsPerTimeWindow,
+    );
+  }
+
+  /**
+   * Rate limit an action based on the organization performing it (instead of the IP address), so
+   * every client of an organization (e.g. several access tokens or pollers) shares one budget, and
+   * clients sharing egress IPs across organizations do not throttle each other.
+   */
+  async isOrganizationRateLimited(
+    req: FastifyRequest,
+    organizationId: string,
+    actionName: string,
+    /** duration of the time window */
+    timeWindowSeconds: number,
+    /** maximum amount of requests allowed in the time window */
+    maxActionsPerTimeWindow: number,
+  ) {
+    if (!this.config.config) {
+      this.logger.debug('rate limiting is disabled');
+      return false;
+    }
+
+    if (this.isRateLimitBypassed(req)) {
+      this.logger.debug('rate limiting is bypassed');
+      return false;
+    }
+
+    return await this.applyRateLimit(
+      `organization:${organizationId}`,
       actionName,
       timeWindowSeconds,
       maxActionsPerTimeWindow,
