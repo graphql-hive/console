@@ -264,6 +264,8 @@ export const usageProcessorV2 = traceInlineSync(
         continue;
       }
 
+      const graph = normalizeGraphMetadata(operation.metadata?.graph);
+
       let client: ClientMetadata | undefined;
       if (operation.persistedDocumentHash) {
         const [name, version] = operation.persistedDocumentHash.split('~');
@@ -271,7 +273,7 @@ export const usageProcessorV2 = traceInlineSync(
           name,
           version,
         };
-        upsertClientUsageTimestamp(name, version, operation.metadata?.graph, operation.timestamp);
+        upsertClientUsageTimestamp(name, version, graph, operation.timestamp);
       } else {
         client = operation.metadata?.client ?? undefined;
       }
@@ -291,10 +293,7 @@ export const usageProcessorV2 = traceInlineSync(
         },
         metadata: {
           client,
-          graph: {
-            graphId: operation.metadata?.graph?.graphId,
-            graphVersionId: operation.metadata?.graph?.graphVersionId,
-          },
+          graph,
         },
       });
 
@@ -316,10 +315,7 @@ export const usageProcessorV2 = traceInlineSync(
             : undefined,
           errors,
           metadata: {
-            graph: {
-              graphId: operation.metadata?.graph?.graphId,
-              graphVersionId: operation.metadata?.graph?.graphVersionId,
-            },
+            graph,
           },
         });
         report.errors ??= rawErrors;
@@ -334,6 +330,8 @@ export const usageProcessorV2 = traceInlineSync(
         continue;
       }
 
+      const graph = normalizeGraphMetadata(operation.metadata?.graph);
+
       let client: ClientMetadata | undefined;
       if (operation.persistedDocumentHash) {
         const [name, version] = operation.persistedDocumentHash.split('~');
@@ -341,7 +339,7 @@ export const usageProcessorV2 = traceInlineSync(
           name,
           version,
         };
-        upsertClientUsageTimestamp(name, version, operation.metadata?.graph, operation.timestamp);
+        upsertClientUsageTimestamp(name, version, graph, operation.timestamp);
       } else {
         client = operation.metadata?.client ?? undefined;
       }
@@ -355,10 +353,7 @@ export const usageProcessorV2 = traceInlineSync(
           : undefined,
         metadata: {
           client,
-          graph: {
-            graphId: operation.metadata?.graph?.graphId,
-            graphVersionId: operation.metadata?.graph?.graphVersionId,
-          },
+          graph,
         },
       });
     }
@@ -501,6 +496,19 @@ const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 tb.FormatRegistry.Set('uuid', value => uuidRegex.test(value));
 
 const UUIDType = tb.Type.String({ format: 'uuid' });
+
+/**
+ * UUIDs are accepted case-insensitively (RFC 9562), but we lowercase them so that
+ * string-based comparisons (e.g. the app deployment usage keys) treat them as equal.
+ */
+function normalizeGraphMetadata(
+  graph: { graphId: string; graphVersionId: string } | null | undefined,
+): GraphMetadata {
+  return {
+    graphId: graph?.graphId.toLowerCase(),
+    graphVersionId: graph?.graphVersionId.toLowerCase(),
+  };
+}
 
 const GraphSchema = tb.Type.Object(
   {
