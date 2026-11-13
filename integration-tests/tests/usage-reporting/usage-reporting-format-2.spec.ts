@@ -481,7 +481,11 @@ describe('graph', () => {
             graph_id: graph.graphId,
             graph_version_id: graph.graphVersionId,
           },
-          { client_name: 'without-graph', graph_id: '', graph_version_id: '' },
+          {
+            client_name: 'without-graph',
+            graph_id: '00000000-0000-0000-0000-000000000000',
+            graph_version_id: '00000000-0000-0000-0000-000000000000',
+          },
         ]);
       });
 
@@ -501,7 +505,11 @@ describe('graph', () => {
             )
             .parse(result.data),
         ).toEqual([
-          { graph_id: '', graph_version_id: '', total: 1 },
+          {
+            graph_id: '00000000-0000-0000-0000-000000000000',
+            graph_version_id: '00000000-0000-0000-0000-000000000000',
+            total: 1,
+          },
           { graph_id: graph.graphId, graph_version_id: graph.graphVersionId, total: 1 },
         ]);
       });
@@ -564,7 +572,11 @@ describe('graph', () => {
             graph_id: graph.graphId,
             graph_version_id: graph.graphVersionId,
           },
-          { client_name: 'without-graph', graph_id: '', graph_version_id: '' },
+          {
+            client_name: 'without-graph',
+            graph_id: '00000000-0000-0000-0000-000000000000',
+            graph_version_id: '00000000-0000-0000-0000-000000000000',
+          },
         ]);
       });
     },
@@ -615,7 +627,12 @@ describe('graph', () => {
             )
             .parse(result.data),
         ).toEqual([
-          { app_name: 'my-app', app_version: '1.0.0', graph_id: '', graph_version_id: '' },
+          {
+            app_name: 'my-app',
+            app_version: '1.0.0',
+            graph_id: '00000000-0000-0000-0000-000000000000',
+            graph_version_id: '00000000-0000-0000-0000-000000000000',
+          },
           {
             app_name: 'my-app',
             app_version: '1.0.0',
