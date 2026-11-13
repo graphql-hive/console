@@ -87,7 +87,7 @@
     "@graphql-codegen/urql-introspection": "4.0.1",
     "@graphql-eslint/eslint-plugin": "4.4.2",
     "@graphql-inspector/cli": "7.0.0",
-    "@graphql-inspector/core": "8.0.0",
+    "@graphql-inspector/core": "catalog:",
     "@graphql-inspector/patch": "catalog:",
     "@graphql-tools/load": "8.1.19",
     "@manypkg/get-packages": "catalog:",

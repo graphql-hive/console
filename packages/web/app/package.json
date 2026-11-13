@@ -18,7 +18,7 @@
     "@fastify/vite": "9.2.0",
     "@fontsource-variable/instrument-sans": "5.3.0",
     "@graphql-hive/laboratory": "workspace:*",
-    "@graphql-inspector/core": "8.0.0",
+    "@graphql-inspector/core": "catalog:",
     "@graphql-inspector/patch": "catalog:",
     "@graphql-tools/mock": "9.1.16",
     "@graphql-typed-document-node/core": "catalog:",
