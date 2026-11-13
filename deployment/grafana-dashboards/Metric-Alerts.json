@@ -1162,6 +1162,303 @@
       ],
       "title": "Failed notification dispatches",
       "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 113
+      },
+      "id": 110,
+      "panels": [],
+      "title": "Alert channel auto-disable (hourly sweep)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Wall-clock cost of the hourly disableFailingAlertChannels cron. The cron runs once an hour, so every expression uses a 2h increase window and a point reflects the latest run or two. The candidate scan reads the per-channel state rollup (alert_channel_delivery_state, one row per channel); the per-channel checks read outbound_deliveries by primary key, one per candidate, so their mean is per query, not per run. The whole job includes graphile-worker's cron wake-up, the Postgres read and the updates, which is roughly a second of baseline regardless of channel count (see the evaluateMetricAlertRules panel).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 114
+      },
+      "id": 111,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(hive_alert_channel_sweep_clickhouse_query_duration_seconds_sum{query=\"candidates\"}[2h])) / sum(increase(hive_alert_channel_sweep_clickhouse_query_duration_seconds_count{query=\"candidates\"}[2h]))",
+          "legendFormat": "candidate scan (mean, 2h)",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(hive_alert_channel_sweep_clickhouse_query_duration_seconds_sum{query=\"channel\"}[2h])) / sum(increase(hive_alert_channel_sweep_clickhouse_query_duration_seconds_count{query=\"channel\"}[2h]))",
+          "legendFormat": "per-channel check (mean, 2h)",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(hive_workflow_job_duration_seconds_sum{task_identifier=\"disableFailingAlertChannels\"}[2h])) / sum(increase(hive_workflow_job_duration_seconds_count{task_identifier=\"disableFailingAlertChannels\"}[2h]))",
+          "legendFormat": "whole job (mean, 2h)",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (increase(hive_alert_channel_sweep_clickhouse_query_duration_seconds_bucket{query=\"candidates\"}[24h])))",
+          "legendFormat": "candidate scan p99 (24h)",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "Auto-disable sweep: ClickHouse queries vs whole job",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "What the hourly disableFailingAlertChannels cron did in the last 2h: candidate scans by ClickHouse outcome (one per run), per-channel checks (one per candidate), runs that threw outside ClickHouse (the Postgres read or an update; with max=1 they are not retried, so only the job counters see them), and how many channels the sweep disabled.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "axisSoftMin": 0,
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 114
+      },
+      "id": 112,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum by (outcome) (increase(hive_alert_channel_sweep_clickhouse_query_duration_seconds_count{query=\"candidates\"}[2h]))",
+          "legendFormat": "{{outcome}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(hive_alert_channel_sweep_clickhouse_query_duration_seconds_count{query=\"channel\"}[2h]))",
+          "legendFormat": "channel checks",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(hive_workflow_job_error_total{task_identifier=\"disableFailingAlertChannels\"}[2h]))",
+          "legendFormat": "job errors",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase(hive_alert_channels_auto_disabled_total[2h]))",
+          "legendFormat": "channels disabled",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "Auto-disable sweep: runs, checks, errors and channels disabled",
+      "type": "timeseries"
     }
   ],
   "refresh": "1m",
