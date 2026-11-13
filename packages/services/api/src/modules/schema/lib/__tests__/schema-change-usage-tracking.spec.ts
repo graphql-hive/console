@@ -23,8 +23,7 @@ describe('isSchemaChangeUsageTracked', () => {
     [ChangeType.TypeRemoved, 'Currency', 'Currency'],
     // The name stays, so no field change carries its usage.
     [ChangeType.TypeKindChanged, 'Status', 'Status'],
-    // An argument or input field that did not exist yet cannot have been sent.
-    [ChangeType.FieldArgumentAdded, 'Query.products.region', 'Query.products.region'],
+    // An input field that did not exist yet cannot have been sent.
     [ChangeType.InputFieldAdded, 'ProductFilter.region', 'ProductFilter'],
     // Fragment type conditions are not collected.
     [ChangeType.UnionMemberRemoved, 'SearchResult', 'SearchResult'],
@@ -34,6 +33,14 @@ describe('isSchemaChangeUsageTracked', () => {
     [ChangeType.DirectiveUsageInputObjectAdded, 'ProductFilter.@oneOf', 'ProductFilter.@oneOf'],
   ])('does not track %s', (type, path, coordinate) => {
     expect(isSchemaChangeUsageTracked(change(type, path, coordinate))).toBe(false);
+  });
+
+  it('tracks FieldArgumentAdded through its field, which the collector records', () => {
+    expect(
+      isSchemaChangeUsageTracked(
+        change(ChangeType.FieldArgumentAdded, 'Query.products.region', 'Query.products'),
+      ),
+    ).toBe(true);
   });
 
   it('does not track a change without a coordinate, like a new query root type', () => {

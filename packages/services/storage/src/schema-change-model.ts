@@ -1266,6 +1266,12 @@ function isInputFieldAddedChange(change: Change): change is z.TypeOf<typeof Inpu
   return change.type === 'INPUT_FIELD_ADDED';
 }
 
+function isFieldArgumentAddedChange(
+  change: Change,
+): change is z.TypeOf<typeof FieldArgumentAddedModel> {
+  return change.type === 'FIELD_ARGUMENT_ADDED';
+}
+
 const AffectedAppDeploymentModel = z.object({
   id: z.string(),
   name: z.string(),
@@ -1376,10 +1382,14 @@ export const HiveSchemaChangeModel = z
     } => {
       const change = schemaChangeFromSerializableChange(rawChange as any);
 
-      /** The schema coordinate used for detecting whether something is a breaking change can be different based on the change type. */
+      /**
+       * The schema coordinate whose usage decides whether a change that can fail a check (breaking, or
+       * dangerous when the target fails on it) is safe based on usage. It differs from the path for
+       * some change types.
+       */
       let breakingChangeSchemaCoordinate: string | null = null;
 
-      if (change.criticality.level === CriticalityLevel.Breaking) {
+      if (change.criticality.level !== CriticalityLevel.NonBreaking) {
         breakingChangeSchemaCoordinate = change.path ?? null;
 
         if (
@@ -1387,6 +1397,11 @@ export const HiveSchemaChangeModel = z
           change.meta.isAddedInputFieldTypeNullable === false
         ) {
           breakingChangeSchemaCoordinate = change.meta.inputName;
+        }
+
+        if (isFieldArgumentAddedChange(change)) {
+          // Every operation selecting the field is affected; the argument is new, so its own usage is always zero.
+          breakingChangeSchemaCoordinate = `${change.meta.typeName}.${change.meta.fieldName}`;
         }
       }
 
@@ -1401,8 +1416,8 @@ export const HiveSchemaChangeModel = z
         meta: change.meta,
         path: change.path ?? null,
         isSafeBasedOnUsage:
-          // only breaking changes can be safe based on usage
-          (change.criticality.level === CriticalityLevel.Breaking &&
+          // only changes that can fail a check (breaking, or dangerous when the target fails on it) can be safe based on usage
+          (change.criticality.level !== CriticalityLevel.NonBreaking &&
             rawChange.isSafeBasedOnUsage) ||
           false,
         reason: change.criticality.reason ?? null,
