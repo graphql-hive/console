@@ -3,7 +3,11 @@
  * jsdom has no `indexedDB`.
  * `vi.mock('@/lib/laboratory-history-storage', () => import('@/lib/testing/mocks/laboratory-history-storage'))`.
  */
-export const loadHistory: typeof import('@/lib/laboratory-history-storage').loadHistory =
-  async () => [];
-export const saveHistory: typeof import('@/lib/laboratory-history-storage').saveHistory =
-  async () => {};
+type Module = typeof import('@/lib/laboratory-history-storage');
+
+export const loadHistory: Module['loadHistory'] = async () => [];
+export const saveHistory: Module['saveHistory'] = async () => {};
+export const loadTargetHistory: Module['loadTargetHistory'] = async () => [];
+export const hasTargetHistory: Module['hasTargetHistory'] = async () => false;
+export const saveTargetHistory: Module['saveTargetHistory'] = async () => true;
+export const loadSnapshotHistory: Module['loadSnapshotHistory'] = async () => [];
