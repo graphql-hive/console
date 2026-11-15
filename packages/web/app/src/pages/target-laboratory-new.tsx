@@ -622,7 +622,7 @@ function useLaboratoryServerState() {
  * Mounts the lab from what this target saved in the browser. Keyed by target and endpoint, so
  * every remount reads the latest writes and never another target's state.
  */
-function LaboratoryMount({
+export function LaboratoryMount({
   targetId,
   linkedOperation,
   onLinkedOperationConsumed,
@@ -640,9 +640,11 @@ function LaboratoryMount({
     readLaboratoryDefaults(targetId, linkedOperation, preflightScript),
   );
 
+  // A mounted lab never reads new defaults, so a link that arrives now is dropped rather than
+  // kept for the next mount, which could be another target's.
   useEffect(() => {
     onLinkedOperationConsumed();
-  }, [onLinkedOperationConsumed]);
+  }, [linkedOperation, onLinkedOperationConsumed]);
 
   // undefined while loading, null when IndexedDB failed.
   const [history, setHistory] = useState<LaboratoryHistory[] | null | undefined>(undefined);
