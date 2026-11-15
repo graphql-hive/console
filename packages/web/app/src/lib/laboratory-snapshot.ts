@@ -45,13 +45,18 @@ function readJson(key: string): unknown {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
+/** Queues the one-time notice that env vars were not carried into per-target labs. */
+export function markEnvNoticePending() {
+  localStorage.setItem(ENV_NOTICE_PENDING, 'true');
+}
+
 /** Removes credentials from the snapshot. Idempotent, safe to run on every page load. */
 export function prepareSnapshot() {
   if (localStorage.getItem(GLOBAL_ENV) !== null) {
     const env = readJson(GLOBAL_ENV);
 
     if (isRecord(env) && isRecord(env.variables) && Object.keys(env.variables).length > 0) {
-      localStorage.setItem(ENV_NOTICE_PENDING, 'true');
+      markEnvNoticePending();
     }
 
     localStorage.removeItem(GLOBAL_ENV);
