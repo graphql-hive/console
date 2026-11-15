@@ -742,8 +742,9 @@ function LaboratoryPageContent() {
     `${organizationSlug}/${projectSlug}/${targetSlug}`,
   );
 
+  // Read only once seeded, or a first visit misses the choice seeding copies over.
   const [actualSelectedApiEndpoint, setEndpointType] = useApiTabValue(
-    targetId,
+    seeded ? targetId : null,
     query.data?.target?.graphqlEndpointUrl ?? null,
   );
 

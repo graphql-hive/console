@@ -39,6 +39,18 @@ describe('useApiTabValue', () => {
     expect(result.current[0]).toBe('linkedApi');
   });
 
+  it('reads the saved choice once the target is ready', () => {
+    const { result, rerender } = renderHook(({ targetId }) => useApiTabValue(targetId, ENDPOINT), {
+      initialProps: { targetId: null as string | null },
+    });
+    expect(result.current[0]).toBe('linkedApi');
+
+    laboratoryStorage('target-a').set('apiTab', 'mockApi');
+    rerender({ targetId: 'target-a' });
+
+    expect(result.current[0]).toBe('mockApi');
+  });
+
   it('falls back to Mock when the saved API choice has no endpoint', () => {
     laboratoryStorage('target-a').set('apiTab', 'linkedApi');
 
