@@ -831,13 +831,12 @@ function LaboratoryPageContent() {
                     value: 'mockApi',
                     label: 'Mock',
                     tooltip: 'Use Mock Schema',
-                    disabled: query.fetching,
                   },
                   {
                     value: 'linkedApi',
                     label: 'API',
                     tooltip: 'Use API endpoint',
-                    disabled: !query.data?.target?.graphqlEndpointUrl || query.fetching,
+                    disabled: !query.data?.target?.graphqlEndpointUrl,
                   },
                 ]}
                 value={actualSelectedApiEndpoint}
