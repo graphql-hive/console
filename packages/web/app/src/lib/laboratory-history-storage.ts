@@ -61,16 +61,3 @@ export async function loadSnapshotHistory(): Promise<LaboratoryHistory[] | null>
     return [];
   }
 }
-
-// The page's global history, replaced by the per-target functions above once the page reads them.
-export async function loadHistory(): Promise<LaboratoryHistory[]> {
-  return (await loadSnapshotHistory()) ?? [];
-}
-
-export async function saveHistory(history: LaboratoryHistory[]): Promise<void> {
-  try {
-    await set(SNAPSHOT_KEY, history, STORE);
-  } catch (err) {
-    console.error('[Laboratory] Failed to save history to IndexedDB:', err);
-  }
-}

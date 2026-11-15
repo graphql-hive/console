@@ -5,8 +5,6 @@
  */
 type Module = typeof import('@/lib/laboratory-history-storage');
 
-export const loadHistory: Module['loadHistory'] = async () => [];
-export const saveHistory: Module['saveHistory'] = async () => {};
 export const loadTargetHistory: Module['loadTargetHistory'] = async () => [];
 export const hasTargetHistory: Module['hasTargetHistory'] = async () => false;
 export const saveTargetHistory: Module['saveTargetHistory'] = async () => true;
