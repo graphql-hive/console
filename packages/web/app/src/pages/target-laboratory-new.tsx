@@ -636,6 +636,7 @@ export function LaboratoryMount({
   preflightScript: string | null;
   updatePreflight: (preflight: LaboratoryPreflight) => void;
 } & ComponentProps<typeof Laboratory>) {
+  // eslint-disable-next-line react/hook-use-state - read once per mount, never set
   const [defaults] = useState(() =>
     readLaboratoryDefaults(targetId, linkedOperation, preflightScript),
   );
