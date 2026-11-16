@@ -40,13 +40,12 @@ const createRollups = async (
       hash String CODEC(ZSTD(1)),
       client_name String CODEC(ZSTD(1)),
       client_version String CODEC(ZSTD(1)),
-      graph_version_id UUID CODEC(ZSTD(1)),
       ${aggregateColumns(granularity)}
     )
     ENGINE = SummingMergeTree
     PARTITION BY ${partitionBy}
     PRIMARY KEY (target, graph_id, timestamp, hash)
-    ORDER BY (target, graph_id, timestamp, hash, client_name, client_version, graph_version_id)
+    ORDER BY (target, graph_id, timestamp, hash, client_name, client_version)
     TTL timestamp + INTERVAL ${ttlInterval}
     SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
   `);
@@ -61,10 +60,9 @@ const createRollups = async (
         hash,
         client_name,
         client_version,
-        graph_version_id,
         ${aggregateStates(granularity)}
       FROM operations
-      GROUP BY target, graph_id, timestamp, hash, client_name, client_version, graph_version_id
+      GROUP BY target, graph_id, timestamp, hash, client_name, client_version
     )
   `);
 
@@ -74,13 +72,12 @@ const createRollups = async (
       target UUID CODEC(ZSTD(1)),
       graph_id UUID CODEC(ZSTD(1)),
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
-      graph_version_id UUID CODEC(ZSTD(1)),
       ${aggregateColumns(granularity)}
     )
     ENGINE = SummingMergeTree
     PARTITION BY ${partitionBy}
     PRIMARY KEY (target, graph_id, timestamp)
-    ORDER BY (target, graph_id, timestamp, graph_version_id)
+    ORDER BY (target, graph_id, timestamp)
     TTL timestamp + INTERVAL ${ttlInterval}
     SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
   `);
@@ -92,10 +89,9 @@ const createRollups = async (
         toUUID(target) AS target,
         graph_id,
         ${bucket}(timestamp) AS timestamp,
-        graph_version_id,
         ${aggregateStates(granularity)}
       FROM operations
-      GROUP BY target, graph_id, timestamp, graph_version_id
+      GROUP BY target, graph_id, timestamp
     )
   `);
 
@@ -107,13 +103,12 @@ const createRollups = async (
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
       client_name String CODEC(ZSTD(1)),
       client_version String CODEC(ZSTD(1)),
-      graph_version_id UUID CODEC(ZSTD(1)),
       ${aggregateColumns(granularity)}
     )
     ENGINE = SummingMergeTree
     PARTITION BY ${partitionBy}
     PRIMARY KEY (target, graph_id, timestamp, client_name, client_version)
-    ORDER BY (target, graph_id, timestamp, client_name, client_version, graph_version_id)
+    ORDER BY (target, graph_id, timestamp, client_name, client_version)
     TTL timestamp + INTERVAL ${ttlInterval}
     SETTINGS index_granularity = 8192, ttl_only_drop_parts = 1
   `);
@@ -127,10 +122,9 @@ const createRollups = async (
         ${bucket}(timestamp) AS timestamp,
         client_name,
         client_version,
-        graph_version_id,
         ${aggregateStates(granularity)}
       FROM operations
-      GROUP BY target, graph_id, timestamp, client_name, client_version, graph_version_id
+      GROUP BY target, graph_id, timestamp, client_name, client_version
     )
   `);
 };
