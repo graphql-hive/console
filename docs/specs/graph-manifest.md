@@ -4,7 +4,7 @@ The Graph Manifest describes the set of GraphQL supergraphs or monolithic schema
 manages and that should be served via a Hive Router/Gateway (in the following sections referred to
 as router for simplicity) instance.
 
-It is configuration file for a running router instance that is being polled continiously from the
+It is configuration for a running router instance that is being polled continuously from the
 Hive CDN. Hive Console publishes the desired state, while routers periodically retrieve the manifest
 and adjust their currently running graphs based on that.
 
@@ -33,7 +33,7 @@ Routers periodically poll this endpoint.
       "id": "<uuid>",
       "currentVersion": {
         "id": "781cf01b-305d-4890-a78b-1be204b42ee5",
-        "artifactPath": "/my-target/versions/781cf01b-305d-4890-a78b-1be204b42ee5",
+        "artifactPath": "versions/781cf01b-305d-4890-a78b-1be204b42ee5",
         "revision": "2026-09-16-production"
       }
     },
@@ -41,7 +41,7 @@ Routers periodically poll this endpoint.
       "id": "<uuid>",
       "currentVersion": {
         "id": "344d8d0c-d414-4727-a7d8-8cee2dc11182",
-        "artifactPath": "/my-target/versions/344d8d0c-d414-4727-a7d8-8cee2dc11182",
+        "artifactPath": "versions/344d8d0c-d414-4727-a7d8-8cee2dc11182",
         "revision": "2026-09-16-contract-a"
       }
     },
@@ -49,7 +49,7 @@ Routers periodically poll this endpoint.
       "id": "<uuid>",
       "currentVersion": {
         "id": "89780103-7ea3-490f-99ba-c60e90eed41b",
-        "artifactPath": "/my-target/versions/89780103-7ea3-490f-99ba-c60e90eed41b"
+        "artifactPath": "versions/89780103-7ea3-490f-99ba-c60e90eed41b"
       }
     }
   }
@@ -175,7 +175,7 @@ Previous manifest:
   "default": {
     "currentVersion": {
       "id": "version-a",
-      "artifactPath": "/my-target/versions/version-a",
+      "artifactPath": "versions/version-a",
       "revision": "revision-a"
     }
   }
@@ -190,7 +190,7 @@ New Manifest:
     "default": {
       "currentVersion": {
         "id": "version-b",
-        "artifactPath": "/my-target/versions/version-b",
+        "artifactPath": "/versions/version-b",
         "revision": "revision-b"
       }
     }
@@ -228,7 +228,7 @@ New Manifest:
     "graph-b": {
       "currentVersion": {
         "id": "version-b",
-        "artifactPath": "/my-target/versions/version-b",
+        "artifactPath": "versions/version-b",
         "revision": "revision-b"
       }
     }
@@ -248,7 +248,7 @@ Previous manifest:
     "graph-b": {
       "currentVersion": {
         "id": "version-b",
-        "artifactPath": "/my-target/versions/version-b",
+        "artifactPath": "versions/version-b",
         "revision": "revision-b"
       }
     }
@@ -316,7 +316,7 @@ example, a future manifest could contain:
     "default": {
       "currentVersion": {
         "id": "781cf01b-305d-4890-a78b-1be204b42ee5",
-        "artifactPath": "/my-target/versions/781cf01b-305d-4890-a78b-1be204b42ee5",
+        "artifactPath": "versions/781cf01b-305d-4890-a78b-1be204b42ee5",
         "revision": "production-42"
       }
     }
