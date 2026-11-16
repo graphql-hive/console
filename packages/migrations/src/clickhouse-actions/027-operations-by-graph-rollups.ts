@@ -25,11 +25,11 @@ const createRollups = async (
   partitionBy: string,
   ttlInterval: string,
 ) => {
-  // Named `operations_v01_by_<dimensions>_<granularity>`; the granularity goes last,
+  // Named `operations_by_graph[_<dimensions>]_<granularity>`; the granularity goes last,
   // like the existing rollups (`operations_daily`, `clients_hourly`).
-  const byHashClient = `operations_v01_by_hash_client_${granularity}`;
-  const byTimestamp = `operations_v01_by_timestamp_${granularity}`;
-  const byClient = `operations_v01_by_client_${granularity}`;
+  const byHashClient = `operations_by_graph_hash_client_${granularity}`;
+  const byGraph = `operations_by_graph_${granularity}`;
+  const byClient = `operations_by_graph_client_${granularity}`;
 
   await exec(`
     CREATE TABLE IF NOT EXISTS ${byHashClient}
@@ -67,7 +67,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE TABLE IF NOT EXISTS ${byTimestamp}
+    CREATE TABLE IF NOT EXISTS ${byGraph}
     (
       target UUID CODEC(ZSTD(1)),
       graph_id UUID CODEC(ZSTD(1)),
@@ -83,7 +83,7 @@ const createRollups = async (
   `);
 
   await exec(`
-    CREATE MATERIALIZED VIEW IF NOT EXISTS ${byTimestamp}_mv TO ${byTimestamp}
+    CREATE MATERIALIZED VIEW IF NOT EXISTS ${byGraph}_mv TO ${byGraph}
     AS (
       SELECT
         toUUID(target) AS target,

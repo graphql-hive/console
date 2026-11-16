@@ -377,7 +377,7 @@ function processSubscriptionOperation(
 
 /**
  * Registry records (`operation_collection`) are written once per operation and graph within a report,
- * so the `coordinates_v01_*` rollups can be scoped by `graph_id` and `graph_version_id`.
+ * so the `coordinates_by_graph_*` rollups can be scoped by `graph_id` and `graph_version_id`.
  */
 function createOperationSampleKey(operation: RawOperation | RawSubscriptionOperation): string {
   const graph = operation.metadata?.graph;
