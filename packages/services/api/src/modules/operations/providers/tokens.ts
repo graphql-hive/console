@@ -6,6 +6,11 @@ export type ClickHouseConfig = BaseClickHouseConfig & {
    * In milliseconds
    */
   requestTimeout?: number;
+  /**
+   * Earliest timestamp for which the graph-scoped (`*_by_graph_*`) rollups contain complete data.
+   * Unset disables reading from them.
+   */
+  graphRollupsStart?: Date;
   onReadEnd?: (
     label: string,
     timings: {

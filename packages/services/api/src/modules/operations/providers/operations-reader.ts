@@ -1,4 +1,4 @@
-import { Injectable } from 'graphql-modules';
+import { Inject, Injectable, Optional } from 'graphql-modules';
 import * as z from 'zod';
 import { UTCDate } from '@date-fns/utc';
 import {
@@ -17,6 +17,7 @@ import { toEndOfInterval, toStartOfInterval } from '../lib/date-time-helpers';
 import { pickTableByPeriod } from '../lib/pick-table-by-provider';
 import { ClickHouse, RowOf, sql } from './clickhouse-client';
 import { calculateTimeWindow } from './helpers';
+import { CLICKHOUSE_CONFIG, type ClickHouseConfig } from './tokens';
 
 const CoordinateClientNamesGroupModel = z.array(
   z.object({
@@ -95,6 +96,123 @@ function withCoordinate(
   return schemaCoordinate ? [...(scopes ?? []), [schemaCoordinate]] : (scopes ?? []);
 }
 
+type Granularity = 'daily' | 'hourly' | 'minutely';
+
+type AggregationTable =
+  | 'operations'
+  | 'clients'
+  | 'coordinates'
+  | 'coordinate_counts'
+  | 'coordinate_errors';
+
+/**
+ * Which `operations_by_graph*` table a query needs:
+ * - `hash`: `operations_by_graph_hash_client_*` (operation hash, client name and client version)
+ * - `client`: `operations_by_graph_client_*` (client name and client version, no hash)
+ * - `graph`: `operations_by_graph_*` (target, graph and time only)
+ */
+export type OperationsRollupDimensions = 'hash' | 'client' | 'graph';
+
+/**
+ * `graph_id` of usage reported without graph metadata (e.g. by SDKs that predate graphs).
+ * Such usage belongs to the default graph of the target.
+ */
+export const UNATTRIBUTED_GRAPH_ID = '00000000-0000-0000-0000-000000000000';
+
+/** Restricts a query to the usage of a single graph. */
+export type GraphFilter = {
+  graphId: string;
+  /** The default graph also owns the usage reported without graph metadata. */
+  isDefaultGraph: boolean;
+  /**
+   * Whether the query reads the graph-scoped (`*_by_graph_*`) rollups
+   * (see the `useGraphRollups` context of `pickAggregationByPeriod`).
+   * The legacy rollups have no `graph_id` column.
+   */
+  useGraphRollups: boolean;
+};
+
+/**
+ * - graph-scoped rollups: filter by `graph_id`
+ * - legacy rollups and the default graph: no condition, all legacy usage belongs to the default graph
+ * - legacy rollups and a contract graph: match nothing, contract graphs have no legacy usage
+ */
+export function buildGraphConditions(graph: GraphFilter, namespace?: string): SqlValue[] {
+  if (!graph.useGraphRollups) {
+    return graph.isDefaultGraph ? [] : [sql`1 = 0`];
+  }
+
+  const column = sql.raw(namespace ? `${namespace}.graph_id` : 'graph_id');
+
+  if (graph.isDefaultGraph) {
+    return [sql`${column} IN (${sql.array([UNATTRIBUTED_GRAPH_ID, graph.graphId], 'String')})`];
+  }
+
+  return [sql`${column} = ${graph.graphId}`];
+}
+
+/**
+ * The graph-scoped rollups (`*_by_graph_*`) are only complete for data ingested after they were
+ * created, so they are only read for periods starting at or after the configured cutoff.
+ */
+export function shouldUseGraphRollups(
+  period: DateRange | null,
+  graphRollupsStart: Date | undefined,
+): boolean {
+  return !!(period && graphRollupsStart && period.from >= graphRollupsStart);
+}
+
+/** Picks the narrowest `operations_by_graph*` table that can serve the given filters. */
+export function operationsRollupDimensions(args: {
+  operations?: readonly string[];
+  clients?: readonly string[];
+  clientVersionFilters?: readonly unknown[];
+  coordinateScopes?: ReadonlyArray<readonly string[]>;
+  schemaCoordinate?: string;
+  requiresHash?: boolean;
+}): OperationsRollupDimensions {
+  if (
+    args.requiresHash ||
+    args.operations?.length ||
+    args.coordinateScopes?.length ||
+    args.schemaCoordinate
+  ) {
+    return 'hash';
+  }
+
+  return args.clients?.length || args.clientVersionFilters?.length ? 'client' : 'graph';
+}
+
+function rollupTableName(args: {
+  table: AggregationTable;
+  granularity: Granularity;
+  useGraphRollups: boolean;
+  operationsDimensions: OperationsRollupDimensions;
+}): RawValue {
+  const { table, granularity } = args;
+
+  if (!args.useGraphRollups) {
+    return sql.raw(`${table}_${granularity}`);
+  }
+
+  switch (table) {
+    case 'operations': {
+      const dimensions =
+        args.operationsDimensions === 'hash'
+          ? '_hash_client'
+          : args.operationsDimensions === 'client'
+            ? '_client'
+            : '';
+      return sql.raw(`operations_by_graph${dimensions}_${granularity}`);
+    }
+    // `operations_by_graph_hash_client_*` stores the same dimensions as the legacy `clients_*` tables.
+    case 'clients':
+      return sql.raw(`operations_by_graph_hash_client_${granularity}`);
+    default:
+      return sql.raw(`${table}_by_graph_${granularity}`);
+  }
+}
+
 @Injectable({
   global: true,
 })
@@ -102,7 +220,32 @@ export class OperationsReader {
   constructor(
     private clickHouse: ClickHouse,
     private logger: Logger,
+    @Optional() @Inject(CLICKHOUSE_CONFIG) private clickHouseConfig?: ClickHouseConfig,
   ) {}
+
+  private useGraphRollups(period: DateRange | null): boolean {
+    return shouldUseGraphRollups(period, this.clickHouseConfig?.graphRollupsStart);
+  }
+
+  /** The graph-scoped rollups store t-digest quantile states. */
+  private durationQuantilesMerge(period: DateRange | null): RawValue {
+    return sql.raw(this.useGraphRollups(period) ? 'quantilesTDigestMerge' : 'quantilesMerge');
+  }
+
+  /** Table to read when a query is not routed through `pickAggregationByPeriod`. */
+  private rollupTable(
+    table: AggregationTable,
+    granularity: Granularity,
+    period: DateRange | null,
+    operationsDimensions: OperationsRollupDimensions = 'hash',
+  ): RawValue {
+    return rollupTableName({
+      table,
+      granularity,
+      useGraphRollups: this.useGraphRollups(period),
+      operationsDimensions,
+    });
+  }
 
   private pickAggregationByPeriod(args: {
     period: DateRange | null;
@@ -115,36 +258,47 @@ export class OperationsReader {
         }
       | number;
     query(
+      /**
+       * Resolves the table for the picked granularity. Uses the graph-scoped rollups if the period
+       * starts after the configured cutoff. `operationsDimensions` selects the `operations_by_graph*`
+       * variant and defaults to the one with all dimensions.
+       */
       aggregationTableName: (
-        tableName:
-          | 'operations'
-          | 'clients'
-          | 'coordinates'
-          | 'coordinate_counts'
-          | 'coordinate_errors',
+        tableName: AggregationTable,
+        operationsDimensions?: OperationsRollupDimensions,
       ) => RawValue,
+      /**
+       * `useGraphRollups` is true if the graph-scoped rollups are read,
+       * which is required for filtering by graph.
+       */
+      context: { useGraphRollups: boolean },
     ): SqlValue;
-    queryId(aggregation: 'daily' | 'hourly' | 'minutely'): `${string}_${typeof aggregation}`;
+    queryId(aggregation: Granularity): `${string}_${typeof aggregation}`;
   }) {
     const timeout =
       typeof args.timeout === 'number'
         ? { daily: args.timeout, hourly: args.timeout, minutely: args.timeout }
         : args.timeout;
     let { period, resolution } = args;
+    const useGraphRollups = this.useGraphRollups(period);
+    const tableNameResolver =
+      (granularity: Granularity) =>
+      (table: AggregationTable, operationsDimensions: OperationsRollupDimensions = 'hash') =>
+        rollupTableName({ table, granularity, useGraphRollups, operationsDimensions });
 
     const queryMap = {
       daily: {
-        query: args.query(tName => sql.raw(tName + '_daily')),
+        query: args.query(tableNameResolver('daily'), { useGraphRollups }),
         queryId: args.queryId('daily'),
         timeout: timeout.daily,
       },
       hourly: {
-        query: args.query(tName => sql.raw(tName + '_hourly')),
+        query: args.query(tableNameResolver('hourly'), { useGraphRollups }),
         queryId: args.queryId('hourly'),
         timeout: timeout.hourly,
       },
       minutely: {
-        query: args.query(tName => sql.raw(tName + '_minutely')),
+        query: args.query(tableNameResolver('minutely'), { useGraphRollups }),
         queryId: args.queryId('minutely'),
         timeout: timeout.minutely,
       },
@@ -810,7 +964,7 @@ export class OperationsReader {
         minutely: 10_000,
       },
       query: aggregationTableName =>
-        sql`SELECT sum(total) as total FROM ${aggregationTableName('operations')} ${this.createFilter(
+        sql`SELECT sum(total) as total FROM ${aggregationTableName('operations', 'graph')} ${this.createFilter(
           {
             target,
             period,
@@ -889,6 +1043,13 @@ export class OperationsReader {
     ok: number;
     notOk: number;
   }> {
+    const operationsDimensions = operationsRollupDimensions({
+      operations,
+      clients,
+      clientVersionFilters,
+      coordinateScopes,
+      schemaCoordinate,
+    });
     const query = this.pickAggregationByPeriod({
       timeout: {
         minutely: 10_000,
@@ -897,7 +1058,7 @@ export class OperationsReader {
       },
       queryId: aggregation => `count_operations_${aggregation}`,
       query: aggregationTableName =>
-        sql`SELECT sum(total) as total, sum(total_ok) as totalOk FROM ${aggregationTableName('operations')} ${this.createFilter(
+        sql`SELECT sum(total) as total, sum(total_ok) as totalOk FROM ${aggregationTableName('operations', operationsDimensions)} ${this.createFilter(
           {
             target,
             period,
@@ -1092,7 +1253,7 @@ export class OperationsReader {
                 sql`
                   hash IN (
                     SELECT hash
-                    FROM ${sql.raw('operations_' + query.queryType)}
+                    FROM ${this.rollupTable('operations', query.queryType, period)}
                     ${this.createFilter({
                       target,
                       period,
@@ -1101,7 +1262,7 @@ export class OperationsReader {
                       excludeOperations,
                       excludeClientVersionFilters,
                       coordinateScope: {
-                        table: sql.raw('coordinates_' + query.queryType),
+                        table: this.rollupTable('coordinates', query.queryType, period),
                         scopes: withCoordinate(coordinateScopes, schemaCoordinate),
                       },
                     })}
@@ -1983,7 +2144,7 @@ export class OperationsReader {
         SELECT
           sum(total) as count,
           client_name
-        FROM clients_daily
+        FROM ${this.rollupTable('clients', 'daily', period)}
         ${this.createFilter({
           target,
           period,
@@ -2092,7 +2253,7 @@ export class OperationsReader {
                   ) as date,
                   sum(total) as total,
                   target
-                FROM ${aggregationTableName('operations')}
+                FROM ${aggregationTableName('operations', 'graph')}
                 ${this.createFilter({ target: targets, period: roundedPeriod })}
                 GROUP BY target, date
                 ORDER BY
@@ -2308,8 +2469,16 @@ export class OperationsReader {
         query: aggregationTableName => sql`
           SELECT
             avgMerge(duration_avg) as average,
-            quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
-          FROM ${aggregationTableName('operations')}
+            ${this.durationQuantilesMerge(period)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+          FROM ${aggregationTableName(
+            'operations',
+            operationsRollupDimensions({
+              operations,
+              clients,
+              clientVersionFilters,
+              coordinateScopes,
+            }),
+          )}
             ${this.createFilter({ target, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters, coordinateScope: { table: aggregationTableName('coordinates'), scopes: coordinateScopes ?? [] } })}
         `,
         queryId: aggregation => `general_duration_percentiles_${aggregation}`,
@@ -2352,7 +2521,7 @@ export class OperationsReader {
               SELECT
                 hash,
                 avgMerge(duration_avg) as average,
-                quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
+                ${this.durationQuantilesMerge(period)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
               FROM ${aggregationTableName('operations')}
               ${this.createFilter({
                 target,
@@ -2668,10 +2837,19 @@ export class OperationsReader {
               ) * toUInt32(${String(interval.seconds)})
             ) as date,
             avgMerge(duration_avg) as average,
-            quantilesMerge(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
+            ${this.durationQuantilesMerge(period)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles,
             sum(total) as total,
             sum(total_ok) as totalOk
-          FROM ${aggregationTableName('operations')}
+          FROM ${aggregationTableName(
+            'operations',
+            operationsRollupDimensions({
+              operations,
+              clients,
+              clientVersionFilters,
+              coordinateScopes,
+              schemaCoordinate,
+            }),
+          )}
           ${this.createFilter({
             target,
             period: roundedPeriod,
@@ -3033,7 +3211,7 @@ export class OperationsReader {
         SELECT
           sum(total) as total,
           target
-        FROM ${aggregationTableName('operations')}
+        FROM ${aggregationTableName('operations', 'graph')}
         PREWHERE
           timestamp >= toDateTime(${formatDate(period.from)}, 'UTC')
           AND
@@ -3084,7 +3262,7 @@ export class OperationsReader {
             ) * toUInt32(${String(interval.seconds)})
           ) as date,
           sum(total) as total
-        FROM ${aggregationTableName('operations')}
+        FROM ${aggregationTableName('operations', 'graph')}
         ${this.createFilter({ period: roundedPeriod })}
         GROUP BY date
         ORDER BY date
@@ -3223,12 +3401,15 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScope,
+    graph,
     extra = [],
     skipWhere = false,
     namespace,
   }: {
     target?: string | readonly string[];
     period?: DateRange;
+    /** Restricts to the usage of a graph. */
+    graph?: GraphFilter | null;
     operations?: readonly string[];
     clients?: readonly string[];
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
@@ -3243,7 +3424,7 @@ export class OperationsReader {
     skipWhere?: boolean;
     namespace?: string;
   }): SqlValue {
-    const where: SqlValue[] = this.scopeConditions({ target, period, namespace });
+    const where: SqlValue[] = this.scopeConditions({ target, period, graph, namespace });
 
     // Operation-hash + client(/version) conditions are built by the shared
     // `@hive/clickhouse` helper so the API and the metric-alert worker filter
@@ -3264,7 +3445,7 @@ export class OperationsReader {
         where.push(
           buildCoordinateScopeCondition({
             coordinatesTable: coordinateScope.table,
-            scopeConditions: this.scopeConditions({ target, period }),
+            scopeConditions: this.scopeConditions({ target, period, graph }),
             coordinates,
             namespace,
           }),
@@ -3286,10 +3467,12 @@ export class OperationsReader {
   private scopeConditions({
     target,
     period,
+    graph,
     namespace,
   }: {
     target?: string | readonly string[];
     period?: DateRange;
+    graph?: GraphFilter | null;
     namespace?: string;
   }): SqlValue[] {
     const where: SqlValue[] = [];
@@ -3301,6 +3484,10 @@ export class OperationsReader {
       } else {
         where.push(sql`${columnPrefix}target = ${target as string}`);
       }
+    }
+
+    if (graph) {
+      where.push(...buildGraphConditions(graph, namespace));
     }
 
     if (period) {

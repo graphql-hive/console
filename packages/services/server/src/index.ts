@@ -278,6 +278,13 @@ export async function main() {
       };
     }
     const logger = createGraphQLLogger();
+
+    if (env.clickhouse.graphRollupsStart) {
+      logger.info(
+        'clickhouse graph rollup tables are read for periods starting at or after %s.',
+        env.clickhouse.graphRollupsStart,
+      );
+    }
     const auditLogApiConfig = new AuditLogApiConfig(env.featureFlags.auditLogApiEnabled);
 
     const registry = createRegistry({
@@ -311,6 +318,7 @@ export async function main() {
         password: env.clickhouse.password,
         database: env.clickhouse.database,
         requestTimeout: env.clickhouse.requestTimeout,
+        graphRollupsStart: env.clickhouse.graphRollupsStart,
         onReadEnd(query, timings) {
           clickHouseReadDuration.labels({ query }).observe(timings.totalSeconds);
 
