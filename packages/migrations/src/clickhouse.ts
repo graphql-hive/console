@@ -199,6 +199,7 @@ export async function migrateClickHouse(
     import('./clickhouse-actions/025-operations-graph-columns'),
     import('./clickhouse-actions/026-app-deployment-usage-graph-columns'),
     import('./clickhouse-actions/027-operations-by-graph-rollups'),
+    import('./clickhouse-actions/028-coordinates-by-graph-rollups'),
   ]);
 
   async function actionRunner(action: Action, index: number) {
