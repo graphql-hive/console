@@ -6,7 +6,7 @@ import type { SchemaPolicyProvider } from '../../policy/providers/schema-policy.
 import { NoopLogger } from '../../shared/providers/logger';
 import { Inspector } from './inspector';
 import type { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
-import { RegistryChecks } from './registry-checks';
+import { RegistryChecks, type GetAffectedAppDeployments } from './registry-checks';
 import { SchemaHelper } from './schema-helper';
 
 /** A registry whose usage data is the given request count per schema coordinate. */
@@ -30,6 +30,27 @@ function createRegistryChecks(usage: Record<string, number>) {
     operationsReader as unknown as OperationsReader,
     {} as unknown as CompositionOrchestrator,
   );
+}
+
+/** Active app deployments keyed by the schema coordinate their documents use. */
+function activeAppDeployments(byCoordinate: Record<string, string[]>): GetAffectedAppDeployments {
+  return async coordinates =>
+    new Map(
+      coordinates
+        .filter(coordinate => coordinate in byCoordinate)
+        .map(coordinate => [
+          coordinate,
+          byCoordinate[coordinate].map(name => ({
+            id: 'b1b3a0e2-6a1c-4d0e-9d3f-2f6f0c1a9e11',
+            name,
+            version: '1.0.0',
+            createdAt: '2026-11-01T00:00:00.000Z',
+            activatedAt: '2026-11-01T00:00:00.000Z',
+            retiredAt: null,
+            affectedOperations: [{ hash: 'users-hash', name: 'Users' }],
+          })),
+        ]),
+    );
 }
 
 const existingSdl = /* GraphQL */ `
@@ -57,6 +78,7 @@ function diff(
     existingSdl?: string;
     incomingSdl: string;
     failDangerousChangeTypes?: DangerousChangeType[];
+    getAffectedAppDeployments?: GetAffectedAppDeployments;
   },
 ) {
   return checks.diff({
@@ -76,7 +98,7 @@ function diff(
     failAllDangerousChanges: false,
     failDangerousChangeTypes: args.failDangerousChangeTypes ?? [],
     filterNestedChanges: true,
-    getAffectedAppDeployments: null,
+    getAffectedAppDeployments: args.getAffectedAppDeployments ?? null,
   });
 }
 
@@ -107,6 +129,27 @@ describe('RegistryChecks.diff', () => {
         status: 'failed',
         reason: {
           breaking: [{ type: 'FIELD_ARGUMENT_ADDED', isSafeBasedOnUsage: false }],
+        },
+      });
+    });
+
+    test('fails when an active app deployment uses the field and no operation requests it', async () => {
+      const result = await diff(createRegistryChecks({}), {
+        incomingSdl: withDefaultedArgument,
+        failDangerousChangeTypes: ['FIELD_ARGUMENT_ADDED'],
+        getAffectedAppDeployments: activeAppDeployments({ 'Query.users': ['web-app'] }),
+      });
+
+      expect(result).toMatchObject({
+        status: 'failed',
+        reason: {
+          breaking: [
+            {
+              type: 'FIELD_ARGUMENT_ADDED',
+              isSafeBasedOnUsage: false,
+              affectedAppDeployments: [{ name: 'web-app' }],
+            },
+          ],
         },
       });
     });
