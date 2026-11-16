@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
-import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphql';
+import { Kind, parse, print } from 'graphql';
 import { throttle } from 'lodash';
-import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
@@ -17,6 +16,7 @@ import { useSlugs, useToggle } from '@/lib/hooks';
 import { useApiTabValue } from '@/lib/hooks/laboratory/use-api-tab-value';
 import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
 import { useEnvNoticeToast } from '@/lib/hooks/laboratory/use-env-notice-toast';
+import { useSchemaIntrospection } from '@/lib/hooks/laboratory/use-schema-introspection';
 import { useSeededLaboratoryTarget } from '@/lib/hooks/laboratory/use-seeded-laboratory-target';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import {
@@ -636,7 +636,7 @@ export function LaboratoryMount({
   preflightScript: string | null;
   updatePreflight: (preflight: LaboratoryPreflight) => void;
 } & ComponentProps<typeof Laboratory>) {
-  // eslint-disable-next-line react/hook-use-state - read once per mount, never set
+  // eslint-disable-next-line react/hook-use-state
   const [defaults] = useState(() =>
     readLaboratoryDefaults(targetId, linkedOperation, preflightScript),
   );
@@ -764,20 +764,7 @@ function LaboratoryPageContent() {
 
   const sdl = query.data?.target?.latestSchemaVersion?.sdl;
 
-  const introspection = useMemo(() => {
-    if (!sdl) {
-      return null;
-    }
-
-    try {
-      return introspectionFromSchema(buildSchema(sdl));
-    } catch (err) {
-      toast.error('Failed to fetch schema', {
-        description: err instanceof Error ? err.message : 'Unknown error',
-      });
-      return null;
-    }
-  }, [sdl]);
+  const introspection = useSchemaIntrospection(sdl);
 
   if (!targetId || !seeded) {
     return null;
