@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { buildSchema, introspectionFromSchema, Kind, parse, print } from 'graphql';
+import { Kind, parse, print } from 'graphql';
 import { throttle } from 'lodash';
-import { toast } from 'sonner';
 import { useMutation, useQuery } from 'urql';
 import { LayoutContent } from '@/components/layouts/layout-content';
 import { ConnectLabModal } from '@/components/target/laboratory/connect-lab-modal';
@@ -15,6 +14,7 @@ import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useSlugs, useToggle } from '@/lib/hooks';
 import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
+import { useSchemaIntrospection } from '@/lib/hooks/laboratory/use-schema-introspection';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
 import { useResetState } from '@/lib/hooks/use-reset-state';
 import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
@@ -755,20 +755,7 @@ function LaboratoryPageContent() {
 
   const sdl = query.data?.target?.latestSchemaVersion?.sdl;
 
-  const introspection = useMemo(() => {
-    if (!sdl) {
-      return null;
-    }
-
-    try {
-      return introspectionFromSchema(buildSchema(sdl));
-    } catch (err) {
-      toast.error('Failed to fetch schema', {
-        description: err instanceof Error ? err.message : 'Unknown error',
-      });
-      return null;
-    }
-  }, [sdl]);
+  const introspection = useSchemaIntrospection(sdl);
 
   if (laboratoryState.fetching) {
     return null;
