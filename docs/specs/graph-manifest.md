@@ -58,7 +58,7 @@ Routers periodically poll this endpoint.
 
 ### `graphs`
 
-graphs contains the complete set of graphs that should currently be served for the target. The
+The `graphs` property contains the complete set of graphs, including contracts and variants, that should currently be served for the target. The
 object key is the **graph name**.
 
 Graph names are semantic identifiers. They are stable from the router's point of view and allow
