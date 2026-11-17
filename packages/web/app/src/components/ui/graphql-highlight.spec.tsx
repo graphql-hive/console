@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { ReactNode } from 'react';
 import { render, screen } from '@testing-library/react';
-import { GraphQLBlock, GraphQLHighlight } from './graphql-block';
+import { GraphQLHighlight } from './graphql-highlight';
 
 /** Records what the mocked code block was rendered with. */
 const codeBlock = vi.hoisted(() => ({
@@ -36,17 +36,5 @@ describe('GraphQLHighlight', () => {
     render(<GraphQLHighlight code="type Query {" />);
 
     expect(codeBlock.file).toMatchObject({ file: { contents: 'type Query {' } });
-  });
-});
-
-describe('GraphQLBlock', () => {
-  it('frames the SDL with its title and service url', () => {
-    render(<GraphQLBlock sdl="type Query { a: String }" url="https://reviews.example" />);
-
-    expect(screen.getByText('SDL')).toBeTruthy();
-    expect(screen.getByText('https://reviews.example')).toBeTruthy();
-    expect(codeBlock.file).toMatchObject({
-      file: { contents: 'type Query {\n  a: String\n}' },
-    });
   });
 });
