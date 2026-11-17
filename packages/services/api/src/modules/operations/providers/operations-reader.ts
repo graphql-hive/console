@@ -119,11 +119,13 @@ export type OperationsRollupDimensions = 'hash' | 'client' | 'graph';
  */
 export const UNATTRIBUTED_GRAPH_ID = '00000000-0000-0000-0000-000000000000';
 
-/** Restricts a query to the usage of a single graph. */
-export type GraphFilter = {
+export type GraphSelector = {
   graphId: string;
   /** The default graph also owns the usage reported without graph metadata. */
   isDefaultGraph: boolean;
+};
+
+export type GraphFilter = GraphSelector & {
   /**
    * Whether the query reads the graph-scoped (`*_by_graph_*`) rollups
    * (see the `useGraphRollups` context of `pickAggregationByPeriod`).
@@ -131,6 +133,10 @@ export type GraphFilter = {
    */
   useGraphRollups: boolean;
 };
+
+function graphKey(graph: GraphSelector | null | undefined): string {
+  return graph ? `${graph.graphId}:${graph.isDefaultGraph}` : '';
+}
 
 /**
  * - graph-scoped rollups: filter by `graph_id`
@@ -149,6 +155,15 @@ export function buildGraphConditions(graph: GraphFilter, namespace?: string): Sq
   }
 
   return [sql`${column} = ${graph.graphId}`];
+}
+
+/**
+ * `buildGraphConditions` as `AND ...` for queries that build their `PREWHERE` by hand.
+ * Empty without a graph or without conditions.
+ */
+function andGraphConditions(graph: GraphFilter | null, namespace?: string): SqlValue {
+  const conditions = graph ? buildGraphConditions(graph, namespace) : [];
+  return conditions.length ? sql`AND ${sql.join(conditions, ' AND ')}` : sql``;
 }
 
 /**
@@ -232,6 +247,25 @@ export class OperationsReader {
     return sql.raw(this.useGraphRollups(period) ? 'quantilesTDigestMerge' : 'quantilesMerge');
   }
 
+  /**
+   * Resolves the graph filter of a query that is not routed through `pickAggregationByPeriod`.
+   * `useGraphRollups` is false for queries that read legacy tables only.
+   */
+  private graphFilter(
+    graph: GraphSelector | null | undefined,
+    useGraphRollups: boolean,
+  ): GraphFilter | null {
+    return graph ? { ...graph, useGraphRollups } : null;
+  }
+
+  /** Graph filter for tables resolved with `rollupTable(..., period)`. */
+  private graphFilterForPeriod(
+    graph: GraphSelector | null | undefined,
+    period: DateRange | null,
+  ): GraphFilter | null {
+    return this.graphFilter(graph, this.useGraphRollups(period));
+  }
+
   /** Table to read when a query is not routed through `pickAggregationByPeriod`. */
   private rollupTable(
     table: AggregationTable,
@@ -249,6 +283,8 @@ export class OperationsReader {
 
   private pickAggregationByPeriod(args: {
     period: DateRange | null;
+    /** Restricts to the usage of a graph, exposed to `query` as `context.graph`. */
+    graph?: GraphSelector | null;
     resolution?: number;
     timeout:
       | {
@@ -270,8 +306,9 @@ export class OperationsReader {
       /**
        * `useGraphRollups` is true if the graph-scoped rollups are read,
        * which is required for filtering by graph.
+       * `graph` is the graph filter to pass to `createFilter` (null without `args.graph`).
        */
-      context: { useGraphRollups: boolean },
+      context: { useGraphRollups: boolean; graph: GraphFilter | null },
     ): SqlValue;
     queryId(aggregation: Granularity): `${string}_${typeof aggregation}`;
   }) {
@@ -281,6 +318,7 @@ export class OperationsReader {
         : args.timeout;
     let { period, resolution } = args;
     const useGraphRollups = this.useGraphRollups(period);
+    const context = { useGraphRollups, graph: this.graphFilter(args.graph, useGraphRollups) };
     const tableNameResolver =
       (granularity: Granularity) =>
       (table: AggregationTable, operationsDimensions: OperationsRollupDimensions = 'hash') =>
@@ -288,17 +326,17 @@ export class OperationsReader {
 
     const queryMap = {
       daily: {
-        query: args.query(tableNameResolver('daily'), { useGraphRollups }),
+        query: args.query(tableNameResolver('daily'), context),
         queryId: args.queryId('daily'),
         timeout: timeout.daily,
       },
       hourly: {
-        query: args.query(tableNameResolver('hourly'), { useGraphRollups }),
+        query: args.query(tableNameResolver('hourly'), context),
         queryId: args.queryId('hourly'),
         timeout: timeout.hourly,
       },
       minutely: {
-        query: args.query(tableNameResolver('minutely'), { useGraphRollups }),
+        query: args.query(tableNameResolver('minutely'), context),
         queryId: args.queryId('minutely'),
         timeout: timeout.minutely,
       },
@@ -365,16 +403,19 @@ export class OperationsReader {
     argument,
     target,
     period,
+    graph,
   }: {
     type: string;
     field?: string;
     argument?: string;
     target: string;
     period: DateRange;
+    graph?: GraphSelector | null;
   }) {
     return this.countFields({
       target,
       period,
+      graph,
       fields: [{ type, field, argument }],
     }).then(r => r[this.makeId({ type, field, argument })]);
   }
@@ -386,11 +427,12 @@ export class OperationsReader {
       period: DateRange;
       operations?: readonly string[];
       excludedClients?: readonly string[] | null;
+      graph?: GraphSelector | null;
     },
     Record<string, number>
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${graphKey(item.graph)}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this.countCoordinateResolution({
@@ -398,6 +440,7 @@ export class OperationsReader {
         excludedClients: items[0].excludedClients,
         period: items[0].period,
         operations: items[0].operations,
+        graph: items[0].graph,
         schemaCoordinates,
       }).then(result =>
         items.map(item =>
@@ -416,12 +459,14 @@ export class OperationsReader {
     period,
     operations,
     excludedClients,
+    graph,
   }: {
     schemaCoordinates: readonly string[];
     targetIds: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
+    graph?: GraphSelector | null;
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
@@ -439,9 +484,10 @@ export class OperationsReader {
                 excludedClients,
                 'String',
               )})) as non_excluded_clients_total
-            FROM clients_daily ${this.createFilter({
+            FROM ${this.rollupTable('clients', 'daily', period)} ${this.createFilter({
               target: targetIds,
               period,
+              graph: this.graphFilterForPeriod(graph, period),
             })}
             GROUP BY hash
           ) WHERE non_excluded_clients_total = 0
@@ -451,15 +497,17 @@ export class OperationsReader {
 
     const query = this.pickAggregationByPeriod({
       period,
-      query: aggregationTableName => sql`
+      graph,
+      query: (aggregationTableName, ctx) => sql`
             SELECT
               coordinate,
               sum(total) as total
-            FROM ${aggregationTableName('coordinate_counts')} 
+            FROM ${aggregationTableName('coordinate_counts')}
             ${this.createFilter({
               target: targetIds,
               period,
               operations,
+              graph: ctx.graph,
               extra: conditions,
             })}
             GROUP BY coordinate
@@ -494,11 +542,12 @@ export class OperationsReader {
       period: DateRange;
       operations?: readonly string[];
       excludedClients?: readonly string[] | null;
+      graph?: GraphSelector | null;
     },
     Record<string, number>
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${graphKey(item.graph)}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this.countCoordinates({
@@ -506,6 +555,7 @@ export class OperationsReader {
         excludedClients: items[0].excludedClients,
         period: items[0].period,
         operations: items[0].operations,
+        graph: items[0].graph,
         schemaCoordinates,
       }).then(result =>
         items.map(item =>
@@ -524,12 +574,14 @@ export class OperationsReader {
     period,
     operations,
     excludedClients,
+    graph,
   }: {
     schemaCoordinates: readonly string[];
     targetIds: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
+    graph?: GraphSelector | null;
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
@@ -547,9 +599,10 @@ export class OperationsReader {
                 excludedClients,
                 'String',
               )})) as non_excluded_clients_total
-            FROM clients_daily ${this.createFilter({
+            FROM ${this.rollupTable('clients', 'daily', period)} ${this.createFilter({
               target: targetIds,
               period,
+              graph: this.graphFilterForPeriod(graph, period),
             })}
             GROUP BY hash
           ) WHERE non_excluded_clients_total = 0
@@ -559,15 +612,17 @@ export class OperationsReader {
 
     const query = this.pickAggregationByPeriod({
       period,
-      query: aggregationTableName => sql`
+      graph,
+      query: (aggregationTableName, ctx) => sql`
             SELECT
               coordinate,
               sum(total) as total
-            FROM ${aggregationTableName('coordinates')} 
+            FROM ${aggregationTableName('coordinates')}
             ${this.createFilter({
               target: targetIds,
               period,
               operations,
+              graph: ctx.graph,
               extra: conditions,
             })}
             GROUP BY coordinate
@@ -602,16 +657,18 @@ export class OperationsReader {
       targetIds: readonly string[];
       period: DateRange;
       excludedClients?: readonly string[] | null;
+      graph?: GraphSelector | null;
     },
     Array<{ id: string; count: number; operationCount: number }>
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${graphKey(item.graph)}`,
     async items => {
       const counts = await this.countCoordinatesPerTarget({
         targetIds: items[0].targetIds,
         excludedClients: items[0].excludedClients,
         period: items[0].period,
+        graph: items[0].graph,
         schemaCoordinates: items.map(item => item.schemaCoordinate),
       });
       return items.map(item => counts.get(item.schemaCoordinate) ?? []);
@@ -623,6 +680,7 @@ export class OperationsReader {
     targetIds: readonly string[];
     period: DateRange;
     excludedClients?: readonly string[] | null;
+    graph?: GraphSelector | null;
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(args.schemaCoordinates, 'String')}))`];
 
@@ -638,9 +696,10 @@ export class OperationsReader {
                 args.excludedClients,
                 'String',
               )})) as non_excluded_clients_total
-            FROM clients_daily ${this.createFilter({
+            FROM ${this.rollupTable('clients', 'daily', args.period)} ${this.createFilter({
               target: args.targetIds,
               period: args.period,
+              graph: this.graphFilterForPeriod(args.graph, args.period),
             })}
             GROUP BY hash, target
           ) WHERE non_excluded_clients_total = 0
@@ -650,7 +709,8 @@ export class OperationsReader {
 
     const query = this.pickAggregationByPeriod({
       period: args.period,
-      query: aggregationTableName => sql`
+      graph: args.graph,
+      query: (aggregationTableName, ctx) => sql`
             SELECT
               coordinate,
               target,
@@ -660,6 +720,7 @@ export class OperationsReader {
             ${this.createFilter({
               target: args.targetIds,
               period: args.period,
+              graph: ctx.graph,
               extra: conditions,
             })}
             GROUP BY coordinate, target
@@ -691,16 +752,18 @@ export class OperationsReader {
       targetIds: readonly string[];
       period: DateRange;
       excludedClients?: readonly string[] | null;
+      graph?: GraphSelector | null;
     },
     Array<{ id: string; count: number }>
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${graphKey(item.graph)}`,
     async items => {
       const counts = await this._getOperationCountsPerTarget({
         targetIds: items[0].targetIds,
         excludedClients: items[0].excludedClients ?? null,
         period: items[0].period,
+        graph: items[0].graph,
         hashes: Array.from(new Set(items.map(item => item.hash))),
       });
       return items.map(item => counts.get(item.hash) ?? []);
@@ -712,14 +775,16 @@ export class OperationsReader {
     excludedClients: null | readonly string[];
     period: DateRange;
     hashes: string[];
+    graph?: GraphSelector | null;
   }) {
-    const filter = (table: string) => sql`
+    const filter = (table: string, graph: GraphFilter | null) => sql`
       PREWHERE
         ${sql.raw(`"${table}"`)}."target" IN (${sql.array(args.targetIds, 'String')})
         AND ${sql.raw(`"${table}"`)}."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
         AND ${sql.raw(`"${table}"`)}."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
         AND ${sql.raw(`"${table}"`)}."hash" IN (${sql.longArray(args.hashes, 'String')})
         ${args.excludedClients ? sql`AND ${sql.raw(`"${table}"`)}."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
+        ${andGraphConditions(graph, `"${table}"`)}
     `;
 
     const rows = await this.clickHouse
@@ -728,15 +793,15 @@ export class OperationsReader {
         query: sql`
           SELECT "hash", "target", SUM("total") AS "count"
           FROM (
-            SELECT "operations_daily"."hash" AS "hash", "operations_daily"."target" AS "target", "operations_daily"."total" AS "total"
-            FROM "operations_daily"
-            ${filter('operations_daily')}
+            SELECT "operations"."hash" AS "hash", "operations"."target" AS "target", "operations"."total" AS "total"
+            FROM ${this.rollupTable('operations', 'daily', args.period)} AS "operations"
+            ${filter('operations', this.graphFilterForPeriod(args.graph, args.period))}
 
             UNION ALL
 
             SELECT "subscription_operations_daily"."hash" AS "hash", "subscription_operations_daily"."target" AS "target", "subscription_operations_daily"."total" AS "total"
             FROM "subscription_operations_daily"
-            ${filter('subscription_operations_daily')}
+            ${filter('subscription_operations_daily', this.graphFilter(args.graph, false))}
           )
           GROUP BY "hash", "target"
         `,
@@ -764,11 +829,12 @@ export class OperationsReader {
       period: DateRange;
       operations?: readonly string[];
       excludedClients?: readonly string[] | null;
+      graph?: GraphSelector | null;
     },
     Record<string, number>
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.operations?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${graphKey(item.graph)}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this.countCoordinateFailures({
@@ -776,6 +842,7 @@ export class OperationsReader {
         excludedClients: items[0].excludedClients,
         period: items[0].period,
         operations: items[0].operations,
+        graph: items[0].graph,
         schemaCoordinates,
       }).then(result =>
         items.map(item =>
@@ -791,12 +858,14 @@ export class OperationsReader {
     period,
     operations,
     excludedClients,
+    graph,
   }: {
     schemaCoordinates: readonly string[];
     targetIds: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
+    graph?: GraphSelector | null;
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
@@ -814,9 +883,10 @@ export class OperationsReader {
                 excludedClients,
                 'String',
               )})) as non_excluded_clients_total
-            FROM clients_daily ${this.createFilter({
+            FROM ${this.rollupTable('clients', 'daily', period)} ${this.createFilter({
               target: targetIds,
               period,
+              graph: this.graphFilterForPeriod(graph, period),
             })}
             GROUP BY hash
           ) WHERE non_excluded_clients_total = 0
@@ -826,7 +896,8 @@ export class OperationsReader {
 
     const query = this.pickAggregationByPeriod({
       period,
-      query: aggregationTableName => sql`
+      graph,
+      query: (aggregationTableName, ctx) => sql`
         SELECT
           coordinate,
           sum(total_errors) as total
@@ -835,6 +906,7 @@ export class OperationsReader {
           target: targetIds,
           period,
           operations,
+          graph: ctx.graph,
           extra: conditions,
         })}
         GROUP BY coordinate
@@ -868,6 +940,7 @@ export class OperationsReader {
     period,
     operations,
     excludedClients,
+    graph,
   }: {
     fields: ReadonlyArray<{
       type: string;
@@ -878,6 +951,7 @@ export class OperationsReader {
     period: DateRange;
     operations?: readonly string[];
     excludedClients?: readonly string[] | null;
+    graph?: GraphSelector | null;
   }): Promise<Record<string, number>> {
     const schemaCoordinates = fields.map(selector => this.makeId(selector));
     return this.countCoordinates({
@@ -886,6 +960,7 @@ export class OperationsReader {
       period,
       operations,
       excludedClients,
+      graph,
     });
   }
 
@@ -952,22 +1027,26 @@ export class OperationsReader {
   async countOperationsWithoutDetails({
     target,
     period,
+    graph,
   }: {
     target: string | readonly string[];
     period: DateRange;
+    graph?: GraphSelector | null;
   }): Promise<number> {
     const query = this.pickAggregationByPeriod({
       period,
+      graph,
       timeout: {
         daily: 30_000,
         hourly: 15_000,
         minutely: 10_000,
       },
-      query: aggregationTableName =>
+      query: (aggregationTableName, ctx) =>
         sql`SELECT sum(total) as total FROM ${aggregationTableName('operations', 'graph')} ${this.createFilter(
           {
             target,
             period,
+            graph: ctx.graph,
           },
         )}`,
       queryId: aggregation => `count_operations_${aggregation}`,
@@ -987,6 +1066,7 @@ export class OperationsReader {
     targetIds: readonly string[];
     period: DateRange;
     excludedClients: readonly string[] | null;
+    graph?: GraphSelector | null;
     fields: readonly {
       type: string;
       field?: string | null;
@@ -999,8 +1079,13 @@ export class OperationsReader {
         target: args.targetIds,
         period: args.period,
         excludedClients: args.excludedClients,
+        graph: args.graph,
       }),
-      this.countOperationsWithoutDetails({ target: args.targetIds, period: args.period }),
+      this.countOperationsWithoutDetails({
+        target: args.targetIds,
+        period: args.period,
+        graph: args.graph,
+      }),
     ]);
 
     return Object.keys(totalFields).map(id => {
@@ -1027,6 +1112,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
     schemaCoordinate,
   }: {
     target: string | readonly string[];
@@ -1037,6 +1123,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
     schemaCoordinate?: string;
   }): Promise<{
     total: number;
@@ -1051,15 +1138,17 @@ export class OperationsReader {
       schemaCoordinate,
     });
     const query = this.pickAggregationByPeriod({
+      graph,
       timeout: {
         minutely: 10_000,
         hourly: 15_000,
         daily: 30_000,
       },
       queryId: aggregation => `count_operations_${aggregation}`,
-      query: aggregationTableName =>
+      query: (aggregationTableName, ctx) =>
         sql`SELECT sum(total) as total, sum(total_ok) as totalOk FROM ${aggregationTableName('operations', operationsDimensions)} ${this.createFilter(
           {
+            graph: ctx.graph,
             target,
             period,
             operations,
@@ -1100,6 +1189,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     target: string;
     period: DateRange;
@@ -1109,6 +1199,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
   }): Promise<number> {
     return this.countRequests({
       target,
@@ -1119,6 +1210,7 @@ export class OperationsReader {
       excludeOperations,
       excludeClientVersionFilters,
       coordinateScopes,
+      graph,
     }).then(r => r.notOk);
   }
 
@@ -1131,6 +1223,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     target: string;
     period: DateRange;
@@ -1140,17 +1233,20 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
   }): Promise<number> {
     const query = this.pickAggregationByPeriod({
+      graph,
       period,
       timeout: {
         daily: 30_000,
         hourly: 15_000,
         minutely: 10_000,
       },
-      query: aggregationTableName =>
+      query: (aggregationTableName, ctx) =>
         sql`SELECT count(distinct hash) as total FROM ${aggregationTableName('operations')} ${this.createFilter(
           {
+            graph: ctx.graph,
             target,
             period,
             operations,
@@ -1183,6 +1279,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
     schemaCoordinate,
   }: {
     target: string;
@@ -1193,6 +1290,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -1205,16 +1303,18 @@ export class OperationsReader {
     }>
   > {
     const query = this.pickAggregationByPeriod({
+      graph,
       period,
       timeout: {
         daily: 30_000,
         hourly: 15_000,
         minutely: 10_000,
       },
-      query: aggregationTableName =>
+      query: (aggregationTableName, ctx) =>
         sql`SELECT sum(total) as total, sum(total_ok) as totalOk, hash FROM ${aggregationTableName(
           'operations',
         )} ${this.createFilter({
+          graph: ctx.graph,
           target,
           period,
           operations,
@@ -1257,6 +1357,7 @@ export class OperationsReader {
                     ${this.createFilter({
                       target,
                       period,
+                      graph: this.graphFilterForPeriod(graph, period),
                       operations,
                       clientVersionFilters,
                       excludeOperations,
@@ -1374,19 +1475,23 @@ export class OperationsReader {
   async getReportedSchemaCoordinates({
     target,
     period,
+    graph,
   }: {
     target: string;
     period: DateRange;
+    graph?: GraphSelector | null;
   }): Promise<Set<string>> {
     const result = await this.clickHouse.query<{
       coordinate: string;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
           SELECT
             coordinate
           FROM ${aggregationTableName('coordinates')}
             ${this.createFilter({
+              graph: ctx.graph,
               target,
               period,
             })}
@@ -1411,6 +1516,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
     schemaCoordinate,
   }: {
     target: string;
@@ -1421,6 +1527,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
     schemaCoordinate?: string;
   }): Promise<
     Array<{
@@ -1440,13 +1547,15 @@ export class OperationsReader {
       client_version: string;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
               SELECT
                 sum(total) as total,
                 client_name,
                 client_version
               FROM ${aggregationTableName('clients')}
               ${this.createFilter({
+                graph: ctx.graph,
                 target,
                 period,
                 operations,
@@ -1522,23 +1631,27 @@ export class OperationsReader {
     period,
     clientName,
     limit,
+    graph,
   }: {
     target: string;
     period: DateRange;
     clientName: string;
     limit: number;
+    graph?: GraphSelector | null;
   }): Promise<{ version: string; count: number; percentage: number }[]> {
     const result = await this.clickHouse.query<{
       total: string;
       client_version: string;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
               SELECT
                 sum(total) as total,
                 client_version
               FROM ${aggregationTableName('clients')}
               ${this.createFilter({
+                graph: ctx.graph,
                 target,
                 period,
                 clients: clientName === 'unknown' ? [clientName, ''] : [clientName],
@@ -1570,6 +1683,7 @@ export class OperationsReader {
     targetIds: readonly string[];
     excludedClients: null | readonly string[];
     period: DateRange;
+    graph?: GraphSelector | null;
   }) {
     const TotalCountModel = z
       .tuple([z.object({ amountOfRequests: z.string() })])
@@ -1583,14 +1697,15 @@ export class OperationsReader {
             SUM("result"."total") AS "amountOfRequests"
           FROM (
             SELECT
-              SUM("operations_daily"."total") AS "total"
+              SUM("operations"."total") AS "total"
             FROM
-              "operations_daily"
+              ${this.rollupTable('operations', 'daily', args.period, args.excludedClients ? 'client' : 'graph')} AS "operations"
             PREWHERE
-              "operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
-              AND "operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
-              AND "operations_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-              ${args.excludedClients ? sql`AND "operations_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
+              "operations"."target" IN (${sql.array(args.targetIds, 'String')})
+              AND "operations"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+              AND "operations"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+              ${args.excludedClients ? sql`AND "operations"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
+              ${andGraphConditions(this.graphFilterForPeriod(args.graph, args.period), '"operations"')}
 
             UNION ALL
 
@@ -1603,6 +1718,7 @@ export class OperationsReader {
               AND "subscription_operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
               AND "subscription_operations_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
               ${args.excludedClients ? sql`AND "subscription_operations_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
+              ${andGraphConditions(this.graphFilter(args.graph, false), '"subscription_operations_daily"')}
           ) AS "result"
           `,
         timeout: 10_000,
@@ -1616,7 +1732,12 @@ export class OperationsReader {
     excludedClients: null | readonly string[];
     period: DateRange;
     schemaCoordinates: string[];
+    graph?: GraphSelector | null;
   }) {
+    const rollupGraph = this.graphFilterForPeriod(args.graph, args.period);
+    // `subscription_operations_daily` has no graph dimension
+    const legacyGraph = this.graphFilter(args.graph, false);
+
     const RecordArrayType = z.array(
       z.object({
         coordinate: z.string(),
@@ -1637,21 +1758,22 @@ export class OperationsReader {
         query: sql`
           WITH "top_operations_by_coordinates" AS (
             SELECT DISTINCT
-              "coordinates_daily"."coordinate" AS "coordinate",
-              "coordinates_daily"."hash" AS "hash",
+              "coordinates"."coordinate" AS "coordinate",
+              "coordinates"."hash" AS "hash",
               "operations_join"."total" AS "total"
             FROM
-              "coordinates_daily"
+              ${this.rollupTable('coordinates', 'daily', args.period)} AS "coordinates"
             RIGHT JOIN (
               SELECT
-                "operations_daily"."hash",
-                SUM("operations_daily"."total") AS "total"
+                "operations"."hash",
+                SUM("operations"."total") AS "total"
               FROM
-                "operations_daily"
+                ${this.rollupTable('operations', 'daily', args.period)} AS "operations"
               PREWHERE
                 "target" IN (${sql.array(args.targetIds, 'String')})
                 AND "timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
                 AND "timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+                ${andGraphConditions(rollupGraph)}
                 ${args.excludedClients ? sql`AND "client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
               GROUP BY
                 "hash"
@@ -1667,20 +1789,22 @@ export class OperationsReader {
                 "target" IN (${sql.array(args.targetIds, 'String')})
                 AND "timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
                 AND "timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+                ${andGraphConditions(legacyGraph)}
                 ${args.excludedClients ? sql`AND "client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
               GROUP BY
                 "hash"
-            ) AS "operations_join" ON "coordinates_daily"."hash" = "operations_join"."hash"
+            ) AS "operations_join" ON "coordinates"."hash" = "operations_join"."hash"
             PREWHERE
-              "coordinates_daily"."target" IN (${sql.array(args.targetIds, 'String')})
-              AND "coordinates_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
-              AND "coordinates_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-              AND "coordinates_daily"."coordinate" IN (${sql.longArray(args.schemaCoordinates, 'String')})
+              "coordinates"."target" IN (${sql.array(args.targetIds, 'String')})
+              AND "coordinates"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+              AND "coordinates"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+              ${andGraphConditions(rollupGraph, '"coordinates"')}
+              AND "coordinates"."coordinate" IN (${sql.longArray(args.schemaCoordinates, 'String')})
             ORDER BY
               "total" DESC,
-              "coordinates_daily"."hash" DESC
+              "coordinates"."hash" DESC
             LIMIT 10
-              BY "coordinates_daily"."coordinate"
+              BY "coordinates"."coordinate"
           )
           SELECT
             "top_operations_by_coordinates"."coordinate" AS "coordinate",
@@ -1744,6 +1868,7 @@ export class OperationsReader {
       excludedClients: null | readonly string[];
       period: DateRange;
       schemaCoordinate: string;
+      graph?: GraphSelector | null;
     },
     Array<{
       hash: string;
@@ -1752,13 +1877,14 @@ export class OperationsReader {
     }> | null
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${graphKey(item.graph)}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this._getTopOperationsForSchemaCoordinates({
         targetIds: items[0].targetIds,
         excludedClients: items[0].excludedClients,
         period: items[0].period,
+        graph: items[0].graph,
         schemaCoordinates,
       }).then(result => result.map(result => Promise.resolve(result)));
     },
@@ -1770,7 +1896,12 @@ export class OperationsReader {
     excludedClients: null | readonly string[];
     period: DateRange;
     schemaCoordinates: string[];
+    graph?: GraphSelector | null;
   }) {
+    const rollupGraph = this.graphFilterForPeriod(args.graph, args.period);
+    // `subscription_operations_daily` has no graph dimension
+    const legacyGraph = this.graphFilter(args.graph, false);
+
     const RecordArrayType = z.array(
       z.object({
         coordinate: z.string(),
@@ -1787,25 +1918,26 @@ export class OperationsReader {
         query: sql`
           WITH "coordinates_to_client_name_mapping" AS (
            SELECT
-              "coordinates_daily"."coordinate" AS "coordinate",
+              "coordinates"."coordinate" AS "coordinate",
               "operations_daily_filtered"."client_name" AS "client_name"
             FROM
-              "coordinates_daily"
+              ${this.rollupTable('coordinates', 'daily', args.period)} AS "coordinates"
             LEFT JOIN (
               SELECT
-                "operations_daily"."hash",
-                "operations_daily"."client_name"
+                "operations"."hash",
+                "operations"."client_name"
               FROM
-                "operations_daily"
+                ${this.rollupTable('operations', 'daily', args.period)} AS "operations"
               PREWHERE
-                "operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
-                AND "operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
-                AND "operations_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-                ${args.excludedClients ? sql`AND "operations_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
+                "operations"."target" IN (${sql.array(args.targetIds, 'String')})
+                AND "operations"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+                AND "operations"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+                ${andGraphConditions(rollupGraph, '"operations"')}
+                ${args.excludedClients ? sql`AND "operations"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
               LIMIT 1
                 BY
-                  "operations_daily"."hash",
-                  "operations_daily"."client_name"
+                  "operations"."hash",
+                  "operations"."client_name"
 
               UNION ALL
 
@@ -1818,21 +1950,23 @@ export class OperationsReader {
                 "subscription_operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
                 AND "subscription_operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
                 AND "subscription_operations_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+                ${andGraphConditions(legacyGraph, '"subscription_operations_daily"')}
                 ${args.excludedClients ? sql`AND "subscription_operations_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
               LIMIT 1
                 BY
                   "subscription_operations_daily"."hash",
                   "subscription_operations_daily"."client_name"
             ) AS "operations_daily_filtered"
-               ON "operations_daily_filtered"."hash" = "coordinates_daily"."hash"
+               ON "operations_daily_filtered"."hash" = "coordinates"."hash"
             PREWHERE
-              "coordinates_daily"."target" IN (${sql.array(args.targetIds, 'String')})
-              AND "coordinates_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
-              AND "coordinates_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-              AND "coordinates_daily"."coordinate" IN (${sql.longArray(args.schemaCoordinates, 'String')})
+              "coordinates"."target" IN (${sql.array(args.targetIds, 'String')})
+              AND "coordinates"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+              AND "coordinates"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+              ${andGraphConditions(rollupGraph, '"coordinates"')}
+              AND "coordinates"."coordinate" IN (${sql.longArray(args.schemaCoordinates, 'String')})
             LIMIT 1
             BY
-              "coordinates_daily"."coordinate",
+              "coordinates"."coordinate",
               "operations_daily_filtered"."client_name"
           )
 
@@ -1843,18 +1977,19 @@ export class OperationsReader {
         FROM (
           SELECT
             "coordinates_to_client_name_mapping"."coordinate" AS "coordinate",
-            "clients_daily"."client_name" AS "name",
-            "clients_daily"."total" AS "count"
+            "clients"."client_name" AS "name",
+            "clients"."total" AS "count"
           FROM
-            "clients_daily"
+            ${this.rollupTable('clients', 'daily', args.period)} AS "clients"
           LEFT JOIN
             "coordinates_to_client_name_mapping"
-            ON "clients_daily"."client_name" = "coordinates_to_client_name_mapping"."client_name"
+            ON "clients"."client_name" = "coordinates_to_client_name_mapping"."client_name"
           PREWHERE
-            "clients_daily"."target" IN (${sql.array(args.targetIds, 'String')})
-            AND "clients_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
-            AND "clients_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-            ${args.excludedClients ? sql`AND "clients_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
+            "clients"."target" IN (${sql.array(args.targetIds, 'String')})
+            AND "clients"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
+            AND "clients"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+            ${andGraphConditions(rollupGraph, '"clients"')}
+            ${args.excludedClients ? sql`AND "clients"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
 
           UNION ALL
 
@@ -1871,6 +2006,7 @@ export class OperationsReader {
             "subscription_operations_daily"."target" IN (${sql.array(args.targetIds, 'String')})
             AND "subscription_operations_daily"."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
             AND "subscription_operations_daily"."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
+            ${andGraphConditions(legacyGraph, '"subscription_operations_daily"')}
             ${args.excludedClients ? sql`AND "subscription_operations_daily"."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
         ) AS "result"
         GROUP BY
@@ -1918,17 +2054,19 @@ export class OperationsReader {
       excludedClients: null | readonly string[];
       period: DateRange;
       schemaCoordinate: string;
+      graph?: GraphSelector | null;
     },
     Array<{ name: string; count: number }> | null
   >(
     item =>
-      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}`,
+      `${item.targetIds.join(',')}-${item.excludedClients?.join(',') ?? ''}-${item.period.from.toISOString()}-${item.period.to.toISOString()}-${graphKey(item.graph)}`,
     async items => {
       const schemaCoordinates = items.map(item => item.schemaCoordinate);
       return await this._getTopClientsForSchemaCoordinates({
         targetIds: items[0].targetIds,
         excludedClients: items[0].excludedClients,
         period: items[0].period,
+        graph: items[0].graph,
         schemaCoordinates,
       }).then(result => result.map(result => Promise.resolve(result)));
     },
@@ -1938,20 +2076,24 @@ export class OperationsReader {
     target,
     period,
     clientName,
+    graph,
   }: {
     target: string;
     period: DateRange;
     clientName: string;
+    graph?: GraphSelector | null;
   }): Promise<number> {
     const result = await this.clickHouse.query<{
       total: string;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
               SELECT
                 count(distinct client_version) as total
               FROM ${aggregationTableName('clients')}
               ${this.createFilter({
+                graph: ctx.graph,
                 target,
                 period,
                 clients: clientName === 'unknown' ? [clientName, ''] : [clientName],
@@ -1971,6 +2113,7 @@ export class OperationsReader {
     period: DateRange;
     limit: number;
     typeNames: readonly string[];
+    graph?: GraphSelector | null;
   }): Promise<
     Map<
       string,
@@ -1988,10 +2131,11 @@ export class OperationsReader {
       coordinate: string;
     }>(
       this.pickAggregationByPeriod({
+        graph: args.graph,
         queryId(aggregation) {
           return `get_top_operations_for_types_${aggregation}`;
         },
-        query: aggregationTableName => sql`
+        query: (aggregationTableName, ctx) => sql`
           WITH coordinates as (
             SELECT cd.total, cd.hash, cd.coordinate
             FROM (
@@ -1999,6 +2143,7 @@ export class OperationsReader {
                 sum(cdi.total) as total, cdi.hash as hash, cdi.coordinate as coordinate
               FROM ${aggregationTableName('coordinates')} as cdi
                 ${this.createFilter({
+                  graph: ctx.graph,
                   target: args.targetId,
                   period: args.period,
                   extra: [
@@ -2055,9 +2200,11 @@ export class OperationsReader {
     targetId: string,
     period: DateRange,
     coordinates: readonly string[],
+    graph?: GraphSelector | null,
   ): Promise<Map<string, Set<string>>> {
     const dbResult = await this.clickHouse.query(
       this.pickAggregationByPeriod({
+        graph,
         queryId: aggregation => `get_client_names_for_schema_coordinates_${aggregation}`,
         // KAMIL: I know this query is a bit weird, but it's the best I could come up with.
         // It processed 27x less rows than the previous version.
@@ -2077,7 +2224,7 @@ export class OperationsReader {
         // It's using sub queries instead of joins (yeah there is a join but with preselected list of rows).
         // It fetches much less data.
         // It fetches rows more accurately.
-        query: aggregationTableName => sql`
+        query: (aggregationTableName, ctx) => sql`
           SELECT
             co.coordinate AS coordinate,
             groupUniqArrayArray(cl.client_names) AS client_names
@@ -2088,6 +2235,7 @@ export class OperationsReader {
               co.hash
             FROM ${aggregationTableName('coordinates')} AS co
             ${this.createFilter({
+              graph: ctx.graph,
               target: targetId,
               period: period,
               extra: [sql`co.coordinate IN (${sql.array(coordinates, 'String')})`],
@@ -2102,6 +2250,7 @@ export class OperationsReader {
                 cl.hash AS hash
               FROM ${aggregationTableName('clients')} AS cl
               ${this.createFilter({
+                graph: ctx.graph,
                 target: targetId,
                 period: period,
                 namespace: 'cl',
@@ -2126,10 +2275,12 @@ export class OperationsReader {
     target,
     period,
     operations,
+    graph,
   }: {
     target: string | readonly string[];
     period: DateRange;
     operations?: readonly string[];
+    graph?: GraphSelector | null;
   }): Promise<
     Array<{
       name: string;
@@ -2146,6 +2297,7 @@ export class OperationsReader {
           client_name
         FROM ${this.rollupTable('clients', 'daily', period)}
         ${this.createFilter({
+          graph: this.graphFilterForPeriod(graph, period),
           target,
           period,
           operations,
@@ -2170,6 +2322,7 @@ export class OperationsReader {
       targets: readonly string[];
       period: DateRange;
       resolution: number;
+      graph?: GraphSelector | null;
     }>,
   ) {
     const aggregationMap = new Map<
@@ -2178,13 +2331,18 @@ export class OperationsReader {
         targets: string[];
         period: DateRange;
         resolution: number;
+        graph?: GraphSelector | null;
       }
     >();
 
-    const makeKey = (selector: { period: DateRange; resolution: number }) =>
+    const makeKey = (selector: {
+      period: DateRange;
+      resolution: number;
+      graph?: GraphSelector | null;
+    }) =>
       `${selector.period.from.toISOString()};${selector.period.to.toISOString()};${
         selector.resolution
-      }`;
+      };${graphKey(selector.graph)}`;
 
     const subSelectors = selectors
       .map(selector =>
@@ -2192,6 +2350,7 @@ export class OperationsReader {
           target,
           period: selector.period,
           resolution: selector.resolution,
+          graph: selector.graph,
         })),
       )
       .flat(1);
@@ -2207,6 +2366,7 @@ export class OperationsReader {
           targets: [selector.target],
           period: selector.period,
           resolution: selector.resolution,
+          graph: selector.graph,
         });
       } else {
         value.targets.push(selector.target);
@@ -2224,7 +2384,7 @@ export class OperationsReader {
       >
     >();
 
-    for (const [key, { targets, period, resolution }] of aggregationMap) {
+    for (const [key, { targets, period, resolution, graph }] of aggregationMap) {
       const interval = calculateTimeWindow({ period, resolution });
       const intervalRaw = this.clickHouse.translateWindow(interval);
       const roundedPeriod = {
@@ -2243,7 +2403,8 @@ export class OperationsReader {
             total: number;
           }>(
             this.pickAggregationByPeriod({
-              query: aggregationTableName => sql`
+              graph,
+              query: (aggregationTableName, ctx) => sql`
                 SELECT
                   toDateTime(
                       intDiv(
@@ -2254,7 +2415,7 @@ export class OperationsReader {
                   sum(total) as total,
                   target
                 FROM ${aggregationTableName('operations', 'graph')}
-                ${this.createFilter({ target: targets, period: roundedPeriod })}
+                ${this.createFilter({ target: targets, period: roundedPeriod, graph: ctx.graph })}
                 GROUP BY target, date
                 ORDER BY
                   target,
@@ -2332,6 +2493,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
     schemaCoordinate,
   }: {
     target: string;
@@ -2343,6 +2505,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
     schemaCoordinate?: string;
   }) {
     const results = await this.getDurationAndCountOverTime({
@@ -2355,6 +2518,7 @@ export class OperationsReader {
       excludeOperations,
       excludeClientVersionFilters,
       coordinateScopes,
+      graph,
       schemaCoordinate,
     });
 
@@ -2374,6 +2538,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     target: string;
     period: DateRange;
@@ -2384,6 +2549,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
   }) {
     const result = await this.getDurationAndCountOverTime({
       target,
@@ -2395,6 +2561,7 @@ export class OperationsReader {
       excludeOperations,
       excludeClientVersionFilters,
       coordinateScopes,
+      graph,
     });
 
     return result.map(row => ({
@@ -2413,6 +2580,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     target: string;
     period: DateRange;
@@ -2421,6 +2589,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
     operations?: readonly string[];
     clients?: readonly string[];
   }): Promise<
@@ -2439,6 +2608,7 @@ export class OperationsReader {
       excludeOperations,
       excludeClientVersionFilters,
       coordinateScopes,
+      graph,
     });
   }
 
@@ -2451,6 +2621,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     target: string;
     period: DateRange;
@@ -2460,13 +2631,15 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
   }): Promise<DurationMetrics> {
     const result = await this.clickHouse.query<{
       percentiles: [number, number, number, number];
       average: number;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
           SELECT
             avgMerge(duration_avg) as average,
             ${this.durationQuantilesMerge(period)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
@@ -2479,7 +2652,7 @@ export class OperationsReader {
               coordinateScopes,
             }),
           )}
-            ${this.createFilter({ target, period, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters, coordinateScope: { table: aggregationTableName('coordinates'), scopes: coordinateScopes ?? [] } })}
+            ${this.createFilter({ target, period, graph: ctx.graph, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters, coordinateScope: { table: aggregationTableName('coordinates'), scopes: coordinateScopes ?? [] } })}
         `,
         queryId: aggregation => `general_duration_percentiles_${aggregation}`,
         timeout: 15_000,
@@ -2499,12 +2672,14 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
     schemaCoordinate,
   }: {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
     target: string;
     period: DateRange;
     operations?: readonly string[];
@@ -2517,13 +2692,15 @@ export class OperationsReader {
       percentiles: [number, number, number, number];
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
               SELECT
                 hash,
                 avgMerge(duration_avg) as average,
                 ${this.durationQuantilesMerge(period)}(0.75, 0.90, 0.95, 0.99)(duration_quantiles) as percentiles
               FROM ${aggregationTableName('operations')}
               ${this.createFilter({
+                graph: ctx.graph,
                 target,
                 period,
                 operations,
@@ -2556,17 +2733,21 @@ export class OperationsReader {
   async getClientNames({
     target,
     period,
+    graph,
   }: {
     target: string;
     period: DateRange;
+    graph?: GraphSelector | null;
   }): Promise<string[]> {
     const result = await this.clickHouse.query<{
       client_name: string;
     }>(
       this.pickAggregationByPeriod({
+        graph,
         queryId: aggregation => `client_names_per_target_${aggregation}`,
-        query: aggregationTableName => sql`
+        query: (aggregationTableName, ctx) => sql`
         SELECT client_name FROM ${aggregationTableName('clients')} ${this.createFilter({
+          graph: ctx.graph,
           target,
           period,
         })} GROUP BY client_name
@@ -2648,11 +2829,13 @@ export class OperationsReader {
     period,
     resolution,
     schemaCoordinate,
+    graph,
   }: {
     targetId: string;
     period: DateRange;
     resolution: number;
     schemaCoordinate: string;
+    graph?: GraphSelector | null;
   }) {
     const interval = calculateTimeWindow({ period, resolution });
     const intervalRaw = this.clickHouse.translateWindow(interval);
@@ -2664,11 +2847,12 @@ export class OperationsReader {
     const endDateTimeFormatted = formatDate(roundedPeriod.to);
 
     const query = this.pickAggregationByPeriod({
+      graph,
       timeout: 15_000,
       period,
       resolution,
       queryId: aggregation => `coord_count_over_time_${aggregation}`,
-      query: aggregationTableName => {
+      query: (aggregationTableName, ctx) => {
         return sql`
         SELECT
           date,
@@ -2684,6 +2868,7 @@ export class OperationsReader {
             sum(total) as total
           FROM ${aggregationTableName('coordinate_counts')}
           ${this.createFilter({
+            graph: ctx.graph,
             target: targetId,
             period: roundedPeriod,
             extra: [sql`coordinate = ${schemaCoordinate}`],
@@ -2718,11 +2903,13 @@ export class OperationsReader {
     period,
     resolution,
     schemaCoordinate,
+    graph,
   }: {
     targetId: string;
     period: DateRange;
     resolution: number;
     schemaCoordinate: string;
+    graph?: GraphSelector | null;
   }) {
     const interval = calculateTimeWindow({ period, resolution });
     const intervalRaw = this.clickHouse.translateWindow(interval);
@@ -2734,11 +2921,12 @@ export class OperationsReader {
     const endDateTimeFormatted = formatDate(roundedPeriod.to);
 
     const query = this.pickAggregationByPeriod({
+      graph,
       timeout: 15_000,
       period,
       resolution,
       queryId: aggregation => `coord_failures_over_time_${aggregation}`,
-      query: aggregationTableName => {
+      query: (aggregationTableName, ctx) => {
         return sql`
         SELECT
           date,
@@ -2754,6 +2942,7 @@ export class OperationsReader {
             sum(total_errors) as total
           FROM ${aggregationTableName('coordinate_errors')}
           ${this.createFilter({
+            graph: ctx.graph,
             target: targetId,
             period: roundedPeriod,
             extra: [sql`coordinate = ${schemaCoordinate}`],
@@ -2793,6 +2982,7 @@ export class OperationsReader {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
     schemaCoordinate,
   }: {
     target: string;
@@ -2804,6 +2994,7 @@ export class OperationsReader {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
+    graph?: GraphSelector | null;
     schemaCoordinate?: string;
   }) {
     const interval = calculateTimeWindow({ period, resolution });
@@ -2816,11 +3007,12 @@ export class OperationsReader {
     const endDateTimeFormatted = formatDate(roundedPeriod.to);
 
     const query = this.pickAggregationByPeriod({
+      graph,
       timeout: 15_000,
       period,
       resolution,
       queryId: aggregation => `duration_and_count_over_time_${aggregation}`,
-      query: aggregationTableName => {
+      query: (aggregationTableName, ctx) => {
         return sql`
         SELECT
           date,
@@ -2851,6 +3043,7 @@ export class OperationsReader {
             }),
           )}
           ${this.createFilter({
+            graph: ctx.graph,
             target,
             period: roundedPeriod,
             operations,
@@ -2903,6 +3096,7 @@ export class OperationsReader {
         target: string;
         period: DateRange;
         typename: string;
+        graph?: GraphSelector | null;
       }>,
     ) => {
       const aggregationMap = new Map<
@@ -2911,13 +3105,18 @@ export class OperationsReader {
           target: string;
           period: DateRange;
           typenames: string[];
+          graph?: GraphSelector | null;
         }
       >();
 
-      const makeKey = (selector: { target: string; period: DateRange }) =>
+      const makeKey = (selector: {
+        target: string;
+        period: DateRange;
+        graph?: GraphSelector | null;
+      }) =>
         `${
           selector.target
-        }-${selector.period.from.toISOString()}-${selector.period.to.toISOString()}`;
+        }-${selector.period.from.toISOString()}-${selector.period.to.toISOString()}-${graphKey(selector.graph)}`;
 
       // Groups the type names by their target and period
       // The idea here is to make the least possible number of queries to ClickHouse
@@ -2931,6 +3130,7 @@ export class OperationsReader {
             target: selector.target,
             period: selector.period,
             typenames: [selector.typename],
+            graph: selector.graph,
           });
         } else {
           value.typenames.push(selector.typename);
@@ -2958,6 +3158,7 @@ export class OperationsReader {
             target: selector.target,
             period: selector.period,
             typenames: selector.typenames,
+            graph: selector.graph,
           }),
         );
       }
@@ -2981,26 +3182,30 @@ export class OperationsReader {
     target,
     period,
     typenames,
+    graph,
   }: {
     target: string;
     period: DateRange;
     typenames: string[];
+    graph?: GraphSelector | null;
   }) {
     const typesConditions = typenames.map(
       t => sql`coordinate = ${t} OR coordinate LIKE ${t + '.%'}`,
     );
 
     const query = this.pickAggregationByPeriod({
-      query: aggregationTableName => sql`
-      SELECT 
-        coalesce(c.coordinate, r.coordinate) AS coordinate, 
-        c.total AS total, 
+      graph,
+      query: (aggregationTableName, ctx) => sql`
+      SELECT
+        coalesce(c.coordinate, r.coordinate) AS coordinate,
+        c.total AS total,
         r.totalResolutions AS totalResolutions
       FROM
       (
         SELECT coordinate, sum(total) as total
         FROM ${aggregationTableName('coordinates')}
         ${this.createFilter({
+          graph: ctx.graph,
           target,
           period,
           extra: [sql`(${sql.join(typesConditions, ' OR ')})`],
@@ -3012,6 +3217,7 @@ export class OperationsReader {
         SELECT coordinate, sum(total) as totalResolutions
         FROM ${aggregationTableName('coordinate_counts')}
         ${this.createFilter({
+          graph: ctx.graph,
           target,
           period,
           extra: [sql`(${sql.join(typesConditions, ' OR ')})`],
@@ -3049,6 +3255,7 @@ export class OperationsReader {
         target: string;
         period: DateRange;
         typename: string;
+        graph?: GraphSelector | null;
       }>,
     ) => {
       const aggregationMap = new Map<
@@ -3057,13 +3264,18 @@ export class OperationsReader {
           target: string;
           period: DateRange;
           typenames: string[];
+          graph?: GraphSelector | null;
         }
       >();
 
-      const makeKey = (selector: { target: string; period: DateRange }) =>
+      const makeKey = (selector: {
+        target: string;
+        period: DateRange;
+        graph?: GraphSelector | null;
+      }) =>
         `${
           selector.target
-        }-${selector.period.from.toISOString()}-${selector.period.to.toISOString()}`;
+        }-${selector.period.from.toISOString()}-${selector.period.to.toISOString()}-${graphKey(selector.graph)}`;
 
       // Groups the type names by their target and period
       // The idea here is to make the least possible number of queries to ClickHouse
@@ -3077,6 +3289,7 @@ export class OperationsReader {
             target: selector.target,
             period: selector.period,
             typenames: [selector.typename],
+            graph: selector.graph,
           });
         } else {
           value.typenames.push(selector.typename);
@@ -3103,6 +3316,7 @@ export class OperationsReader {
             target: selector.target,
             period: selector.period,
             typenames: selector.typenames,
+            graph: selector.graph,
           }),
         );
       }
@@ -3126,10 +3340,12 @@ export class OperationsReader {
     target,
     period,
     typenames,
+    graph,
   }: {
     target: string;
     period: DateRange;
     typenames: string[];
+    graph?: GraphSelector | null;
   }) {
     const typesConditions = typenames.map(
       t => sql`coordinate = ${t} OR coordinate LIKE ${t + '.%'}`,
@@ -3139,9 +3355,11 @@ export class OperationsReader {
       total: number;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
         SELECT coordinate, sum(total_errors) as total FROM ${aggregationTableName('coordinate_errors')}
         ${this.createFilter({
+          graph: ctx.graph,
           target,
           period,
           extra: [sql`(${sql.join(typesConditions, ' OR ')})`],
@@ -3164,7 +3382,15 @@ export class OperationsReader {
       'hive.target.id': input.target,
     }),
   })
-  async countCoordinatesOfTarget({ target, period }: { target: string; period: DateRange }) {
+  async countCoordinatesOfTarget({
+    target,
+    period,
+    graph,
+  }: {
+    target: string;
+    period: DateRange;
+    graph?: GraphSelector | null;
+  }) {
     this.logger.debug('Count coordinates of target. (targetId=%s, period=%o)', target, period);
 
     const result = await this.clickHouse.query<{
@@ -3172,9 +3398,11 @@ export class OperationsReader {
       total: number;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
         SELECT coordinate, sum(total) as total FROM ${aggregationTableName('coordinates')}
         ${this.createFilter({
+          graph: ctx.graph,
           target,
           period,
         })}
@@ -3288,6 +3516,7 @@ export class OperationsReader {
     period,
     target,
     schemaCoordinate,
+    graph,
   }: {
     period: {
       from: Date;
@@ -3295,13 +3524,15 @@ export class OperationsReader {
     };
     target: string;
     schemaCoordinate: string;
+    graph?: GraphSelector | null;
   }) {
     const result = await this.clickHouse.query<{
       count: number;
       code: string;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
         SELECT
           sum(total_errors) as count,
           code
@@ -3314,6 +3545,7 @@ export class OperationsReader {
           target = ${target}
           AND
           coordinate = ${schemaCoordinate}
+          ${andGraphConditions(ctx.graph)}
         GROUP BY code`,
         queryId: aggregation => `error_codes_at_schema_coordinate_${aggregation}`,
         timeout: 15_000,
@@ -3331,9 +3563,11 @@ export class OperationsReader {
     target,
     period,
     resolution,
+    graph,
   }: {
     schemaCoordinate: string;
     target: string;
+    graph?: GraphSelector | null;
     period: {
       from: Date;
       to: Date;
@@ -3355,7 +3589,8 @@ export class OperationsReader {
       count: string;
     }>(
       this.pickAggregationByPeriod({
-        query: aggregationTableName => sql`
+        graph,
+        query: (aggregationTableName, ctx) => sql`
         SELECT
           toDateTime(
             intDiv(
@@ -3367,6 +3602,7 @@ export class OperationsReader {
           sum(total_errors) as count
         FROM ${aggregationTableName('coordinate_errors')}
         ${this.createFilter({
+          graph: ctx.graph,
           period: roundedPeriod,
           target,
           extra: [sql`coordinate=${schemaCoordinate}`],
@@ -3408,7 +3644,6 @@ export class OperationsReader {
   }: {
     target?: string | readonly string[];
     period?: DateRange;
-    /** Restricts to the usage of a graph. */
     graph?: GraphFilter | null;
     operations?: readonly string[];
     clients?: readonly string[];
