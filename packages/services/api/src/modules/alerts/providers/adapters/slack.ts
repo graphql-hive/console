@@ -23,19 +23,29 @@ import {
   type DeliveryOutcome,
 } from '../delivery-recorder';
 import {
+  attemptTestNotification,
   ChannelConfirmationInput,
   CommunicationAdapter,
   SchemaChangeNotificationInput,
   slackCoderize,
+  TEST_NOTIFICATION_TIMEOUT_MS,
+  TestNotificationInput,
+  testNotificationText,
 } from './common';
 
 // The client default retries 10 times over about 30 minutes; a notification is not worth that, and
 // each recorded delivery should stand for a handful of calls at most.
 const SLACK_CLIENT_OPTIONS = { retryConfig: { retries: 3 } };
 
-// The client is created without a timeout, so the only timeout its request error can carry is
-// the socket's, passed through by axios on `original`.
-const REQUEST_TIMEOUT_CODES = new Set(['ETIMEDOUT']);
+const SLACK_TEST_CLIENT_OPTIONS = {
+  retryConfig: { retries: 0 },
+  timeout: TEST_NOTIFICATION_TIMEOUT_MS,
+  rejectRateLimitedCalls: true,
+};
+
+// The timeouts a request error can carry, passed through by axios on `original`: the socket's,
+// and axios's own (ECONNABORTED), which only the test client sets.
+const REQUEST_TIMEOUT_CODES = new Set(['ETIMEDOUT', 'ECONNABORTED']);
 
 /**
  * The outcome of a failed `chat.postMessage`: the API's result code, the HTTP status it answered,
@@ -235,6 +245,40 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
     } catch (error) {
       this.handleSlackClientError(error);
     }
+  }
+
+  async sendTestNotification(input: TestNotificationInput) {
+    this.logger.debug(
+      `Sending Test Notification over Slack (organization=%s, project=%s)`,
+      input.organization.id,
+      input.project.id,
+    );
+
+    const projectLink = this.createLink({
+      text: input.project.name,
+      url: `${this.appBaseUrl}/${input.organization.slug}/${input.project.slug}`,
+    });
+    const client = new WebClient(
+      input.integrations.slack.token ?? undefined,
+      SLACK_TEST_CLIENT_OPTIONS,
+    );
+    const metadata = buildHiveSlackMetadata(
+      this.deliveries.describe({ event: 'test', idempotencyKey: input.idempotencyKey }),
+    );
+
+    return attemptTestNotification(
+      this.logger,
+      () =>
+        client.chat.postMessage({
+          channel: input.destination,
+          text: testNotificationText(projectLink),
+          mrkdwn: true,
+          unfurl_links: false,
+          unfurl_media: false,
+          metadata,
+        }),
+      describeSlackError,
+    );
   }
 
   private pluralize(word: string, num: number): string {

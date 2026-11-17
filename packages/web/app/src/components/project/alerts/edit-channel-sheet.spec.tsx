@@ -103,6 +103,29 @@ describe('EditChannelSheet', () => {
     });
   });
 
+  it('tests the destination typed in the form, not the saved one', async () => {
+    urql.mutate.mockResolvedValue({
+      data: { testDeliveryChannel: { ok: { idempotencyKey: 'test:req-1:c1' }, error: null } },
+    });
+    await open(webhookChannel);
+
+    await fill('Endpoint', 'https://hooks.example.com/other');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Test configuration' }));
+    });
+
+    expect(urql.mutate.mock.calls[0][0]).toEqual({
+      input: {
+        channelId: 'c1',
+        destination: { webhook: { endpoint: 'https://hooks.example.com/other' } },
+      },
+    });
+    expect(screen.getByText('test:req-1:c1')).toBeTruthy();
+  });
+
   it('closes without a request when nothing changed, and shows what the server rejected under its field', async () => {
     const rejected = {
       data: {

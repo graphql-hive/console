@@ -45,6 +45,8 @@ function createManager({ slackToken }: { slackToken: string | null }) {
     } as any,
     storage as any,
     {} as any,
+    {} as any,
+    {} as any,
   );
   return { manager, storage, slack };
 }

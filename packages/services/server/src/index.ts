@@ -283,6 +283,7 @@ export async function main() {
     const registry = createRegistry({
       release: env.release,
       clientIPHeaderName: env.clientIPHeaderName,
+      requestBroker: env.requestBroker,
       app: env.hiveServices.webApp
         ? {
             baseUrl: env.hiveServices.webApp.url,
