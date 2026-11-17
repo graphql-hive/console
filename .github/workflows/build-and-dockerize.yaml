@@ -232,7 +232,7 @@ jobs:
       - name: configure Docker Node.js image tag
         id: node-version-tag
         if: ${{ inputs.dockerize }}
-        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+        run: echo "value=:$(< .node-version)-trixie-slim" >> "$GITHUB_OUTPUT"
 
       - name: build docker images (${{ matrix.platform }})
         timeout-minutes: 60
@@ -362,7 +362,7 @@ jobs:
 
       - name: configure Docker Node.js image tag
         id: node-version-tag
-        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+        run: echo "value=:$(< .node-version)-trixie-slim" >> "$GITHUB_OUTPUT"
 
       - name: configure docker buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1

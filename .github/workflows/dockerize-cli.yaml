@@ -47,7 +47,7 @@ jobs:
           fetch-depth: 2
       - name: configure Docker Node.js image tag
         id: node-version-tag
-        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+        run: echo "value=:$(< .node-version)-trixie-slim" >> "$GITHUB_OUTPUT"
       - name: configure eqemu
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
         with:
