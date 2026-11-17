@@ -3863,7 +3863,6 @@ const insertLegacyVersion = async (
             commit,
             sdl,
             project_id,
-            target_id,
             metadata,
             action
           )
@@ -3875,7 +3874,6 @@ const insertLegacyVersion = async (
             ${'42069'}::text,
             ${args.sdl}::text,
             ${args.projectId},
-            ${args.targetId},
             ${null},
             'PUSH'
           )
