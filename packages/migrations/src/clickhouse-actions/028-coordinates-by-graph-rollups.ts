@@ -15,9 +15,9 @@ const pickUInt = (aggregation: Granularity) => (aggregation === 'daily' ? 'UInt6
  * source insert (no minutely -> hourly -> daily cascade), each materialized view writes `TO` a
  * separately created destination table, and retention is a fixed TTL on time-based partitions.
  *
- * The `hash` column keeps the type of the legacy table it replaces (`String` for `coordinates`,
- * raw md5 `FixedString(16)` for `coordinate_counts` and `coordinate_errors`), so the reader can
- * switch tables without changing its hash handling.
+ * `hash` is the raw md5 as `FixedString(16)` in all of them, like in `operations_by_graph_hash_client_*`
+ * (027), so the graph-scoped rollups join on `hash` without conversion. Note that this differs from
+ * the legacy `coordinates_*` tables, which store the md5 hex `String`.
  */
 const createRollups = async (
   exec: (query: string) => Promise<void>,
@@ -38,7 +38,7 @@ const createRollups = async (
       graph_id UUID CODEC(ZSTD(1)),
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
       coordinate String CODEC(ZSTD(1)),
-      hash String CODEC(ZSTD(1)),
+      hash FixedString(16) CODEC(ZSTD(1)),
       total ${pickUInt(granularity)} CODEC(T64, ZSTD(1))
     )
     ENGINE = SummingMergeTree
@@ -57,7 +57,7 @@ const createRollups = async (
         graph_id,
         ${bucket}(timestamp) AS timestamp,
         coordinate,
-        hash,
+        unhex(hash) AS hash,
         CAST(sum(total) AS ${pickUInt(granularity)}) AS total
       FROM operation_collection
       ARRAY JOIN coordinates AS coordinate

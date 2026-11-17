@@ -18,6 +18,14 @@ const aggregateStates = (granularity: Granularity) => `
   quantilesTDigestState(0.75, 0.9, 0.95, 0.99)(duration) AS duration_quantiles
 `;
 
+/**
+ * Graph-aware rollups of `operations`, named `operations_by_graph[_<dimensions>]_<granularity>`.
+ *
+ * `hash` is stored as the raw md5 (`FixedString(16)`, `unhex` of the md5 hex `operations.hash`), like
+ * in every `*_by_graph_*` rollup (see 028). It halves the column and makes grouping, `IN` filters and
+ * joins on `hash` cheaper. Readers `unhex` hashes they filter by and `lower(hex(hash))` hashes they
+ * return or join with tables storing the hex `String` (`operation_collection_*`, legacy rollups).
+ */
 const createRollups = async (
   exec: (query: string) => Promise<void>,
   granularity: Granularity,
@@ -37,7 +45,7 @@ const createRollups = async (
       target UUID CODEC(ZSTD(1)),
       graph_id UUID CODEC(ZSTD(1)),
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
-      hash String CODEC(ZSTD(1)),
+      hash FixedString(16) CODEC(ZSTD(1)),
       client_name String CODEC(ZSTD(1)),
       client_version String CODEC(ZSTD(1)),
       ${aggregateColumns(granularity)}
@@ -57,7 +65,7 @@ const createRollups = async (
         toUUID(target) AS target,
         graph_id,
         ${bucket}(timestamp) AS timestamp,
-        hash,
+        unhex(hash) AS hash,
         client_name,
         client_version,
         ${aggregateStates(granularity)}
