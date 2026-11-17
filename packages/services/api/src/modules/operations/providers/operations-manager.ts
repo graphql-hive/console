@@ -17,9 +17,13 @@ import type {
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
 import { defaultUsagePeriodDays, retentionBoundary } from '../lib/usage-retention';
-import { FieldMetricsState, OperationsReader } from './operations-reader';
+import { FieldMetricsState, OperationsReader, type GraphSelector } from './operations-reader';
 
 const DAY_IN_MS = 86_400_000;
+
+function graphCacheKey(graph: GraphSelector | null): string {
+  return graph ? `${graph.graphId}:${graph.isDefaultGraph}` : '';
+}
 const lru = new LRUCache<string, boolean>({
   max: 500,
   ttl: 30 * DAY_IN_MS,
@@ -40,7 +44,13 @@ async function hasCollectedOperationsCached(target: string, checkFn: () => Promi
   return collected;
 }
 
-interface ReadFieldStatsInput extends TargetSelector {
+/**
+ * The graph whose usage is read. `null` reads the usage of all graphs,
+ * e.g. for reads spanning several targets.
+ */
+type GraphScope = { graph: GraphSelector | null };
+
+interface ReadFieldStatsInput extends TargetSelector, GraphScope {
   type: string;
   field: string;
   argument?: string;
@@ -71,6 +81,7 @@ export class OperationsManager {
       targets: readonly string[];
       period: DateRange;
       resolution: number;
+      graph: GraphSelector | null;
     },
     {
       [target: string]: {
@@ -100,7 +111,7 @@ export class OperationsManager {
         cacheKeyFn(selector) {
           return `${selector.period.from.toISOString()};${selector.period.to.toISOString()};${
             selector.resolution
-          };${selector.targets.join(',')}}`;
+          };${selector.targets.join(',')};${graphCacheKey(selector.graph)}`;
         },
         batchScheduleFn: callback => setTimeout(callback, 100),
       },
@@ -185,6 +196,7 @@ export class OperationsManager {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -193,7 +205,8 @@ export class OperationsManager {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info('Counting unique operations (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -207,6 +220,7 @@ export class OperationsManager {
 
     return await this.reader.countUniqueDocuments({
       target,
+      graph,
       period,
       operations,
       clients,
@@ -265,10 +279,12 @@ export class OperationsManager {
     targetId,
     period,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     schemaCoordinate: string;
-  } & Listify<TargetSelector, 'targetId'>) {
+  } & Listify<TargetSelector, 'targetId'> &
+    GraphScope) {
     this.logger.info(
       'Counting resolutions with schema coordinate (period=%o, target=%s, coordinate=%s)',
       period,
@@ -287,6 +303,7 @@ export class OperationsManager {
     return this.reader
       .countCoordinateResolutions({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],
+        graph,
         period,
         schemaCoordinate,
       })
@@ -299,10 +316,12 @@ export class OperationsManager {
     targetId,
     period,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     schemaCoordinate: string;
-  } & Listify<TargetSelector, 'targetId'>) {
+  } & Listify<TargetSelector, 'targetId'> &
+    GraphScope) {
     this.logger.info(
       'Counting requests with schema coordinate (period=%o, target=%s, coordinate=%s)',
       period,
@@ -322,6 +341,7 @@ export class OperationsManager {
     return this.reader
       .countCoordinate({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],
+        graph,
         period,
         schemaCoordinate,
       })
@@ -334,10 +354,12 @@ export class OperationsManager {
     targetId,
     period,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     schemaCoordinate: string;
-  } & Listify<TargetSelector, 'targetId'>) {
+  } & Listify<TargetSelector, 'targetId'> &
+    GraphScope) {
     await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId,
@@ -350,6 +372,7 @@ export class OperationsManager {
     return this.reader
       .countCoordinateFailure({
         targetIds: Array.isArray(targetId) ? targetId : [targetId],
+        graph,
         period,
         schemaCoordinate,
       })
@@ -367,6 +390,7 @@ export class OperationsManager {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -375,7 +399,8 @@ export class OperationsManager {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
-  } & Listify<TargetSelector, 'targetId'>) {
+  } & Listify<TargetSelector, 'targetId'> &
+    GraphScope) {
     this.logger.info('Counting requests and failures (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -390,6 +415,7 @@ export class OperationsManager {
     return this.reader
       .countRequests({
         target,
+        graph,
         period,
         operations,
         clients,
@@ -406,9 +432,11 @@ export class OperationsManager {
     projectId: project,
     targetId: target,
     period,
+    graph,
   }: {
     period: DateRange;
-  } & Listify<TargetSelector, 'targetId'>): Promise<number> {
+  } & Listify<TargetSelector, 'targetId'> &
+    GraphScope): Promise<number> {
     this.logger.info('Counting requests (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -422,6 +450,7 @@ export class OperationsManager {
 
     return this.reader.countOperationsWithoutDetails({
       target,
+      graph,
       period,
     });
   }
@@ -443,6 +472,7 @@ export class OperationsManager {
       projectId: project,
       targetId: targets,
       period,
+      graph: null,
     });
   }
 
@@ -457,6 +487,7 @@ export class OperationsManager {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -465,7 +496,8 @@ export class OperationsManager {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info('Counting failures (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -479,6 +511,7 @@ export class OperationsManager {
 
     return this.reader.countFailures({
       target,
+      graph,
       period,
       operations,
       clients,
@@ -502,6 +535,7 @@ export class OperationsManager {
       organizationId: organization,
       projectId: project,
       targetId: target,
+      graph,
     } = input;
     this.logger.info('Counting a field (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -521,8 +555,9 @@ export class OperationsManager {
         argument,
         target,
         period,
+        graph,
       }),
-      this.reader.countOperationsWithoutDetails({ target, period }),
+      this.reader.countOperationsWithoutDetails({ target, period, graph }),
     ]);
 
     return {
@@ -542,6 +577,7 @@ export class OperationsManager {
     projectId: project,
     targetId: target,
     excludedClients,
+    graph,
   }: {
     fields: ReadonlyArray<{
       type: string;
@@ -550,7 +586,8 @@ export class OperationsManager {
     }>;
     period: DateRange;
     excludedClients?: readonly string[];
-  } & Listify<TargetSelector, 'targetId'>) {
+  } & Listify<TargetSelector, 'targetId'> &
+    GraphScope) {
     this.logger.info(
       'Counting fields (period=%o, target=%s, excludedClients=%s)',
       period,
@@ -573,6 +610,7 @@ export class OperationsManager {
       period,
       targetIds: Array.isArray(target) ? target : [target],
       excludedClients: excludedClients ?? null,
+      graph,
     });
   }
 
@@ -588,6 +626,7 @@ export class OperationsManager {
     excludeClientVersionFilters,
     coordinateScopes,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -597,7 +636,8 @@ export class OperationsManager {
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info('Reading operations stats (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -612,6 +652,7 @@ export class OperationsManager {
     // Maybe it needs less data
     return this.reader.readUniqueDocuments({
       target,
+      graph,
       period,
       operations,
       clients,
@@ -662,6 +703,8 @@ export class OperationsManager {
       targets,
       period,
       resolution,
+      // A project spans several targets and graphs.
+      graph: null,
     });
 
     // Because we get data for each target separately, we need to sum(targets) per date
@@ -697,11 +740,13 @@ export class OperationsManager {
     organizationId: organization,
     projectId: project,
     targets,
+    graph,
   }: {
     period: DateRange;
     resolution: number;
     targets: string[];
-  } & ProjectSelector) {
+  } & ProjectSelector &
+    GraphScope) {
     this.logger.debug(
       'Reading requests over time of targets (period=%o, resolution=%s, targets=%s)',
       period,
@@ -723,6 +768,7 @@ export class OperationsManager {
       targets,
       period,
       resolution,
+      graph,
     });
   }
 
@@ -739,6 +785,7 @@ export class OperationsManager {
     excludeClientVersionFilters,
     coordinateScopes,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     resolution: number;
@@ -749,7 +796,8 @@ export class OperationsManager {
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info(
       'Reading requests over time (period=%o, resolution=%s, target=%s)',
       period,
@@ -768,6 +816,7 @@ export class OperationsManager {
 
     return this.reader.requestsOverTime({
       target,
+      graph,
       period,
       resolution,
       operations,
@@ -792,6 +841,7 @@ export class OperationsManager {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     period: DateRange;
     resolution: number;
@@ -801,7 +851,8 @@ export class OperationsManager {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info(
       'Reading failures over time (period=%o, resolution=%s, target=%s)',
       period,
@@ -820,6 +871,7 @@ export class OperationsManager {
 
     return this.reader.failuresOverTime({
       target,
+      graph,
       period,
       resolution,
       operations,
@@ -850,12 +902,14 @@ export class OperationsManager {
     projectId: project,
     targetId: target,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     resolution: number;
     operations?: readonly string[];
     schemaCoordinate: string;
-  } & TargetSelector): Promise<
+  } & TargetSelector &
+    GraphScope): Promise<
     {
       code: string;
       date: number;
@@ -881,6 +935,7 @@ export class OperationsManager {
 
     return this.reader.errorCodesOverTimeAtSchemaCoordinate({
       target,
+      graph,
       period,
       resolution,
       schemaCoordinate,
@@ -899,6 +954,7 @@ export class OperationsManager {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     period: DateRange;
     resolution: number;
@@ -908,7 +964,8 @@ export class OperationsManager {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info(
       'Reading duration over time (period=%o, resolution=%s, target=%s)',
       period,
@@ -927,6 +984,7 @@ export class OperationsManager {
 
     return this.reader.durationOverTime({
       target,
+      graph,
       period,
       resolution,
       operations,
@@ -945,11 +1003,13 @@ export class OperationsManager {
     period,
     resolution,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     resolution: number;
     schemaCoordinate: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId,
@@ -965,6 +1025,7 @@ export class OperationsManager {
       resolution,
       schemaCoordinate,
       targetId,
+      graph,
     });
   }
 
@@ -975,11 +1036,13 @@ export class OperationsManager {
     period,
     resolution,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     resolution: number;
     schemaCoordinate: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId,
@@ -995,6 +1058,7 @@ export class OperationsManager {
       resolution,
       schemaCoordinate,
       targetId,
+      graph,
     });
   }
 
@@ -1009,6 +1073,7 @@ export class OperationsManager {
     excludeOperations,
     excludeClientVersionFilters,
     coordinateScopes,
+    graph,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -1017,7 +1082,8 @@ export class OperationsManager {
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info('Reading overall duration percentiles (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -1031,6 +1097,7 @@ export class OperationsManager {
 
     return this.reader.generalDurationPercentiles({
       target,
+      graph,
       period,
       operations,
       clients,
@@ -1054,6 +1121,7 @@ export class OperationsManager {
     excludeClientVersionFilters,
     coordinateScopes,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -1063,7 +1131,8 @@ export class OperationsManager {
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info(
       'Reading detailed duration percentiles (period=%o, target=%s, clientFilter=%s)',
       period,
@@ -1082,6 +1151,7 @@ export class OperationsManager {
 
     return this.reader.durationMetrics({
       target,
+      graph,
       period,
       operations,
       clients,
@@ -1105,6 +1175,7 @@ export class OperationsManager {
     excludeClientVersionFilters,
     coordinateScopes,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -1114,7 +1185,8 @@ export class OperationsManager {
     excludeClientVersionFilters?: boolean;
     coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info('Counting unique clients (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -1128,6 +1200,7 @@ export class OperationsManager {
 
     return this.reader.countUniqueClients({
       target,
+      graph,
       period,
       operations,
       clients,
@@ -1145,7 +1218,9 @@ export class OperationsManager {
     projectId: project,
     targetId: target,
     operations,
-  }: { period: DateRange; operations?: readonly string[] } & Listify<TargetSelector, 'targetId'>) {
+    graph,
+  }: { period: DateRange; operations?: readonly string[] } & Listify<TargetSelector, 'targetId'> &
+    GraphScope) {
     this.logger.info('Read unique client names (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -1159,6 +1234,7 @@ export class OperationsManager {
 
     return this.reader.readUniqueClientNames({
       target,
+      graph,
       period,
       operations,
     });
@@ -1171,11 +1247,13 @@ export class OperationsManager {
     targetId: target,
     clientName,
     limit,
+    graph,
   }: {
     period: DateRange;
     clientName: string;
     limit: number;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info('Read client versions (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -1189,6 +1267,7 @@ export class OperationsManager {
 
     return this.reader.readClientVersions({
       target,
+      graph,
       period,
       limit,
       clientName,
@@ -1201,10 +1280,12 @@ export class OperationsManager {
     projectId: project,
     targetId: target,
     clientName,
+    graph,
   }: {
     period: DateRange;
     clientName: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.info(
       'Count client versions (period=%o, target=%s, client=%s)',
       period,
@@ -1223,6 +1304,7 @@ export class OperationsManager {
 
     return this.reader.countClientVersions({
       target,
+      graph,
       period,
       clientName,
     });
@@ -1233,10 +1315,19 @@ export class OperationsManager {
     DataLoader<string, Set<string>>
   >();
 
-  private getClientNamesPerCoordinateLoader(args: { target: string; period: DateRange }) {
-    // Stores a DataLoader per target and date range
-    // A many type names can share the same DataLoader as long as they share the same target and date range.
-    const cacheKey = [args.target, args.period.from, args.period.to].join('__');
+  private getClientNamesPerCoordinateLoader(args: {
+    target: string;
+    period: DateRange;
+    graph: GraphSelector | null;
+  }) {
+    // Stores a DataLoader per target, date range and graph
+    // A many type names can share the same DataLoader as long as they share the same target, date range and graph.
+    const cacheKey = [
+      args.target,
+      args.period.from,
+      args.period.to,
+      graphCacheKey(args.graph),
+    ].join('__');
     let loader = this.clientNamesPerCoordinateOfTypeDataLoaderCache.get(cacheKey);
 
     if (loader == null) {
@@ -1245,6 +1336,7 @@ export class OperationsManager {
           args.target,
           args.period,
           coordinates,
+          args.graph,
         );
         return Promise.all(
           coordinates.map(coordinate =>
@@ -1266,7 +1358,8 @@ export class OperationsManager {
     args: {
       period: DateRange;
       schemaCoordinate: string;
-    } & TargetSelector,
+    } & TargetSelector &
+      GraphScope,
   ) {
     await this.assertPeriodWithinRetention({
       organizationId: args.organizationId,
@@ -1275,6 +1368,7 @@ export class OperationsManager {
     const loader = this.getClientNamesPerCoordinateLoader({
       target: args.targetId,
       period: args.period,
+      graph: args.graph,
     });
 
     return Array.from(await loader.load(args.schemaCoordinate));
@@ -1292,10 +1386,21 @@ export class OperationsManager {
     >
   >();
 
-  private getTopOperationForTypeLoader(args: { target: string; period: DateRange; limit: number }) {
-    // Stores a DataLoader per target, date range and limit
-    // A many type names can share the same DataLoader as long as they share the same target, date range and limit.
-    const cacheKey = [args.target, args.limit, args.period.from, args.period.to].join('__');
+  private getTopOperationForTypeLoader(args: {
+    target: string;
+    period: DateRange;
+    limit: number;
+    graph: GraphSelector | null;
+  }) {
+    // Stores a DataLoader per target, date range, limit and graph
+    // A many type names can share the same DataLoader as long as they share the same target, date range, limit and graph.
+    const cacheKey = [
+      args.target,
+      args.limit,
+      args.period.from,
+      args.period.to,
+      graphCacheKey(args.graph),
+    ].join('__');
     let loader = this.topOperationForTypeDataLoaderCache.get(cacheKey);
 
     if (loader == null) {
@@ -1319,6 +1424,7 @@ export class OperationsManager {
             period: args.period,
             limit: args.limit,
             typeNames,
+            graph: args.graph,
           });
 
           return coordinates.map(coordinate => {
@@ -1341,6 +1447,7 @@ export class OperationsManager {
     period: DateRange;
     limit: number;
     coordinate: string;
+    graph: GraphSelector | null;
   }) {
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -1359,6 +1466,7 @@ export class OperationsManager {
       target: args.targetId,
       period: args.period,
       limit: args.limit,
+      graph: args.graph,
     });
 
     return Array.from((await loader.load(args.coordinate)) ?? []);
@@ -1369,6 +1477,7 @@ export class OperationsManager {
     projectId: string;
     organizationId: string;
     period: DateRange;
+    graph: GraphSelector | null;
   }): Promise<Set<string>> {
     await this.session.assertPerformAction({
       action: 'project:describe',
@@ -1386,6 +1495,7 @@ export class OperationsManager {
     return this.reader.getReportedSchemaCoordinates({
       target: args.targetId,
       period: args.period,
+      graph: args.graph,
     });
   }
 
@@ -1428,10 +1538,12 @@ export class OperationsManager {
     projectId: project,
     organizationId: organization,
     typename,
+    graph,
   }: {
     period: DateRange;
     typename: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId: organization,
@@ -1446,11 +1558,13 @@ export class OperationsManager {
         target,
         period,
         typename,
+        graph,
       }),
       this.reader.countErrorCoordinatesOfType({
         target,
         period,
         typename,
+        graph,
       }),
     ]);
 
@@ -1502,9 +1616,11 @@ export class OperationsManager {
     targetId: target,
     projectId: project,
     organizationId: organization,
+    graph,
   }: {
     period: DateRange;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     this.logger.debug(
       'Count coordinates of target. (organizationId=%s, projectId=%s, targetId=%s, period=%o)',
       organization,
@@ -1525,6 +1641,7 @@ export class OperationsManager {
 
     const rows = await this.reader.countCoordinatesOfTarget({
       target,
+      graph,
       period,
     });
 
@@ -1572,10 +1689,12 @@ export class OperationsManager {
     projectId: project,
     organizationId: organization,
     schemaCoordinate,
+    graph,
   }: {
     period: DateRange;
     schemaCoordinate: string;
-  } & TargetSelector) {
+  } & TargetSelector &
+    GraphScope) {
     await this.session.assertPerformAction({
       action: 'project:describe',
       organizationId: organization,
@@ -1589,6 +1708,7 @@ export class OperationsManager {
     return this.reader.errorCodesAtSchemaCoordinate({
       period,
       target,
+      graph,
       schemaCoordinate,
     });
   }

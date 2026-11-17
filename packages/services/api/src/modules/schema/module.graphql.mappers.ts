@@ -9,6 +9,7 @@ import type { SchemaError } from '../../__generated__/types';
 import type { DateRange, PushedCompositeSchema, SingleSchema } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import type { ContractGraph } from '../graph/providers/graph-store';
+import type { GraphSelector } from '../operations/providers/operations-reader';
 import type { SuperGraphInformation } from './lib/federation-super-graph';
 import type {
   ContractCheck,
@@ -65,6 +66,7 @@ export type SchemaExplorerMapper = {
     organizationId: string;
     projectId: string;
     targetId: string;
+    graph: GraphSelector;
   };
   supergraph: null | SuperGraphInformation;
 };
@@ -75,6 +77,7 @@ export type UnusedSchemaExplorerMapper = {
     organizationId: string;
     projectId: string;
     targetId: string;
+    graph: GraphSelector;
     usedCoordinates: Set<string>;
   };
   supergraph: null | SuperGraphInformation;
@@ -86,6 +89,7 @@ export type DeprecatedSchemaExplorerMapper = {
     organizationId: string;
     projectId: string;
     targetId: string;
+    graph: GraphSelector;
   };
   supergraph: null | SuperGraphInformation;
 };
@@ -113,6 +117,7 @@ export type SchemaCoordinateUsageForUnusedExplorer = {
   organizationId: string;
   projectId: string;
   targetId: string;
+  graph: GraphSelector | null;
 };
 export type WithSchemaCoordinatesUsage<T> = T & {
   usage: // explorer
@@ -127,6 +132,7 @@ export type WithSchemaCoordinatesUsage<T> = T & {
           organizationId: string;
           projectId: string;
           targetId: string;
+          graph: GraphSelector | null;
           typename: string;
         };
       }>
@@ -276,6 +282,7 @@ export type SchemaCoordinateUsageMapper =
       organizationId: string;
       projectId: string;
       targetId: string;
+      graph: GraphSelector | null;
       coordinate: string;
     }
   | {

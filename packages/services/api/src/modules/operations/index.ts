@@ -1,5 +1,6 @@
 import { createModule } from 'graphql-modules';
 import { ClickHouse } from './providers/clickhouse-client';
+import { GraphSelectorProvider } from './providers/graph-selector-provider';
 import { OperationsManager } from './providers/operations-manager';
 import { OperationsReader } from './providers/operations-reader';
 import { Traces } from './providers/traces';
@@ -11,5 +12,5 @@ export const operationsModule = createModule({
   dirname: __dirname,
   typeDefs,
   resolvers,
-  providers: [OperationsManager, OperationsReader, ClickHouse, Traces],
+  providers: [GraphSelectorProvider, OperationsManager, OperationsReader, ClickHouse, Traces],
 });

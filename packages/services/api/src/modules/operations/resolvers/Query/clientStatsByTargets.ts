@@ -23,12 +23,16 @@ export const clientStatsByTargets: NonNullable<QueryResolvers['clientStatsByTarg
       projectId: project,
       organizationId: organization,
       period,
+      // Spans several targets and their graphs.
+      graph: null,
     }),
     injector.get(OperationsManager).countRequests({
       organizationId: organization,
       projectId: project,
       targetId: targets,
       period,
+      // Spans several targets and their graphs.
+      graph: null,
     }),
   ]);
 

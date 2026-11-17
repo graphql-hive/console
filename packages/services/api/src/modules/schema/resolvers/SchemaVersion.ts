@@ -1,4 +1,5 @@
 import { buildASTSchema } from '../../../shared/schema';
+import { GraphSelectorProvider } from '../../operations/providers/graph-selector-provider';
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { Logger } from '../../shared/providers/logger';
 import { onlyDeprecatedDocumentNode } from '../lib/deprecated-graphql';
@@ -54,6 +55,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
     const period = await injector
       .get(OperationsManager)
       .usagePeriod({ organizationId: version.organizationId }, usage?.period);
+    const graph = await injector.get(GraphSelectorProvider).forSchemaVersion(version);
     // @todo use graphql resolve info to optimize this query
     const [schemaAst, supergraphAst] = await Promise.all([
       injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
@@ -73,6 +75,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,
+        graph,
       },
       supergraph: {
         schemaCoordinateMetadataMappings: version.schemaMetadata
@@ -98,12 +101,14 @@ export const SchemaVersion: SchemaVersionResolvers = {
     const period = await injector
       .get(OperationsManager)
       .usagePeriod({ organizationId: version.organizationId }, args.period?.absoluteRange);
+    const graph = await injector.get(GraphSelectorProvider).forSchemaVersion(version);
 
     const usedCoordinates = await injector.get(OperationsManager).getReportedSchemaCoordinates({
       targetId: version.targetId,
       projectId: version.projectId,
       organizationId: version.organizationId,
       period,
+      graph,
     });
 
     const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
@@ -115,6 +120,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,
+        graph,
         usedCoordinates,
       },
       supergraph: {
@@ -153,6 +159,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
     const period = await injector
       .get(OperationsManager)
       .usagePeriod({ organizationId: version.organizationId }, args.period?.absoluteRange);
+    const graph = await injector.get(GraphSelectorProvider).forSchemaVersion(version);
 
     logger.debug(
       'Start filtering full schema SDL into deprecated schema SDL. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
@@ -179,6 +186,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,
+        graph,
       },
       supergraph: {
         schemaCoordinateMetadataMappings: version.schemaMetadata

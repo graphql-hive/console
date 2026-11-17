@@ -1,5 +1,6 @@
 import { parseDateRangeInput } from '../../../../shared/helpers';
 import { IdTranslator } from '../../../shared/providers/id-translator';
+import { GraphSelectorProvider } from '../../providers/graph-selector-provider';
 import { OperationsManager } from '../../providers/operations-manager';
 import type { QueryResolvers } from './../../../../__generated__/types';
 
@@ -23,5 +24,6 @@ export const fieldStats: NonNullable<QueryResolvers['fieldStats']> = async (
     field: selector.field,
     argument: selector.argument ?? undefined,
     period: parseDateRangeInput(selector.period),
+    graph: await injector.get(GraphSelectorProvider).forTarget(target),
   });
 };

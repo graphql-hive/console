@@ -1,5 +1,6 @@
 import { GraphQLError } from 'graphql';
 import { parseDateRangeInput } from '../../../shared/helpers';
+import { GraphSelectorProvider } from '../providers/graph-selector-provider';
 import { OperationsManager } from '../providers/operations-manager';
 import { Traces } from '../providers/traces';
 import type { TargetResolvers } from './../../../__generated__/types';
@@ -24,12 +25,13 @@ export const Target: Pick<
   | 'tracesStatusBreakdown'
   | 'viewerCanAccessTraces'
 > = {
-  totalRequests: (target, { period }, { injector }) => {
+  totalRequests: async (target, { period }, { injector }) => {
     return injector.get(OperationsManager).countRequests({
       targetId: target.id,
       projectId: target.projectId,
       organizationId: target.orgId,
       period: parseDateRangeInput(period),
+      graph: await injector.get(GraphSelectorProvider).forTarget(target.id),
     });
   },
   requestsOverTime: async (target, { resolution, period }, { injector }) => {
@@ -39,6 +41,7 @@ export const Target: Pick<
       targets: [target.id],
       period: parseDateRangeInput(period),
       resolution,
+      graph: await injector.get(GraphSelectorProvider).forTarget(target.id),
     });
 
     return result[target.id] ?? [];
@@ -57,8 +60,10 @@ export const Target: Pick<
     await injector
       .get(OperationsManager)
       .assertPeriodWithinRetention({ organizationId: target.orgId, period });
+
     return {
       period,
+      graph: await injector.get(GraphSelectorProvider).forTarget(target.id),
       organization: target.orgId,
       project: target.projectId,
       target: target.id,
@@ -108,6 +113,7 @@ export const Target: Pick<
 
     return {
       period,
+      graph: await injector.get(GraphSelectorProvider).forTarget(target.id),
       organization: target.orgId,
       project: target.projectId,
       target: target.id,
@@ -131,8 +137,10 @@ export const Target: Pick<
     await injector
       .get(OperationsManager)
       .assertPeriodWithinRetention({ organizationId: target.orgId, period });
+
     return {
       period,
+      graph: await injector.get(GraphSelectorProvider).forTarget(target.id),
       organization: target.orgId,
       project: target.projectId,
       target: target.id,

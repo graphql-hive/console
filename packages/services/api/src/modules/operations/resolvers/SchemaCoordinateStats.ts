@@ -15,16 +15,25 @@ export const SchemaCoordinateStats: Pick<
   | 'totalRequests'
   | 'totalResolutions'
 > = {
-  totalRequests: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+  totalRequests: (
+    { organization, project, target, period, graph, schemaCoordinate },
+    _,
+    { injector },
+  ) => {
     return injector.get(OperationsManager).countRequestsWithSchemaCoordinate({
       organizationId: organization,
       projectId: project,
       targetId: target,
       period,
+      graph,
       schemaCoordinate,
     });
   },
-  totalFailures: ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+  totalFailures: (
+    { organization, project, target, period, graph, schemaCoordinate },
+    _,
+    { injector },
+  ) => {
     // Failures are tracked to fields and not types. Don't bother doing a lookup for types.
     if (!schemaCoordinate.includes('.')) {
       return null;
@@ -34,11 +43,12 @@ export const SchemaCoordinateStats: Pick<
       projectId: project,
       targetId: target,
       period,
+      graph,
       schemaCoordinate,
     });
   },
   resolutionsOverTime: (
-    { organization, project, target, period, schemaCoordinate },
+    { organization, project, target, period, graph, schemaCoordinate },
     { resolution },
     { injector },
   ) => {
@@ -47,12 +57,13 @@ export const SchemaCoordinateStats: Pick<
       projectId: project,
       organizationId: organization,
       period,
+      graph,
       resolution,
       schemaCoordinate,
     });
   },
   requestsOverTime: (
-    { organization, project, target, period, schemaCoordinate },
+    { organization, project, target, period, graph, schemaCoordinate },
     { resolution },
     { injector },
   ) => {
@@ -61,12 +72,13 @@ export const SchemaCoordinateStats: Pick<
       projectId: project,
       organizationId: organization,
       period,
+      graph,
       resolution,
       schemaCoordinate,
     });
   },
   operations: async (
-    { organization, project, target, period, schemaCoordinate },
+    { organization, project, target, period, graph, schemaCoordinate },
     args,
     { injector },
   ) => {
@@ -77,6 +89,7 @@ export const SchemaCoordinateStats: Pick<
         projectId: project,
         targetId: target,
         period,
+        graph,
         schemaCoordinate,
       }),
       operationsManager.readDetailedDurationMetrics({
@@ -84,6 +97,7 @@ export const SchemaCoordinateStats: Pick<
         projectId: project,
         targetId: target,
         period,
+        graph,
         schemaCoordinate,
       }),
     ]);
@@ -113,12 +127,17 @@ export const SchemaCoordinateStats: Pick<
       },
     };
   },
-  clients: async ({ organization, project, target, period, schemaCoordinate }, _, { injector }) => {
+  clients: async (
+    { organization, project, target, period, graph, schemaCoordinate },
+    _,
+    { injector },
+  ) => {
     const nodes = await injector.get(OperationsManager).readUniqueClients({
       targetId: target,
       projectId: project,
       organizationId: organization,
       period,
+      graph,
       schemaCoordinate,
     });
 
@@ -133,7 +152,7 @@ export const SchemaCoordinateStats: Pick<
     };
   },
   failuresOverTime: (
-    { organization, project, target, period, schemaCoordinate },
+    { organization, project, target, period, graph, schemaCoordinate },
     { resolution },
     { injector },
   ) => {
@@ -147,12 +166,13 @@ export const SchemaCoordinateStats: Pick<
       projectId: project,
       organizationId: organization,
       period,
+      graph,
       resolution,
       schemaCoordinate,
     });
   },
   totalResolutions: (
-    { organization, project, target, period, schemaCoordinate },
+    { organization, project, target, period, graph, schemaCoordinate },
     _,
     { injector },
   ) => {
@@ -161,11 +181,12 @@ export const SchemaCoordinateStats: Pick<
       projectId: project,
       targetId: target,
       period,
+      graph,
       schemaCoordinate,
     });
   },
   errorCodes: async (
-    { organization, project, target, period, schemaCoordinate },
+    { organization, project, target, period, graph, schemaCoordinate },
     _,
     { injector },
   ) => {
@@ -174,6 +195,7 @@ export const SchemaCoordinateStats: Pick<
       projectId: project,
       targetId: target,
       period,
+      graph,
       schemaCoordinate,
     });
     return {
@@ -187,7 +209,7 @@ export const SchemaCoordinateStats: Pick<
     };
   },
   errorCodesOverTime: async (
-    { organization, project, target, period, schemaCoordinate },
+    { organization, project, target, period, graph, schemaCoordinate },
     { resolution },
     { injector },
   ) => {
@@ -201,6 +223,7 @@ export const SchemaCoordinateStats: Pick<
       projectId: project,
       organizationId: organization,
       period,
+      graph,
       resolution,
       schemaCoordinate,
     });
