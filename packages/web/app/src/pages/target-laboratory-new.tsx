@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { Kind, parse, print } from 'graphql';
 import { throttle } from 'lodash';
 import { useMutation, useQuery } from 'urql';
@@ -13,13 +13,19 @@ import { ToggleGroup } from '@/components/ui/primitives/toggle-group/toggle-grou
 import { graphql, useFragment } from '@/gql';
 import { TargetEnvPlugin } from '@/laboratory/plugins/target-env';
 import { useSlugs, useToggle } from '@/lib/hooks';
+import { useApiTabValue } from '@/lib/hooks/laboratory/use-api-tab-value';
 import { useCurrentOperationWithFetchingState } from '@/lib/hooks/laboratory/use-current-operation';
+import { useEnvNoticeToast } from '@/lib/hooks/laboratory/use-env-notice-toast';
 import { useSchemaIntrospection } from '@/lib/hooks/laboratory/use-schema-introspection';
+import { useSeededLaboratoryTarget } from '@/lib/hooks/laboratory/use-seeded-laboratory-target';
 import { useOperationFromQueryString } from '@/lib/hooks/laboratory/useOperationFromQueryString';
-import { useResetState } from '@/lib/hooks/use-reset-state';
-import { loadHistory, saveHistory } from '@/lib/laboratory-history-storage';
-import { migrateLegacyLaboratoryStorage } from '@/lib/laboratory-legacy-storage';
-import { withLinkedOperation } from '@/lib/laboratory-linked-operation';
+import {
+  readLaboratoryDefaults,
+  resolveLaboratoryTargetId,
+  type LinkedOperation,
+} from '@/lib/laboratory-defaults';
+import { loadTargetHistory, saveTargetHistory } from '@/lib/laboratory-history-storage';
+import { laboratoryStorage } from '@/lib/laboratory-storage';
 import {
   Laboratory,
   LaboratoryCollection,
@@ -33,46 +39,9 @@ import {
 } from '@graphql-hive/laboratory';
 import { getRouteApi, Link as RouterLink, useRouter } from '@tanstack/react-router';
 
-function useApiTabValueState(graphqlEndpointUrl: string | null) {
-  const [state, setState] = useResetState<'mockApi' | 'linkedApi'>(() => {
-    const value = localStorage.getItem('hive:laboratory-tab-value');
-    if (!value || !['mockApi', 'linkedApi'].includes(value)) {
-      return graphqlEndpointUrl ? 'linkedApi' : 'mockApi';
-    }
-
-    if (value === 'linkedApi' && graphqlEndpointUrl) {
-      return 'linkedApi';
-    }
-
-    return 'mockApi';
-  }, [graphqlEndpointUrl]);
-
-  return [
-    state,
-    useCallback(
-      (state: 'mockApi' | 'linkedApi') => {
-        localStorage.setItem('hive:laboratory-tab-value', state);
-        setState(state);
-      },
-      [setState],
-    ),
-  ] as const;
-}
-
 const laboratoryRoute = getRouteApi(
   '/authenticated/with-header/$organizationSlug/$projectSlug/$targetSlug/laboratory',
 );
-
-const localStoragePrefix = 'hive:laboratory:';
-
-const getLocalStorageState = (key: string, defaultValue: any) => {
-  const value = localStorage.getItem(`${localStoragePrefix}${key}`);
-  return value ? JSON.parse(value) : defaultValue;
-};
-
-const setLocalStorageState = (key: string, value: any) => {
-  localStorage.setItem(`${localStoragePrefix}${key}`, JSON.stringify(value));
-};
 
 export const LaboratoryPreflightScriptTargetFragment = graphql(`
   fragment LaboratoryPreflightScriptTargetFragment on Target {
@@ -318,10 +287,9 @@ export const UpdatePreflightScriptMutation = graphql(`
   }
 `);
 
-function useLaboratoryState() {
-  // Idempotent, so it can run on every render ahead of the reads below.
-  migrateLegacyLaboratoryStorage();
-
+// Server-side lab state (collections, preflight script, linked operation). What the browser saves
+// per target is read by LaboratoryMount, once the target is known and seeded.
+function useLaboratoryServerState() {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const [{ data, fetching: dataFetching }] = useQuery({
     query: LaboratoryQuery,
@@ -333,18 +301,6 @@ function useLaboratoryState() {
       },
     },
   });
-
-  const [historyData, setHistoryData] = useState<LaboratoryHistory[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void loadHistory().then(history => {
-      if (!cancelled) setHistoryData(history);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const preflight = useFragment(LaboratoryPreflightScriptTargetFragment, data?.target ?? null);
 
@@ -571,21 +527,25 @@ function useLaboratoryState() {
     return null;
   }, [operationString]);
 
-  const linkedState = useMemo(() => {
-    const stored = {
-      operations: getLocalStorageState('operations', []),
-      tabs: getLocalStorageState('tabs', []),
-      activeTabId: getLocalStorageState('activeTabId', null),
-    };
+  // The param is stripped right away, so keep the operation until the lab has mounted with it.
+  const [pendingOperation, setPendingOperation] = useState<LaboratoryOperation | null>(null);
 
+  useEffect(() => {
     if (operationFromQueryString) {
-      return withLinkedOperation(stored, operationFromQueryString, 'content');
+      setPendingOperation(operationFromQueryString);
+    }
+  }, [operationFromQueryString]);
+
+  const linkedOperation = useMemo((): LinkedOperation | null => {
+    const fromQueryString = operationFromQueryString ?? pendingOperation;
+
+    if (fromQueryString) {
+      return { operation: fromQueryString, matchBy: 'content' };
     }
 
     if (currentOperation) {
-      return withLinkedOperation(
-        stored,
-        {
+      return {
+        operation: {
           id: currentOperation.id,
           name: currentOperation.name,
           query: currentOperation.query,
@@ -593,109 +553,145 @@ function useLaboratoryState() {
           headers: currentOperation.headers ?? '{}',
           extensions: '{}',
         },
-        'id',
-      );
+        matchBy: 'id',
+      };
     }
 
-    return stored;
-  }, [currentOperation, operationFromQueryString]);
+    return null;
+  }, [currentOperation, operationFromQueryString, pendingOperation]);
 
   const operationIdFromSearch = useOperationFromQueryString();
 
-  const fetching = useMemo(() => {
-    if (historyData === null) {
-      return true;
-    }
-    if (operationIdFromSearch) {
-      return dataFetching || currentOperationFetching;
-    }
-
-    return dataFetching;
-  }, [dataFetching, currentOperationFetching, operationIdFromSearch, historyData]);
+  const fetching = dataFetching || (!!operationIdFromSearch && currentOperationFetching);
 
   return {
     fetching,
-    defaultCollections: collections,
-    defaultOperations: linkedState.operations,
-    defaultHistory: historyData ?? [],
-    defaultTabs: linkedState.tabs,
-    defaultActiveTabId: linkedState.activeTabId,
-    defaultSettings: getLocalStorageState('settings', null),
-    defaultPreflight: preflight?.preflightScript?.sourceCode
-      ? {
-          script: preflight.preflightScript.sourceCode,
-          enabled: getLocalStorageState('preflightEnabled', false),
-        }
-      : null,
-    defaultEnv: getLocalStorageState('env', {}),
-    onEnvChange: (env: LaboratoryEnv | null) => {
-      setLocalStorageState('env', env);
-    },
-    defaultPluginsState: getLocalStorageState('pluginsState', {}),
-    onPluginsStateChange: (pluginsState: Record<string, any>) => {
-      setLocalStorageState('pluginsState', pluginsState);
-    },
-    onOperationsChange: (operations: LaboratoryOperation[]) => {
-      setLocalStorageState('operations', operations);
-    },
-    onHistoryChange: (history: LaboratoryHistory[]) => {
-      void saveHistory(history);
-    },
-    onTabsChange: (tabs: LaboratoryTab[]) => {
-      setLocalStorageState('tabs', tabs);
-    },
-    onActiveTabIdChange: (activeTabId: string | null) => {
-      setLocalStorageState('activeTabId', activeTabId);
-    },
-    onCollectionOperationCreate: (
-      collection: LaboratoryCollection,
-      operation: LaboratoryCollectionOperation,
-    ) => createOperation(collection, operation),
-    onCollectionOperationUpdate: (
-      collection: LaboratoryCollection,
-      operation: LaboratoryCollectionOperation,
-    ) => {
-      updateOperation(collection, operation);
-    },
-    onCollectionOperationDelete: (
-      collection: LaboratoryCollection,
-      operation: LaboratoryCollectionOperation,
-    ) => {
-      deleteOperation(collection, operation);
-    },
-    onCollectionDelete: (collection: LaboratoryCollection) => {
-      deleteCollection(collection);
-    },
-    onCollectionCreate: (collection: LaboratoryCollection) => addCollection(collection),
-    onCollectionUpdate: (collection: LaboratoryCollection) => {
-      updateCollection(collection);
-    },
-    onSettingsChange: (settings: LaboratorySettings | null) => {
-      setLocalStorageState('settings', settings);
-    },
-    onPreflightChange: (preflight: LaboratoryPreflight | null) => {
-      updatePreflight(preflight ?? { script: '', enabled: true });
-      setLocalStorageState('preflightEnabled', preflight?.enabled ?? false);
-    },
-    // One script per target, stored server side, so it is not private to the person editing it.
-    preflightNotice:
-      'It is stored in plain text on this target, where everyone with access can read it and it runs in their browser too.',
-    permissions: {
-      preflight: {
-        update: preflight?.viewerCanModifyPreflightScript === true,
+    targetId: data?.target?.id ?? null,
+    preflightScript: preflight?.preflightScript?.sourceCode ?? null,
+    linkedOperation,
+    onLinkedOperationConsumed: useCallback(() => setPendingOperation(null), []),
+    updatePreflight,
+    labProps: {
+      defaultCollections: collections,
+      onCollectionOperationCreate: (
+        collection: LaboratoryCollection,
+        operation: LaboratoryCollectionOperation,
+      ) => createOperation(collection, operation),
+      onCollectionOperationUpdate: (
+        collection: LaboratoryCollection,
+        operation: LaboratoryCollectionOperation,
+      ) => {
+        updateOperation(collection, operation);
       },
-      collections: {
-        create: data?.target?.viewerCanModifyLaboratory === true,
-        update: data?.target?.viewerCanModifyLaboratory === true,
-        delete: data?.target?.viewerCanModifyLaboratory === true,
+      onCollectionOperationDelete: (
+        collection: LaboratoryCollection,
+        operation: LaboratoryCollectionOperation,
+      ) => {
+        deleteOperation(collection, operation);
       },
-      collectionsOperations: {
-        create: data?.target?.viewerCanModifyLaboratory === true,
-        update: data?.target?.viewerCanModifyLaboratory === true,
-        delete: data?.target?.viewerCanModifyLaboratory === true,
+      onCollectionDelete: (collection: LaboratoryCollection) => {
+        deleteCollection(collection);
+      },
+      onCollectionCreate: (collection: LaboratoryCollection) => addCollection(collection),
+      onCollectionUpdate: (collection: LaboratoryCollection) => {
+        updateCollection(collection);
+      },
+      // One script per target, stored server side, so it is not private to the person editing it.
+      preflightNotice:
+        'It is stored in plain text on this target, where everyone with access can read it and it runs in their browser too.',
+      permissions: {
+        preflight: {
+          update: preflight?.viewerCanModifyPreflightScript === true,
+        },
+        collections: {
+          create: data?.target?.viewerCanModifyLaboratory === true,
+          update: data?.target?.viewerCanModifyLaboratory === true,
+          delete: data?.target?.viewerCanModifyLaboratory === true,
+        },
+        collectionsOperations: {
+          create: data?.target?.viewerCanModifyLaboratory === true,
+          update: data?.target?.viewerCanModifyLaboratory === true,
+          delete: data?.target?.viewerCanModifyLaboratory === true,
+        },
       },
     },
   };
+}
+
+/**
+ * Mounts the lab from what this target saved in the browser. Keyed by target and endpoint, so
+ * every remount reads the latest writes and never another target's state.
+ */
+export function LaboratoryMount({
+  targetId,
+  linkedOperation,
+  onLinkedOperationConsumed,
+  preflightScript,
+  updatePreflight,
+  ...labProps
+}: {
+  targetId: string;
+  linkedOperation: LinkedOperation | null;
+  onLinkedOperationConsumed: () => void;
+  preflightScript: string | null;
+  updatePreflight: (preflight: LaboratoryPreflight) => void;
+} & ComponentProps<typeof Laboratory>) {
+  // eslint-disable-next-line react/hook-use-state
+  const [defaults] = useState(() =>
+    readLaboratoryDefaults(targetId, linkedOperation, preflightScript),
+  );
+
+  // A mounted lab never reads new defaults, so a link that arrives now is dropped rather than
+  // kept for the next mount, which could be another target's.
+  useEffect(() => {
+    onLinkedOperationConsumed();
+  }, [linkedOperation, onLinkedOperationConsumed]);
+
+  // undefined while loading, null when IndexedDB failed.
+  const [history, setHistory] = useState<LaboratoryHistory[] | null | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadTargetHistory(targetId).then(loaded => {
+      if (!cancelled) setHistory(loaded);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [targetId]);
+
+  useEnvNoticeToast();
+
+  const historyFailed = history === null;
+
+  const callbacks = useMemo(() => {
+    const storage = laboratoryStorage(targetId);
+
+    return {
+      onEnvChange: (env: LaboratoryEnv | null) => storage.set('env', env),
+      onPluginsStateChange: (pluginsState: Record<string, any>) =>
+        storage.set('pluginsState', pluginsState),
+      onOperationsChange: (operations: LaboratoryOperation[]) =>
+        storage.set('operations', operations),
+      onTabsChange: (tabs: LaboratoryTab[]) => storage.set('tabs', tabs),
+      onActiveTabIdChange: (activeTabId: string | null) => storage.set('activeTabId', activeTabId),
+      onSettingsChange: (settings: LaboratorySettings | null) => storage.set('settings', settings),
+      onPreflightChange: (preflight: LaboratoryPreflight | null) => {
+        updatePreflight(preflight ?? { script: '', enabled: true });
+        storage.set('preflightEnabled', preflight?.enabled ?? false);
+      },
+      // Saving after a failed load would replace history this mount never read.
+      onHistoryChange: historyFailed
+        ? undefined
+        : (next: LaboratoryHistory[]) => void saveTargetHistory(targetId, next),
+    };
+  }, [targetId, updatePreflight, historyFailed]);
+
+  if (history === undefined) {
+    return null;
+  }
+
+  return <Laboratory {...labProps} {...defaults} defaultHistory={history ?? []} {...callbacks} />;
 }
 
 const TargetLaboratoryPageQuery = graphql(`
@@ -736,7 +732,22 @@ function LaboratoryPageContent() {
     },
   });
 
-  const [actualSelectedApiEndpoint, setEndpointType] = useApiTabValueState(
+  const laboratoryState = useLaboratoryServerState();
+
+  const targetId = resolveLaboratoryTargetId({
+    pageTargetId: query.data?.target?.id ?? null,
+    pageFetching: query.fetching,
+    labTargetId: laboratoryState.targetId,
+    labFetching: laboratoryState.fetching,
+  });
+  const seeded = useSeededLaboratoryTarget(
+    targetId,
+    `${organizationSlug}/${projectSlug}/${targetSlug}`,
+  );
+
+  // Read only once seeded, or a first visit misses the choice seeding copies over.
+  const [actualSelectedApiEndpoint, setEndpointType] = useApiTabValue(
+    seeded ? targetId : null,
     query.data?.target?.graphqlEndpointUrl ?? null,
   );
 
@@ -747,8 +758,6 @@ function LaboratoryPageContent() {
       ? query.data?.target?.graphqlEndpointUrl
       : undefined) ?? mockEndpoint;
 
-  const laboratoryState = useLaboratoryState();
-
   const [isConnectLabModalOpen, toggleConnectLabModal] = useToggle();
 
   const { resolvedTheme } = useTheme();
@@ -757,7 +766,7 @@ function LaboratoryPageContent() {
 
   const introspection = useSchemaIntrospection(sdl);
 
-  if (laboratoryState.fetching) {
+  if (!targetId || !seeded) {
     return null;
   }
 
@@ -810,13 +819,12 @@ function LaboratoryPageContent() {
                     value: 'mockApi',
                     label: 'Mock',
                     tooltip: 'Use Mock Schema',
-                    disabled: query.fetching,
                   },
                   {
                     value: 'linkedApi',
                     label: 'API',
                     tooltip: 'Use API endpoint',
-                    disabled: !query.data?.target?.graphqlEndpointUrl || query.fetching,
+                    disabled: !query.data?.target?.graphqlEndpointUrl,
                   },
                 ]}
                 value={actualSelectedApiEndpoint}
@@ -829,13 +837,18 @@ function LaboratoryPageContent() {
           </div>
         </div>
         <div className="flex-1 overflow-hidden rounded-lg border">
-          <Laboratory
-            key={url}
+          <LaboratoryMount
+            key={`${targetId}:${url}`}
+            targetId={targetId}
+            linkedOperation={laboratoryState.linkedOperation}
+            onLinkedOperationConsumed={laboratoryState.onLinkedOperationConsumed}
+            preflightScript={laboratoryState.preflightScript}
+            updatePreflight={laboratoryState.updatePreflight}
             defaultEndpoint={url}
             theme={resolvedTheme}
             defaultSchemaIntrospection={introspection}
             enableDocs
-            {...laboratoryState}
+            {...laboratoryState.labProps}
             plugins={[
               TargetEnvPlugin({
                 organizationSlug,

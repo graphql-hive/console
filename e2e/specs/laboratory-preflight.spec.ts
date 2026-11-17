@@ -132,21 +132,26 @@ test.describe('Laboratory > Preflight', () => {
     await expect(laboratory.logs().page().getByText('No logs yet')).toBeVisible();
   });
 
-  test('carries the GraphiQL env and toggle over on first visit', async ({ page, laboratory }) => {
+  test('carries the GraphiQL toggle over on first visit but not its env', async ({
+    page,
+    laboratory,
+  }) => {
     await project.updatePreflightScript({ sourceCode: `console.log('legacy');` });
     await page.addInitScript(() => {
       window.localStorage.setItem('hive:laboratory:type', 'graphiql');
       window.localStorage.setItem('hive:laboratory:environment', '{"foo":"bar","count":2}');
       window.localStorage.setItem('hive:laboratory:isPreflightScriptEnabled', 'true');
     });
-    await openWithOperation(laboratory);
+    await laboratory.openSeededTarget(slug);
+    // Toast text is repeated in a live region, so either copy will do.
+    await expect(page.getByText('Env vars are now saved per target').first()).toBeAttached();
+    await laboratory.addOperationTab();
+    await laboratory.setEditorValue('operation', QUERY);
     expect(await page.evaluate(() => localStorage.getItem('hive:laboratory:type'))).toBeNull();
 
     await expect(page.getByRole('button', { name: 'Disable preflight' })).toBeVisible();
     await laboratory.openEnvTab();
-    const env = await laboratory.getEditorValue('env');
-    expect(env).toContain('foo=bar');
-    expect(env).toContain('count=2');
+    expect(await laboratory.getEditorValue('env')).not.toContain('foo=bar');
   });
 
   test.describe('execution', () => {
