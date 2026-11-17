@@ -793,13 +793,13 @@ export class OperationsReader {
         query: sql`
           SELECT "hash", "target", SUM("total") AS "count"
           FROM (
-            SELECT "operations"."hash" AS "hash", "operations"."target" AS "target", "operations"."total" AS "total"
+            SELECT "operations"."hash" AS "hash", toString("operations"."target") AS "target", "operations"."total" AS "total"
             FROM ${this.rollupTable('operations', 'daily', args.period)} AS "operations"
             ${filter('operations', this.graphFilterForPeriod(args.graph, args.period))}
 
             UNION ALL
 
-            SELECT "subscription_operations_daily"."hash" AS "hash", "subscription_operations_daily"."target" AS "target", "subscription_operations_daily"."total" AS "total"
+            SELECT "subscription_operations_daily"."hash" AS "hash", toString("subscription_operations_daily"."target") AS "target", "subscription_operations_daily"."total" AS "total"
             FROM "subscription_operations_daily"
             ${filter('subscription_operations_daily', this.graphFilter(args.graph, false))}
           )
