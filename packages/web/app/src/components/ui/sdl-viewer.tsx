@@ -44,6 +44,7 @@ const OPTIONS = {
   folding: true,
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
+  padding: { top: 12, bottom: 12 },
   // Otherwise clicking a definition itself falls back to Find References, which nothing provides.
   gotoLocation: { alternativeDefinitionCommand: '' },
 } as const;
@@ -72,7 +73,7 @@ export function SdlViewer(props: {
   };
 
   return (
-    <div className={cn('h-full', props.className)}>
+    <div className={cn('h-full overflow-hidden rounded-md border bg-surface-card', props.className)}>
       <SchemaEditor
         value={pretty ?? ''}
         path={props.modelPath}
