@@ -1,7 +1,7 @@
 ARG NODE_VERSION_TAG
 FROM node${NODE_VERSION_TAG}
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/*
 
 ARG CLI_VERSION
 
