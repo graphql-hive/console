@@ -5,6 +5,12 @@
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 // Enables the read-only tooltip shown when users type into a read-only model.
 import 'monaco-editor/esm/vs/editor/contrib/readOnlyMessage/browser/contribution.js';
+// The codicon @font-face; editor.api only gets it via contributions we don't load.
+import 'monaco-editor/esm/vs/base/browser/ui/codicons/codiconStyles.js';
+import 'monaco-editor/esm/vs/editor/contrib/find/browser/findController.js';
+import 'monaco-editor/esm/vs/editor/contrib/folding/browser/folding.js';
+import 'monaco-editor/esm/vs/editor/contrib/gotoSymbol/browser/goToCommands.js';
+import 'monaco-editor/esm/vs/editor/contrib/gotoSymbol/browser/link/goToDefinitionAtPosition.js';
 // Registers the basic GraphQL Monarch tokenizer so `language="graphql"` models
 // get syntax highlighting. Without this, `editor.api` ships no languages.
 import 'monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution.js';

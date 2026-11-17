@@ -1,6 +1,5 @@
 import { Kind, parse, type DefinitionNode, type NameNode } from 'graphql/index';
 
-/** Where a definition's name sits, in Monaco's 1-based line/column terms. */
 export type SdlDefinitionRange = {
   startLineNumber: number;
   startColumn: number;
@@ -8,7 +7,6 @@ export type SdlDefinitionRange = {
   endColumn: number;
 };
 
-/** Types and directives live in separate namespaces, so `@key` and a `key` type never collide. */
 export type SdlDefinitionIndex = {
   types: Map<string, SdlDefinitionRange>;
   directives: Map<string, SdlDefinitionRange>;
@@ -49,11 +47,8 @@ function nameOf(definition: DefinitionNode): NameNode | null {
   return 'name' in definition && definition.name ? definition.name : null;
 }
 
-/**
- * Where each type and directive in `sdl` is defined. A subgraph often only extends a type
- * owned elsewhere, so an extension stands in when there is no definition. SDL that does
- * not parse has no definitions.
- */
+// A subgraph often only extends a type owned elsewhere, so an extension stands in when
+// there is no definition.
 export function indexSdlDefinitions(sdl: string): SdlDefinitionIndex {
   const index: SdlDefinitionIndex = { types: new Map(), directives: new Map() };
 
