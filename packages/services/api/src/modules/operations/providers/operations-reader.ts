@@ -4,10 +4,13 @@ import { UTCDate } from '@date-fns/utc';
 import {
   buildCoordinateScopeCondition,
   buildOperationsFilterSQLConditions,
+  convertHash,
   formatDateTime,
+  hashList,
   parseDateTime,
   RawValue,
   SqlValue,
+  type HashEncoding,
 } from '@hive/clickhouse';
 import { traceFn } from '@hive/service-common';
 import type { DateRange } from '../../../shared/entities';
@@ -177,6 +180,18 @@ export function shouldUseGraphRollups(
   return !!(period && graphRollupsStart && period.from >= graphRollupsStart);
 }
 
+/**
+ * How the table read for `table` stores the operation hash. The graph-scoped rollups store it
+ * binary, so do the legacy `coordinate_counts_*` / `coordinate_errors_*`. The other legacy rollups
+ * store the hex `String`, like `operation_collection_*` and `subscription_operations_*`.
+ */
+export function hashEncodingOf(table: AggregationTable, useGraphRollups: boolean): HashEncoding {
+  if (table === 'coordinate_counts' || table === 'coordinate_errors') {
+    return 'binary';
+  }
+  return useGraphRollups ? 'binary' : 'hex';
+}
+
 /** Picks the narrowest `operations_by_graph*` table that can serve the given filters. */
 export function operationsRollupDimensions(args: {
   operations?: readonly string[];
@@ -266,6 +281,11 @@ export class OperationsReader {
     return this.graphFilter(graph, this.useGraphRollups(period));
   }
 
+  /** Hash encoding of tables resolved with `rollupTable(..., period)`. */
+  private hashEncoding(table: AggregationTable, period: DateRange | null): HashEncoding {
+    return hashEncodingOf(table, this.useGraphRollups(period));
+  }
+
   /** Table to read when a query is not routed through `pickAggregationByPeriod`. */
   private rollupTable(
     table: AggregationTable,
@@ -307,8 +327,13 @@ export class OperationsReader {
        * `useGraphRollups` is true if the graph-scoped rollups are read,
        * which is required for filtering by graph.
        * `graph` is the graph filter to pass to `createFilter` (null without `args.graph`).
+       * `hashEncoding` is how the table resolved for a given `AggregationTable` stores `hash`.
        */
-      context: { useGraphRollups: boolean; graph: GraphFilter | null },
+      context: {
+        useGraphRollups: boolean;
+        graph: GraphFilter | null;
+        hashEncoding: (table: AggregationTable) => HashEncoding;
+      },
     ): SqlValue;
     queryId(aggregation: Granularity): `${string}_${typeof aggregation}`;
   }) {
@@ -318,7 +343,11 @@ export class OperationsReader {
         : args.timeout;
     let { period, resolution } = args;
     const useGraphRollups = this.useGraphRollups(period);
-    const context = { useGraphRollups, graph: this.graphFilter(args.graph, useGraphRollups) };
+    const context = {
+      useGraphRollups,
+      graph: this.graphFilter(args.graph, useGraphRollups),
+      hashEncoding: (table: AggregationTable) => hashEncodingOf(table, useGraphRollups),
+    };
     const tableNameResolver =
       (granularity: Granularity) =>
       (table: AggregationTable, operationsDimensions: OperationsRollupDimensions = 'hash') =>
@@ -451,6 +480,66 @@ export class OperationsReader {
   );
 
   /**
+   * Eliminates rows of operations used only by the excluded clients. Coordinates are connected to
+   * clients through the operation hash.
+   *
+   * Must be built inside `pickAggregationByPeriod` with the `clients` table and graph filter of the
+   * outer query: the clients table must have the same granularity as the outer table, since the
+   * `period` filter otherwise drops its rows (e.g. daily rows are at `00:00`, which a period starting
+   * later that day excludes, so nothing would be excluded at all).
+   *
+   * With `perTarget`, an operation is only dropped for the targets only excluded clients used it in.
+   */
+  private excludedClientsConditions({
+    excludedClients,
+    targetIds,
+    period,
+    graph,
+    clientsTable,
+    clientsHashEncoding,
+    hashEncoding,
+    perTarget = false,
+  }: {
+    excludedClients: readonly string[] | null | undefined;
+    targetIds: string | readonly string[];
+    period: DateRange;
+    graph: GraphFilter | null;
+    clientsTable: RawValue;
+    clientsHashEncoding: HashEncoding;
+    /** How the outer table stores `hash`. */
+    hashEncoding: HashEncoding;
+    perTarget?: boolean;
+  }): SqlValue[] {
+    if (!excludedClients?.length) {
+      return [];
+    }
+
+    const hash = convertHash(sql.raw('hash'), clientsHashEncoding, hashEncoding);
+    const key = sql.raw(perTarget ? 'hash, target' : 'hash');
+
+    return [
+      sql`
+        (${key}) NOT IN (
+          SELECT ${hash}${sql.raw(perTarget ? ', target' : '')} FROM (
+            SELECT
+              ${key},
+              countIf(client_name NOT IN (${sql.array(
+                excludedClients,
+                'String',
+              )})) as non_excluded_clients_total
+            FROM ${clientsTable} ${this.createFilter({
+              target: targetIds,
+              period,
+              graph,
+            })}
+            GROUP BY ${key}
+          ) WHERE non_excluded_clients_total = 0
+        )
+      `,
+    ];
+  }
+
+  /**
    * Count the number of resolutions for a coordinate.
    */
   public async countCoordinateResolution({
@@ -470,31 +559,6 @@ export class OperationsReader {
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
-    if (Array.isArray(excludedClients) && excludedClients.length > 0) {
-      // Eliminate coordinates fetched by excluded clients.
-      // We can connect a coordinate to a client by using the hash column.
-      // The hash column is basically a unique identifier of a GraphQL operation.
-      // In the following query we fetch all hashes that were used only by the excluded clients.
-      conditions.push(sql`
-        hash NOT IN (
-          SELECT hash FROM (
-            SELECT
-              hash,
-              countIf(client_name NOT IN (${sql.array(
-                excludedClients,
-                'String',
-              )})) as non_excluded_clients_total
-            FROM ${this.rollupTable('clients', 'daily', period)} ${this.createFilter({
-              target: targetIds,
-              period,
-              graph: this.graphFilterForPeriod(graph, period),
-            })}
-            GROUP BY hash
-          ) WHERE non_excluded_clients_total = 0
-        )
-      `);
-    }
-
     const query = this.pickAggregationByPeriod({
       period,
       graph,
@@ -507,8 +571,20 @@ export class OperationsReader {
               target: targetIds,
               period,
               operations,
+              hashEncoding: ctx.hashEncoding('coordinate_counts'),
               graph: ctx.graph,
-              extra: conditions,
+              extra: [
+                ...conditions,
+                ...this.excludedClientsConditions({
+                  excludedClients,
+                  targetIds,
+                  period,
+                  graph: ctx.graph,
+                  clientsTable: aggregationTableName('clients'),
+                  clientsHashEncoding: ctx.hashEncoding('clients'),
+                  hashEncoding: ctx.hashEncoding('coordinate_counts'),
+                }),
+              ],
             })}
             GROUP BY coordinate
           `,
@@ -585,31 +661,6 @@ export class OperationsReader {
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
-    if (Array.isArray(excludedClients) && excludedClients.length > 0) {
-      // Eliminate coordinates fetched by excluded clients.
-      // We can connect a coordinate to a client by using the hash column.
-      // The hash column is basically a unique identifier of a GraphQL operation.
-      // In the following query we fetch all hashes that were used only by the excluded clients.
-      conditions.push(sql`
-        hash NOT IN (
-          SELECT hash FROM (
-            SELECT
-              hash,
-              countIf(client_name NOT IN (${sql.array(
-                excludedClients,
-                'String',
-              )})) as non_excluded_clients_total
-            FROM ${this.rollupTable('clients', 'daily', period)} ${this.createFilter({
-              target: targetIds,
-              period,
-              graph: this.graphFilterForPeriod(graph, period),
-            })}
-            GROUP BY hash
-          ) WHERE non_excluded_clients_total = 0
-        )
-      `);
-    }
-
     const query = this.pickAggregationByPeriod({
       period,
       graph,
@@ -622,8 +673,20 @@ export class OperationsReader {
               target: targetIds,
               period,
               operations,
+              hashEncoding: ctx.hashEncoding('coordinates'),
               graph: ctx.graph,
-              extra: conditions,
+              extra: [
+                ...conditions,
+                ...this.excludedClientsConditions({
+                  excludedClients,
+                  targetIds,
+                  period,
+                  graph: ctx.graph,
+                  clientsTable: aggregationTableName('clients'),
+                  clientsHashEncoding: ctx.hashEncoding('clients'),
+                  hashEncoding: ctx.hashEncoding('coordinates'),
+                }),
+              ],
             })}
             GROUP BY coordinate
           `,
@@ -684,29 +747,6 @@ export class OperationsReader {
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(args.schemaCoordinates, 'String')}))`];
 
-    if (Array.isArray(args.excludedClients) && args.excludedClients.length > 0) {
-      // Per target, so a target only excluded clients used does not count as used.
-      conditions.push(sql`
-        (hash, target) NOT IN (
-          SELECT hash, target FROM (
-            SELECT
-              hash,
-              target,
-              countIf(client_name NOT IN (${sql.array(
-                args.excludedClients,
-                'String',
-              )})) as non_excluded_clients_total
-            FROM ${this.rollupTable('clients', 'daily', args.period)} ${this.createFilter({
-              target: args.targetIds,
-              period: args.period,
-              graph: this.graphFilterForPeriod(args.graph, args.period),
-            })}
-            GROUP BY hash, target
-          ) WHERE non_excluded_clients_total = 0
-        )
-      `);
-    }
-
     const query = this.pickAggregationByPeriod({
       period: args.period,
       graph: args.graph,
@@ -721,7 +761,20 @@ export class OperationsReader {
               target: args.targetIds,
               period: args.period,
               graph: ctx.graph,
-              extra: conditions,
+              extra: [
+                ...conditions,
+                // Per target, so a target only excluded clients used does not count as used.
+                ...this.excludedClientsConditions({
+                  excludedClients: args.excludedClients,
+                  targetIds: args.targetIds,
+                  period: args.period,
+                  graph: ctx.graph,
+                  clientsTable: aggregationTableName('clients'),
+                  clientsHashEncoding: ctx.hashEncoding('clients'),
+                  hashEncoding: ctx.hashEncoding('coordinates'),
+                  perTarget: true,
+                }),
+              ],
             })}
             GROUP BY coordinate, target
           `,
@@ -777,12 +830,13 @@ export class OperationsReader {
     hashes: string[];
     graph?: GraphSelector | null;
   }) {
-    const filter = (table: string, graph: GraphFilter | null) => sql`
+    const operationsHashEncoding = this.hashEncoding('operations', args.period);
+    const filter = (table: string, graph: GraphFilter | null, hashEncoding: HashEncoding) => sql`
       PREWHERE
         ${sql.raw(`"${table}"`)}."target" IN (${sql.array(args.targetIds, 'String')})
         AND ${sql.raw(`"${table}"`)}."timestamp" >= toDateTime(${formatDate(args.period.from)}, 'UTC')
         AND ${sql.raw(`"${table}"`)}."timestamp" <= toDateTime(${formatDate(args.period.to)}, 'UTC')
-        AND ${sql.raw(`"${table}"`)}."hash" IN (${sql.longArray(args.hashes, 'String')})
+        AND ${sql.raw(`"${table}"`)}."hash" IN (${hashList(args.hashes, hashEncoding, { long: true })})
         ${args.excludedClients ? sql`AND ${sql.raw(`"${table}"`)}."client_name" NOT IN (${sql.array(args.excludedClients, 'String')})` : sql``}
         ${andGraphConditions(graph, `"${table}"`)}
     `;
@@ -791,19 +845,19 @@ export class OperationsReader {
       .postQuery({
         queryId: '_getOperationCountsPerTarget',
         query: sql`
-          SELECT "hash", "target", SUM("total") AS "count"
+          SELECT "hex_hash" AS "hash", "target", SUM("total") AS "count"
           FROM (
-            SELECT "operations"."hash" AS "hash", toString("operations"."target") AS "target", "operations"."total" AS "total"
+            SELECT ${convertHash(sql.raw('"operations"."hash"'), operationsHashEncoding, 'hex')} AS "hex_hash", toString("operations"."target") AS "target", "operations"."total" AS "total"
             FROM ${this.rollupTable('operations', 'daily', args.period)} AS "operations"
-            ${filter('operations', this.graphFilterForPeriod(args.graph, args.period))}
+            ${filter('operations', this.graphFilterForPeriod(args.graph, args.period), operationsHashEncoding)}
 
             UNION ALL
 
-            SELECT "subscription_operations_daily"."hash" AS "hash", toString("subscription_operations_daily"."target") AS "target", "subscription_operations_daily"."total" AS "total"
+            SELECT "subscription_operations_daily"."hash" AS "hex_hash", toString("subscription_operations_daily"."target") AS "target", "subscription_operations_daily"."total" AS "total"
             FROM "subscription_operations_daily"
-            ${filter('subscription_operations_daily', this.graphFilter(args.graph, false))}
+            ${filter('subscription_operations_daily', this.graphFilter(args.graph, false), 'hex')}
           )
-          GROUP BY "hash", "target"
+          GROUP BY "hex_hash", "target"
         `,
         timeout: 10_000,
       })
@@ -869,31 +923,6 @@ export class OperationsReader {
   }) {
     const conditions = [sql`(coordinate IN (${sql.array(schemaCoordinates, 'String')}))`];
 
-    if (Array.isArray(excludedClients) && excludedClients.length > 0) {
-      // Eliminate coordinates fetched by excluded clients.
-      // We can connect a coordinate to a client by using the hash column.
-      // The hash column is basically a unique identifier of a GraphQL operation.
-      // In the following query we fetch all hashes that were used only by the excluded clients.
-      conditions.push(sql`
-        hash NOT IN (
-          SELECT hash FROM (
-            SELECT
-              hash,
-              countIf(client_name NOT IN (${sql.array(
-                excludedClients,
-                'String',
-              )})) as non_excluded_clients_total
-            FROM ${this.rollupTable('clients', 'daily', period)} ${this.createFilter({
-              target: targetIds,
-              period,
-              graph: this.graphFilterForPeriod(graph, period),
-            })}
-            GROUP BY hash
-          ) WHERE non_excluded_clients_total = 0
-        )
-      `);
-    }
-
     const query = this.pickAggregationByPeriod({
       period,
       graph,
@@ -906,8 +935,20 @@ export class OperationsReader {
           target: targetIds,
           period,
           operations,
+          hashEncoding: ctx.hashEncoding('coordinate_errors'),
           graph: ctx.graph,
-          extra: conditions,
+          extra: [
+            ...conditions,
+            ...this.excludedClientsConditions({
+              excludedClients,
+              targetIds,
+              period,
+              graph: ctx.graph,
+              clientsTable: aggregationTableName('clients'),
+              clientsHashEncoding: ctx.hashEncoding('clients'),
+              hashEncoding: ctx.hashEncoding('coordinate_errors'),
+            }),
+          ],
         })}
         GROUP BY coordinate
       `,
@@ -1152,6 +1193,7 @@ export class OperationsReader {
             target,
             period,
             operations,
+            hashEncoding: ctx.hashEncoding('operations'),
             clients,
             clientVersionFilters,
             excludeOperations,
@@ -1250,6 +1292,7 @@ export class OperationsReader {
             target,
             period,
             operations,
+            hashEncoding: ctx.hashEncoding('operations'),
             clients,
             clientVersionFilters,
             excludeOperations,
@@ -1311,13 +1354,14 @@ export class OperationsReader {
         minutely: 10_000,
       },
       query: (aggregationTableName, ctx) =>
-        sql`SELECT sum(total) as total, sum(total_ok) as totalOk, hash FROM ${aggregationTableName(
+        sql`SELECT total, totalOk, ${convertHash(sql.raw('hash'), ctx.hashEncoding('operations'), 'hex')} AS hash FROM (SELECT sum(total) as total, sum(total_ok) as totalOk, hash FROM ${aggregationTableName(
           'operations',
         )} ${this.createFilter({
           graph: ctx.graph,
           target,
           period,
           operations,
+          hashEncoding: ctx.hashEncoding('operations'),
           clients,
           clientVersionFilters,
           excludeOperations,
@@ -1326,7 +1370,7 @@ export class OperationsReader {
             table: aggregationTableName('coordinates'),
             scopes: withCoordinate(coordinateScopes, schemaCoordinate),
           },
-        })} GROUP BY hash`,
+        })} GROUP BY hash)`,
       queryId: aggregation => `read_unique_documents_${aggregation}`,
     });
 
@@ -1352,13 +1396,14 @@ export class OperationsReader {
               extra: [
                 sql`
                   hash IN (
-                    SELECT hash
+                    SELECT ${convertHash(sql.raw('hash'), this.hashEncoding('operations', period), 'hex')}
                     FROM ${this.rollupTable('operations', query.queryType, period)}
                     ${this.createFilter({
                       target,
                       period,
                       graph: this.graphFilterForPeriod(graph, period),
                       operations,
+                      hashEncoding: this.hashEncoding('operations', period),
                       clientVersionFilters,
                       excludeOperations,
                       excludeClientVersionFilters,
@@ -1559,6 +1604,7 @@ export class OperationsReader {
                 target,
                 period,
                 operations,
+                hashEncoding: ctx.hashEncoding('clients'),
                 clients,
                 clientVersionFilters,
                 excludeOperations,
@@ -1737,6 +1783,8 @@ export class OperationsReader {
     const rollupGraph = this.graphFilterForPeriod(args.graph, args.period);
     // `subscription_operations_daily` has no graph dimension
     const legacyGraph = this.graphFilter(args.graph, false);
+    // `coordinates` and `operations` share the encoding, `subscription_operations_daily` is hex
+    const hashEncoding = this.hashEncoding('coordinates', args.period);
 
     const RecordArrayType = z.array(
       z.object({
@@ -1759,7 +1807,7 @@ export class OperationsReader {
           WITH "top_operations_by_coordinates" AS (
             SELECT DISTINCT
               "coordinates"."coordinate" AS "coordinate",
-              "coordinates"."hash" AS "hash",
+              ${convertHash(sql.raw('"coordinates"."hash"'), hashEncoding, 'hex')} AS "hash",
               "operations_join"."total" AS "total"
             FROM
               ${this.rollupTable('coordinates', 'daily', args.period)} AS "coordinates"
@@ -1781,7 +1829,7 @@ export class OperationsReader {
               UNION ALL
 
               SELECT
-                "subscription_operations_daily"."hash",
+                ${convertHash(sql.raw('"subscription_operations_daily"."hash"'), 'hex', hashEncoding)} AS "hash",
                 SUM("subscription_operations_daily"."total") AS "total"
               FROM
                 "subscription_operations_daily"
@@ -1901,6 +1949,8 @@ export class OperationsReader {
     const rollupGraph = this.graphFilterForPeriod(args.graph, args.period);
     // `subscription_operations_daily` has no graph dimension
     const legacyGraph = this.graphFilter(args.graph, false);
+    // `coordinates` and `operations` share the encoding, `subscription_operations_daily` is hex
+    const hashEncoding = this.hashEncoding('coordinates', args.period);
 
     const RecordArrayType = z.array(
       z.object({
@@ -1942,7 +1992,7 @@ export class OperationsReader {
               UNION ALL
 
               SELECT
-                "subscription_operations_daily"."hash",
+                ${convertHash(sql.raw('"subscription_operations_daily"."hash"'), 'hex', hashEncoding)} AS "hash",
                 "subscription_operations_daily"."client_name"
               FROM
                 "subscription_operations_daily"
@@ -2137,7 +2187,7 @@ export class OperationsReader {
         },
         query: (aggregationTableName, ctx) => sql`
           WITH coordinates as (
-            SELECT cd.total, cd.hash, cd.coordinate
+            SELECT cd.total, ${convertHash(sql.raw('cd.hash'), ctx.hashEncoding('coordinates'), 'hex')} AS hash, cd.coordinate
             FROM (
               SELECT
                 sum(cdi.total) as total, cdi.hash as hash, cdi.coordinate as coordinate
@@ -2301,6 +2351,7 @@ export class OperationsReader {
           target,
           period,
           operations,
+          hashEncoding: this.hashEncoding('clients', period),
           extra: [sql`notEmpty(client_name)`],
         })}
         GROUP BY client_name
@@ -2652,7 +2703,7 @@ export class OperationsReader {
               coordinateScopes,
             }),
           )}
-            ${this.createFilter({ target, period, graph: ctx.graph, operations, clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters, coordinateScope: { table: aggregationTableName('coordinates'), scopes: coordinateScopes ?? [] } })}
+            ${this.createFilter({ target, period, graph: ctx.graph, operations, hashEncoding: ctx.hashEncoding('operations'), clients, clientVersionFilters, excludeOperations, excludeClientVersionFilters, coordinateScope: { table: aggregationTableName('coordinates'), scopes: coordinateScopes ?? [] } })}
         `,
         queryId: aggregation => `general_duration_percentiles_${aggregation}`,
         timeout: 15_000,
@@ -2694,6 +2745,8 @@ export class OperationsReader {
       this.pickAggregationByPeriod({
         graph,
         query: (aggregationTableName, ctx) => sql`
+            SELECT ${convertHash(sql.raw('hash'), ctx.hashEncoding('operations'), 'hex')} AS hash, average, percentiles
+            FROM (
               SELECT
                 hash,
                 avgMerge(duration_avg) as average,
@@ -2704,6 +2757,7 @@ export class OperationsReader {
                 target,
                 period,
                 operations,
+                hashEncoding: ctx.hashEncoding('operations'),
                 clients,
                 clientVersionFilters,
                 excludeOperations,
@@ -2714,6 +2768,7 @@ export class OperationsReader {
                 },
               })}
               GROUP BY hash
+            )
             `,
         queryId: aggregation => `duration_percentiles_${aggregation}`,
         timeout: 15_000,
@@ -3047,6 +3102,7 @@ export class OperationsReader {
             target,
             period: roundedPeriod,
             operations,
+            hashEncoding: ctx.hashEncoding('operations'),
             clients,
             clientVersionFilters,
             excludeOperations,
@@ -3641,6 +3697,7 @@ export class OperationsReader {
     extra = [],
     skipWhere = false,
     namespace,
+    hashEncoding,
   }: {
     target?: string | readonly string[];
     period?: DateRange;
@@ -3658,7 +3715,16 @@ export class OperationsReader {
     extra?: SqlValue[];
     skipWhere?: boolean;
     namespace?: string;
+    /**
+     * How the filtered table stores `hash` (see `hashEncodingOf`). Required with `operations`,
+     * since the hex input has to be compared differently against binary hashes.
+     */
+    hashEncoding?: HashEncoding;
   }): SqlValue {
+    if (operations?.length && !hashEncoding) {
+      throw new Error('createFilter: `hashEncoding` is required when filtering by `operations`.');
+    }
+
     const where: SqlValue[] = this.scopeConditions({ target, period, graph, namespace });
 
     // Operation-hash + client(/version) conditions are built by the shared
@@ -3672,6 +3738,7 @@ export class OperationsReader {
         excludeOperations,
         excludeClientVersionFilters,
         namespace,
+        hashEncoding,
       }),
     );
 

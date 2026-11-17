@@ -5,4 +5,5 @@ export {
   buildOperationsFilterSQLConditions,
   type OperationsFilterInput,
 } from './operations-filter';
+export { convertHash, hashList, type HashEncoding } from './hash-encoding';
 export { buildCoordinateScopeCondition, type CoordinateScopeInput } from './coordinate-scope';
