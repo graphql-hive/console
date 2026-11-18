@@ -7,7 +7,13 @@ import {
   Kind,
   parse,
 } from 'graphql';
-import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
+import {
+  _createLRUCache,
+  YogaServer,
+  type GraphQLParams,
+  type OnParamsEventPayload,
+  type Plugin,
+} from 'graphql-yoga';
 import {
   addHiveTypenames,
   autoDisposeSymbol,
@@ -308,7 +314,12 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
         // not using @graphql-yoga/plugin-persisted-operations because its majors are tied to
         // graphql-yoga majors (v3 breaks on yoga 6, v4 requires yoga 6) and we support both
         addPlugin({
-          async onParams({ params, request, context, setParams }) {
+          async onParams({
+            params,
+            request,
+            context,
+            setParams,
+          }: OnParamsEventPayload<{ waitUntil?: (promise: Promise<void> | void) => void }>) {
             if (params.query) {
               if (!(await persistedDocuments.allowArbitraryDocuments(request))) {
                 throw new GraphQLError('No persisted document provided.', {
