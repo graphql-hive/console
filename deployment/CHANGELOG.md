@@ -1,5 +1,86 @@
 # hive
 
+## 15.4.0
+
+### Minor Changes
+
+- [#8938](https://github.com/graphql-hive/console/pull/8938)
+  [`955fd7d`](https://github.com/graphql-hive/console/commit/955fd7deb9985f0c3b0c70676efb8dd738f133fb)
+  Thanks [@jdolle](https://github.com/jdolle)! - The author of a change can no longer approve their
+  own failing schema check. A check is treated as authored by a user when the email of the commit
+  author sent with the check matches the email of the user's account; checks without a commit author
+  email are unaffected, and so are approvals made with an access token (for example
+  `schema:check --forceSafe`).
+
+  On the schema check page, users who cannot approve a failed check now see a disabled Approve
+  button with an explanation instead of no button.
+
+- [#8914](https://github.com/graphql-hive/console/pull/8914)
+  [`ceedf63`](https://github.com/graphql-hive/console/commit/ceedf631795f50ab8b2054d22b9aa2eccdd44928)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Store the `graphId` and `graphVersionId` reported
+  with operations in ClickHouse, so usage data can later be scoped to a graph and graph version. A
+  new ClickHouse migration adds `graph_id` and `graph_version_id` columns to the `operations`,
+  `subscription_operations`, `operation_errors`, `operation_collection` and `app_deployment_usage`
+  tables. Operations reported without a graph store empty values.
+
+  Also fixes the usage service rejecting every usage report (format version 2) that contains `graph`
+  metadata, as the `uuid` string format was not registered for validation.
+
+- [#8930](https://github.com/graphql-hive/console/pull/8930)
+  [`68bbcd3`](https://github.com/graphql-hive/console/commit/68bbcd3b8f8278325da0f9e225eb8b0f756564c3)
+  Thanks [@jdolle](https://github.com/jdolle)! - The details page of a webhook alert channel shows a
+  preview of the request body Hive sends for each kind of notification: a schema change, a schema
+  change with composition errors, and a metric alert firing or resolving.
+
+### Patch Changes
+
+- [#8925](https://github.com/graphql-hive/console/pull/8925)
+  [`6b6134c`](https://github.com/graphql-hive/console/commit/6b6134c163268554741052f4b966b87b9fa2089c)
+  Thanks [@jdolle](https://github.com/jdolle)! - Schema checks classify added field arguments more
+  precisely. Adding a nullable argument without a default value is now a safe change; adding one
+  with a default value stays dangerous, and adding a required argument stays breaking. The change's
+  `severityReason` explains the level.
+
+  With conditional breaking changes enabled, usage is applied to these changes differently. In a
+  schema check this decides whether the check passes. On a schema publish it decides whether the
+  change is recorded as safe based on usage; a publish is still never rejected for these changes.
+
+  - An added argument is measured by the usage of its field. Usage was previously looked up on the
+    new argument, which no operation can use yet, so a required argument was always safe based on
+    usage. Adding one to a field that operations request now fails the check.
+  - A dangerous change that the target is set to fail on is measured against usage the same way a
+    breaking change is. For example, adding an argument with a default value to a field that no
+    operation requests is now safe based on usage, and the check passes. Dangerous changes whose
+    usage is not recorded, such as an added enum value, still fail the check.
+
+- [#8926](https://github.com/graphql-hive/console/pull/8926)
+  [`c2ddbc0`](https://github.com/graphql-hive/console/commit/c2ddbc02db0b0c6e6e04b82d100d7b219155d0cb)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - The Laboratory now keeps its
+  browser-saved state per target: tabs, operations, history, settings, environment variables, the
+  preflight toggle and the Mock/API choice. Previously one shared copy was used across every target,
+  project and organization, so an environment variable set on one target could be read by another
+  target's preflight script. The first time each target is opened, it starts from the existing
+  session, except environment variables and introspection headers, which are not carried over and
+  need to be set again per target.
+
+- [#8932](https://github.com/graphql-hive/console/pull/8932)
+  [`c3c0b8e`](https://github.com/graphql-hive/console/commit/c3c0b8e3dbbf49aad8f37f995b409775d0990a3a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Stop writing the deprecated `schema_log.target_id`
+  column when promoting schema versions. A new PostgreSQL migration replaces the
+  `schema_log_by_commit_ordered` index with `schema_log_by_project_commit_ordered` on
+  `(project_id, commit, created_at DESC)`, which matches the schema version lookup by commit, and
+  drops the unused `schema_log_target_id` index. This prepares the column for removal in a future
+  release.
+
+- [#8931](https://github.com/graphql-hive/console/pull/8931)
+  [`e6a4392`](https://github.com/graphql-hive/console/commit/e6a439236a6341cb11ffac49925b901ed3925259)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Switch Node.js docker base images from debian
+  bookworm to debian trixie (`node:<version>-trixie-slim`) and upgrade OS packages during image
+  build.
+
+  Addresses [CVE-2026-85091](https://security-tracker.debian.org/tracker/CVE-2026-85091) (zlib heap
+  buffer overflow), which has no fix available for bookworm.
+
 ## 15.3.0
 
 ### Minor Changes
