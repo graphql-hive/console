@@ -97,24 +97,21 @@ export class Mutex {
     let attemptCounter = 0;
     let lockToAcquire: Lock | null = null;
 
-    signal.addEventListener(
-      'abort',
-      () => {
-        logger.debug('Request has been aborted (id=%s)', id);
-        requestAbortedD.reject(signal.reason);
-      },
-      { once: true },
-    );
+    const onAbort = () => {
+      logger.debug('Request has been aborted (id=%s)', id);
+      requestAbortedD.reject(signal.reason);
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
 
-    // We try to acquire the lock until the retry counter is exceeded or the lock as been successfully acquired.
-    do {
-      logger.debug('Acquiring lock (id=%s, attempt=%d)', id, attemptCounter + 1);
+    try {
+      // We try to acquire the lock until the retry counter is exceeded or the lock as been successfully acquired.
+      do {
+        logger.debug('Acquiring lock (id=%s, attempt=%d)', id, attemptCounter + 1);
 
-      lockToAcquire = await Promise.race([
         // we avoid using any of the acquire settings for auto-extension, retrying, etc.
         // because of the many bugs and weird API design choices in the redlock library.
         // By manually handling the retries and lock extension we can abort acquiring the lock as soon as the incoming request has been canceled
-        this.redlock
+        const acquireP = this.redlock
           .acquire([id], duration, {
             // we only want to try once to acquire the lock
             // if we fail, we will retry manually with our own logic
@@ -136,24 +133,46 @@ export class Mutex {
             logger.error('Error while acquiring lock (id=%s)', id);
             console.error(err);
             throw err;
-          }),
-        requestAbortedD.promise,
-      ]);
+          });
 
-      if (lockToAcquire !== null) {
-        break;
-      }
+        try {
+          lockToAcquire = await Promise.race([acquireP, requestAbortedD.promise]);
+        } catch (err) {
+          if (signal.aborted) {
+            // The in-flight acquire may still succeed after the abort.
+            // Release that lock so it does not block other requests until it expires.
+            void acquireP
+              .then(orphanedLock => {
+                if (orphanedLock) {
+                  logger.debug('Releasing lock acquired after abort (id=%s)', id);
+                  return orphanedLock.release();
+                }
+              })
+              .catch(releaseErr => {
+                logger.debug('Error while releasing lock acquired after abort (id=%s)', id);
+                console.error(releaseErr);
+              });
+          }
+          throw err;
+        }
 
-      attemptCounter++;
+        if (lockToAcquire !== null) {
+          break;
+        }
 
-      if (attemptCounter >= retries) {
-        logger.debug('Acquiring lock failed (id=%s)', id);
-        throw new MutexResourceLockedError(`Resource "${id}" is locked.`);
-      }
+        attemptCounter++;
 
-      await Promise.race([requestAbortedD.promise, setTimeoutP(retryDelay)]);
-      // eslint-disable-next-line no-constant-condition
-    } while (true);
+        if (attemptCounter >= retries) {
+          logger.debug('Acquiring lock failed (id=%s)', id);
+          throw new MutexResourceLockedError(`Resource "${id}" is locked.`);
+        }
+
+        await Promise.race([requestAbortedD.promise, setTimeoutP(retryDelay)]);
+        // eslint-disable-next-line no-constant-condition
+      } while (true);
+    } finally {
+      signal.removeEventListener('abort', onAbort);
+    }
 
     let lock: Lock = lockToAcquire;
 

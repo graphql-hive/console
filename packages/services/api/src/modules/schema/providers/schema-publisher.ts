@@ -10,6 +10,7 @@ import lodash from 'lodash';
 import promClient from 'prom-client';
 import { z } from 'zod';
 import { CriticalityLevel } from '@graphql-inspector/core';
+import { UniqueIntegrityConstraintViolationError } from '@hive/postgres';
 import { fail, invariant, registryLockId, trace, traceFn } from '@hive/service-common';
 import type {
   ConditionalBreakingChangeMetadata,
@@ -1546,7 +1547,18 @@ export class SchemaPublisher {
         },
       )
       .catch((error: unknown) => {
-        if (error instanceof MutexResourceLockedError) {
+        const isConcurrentPublish = isConcurrentSchemaVersionWriteError(error);
+        if (isConcurrentPublish) {
+          // Another publish for the same target wrote a schema version based on the same previous version,
+          // which means we lost the lock while publishing. The transaction was rolled back,
+          // so we tell the client to retry, the same as if we failed to acquire the lock.
+          this.logger.warn(
+            'Concurrent schema version write detected, asking client to retry. (target=%s)',
+            selector.targetId,
+          );
+        }
+
+        if (error instanceof MutexResourceLockedError || isConcurrentPublish) {
           if (input.supportsRetry === true) {
             return {
               __typename: 'SchemaPublishRetry',
@@ -4212,6 +4224,17 @@ function buildGitHubActionCheckName(input: {
   ].filter((val): val is string => typeof val === 'string');
 
   return `GraphQL Hive > schema:check > ${path.join(' > ')}`;
+}
+
+/**
+ * `schema_versions.previous_schema_version_id` is unique, so two publishes based on the same previous version
+ * can not both be written. Hitting it means another publish for the same target ran at the same time.
+ */
+function isConcurrentSchemaVersionWriteError(error: unknown): boolean {
+  return (
+    error instanceof UniqueIntegrityConstraintViolationError &&
+    error.constraint === 'schema_versions_previous_schema_version_id_key'
+  );
 }
 
 function tryPrettifySDL(sdl: string): string {
