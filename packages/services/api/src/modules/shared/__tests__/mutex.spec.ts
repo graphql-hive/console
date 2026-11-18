@@ -87,7 +87,7 @@ it('should keep auto-extending lock until unlock', async ({ expect }) => {
   const unlock = await mutex.lock('1', {
     signal,
     duration: 200,
-    extendInterval: 50,
+    autoExtendThreshold: 150,
   });
 
   await sleep(600); // extended at least 2 times
@@ -119,7 +119,7 @@ it('should retry a failed lock extension while the lock is still valid', async (
     const unlock = await mutex.lock('1', {
       signal,
       duration: 200,
-      extendInterval: 50,
+      autoExtendThreshold: 150,
     });
 
     await sleep(600); // well past the original lock duration
