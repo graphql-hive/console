@@ -58,6 +58,11 @@ const {
 
 const SLACK_TOKEN = 'xoxb-test-token';
 const encryptor = new Encryptor('test-secret');
+// SLACK_TOKEN encrypted with 'a-different-secret'. Frozen because a wrong key only throws when
+// the garbage padding of the last AES-CBC block is invalid: a ciphertext made with a fresh random
+// IV decrypts silently about one run in 256.
+const ENCRYPTED_WITH_ANOTHER_SECRET =
+  'a2a8339b468d55238535d743538dc6cb:3510994f988a372dc105681b1566e314';
 
 // Legacy shape: rows written before the token column was encrypted are still plain text.
 const pg = {
@@ -297,9 +302,7 @@ describe('sendSlackNotification token decryption', () => {
   // Retrying cannot fix a wrong secret, so this must resolve rather than throw --
   // throwing would burn all 25 graphile-worker attempts.
   test('reports a config failure without throwing when the secret is wrong', async () => {
-    const encryptedElsewhere = new Encryptor('a-different-secret').encrypt(SLACK_TOKEN);
-
-    const { result, token } = await send(encryptedElsewhere);
+    const { result, token } = await send(ENCRYPTED_WITH_ANOTHER_SECRET);
 
     expect(result).toEqual({ status: 'failed-config', reason: 'decrypt-failed' });
     expect(token).toBeNull();
@@ -485,8 +488,8 @@ describe('delivery tracking', () => {
   test('a Slack platform error is recorded and still rejects so the job retries', async () => {
     const error = {
       code: 'slack_webapi_platform_error',
-      message: 'An API error occurred: channel_not_found',
-      data: { ok: false, error: 'channel_not_found' },
+      message: 'An API error occurred: internal_error',
+      data: { ok: false, error: 'internal_error' },
     };
     postMessage.mockRejectedValueOnce(error);
 
@@ -510,10 +513,44 @@ describe('delivery tracking', () => {
         attempt: 2,
         ok: false,
         statusCode: null,
-        statusText: 'channel_not_found',
+        statusText: 'internal_error',
       }),
     );
   });
+
+  test.each(['channel_not_found', 'not_in_channel', 'token_revoked', 'invalid_blocks'])(
+    'an error no retry can fix (%s) completes the job instead of retrying',
+    async code => {
+      postMessage.mockRejectedValueOnce({
+        code: 'slack_webapi_platform_error',
+        message: `An API error occurred: ${code}`,
+        data: { ok: false, error: code },
+      });
+
+      await expect(
+        sendSlackNotification({
+          channel,
+          event: makeEvent(),
+          pg,
+          logger: makeLogger().logger,
+          webAppUrl: null,
+          crypto: encryptor,
+          tracking,
+          attempt: 2,
+          maxAttempts: 25,
+          idempotencyKey: 'key-1',
+        }),
+      ).resolves.toEqual({
+        status: 'failed-config',
+        reason: `slack-${code.replaceAll('_', '-')}`,
+      });
+
+      // Recorded as the last attempt, since there won't be another
+      expect(trackingRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ attempt: 2, maxAttempts: 2, ok: false, statusText: code }),
+      );
+    },
+  );
 
   test('Discord webhooks carry the Hive headers and hand the recorder to sendWebhook', async () => {
     await postDiscord(makeEvent());
@@ -546,14 +583,24 @@ describe('delivery tracking', () => {
 });
 
 describe('describeSlackError', () => {
-  test.each<[string, unknown, { statusCode: number | null; statusText: string } | null]>([
+  test.each<
+    [string, unknown, { statusCode: number | null; statusText: string; final?: boolean } | null]
+  >([
     [
       'platform error',
+      Object.assign(new Error('An API error occurred: internal_error'), {
+        code: 'slack_webapi_platform_error',
+        data: { ok: false, error: 'internal_error' },
+      }),
+      { statusCode: null, statusText: 'internal_error' },
+    ],
+    [
+      'platform error retrying cannot fix',
       Object.assign(new Error('An API error occurred: channel_not_found'), {
         code: 'slack_webapi_platform_error',
         data: { ok: false, error: 'channel_not_found' },
       }),
-      { statusCode: null, statusText: 'channel_not_found' },
+      { statusCode: null, statusText: 'channel_not_found', final: true },
     ],
     [
       'platform error without a result code',

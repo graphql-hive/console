@@ -320,6 +320,7 @@ export function OperationsList({
   return (
     <OperationsFallback
       state={query.fetching ? 'fetching' : query.error ? 'error' : 'success'}
+      errorMessage={query.error?.graphQLErrors[0]?.message}
       refetch={() => refetch()}
     >
       <OperationsTableContainer

@@ -184,6 +184,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -191,6 +192,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   } & TargetSelector) {
     this.logger.info('Counting unique operations (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -211,6 +213,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   }
 
@@ -363,6 +366,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -370,6 +374,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   } & Listify<TargetSelector, 'targetId'>) {
     this.logger.info('Counting requests and failures (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -391,6 +396,7 @@ export class OperationsManager {
         clientVersionFilters,
         excludeOperations,
         excludeClientVersionFilters,
+        coordinateScopes,
       })
       .then(r => r.total);
   }
@@ -450,6 +456,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -457,6 +464,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   } & TargetSelector) {
     this.logger.info('Counting failures (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -477,6 +485,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   }
 
@@ -577,6 +586,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     period: DateRange;
@@ -585,6 +595,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info('Reading operations stats (period=%o, target=%s)', period, target);
@@ -607,6 +618,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
       schemaCoordinate,
     });
   }
@@ -725,6 +737,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     period: DateRange;
@@ -734,6 +747,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info(
@@ -761,6 +775,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
       schemaCoordinate,
     });
   }
@@ -776,6 +791,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     period: DateRange;
     resolution: number;
@@ -784,6 +800,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   } & TargetSelector) {
     this.logger.info(
       'Reading failures over time (period=%o, resolution=%s, target=%s)',
@@ -810,6 +827,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   }
 
@@ -880,6 +898,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     period: DateRange;
     resolution: number;
@@ -888,6 +907,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   } & TargetSelector) {
     this.logger.info(
       'Reading duration over time (period=%o, resolution=%s, target=%s)',
@@ -914,6 +934,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   }
 
@@ -987,6 +1008,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
   }: {
     period: DateRange;
     operations?: readonly string[];
@@ -994,6 +1016,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
   } & TargetSelector) {
     this.logger.info('Reading overall duration percentiles (period=%o, target=%s)', period, target);
     await this.session.assertPerformAction({
@@ -1014,6 +1037,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   }
 
@@ -1028,6 +1052,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     period: DateRange;
@@ -1036,6 +1061,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info(
@@ -1062,6 +1088,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
       schemaCoordinate,
     });
   }
@@ -1076,6 +1103,7 @@ export class OperationsManager {
     clientVersionFilters,
     excludeOperations,
     excludeClientVersionFilters,
+    coordinateScopes,
     schemaCoordinate,
   }: {
     period: DateRange;
@@ -1084,6 +1112,7 @@ export class OperationsManager {
     clientVersionFilters?: readonly { clientName: string; versions: readonly string[] | null }[];
     excludeOperations?: boolean;
     excludeClientVersionFilters?: boolean;
+    coordinateScopes?: ReadonlyArray<readonly string[]>;
     schemaCoordinate?: string;
   } & TargetSelector) {
     this.logger.info('Counting unique clients (period=%o, target=%s)', period, target);
@@ -1105,6 +1134,7 @@ export class OperationsManager {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
       schemaCoordinate,
     });
   }

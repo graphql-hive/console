@@ -67,3 +67,19 @@ export const metricAlertRuleGroups = new metrics.Gauge({
   help: 'Metric alert query groups (one ClickHouse query each), by whether a saved filter is attached',
   labelNames: ['filtered'],
 });
+
+// The hourly sweep that disables alert channels failing for 48 hours: its candidate scan over
+// the per-channel state rollup and the per-candidate check against outbound_deliveries, split
+// by `query` so the Metric-Alerts dashboard shows what an hour costs. Same buckets as the
+// evaluator's histogram above, so the two are comparable.
+export const alertChannelSweepClickHouseQueryDuration = new metrics.Histogram({
+  name: 'hive_alert_channel_sweep_clickhouse_query_duration_seconds',
+  help: 'Duration of the ClickHouse queries of the hourly sweep that disables alert channels failing for 48 hours',
+  buckets: [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10],
+  labelNames: ['query', 'outcome'],
+});
+
+export const alertChannelsAutoDisabledCounter = new metrics.Counter({
+  name: 'hive_alert_channels_auto_disabled_total',
+  help: 'Alert channels Hive disabled after they had been failing for 48 hours',
+});

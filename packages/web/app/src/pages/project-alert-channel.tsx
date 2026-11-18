@@ -13,9 +13,11 @@ import {
   type ChannelDeliveryTarget,
 } from '@/components/project/alerts/channel-deliveries-table';
 import { ChannelDetailsPanel } from '@/components/project/alerts/channel-details-panel';
+import { ChannelDisabledNotice } from '@/components/project/alerts/channel-disabled-notice';
 import { CHANNEL_TYPE_LABEL } from '@/components/project/alerts/channel-form';
 import { ChannelHealthWarning } from '@/components/project/alerts/channel-health-warning';
-import { ALERTS_POLL_INTERVAL_MS } from '@/components/target/alerts/alert-polling';
+import { ChannelPayloadPreview } from '@/components/project/alerts/channel-payload-preview';
+import { CHANNEL_DELIVERIES_POLL_INTERVAL_MS } from '@/components/project/alerts/channel-polling';
 import { Callout } from '@/components/ui/callout';
 import { Meta } from '@/components/ui/meta';
 import { NotFound, resourceAccessDescription } from '@/components/ui/not-found/not-found';
@@ -23,6 +25,7 @@ import { PageLead } from '@/components/ui/page-lead';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { graphql } from '@/gql';
+import { AlertChannelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useRefetchOnTick } from '@/lib/hooks/use-refetch-on-tick';
@@ -44,6 +47,10 @@ export const ProjectAlertChannelPage_ChannelQuery = graphql(`
         id
         name
         type
+        disabledAt
+        disabledBy {
+          id
+        }
         ...ChannelDetailsPanel_AlertChannelFragment
       }
       targets {
@@ -176,10 +183,19 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
               }
             />
 
-            <ChannelDeliveriesSection channelId={channel.id} targets={targets} />
+            <ChannelDeliveriesSection
+              channelId={channel.id}
+              disabled={
+                channel.disabledAt
+                  ? { at: channel.disabledAt, byHive: channel.disabledBy == null }
+                  : null
+              }
+              targets={targets}
+            />
           </div>
 
-          <aside className="shrink-0 self-start xl:sticky xl:top-6 xl:w-94">
+          {/* Sticky at xl, so capped to the viewport: the payload gives up height first, then the column scrolls. */}
+          <aside className="flex shrink-0 flex-col gap-6 self-start xl:sticky xl:top-6 xl:max-h-[calc(var(--content-height)-3.5rem)] xl:w-94 xl:overflow-y-auto">
             <ChannelDetailsPanel
               channel={channel}
               onChannelDeleted={() => {
@@ -189,6 +205,7 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
                 });
               }}
             />
+            {channel.type === AlertChannelType.Webhook && <ChannelPayloadPreview />}
           </aside>
         </div>
       </LayoutContent>
@@ -196,9 +213,13 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
   );
 }
 
-function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDeliveryTarget[] }) {
+function ChannelDeliveriesSection(props: {
+  channelId: string;
+  disabled: { at: string; byHive: boolean } | null;
+  targets: ChannelDeliveryTarget[];
+}) {
   const { organizationSlug, projectSlug } = useSlugs('project');
-  const { now, from, to, resolution } = useDeliveryWindow(ALERTS_POLL_INTERVAL_MS);
+  const { now, from, to, resolution } = useDeliveryWindow(CHANNEL_DELIVERIES_POLL_INTERVAL_MS);
 
   const [result, reexecuteQuery] = useQuery({
     query: ProjectAlertChannelPage_DeliveriesQuery,
@@ -235,7 +256,14 @@ function ChannelDeliveriesSection(props: { channelId: string; targets: ChannelDe
 
   return (
     <>
-      <ChannelHealthWarning health={channel?.deliveryHealth ?? null} now={now} />
+      {props.disabled ? (
+        // A member's pause needs no explanation; Hive's does.
+        props.disabled.byHive ? (
+          <ChannelDisabledNotice channelId={props.channelId} disabledAt={props.disabled.at} />
+        ) : null
+      ) : (
+        <ChannelHealthWarning health={channel?.deliveryHealth ?? null} now={now} />
+      )}
 
       {status ?? (
         <>

@@ -559,6 +559,110 @@ describe('Saved Filters', () => {
     );
   });
 
+  describe('Fields', () => {
+    test.concurrent('round-trips schema coordinates, deduplicated', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createSavedFilter, getSavedFilter } = await createProject(ProjectType.Single);
+
+      const created = await createSavedFilter({
+        name: 'Viewer fields',
+        visibility: SavedFilterVisibilityType.Shared,
+        insightsFilter: { schemaCoordinates: ['User.name', 'Query.me', 'User.name'] },
+      });
+
+      expect(created.error).toBeNull();
+      expect(created.ok?.savedFilter.filters.schemaCoordinates).toEqual(['User.name', 'Query.me']);
+
+      const fetched = await getSavedFilter({ filterId: created.ok?.savedFilter.id! });
+      expect(fetched?.filters.schemaCoordinates).toEqual(['User.name', 'Query.me']);
+    });
+
+    test.concurrent('filters created without the key read as an empty list', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createSavedFilter, getSavedFilter } = await createProject(ProjectType.Single);
+
+      const created = await createSavedFilter({
+        name: 'Legacy',
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: { operationHashes: ['op1'] },
+      });
+
+      expect(created.ok?.savedFilter.filters.schemaCoordinates).toEqual([]);
+      const fetched = await getSavedFilter({ filterId: created.ok?.savedFilter.id! });
+      expect(fetched?.filters.schemaCoordinates).toEqual([]);
+    });
+
+    test.concurrent(
+      'update keeps the key a client did not send and clears on an empty list',
+      async ({ expect }) => {
+        const { createOrg } = await initSeed().createOwner();
+        const { createProject } = await createOrg();
+        const { createSavedFilter, updateSavedFilter, getSavedFilter } = await createProject(
+          ProjectType.Single,
+        );
+
+        const created = await createSavedFilter({
+          name: 'Viewer fields',
+          visibility: SavedFilterVisibilityType.Private,
+          insightsFilter: { schemaCoordinates: ['User.name'] },
+        });
+        const filterId = created.ok?.savedFilter.id!;
+
+        // A client built before this key existed only sends the old ones.
+        const kept = await updateSavedFilter({
+          filterId,
+          insightsFilter: { operationHashes: ['op1'] },
+        });
+        expect(kept.error).toBeNull();
+        expect(kept.ok?.savedFilter.filters.operationHashes).toEqual(['op1']);
+        expect(kept.ok?.savedFilter.filters.schemaCoordinates).toEqual(['User.name']);
+
+        const cleared = await updateSavedFilter({
+          filterId,
+          insightsFilter: { operationHashes: ['op1'], schemaCoordinates: [] },
+        });
+        expect(cleared.error).toBeNull();
+        expect(cleared.ok?.savedFilter.filters.schemaCoordinates).toEqual([]);
+
+        const fetched = await getSavedFilter({ filterId });
+        expect(fetched?.filters.operationHashes).toEqual(['op1']);
+        expect(fetched?.filters.schemaCoordinates).toEqual([]);
+      },
+    );
+
+    test.concurrent('rejects a bare type name as a schema coordinate', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createSavedFilter } = await createProject(ProjectType.Single);
+
+      const result = await createSavedFilter({
+        name: 'Bad coordinate',
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: { schemaCoordinates: ['Query'] },
+      });
+
+      expect(result.error?.message).toContain('Invalid schema coordinate');
+    });
+
+    test.concurrent('rejects more than 100 schema coordinates', async ({ expect }) => {
+      const { createOrg } = await initSeed().createOwner();
+      const { createProject } = await createOrg();
+      const { createSavedFilter } = await createProject(ProjectType.Single);
+
+      const result = await createSavedFilter({
+        name: 'Too many fields',
+        visibility: SavedFilterVisibilityType.Private,
+        insightsFilter: {
+          schemaCoordinates: Array.from({ length: 101 }, (_, i) => `Query.field${i}`),
+        },
+      });
+
+      expect(result.error?.message).toBe('At most 100 schema coordinates can be selected');
+    });
+  });
+
   describe('Alert usage', () => {
     test.concurrent('exposes usedByAlertRulesCount on a saved filter', async ({ expect }) => {
       const { createOrg } = await initSeed().createOwner();

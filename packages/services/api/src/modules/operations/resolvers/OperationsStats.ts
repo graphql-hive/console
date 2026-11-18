@@ -14,6 +14,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     _,
     { injector },
@@ -30,6 +31,7 @@ export const OperationsStats: OperationsStatsResolvers = {
         clientVersionFilters,
         excludeOperations,
         excludeClientVersionFilters,
+        coordinateScopes,
       }),
       operationsManager.readDetailedDurationMetrics({
         organizationId: organization,
@@ -41,6 +43,7 @@ export const OperationsStats: OperationsStatsResolvers = {
         clientVersionFilters,
         excludeOperations,
         excludeClientVersionFilters,
+        coordinateScopes,
       }),
     ]);
 
@@ -80,6 +83,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     _,
     { injector },
@@ -94,6 +98,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   },
   totalFailures: (
@@ -107,6 +112,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     _,
     { injector },
@@ -121,6 +127,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   },
   totalOperations: (
@@ -134,6 +141,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     _,
     { injector },
@@ -148,6 +156,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   },
   requestsOverTime: (
@@ -161,6 +170,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     { resolution },
     { injector },
@@ -176,6 +186,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   },
   failuresOverTime: (
@@ -189,6 +200,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     { resolution },
     { injector },
@@ -204,6 +216,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   },
   durationOverTime: (
@@ -217,6 +230,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     { resolution },
     { injector },
@@ -232,6 +246,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   },
   clients: async (
@@ -245,6 +260,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     _,
     { injector },
@@ -259,6 +275,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
 
     return {
@@ -282,6 +299,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     },
     _,
     { injector },
@@ -296,6 +314,7 @@ export const OperationsStats: OperationsStatsResolvers = {
       clientVersionFilters,
       excludeOperations,
       excludeClientVersionFilters,
+      coordinateScopes,
     });
   },
 };

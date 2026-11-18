@@ -1,5 +1,6 @@
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableCell } from '@/components/ui/data-table/data-table-cell';
+import { Badge } from '@/components/ui/primitives/badge/badge';
 import { FragmentType, graphql, useFragment } from '@/gql';
 import { ChannelsTable_AlertChannelFragmentFragment } from '@/gql/graphql';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -9,6 +10,7 @@ export const ChannelsTable_AlertChannelFragment = graphql(`
     id
     name
     type
+    disabledAt
     ... on AlertSlackChannel {
       channel
     }
@@ -64,7 +66,18 @@ export function ChannelsTable(props: {
     },
     {
       id: 'name',
-      cell: ({ row }) => <DataTableCell kind="text" value={row.original.name} weight="medium" />,
+      cell: ({ row }) => (
+        <DataTableCell
+          kind="text"
+          value={row.original.name}
+          weight="medium"
+          trailing={
+            row.original.disabledAt ? (
+              <Badge content="Paused" variants={{ variant: 'info' }} />
+            ) : undefined
+          }
+        />
+      ),
     },
     {
       id: 'endpoint',

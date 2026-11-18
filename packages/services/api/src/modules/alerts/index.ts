@@ -6,6 +6,7 @@ import { DiscordCommunicationAdapter } from './providers/adapters/discord';
 import { TeamsCommunicationAdapter } from './providers/adapters/msteams';
 import { SlackCommunicationAdapter } from './providers/adapters/slack';
 import { WebhookCommunicationAdapter } from './providers/adapters/webhook';
+import { AlertChannelsStorage } from './providers/alert-channels-storage';
 import { AlertsManager } from './providers/alerts-manager';
 import { DeliveryRecorder } from './providers/delivery-recorder';
 import { MetricAlertRulesManager } from './providers/metric-alert-rules-manager';
@@ -20,6 +21,7 @@ export const alertsModule = createModule({
   resolvers,
   providers: [
     AlertsManager,
+    AlertChannelsStorage,
     MetricAlertRulesManager,
     MetricAlertRulesStorage,
     SavedFiltersStorage,

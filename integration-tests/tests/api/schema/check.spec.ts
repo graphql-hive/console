@@ -191,6 +191,7 @@ const SchemaCheckQuery = graphql(/* GraphQL */ `
           approvalComment
         }
         ... on FailedSchemaCheck {
+          canBeApprovedByViewer
           compositionErrors {
             nodes {
               message
@@ -1687,6 +1688,62 @@ test.concurrent(
     });
   },
 );
+
+test.concurrent('the author of a schema check can not approve it', async ({ expect }) => {
+  const { createOrg, ownerToken, ownerEmail } = await initSeed().createOwner();
+  const { createProject, organization } = await createOrg();
+  const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
+  const token = await createTargetAccessToken({});
+  const selector = {
+    organizationSlug: organization.slug,
+    projectSlug: project.slug,
+    targetSlug: target.slug,
+  };
+
+  await token
+    .publishSchema({ sdl: 'type Query { ping: String }' })
+    .then(r => r.expectNoGraphQLErrors());
+  const checkResult = await token
+    .checkSchema('type Query { ping: Float }', undefined, {
+      author: `Owner <${ownerEmail}>`,
+      commit: 'abc123',
+    })
+    .then(r => r.expectNoGraphQLErrors());
+  if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+    throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+  }
+  const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+  if (!schemaCheckId) {
+    throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+  }
+
+  const approve = (authToken: string) =>
+    execute({
+      document: ApproveFailedSchemaCheckMutation,
+      variables: { input: { ...selector, schemaCheckId } },
+      authToken,
+    })
+      .then(r => r.expectNoGraphQLErrors())
+      .then(r => r.approveFailedSchemaCheck);
+
+  await expect(
+    execute({
+      document: SchemaCheckQuery,
+      variables: { selector, id: schemaCheckId },
+      authToken: ownerToken,
+    })
+      .then(r => r.expectNoGraphQLErrors())
+      .then(r => r.target?.schemaCheck),
+  ).resolves.toMatchObject({ canBeApprovedByViewer: false });
+  await expect(approve(ownerToken)).resolves.toMatchObject({
+    ok: null,
+    error: { message: expect.any(String) },
+  });
+  await expect(approve(token.secret)).resolves.toMatchObject({
+    ok: { schemaCheck: { __typename: 'SuccessfulSchemaCheck', isApproved: true } },
+    error: null,
+  });
+});
 
 test.concurrent(
   'subsequent schema check with shared contextId that contains new breaking changes that have not been approved fails',

@@ -6,6 +6,7 @@ export type CurrentFilters = {
   dateRange: { from: string; to: string };
   excludeOperations: boolean;
   excludeClientFilters: boolean;
+  schemaCoordinates: string[];
 };
 
 export function toInsightsFilterInput(currentFilters: CurrentFilters) {
@@ -21,7 +22,12 @@ export function toInsightsFilterInput(currentFilters: CurrentFilters) {
     },
     excludeOperations: currentFilters.excludeOperations,
     excludeClientFilters: currentFilters.excludeClientFilters,
+    schemaCoordinates: currentFilters.schemaCoordinates,
   };
+}
+
+function sameSet(a: readonly string[], b: readonly string[]) {
+  return JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
 }
 
 function normalizeClients(arr: Array<{ name: string; versions: string[] | null }>) {
@@ -33,11 +39,8 @@ function normalizeClients(arr: Array<{ name: string; versions: string[] | null }
 }
 
 export function hasUnsavedChanges(activeView: SavedFilterView, currentFilters: CurrentFilters) {
-  if (
-    JSON.stringify([...currentFilters.operations].sort()) !==
-    JSON.stringify([...activeView.filters.operationHashes].sort())
-  )
-    return true;
+  if (!sameSet(currentFilters.operations, activeView.filters.operationHashes)) return true;
+  if (!sameSet(currentFilters.schemaCoordinates, activeView.filters.schemaCoordinates)) return true;
   if (
     normalizeClients(currentFilters.clients) !== normalizeClients(activeView.filters.clientFilters)
   )

@@ -6,7 +6,7 @@ import { DeliveryHealthStatus } from '@/gql/graphql';
 export const CHANNEL_FAILING_WARNING_AFTER_MS = 60 * 60 * 1000;
 export const CHANNEL_DISABLE_GRACE_HOURS = 48;
 
-/** The only place the auto-disable copy lives; the behaviour it announces ships separately. */
+/** The only place the auto-disable copy lives; the workflows service's hourly sweep applies it. */
 export function channelDisableNotice(): string {
   return `It will be disabled once it has been failing for ${CHANNEL_DISABLE_GRACE_HOURS} hours.`;
 }

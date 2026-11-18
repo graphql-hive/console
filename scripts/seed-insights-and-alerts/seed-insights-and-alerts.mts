@@ -393,6 +393,9 @@ input ReviewInput { stars: Int! commentary: String }
 type Mutation { createReview(episode: Episode, review: ReviewInput!): Review }
 `.trim();
 
+/** Operations that create a review, for the rule scoped to that mutation. */
+const REVIEW_OPERATIONS = OPERATIONS.filter(op => op.fields.includes('Mutation.createReview'));
+
 // ---------------------------------------------------------------------------
 // 4. Prompt + Main
 // ---------------------------------------------------------------------------
@@ -619,6 +622,10 @@ async function main() {
     confirmationMinutes?: number;
     /** Narrative driver for past incident pattern. */
     scenario: IncidentScenario;
+    /** Shared saved filter (by name, from `savedFilterDefs`) the rule is scoped to. */
+    savedFilterName?: string;
+    /** Operations the rule's signal ops draw from, so a scoped rule's breaches match its filter. */
+    operationPool?: OperationDef[];
   };
 
   const SCENARIO_PROFILES: Record<
@@ -928,8 +935,9 @@ async function main() {
   function buildOp(
     timestamp: number,
     opts: { ok: boolean; durationMs: number },
+    pool: OperationDef[] = OPERATIONS,
   ): CollectedOperation {
-    const op = randomOperation();
+    const op = pool[Math.floor(Math.random() * pool.length)];
     const client = pickWeightedClient();
     return {
       timestamp,
@@ -994,10 +1002,14 @@ async function main() {
     if (def.type === MetricAlertRuleType.Traffic) {
       for (let i = 0; i < count; i++) {
         out.push(
-          buildOp(Math.floor(minuteStartMs + Math.random() * MINUTE_MS), {
-            ok: Math.random() > 0.02,
-            durationMs: baseDuration + randBetween(-80, 80),
-          }),
+          buildOp(
+            Math.floor(minuteStartMs + Math.random() * MINUTE_MS),
+            {
+              ok: Math.random() > 0.02,
+              durationMs: baseDuration + randBetween(-80, 80),
+            },
+            def.operationPool,
+          ),
         );
       }
       return;
@@ -1011,10 +1023,14 @@ async function main() {
       const clamped = Math.min(0.95, Math.max(0.05, targetErrorRate));
       for (let i = 0; i < count; i++) {
         out.push(
-          buildOp(Math.floor(minuteStartMs + Math.random() * MINUTE_MS), {
-            ok: Math.random() > clamped,
-            durationMs: baseDuration + randBetween(-80, 80),
-          }),
+          buildOp(
+            Math.floor(minuteStartMs + Math.random() * MINUTE_MS),
+            {
+              ok: Math.random() > clamped,
+              durationMs: baseDuration + randBetween(-80, 80),
+            },
+            def.operationPool,
+          ),
         );
       }
       return;
@@ -1041,10 +1057,14 @@ async function main() {
         ? highDurationMs * randBetween(1.0, 1.3)
         : baseDuration + randBetween(-80, 120);
       out.push(
-        buildOp(Math.floor(minuteStartMs + Math.random() * MINUTE_MS), {
-          ok: Math.random() > 0.02,
-          durationMs,
-        }),
+        buildOp(
+          Math.floor(minuteStartMs + Math.random() * MINUTE_MS),
+          {
+            ok: Math.random() > 0.02,
+            durationMs,
+          },
+          def.operationPool,
+        ),
       );
     }
   }
@@ -1224,6 +1244,10 @@ async function main() {
       channelKeys: ['slack'],
       desiredState: 'NORMAL',
       scenario: 'business_hours',
+      // Scoped to Mutation.createReview so the alert detail page renders a field chip and the
+      // evaluator exercises the coordinates subquery against seeded data.
+      savedFilterName: 'Review mutations',
+      operationPool: REVIEW_OPERATIONS,
     },
     {
       // "Weekend traffic dips — service drops low every Sat/Sun night"
@@ -1372,7 +1396,6 @@ async function main() {
     console.error('Schema publish failed:', publishResult.rawBody.errors);
     process.exit(1);
   }
-  console.log('   Schema published successfully.');
 
   // Generate operations spread across the retained range
   console.log(`📊 Generating usage data (${daysPast} days)...`);
@@ -1383,38 +1406,45 @@ async function main() {
   // Higher than before so BELOW rules are visible and signal injections don't drown
   // out the baseline completely at coarser view resolutions.
   let suppressedCount = 0;
-  for (let t = now - daysPastMs; t <= now; t += ONE_HOUR_MS) {
-    const opsThisHour = 55 + Math.floor(Math.random() * 15); // 55–70 per hour
-    for (let i = 0; i < opsThisHour; i++) {
-      const timestamp = t + Math.floor(Math.random() * ONE_HOUR_MS);
-      // Skip baseline ops inside TRAFFIC-Below suppression windows so those rules see
-      // an actual drop in the rolling window sum.
-      if (isSuppressed(timestamp)) {
-        suppressedCount++;
-        continue;
-      }
-      const op = randomOperation();
-      const client = pickWeightedClient();
-      const ok = Math.random() > 0.02;
-      allOperations.push({
-        timestamp,
-        operation: op.operation,
-        operationName: op.operationName,
-        fields: op.fields,
-        execution: {
-          ok,
-          duration: randomDuration(),
-          errorsTotal: ok ? 0 : 1,
-        },
-        metadata: {
-          client: {
-            name: client.name,
-            ...(client.version ? { version: client.version } : {}),
+  function generateBaseline(
+    out: CollectedOperation[],
+    fromMs: number,
+    suppress: (timestamp: number) => boolean,
+  ) {
+    for (let t = fromMs; t <= now; t += ONE_HOUR_MS) {
+      const opsThisHour = 55 + Math.floor(Math.random() * 15); // 55–70 per hour
+      for (let i = 0; i < opsThisHour; i++) {
+        const timestamp = t + Math.floor(Math.random() * ONE_HOUR_MS);
+        // Skip baseline ops inside TRAFFIC-Below suppression windows so those rules see
+        // an actual drop in the rolling window sum.
+        if (suppress(timestamp)) {
+          suppressedCount++;
+          continue;
+        }
+        const op = randomOperation();
+        const client = pickWeightedClient();
+        const ok = Math.random() > 0.02;
+        out.push({
+          timestamp,
+          operation: op.operation,
+          operationName: op.operationName,
+          fields: op.fields,
+          execution: {
+            ok,
+            duration: randomDuration(),
+            errorsTotal: ok ? 0 : 1,
           },
-        },
-      });
+          metadata: {
+            client: {
+              name: client.name,
+              ...(client.version ? { version: client.version } : {}),
+            },
+          },
+        });
+      }
     }
   }
+  generateBaseline(allOperations, now - daysPastMs, isSuppressed);
   if (suppressedCount > 0) {
     console.log(
       `   🔇 Skipped ${suppressedCount} baseline ops for TRAFFIC-Below suppression windows`,
@@ -1565,6 +1595,7 @@ async function main() {
     operationNames: string[];
     clientFilters?: Array<{ name: string; versions?: string[] }>;
     dateRange?: { from: string; to: string };
+    schemaCoordinates?: string[];
     views: number;
   }> = [
     {
@@ -1708,6 +1739,33 @@ async function main() {
       dateRange: { from: 'now-7d', to: 'now' },
       views: 203,
     },
+    {
+      name: 'Review mutations',
+      description: 'Everything that creates a review',
+      visibility: SavedFilterVisibilityType.Shared,
+      operationNames: [],
+      schemaCoordinates: ['Mutation.createReview'],
+      dateRange: { from: 'now-7d', to: 'now' },
+      views: 88,
+    },
+    {
+      name: 'Character names',
+      description: 'Operations that read a character name',
+      visibility: SavedFilterVisibilityType.Shared,
+      operationNames: [],
+      schemaCoordinates: ['Character.name', 'Human.name', 'Droid.name'],
+      views: 41,
+    },
+    {
+      name: 'Starships from the web app',
+      description: 'Starship traffic, web client only',
+      visibility: SavedFilterVisibilityType.Shared,
+      operationNames: [],
+      schemaCoordinates: ['Human.starships', 'Starship.name'],
+      clientFilters: [{ name: 'web-app' }],
+      dateRange: { from: 'now-30d', to: 'now' },
+      views: 17,
+    },
   ];
 
   // Create all filters and collect results
@@ -1722,6 +1780,7 @@ async function main() {
         operationHashes: ops,
         ...(def.clientFilters ? { clientFilters: def.clientFilters } : {}),
         ...(def.dateRange ? { dateRange: def.dateRange } : {}),
+        ...(def.schemaCoordinates ? { schemaCoordinates: def.schemaCoordinates } : {}),
       },
     });
     if (result.ok) {
@@ -1818,6 +1877,9 @@ async function main() {
         direction: def.direction,
         severity: def.severity,
         channelIds: def.channelIds,
+        savedFilterId: def.savedFilterName
+          ? createdFilters.find(f => f.name === def.savedFilterName)?.id
+          : undefined,
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());
@@ -1825,7 +1887,7 @@ async function main() {
     const rule = result.addMetricAlertRule.ok?.addedMetricAlertRule;
     if (rule) {
       createdAlertRules.push({ id: rule.id, def });
-      console.log(`   ✓ ${def.name}`);
+      console.log(`   ✓ ${def.name}${def.savedFilterName ? ` (on "${def.savedFilterName}")` : ''}`);
     } else {
       console.error(`   ✗ Failed: ${def.name}`);
     }
@@ -2006,6 +2068,9 @@ Credentials:
 Navigate to:
   http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/insights
   http://localhost:3000/${organization.slug}/${project.slug}/${target.slug}/alerts
+
+Saved filters on the Fields dimension: "Review mutations", "Character names", "Starships from the web app".
+Rule "P95 Latency Above 800ms - Last 30 Min" is on "Review mutations".
 
 Rules in non-NORMAL states (for polling testing):
 ${createdAlertRules

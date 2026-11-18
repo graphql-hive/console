@@ -7,7 +7,13 @@ import {
   Kind,
   parse,
 } from 'graphql';
-import { _createLRUCache, YogaServer, type GraphQLParams, type Plugin } from 'graphql-yoga';
+import {
+  _createLRUCache,
+  YogaServer,
+  type GraphQLParams,
+  type OnParamsEventPayload,
+  type Plugin,
+} from 'graphql-yoga';
 import {
   addHiveTypenames,
   autoDisposeSymbol,
@@ -20,7 +26,6 @@ import {
   isHiveClient,
 } from '@graphql-hive/core';
 import { Logger } from '@graphql-hive/logger';
-import { usePersistedOperations } from '@graphql-yoga/plugin-persisted-operations';
 import { version } from './version.js';
 
 export {
@@ -306,23 +311,30 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
       void hive.info();
       const persistedDocuments = hive.persistedDocuments;
       if (persistedDocuments) {
-        addPlugin(
-          usePersistedOperations({
-            extractPersistedOperationId(body, request) {
-              if ('documentId' in body && typeof body.documentId === 'string') {
-                return body.documentId;
+        // not using @graphql-yoga/plugin-persisted-operations because its majors are tied to
+        // graphql-yoga majors (v3 breaks on yoga 6, v4 requires yoga 6) and we support both
+        addPlugin({
+          async onParams({
+            params,
+            request,
+            context,
+            setParams,
+          }: OnParamsEventPayload<{ waitUntil?: (promise: Promise<void> | void) => void }>) {
+            if (params.query) {
+              if (!(await persistedDocuments.allowArbitraryDocuments(request))) {
+                throw new GraphQLError('No persisted document provided.', {
+                  extensions: { code: 'PERSISTED_DOCUMENT_REQUIRED' },
+                });
               }
+              return;
+            }
 
-              const documentId = new URL(request.url).searchParams.get('documentId');
-
-              if (documentId) {
-                return documentId;
-              }
-
-              return null;
-            },
-            async getPersistedOperation(key, _request, context) {
-              let document: string | null;
+            const key =
+              'documentId' in params && typeof params.documentId === 'string'
+                ? params.documentId
+                : new URL(request.url).searchParams.get('documentId');
+            let document: string | null = null;
+            if (key) {
               try {
                 document = await persistedDocuments.resolve(key, {
                   waitUntil: context.waitUntil,
@@ -342,41 +354,30 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                 }
                 throw error;
               }
-              // after we resolve the document we need to update the cache record to contain the resolved document
-              if (document) {
-                const record = contextualCache.get(context);
-                if (record) {
-                  record.documentId = key;
-                  record.paramsArgs = {
-                    ...record.paramsArgs,
-                    query: document,
-                  };
-                }
-              }
-              return document;
-            },
-            allowArbitraryOperations(request) {
-              return persistedDocuments.allowArbitraryDocuments(request);
-            },
-            customErrors: {
-              keyNotFound() {
-                return new GraphQLError('Persisted document not found.', {
-                  extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
-                });
-              },
-              notFound() {
-                return new GraphQLError('Persisted document not found.', {
-                  extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
-                });
-              },
-              persistedQueryOnly() {
-                return new GraphQLError('No persisted document provided.', {
-                  extensions: { code: 'PERSISTED_DOCUMENT_REQUIRED' },
-                });
-              },
-            },
-          }),
-        );
+            }
+            if (!key || !document) {
+              throw new GraphQLError('Persisted document not found.', {
+                extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
+              });
+            }
+
+            // after we resolve the document we need to update the cache record to contain the resolved document
+            const record = contextualCache.get(context);
+            if (record) {
+              record.documentId = key;
+              record.paramsArgs = {
+                ...record.paramsArgs,
+                query: document,
+              };
+            }
+            setParams({
+              query: document,
+              operationName: params.operationName,
+              variables: params.variables,
+              extensions: params.extensions,
+            });
+          },
+        });
       }
     },
     onDispose() {

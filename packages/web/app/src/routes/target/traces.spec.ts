@@ -24,6 +24,17 @@ vi.mock('@/components/schema-editor', async importOriginal => ({
 }));
 vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 
+// ECharts never sizes under jsdom, so the chart is stood in for to reach its range handler.
+const chart = vi.hoisted(() => ({
+  onRangeSelect: undefined as ((range: { from: Date; to: Date }) => void) | undefined,
+}));
+vi.mock('@/components/ui/primitives/chart/time-series-chart', () => ({
+  TimeSeriesChart: (props: { onRangeSelect?: typeof chart.onRangeSelect }) => {
+    chart.onRangeSelect = props.onRangeSelect;
+    return null;
+  },
+}));
+
 const TARGET = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 const TRACES = `${TARGET}/traces`;
 const TRACE = `${TRACES}/trace-1`;
@@ -90,6 +101,32 @@ describe('traces route', () => {
     await waitFor(() => expect(router.state.location.search).toMatchObject({ from: 'now-7d' }));
     await waitFor(() => expect(rowHref()).toContain('now-7d'));
   });
+
+  it(
+    'a drag across the chart sets the range and keeps the filter',
+    { timeout: 30_000 },
+    async () => {
+      const client = createTestClient(new Map([...layoutFixtures(), ...tracesFixtures()]));
+      const { router } = renderAtUrl(
+        `${TRACES}?from=now-7d&to=now&operationNames=${encodeURIComponent(JSON.stringify(['GetUser']))}`,
+        { client },
+      );
+      await waitFor(() => expect(chart.onRangeSelect).toBeDefined());
+
+      chart.onRangeSelect!({
+        from: new Date('2026-09-25T10:00:00.000Z'),
+        to: new Date('2026-09-25T14:00:00.000Z'),
+      });
+
+      await waitFor(() =>
+        expect(router.state.location.search).toMatchObject({
+          from: '2026-09-25T10:00:00.000Z',
+          to: '2026-09-25T14:00:00.000Z',
+          operationNames: ['GetUser'],
+        }),
+      );
+    },
+  );
 
   it('carries the filter and sort from the URL into the list', { timeout: 30_000 }, async () => {
     const json = (value: unknown) => encodeURIComponent(JSON.stringify(value));

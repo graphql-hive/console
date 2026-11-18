@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Context } from './context.js';
 import { defineTask, implementTask, TaskScheduler, type TaskDefinition } from './kit.js';
 import { EMAIL_MAX_ATTEMPTS } from './lib/emails/retry-policy.js';
+import { DisableFailingAlertChannelsTask } from './tasks/disable-failing-alert-channels.js';
 import { EvaluateMetricAlertRulesTask } from './tasks/evaluate-metric-alert-rules.js';
 import { FlushTargetTokenLastUsedTask } from './tasks/flush-target-token-last-used.js';
 import { OrganizationInvitationTask } from './tasks/organization-invitation.js';
@@ -36,6 +37,7 @@ describe('implementTask', () => {
     PurgeExpiredSchemaChecks,
     PurgeExpiredSchemaRevisions,
     FlushTargetTokenLastUsedTask,
+    DisableFailingAlertChannelsTask,
   ];
   test.each(cronTasks)('runs cron task $name on a cron payload', async definition => {
     const inputs: unknown[] = [];

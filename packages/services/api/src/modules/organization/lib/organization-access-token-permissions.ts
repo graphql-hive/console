@@ -53,6 +53,17 @@ export const permissionGroups: Array<PermissionGroup> = [
     ],
   },
   {
+    id: 'audit-log',
+    title: 'Audit Log',
+    permissions: [
+      {
+        id: 'auditLog:describe',
+        title: 'Describe audit log',
+        description: 'Read the organization audit log through the audit log API (SIEM ingestion).',
+      },
+    ],
+  },
+  {
     id: 'project',
     title: 'Project',
     permissions: [

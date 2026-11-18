@@ -275,6 +275,8 @@ export interface InsightsFilterData {
   dateRange: { from: string; to: string } | null;
   excludeOperations?: boolean;
   excludeClientFilters?: boolean;
+  /** Schema coordinates as reported by usage; scopes to operations whose document uses any. */
+  schemaCoordinates?: string[];
 }
 
 export interface SavedFilter {
@@ -424,6 +426,12 @@ export interface AlertChannel {
   createdAt: string;
   slackChannel: string | null;
   webhookEndpoint: string | null;
+  /** Set while the channel is disabled; null when it may be notified. */
+  disabledAt: string | null;
+  /** The member who disabled it; null while enabled, and when Hive disabled it for failing. */
+  disabledByUserId: string | null;
+  /** When the channel was created or last enabled; its delivery health counts from here. */
+  enabledAt: string;
 }
 
 export interface Alert {

@@ -4,6 +4,7 @@ import {
   InsightsFilterSearch,
 } from '@/components/target/insights/search-schemas';
 import { Stats_GeneralOperationsStatsQuery } from '@/components/target/insights/stats';
+import { InsightsSchemaFilterOptions_Query } from '@/components/target/insights/use-insights-filter-dimensions';
 import { presetLast1Day, presetLast7Days, type Preset } from '@/components/ui/date-range-picker';
 import { DiffsWorkerPoolProvider } from '@/components/ui/diffs';
 import { loaderPeriod } from '@/lib/hooks/use-date-range-controller';
@@ -79,6 +80,7 @@ export const targetInsightsRoute = createRoute({
     const filter = buildGraphQLFilter(loader.deps);
     void loadQuery(loader, TargetOperationsPageQuery, selector);
     void loadQuery(loader, InsightsFilterPicker_Query, { selector, period });
+    void loadQuery(loader, InsightsSchemaFilterOptions_Query, { selector });
     void loadQuery(
       loader,
       Stats_GeneralOperationsStatsQuery,
@@ -103,10 +105,10 @@ export const targetInsightsManageFiltersRoute = createRoute({
   path: 'insights/manage-filters',
   loader: loader => {
     const { organizationSlug, projectSlug, targetSlug } = loader.params;
-    void loadQuery(loader, ManageFilters_SavedFiltersQuery, {
-      organizationSlug,
-      selector: { organizationSlug, projectSlug, targetSlug },
-    });
+    const selector = { organizationSlug, projectSlug, targetSlug };
+    void loadQuery(loader, ManageFilters_SavedFiltersQuery, { organizationSlug, selector });
+    // Every opened row reads the schema options; one warm cache serves them all.
+    void loadQuery(loader, InsightsSchemaFilterOptions_Query, { selector });
   },
   component: TargetInsightsManageFiltersPage,
 });

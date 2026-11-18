@@ -6,6 +6,8 @@ import type { TargetResolvers } from './../../../__generated__/types';
 
 const MAX_CLIENT_VERSION_FILTERS = 50;
 const MAX_VERSIONS_PER_FILTER = 100;
+const MAX_SCHEMA_COORDINATES = 100;
+const MAX_SCHEMA_COORDINATE_LENGTH = 200;
 
 export const Target: Pick<
   TargetResolvers,
@@ -81,15 +83,35 @@ export const Target: Pick<
       }
     }
 
+    // Same bounds as a saved filter; the values are bound as ClickHouse URL parameters.
+    const schemaCoordinates = args.filter?.schemaCoordinates ?? [];
+    if (schemaCoordinates.length > MAX_SCHEMA_COORDINATES) {
+      throw new GraphQLError(
+        `'OperationStatsFilterInput.schemaCoordinates' must contain at most ${MAX_SCHEMA_COORDINATES} elements`,
+      );
+    }
+    if (schemaCoordinates.some(c => c.length > MAX_SCHEMA_COORDINATE_LENGTH)) {
+      throw new GraphQLError(
+        `'OperationStatsFilterInput.schemaCoordinates' elements must be at most ${MAX_SCHEMA_COORDINATE_LENGTH} characters long`,
+      );
+    }
+
     const period = parseDateRangeInput(args.period);
     await injector
       .get(OperationsManager)
       .assertPeriodWithinRetention({ organizationId: target.orgId, period });
+
+    const coordinateScopes: Array<readonly string[]> = [];
+    if (schemaCoordinates.length > 0) {
+      coordinateScopes.push(schemaCoordinates);
+    }
+
     return {
       period,
       organization: target.orgId,
       project: target.projectId,
       target: target.id,
+      coordinateScopes,
       operations: args.filter?.operationIds ?? [],
       clients:
         // TODO: figure out if the mapping should actually happen here :thinking:

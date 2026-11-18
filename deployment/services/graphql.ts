@@ -168,6 +168,7 @@ export function deployGraphQL({
         AUTH_ORGANIZATION_OIDC: '1',
         AUTH_ORGANIZATION_SCIM: '1',
         AUTH_REQUIRE_EMAIL_VERIFICATION: '1',
+        FEATURE_FLAGS_AUDIT_LOG_API_ENABLED: '1',
         // set by Cloudflare, used for rate limiting and audit logs
         CLIENT_IP_HEADER_NAME: 'cf-connecting-ip',
         // Traces (OTLP)

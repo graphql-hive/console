@@ -1,6 +1,6 @@
 module github.com/graphql-hive/console/docker/configs/otel-collector/extension-statsviz
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/arl/statsviz v0.6.0

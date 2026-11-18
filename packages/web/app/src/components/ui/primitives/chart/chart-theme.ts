@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
+import { color } from 'echarts';
 import type {
+  BrushComponentOption,
   GridComponentOption,
   LegendComponentOption,
   TooltipComponentOption,
@@ -54,6 +56,20 @@ function buildChartTheme(colors: ChartColors) {
         borderColor: colors.overlayBorder,
         textStyle: { color: colors.overlayText, fontSize: 12 },
         valueFormatter: valueFormatter as TooltipComponentOption['valueFormatter'],
+      };
+    },
+
+    brushX(): BrushComponentOption {
+      return {
+        xAxisIndex: 0,
+        brushType: 'lineX',
+        brushMode: 'single',
+        transformable: false,
+        brushStyle: {
+          color: color.modifyAlpha(colors.primary, 0.15),
+          borderColor: color.modifyAlpha(colors.primary, 0.6),
+          borderWidth: 1,
+        },
       };
     },
 

@@ -756,6 +756,7 @@ export function OperationsStats({
 
   const isFetching = query.fetching;
   const isError = !!query.error;
+  const errorMessage = query.error?.graphQLErrors[0]?.message;
 
   const operationsStats = query.data?.target?.operationsStats;
   const allOperationsStats = query.data?.target?.allOperations;
@@ -771,7 +772,7 @@ export function OperationsStats({
 
   return (
     <section className="space-y-12 text-fg-subtle transition-opacity duration-700 ease-in-out">
-      <OperationsFallback state={state} refetch={refetch}>
+      <OperationsFallback state={state} errorMessage={errorMessage} refetch={refetch}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <RequestsStats requests={operationsStats?.totalRequests} dateRangeText={dateRangeText} />
           <RPM
@@ -819,17 +820,17 @@ export function OperationsStats({
         </div>
       </OperationsFallback>
       <div>
-        <OperationsFallback state={state} refetch={refetch}>
+        <OperationsFallback state={state} errorMessage={errorMessage} refetch={refetch}>
           <ClientsStats operationStats={operationsStats ?? null} />
         </OperationsFallback>
       </div>
       <div>
-        <OperationsFallback state={state} refetch={refetch}>
+        <OperationsFallback state={state} errorMessage={errorMessage} refetch={refetch}>
           <OverTimeStats operationStats={operationsStats ?? null} />
         </OperationsFallback>
       </div>
       <div>
-        <OperationsFallback state={state} refetch={refetch}>
+        <OperationsFallback state={state} errorMessage={errorMessage} refetch={refetch}>
           <RpmOverTimeStats
             period={period}
             resolution={resolution}
@@ -838,7 +839,7 @@ export function OperationsStats({
         </OperationsFallback>
       </div>
       <div>
-        <OperationsFallback state={state} refetch={refetch}>
+        <OperationsFallback state={state} errorMessage={errorMessage} refetch={refetch}>
           <LatencyOverTimeStats operationStats={operationsStats ?? null} />
         </OperationsFallback>
       </div>

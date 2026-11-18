@@ -20,6 +20,7 @@ import { DiscordCommunicationAdapter } from './adapters/discord';
 import { TeamsCommunicationAdapter } from './adapters/msteams';
 import { SlackCommunicationAdapter } from './adapters/slack';
 import { WebhookCommunicationAdapter } from './adapters/webhook';
+import { AlertChannelsStorage, type AlertChannelWithOrganization } from './alert-channels-storage';
 
 @Injectable({
   scope: Scope.Operation,
@@ -40,6 +41,7 @@ export class AlertsManager {
     private projectManager: ProjectManager,
     private storage: Storage,
     private deliveryReader: DeliveryReader,
+    private alertChannels: AlertChannelsStorage,
   ) {
     this.logger = logger.child({ source: 'AlertsManager' });
   }
@@ -234,9 +236,87 @@ export class AlertsManager {
     return channels.find(channel => channel.id === selector.channelId) ?? null;
   }
 
+  /**
+   * Lets a disabled channel receive notifications again; its health counts from now on. Null when
+   * there is no such channel or it is not disabled.
+   */
+  async enableChannel(input: { channelId: string }): Promise<AlertChannelWithOrganization | null> {
+    this.logger.debug('Enabling Alert Channel (channel=%s)', input.channelId);
+    const channel = await this.getChannelToModify(input.channelId);
+    if (!channel) {
+      return null;
+    }
+    const enabled = await this.storage.enableAlertChannel({
+      organizationId: channel.organizationId,
+      projectId: channel.projectId,
+      channelId: channel.id,
+    });
+    if (!enabled) {
+      return null;
+    }
+    this.logger.info(
+      'Enabled Alert Channel (organization=%s, project=%s, channel=%s)',
+      channel.organizationId,
+      channel.projectId,
+      channel.id,
+    );
+    return { ...enabled, organizationId: channel.organizationId };
+  }
+
+  /**
+   * Pauses a channel at a member's request; it receives nothing until it is enabled again. Null
+   * when there is no such channel or it is already disabled.
+   */
+  async disableChannel(input: { channelId: string }): Promise<AlertChannelWithOrganization | null> {
+    this.logger.debug('Disabling Alert Channel (channel=%s)', input.channelId);
+    const channel = await this.getChannelToModify(input.channelId);
+    if (!channel) {
+      return null;
+    }
+    const viewer = await this.session.getViewer();
+    const disabled = await this.storage.disableAlertChannel({
+      organizationId: channel.organizationId,
+      projectId: channel.projectId,
+      channelId: channel.id,
+      disabledByUserId: viewer.id,
+    });
+    if (!disabled) {
+      return null;
+    }
+    this.logger.info(
+      'Disabled Alert Channel (organization=%s, project=%s, channel=%s)',
+      channel.organizationId,
+      channel.projectId,
+      channel.id,
+    );
+    return { ...disabled, organizationId: channel.organizationId };
+  }
+
+  /** The channel once the viewer may modify alerts of its project; null when there is none. */
+  private async getChannelToModify(
+    channelId: string,
+  ): Promise<AlertChannelWithOrganization | null> {
+    const channel = await this.alertChannels.getAlertChannelById(channelId);
+    if (!channel) {
+      return null;
+    }
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: channel.organizationId,
+      params: {
+        organizationId: channel.organizationId,
+        projectId: channel.projectId,
+      },
+    });
+    return channel;
+  }
+
   async getChannelDeliveryHealth(input: ChannelDeliveryRef): Promise<DeliveryHealth> {
     await this.assertCanReadChannelDeliveries(input);
-    return this.deliveryReader.getHealth(channelDeliverySelector(input));
+    return this.deliveryReader.getHealth({
+      ...channelDeliverySelector(input),
+      since: new Date(input.enabledAt),
+    });
   }
 
   async getChannelDeliveryLog(
@@ -374,11 +454,13 @@ export class AlertsManager {
     const matchingAlerts = alerts.filter(
       alert => alert.type === 'SCHEMA_CHANGE_NOTIFICATIONS' && alert.targetId === target,
     );
-    const pairs = matchingAlerts.map(alert => {
-      return {
-        alert,
-        channel: channels.find(channel => channel.id === alert.channelId)!,
-      };
+    const pairs = matchingAlerts.flatMap(alert => {
+      const channel = channels.find(channel => channel.id === alert.channelId)!;
+      if (channel.disabledAt) {
+        this.logger.debug('Skipping disabled alert channel (channel=%s)', channel.id);
+        return [];
+      }
+      return [{ alert, channel }];
     });
 
     const slackToken = await this.slackIntegrationManager.getToken({
@@ -548,6 +630,8 @@ export class AlertsManager {
 export type ChannelDeliveryRef = ProjectSelector & {
   channelId: string;
   channelType: AlertChannel['type'];
+  /** When the channel was last enabled; its health is read from there. */
+  enabledAt: string;
 };
 
 /** The channel's deliveries, as the delivery reader keys them. */

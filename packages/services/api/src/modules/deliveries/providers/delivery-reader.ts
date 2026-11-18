@@ -89,6 +89,8 @@ export type DeliverySelector = {
   deliveryType: DeliveryType;
   destination?: string;
   events?: readonly DeliveryEventName[];
+  /** Only attempts at or after this time: a channel's health counts from when it was last enabled. */
+  since?: Date;
 };
 
 // UInt64 aggregates arrive quoted (output_format_json_quote_64bit_integers); smaller integers as numbers.
@@ -158,6 +160,9 @@ export class DeliveryReader {
     if (selector.events !== undefined) {
       const events = selector.events.map(event => event.toLowerCase());
       where = sql`${where} AND "event" IN (${sql.array(events, 'String')})`;
+    }
+    if (selector.since !== undefined) {
+      where = sql`${where} AND "timestamp" >= toDateTime(${formatDateTime(selector.since)}, 'UTC')`;
     }
     return where;
   }

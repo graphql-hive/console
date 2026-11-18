@@ -1,4 +1,5 @@
 import { alertChannelDeliveryResolvers } from '../lib/alert-channel-delivery-resolvers';
+import { alertChannelDisabledBy } from '../lib/alert-channel-disabled-by-resolver';
 import type { AlertSlackChannelResolvers } from './../../../__generated__/types';
 
 export const AlertSlackChannel: AlertSlackChannelResolvers = {
@@ -11,4 +12,5 @@ export const AlertSlackChannel: AlertSlackChannelResolvers = {
   deliveryStats: alertChannelDeliveryResolvers.deliveryStats,
   deliveryHealth: alertChannelDeliveryResolvers.deliveryHealth,
   deliveryLog: alertChannelDeliveryResolvers.deliveryLog,
+  disabledBy: alertChannelDisabledBy,
 };

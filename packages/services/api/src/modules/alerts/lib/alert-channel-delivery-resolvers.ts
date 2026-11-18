@@ -13,6 +13,7 @@ function channelRef(channel: AlertChannelMapper): ChannelDeliveryRef {
     projectId: channel.projectId,
     channelId: channel.id,
     channelType: channel.type,
+    enabledAt: channel.enabledAt,
   };
 }
 

@@ -48,6 +48,8 @@ const HydrationRowSchema = z.object({
   channelName: z.string(),
   slackChannel: z.string().nullable(),
   webhookEndpoint: z.string().nullable(),
+  channelDisabledAt: z.string().nullable(),
+  channelEnabledAt: z.string(),
   // slugs
   organizationSlug: z.string(),
   projectSlug: z.string(),
@@ -78,6 +80,7 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
         | 'sent'
         | 'deduped'
         | 'skipped-deleted'
+        | 'skipped-disabled'
         | 'skipped-config'
         | 'failed-config'
         | 'gave-up'
@@ -134,6 +137,8 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             , ac."name" as "channelName"
             , ac."slack_channel" as "slackChannel"
             , ac."webhook_endpoint" as "webhookEndpoint"
+            , to_json(ac."disabled_at") as "channelDisabledAt"
+            , to_json(ac."enabled_at") as "channelEnabledAt"
             , o."clean_id" as "organizationSlug"
             , p."clean_id" as "projectSlug"
             , t."clean_id" as "targetSlug"
@@ -153,6 +158,12 @@ export const task = implementTask(SendMetricAlertChannelNotificationTask, async 
             'State log or channel no longer exists, skipping notification',
           );
           outcome = 'skipped-deleted';
+          return;
+        }
+
+        if (row.channelDisabledAt) {
+          logger.debug({ stateLogId, channelId }, 'Channel is disabled, skipping notification');
+          outcome = 'skipped-disabled';
           return;
         }
 

@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { ExternalLink, Info } from 'lucide-react';
-import { savedFilterToSearchParams } from '@/components/target/insights/search-params';
-import { Avatar } from '@/components/ui/primitives/avatar/avatar';
+import {
+  savedFilterToSearchParams,
+  type SavedFilterFilters,
+} from '@/components/target/insights/search-params';
 import { Button } from '@/components/ui/primitives/button/button';
 import { DescriptionList } from '@/components/ui/primitives/description-list/description-list';
 import { Popover } from '@/components/ui/primitives/floating/popover/popover';
 import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { StatusDot } from '@/components/ui/primitives/status-dot/status-dot';
 import { TimeAgo } from '@/components/ui/time-ago';
+import { UserCell } from '@/components/ui/user-cell';
 import {
   AlertChannelType,
   MetricAlertRuleSeverity,
@@ -84,17 +87,7 @@ function formatTimeWindow(minutes: number): string {
 type Channel = { id: string; name: string; type: string };
 type User = { id: string; displayName: string } | null | undefined;
 
-type SavedFilter = {
-  id: string;
-  name: string;
-  filters: {
-    operationHashes: string[];
-    clientFilters: ReadonlyArray<{ name: string; versions?: string[] | null }>;
-    dateRange?: { from: string; to: string } | null;
-    excludeOperations?: boolean | null;
-    excludeClientFilters?: boolean | null;
-  };
-};
+type SavedFilter = { id: string; name: string; filters: SavedFilterFilters };
 
 export type AlertConditionsPanelProps = {
   rule: {
@@ -142,16 +135,6 @@ function RelativeTimestamp({ iso }: { iso: string }) {
   );
 }
 
-function UserCell({ user }: { user: User }) {
-  if (!user) return <>—</>;
-  return (
-    <span className="inline-flex items-center gap-2">
-      <Avatar size="xs" alt={user.displayName} />
-      <span>{user.displayName}</span>
-    </span>
-  );
-}
-
 export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPanelProps) {
   const { organizationSlug, projectSlug, targetSlug } = useSlugs('target');
   const metricLabel =
@@ -181,16 +164,7 @@ export function AlertConditionsPanel({ rule, onRuleDeleted }: AlertConditionsPan
     <Link
       to="/$organizationSlug/$projectSlug/$targetSlug/insights"
       params={{ organizationSlug, projectSlug, targetSlug }}
-      search={savedFilterToSearchParams({
-        id: rule.savedFilter.id,
-        filters: {
-          operationHashes: rule.savedFilter.filters.operationHashes,
-          clientFilters: rule.savedFilter.filters.clientFilters,
-          dateRange: rule.savedFilter.filters.dateRange,
-          excludeOperations: rule.savedFilter.filters.excludeOperations ?? undefined,
-          excludeClientFilters: rule.savedFilter.filters.excludeClientFilters ?? undefined,
-        },
-      })}
+      search={savedFilterToSearchParams(rule.savedFilter)}
       target="_blank"
       rel="noreferrer"
       className="inline-flex items-center gap-1 text-accent hover:text-accent-muted"

@@ -443,6 +443,30 @@ describe('failed check status', () => {
       expect(screen.getByLabelText('Schema policy errors.')).toBeTruthy();
     },
   );
+
+  it(
+    'disables approval for a viewer who cannot approve the check',
+    { timeout: 30_000 },
+    async () => {
+      const testClient = client();
+      testClient.fixtures.set(
+        'ActiveSchemaCheck_ActiveSchemaCheckQuery',
+        (variables: Record<string, unknown>) => {
+          const data = policyFailedSchemaCheck(variables as { schemaCheckId: string });
+          data.project.target.schemaCheck.canBeApprovedByViewer = false;
+          return data;
+        },
+      );
+      renderAtUrl(`${CHECKS_PAGE}/check-policy`, { client: testClient });
+
+      const approve = await screen.findByRole<HTMLButtonElement>(
+        'button',
+        { name: /^Approve/ },
+        { timeout: 10_000 },
+      );
+      expect(approve.disabled).toBe(true);
+    },
+  );
 });
 
 describe('paged changes', () => {
