@@ -271,7 +271,7 @@ function SendChannelTest(props: {
                 {outcome.delivered ? (
                   <p>Success</p>
                 ) : (
-                  <p className="whitespace-nowrap text-critical">Failed: {outcome.message}</p>
+                  <p className="text-critical">Failed: {outcome.message}</p>
                 )}
               </div>
               {outcome.idempotencyKey ? (
