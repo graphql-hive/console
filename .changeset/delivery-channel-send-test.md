@@ -10,3 +10,7 @@ channel's delivery history and are limited to 10 per minute for each channel.
 
 Slack, MS Teams and Discord receive a one-line message. A webhook receives a schema change request
 with made-up data and a `Hive-Test: true` header.
+
+Self-hosting: the test request of a webhook channel is sent by the API service (`server`), while
+real webhook deliveries are sent by `workflows`. Without a request broker, `server` needs outbound
+access to the webhook endpoint for a test to succeed.
