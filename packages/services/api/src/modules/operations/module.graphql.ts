@@ -60,6 +60,7 @@ export default gql`
   extend type Target {
     """
     Retrieve statistics over a schema coordinates usage.
+    The statistics are based on the usage reported for the default graph of the target.
     """
     schemaCoordinateStats(
       """
@@ -73,6 +74,7 @@ export default gql`
     ): SchemaCoordinateStats! @tag(name: "public")
     """
     Retrieve statistics for a clients usage.
+    The statistics are based on the usage reported for the default graph of the target.
     """
     clientStats(
       """
@@ -86,6 +88,7 @@ export default gql`
     ): ClientStats! @tag(name: "public")
     """
     Retrieve an overview of all operation statistics.
+    The statistics are based on the usage reported for the default graph of the target.
     """
     operationsStats(
       """
@@ -602,7 +605,13 @@ export default gql`
   }
 
   extend type Target {
+    """
+    Requests over time, based on the usage reported for the default graph of the target.
+    """
     requestsOverTime(resolution: Int!, period: DateRangeInput!): [RequestsOverTime!]!
+    """
+    Total requests, based on the usage reported for the default graph of the target.
+    """
     totalRequests(period: DateRangeInput!): SafeInt!
     """
     Retrieve an operation via it's hash.

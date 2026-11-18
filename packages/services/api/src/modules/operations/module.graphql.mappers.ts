@@ -1,5 +1,6 @@
 import type { ClientStatsValues, OperationStatsValues, PageInfo } from '../../__generated__/types';
 import type { DateRange } from '../../shared/entities';
+import type { GraphSelector } from './providers/operations-reader';
 import type {
   Span,
   Trace,
@@ -23,6 +24,7 @@ export interface SchemaCoordinateStatsMapper {
   project: string;
   target: string;
   period: DateRange;
+  graph: GraphSelector;
   schemaCoordinate: string;
 }
 export interface ClientStatsMapper {
@@ -30,6 +32,7 @@ export interface ClientStatsMapper {
   project: string;
   target: string;
   period: DateRange;
+  graph: GraphSelector;
   clientName: string;
 }
 export interface OperationsStatsMapper {
@@ -37,6 +40,7 @@ export interface OperationsStatsMapper {
   project: string;
   target: string;
   period: DateRange;
+  graph: GraphSelector;
   operations: readonly string[];
   clients: readonly string[];
   clientVersionFilters: readonly { clientName: string; versions: readonly string[] | null }[];

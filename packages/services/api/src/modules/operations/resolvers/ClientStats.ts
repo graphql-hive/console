@@ -3,26 +3,36 @@ import { OperationsManager } from '../providers/operations-manager';
 import type { ClientStatsResolvers } from './../../../__generated__/types';
 
 export const ClientStats: ClientStatsResolvers = {
-  totalRequests: ({ organization, project, target, period, clientName }, _, { injector }) => {
+  totalRequests: (
+    { organization, project, target, period, graph, clientName },
+    _,
+    { injector },
+  ) => {
     return injector.get(OperationsManager).countRequestsAndFailures({
       organizationId: organization,
       projectId: project,
       targetId: target,
       period,
+      graph,
       clients: clientName === 'unknown' ? ['unknown', ''] : [clientName],
     });
   },
-  totalVersions: ({ organization, project, target, period, clientName }, _, { injector }) => {
+  totalVersions: (
+    { organization, project, target, period, graph, clientName },
+    _,
+    { injector },
+  ) => {
     return injector.get(OperationsManager).countClientVersions({
       organizationId: organization,
       projectId: project,
       targetId: target,
       period,
+      graph,
       clientName,
     });
   },
   requestsOverTime: (
-    { organization, project, target, period, clientName },
+    { organization, project, target, period, graph, clientName },
     { resolution },
     { injector },
   ) => {
@@ -31,12 +41,13 @@ export const ClientStats: ClientStatsResolvers = {
       projectId: project,
       organizationId: organization,
       period,
+      graph,
       resolution,
       clients: clientName === 'unknown' ? ['unknown', ''] : [clientName],
     });
   },
   operations: async (
-    { organization, project, target, period, clientName },
+    { organization, project, target, period, graph, clientName },
     _args,
     { injector },
   ) => {
@@ -47,6 +58,7 @@ export const ClientStats: ClientStatsResolvers = {
         projectId: project,
         targetId: target,
         period,
+        graph,
         clients: clientName === 'unknown' ? ['unknown', ''] : [clientName],
       }),
       operationsManager.readDetailedDurationMetrics({
@@ -54,6 +66,7 @@ export const ClientStats: ClientStatsResolvers = {
         projectId: project,
         targetId: target,
         period,
+        graph,
         clients: clientName === 'unknown' ? ['unknown', ''] : [clientName],
       }),
     ]);
@@ -83,12 +96,17 @@ export const ClientStats: ClientStatsResolvers = {
       },
     };
   },
-  versions: ({ organization, project, target, period, clientName }, { limit }, { injector }) => {
+  versions: (
+    { organization, project, target, period, graph, clientName },
+    { limit },
+    { injector },
+  ) => {
     return injector.get(OperationsManager).readClientVersions({
       targetId: target,
       projectId: project,
       organizationId: organization,
       period,
+      graph,
       clientName,
       limit,
     });

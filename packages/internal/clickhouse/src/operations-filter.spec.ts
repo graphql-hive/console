@@ -20,6 +20,24 @@ describe('buildOperationsFilterSQLConditions', () => {
     ).toEqual([`(hash) NOT IN (['h1'])`]);
   });
 
+  test('operations (include, binary hash column)', () => {
+    expect(
+      render(buildOperationsFilterSQLConditions({ operations: ['h1'], hashEncoding: 'binary' })),
+    ).toEqual([`(hash) IN (arrayMap(h -> unhex(h), ['h1']))`]);
+  });
+
+  test('operations (exclude, binary hash column)', () => {
+    expect(
+      render(
+        buildOperationsFilterSQLConditions({
+          operations: ['h1'],
+          excludeOperations: true,
+          hashEncoding: 'binary',
+        }),
+      ),
+    ).toEqual([`(hash) NOT IN (arrayMap(h -> unhex(h), ['h1']))`]);
+  });
+
   test('clients (plain array)', () => {
     expect(render(buildOperationsFilterSQLConditions({ clients: ['web', 'mobile'] }))).toEqual([
       `client_name IN (['web', 'mobile'])`,

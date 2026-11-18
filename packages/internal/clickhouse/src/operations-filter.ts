@@ -1,3 +1,4 @@
+import { hashList, type HashEncoding } from './hash-encoding';
 import { sql, type SqlValue } from './sql';
 
 export type OperationsFilterInput = {
@@ -11,6 +12,11 @@ export type OperationsFilterInput = {
   excludeClientVersionFilters?: boolean;
   /** Table alias; when set, columns are prefixed `${namespace}.` (e.g. for aliased/joined queries). */
   namespace?: string;
+  /**
+   * How the queried table stores `hash` (`operations` are always md5 hex). Defaults to `hex`.
+   * Comparing a binary `FixedString(16)` hash with hex strings throws `TOO_LARGE_STRING_SIZE`.
+   */
+  hashEncoding?: HashEncoding;
 };
 
 /**
@@ -29,16 +35,18 @@ export function buildOperationsFilterSQLConditions(input: OperationsFilterInput)
     excludeOperations,
     excludeClientVersionFilters,
     namespace,
+    hashEncoding = 'hex',
   } = input;
 
   const columnPrefix = sql.raw(namespace ? `${namespace}.` : '');
   const conditions: SqlValue[] = [];
 
   if (operations?.length) {
+    const hashes = hashList(operations, hashEncoding);
     if (excludeOperations) {
-      conditions.push(sql`(${columnPrefix}hash) NOT IN (${sql.array(operations, 'String')})`);
+      conditions.push(sql`(${columnPrefix}hash) NOT IN (${hashes})`);
     } else {
-      conditions.push(sql`(${columnPrefix}hash) IN (${sql.array(operations, 'String')})`);
+      conditions.push(sql`(${columnPrefix}hash) IN (${hashes})`);
     }
   }
 

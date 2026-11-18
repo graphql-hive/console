@@ -16,6 +16,7 @@ import { ConstDirectiveNode, DEFAULT_DEPRECATION_REASON, DocumentNode, Kind, pri
 import type { DateRange } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import { OperationsManager } from '../operations/providers/operations-manager';
+import type { GraphSelector } from '../operations/providers/operations-reader';
 import { TargetSelector } from '../shared/providers/storage';
 import { SuperGraphInformation } from './lib/federation-super-graph';
 
@@ -27,7 +28,7 @@ export function withUsedByClients<
   input: Record<string, T>,
   deps: {
     operationsManager: OperationsManager;
-    selector: TargetSelector;
+    selector: TargetSelector & { graph: GraphSelector | null };
     period: DateRange;
     typename: string;
   },
@@ -39,6 +40,7 @@ export function withUsedByClients<
     organizationId: string;
     projectId: string;
     targetId: string;
+    graph: GraphSelector | null;
     typename: string;
   }
 > {
@@ -73,6 +75,7 @@ export function withUsedByClients<
         organizationId: deps.selector.organizationId,
         projectId: deps.selector.projectId,
         targetId: deps.selector.targetId,
+        graph: deps.selector.graph,
         ...record,
         usedByClients() {
           if (record.isUsed === false) {
@@ -96,6 +99,7 @@ export function withUsedByClients<
       organizationId: string;
       projectId: string;
       targetId: string;
+      graph: GraphSelector | null;
       typename: string;
     }
   >;
@@ -378,6 +382,7 @@ export function usage(
         organizationId: usage.organizationId,
         projectId: usage.projectId,
         targetId: usage.targetId,
+        graph: usage.graph,
         coordinate: coordinate,
       };
     }
@@ -405,6 +410,7 @@ export function usage(
           organizationId: coordinateUsage.organizationId,
           projectId: coordinateUsage.projectId,
           targetId: coordinateUsage.targetId,
+          graph: coordinateUsage.graph,
           coordinate: coordinate,
         }
       : {

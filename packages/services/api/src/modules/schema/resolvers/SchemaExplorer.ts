@@ -44,6 +44,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
           projectId: source.usage.projectId,
           targetId: source.usage.targetId,
           period: source.usage.period,
+          graph: source.usage.graph,
         })
         .then(usage =>
           withUsedByClients(usage, {
@@ -169,6 +170,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
           organizationId: usage.organizationId,
           projectId: usage.projectId,
           period: usage.period,
+          graph: usage.graph,
         });
 
         return withUsedByClients(stats, {
@@ -313,6 +315,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
             projectId: usage.projectId,
             targetId: usage.targetId,
             period: usage.period,
+            graph: usage.graph,
           })
           .then(stats =>
             withUsedByClients(stats, {
@@ -356,6 +359,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
             projectId: usage.projectId,
             targetId: usage.targetId,
             period: usage.period,
+            graph: usage.graph,
           })
           .then(stats =>
             withUsedByClients(stats, {
@@ -399,6 +403,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
             projectId: usage.projectId,
             targetId: usage.targetId,
             period: usage.period,
+            graph: usage.graph,
           })
           .then(stats =>
             withUsedByClients(stats, {

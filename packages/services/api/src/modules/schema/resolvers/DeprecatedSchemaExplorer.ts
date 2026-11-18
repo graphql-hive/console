@@ -14,6 +14,7 @@ export const DeprecatedSchemaExplorer: DeprecatedSchemaExplorerResolvers = {
           organizationId: usage.organizationId,
           projectId: usage.projectId,
           period: usage.period,
+          graph: usage.graph,
         });
 
         return withUsedByClients(stats, {

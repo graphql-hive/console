@@ -15,6 +15,7 @@ export const SchemaCoordinateUsage: SchemaCoordinateUsageResolvers = {
         targetId: source.targetId,
         coordinate: source.coordinate,
         period: source.period,
+        graph: source.graph,
         limit,
       })
       .then(operations =>

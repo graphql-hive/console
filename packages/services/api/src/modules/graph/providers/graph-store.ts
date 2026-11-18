@@ -146,6 +146,34 @@ export class GraphStore {
     return this.findGraphForTargetIdByNameBatched({ targetId, graphName });
   }
 
+  private findGraphByIdBatched = batch<string, Graph | null>(async ids => {
+    this.logger.debug('find graphs by ids (ids=%o)', ids);
+
+    const records = await this.pg.any(
+      psql`/* findGraphByIdBatched */
+        SELECT
+          ${graphFields}
+        FROM
+          "graphs"
+        WHERE
+          "id" = ANY(${psql.array(Array.from(new Set(ids)), 'uuid')})
+      `,
+    );
+
+    const graphById = new Map();
+
+    for (const record of records) {
+      const graph = GraphModel.parse(record);
+      graphById.set(graph.id, graph);
+    }
+
+    return ids.map(id => graphById.get(id) ?? null);
+  });
+
+  findGraphById(id: string): Promise<Graph | null> {
+    return this.findGraphByIdBatched(id);
+  }
+
   async findGraphForSchemaVersion(schemaVersion: SchemaVersion): Promise<Graph | null> {
     const query = psql`/* findGraphForSchemaVersion */
       SELECT

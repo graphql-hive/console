@@ -35,14 +35,35 @@ describe('OperationsReader.createFilter (characterization)', () => {
 
   test('operations (include)', () => {
     expect(
-      render(reader.createFilter({ target: 't1', operations: ['h1', 'h2'] })),
+      render(reader.createFilter({ target: 't1', operations: ['h1', 'h2'], hashEncoding: 'hex' })),
     ).toMatchInlineSnapshot(`PREWHERE target = 't1' AND (hash) IN (['h1', 'h2'])`);
   });
 
   test('operations (exclude)', () => {
     expect(
-      render(reader.createFilter({ target: 't1', operations: ['h1'], excludeOperations: true })),
+      render(
+        reader.createFilter({
+          target: 't1',
+          operations: ['h1'],
+          excludeOperations: true,
+          hashEncoding: 'hex',
+        }),
+      ),
     ).toMatchInlineSnapshot(`PREWHERE target = 't1' AND (hash) NOT IN (['h1'])`);
+  });
+
+  test('operations (binary hash column)', () => {
+    expect(
+      render(reader.createFilter({ target: 't1', operations: ['h1'], hashEncoding: 'binary' })),
+    ).toMatchInlineSnapshot(
+      `PREWHERE target = 't1' AND (hash) IN (arrayMap(h -> unhex(h), ['h1']))`,
+    );
+  });
+
+  test('operations without hashEncoding throws', () => {
+    expect(() => reader.createFilter({ target: 't1', operations: ['h1'] })).toThrow(
+      '`hashEncoding` is required',
+    );
   });
 
   test('clients (plain array)', () => {
@@ -121,6 +142,7 @@ describe('OperationsReader.createFilter (characterization)', () => {
       target: 't1',
       period,
       operations: ['h1'],
+      hashEncoding: 'hex',
       clients: ['web'],
       clientVersionFilters: [{ clientName: 'web', versions: ['1.0'] }],
       excludeOperations: false,
@@ -212,6 +234,7 @@ describe('OperationsReader.createFilter (characterization)', () => {
           reader.createFilter({
             target: 't1',
             operations: ['h1'],
+            hashEncoding: 'hex',
             clients: ['web'],
             coordinateScope: { table, scopes: [['Query.me']] },
             extra: [sql`total > 0`],
@@ -239,7 +262,14 @@ describe('OperationsReader.createFilter (characterization)', () => {
 
   test('skipWhere omits the PREWHERE keyword', () => {
     expect(
-      render(reader.createFilter({ target: 't1', operations: ['h1'], skipWhere: true })),
+      render(
+        reader.createFilter({
+          target: 't1',
+          operations: ['h1'],
+          skipWhere: true,
+          hashEncoding: 'hex',
+        }),
+      ),
     ).toMatchInlineSnapshot(`target = 't1' AND (hash) IN (['h1'])`);
   });
 });
