@@ -40,6 +40,7 @@ export default defineConfig({
         test: {
           name: 'yoga-6',
           include: ['packages/libraries/yoga/tests/**/*.spec.ts'],
+          // only alias test-side deps here, never runtime deps of `@graphql-hive/yoga` or the alias hides real version mismatches
           alias: {
             'graphql-yoga': yogaRequire.resolve('graphql-yoga-6'),
             '@graphql-yoga/plugin-defer-stream': yogaRequire.resolve(
@@ -50,9 +51,6 @@ export default defineConfig({
             ),
             '@graphql-yoga/plugin-graphql-sse': yogaRequire.resolve(
               '@graphql-yoga-6/plugin-graphql-sse',
-            ),
-            '@graphql-yoga/plugin-persisted-operations': yogaRequire.resolve(
-              '@graphql-yoga-6/plugin-persisted-operations',
             ),
             '@graphql-yoga/plugin-response-cache': yogaRequire.resolve(
               '@graphql-yoga-6/plugin-response-cache',

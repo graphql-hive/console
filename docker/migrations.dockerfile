@@ -1,7 +1,8 @@
 ARG NODE_VERSION_TAG
 FROM node${NODE_VERSION_TAG}
 
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+# The node base image lags behind Debian security updates; upgrade so OS-level CVE fixes land without waiting for a new node image.
+RUN apt-get update && apt-get upgrade -y && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Migrations execute Node.js directly and do not need package managers at runtime.
 RUN rm -rf /usr/local/lib/node_modules/npm \

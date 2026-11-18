@@ -10,6 +10,7 @@ import * as GraphQLSchema from '../../../__generated__/types';
 import { Organization, Project } from '../../../shared/entities';
 import { isUUID } from '../../../shared/is-uuid';
 import { APP_DEPLOYMENTS_ENABLED } from '../../app-deployments/providers/app-deployments-enabled-token';
+import { AuditLogApiConfig } from '../../audit-logs/providers/audit-log-api-config';
 import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import {
   getPermissionGroup,
@@ -194,6 +195,7 @@ export class OrganizationAccessTokens {
     @Inject(OTEL_TRACING_ENABLED) private otelTracingEnabled: boolean,
     @Inject(APP_DEPLOYMENTS_ENABLED) private appDeploymentsEnabled: boolean,
     @Inject(SCHEMA_PROPOSALS_ENABLED) private schemaProposalsEnabled: boolean,
+    private auditLogApiConfig: AuditLogApiConfig,
     private oidcConfig: OIDCIntegrationConfig,
   ) {
     this.logger = logger.child({
@@ -1005,7 +1007,8 @@ export class OrganizationAccessTokens {
       (!isAppDeploymentsEnabled && id.startsWith('appDeployment:')) ||
       (!isOTELTracingEnabled && id.startsWith('traces:')) ||
       (!isSchemaProposalsEnabled && id.startsWith('schemaProposal:')) ||
-      (!isSCIMProvisioningEnabled && id.startsWith('scim:provision'))
+      (!isSCIMProvisioningEnabled && id.startsWith('scim:provision')) ||
+      (!this.auditLogApiConfig.isEnabled && id === 'auditLog:describe')
         ? false
         : true;
   }

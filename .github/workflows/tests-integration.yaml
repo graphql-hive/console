@@ -76,7 +76,7 @@ jobs:
       - name: configure Docker Node.js image tag
         id: node-version-tag
         if: ${{ inputs.dockerize }}
-        run: echo "value=:$(< .node-version)-slim" >> "$GITHUB_OUTPUT"
+        run: echo "value=:$(< .node-version)-trixie-slim" >> "$GITHUB_OUTPUT"
 
       - name: setup environment
         uses: ./.github/actions/setup

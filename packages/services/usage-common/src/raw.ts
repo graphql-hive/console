@@ -11,7 +11,10 @@ export interface RawReport {
 }
 
 export interface RawAppDeploymentUsageTimestampMap {
-  /** key is `${appName}/${appVersion}` */
+  /**
+   * key is `${appName}/${appVersion}`, or `${appName}/${appVersion}/${graphId}/${graphVersionId}`
+   * if the operation was reported with a graph.
+   */
   [key: string]: number;
 }
 
@@ -47,6 +50,9 @@ export interface RawOperationErrors {
   timestamp: number;
   expiresAt?: number;
   errors: { code?: string; coordinate: string }[];
+  metadata?: {
+    graph?: GraphMetadata;
+  };
 }
 
 export type RawSubscriptionOperation = {

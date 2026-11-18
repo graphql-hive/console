@@ -5,6 +5,7 @@ const ENV = 'hive:laboratory:env';
 const OLD_ENV = 'hive:laboratory:environment';
 const ENABLED = 'hive:laboratory:preflightEnabled';
 const OLD_ENABLED = 'hive:laboratory:isPreflightScriptEnabled';
+const ENV_NOTICE = 'hive:laboratory:envNoticePending';
 
 const dump = () =>
   Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i)!)
@@ -16,40 +17,29 @@ afterEach(() => {
 });
 
 describe('migrateLegacyLaboratoryStorage', () => {
-  it('carries primitive GraphiQL variables over as text', () => {
-    localStorage.setItem(
-      OLD_ENV,
-      JSON.stringify({ token: 'abc', retries: 3, debug: true, none: null, nested: { a: 1 } }),
-    );
+  it('deletes the GraphiQL env without carrying it over', () => {
+    localStorage.setItem(OLD_ENV, JSON.stringify({ token: 'abc' }));
 
     migrateLegacyLaboratoryStorage();
 
-    expect(JSON.parse(localStorage.getItem(ENV)!)).toEqual({
-      variables: { token: 'abc', retries: '3', debug: 'true', none: 'null' },
-    });
     expect(localStorage.getItem(OLD_ENV)).toBeNull();
+    expect(localStorage.getItem(ENV)).toBeNull();
   });
 
-  it.each([
-    ['invalid JSON', '{oops'],
-    ['an array', '["a"]'],
-    ['a string', '"a"'],
-    ['null', 'null'],
-  ])('writes no env for %s', (_, raw) => {
+  it('queues the env notice when the GraphiQL env had variables', () => {
+    localStorage.setItem(OLD_ENV, JSON.stringify({ token: 'abc' }));
+
+    migrateLegacyLaboratoryStorage();
+
+    expect(localStorage.getItem(ENV_NOTICE)).toBe('true');
+  });
+
+  it.each(['{}', 'not json', '[]'])('queues no notice for a GraphiQL env of %s', raw => {
     localStorage.setItem(OLD_ENV, raw);
 
     migrateLegacyLaboratoryStorage();
 
-    expect(localStorage.getItem(ENV)).toBeNull();
-  });
-
-  it('does not overwrite an existing lab env', () => {
-    localStorage.setItem(OLD_ENV, '{"token":"old"}');
-    localStorage.setItem(ENV, '{"variables":{"token":"new"}}');
-
-    migrateLegacyLaboratoryStorage();
-
-    expect(localStorage.getItem(ENV)).toBe('{"variables":{"token":"new"}}');
+    expect(localStorage.getItem(ENV_NOTICE)).toBeNull();
   });
 
   it('writes nothing when there is no GraphiQL state', () => {

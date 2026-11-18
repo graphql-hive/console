@@ -138,5 +138,13 @@ export function deployProxy({
         requestTimeout: '60s',
         retriable: true,
       },
+      {
+        name: 'audit-log-api',
+        path: '/audit-log/v1',
+        customRewrite: '/audit-log/v1',
+        service: graphql.service,
+        requestTimeout: '60s',
+        retriable: true,
+      },
     ]);
 }

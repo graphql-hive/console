@@ -48,15 +48,13 @@
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*",
-    "@graphql-hive/logger": "^1.1.0",
-    "@graphql-yoga/plugin-persisted-operations": "^3.24.4"
+    "@graphql-hive/logger": "^1.1.0"
   },
   "devDependencies": {
     "@graphql-tools/schema": "catalog:",
     "@graphql-yoga-6/plugin-defer-stream": "npm:@graphql-yoga/plugin-defer-stream@4.0.1",
     "@graphql-yoga-6/plugin-disable-introspection": "npm:@graphql-yoga/plugin-disable-introspection@3.0.1",
     "@graphql-yoga-6/plugin-graphql-sse": "npm:@graphql-yoga/plugin-graphql-sse@4.0.1",
-    "@graphql-yoga-6/plugin-persisted-operations": "npm:@graphql-yoga/plugin-persisted-operations@4.0.1",
     "@graphql-yoga-6/plugin-response-cache": "npm:@graphql-yoga/plugin-response-cache@4.0.1",
     "@graphql-yoga/plugin-defer-stream": "3.24.4",
     "@graphql-yoga/plugin-disable-introspection": "2.25.4",

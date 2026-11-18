@@ -7,7 +7,7 @@ import { OperationsStats } from '@/components/target/insights/stats';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DateRangePicker, presetLast1Day } from '@/components/ui/date-range-picker';
 import { EmptyList } from '@/components/ui/empty-list';
-import { GraphQLHighlight } from '@/components/ui/graphql-block';
+import { GraphQLHighlight } from '@/components/ui/graphql-highlight';
 import { Link } from '@/components/ui/link';
 import { Meta } from '@/components/ui/meta';
 import { Subtitle, Title } from '@/components/ui/page';

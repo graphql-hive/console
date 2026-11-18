@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
+import { createElement } from 'react';
 import { layoutFixtures, SLUGS } from '@/lib/testing/fixtures/layouts';
 import { renderAtUrl } from '@/lib/testing/router';
-import { pickOption } from '@/lib/testing/select';
 import { createTestClient } from '@/lib/testing/urql';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 
 // The tree imports every page; these stand in for what cannot load under jsdom.
 vi.mock('@/env/frontend', () => import('@/lib/testing/mocks/env'));
@@ -14,14 +14,14 @@ vi.mock(
 );
 vi.mock('@/components/schema-editor', async importOriginal => ({
   ...(await importOriginal<typeof import('@/components/schema-editor')>()),
-  SchemaEditor: () => null,
+  SchemaEditor: (props: { value: string }) =>
+    createElement('pre', { 'data-testid': 'sdl' }, props.value),
 }));
 vi.mock('@/lib/auth/session', () => import('@/lib/testing/mocks/auth-session'));
 
 const SCHEMA_PAGE = `/${SLUGS.organizationSlug}/${SLUGS.projectSlug}/${SLUGS.targetSlug}`;
 
-/** A federation project whose latest version has a `users` and a `products` service. */
-function schemaPage() {
+function schemaPage(type: 'FEDERATION' | 'STITCHING') {
   const edges = ['users', 'products'].map(service => ({
     __typename: 'SchemaEdge',
     node: {
@@ -37,7 +37,7 @@ function schemaPage() {
     project: {
       __typename: 'Project',
       id: 'project-1',
-      type: 'FEDERATION',
+      type,
       target: {
         __typename: 'Target',
         id: 'target-1',
@@ -47,62 +47,38 @@ function schemaPage() {
           id: 'version-42',
           schemas: { __typename: 'SchemaConnection', edges },
         },
+        latestValidSchemaVersion: {
+          __typename: 'SchemaVersion',
+          id: 'version-42',
+          sdl: 'type Query { api: String }',
+          supergraph: null,
+        },
       },
     },
   };
 }
 
-function client() {
-  return createTestClient(new Map([...layoutFixtures(), ['TargetSchemaPageQuery', schemaPage()]]));
+function client(type: 'FEDERATION' | 'STITCHING') {
+  return createTestClient(
+    new Map([...layoutFixtures(), ['TargetSchemaPageQuery', schemaPage(type)]]),
+  );
 }
 
-// The select's trigger echoes the picked name, so a service is its header's deep-link anchor.
-const serviceHeader = (name: string) => document.getElementById(`service-${name}`);
-const clearButton = () => screen.queryByRole('button', { name: 'Clear service' });
+const pressed = (name: string) => screen.queryByRole('button', { name, pressed: true });
 
 describe('target schema page', () => {
-  // The SDL viewer virtualizes with observers jsdom does not have; nothing here scrolls.
-  beforeEach(() => {
-    class NoopObserver {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-      takeRecords() {
-        return [];
-      }
-    }
-    vi.stubGlobal('IntersectionObserver', NoopObserver);
-    vi.stubGlobal('ResizeObserver', NoopObserver);
-  });
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  it('lands on the service view from an old ?service= link', { timeout: 30_000 }, async () => {
+    renderAtUrl(`${SCHEMA_PAGE}?service=products`, { client: client('FEDERATION') });
+
+    await waitFor(() => expect(screen.getByTestId('sdl').textContent).toContain('products'));
+    expect(pressed('Service')).toBeTruthy();
   });
 
-  it('filters the services to the one picked, and clears back', { timeout: 30_000 }, async () => {
-    const { router } = renderAtUrl(SCHEMA_PAGE, { client: client() });
-    await waitFor(() => expect(serviceHeader('users')).toBeTruthy());
-    expect(serviceHeader('products')).toBeTruthy();
-    expect(clearButton()).toBeNull();
+  it('offers no supergraph for a stitching project', { timeout: 30_000 }, async () => {
+    renderAtUrl(`${SCHEMA_PAGE}?view=supergraph`, { client: client('STITCHING') });
 
-    await pickOption('Service', /^products/);
-
-    await waitFor(() => expect(router.state.location.search).toEqual({ service: 'products' }));
-    await waitFor(() => expect(serviceHeader('users')).toBeNull());
-    expect(serviceHeader('products')).toBeTruthy();
-    expect(clearButton()).toBeTruthy();
-
-    fireEvent.click(clearButton()!);
-
-    await waitFor(() => expect(router.state.location.search).toEqual({}));
-    await waitFor(() => expect(serviceHeader('users')).toBeTruthy());
-    expect(serviceHeader('products')).toBeTruthy();
-    expect(clearButton()).toBeNull();
-  });
-
-  it('lands filtered from a deep link', { timeout: 30_000 }, async () => {
-    renderAtUrl(`${SCHEMA_PAGE}?service=users`, { client: client() });
-    await waitFor(() => expect(serviceHeader('users')).toBeTruthy());
-    expect(serviceHeader('products')).toBeNull();
-    expect(clearButton()).toBeTruthy();
+    await waitFor(() => expect(screen.getByTestId('sdl').textContent).toContain('api'));
+    expect(pressed('API schema')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Supergraph' })).toBeNull();
   });
 });
