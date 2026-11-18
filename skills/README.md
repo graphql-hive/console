@@ -4,9 +4,9 @@ Agent skills that teach coding agents how to use GraphQL Hive. They follow the
 [Agent Skills](https://skills.sh) format: each skill is a folder with a `SKILL.md` and optional
 `references/`, `scripts/` and `evals/`.
 
-| Skill                  | Use it for                                                                                                                                                                        |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`hive-debug-cli`](./hive-debug-cli) | Automatically debug Hive CLI errors.  |
+| Skill                                | Use it for                           |
+| ------------------------------------ | ------------------------------------ |
+| [`hive-debug-cli`](./hive-debug-cli) | Automatically debug Hive CLI errors. |
 
 ## Install
 

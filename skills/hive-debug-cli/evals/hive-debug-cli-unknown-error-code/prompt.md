@@ -7,5 +7,5 @@ allowed_tools: [WebFetch]
 
 What does this hive-cli error mean?
 
-$ hive schema:publish schema.graphql --service search
-Error 999: Unexpected internal failure during publish.
+$ hive schema:publish schema.graphql --service search Error 999: Unexpected internal failure during
+publish.
