@@ -51,9 +51,6 @@ export default defineConfig({
             '@graphql-yoga/plugin-graphql-sse': yogaRequire.resolve(
               '@graphql-yoga-6/plugin-graphql-sse',
             ),
-            '@graphql-yoga/plugin-persisted-operations': yogaRequire.resolve(
-              '@graphql-yoga-6/plugin-persisted-operations',
-            ),
             '@graphql-yoga/plugin-response-cache': yogaRequire.resolve(
               '@graphql-yoga-6/plugin-response-cache',
             ),
