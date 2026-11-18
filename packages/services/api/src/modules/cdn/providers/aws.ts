@@ -209,8 +209,8 @@ export class AwsClient {
       headers: signed.init.headers,
       responseType: 'text',
       retry: signed.init.retry ?? {
-        // By default in GOT
-        limit: 2,
+        backoffLimit: 4000,
+        limit: 5,
         // By default in GOT
         methods: ['GET', 'PUT', 'HEAD', 'DELETE', 'OPTIONS', 'TRACE'],
         // By default in GOT
