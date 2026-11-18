@@ -37,6 +37,7 @@ import {
 } from '../../shared/providers/storage';
 import { TargetManager } from '../../target/providers/target-manager';
 import { TargetStore } from '../../target/providers/target-store';
+import { parseCliAuthor } from '../lib/parse-cli-author';
 import { SCHEMA_MODULE_CONFIG, type SchemaModuleConfig } from './config';
 import { Contracts } from './contracts';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
@@ -890,6 +891,14 @@ export class SchemaManager {
     return true;
   }
 
+  private isSchemaCheckAuthoredBy(schemaCheck: SchemaCheck, user: User | null) {
+    if (!user || !schemaCheck.meta) {
+      return false;
+    }
+
+    return parseCliAuthor(schemaCheck.meta.author).email.toLowerCase() === user.email.toLowerCase();
+  }
+
   async getFailedSchemaCheckCanBeApprovedByViewer(
     schemaCheck: SchemaCheck & {
       selector: {
@@ -921,6 +930,10 @@ export class SchemaManager {
     });
 
     if (isAllowedToApproveFailedSchemaCheck === false) {
+      return false;
+    }
+
+    if (this.isSchemaCheckAuthoredBy(schemaCheck, await this.session.getViewer())) {
       return false;
     }
 
@@ -992,6 +1005,14 @@ export class SchemaManager {
       return {
         type: 'error',
         reason: 'Schema check has composition errors.',
+      } as const;
+    }
+
+    if (this.isSchemaCheckAuthoredBy(schemaCheck, viewer)) {
+      this.logger.debug('Schema check can not be approved by its author. (args=%o)', args);
+      return {
+        type: 'error',
+        reason: 'The change author cannot approve their own failing schema check.',
       } as const;
     }
 
