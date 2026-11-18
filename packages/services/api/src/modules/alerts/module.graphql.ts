@@ -9,7 +9,8 @@ export default gql`
     disableAlertChannel(input: DisableAlertChannelInput!): DisableAlertChannelResult!
     """
     Sends one test notification to the given destination, saved on the channel or not. It is not
-    part of the channel's deliveries. Limited to 10 per minute for each channel.
+    part of the channel's deliveries. Limited to 10 per minute for each channel when rate limiting
+    is enabled.
     """
     testDeliveryChannel(input: TestDeliveryChannelInput!): TestDeliveryChannelResult!
     addAlert(input: AddAlertInput!): AddAlertResult!

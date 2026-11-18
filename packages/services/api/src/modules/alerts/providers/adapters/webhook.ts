@@ -1,7 +1,10 @@
 import { Injectable, Scope } from 'graphql-modules';
 import { getRequestId } from '@hive/service-common';
 import { TaskScheduler } from '@hive/workflows/kit';
-import { SchemaChangeNotificationTask } from '@hive/workflows/tasks/schema-change-notification';
+import {
+  buildWebhookRequest,
+  SchemaChangeNotificationTask,
+} from '@hive/workflows/tasks/schema-change-notification';
 import { HiveHttpClientError, HttpClient } from '../../../shared/providers/http-client';
 import { Logger } from '../../../shared/providers/logger';
 import { HiveConsoleReleaseVersion, RequestBrokerConfig } from '../../../shared/providers/tokens';
@@ -68,11 +71,10 @@ export class WebhookCommunicationAdapter implements CommunicationAdapter {
       endpoint: input.destination,
       event: createTestSchemaChangeEvent(input.organization, input.project),
     });
-    const headers = {
-      Accept: 'application/json',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Content-Type': 'application/json',
-      ...buildHiveTestWebhookHeaders({
+    const request = buildWebhookRequest(this.requestBroker.config, {
+      endpoint: input.destination,
+      data: event,
+      headers: buildHiveTestWebhookHeaders({
         requestId: getRequestId() ?? null,
         event: 'schema_change',
         targetId: event.target.id,
@@ -80,38 +82,23 @@ export class WebhookCommunicationAdapter implements CommunicationAdapter {
         release: this.release.valueOf(),
         idempotencyKey: input.idempotencyKey,
       }),
-    };
-    const options = {
-      timeout: { request: TEST_NOTIFICATION_TIMEOUT_MS },
-      context: { logger: this.logger },
-    };
-    const broker = this.requestBroker.config;
+    });
 
     return attemptTestNotification(
       this.logger,
       () =>
-        broker
-          ? this.httpClient.postWithResponse(broker.endpoint, {
-              ...options,
-              headers: { Accept: 'text/plain', 'x-hive-signature': broker.signature },
-              json: {
-                url: input.destination,
-                method: 'POST',
-                headers,
-                body: JSON.stringify(event),
-                resolveResponseBody: false,
-              },
-            })
-          : this.httpClient.postWithResponse(input.destination, {
-              ...options,
-              headers,
-              json: event,
-            }),
+        this.httpClient.postWithResponse(request.url, {
+          headers: request.headers,
+          json: request.json,
+          timeout: { request: TEST_NOTIFICATION_TIMEOUT_MS },
+          context: { logger: this.logger },
+        }),
       describeWebhookError,
     );
   }
 }
 
+/** Mirrors `describeWebhookError` in the workflows `send-webhook.ts`, for the API's HTTP client. */
 function describeWebhookError(error: unknown): DeliveryOutcome | null {
   if (!(error instanceof HiveHttpClientError)) {
     return null;

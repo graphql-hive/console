@@ -4,6 +4,8 @@ import { buildHiveWebhookHeaders } from '../lib/delivery-metadata.js';
 import { sendWebhook } from '../lib/webhooks/send-webhook.js';
 import { SchemaChangeNotification } from '../webhooks/schema-change-notification.js';
 
+export { buildWebhookRequest } from '../lib/webhooks/send-webhook.js';
+
 export const SchemaChangeNotificationTask = defineTask({
   name: 'schemaChangeNotification',
   schema: SchemaChangeNotification,
