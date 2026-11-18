@@ -1732,7 +1732,18 @@ const ActiveSchemaCheck = (props: { schemaCheckId: string | null }): React.React
                     />
                   }
                 />
-              ) : null}
+              ) : (
+                <Tooltip
+                  trigger={
+                    <span className="inline-flex">
+                      <Button variant="destructive" disabled>
+                        Approve <ChevronDown className="ml-2 size-4" />
+                      </Button>
+                    </span>
+                  }
+                  content="You cannot approve this schema check. Either you lack the permission to approve schema checks, or you are the author of the change."
+                />
+              )}
             </div>
           ) : null}
         </div>
