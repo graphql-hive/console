@@ -333,33 +333,29 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
               'documentId' in params && typeof params.documentId === 'string'
                 ? params.documentId
                 : new URL(request.url).searchParams.get('documentId');
-            if (!key) {
-              throw new GraphQLError('Persisted document not found.', {
-                extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
-              });
-            }
-
-            let document: string | null;
-            try {
-              document = await persistedDocuments.resolve(key, {
-                waitUntil: context.waitUntil,
-              });
-            } catch (error) {
-              if (
-                error &&
-                typeof error === 'object' &&
-                'code' in error &&
-                error.code === 'INVALID_DOCUMENT_ID' &&
-                'message' in error &&
-                typeof error.message === 'string'
-              ) {
-                throw new GraphQLError(error.message, {
-                  extensions: { code: 'INVALID_DOCUMENT_ID' },
+            let document: string | null = null;
+            if (key) {
+              try {
+                document = await persistedDocuments.resolve(key, {
+                  waitUntil: context.waitUntil,
                 });
+              } catch (error) {
+                if (
+                  error &&
+                  typeof error === 'object' &&
+                  'code' in error &&
+                  error.code === 'INVALID_DOCUMENT_ID' &&
+                  'message' in error &&
+                  typeof error.message === 'string'
+                ) {
+                  throw new GraphQLError(error.message, {
+                    extensions: { code: 'INVALID_DOCUMENT_ID' },
+                  });
+                }
+                throw error;
               }
-              throw error;
             }
-            if (!document) {
+            if (!key || !document) {
               throw new GraphQLError('Persisted document not found.', {
                 extensions: { code: 'PERSISTED_DOCUMENT_NOT_FOUND' },
               });
