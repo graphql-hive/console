@@ -1,5 +1,6 @@
 import Redis from 'ioredis-mock';
 import 'reflect-metadata';
+import { Lock } from 'redlock';
 import { Logger } from '../providers/logger';
 import { Mutex } from '../providers/mutex';
 
@@ -85,9 +86,8 @@ it('should keep auto-extending lock until unlock', async ({ expect }) => {
 
   const unlock = await mutex.lock('1', {
     signal,
-    autoExtendThreshold: 100,
-    // duration needs to be 100ms more than the autoExtendThreshold
     duration: 200,
+    extendInterval: 50,
   });
 
   await sleep(600); // extended at least 2 times
@@ -101,6 +101,42 @@ it('should keep auto-extending lock until unlock', async ({ expect }) => {
 
   // only after unlock can the second lock be acquired
   await expect(lock2).resolves.toBeTruthy();
+});
+
+it('should retry a failed lock extension while the lock is still valid', async ({ expect }) => {
+  const mutex = new Mutex(new Tlogger(), new Redis(differentPort()));
+  const [signal] = createSignal();
+
+  const realExtend = Lock.prototype.extend;
+  const extendSpy = vi
+    .spyOn(Lock.prototype, 'extend')
+    .mockImplementationOnce(() => Promise.reject(new Error('Redis hiccup')))
+    .mockImplementation(function (this: Lock, duration: number) {
+      return realExtend.call(this, duration);
+    });
+
+  try {
+    const unlock = await mutex.lock('1', {
+      signal,
+      duration: 200,
+      extendInterval: 50,
+    });
+
+    await sleep(600); // well past the original lock duration
+
+    expect(extendSpy.mock.calls.length).toBeGreaterThan(2);
+
+    const lock2 = mutex.lock('1', { signal: createSignal()[0] });
+
+    // the lock survived the failed extension
+    await expect(Promise.race([throwAfter(50), lock2])).rejects.toBeTruthy();
+
+    await unlock();
+
+    await expect(lock2).resolves.toBeTruthy();
+  } finally {
+    extendSpy.mockRestore();
+  }
 });
 
 class Tlogger implements Logger {
