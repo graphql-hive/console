@@ -34,11 +34,15 @@ export interface MutexLockOptions {
    */
   retryDelay?: number;
   /**
-   * The minimum remaining time in milliseconds on the lock before auto-extension.
+   * How often the lock is extended in milliseconds.
    *
-   * @default 500
+   * Extending early leaves a large safety margin before the lock expires,
+   * so a blocked event loop or a slow Redis does not cause the lock to be lost.
+   * A failed extension is retried until the lock actually expires.
+   *
+   * @default duration / 4
    */
-  autoExtendThreshold?: number;
+  extendInterval?: number;
 }
 
 /** Error indicating that a resource is locked and the lock can not be acquired within the provided time frame. */
@@ -75,7 +79,7 @@ export class Mutex {
       'lock.duration': options.duration,
       'lock.retries': options.retries,
       'lock.retryDelay': options.retryDelay,
-      'lock.autoExtendThreshold': options.autoExtendThreshold,
+      'lock.extendInterval': options.extendInterval,
     }),
     errorAttributes: error => ({
       'error.message': error.message,
@@ -88,7 +92,7 @@ export class Mutex {
       duration = 10_000,
       retries = 30,
       retryDelay = 1_000,
-      autoExtendThreshold = 1_000,
+      extendInterval = Math.floor(duration / 3),
     }: MutexLockOptions,
   ) {
     const { logger } = this;
@@ -189,50 +193,76 @@ export class Mutex {
       throw signal.reason;
     }
 
+    /** How long to wait before retrying a failed lock extension. */
+    const extendRetryDelay = Math.min(500, extendInterval);
+    let released = false;
     let extendTimeout: NodeJS.Timeout | undefined;
     // we have a global timeout of 90 seconds to avoid dead-locks
     const globalTimeout = setTimeout(() => {
       logger.error('Global lock timeout exceeded (id=%s)', id);
-      void cleanup();
+      cleanup();
     }, 90_000);
 
     /** cleanup timers and release the lock. */
     function cleanup() {
-      if (extendTimeout === undefined) {
+      if (released) {
         return;
       }
 
       logger.debug('Releasing lock (id=%s)', id);
+      released = true;
       clearTimeout(extendTimeout);
       clearTimeout(globalTimeout);
 
-      extendTimeout = undefined;
       void lock.release().catch(err => {
         logger.error('Error while releasing lock (id=%s)', id);
         console.error(err);
       });
     }
 
-    async function extendLock(isInitial = false) {
-      if (isInitial === false) {
-        logger.debug('Attempt extending lock (id=%s)', id);
-        try {
-          // NOTE: extending a lock creates a new lock instance, so we need to replace it here.
-          lock = await lock.extend(duration);
-          logger.debug('Lock extension succeeded (id=%s)', id);
-        } catch (err) {
-          logger.error('Failed to extend lock (id=%s)', id);
-          console.error(err);
-          return;
-        }
+    function scheduleExtendLock(delay: number) {
+      extendTimeout = setTimeout(() => void extendLock(), delay);
+    }
+
+    async function extendLock() {
+      if (released) {
+        return;
       }
 
-      extendTimeout = setTimeout(extendLock, lock.expiration - Date.now() - autoExtendThreshold);
+      logger.debug('Attempt extending lock (id=%s)', id);
+      try {
+        // NOTE: extending a lock creates a new lock instance, so we need to replace it here.
+        const extendedLock = await lock.extend(duration);
+        if (released) {
+          // The lock got released while the extension was in flight.
+          // Release the extended lock as well, so it does not linger until it expires.
+          void extendedLock.release().catch(() => {});
+          return;
+        }
+        lock = extendedLock;
+        logger.debug('Lock extension succeeded (id=%s)', id);
+        scheduleExtendLock(extendInterval);
+      } catch (err) {
+        if (released) {
+          return;
+        }
+
+        if (lock.expiration > Date.now()) {
+          // The lock is still valid, so we can retry extending it.
+          logger.warn('Failed to extend lock, retrying (id=%s)', id);
+          console.error(err);
+          scheduleExtendLock(extendRetryDelay);
+          return;
+        }
+
+        logger.error('Failed to extend lock, the lock expired (id=%s)', id);
+        console.error(err);
+      }
     }
 
     logger.debug('Lock acquired (id=%s)', id);
 
-    await extendLock(true);
+    scheduleExtendLock(extendInterval);
 
     return cleanup;
   }
