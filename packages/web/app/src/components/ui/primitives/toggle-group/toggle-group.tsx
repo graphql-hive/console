@@ -20,7 +20,7 @@ const itemVariants = cva(
   [
     'relative flex cursor-pointer items-center justify-center self-stretch font-medium transition-colors',
     'text-fg-muted dark:text-fg-default hover:bg-neutral-4/50 hover:text-fg',
-    'data-[pressed]:bg-neutral-3 dark:data-[pressed]:bg-neutral-5 data-[pressed]:text-fg',
+    'data-[pressed]:bg-neutral-5 data-[pressed]:text-fg',
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
     // The group draws the outer border; items only separate themselves from the one before.
     'first:rounded-l-[inherit] last:rounded-r-[inherit] not-first:border-l not-first:[border-left-color:inherit]',

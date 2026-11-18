@@ -9,6 +9,14 @@ const monaco = vi.hoisted(() => ({ props: undefined as Record<string, unknown> |
 // Monaco cannot mount in jsdom, and skipping its modules keeps the spec fast.
 vi.mock('monaco-editor/esm/vs/editor/editor.api', () => ({}));
 vi.mock('monaco-editor/esm/vs/editor/contrib/readOnlyMessage/browser/contribution.js', () => ({}));
+vi.mock('monaco-editor/esm/vs/base/browser/ui/codicons/codiconStyles.js', () => ({}));
+vi.mock('monaco-editor/esm/vs/editor/contrib/find/browser/findController.js', () => ({}));
+vi.mock('monaco-editor/esm/vs/editor/contrib/folding/browser/folding.js', () => ({}));
+vi.mock('monaco-editor/esm/vs/editor/contrib/gotoSymbol/browser/goToCommands.js', () => ({}));
+vi.mock(
+  'monaco-editor/esm/vs/editor/contrib/gotoSymbol/browser/link/goToDefinitionAtPosition.js',
+  () => ({}),
+);
 vi.mock('monaco-editor/esm/vs/basic-languages/graphql/graphql.contribution.js', () => ({}));
 vi.mock('monaco-editor/esm/vs/language/json/monaco.contribution.js', () => ({}));
 vi.mock('@monaco-editor/react', () => ({
