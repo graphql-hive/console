@@ -65,6 +65,7 @@ const modules = await Promise.all([
   import('./tasks/purge-expired-alert-state-log.js'),
   import('./tasks/purge-target-tokens.js'),
   import('./tasks/flush-target-token-last-used.js'),
+  import('./tasks/disable-failing-alert-channels.js'),
 ]);
 
 const logger = new Logger({ level: env.log.level });
@@ -90,9 +91,10 @@ const pg = await createPostgresDatabasePool({
 logger.info({ pid: process.pid }, 'starting workflow service ' + process.pid);
 
 // Build the crontab. The metric-alerts evaluator queries ClickHouse for
-// metric windows, so its line is only included when ClickHouse is
-// configured. Otherwise the task would silently bail every minute. The
-// state-log purge task only touches Postgres so it stays unconditional.
+// metric windows and the failing-channel sweep reads delivery outcomes from
+// it, so their lines are only included when ClickHouse is configured.
+// Otherwise the tasks would silently bail on every tick. The state-log purge
+// task only touches Postgres so it stays unconditional.
 const crontabLines: string[] = [
   '# Flush target token last-used dates every minute',
   '* * * * * flushTargetTokenLastUsed',
@@ -111,11 +113,15 @@ if (env.clickhouse) {
   crontabLines.push(
     '# Evaluate metric alert rules every minute',
     '* * * * * evaluateMetricAlertRules ?queue=metric-alerts&max=1',
+    // Once an hour is enough for a 48-hour rule; max=1 because the next tick repeats the work.
+    '# Disable alert channels that have been failing for 48 hours',
+    '0 * * * * disableFailingAlertChannels ?max=1',
   );
 } else {
   logger.warn(
-    'ClickHouse not configured — metric alert rules will not be evaluated and outbound ' +
-      'deliveries will not be recorded. Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
+    'ClickHouse not configured — metric alert rules will not be evaluated, outbound ' +
+      'deliveries will not be recorded and failing alert channels will not be disabled. ' +
+      'Set CLICKHOUSE=1 and the CLICKHOUSE_* env vars to enable.',
   );
 }
 crontabLines.push(

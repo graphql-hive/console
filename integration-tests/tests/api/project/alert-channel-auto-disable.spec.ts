@@ -1,10 +1,14 @@
 import 'reflect-metadata';
 import asyncRetry from 'async-retry';
+import { pollFor } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
 import { generateMockEndpoint, getRecordedRequests } from 'testkit/mock-server';
+import { NoopLogger } from '@hive/api/modules/shared/providers/logger';
 import { psql } from '@hive/postgres';
+import { TaskScheduler } from '@hive/workflows/kit';
+import { DisableFailingAlertChannelsTask } from '@hive/workflows/tasks/disable-failing-alert-channels';
 import { clickHouseInsert, flushAsyncInserts } from '../../../testkit/clickhouse';
 import { initSeed } from '../../../testkit/seed';
 
@@ -288,5 +292,67 @@ test.concurrent(
     expect(again.error?.message).toBe('Alert channel not found or already enabled.');
     const unknown = await enableChannel('00000000-0000-0000-0000-000000000000', ownerToken);
     expect(unknown.error?.message).toBe('Alert channel not found or already enabled.');
+  },
+);
+
+test.concurrent(
+  'a channel that has been failing for 48 hours is disabled by the hourly sweep',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg, ownerToken } = await seed.createOwner();
+    const { createProject, organization } = await createOrg();
+    const { project, addAlertChannel } = await createProject(ProjectType.Single);
+    const selector = { organizationSlug: organization.slug, projectSlug: project.slug };
+
+    // Webhook channels: creating one sends no confirmation, so the rows inserted below are the
+    // channel's whole history.
+    const createWebhookChannel = async (name: string) => {
+      const endpoint = await generateMockEndpoint();
+      const created = await addAlertChannel({
+        ...selector,
+        name,
+        type: AlertChannelType.Webhook,
+        webhook: { endpoint: endpoint.url },
+      });
+      if (!created.ok) {
+        throw new Error(created.error?.message ?? 'Expected ok');
+      }
+      return created.ok.addedAlertChannel.id;
+    };
+    const liveId = await createWebhookChannel('live');
+    const deadId = await createWebhookChannel('dead');
+
+    // Ten failures, the oldest 49 hours ago, all after the channel was enabled three days ago:
+    // FAILING for longer than the 48 hours the page announces.
+    await clickHouseInsert(`
+      INSERT INTO "outbound_deliveries" (
+        "timestamp", "organization_id", "delivery_type", "destination", "event", "attempt",
+        "max_attempts", "ok", "status_code", "status_text", "duration_ms", "metadata"
+      )
+      SELECT
+        now() - toIntervalHour(49) + toIntervalMinute(number), '${organization.id}', 'WEBHOOK',
+        '${deadId}', 'schema_change', 1, 1, 0, 404, 'Not Found', 5,
+        map('Hive-Event', 'schema_change')
+      FROM numbers(10)
+    `);
+    await using db = await seed.createDbConnection();
+    await db.pool.query(psql`
+      UPDATE "alert_channels" SET "enabled_at" = now() - interval '3 days' WHERE "id" = ${deadId}
+    `);
+    expect((await readChannel(selector, deadId, ownerToken))?.deliveryHealth).toEqual({
+      status: 'FAILING',
+      failingSince: expect.any(String),
+    });
+
+    // The sweep runs once an hour; enqueue it now instead of waiting for the next tick.
+    await new TaskScheduler(db.pool, new NoopLogger() as any).scheduleTask(
+      DisableFailingAlertChannelsTask,
+      undefined,
+    );
+    await pollFor(
+      async () => (await readChannel(selector, deadId, ownerToken))?.disabledAt != null,
+    );
+    expect((await readChannel(selector, deadId, ownerToken))?.disabledBy).toBeNull();
+    expect((await readChannel(selector, liveId, ownerToken))?.disabledAt).toBeNull();
   },
 );
