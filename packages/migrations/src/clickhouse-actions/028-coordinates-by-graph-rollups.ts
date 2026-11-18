@@ -36,7 +36,8 @@ const createTables = async (
       timestamp DateTime('UTC') CODEC(DoubleDelta, LZ4),
       coordinate String CODEC(ZSTD(1)),
       hash FixedString(16) CODEC(ZSTD(1)),
-      total ${pickUInt(granularity)} CODEC(T64, ZSTD(1))
+      total ${pickUInt(granularity)} CODEC(T64, ZSTD(1)),
+      INDEX idx_typename (substringIndex(coordinate, '.', 1)) TYPE ngrambf_v1(4, 1024, 2, 0) GRANULARITY 1
     )
     ENGINE = SummingMergeTree
     PARTITION BY ${partitionBy}
