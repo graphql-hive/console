@@ -2833,7 +2833,6 @@ export class SchemaPublisher {
           id: logId,
           previousId: diff.previousLog.id,
           serviceName: diff.previousLog.service_name,
-          targetId: args.target.id,
           projectId: args.target.projectId,
           type: 'removed',
         });
@@ -2847,7 +2846,6 @@ export class SchemaPublisher {
           id: diff.newLog.id,
           serviceName: diff.newLog.service_name,
           projectId: args.target.projectId,
-          targetId: args.target.id,
           type: 'added',
         });
         continue;

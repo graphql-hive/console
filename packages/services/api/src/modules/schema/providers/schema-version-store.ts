@@ -1703,7 +1703,6 @@ export class SchemaVersionStore {
           INSERT INTO "schema_log" (
             "id"
             , "project_id"
-            , "target_id"
             , "author"
             , "commit"
             , "service_name"
@@ -1713,13 +1712,12 @@ export class SchemaVersionStore {
             args.schemaLogs.removed.map(log => [
               log.id,
               log.projectId,
-              log.targetId,
               'system',
               'system',
               log.serviceName,
               'DELETE',
             ]),
-            ['uuid', 'uuid', 'uuid', 'text', 'text', 'text', 'text'],
+            ['uuid', 'uuid', 'text', 'text', 'text', 'text'],
           )}
         `;
 
@@ -2149,14 +2147,12 @@ export type SchemaLogDiffInput = {
     id: string;
     previousId: string;
     serviceName: string;
-    targetId: string;
     projectId: string;
     type: 'removed';
   }>;
   added: Array<{
     id: string;
     serviceName: string;
-    targetId: string;
     projectId: string;
     type: 'added';
   }>;
