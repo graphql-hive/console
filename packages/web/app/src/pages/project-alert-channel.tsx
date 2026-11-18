@@ -16,6 +16,7 @@ import { ChannelDetailsPanel } from '@/components/project/alerts/channel-details
 import { ChannelDisabledNotice } from '@/components/project/alerts/channel-disabled-notice';
 import { CHANNEL_TYPE_LABEL } from '@/components/project/alerts/channel-form';
 import { ChannelHealthWarning } from '@/components/project/alerts/channel-health-warning';
+import { ChannelPayloadPreview } from '@/components/project/alerts/channel-payload-preview';
 import { CHANNEL_DELIVERIES_POLL_INTERVAL_MS } from '@/components/project/alerts/channel-polling';
 import { Callout } from '@/components/ui/callout';
 import { Meta } from '@/components/ui/meta';
@@ -24,6 +25,7 @@ import { PageLead } from '@/components/ui/page-lead';
 import { Badge } from '@/components/ui/primitives/badge/badge';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { graphql } from '@/gql';
+import { AlertChannelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
 import { useKeepPreviousData } from '@/lib/hooks/use-keep-previous-data';
 import { useRefetchOnTick } from '@/lib/hooks/use-refetch-on-tick';
@@ -192,7 +194,8 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
             />
           </div>
 
-          <aside className="shrink-0 self-start xl:sticky xl:top-6 xl:w-94">
+          {/* Sticky at xl, so capped to the viewport: the payload gives up height first, then the column scrolls. */}
+          <aside className="flex shrink-0 flex-col gap-6 self-start xl:sticky xl:top-6 xl:max-h-[calc(var(--content-height)-3.5rem)] xl:w-94 xl:overflow-y-auto">
             <ChannelDetailsPanel
               channel={channel}
               onChannelDeleted={() => {
@@ -202,6 +205,7 @@ export function ProjectAlertChannelPage(props: { channelId: string }) {
                 });
               }}
             />
+            {channel.type === AlertChannelType.Webhook && <ChannelPayloadPreview />}
           </aside>
         </div>
       </LayoutContent>
