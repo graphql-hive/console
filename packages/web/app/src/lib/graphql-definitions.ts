@@ -75,10 +75,8 @@ export function indexSdlDefinitions(sdl: string): SdlDefinitionIndex {
       if (!index.types.has(name.value)) {
         index.types.set(name.value, range);
       }
-    } else if (TYPE_EXTENSIONS.has(definition.kind)) {
-      if (!extensions.has(name.value)) {
-        extensions.set(name.value, range);
-      }
+    } else if (TYPE_EXTENSIONS.has(definition.kind) && !extensions.has(name.value)) {
+      extensions.set(name.value, range);
     }
   }
 

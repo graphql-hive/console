@@ -73,7 +73,9 @@ export function SdlViewer(props: {
   };
 
   return (
-    <div className={cn('h-full overflow-hidden rounded-md border bg-surface-card', props.className)}>
+    <div
+      className={cn('h-full overflow-hidden rounded-md border bg-surface-card', props.className)}
+    >
       <SchemaEditor
         value={pretty ?? ''}
         path={props.modelPath}
