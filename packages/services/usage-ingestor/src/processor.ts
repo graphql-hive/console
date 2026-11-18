@@ -143,10 +143,35 @@ export function createProcessor(config: { logger: ServiceLogger }) {
         }
 
         for (const raw of rawReport.errors ?? []) {
+          // `raw.operationMapKey` is an intermediate key of the usage service (includes the target and raw document),
+          // so we need to use the normalized hash in order to match the hash stored in the operations tables.
+          const operationMapRecord = rawReport.map[raw.operationMapKey];
+
+          if (!operationMapRecord) {
+            logger.warn(`Operation map record not found key=%s`, raw.operationMapKey);
+            continue;
+          }
+
+          const [normalizationError, normalizationResult] = errorOkTuple(() =>
+            normalize(operationMapRecord),
+          );
+
+          if (!normalizationResult) {
+            logger.error(normalizationError);
+            continue;
+          }
+
+          const normalized = normalizationResult.value;
+
+          if (normalized === null) {
+            // The operation should be ignored
+            continue;
+          }
+
           const err: ProcessedOperationErrorRecord = {
             errors: raw.errors.map(e => [e.code ?? '', e.coordinate]),
             expires_at: raw.expiresAt || raw.timestamp + RETENTION_FALLBACK * DAY_IN_MS,
-            hash: raw.operationMapKey,
+            hash: normalized.hash,
             target: rawReport.target,
             timestamp: raw.timestamp,
             graph_id: raw.metadata?.graph?.graphId,

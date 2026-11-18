@@ -4,7 +4,7 @@ import { createLogger } from 'graphql-yoga';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import z from 'zod';
-import { createHive } from '../../../packages/libraries/core/src';
+import { createHive, hashOperation } from '../../../packages/libraries/core/src';
 import { clickHouseQuery } from '../../testkit/clickhouse';
 import { waitForExpectations } from '../../testkit/flow';
 import { getServiceHost } from '../../testkit/utils';
@@ -536,6 +536,61 @@ describe('graph', () => {
             errors: 'BOOM:Query.a',
           },
         ]);
+      });
+    },
+  );
+
+  test.concurrent(
+    'operation errors are stored with the same hash as operations and operation collection',
+    async ({ expect }) => {
+      const { target, client } = await setupSDK();
+      // literals and aliases are removed during normalization,
+      // so the raw document differs from the normalized one
+      const document = parse(`
+        query errorHash {
+          aliasedA: a
+          b
+        }
+      `);
+
+      const expectedHash = hashOperation({
+        documentNode: document,
+        operationName: 'errorHash',
+        schema,
+        variables: null,
+      });
+      expect(expectedHash).toEqual(expect.any(String));
+
+      await client.collectUsage().finish(
+        { schema, document, contextValue: contextForClient('error-hash') },
+        {
+          data: { aliasedA: null, b: 'b' },
+          errors: [new GraphQLError('boom', { path: ['aliasedA'], extensions: { code: 'BOOM' } })],
+        },
+      );
+      await client.dispose();
+
+      const HashRowsModel = z.array(z.object({ hash: z.string() }));
+
+      await waitForExpectations(async () => {
+        const result = await clickHouseQuery(`
+          SELECT DISTINCT hash FROM operations WHERE target = '${target.id}'
+        `);
+        expect(HashRowsModel.parse(result.data)).toEqual([{ hash: expectedHash }]);
+      });
+
+      await waitForExpectations(async () => {
+        const result = await clickHouseQuery(`
+          SELECT DISTINCT hash FROM operation_collection WHERE target = '${target.id}'
+        `);
+        expect(HashRowsModel.parse(result.data)).toEqual([{ hash: expectedHash }]);
+      });
+
+      await waitForExpectations(async () => {
+        const result = await clickHouseQuery(`
+          SELECT DISTINCT lower(hex(hash)) AS hash FROM operation_errors WHERE target = '${target.id}'
+        `);
+        expect(HashRowsModel.parse(result.data)).toEqual([{ hash: expectedHash }]);
       });
     },
   );
