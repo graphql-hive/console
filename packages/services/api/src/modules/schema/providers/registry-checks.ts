@@ -25,7 +25,7 @@ import type {
   Project,
 } from './../../../shared/entities';
 import { Logger } from './../../shared/providers/logger';
-import { diffSchemaCoordinates, Inspector, SchemaCoordinatesDiffResult } from './inspector';
+import { Inspector } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import {
@@ -165,7 +165,6 @@ type SchemaDiffFailure = {
     breaking: Array<SchemaChangeType> | null;
     safe: Array<SchemaChangeType> | null;
     all: Array<SchemaChangeType> | null;
-    coordinatesDiff: SchemaCoordinatesDiffResult | null;
   };
   result?: never;
 };
@@ -176,7 +175,6 @@ export type SchemaDiffSuccess = {
     breaking: Array<SchemaChangeType> | null;
     safe: Array<SchemaChangeType> | null;
     all: Array<SchemaChangeType> | null;
-    coordinatesDiff: SchemaCoordinatesDiffResult | null;
   };
   reason?: never;
 };
@@ -560,9 +558,6 @@ export class RegistryChecks {
       this.logger.debug('Skip diff check due to either existing or incoming SDL being absent.');
       return {
         status: 'skipped',
-        data: {
-          coordinatesDiff: incomingSchema ? diffSchemaCoordinates(null, incomingSchema) : null,
-        },
       } satisfies CheckResult;
     }
 
@@ -791,8 +786,6 @@ export class RegistryChecks {
     const safeChanges: Array<SchemaChangeType> = [];
     const breakingChanges: Array<SchemaChangeType> = [];
 
-    const coordinatesDiff = diffSchemaCoordinates(existingSchema, incomingSchema);
-
     for (const change of inspectorChanges) {
       if (change.criticality === CriticalityLevel.Breaking || isFailingDangerousChange(change)) {
         if (change.isSafeBasedOnUsage === true) {
@@ -831,7 +824,6 @@ export class RegistryChecks {
             }
             return null;
           },
-          coordinatesDiff,
         },
       } satisfies SchemaDiffFailure;
     }
@@ -851,7 +843,6 @@ export class RegistryChecks {
           }
           return null;
         },
-        coordinatesDiff,
       },
     } satisfies SchemaDiffSuccess;
   }

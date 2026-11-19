@@ -449,11 +449,6 @@ export class SingleModel {
         changes: diffCheck.result?.all ?? diffCheck.reason?.all ?? null,
         messages,
         breakingChanges: null,
-        coordinatesDiff:
-          diffCheck.result?.coordinatesDiff ??
-          diffCheck.reason?.coordinatesDiff ??
-          diffCheck.data?.coordinatesDiff ??
-          null,
         supergraphChanges: null,
         previousSchemas: null,
         serviceChanges: null,

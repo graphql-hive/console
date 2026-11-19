@@ -3,7 +3,6 @@ import { CompositionFailureError } from '@hive/schema';
 import type { SchemaChangeType, SchemaCompositionError } from '@hive/storage';
 import { ContractGraph } from '../../../graph/providers/graph-store';
 import type { ValidContractVersion } from '../contracts';
-import type { SchemaCoordinatesDiffResult } from '../inspector';
 import type {
   ContractCompositionResult,
   RegistryChecks,
@@ -211,7 +210,6 @@ export type SchemaPublishFailureReason =
       code: (typeof PublishFailureReasonCode)['BreakingChanges'];
       breakingChanges: Array<SchemaChangeType>;
       changes: Array<SchemaChangeType>;
-      coordinatesDiff: SchemaCoordinatesDiffResult;
     };
 
 export type ContractResult = {
@@ -229,7 +227,6 @@ type SchemaPublishSuccess = {
   state: {
     composable: boolean;
     initial: boolean;
-    coordinatesDiff: SchemaCoordinatesDiffResult | null;
     changes: Array<SchemaChangeType> | null;
     serviceChanges: Array<SchemaChangeType> | null;
     supergraphChanges: Array<SchemaChangeType> | null;
@@ -292,7 +289,6 @@ export type SchemaDeleteSuccess = {
     schemas: CompositeSchemaInput[];
     breakingChanges: Array<SchemaChangeType> | null;
     compositionErrors: Array<SchemaCompositionError> | null;
-    coordinatesDiff: SchemaCoordinatesDiffResult | null;
     supergraph: string | null;
     supergraphChanges: Array<SchemaChangeType> | null;
     tags: null | Array<string>;
