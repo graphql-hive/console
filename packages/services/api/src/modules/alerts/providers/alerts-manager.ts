@@ -331,6 +331,17 @@ export class AlertsManager {
       return notSent('A destination is required.');
     }
 
+    const rateLimited = await this.rateLimiter.isOrganizationRateLimited(
+      req,
+      channel.organizationId,
+      `testDeliveryChannel:${channel.id}`,
+      60,
+      MAX_CHANNEL_TESTS_PER_MINUTE,
+    );
+    if (rateLimited) {
+      return notSent('Too many test notifications for this channel. Try again in a minute.');
+    }
+
     let slackToken: string | null = null;
     if (channel.type === 'SLACK') {
       slackToken =
@@ -342,17 +353,6 @@ export class AlertsManager {
       if (!slackToken) {
         return notSent('Connect Slack to the organization first.');
       }
-    }
-
-    const rateLimited = await this.rateLimiter.isOrganizationRateLimited(
-      req,
-      channel.organizationId,
-      `testDeliveryChannel:${channel.id}`,
-      60,
-      MAX_CHANNEL_TESTS_PER_MINUTE,
-    );
-    if (rateLimited) {
-      return notSent('Too many test notifications for this channel. Try again in a minute.');
     }
 
     const [organization, project] = await Promise.all([
