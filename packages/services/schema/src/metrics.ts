@@ -6,6 +6,12 @@ export const composeAndValidateCounter = new metrics.Counter({
   labelNames: ['type'],
 });
 
+export const schemaDiffCounter = new metrics.Counter({
+  name: 'schema_diff_total',
+  help: 'Number of calls to diff schemas',
+  labelNames: ['source' /* composed or service */],
+});
+
 export const schemaCompositionCounter = new metrics.Counter({
   name: 'schema_composition_total',
   help: 'Number of schema compositions',
@@ -17,19 +23,24 @@ const msBuckets = [50, 300, 2_000, 5_000, 10_000, 20_000, 45_000];
 export const compositionTotalDurationMS = new metrics.Histogram({
   name: 'composition_total_duration_ms',
   help: 'Total time of processing a composition (includes time in queue + actual processing time)',
+  labelNames: ['pool' /* composition or diff */],
   buckets: msBuckets,
 });
 
 export const compositionQueueDurationMS = new metrics.Histogram({
   name: 'composition_queue_duration_ms',
   help: 'Time spent in queue before being processed.',
+  labelNames: ['pool' /* composition or diff */],
   buckets: msBuckets,
 });
 
 export const compositionWorkerDurationMS = new metrics.Histogram({
   name: 'composition_worker_duration_ms',
   help: 'Time of running composition in worker',
-  labelNames: ['type' /* single, federation or stitching */],
+  labelNames: [
+    'type' /* single, federation, stitching or diff */,
+    'pool' /* composition or diff */,
+  ],
   buckets: msBuckets,
 });
 

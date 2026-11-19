@@ -39,8 +39,15 @@ type QueueData = {
   addedToQueueTime: number;
 };
 
+/**
+ * Tasks of different pools do not queue behind each other.
+ * Diffs are fast compared to compositions (which can wait on external composition services).
+ */
+export type SchedulerPool = 'composition' | 'diff';
+
 export class CompositionScheduler {
   private logger: Logger;
+  private pool: SchedulerPool;
   /** The amount of parallel workers */
   private workerCount: number;
   private maxOldGenerationSizeMb: number;
@@ -55,11 +62,13 @@ export class CompositionScheduler {
     workerCount: number,
     maxOldGenerationSizeMb: number,
     workerScriptPath = path.join(__dirname, 'composition-worker-main.js'),
+    pool: SchedulerPool = 'composition',
   ) {
+    this.pool = pool;
     this.workerCount = workerCount;
     this.maxOldGenerationSizeMb = maxOldGenerationSizeMb;
     this.workerScriptPath = workerScriptPath;
-    this.logger = logger.child({ source: 'CompositionScheduler' });
+    this.logger = logger.child({ source: 'CompositionScheduler', pool });
     const workers = Array.from({ length: this.workerCount }, (_, i) => this.createWorker(i));
     this.workers = workers;
 
@@ -70,7 +79,7 @@ export class CompositionScheduler {
           throw data.args.abortSignal.reason;
         }
         const startProcessingTime = now();
-        compositionQueueDurationMS.observe(startProcessingTime - data.addedToQueueTime);
+        compositionQueueDurationMS.observe({ pool }, startProcessingTime - data.addedToQueueTime);
         const worker = workers.find(worker => worker.isIdle);
         if (!worker) {
           throw new Error('No idle worker found.');
@@ -79,10 +88,10 @@ export class CompositionScheduler {
         const result = await worker.run(data.args);
         const finishedTime = now();
         compositionWorkerDurationMS.observe(
-          { type: data.args.data.type },
+          { type: data.args.data.type, pool },
           finishedTime - startProcessingTime,
         );
-        compositionTotalDurationMS.observe(finishedTime - data.addedToQueueTime);
+        compositionTotalDurationMS.observe({ pool }, finishedTime - data.addedToQueueTime);
         return result;
       },
       // The size needs to be the same as the length of `this.workers`.
@@ -93,7 +102,7 @@ export class CompositionScheduler {
 
   private createWorker(index: number): WorkerInterface {
     this.logger.debug('Creating worker %s', index);
-    const name = `composition-worker-${index}`;
+    const name = `${this.pool}-worker-${index}`;
     const worker = new Worker(this.workerScriptPath, {
       name,
       resourceLimits: {

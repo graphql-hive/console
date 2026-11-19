@@ -3,16 +3,20 @@ import { z } from 'zod';
 import { handleTRPCError } from '@hive/service-common';
 import type { inferRouterInputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
+import type { SchemaDiffInput } from '../../api/src/modules/schema/lib/schema-diff';
 import type { Cache } from './cache';
 import type { CompositionScheduler } from './composition-scheduler';
+import type { CompositionResultEvent } from './composition-worker';
 import { type ComposeFederationArgs } from './composition/federation';
 import type { CompositionErrorType } from './composition/shared';
 import { ComposeSingleArgs } from './composition/single';
 import { ComposeStitchingArgs } from './composition/stitching';
-import { composeAndValidateCounter } from './metrics';
+import { DiffInputModel, resolveDiffInput, type DiffResponse } from './diff';
+import { composeAndValidateCounter, schemaDiffCounter } from './metrics';
 import type { Metadata } from './types';
 
 export type { CompositionFailureError, CompositionErrorSource } from './lib/errors';
+export type { DiffInput, DiffResponse, SdlRef, SerializedSchemaChange } from './diff';
 
 export interface Context {
   req: FastifyRequest;
@@ -22,6 +26,8 @@ export interface Context {
     signature: string;
   } | null;
   compositionScheduler: CompositionScheduler;
+  /** Runs diffs in separate workers, so they do not queue behind compositions. */
+  diffScheduler: CompositionScheduler;
 }
 
 const t = initTRPC.context<Context>().create();
@@ -104,7 +110,7 @@ export const schemaBuilderApiRouter = t.router({
                 abortSignal,
                 requestId: ctx.req.id,
               });
-              return result.result;
+              return expectCompositionResult(result);
             },
             result =>
               result.includesNetworkError === true || result.includesException === true
@@ -136,7 +142,7 @@ export const schemaBuilderApiRouter = t.router({
                 abortSignal,
                 requestId: ctx.req.id,
               });
-              return result.result;
+              return expectCompositionResult(result);
             },
           )({ schemas: input.schemas });
         }
@@ -151,7 +157,7 @@ export const schemaBuilderApiRouter = t.router({
               abortSignal,
               requestId: ctx.req.id,
             });
-            return result.result;
+            return expectCompositionResult(result);
           })({ schemas: input.schemas });
         }
 
@@ -211,10 +217,43 @@ export const schemaBuilderApiRouter = t.router({
 
       throw new Error('tRCP and TypeScript for the win.');
     }),
+  /**
+   * Computes the changes between two schemas.
+   * Classifying the changes (usage data, approvals, app deployments) is up to the caller.
+   */
+  diff: procedure.input(DiffInputModel).mutation(async ({ ctx, input }): Promise<DiffResponse> => {
+    schemaDiffCounter.inc({ source: input.source });
+
+    return await ctx.cache.reuse('diff', async (args: SchemaDiffInput, abortSignal) => {
+      const result = await ctx.diffScheduler.process({
+        data: {
+          type: 'diff',
+          args,
+        },
+        abortSignal,
+        requestId: ctx.req.id,
+      });
+      return expectDiffResult(result);
+    })(resolveDiffInput(input));
+  }),
 });
 
 export type SchemaBuilderApi = typeof schemaBuilderApiRouter;
 export type SchemaBuilderApiInput = inferRouterInputs<SchemaBuilderApi>;
+
+function expectCompositionResult(data: CompositionResultEvent['data']): CompositionResponse {
+  if (data.type === 'diff') {
+    throw new Error('Expected a composition result, received a diff result.');
+  }
+  return data.result;
+}
+
+function expectDiffResult(data: CompositionResultEvent['data']): DiffResponse {
+  if (data.type !== 'diff') {
+    throw new Error('Expected a diff result, received a composition result.');
+  }
+  return data.result;
+}
 
 function assertAllCasesExhausted(value: never) {
   throw new Error(`Not all cases are exhaused. Value '${value}'.`);

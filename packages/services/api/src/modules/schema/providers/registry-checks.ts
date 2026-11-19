@@ -1,8 +1,7 @@
 import { URL } from 'node:url';
-import { type GraphQLSchema } from 'graphql';
 import { Injectable, Scope } from 'graphql-modules';
 import hashObject from 'object-hash';
-import { ChangeType, CriticalityLevel, DiffRule, TypeOfChangeType } from '@graphql-inspector/core';
+import { ChangeType, CriticalityLevel, TypeOfChangeType } from '@graphql-inspector/core';
 import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import type { CheckPolicyResponse } from '@hive/policy';
 import type { CompositionFailureError, ContractsInputType } from '@hive/schema';
@@ -13,11 +12,11 @@ import {
   type SchemaChangeType,
 } from '@hive/storage';
 import { ProjectType, toCompositionSchemaInput } from '../../../shared/entities';
-import { buildSortedSchemaFromSchemaObject } from '../../../shared/schema';
 import { AffectAppDeploymentsBySchemaCoordinate } from '../../app-deployments/providers/app-deployments';
 import { OperationsReader } from '../../operations/providers/operations-reader';
 import { SchemaPolicyProvider } from '../../policy/providers/schema-policy.provider';
 import { isSchemaChangeUsageTracked } from '../lib/schema-change-usage-tracking';
+import { computeSchemaChanges, type SchemaDiffInput } from '../lib/schema-diff';
 import type {
   ComposeAndValidateResult,
   DateRange,
@@ -28,13 +27,7 @@ import { Logger } from './../../shared/providers/logger';
 import { Inspector } from './inspector';
 import { SchemaCheckWarning } from './models/shared';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
-import {
-  addTypeForExtensions,
-  CompositeSchemaInput,
-  extendWithBase,
-  SchemaHelper,
-  SchemaInput,
-} from './schema-helper';
+import { CompositeSchemaInput, extendWithBase, SchemaHelper, SchemaInput } from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
   period: DateRange;
@@ -450,26 +443,7 @@ export class RegistryChecks {
     /** The incoming SDL */
     incoming: Pick<SchemaInput, 'sdl'> | null;
   }) {
-    let existingSchema: GraphQLSchema | null;
-    let incomingSchema: GraphQLSchema | null;
-
-    const createSchema = (sdl: Pick<SchemaInput, 'sdl'>) => {
-      const obj = this.helper.createSchemaObject(sdl);
-      obj.document = addTypeForExtensions(obj.document);
-      return buildSortedSchemaFromSchemaObject(obj);
-    };
-
-    try {
-      existingSchema = args.existing ? createSchema(args.existing) : null;
-      incomingSchema = args.incoming ? createSchema(args.incoming) : null;
-    } catch (error) {
-      this.logger.error('Failed to build schema for serviceDiff. Skip serviceDiff check.');
-      return {
-        status: 'skipped',
-      } satisfies CheckResult;
-    }
-
-    if (!existingSchema || !incomingSchema) {
+    if (!args.existing || !args.incoming) {
       this.logger.debug(
         'Skip serviceDiff check due to either existing or incoming SDL being absent.',
       );
@@ -477,17 +451,25 @@ export class RegistryChecks {
         status: 'skipped',
       } satisfies CheckResult;
     }
-    if (!incomingSchema) {
+
+    const outcome = await this.computeSchemaChanges({
+      existingSdl: args.existing.sdl,
+      incomingSdl: args.incoming.sdl,
+      source: 'service',
+      filterNestedChanges: false,
+      filterOutFederationChanges: false,
+    });
+
+    if (outcome.status === 'skipped') {
+      this.logger.error('Failed to build schema for serviceDiff. Skip serviceDiff check.');
       return {
-        status: 'failed',
-        reason: 'Incoming schema is invalid.',
+        status: 'skipped',
       } satisfies CheckResult;
     }
-    let inspectorChanges = await this.inspector.diff(existingSchema, incomingSchema);
 
     return {
       status: 'completed',
-      result: inspectorChanges,
+      result: outcome.changes,
     } satisfies CheckResult;
   }
 
@@ -524,53 +506,29 @@ export class RegistryChecks {
     /** Function to fetch affected app deployments. Called with breaking change coordinates after diff is computed. */
     getAffectedAppDeployments: GetAffectedAppDeployments | null;
   }) {
-    let existingSchema: GraphQLSchema | null = null;
-    let incomingSchema: GraphQLSchema | null = null;
-
-    try {
-      existingSchema = args.existingSdl
-        ? buildSortedSchemaFromSchemaObject(
-            this.helper.createSchemaObject({
-              sdl: args.existingSdl,
-              serviceName: null,
-              serviceUrl: null,
-            }),
-          )
-        : null;
-
-      incomingSchema = args.incomingSdl
-        ? buildSortedSchemaFromSchemaObject(
-            this.helper.createSchemaObject({
-              sdl: args.incomingSdl,
-              serviceName: null,
-              serviceUrl: null,
-            }),
-          )
-        : null;
-    } catch (error) {
-      this.logger.error('Failed to build schema for diff. Skip diff check.');
-      return {
-        status: 'skipped',
-      } satisfies CheckResult;
-    }
-
-    if (existingSchema === null || incomingSchema === null) {
+    if (!args.existingSdl || !args.incomingSdl) {
       this.logger.debug('Skip diff check due to either existing or incoming SDL being absent.');
       return {
         status: 'skipped',
       } satisfies CheckResult;
     }
 
-    let inspectorChanges = await this.inspector.diff(
-      existingSchema,
-      incomingSchema,
-      args.filterNestedChanges ? [DiffRule.simplifyChanges] : [],
-    );
+    const outcome = await this.computeSchemaChanges({
+      existingSdl: args.existingSdl,
+      incomingSdl: args.incomingSdl,
+      source: 'composed',
+      filterNestedChanges: args.filterNestedChanges,
+      filterOutFederationChanges: args.filterOutFederationChanges,
+    });
 
-    // Filter out federation specific changes as they are not relevant for the schema diff and were in previous schema versions by accident.
-    if (args.filterOutFederationChanges === true) {
-      inspectorChanges = inspectorChanges.filter(change => !isFederationRelatedChange(change));
+    if (outcome.status === 'skipped') {
+      this.logger.error('Failed to build schema for diff. Skip diff check.');
+      return {
+        status: 'skipped',
+      } satisfies CheckResult;
     }
+
+    const inspectorChanges = outcome.changes;
 
     const isFailingDangerousChange = (change: { criticality: CriticalityLevel; type: string }) => {
       return (
@@ -941,6 +899,14 @@ export class RegistryChecks {
     }
   }
 
+  /** Parses with the per-operation document cache of `SchemaHelper` and traces via `Inspector`. */
+  private computeSchemaChanges(input: SchemaDiffInput) {
+    return computeSchemaChanges(input, {
+      parse: sdl => this.helper.createSchemaObject({ sdl }).document,
+      diff: (existing, incoming, rules) => this.inspector.diff(existing, incoming, rules),
+    });
+  }
+
   public checkProjectNativeFederationSupport(
     targetId: string,
     project: Project,
@@ -1116,36 +1082,6 @@ const toSchemaCheckWarning = (record: CheckPolicyResponse[number]): SchemaCheckW
   endColumn: record.endColumn ?? null,
   endLine: record.endLine ?? null,
 });
-
-const federationTypes = new Set([
-  'join__FieldSet',
-  'join__Graph',
-  'link__Import',
-  'link__Purpose',
-  'core__Purpose',
-  'policy__Policy',
-  'requiresScopes__Scope',
-  'join__DirectiveArguments',
-]);
-const federationDirectives = new Set([
-  '@join__enumValue',
-  '@join__field',
-  '@join__graph',
-  '@join__implements',
-  '@join__type',
-  '@join__owner',
-  '@join__unionMember',
-  '@link',
-  '@federation__inaccessible',
-  '@inaccessible',
-  '@tag',
-  '@core',
-  '@federation__tag',
-]);
-
-function isFederationRelatedChange(change: SchemaChangeType) {
-  return change.path && (federationTypes.has(change.path) || federationDirectives.has(change.path));
-}
 
 function compareAlphaNumeric(a: string, b: string) {
   return a.localeCompare(b, 'en', { numeric: true });
