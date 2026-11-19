@@ -222,7 +222,7 @@ export default gql`
     schemaChecks(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
-      filters: SchemaChecksFilter
+      filters: SchemaChecksFilter @tag(name: "private")
     ): SchemaCheckConnection! @tag(name: "public")
     """
     Lowercased, sorted names of the services that have schema checks in this target.
