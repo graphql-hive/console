@@ -1,5 +1,68 @@
 # hive
 
+## 15.5.0
+
+### Minor Changes
+
+- [#8922](https://github.com/graphql-hive/console/pull/8922)
+  [`74bccfa`](https://github.com/graphql-hive/console/commit/74bccfa2e9b8f994aa76201c5b9ce8d83f950ea4)
+  Thanks [@jdolle](https://github.com/jdolle)! - Hive disables an alert channel that has been
+  failing for 48 hours. A channel whose ten most recent notification attempts all failed, the first
+  of them two days ago or more, is disabled within the hour and receives nothing until a member
+  enables it again from the channel page, which says so and offers an Enable button.
+
+### Patch Changes
+
+- [#8951](https://github.com/graphql-hive/console/pull/8951)
+  [`f6765a5`](https://github.com/graphql-hive/console/commit/f6765a55d75d73fcf3dd4fa4bf197fb53b3b4cf7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Reduce CPU usage of schema checks and publishes by
+  building lexicographically sorted schemas about 1.7× faster. The schema's AST is sorted before the
+  schema is built once, instead of building the schema and then re-creating every type in sorted
+  order. The resulting schema, including the key order of input object default values, stays the
+  same, so existing schema change approvals keep matching.
+
+- [#8948](https://github.com/graphql-hive/console/pull/8948)
+  [`a851457`](https://github.com/graphql-hive/console/commit/a851457433353442b33da1fb2c79b82874bacad1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Reduce CPU usage of schema checks and publishes by
+  parsing and hashing each SDL once instead of repeatedly during a single check or publish.
+
+- [#8942](https://github.com/graphql-hive/console/pull/8942)
+  [`e15a2f4`](https://github.com/graphql-hive/console/commit/e15a2f41f00bae27db615885b695eccb60aecaf7)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Release a lock that is acquired after its request
+  was aborted, before any work started. Before, such a lock was left in Redis until it expired,
+  blocking other requests for the same resource for up to 10 seconds.
+
+- [#8949](https://github.com/graphql-hive/console/pull/8949)
+  [`7077561`](https://github.com/graphql-hive/console/commit/7077561463ca07a1fb8188d52110844470595e0a)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Reduce CPU usage of schema checks, publishes and
+  deletes by no longer computing a schema coordinates diff whose result was never used.
+
+- [#8941](https://github.com/graphql-hive/console/pull/8941)
+  [`87f9eb2`](https://github.com/graphql-hive/console/commit/87f9eb24409647d3d9eef8c2a6aa66d4c479e7f6)
+  Thanks [@jdolle](https://github.com/jdolle)! - The API now retries failed requests to
+  S3-compatible storage (such as Cloudflare R2) up to 5 times instead of 2.
+
+- [#8937](https://github.com/graphql-hive/console/pull/8937)
+  [`f3553ad`](https://github.com/graphql-hive/console/commit/f3553ad4a2db9a26f25581f37434c39bf877a90c)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - The target's Schema tab now shows
+  the API schema, the supergraph (federation projects) and each service's own SDL, picked with a
+  toggle, in an editor with search (Cmd/Ctrl+F), folding and Cmd/Ctrl+click go-to-definition for
+  types and directives. When the latest publish did not compose, the composed views show the last
+  composed version with a link to what failed.
+
+- [#8952](https://github.com/graphql-hive/console/pull/8952)
+  [`fc1404d`](https://github.com/graphql-hive/console/commit/fc1404d50a5ac7b6592455d47787a60d9cbdf3d1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade `@graphql-inspector/core` from 8.0.3 to
+  8.1.1, which changes how schema checks and publishes compute schema changes:
+
+  - Schema diffs are faster on large schemas where most of the schema is unchanged, such as
+    federation supergraphs. Unchanged fields, directive usages, type references and default values
+    are skipped without extra work, and directive argument values are compared structurally instead
+    of being printed to strings first.
+  - Directive usages, such as `@deprecated`, are no longer reported as added or removed when one of
+    the two compared schemas has no AST, for example because it was built from introspection. In
+    that case directive usages are not compared at all.
+
 ## 15.4.0
 
 ### Minor Changes
