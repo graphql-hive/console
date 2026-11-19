@@ -4,7 +4,6 @@ import type {
   SuccessfulSchemaCheckMapper,
 } from '../module.graphql.mappers';
 import stringify from 'fast-json-stable-stringify';
-import { parse, print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import promClient from 'prom-client';
@@ -20,7 +19,6 @@ import type {
 import * as Sentry from '@sentry/node';
 import * as Types from '../../../__generated__/types';
 import {
-  createSchemaObject,
   GraphQLDocumentStringInvalidError,
   Organization,
   Project,
@@ -82,6 +80,7 @@ import { RegistryChecks, type ConditionalBreakingChangeDiffConfig } from './regi
 import {
   ensureCompositeSchemas,
   ensureSingleSchema,
+  SchemaHelper,
   toCompositeSchemaInput,
   toSingleSchemaInput,
   type SchemaInput,
@@ -205,6 +204,7 @@ export class SchemaPublisher {
     private appDeployments: AppDeployments,
     private schemaRevisions: SchemaRevisionStore,
     private graphStore: GraphStore,
+    private schemaHelper: SchemaHelper,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -601,8 +601,8 @@ export class SchemaPublisher {
 
     const baseSchema = await this.schemaManager.getBaseSchemaForTarget(target);
 
-    const sdl = tryPrettifySDL(input.sdl);
-    const baselineSdl = input.baseline ? tryPrettifySDL(input.baseline.sdl) : null;
+    const sdl = this.schemaHelper.prettifySDL(input.sdl);
+    const baselineSdl = input.baseline ? this.schemaHelper.prettifySDL(input.baseline.sdl) : null;
     const baselineSchemaHash = input.baseline?.hash ?? null;
 
     const contracts =
@@ -1479,7 +1479,7 @@ export class SchemaPublisher {
     const inputSdl = input.sdl ?? input.schema?.sdl ?? null;
     if (inputSdl !== null) {
       try {
-        createSchemaObject({ sdl: inputSdl });
+        this.schemaHelper.createSchemaObject({ sdl: inputSdl });
       } catch (error) {
         if (error instanceof GraphQLDocumentStringInvalidError) {
           return invalidInputResult(error.message);
@@ -1539,7 +1539,7 @@ export class SchemaPublisher {
             executor: () =>
               this.internalPublish({
                 ...publishInput,
-                sdl: tryPrettifySDL(publishInput.sdl),
+                sdl: this.schemaHelper.prettifySDL(publishInput.sdl),
                 checksum,
                 selector,
               }),
@@ -4235,14 +4235,6 @@ function isConcurrentSchemaVersionWriteError(error: unknown): boolean {
     error instanceof UniqueIntegrityConstraintViolationError &&
     error.constraint === 'schema_versions_previous_schema_version_id_key'
   );
-}
-
-function tryPrettifySDL(sdl: string): string {
-  try {
-    return print(parse(sdl));
-  } catch {
-    return sdl;
-  }
 }
 
 const millisecondsPerDay = 60 * 60 * 24 * 1000;

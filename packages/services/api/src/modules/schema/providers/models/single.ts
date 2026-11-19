@@ -136,6 +136,9 @@ export class SingleModel {
       };
     }
 
+    // Rejects invalid SDL before it is sent to the composition (the checksum check above only parses it if there is an existing schema).
+    this.checks.assertValidSDL(newSchemaInput.sdl);
+
     const [baselineCompositionCheck, compositionCheck] = await Promise.all([
       baseline && !baselineMatchesHead
         ? this.checks.composition({

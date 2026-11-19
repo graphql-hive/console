@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { DocumentNode, GraphQLError, parse, print, SourceLocation } from 'graphql';
+import { DocumentNode, GraphQLError, print, SourceLocation } from 'graphql';
 import { z } from 'zod';
 import type { AvailableRulesResponse, PolicyConfigurationObject } from '@hive/policy';
 import type { CompositionFailureError } from '@hive/schema';
@@ -73,38 +73,50 @@ export function hashSDL(sdl: DocumentNode): string {
   return hasher.digest('hex');
 }
 
-export function createSDLHash(sdl: string): string {
-  return hashSDL(
-    parse(sdl, {
-      noLocation: true,
-    }),
-  );
-}
-
 export type CreateSchemaObjectInput = {
   sdl: string;
   serviceName?: string | null;
   serviceUrl?: string | null;
 };
 
-export function createSchemaObject(schema: CreateSchemaObjectInput): SchemaObject {
-  let document: DocumentNode;
-
+/**
+ * Parses SDL into a DocumentNode.
+ * Throws GraphQLDocumentStringInvalidError in case the SDL is not valid.
+ */
+export function parseSchemaSDL(sdl: string): DocumentNode {
   try {
-    document = parseGraphQLSource(schema.sdl, 'createSchemaObject');
+    return parseGraphQLSource(sdl, 'createSchemaObject');
   } catch (err) {
     if (err instanceof GraphQLError) {
       throw new GraphQLDocumentStringInvalidError(err.message, err.locations?.[0]);
     }
     throw err;
   }
+}
 
+/** The fields of a SchemaObject that the composition needs. Does not require parsing the SDL. */
+export type CompositionSchemaInput = Pick<SchemaObject, 'raw' | 'source' | 'url'>;
+
+export function toCompositionSchemaInput(schema: CreateSchemaObjectInput): CompositionSchemaInput {
   return {
-    document,
     raw: schema.sdl,
     source: schema.serviceName ?? emptySource,
     url: schema.serviceUrl ?? null,
   };
+}
+
+export function createSchemaObjectFromDocument(
+  schema: CreateSchemaObjectInput,
+  document: DocumentNode,
+): SchemaObject {
+  return {
+    document,
+    ...toCompositionSchemaInput(schema),
+  };
+}
+
+export function createSchemaObject(schema: CreateSchemaObjectInput): SchemaObject {
+  return createSchemaObjectFromDocument(schema, parseSchemaSDL(schema.sdl));
 }
 
 export enum ProjectType {

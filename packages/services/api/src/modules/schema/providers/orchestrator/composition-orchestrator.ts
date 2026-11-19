@@ -4,10 +4,10 @@ import type { ContractsInputType, SchemaBuilderApi } from '@hive/schema';
 import { errorSourceLink, trace, traceFn } from '@hive/service-common';
 import { createTRPCProxyClient, httpLink } from '@trpc/client';
 import {
-  ComposeAndValidateResult,
-  Project,
   ProjectType,
-  SchemaObject,
+  type ComposeAndValidateResult,
+  type CompositionSchemaInput,
+  type Project,
 } from '../../../../shared/entities';
 import { Logger } from '../../../shared/providers/logger';
 import { ArtifactStorageWriter } from '../artifact-storage-writer';
@@ -104,7 +104,7 @@ export class CompositionOrchestrator {
    */
   async composeAndValidate(
     compositionType: 'federation' | 'single' | 'stitching',
-    schemas: SchemaObject[],
+    schemas: CompositionSchemaInput[],
     config: {
       /** Whether external composition should be used (only Federation) */
       external: Project['externalComposition'];

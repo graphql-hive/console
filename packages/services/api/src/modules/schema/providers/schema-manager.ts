@@ -1,6 +1,6 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
 import DataLoader from 'dataloader';
-import { parse, print } from 'graphql';
+import { print } from 'graphql';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import lodash from 'lodash';
 import { z } from 'zod';
@@ -57,7 +57,6 @@ const externalSchemaCompositionTestSdl = /* GraphQL */ `
     test: String
   }
 `;
-const externalSchemaCompositionTestDocument = parse(externalSchemaCompositionTestSdl);
 
 /**
  * Responsible for auth checks.
@@ -530,7 +529,6 @@ export class SchemaManager {
         'federation',
         [
           {
-            document: externalSchemaCompositionTestDocument,
             raw: externalSchemaCompositionTestSdl,
             source: 'test',
             url: null,
