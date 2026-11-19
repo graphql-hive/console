@@ -1,4 +1,5 @@
 import { Injectable, Scope } from 'graphql-modules';
+import { z } from 'zod';
 import { getRequestId, type FastifyRequest } from '@hive/service-common';
 import type { Alert, AlertChannel, DateRange } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
@@ -17,6 +18,7 @@ import { Logger } from '../../shared/providers/logger';
 import { RedisRateLimiter } from '../../shared/providers/redis-rate-limiter';
 import type { ProjectSelector } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
+import { SlackChannelNameModel, WebhookEndpointModel } from '../lib/alert-channel-input';
 import { testNotificationKey } from '../lib/delivery-metadata';
 import {
   ChannelConfirmationInput,
@@ -303,21 +305,28 @@ export class AlertsManager {
 
   /** Sends a test notification to the given destination, saved or not. Never recorded. */
   async testChannel(
-    input: { channelId: string; slackChannel: string | null; webhookEndpoint: string | null },
+    input: { channelId: string; destination: z.input<typeof TestDestinationModel> },
     req: FastifyRequest,
   ): Promise<TestChannelResult> {
     this.logger.debug('Testing Alert Channel (channel=%s)', input.channelId);
+    const parsed = TestDestinationModel.safeParse(input.destination);
+    if (!parsed.success) {
+      return notSent(parsed.error.issues[0].message);
+    }
+    const slackChannel = parsed.data.slack?.channel ?? null;
+    const webhookEndpoint = parsed.data.webhook?.endpoint ?? null;
+
     const channel = await this.getChannelToModify(input.channelId);
     if (!channel) {
       return notSent('Alert channel not found.');
     }
-    if (input.slackChannel !== null && channel.type !== 'SLACK') {
+    if (slackChannel !== null && channel.type !== 'SLACK') {
       return notSent('Only a Slack channel has a Slack channel.');
     }
-    if (input.webhookEndpoint !== null && channel.type === 'SLACK') {
+    if (webhookEndpoint !== null && channel.type === 'SLACK') {
       return notSent('A Slack channel has no endpoint.');
     }
-    const destination = input.slackChannel ?? input.webhookEndpoint;
+    const destination = slackChannel ?? webhookEndpoint;
     if (destination === null) {
       return notSent('A destination is required.');
     }
@@ -716,6 +725,11 @@ export class AlertsManager {
 }
 
 const MAX_CHANNEL_TESTS_PER_MINUTE = 10;
+
+const TestDestinationModel = z.object({
+  slack: z.object({ channel: SlackChannelNameModel }).nullish(),
+  webhook: z.object({ endpoint: WebhookEndpointModel }).nullish(),
+});
 
 export type TestChannelResult =
   | { delivered: true; idempotencyKey: string | null }
