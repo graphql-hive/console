@@ -1,5 +1,15 @@
 # @graphql-hive/yoga
 
+## 0.50.2
+
+### Patch Changes
+
+- [#8939](https://github.com/graphql-hive/console/pull/8939)
+  [`1769759`](https://github.com/graphql-hive/console/commit/1769759aacdb5d67de5be998322a2f85c85a6336)
+  Thanks [@enisdenjo](https://github.com/enisdenjo)! - Fix persisted documents crashing with
+  `graphql-yoga@6` by dropping the `@graphql-yoga/plugin-persisted-operations` dependency, which is
+  bound to a single `graphql-yoga` major.
+
 ## 0.50.1
 
 ### Patch Changes
