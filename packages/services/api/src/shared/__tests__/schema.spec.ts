@@ -3,6 +3,9 @@ import {
   getIntrospectionQuery,
   GraphQLSchema,
   graphqlSync,
+  isInputObjectType,
+  isInterfaceType,
+  isObjectType,
   lexicographicSortSchema,
   parse,
   printSchema,
@@ -48,6 +51,34 @@ function expectSameSchema(actual: GraphQLSchema, expected: GraphQLSchema) {
   expect(printSchema(actual)).toEqual(printSchema(expected));
   // covers descriptions, deprecations, default values, built-in scalars and introspection types
   expect(introspect(actual)).toEqual(introspect(expected));
+  // printSchema and introspection print default values in the order of the (sorted) input fields,
+  // but the order of the keys of the coerced values is visible elsewhere (e.g. in inspector's change metadata)
+  expect(defaultValues(actual)).toEqual(defaultValues(expected));
+}
+
+/** All default values, serialized with the order of their keys. */
+function defaultValues(schema: GraphQLSchema): Array<[string, string]> {
+  const result: Array<[string, string]> = [];
+  const add = (coordinate: string, input: { defaultValue?: unknown }) => {
+    if (input.defaultValue !== undefined) {
+      result.push([coordinate, JSON.stringify(input.defaultValue)]);
+    }
+  };
+  for (const type of Object.values(schema.getTypeMap())) {
+    if (isObjectType(type) || isInterfaceType(type)) {
+      for (const field of Object.values(type.getFields())) {
+        field.args.forEach(arg => add(`${type.name}.${field.name}(${arg.name}:)`, arg));
+      }
+    } else if (isInputObjectType(type)) {
+      for (const field of Object.values(type.getFields())) {
+        add(`${type.name}.${field.name}`, field);
+      }
+    }
+  }
+  for (const directive of schema.getDirectives()) {
+    directive.args.forEach(arg => add(`@${directive.name}(${arg.name}:)`, arg));
+  }
+  return result;
 }
 
 async function changes(before: GraphQLSchema, after: GraphQLSchema, simplify: boolean) {
@@ -102,6 +133,31 @@ const unsortedSdl = /* GraphQL */ `
 
   type Mutation {
     update(input: Filter2!): Boolean @auth
+    withDefaults(
+      plain: Point = { z: 1, a: 2 }
+      partial: Point = { a: 2 }
+      nested: Shape = {
+        name: "s"
+        points: [{ z: 1, a: 2 }, { a: 3, z: 4 }]
+        origin: { a: 0, z: 0 }
+      }
+      list: [Point!] = [{ z: 5, a: 6 }]
+    ): Boolean @limit
+  }
+
+  directive @limit(config: Point = { z: 7, a: 8 }) on FIELD_DEFINITION
+
+  input Point {
+    z: Int = 10
+    m2: Int
+    a: Int
+    m10: Int = 20
+  }
+
+  input Shape {
+    points: [Point!]
+    origin: Point = { z: 9, a: 9 }
+    name: String
   }
 
   """
@@ -206,6 +262,12 @@ describe('buildLexicographicallySortedSchema', () => {
       .replace('union SearchResult = Type2 | Type10', 'union SearchResult = Type10')
       .replace('m: Filter10', 'm: Filter10!')
       .replace('@tag(name: "b") @tag(name: "c")', '@tag(name: "c")')
+      .replace('plain: Point = { z: 1, a: 2 }', 'plain: Point = { z: 1, a: 3 }')
+      .replace('origin: Point = { z: 9, a: 9 }', 'origin: Point = { a: 9, z: 1 }')
+      .replace(
+        'directive @limit(config: Point = { z: 7, a: 8 })',
+        'directive @limit(config: Point = { z: 7 })',
+      )
       .replace(
         'directive @auth on OBJECT | FIELD_DEFINITION',
         'directive @auth on FIELD_DEFINITION',
@@ -296,8 +358,15 @@ function randomSchemaSdl(
 
   const enumValues = subset(names.values);
 
+  const defaultsInput = shuffle(names.fields, random);
+  const objectDefault = () =>
+    `{ ${subset(names.fields)
+      .map(field => `${field}: ${Math.floor(random() * 10)}`)
+      .join(', ')} }`;
+
   const definitions = [
-    `type Query {\n${objectTypes.map(type => `  q${type}${args()}: ${type}`).join('\n')}\n}`,
+    `type Query {\n${objectTypes.map(type => `  q${type}${args()}: ${type}`).join('\n')}\n  withDefault(x: Defaults = ${objectDefault()}, y: [Defaults!] = [${objectDefault()}]): Int\n}`,
+    `input Defaults {\n${defaultsInput.map(field => `  ${field}: Int${random() > 0.7 ? ` = ${Math.floor(random() * 10)}` : ''}`).join('\n')}\n}`,
     ...objectTypes.map(type => {
       const interfaces = subset(interfaceTypes);
       return `type ${type}${interfaces.length ? ` implements ${interfaces.join(' & ')}` : ''} ${directives()} {\n  id: ID\n${fields(true)}\n}`;

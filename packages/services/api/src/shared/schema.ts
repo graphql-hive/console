@@ -6,9 +6,15 @@ import {
   DocumentNode,
   EnumValueDefinitionNode,
   FieldDefinitionNode,
+  getNullableType,
   GraphQLDirective,
+  GraphQLInputType,
   GraphQLSchema,
   InputValueDefinitionNode,
+  isInputObjectType,
+  isInterfaceType,
+  isListType,
+  isObjectType,
   isTypeSystemExtensionNode,
   Kind,
   lexicographicSortSchema,
@@ -65,7 +71,9 @@ export function buildLexicographicallySortedSchema(document: DocumentNode): Grap
     return lexicographicSortSchema(buildASTSchema(document));
   }
 
-  const config = buildASTSchema(sortDocumentListsForSchema(document)).toConfig();
+  const built = buildASTSchema(sortDocumentListsForSchema(document));
+  restoreDefaultValueKeyOrder(built, document);
+  const config = built.toConfig();
 
   // The type map follows the order of the types list.
   // This also sorts the built-in scalars and introspection types, as `lexicographicSortSchema` does.
@@ -87,6 +95,81 @@ export function buildLexicographicallySortedSchema(document: DocumentNode): Grap
       });
     }),
   });
+}
+
+/**
+ * `buildASTSchema` coerces default values of input object types by iterating the fields of the input object type.
+ * Those are already sorted at this point, while `lexicographicSortSchema` keeps the default values that were coerced
+ * against the unsorted type. The order of the keys is visible: inspector prints default values into the change
+ * metadata (e.g. `{ z: 1, a: 2 }`), which is hashed into the change id used to look up approvals.
+ *
+ * Restores the order of the input object fields as defined in the document, for all default values
+ * (field arguments, input fields and directive arguments), including nested input objects and lists.
+ */
+function restoreDefaultValueKeyOrder(schema: GraphQLSchema, document: DocumentNode): void {
+  const fieldPositionsByInputType = new Map<string, Map<string, number>>();
+  for (const definition of document.definitions) {
+    if (definition.kind === Kind.INPUT_OBJECT_TYPE_DEFINITION) {
+      fieldPositionsByInputType.set(
+        definition.name.value,
+        new Map((definition.fields ?? []).map((field, index) => [field.name.value, index])),
+      );
+    }
+  }
+
+  if (fieldPositionsByInputType.size === 0) {
+    return;
+  }
+
+  function restore(value: unknown, type: GraphQLInputType): unknown {
+    if (value === null || value === undefined) {
+      return value;
+    }
+
+    const nullableType = getNullableType(type);
+
+    if (isListType(nullableType)) {
+      return Array.isArray(value) ? value.map(item => restore(item, nullableType.ofType)) : value;
+    }
+
+    if (!isInputObjectType(nullableType) || typeof value !== 'object') {
+      return value;
+    }
+
+    const positions = fieldPositionsByInputType.get(nullableType.name);
+    const fields = nullableType.getFields();
+    const entries = Object.entries(value);
+    if (positions) {
+      entries.sort(([a], [b]) => (positions.get(a) ?? 0) - (positions.get(b) ?? 0));
+    }
+
+    // same prototype-less object as created by `valueFromAST`
+    const restored: Record<string, unknown> = Object.create(null);
+    for (const [key, fieldValue] of entries) {
+      restored[key] = fields[key] ? restore(fieldValue, fields[key].type) : fieldValue;
+    }
+    return restored;
+  }
+
+  function restoreDefaultValue(input: { defaultValue?: unknown; type: GraphQLInputType }) {
+    if (input.defaultValue !== undefined) {
+      input.defaultValue = restore(input.defaultValue, input.type);
+    }
+  }
+
+  for (const type of Object.values(schema.getTypeMap())) {
+    if (isObjectType(type) || isInterfaceType(type)) {
+      for (const field of Object.values(type.getFields())) {
+        field.args.forEach(restoreDefaultValue);
+      }
+    } else if (isInputObjectType(type)) {
+      Object.values(type.getFields()).forEach(restoreDefaultValue);
+    }
+  }
+
+  for (const directive of schema.getDirectives()) {
+    directive.args.forEach(restoreDefaultValue);
+  }
 }
 
 function sortDocumentListsForSchema(document: DocumentNode): DocumentNode {
