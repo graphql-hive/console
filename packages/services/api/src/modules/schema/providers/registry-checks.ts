@@ -12,7 +12,7 @@ import {
   type RegistryServiceUrlChangeSerializableChange,
   type SchemaChangeType,
 } from '@hive/storage';
-import { ProjectType } from '../../../shared/entities';
+import { ProjectType, toCompositionSchemaInput } from '../../../shared/entities';
 import { buildSortedSchemaFromSchemaObject } from '../../../shared/schema';
 import { AffectAppDeploymentsBySchemaCoordinate } from '../../app-deployments/providers/app-deployments';
 import { OperationsReader } from '../../operations/providers/operations-reader';
@@ -271,6 +271,15 @@ export class RegistryChecks {
     return 'modified' as const;
   }
 
+  /**
+   * Throws GraphQLDocumentStringInvalidError in case the SDL is not valid.
+   * The composition does not parse SDLs on our side, so this must be called for SDL provided by the user,
+   * before composing it.
+   */
+  assertValidSDL(sdl: string): void {
+    this.helper.createSchemaObject({ sdl });
+  }
+
   async composition({
     targetId,
     project,
@@ -288,7 +297,8 @@ export class RegistryChecks {
   }) {
     const result = await this.orchestrator.composeAndValidate(
       CompositionOrchestrator.projectTypeToOrchestratorType(project.type),
-      extendWithBase(schemas, baseSchema).map(s => this.helper.createSchemaObject(s)),
+      // The composition only needs the raw SDLs, parsing them here would be wasted work.
+      extendWithBase(schemas, baseSchema).map(s => toCompositionSchemaInput(s)),
       {
         external: project.externalComposition,
         native: this.checkProjectNativeFederationSupport(targetId, project, organization),
@@ -365,7 +375,7 @@ export class RegistryChecks {
 
     const existingSchemaResult = await this.orchestrator.composeAndValidate(
       CompositionOrchestrator.projectTypeToOrchestratorType(args.project.type),
-      args.version.schemas.map(s => this.helper.createSchemaObject(s)),
+      args.version.schemas.map(s => toCompositionSchemaInput(s)),
       {
         external: args.project.externalComposition,
         native: this.checkProjectNativeFederationSupport(

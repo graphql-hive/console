@@ -18,9 +18,7 @@ import type {
   SchemaObject,
   SingleSchema,
 } from '../../../shared/entities';
-import { createSchemaObject } from '../../../shared/entities';
-import { cache } from '../../../shared/helpers';
-import { sortDocumentNode } from '../../../shared/schema';
+import { createSchemaObjectFromDocument, hashSDL, parseSchemaSDL } from '../../../shared/entities';
 
 export function isSingleSchema(schema: Schema): schema is SingleSchema {
   return schema.kind === 'single';
@@ -176,15 +174,57 @@ export function addTypeForExtensions(ast: DocumentNode) {
   global: true,
 })
 export class SchemaHelper {
-  @cache<CreateSchemaObjectInput>(schema => JSON.stringify(schema))
+  /** Parsed documents keyed by SDL, for sharing. :) */
+  private documents = new Map<string, DocumentNode>();
+  /** Results of `hashSDL` keyed by SDL. */
+  private sdlHashes = new Map<string, string>();
+
   createSchemaObject(schema: CreateSchemaObjectInput): SchemaObject {
-    return createSchemaObject(schema);
+    return createSchemaObjectFromDocument(schema, this.parse(schema.sdl));
   }
 
+  /**
+   * Hash of the sorted and printed SDL (see `hashSDL`), so it ignores the order of definitions, fields etc.
+   * Used to detect whether a schema changed. Computed once per distinct SDL per operation.
+   * Throws GraphQLDocumentStringInvalidError in case the SDL is not valid.
+   */
+  hashSDL(sdl: string): string {
+    let hash = this.sdlHashes.get(sdl);
+    if (hash === undefined) {
+      hash = hashSDL(this.parse(sdl));
+      this.sdlHashes.set(sdl, hash);
+    }
+    return hash;
+  }
+
+  /**
+   * Prints the SDL in a consistent format.
+   * Returns the SDL as-is in case it is not valid.
+   */
+  prettifySDL(sdl: string): string {
+    try {
+      return print(this.parse(sdl));
+    } catch {
+      return sdl;
+    }
+  }
+
+  private parse(sdl: string): DocumentNode {
+    let document = this.documents.get(sdl);
+    if (document === undefined) {
+      document = parseSchemaSDL(sdl);
+      this.documents.set(sdl, document);
+    }
+    return document;
+  }
+
+  /**
+   * Only used to compare schemas within an operation, it is not persisted.
+   */
   createChecksum(schema: SchemaInput): string {
     const hasher = createHash('md5');
 
-    hasher.update(print(sortDocumentNode(this.createSchemaObject(schema).document)), 'utf-8');
+    hasher.update(`sdl: ${this.hashSDL(schema.sdl)}`, 'utf-8');
     hasher.update(`service_name: ${schema.serviceName ?? ''}`, 'utf-8');
     hasher.update(`service_url: ${schema.serviceUrl ?? ''}`, 'utf-8');
     hasher.update(`metadata: ${hashMetadata(schema.metadata)}`, 'utf-8');

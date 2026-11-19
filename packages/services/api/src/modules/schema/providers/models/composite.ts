@@ -296,6 +296,9 @@ export class CompositeModel {
       };
     }
 
+    // Rejects invalid SDL before it is sent to the composition (the checksum check above only parses it if there is an existing schema).
+    this.checks.assertValidSDL(incoming.sdl);
+
     const contractCompositionInput: ContractsInputType | null =
       contracts?.map(({ graph }) => ({
         id: graph.id,

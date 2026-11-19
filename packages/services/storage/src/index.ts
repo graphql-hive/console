@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { Member, Organization, OrganizationInvitation, Storage } from '@hive/api';
 import {
@@ -10,7 +11,6 @@ import {
   UniqueIntegrityConstraintViolationError,
   type ConnectionStringProvider,
 } from '@hive/postgres';
-import { createSDLHash } from '../../api/src/shared/entities';
 import { batch, batchBy } from '../../api/src/shared/helpers';
 import { type organizations } from './db';
 import {
@@ -2452,7 +2452,7 @@ export async function createStorage(
           `);
         }
 
-        const schemaSDLHash = createSDLHash(args.schemaSDL);
+        const schemaSDLHash = createSdlStoreId(args.schemaSDL);
         let baselineSchemaSdlHash: string | null = null;
         let baselinePublicSdlHash: string | null = null;
         let baselineSupergraphSdlHash: string | null = null;
@@ -2462,27 +2462,27 @@ export async function createStorage(
         sdlStoreInserts.push(insertSdl(schemaSDLHash, args.schemaSDL));
 
         if (args.baselineSchemaSdl) {
-          baselineSchemaSdlHash = createSDLHash(args.baselineSchemaSdl);
+          baselineSchemaSdlHash = createSdlStoreId(args.baselineSchemaSdl);
           sdlStoreInserts.push(insertSdl(baselineSchemaSdlHash, args.baselineSchemaSdl));
         }
 
         if (args.baselinePublicSdl) {
-          baselinePublicSdlHash = createSDLHash(args.baselinePublicSdl);
+          baselinePublicSdlHash = createSdlStoreId(args.baselinePublicSdl);
           sdlStoreInserts.push(insertSdl(baselinePublicSdlHash, args.baselinePublicSdl));
         }
 
         if (args.baselineSupergraphSdl) {
-          baselineSupergraphSdlHash = createSDLHash(args.baselineSupergraphSdl);
+          baselineSupergraphSdlHash = createSdlStoreId(args.baselineSupergraphSdl);
           sdlStoreInserts.push(insertSdl(baselineSupergraphSdlHash, args.baselineSupergraphSdl));
         }
 
         if (args.compositeSchemaSDL) {
-          compositeSchemaSdlHash = createSDLHash(args.compositeSchemaSDL);
+          compositeSchemaSdlHash = createSdlStoreId(args.compositeSchemaSDL);
           sdlStoreInserts.push(insertSdl(compositeSchemaSdlHash, args.compositeSchemaSDL));
         }
 
         if (args.supergraphSDL) {
-          supergraphSdlHash = createSDLHash(args.supergraphSDL);
+          supergraphSdlHash = createSdlStoreId(args.supergraphSDL);
           sdlStoreInserts.push(insertSdl(supergraphSdlHash, args.supergraphSDL));
         }
 
@@ -2575,24 +2575,26 @@ export async function createStorage(
             const sdlInserts: Array<Promise<unknown>> = [];
 
             if (contract.supergraphSchemaSdl) {
-              supergraphSchemaSdlHash = createSDLHash(contract.supergraphSchemaSdl);
+              supergraphSchemaSdlHash = createSdlStoreId(contract.supergraphSchemaSdl);
               sdlInserts.push(insertSdl(supergraphSchemaSdlHash, contract.supergraphSchemaSdl));
             }
 
             if (contract.compositeSchemaSdl) {
-              compositeSchemaSdlHash = createSDLHash(contract.compositeSchemaSdl);
+              compositeSchemaSdlHash = createSdlStoreId(contract.compositeSchemaSdl);
               sdlInserts.push(insertSdl(compositeSchemaSdlHash, contract.compositeSchemaSdl));
             }
 
             if (contract.baselineSupergraphSchemaSdl) {
-              baselineSupergraphSchemaSdlHash = createSDLHash(contract.baselineSupergraphSchemaSdl);
+              baselineSupergraphSchemaSdlHash = createSdlStoreId(
+                contract.baselineSupergraphSchemaSdl,
+              );
               sdlInserts.push(
                 insertSdl(baselineSupergraphSchemaSdlHash, contract.baselineSupergraphSchemaSdl),
               );
             }
 
             if (contract.baselineCompositeSchemaSdl) {
-              baselinePublicSdlHash = createSDLHash(contract.baselineCompositeSchemaSdl);
+              baselinePublicSdlHash = createSdlStoreId(contract.baselineCompositeSchemaSdl);
               sdlInserts.push(
                 insertSdl(baselinePublicSdlHash, contract.baselineCompositeSchemaSdl),
               );
@@ -4075,3 +4077,15 @@ export const UserModel = z.union([
 ]);
 
 export type UserType = z.TypeOf<typeof UserModel>;
+
+/**
+ * The id of an SDL in the "sdl_store" table, which deduplicates SDLs that are byte-identical.
+ * The ids are only used as references from schema checks, they are never compared with each other.
+ *
+ * The SDL is hashed as-is: it is either prettified (user input) or produced deterministically by the composition,
+ * so re-checking the same schema yields the same id without the cost of parsing, sorting and printing it.
+ * Ids created before this change were hashes of the sorted SDL; they remain valid references.
+ */
+function createSdlStoreId(sdl: string): string {
+  return createHash('sha256').update(sdl, 'utf-8').digest('hex');
+}
