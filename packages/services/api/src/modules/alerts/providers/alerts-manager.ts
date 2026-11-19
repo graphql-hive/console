@@ -1,4 +1,6 @@
 import { Injectable, Scope } from 'graphql-modules';
+import { z } from 'zod';
+import { getRequestId, type FastifyRequest } from '@hive/service-common';
 import type { Alert, AlertChannel, DateRange } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
 import { Session } from '../../auth/lib/authz';
@@ -13,14 +15,22 @@ import { SlackIntegrationManager } from '../../integrations/providers/slack-inte
 import { OrganizationManager } from '../../organization/providers/organization-manager';
 import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
+import { RedisRateLimiter } from '../../shared/providers/redis-rate-limiter';
 import type { ProjectSelector } from '../../shared/providers/storage';
 import { Storage } from '../../shared/providers/storage';
-import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './adapters/common';
+import { SlackChannelNameModel, WebhookEndpointModel } from '../lib/alert-channel-input';
+import { testNotificationKey } from '../lib/delivery-metadata';
+import {
+  ChannelConfirmationInput,
+  CommunicationAdapter,
+  SchemaChangeNotificationInput,
+} from './adapters/common';
 import { DiscordCommunicationAdapter } from './adapters/discord';
 import { TeamsCommunicationAdapter } from './adapters/msteams';
 import { SlackCommunicationAdapter } from './adapters/slack';
 import { WebhookCommunicationAdapter } from './adapters/webhook';
 import { AlertChannelsStorage, type AlertChannelWithOrganization } from './alert-channels-storage';
+import { UNEXPECTED_ERROR, type DeliveryOutcome } from './delivery-recorder';
 
 @Injectable({
   scope: Scope.Operation,
@@ -42,6 +52,7 @@ export class AlertsManager {
     private storage: Storage,
     private deliveryReader: DeliveryReader,
     private alertChannels: AlertChannelsStorage,
+    private rateLimiter: RedisRateLimiter,
   ) {
     this.logger = logger.child({ source: 'AlertsManager' });
   }
@@ -290,6 +301,93 @@ export class AlertsManager {
       channel.id,
     );
     return { ...disabled, organizationId: channel.organizationId };
+  }
+
+  /** Sends a test notification to the given destination, saved or not. Never recorded. */
+  async testChannel(
+    input: { channelId: string; destination: z.input<typeof TestDestinationModel> },
+    req: FastifyRequest,
+  ): Promise<TestChannelResult> {
+    this.logger.debug('Testing Alert Channel (channel=%s)', input.channelId);
+    const parsed = TestDestinationModel.safeParse(input.destination);
+    if (!parsed.success) {
+      return notSent(parsed.error.issues[0].message);
+    }
+    const slackChannel = parsed.data.slack?.channel ?? null;
+    const webhookEndpoint = parsed.data.webhook?.endpoint ?? null;
+
+    const channel = await this.getChannelToModify(input.channelId);
+    if (!channel) {
+      return notSent('Alert channel not found.');
+    }
+    if (slackChannel !== null && channel.type !== 'SLACK') {
+      return notSent('Only a Slack channel has a Slack channel.');
+    }
+    if (webhookEndpoint !== null && channel.type === 'SLACK') {
+      return notSent('A Slack channel has no endpoint.');
+    }
+    const destination = slackChannel ?? webhookEndpoint;
+    if (destination === null) {
+      return notSent('A destination is required.');
+    }
+
+    const rateLimited = await this.rateLimiter.isOrganizationRateLimited(
+      req,
+      channel.organizationId,
+      `testDeliveryChannel:${channel.id}`,
+      60,
+      MAX_CHANNEL_TESTS_PER_MINUTE,
+    );
+    if (rateLimited) {
+      return notSent('Too many test notifications for this channel. Try again in a minute.');
+    }
+
+    let slackToken: string | null = null;
+    if (channel.type === 'SLACK') {
+      slackToken =
+        (await this.slackIntegrationManager.getToken({
+          organizationId: channel.organizationId,
+          projectId: channel.projectId,
+          context: IntegrationsAccessContext.ChannelConfirmation,
+        })) ?? null;
+      if (!slackToken) {
+        return notSent('Connect Slack to the organization first.');
+      }
+    }
+
+    const [organization, project] = await Promise.all([
+      this.organizationManager.getOrganization({ organizationId: channel.organizationId }),
+      this.projectManager.getProject({
+        organizationId: channel.organizationId,
+        projectId: channel.projectId,
+      }),
+    ]);
+    const requestId = getRequestId();
+    const idempotencyKey = requestId ? testNotificationKey(requestId, channel.id) : null;
+    const adapter: CommunicationAdapter =
+      channel.type === 'SLACK'
+        ? this.slack
+        : channel.type === 'MSTEAMS_WEBHOOK'
+          ? this.teamsWebhook
+          : channel.type === 'DISCORD'
+            ? this.discordWebhook
+            : this.webhook;
+
+    const failure = await adapter.sendTestNotification({
+      organization,
+      project,
+      destination,
+      idempotencyKey,
+      integrations: { slack: { token: slackToken } },
+    });
+    if (!failure) {
+      return { delivered: true, idempotencyKey };
+    }
+    return {
+      delivered: false,
+      message: failureMessage(failure),
+      idempotencyKey,
+    };
   }
 
   /** The channel once the viewer may modify alerts of its project; null when there is none. */
@@ -624,6 +722,28 @@ export class AlertsManager {
       await this.webhook.sendChannelConfirmation();
     }
   }
+}
+
+const MAX_CHANNEL_TESTS_PER_MINUTE = 10;
+
+const TestDestinationModel = z.object({
+  slack: z.object({ channel: SlackChannelNameModel }).nullish(),
+  webhook: z.object({ endpoint: WebhookEndpointModel }).nullish(),
+});
+
+export type TestChannelResult =
+  | { delivered: true; idempotencyKey: string | null }
+  | { delivered: false; message: string; idempotencyKey: string | null };
+
+function failureMessage(failure: DeliveryOutcome): string {
+  const label = failure.statusCode
+    ? `${failure.statusCode} ${failure.statusText}`
+    : failure.statusText;
+  return label.trim() || UNEXPECTED_ERROR;
+}
+
+function notSent(message: string): TestChannelResult {
+  return { delivered: false, message, idempotencyKey: null };
 }
 
 /** A channel whose deliveries are read, with the project the viewer reached it through. */

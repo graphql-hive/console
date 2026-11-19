@@ -70,6 +70,7 @@ import {
   ClientIPHeaderName,
   HiveConsoleReleaseVersion,
   RateLimitConfig,
+  RequestBrokerConfig,
   WEB_APP_URL,
 } from './modules/shared/providers/tokens';
 import { supportModule } from './modules/support';
@@ -132,6 +133,7 @@ export function createRegistry({
   taskScheduler,
   release,
   clientIPHeaderName,
+  requestBroker,
 }: {
   logger: Logger;
   storage: Storage;
@@ -178,6 +180,7 @@ export function createRegistry({
   /** Hive release version, sent as the User-Agent of outbound webhook calls. */
   release: string;
   clientIPHeaderName: string | null;
+  requestBroker: RequestBrokerConfig['config'];
 }) {
   const s3Config = new S3Config([
     {
@@ -325,6 +328,11 @@ export function createRegistry({
     {
       provide: RateLimitConfig,
       useValue: new RateLimitConfig(app?.rateLimit ?? null),
+      scope: Scope.Singleton,
+    },
+    {
+      provide: RequestBrokerConfig,
+      useValue: new RequestBrokerConfig(requestBroker),
       scope: Scope.Singleton,
     },
     {

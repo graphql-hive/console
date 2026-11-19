@@ -16,6 +16,42 @@ export type RequestBroker = {
 
 export type SendWebhookResult = { status: 'sent' } | { status: 'gave-up' };
 
+/** A webhook call's POST, direct or through the broker. The API's channel test sends it too. */
+export function buildWebhookRequest(
+  requestBroker: RequestBroker | null,
+  args: {
+    endpoint: string;
+    data: unknown;
+    headers?: Record<string, string>;
+  },
+): { url: string; headers: Record<string, string>; json: unknown } {
+  const headers = {
+    Accept: 'application/json',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Content-Type': 'application/json',
+    ...args.headers,
+  };
+
+  if (!requestBroker) {
+    return { url: args.endpoint, headers, json: args.data };
+  }
+
+  return {
+    url: requestBroker.endpoint,
+    headers: {
+      Accept: 'text/plain',
+      'x-hive-signature': requestBroker.signature,
+    },
+    json: {
+      url: args.endpoint,
+      method: 'POST',
+      headers,
+      body: JSON.stringify(args.data),
+      resolveResponseBody: false,
+    },
+  };
+}
+
 export async function sendWebhook(
   logger: Logger,
   requestBroker: RequestBroker | null,
@@ -35,38 +71,16 @@ export async function sendWebhook(
   if (args.attempt < args.maxAttempts) {
     logger.debug('Calling webhook');
 
-    const destinationHeaders = {
-      Accept: 'application/json',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Content-Type': 'application/json',
-      ...args.headers,
-    };
+    const request = buildWebhookRequest(requestBroker, args);
 
     const post = async () => {
-      const response = requestBroker
-        ? await got.post(requestBroker.endpoint, {
-            headers: {
-              Accept: 'text/plain',
-              'x-hive-signature': requestBroker.signature,
-            },
-            timeout: {
-              request: 10_000,
-            },
-            json: {
-              url: args.endpoint,
-              method: 'POST',
-              headers: destinationHeaders,
-              body: JSON.stringify(args.data),
-              resolveResponseBody: false,
-            },
-          })
-        : await got.post(args.endpoint, {
-            headers: destinationHeaders,
-            timeout: {
-              request: 10_000,
-            },
-            json: args.data,
-          });
+      const response = await got.post(request.url, {
+        headers: request.headers,
+        timeout: {
+          request: 10_000,
+        },
+        json: request.json,
+      });
 
       return {
         outcome: { statusCode: response.statusCode, statusText: response.statusMessage ?? '' },

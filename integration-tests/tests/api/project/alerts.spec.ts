@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { createHash } from 'node:crypto';
 import asyncRetry from 'async-retry';
 import { clickHouseInsert, clickHouseQuery, flushAsyncInserts } from 'testkit/clickhouse';
-import { addAlertChannel, updateAlertChannel } from 'testkit/flow';
+import { addAlertChannel, testDeliveryChannel, updateAlertChannel } from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -685,6 +685,55 @@ test.concurrent(
     ).then(r => r.expectGraphQLErrors());
     expect(errors).toHaveLength(1);
     expect(errors[0].message).toContain('Missing permission for performing');
+  },
+);
+
+test.concurrent(
+  'sends a test notification to the given destination without recording it, for members who may modify alerts',
+  async ({ expect }) => {
+    const seed = initSeed();
+    const { createOrg, ownerToken } = await seed.createOwner();
+    const { createProject, organization } = await createOrg();
+    const { project, addAlertChannel } = await createProject(ProjectType.Single);
+
+    const savedEndpoint = await generateMockEndpoint();
+    const created = await addAlertChannel({
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      name: 'discord',
+      type: AlertChannelType.Discord,
+      webhook: { endpoint: savedEndpoint.url },
+    });
+    if (!created.ok) {
+      throw new Error(created.error?.message ?? 'Expected ok');
+    }
+    const channelId = created.ok.addedAlertChannel.id;
+    const send = (endpoint: string, token: string) =>
+      testDeliveryChannel({ channelId, destination: { webhook: { endpoint } } }, token);
+
+    const unsavedEndpoint = await generateMockEndpoint();
+    const delivered = await send(unsavedEndpoint.url, ownerToken).then(r =>
+      r.expectNoGraphQLErrors(),
+    );
+    expect(delivered.testDeliveryChannel.ok).not.toBeNull();
+    const requests = await getRecordedRequests();
+    expect(requests.some(request => request.path === unsavedEndpoint.path)).toBe(true);
+
+    const unregistered = new URL(`/random/no-expectation-${channelId}`, savedEndpoint.url).href;
+    const refused = await send(unregistered, ownerToken).then(r => r.expectNoGraphQLErrors());
+    expect(refused.testDeliveryChannel.error?.message).toBe('404 Not Found');
+
+    const { ownerToken: outsiderToken } = await seed.createOwner();
+    const errors = await send(unsavedEndpoint.url, outsiderToken).then(r =>
+      r.expectGraphQLErrors(),
+    );
+    expect(errors[0].message).toContain('Missing permission for performing');
+
+    await flushAsyncInserts();
+    const { data: rows } = await clickHouseQuery<{ event: string }>(
+      `SELECT event FROM outbound_deliveries WHERE destination = '${channelId}'`,
+    );
+    expect(rows).toEqual([{ event: 'channel_confirmation' }]);
   },
 );
 

@@ -3,7 +3,11 @@ import { CriticalityLevel } from '@graphql-inspector/core';
 import { SchemaChangeType } from '@hive/storage';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
-import { buildHiveWebhookHeaders, channelConfirmationKey } from '../../lib/delivery-metadata';
+import {
+  buildHiveTestWebhookHeaders,
+  buildHiveWebhookHeaders,
+  channelConfirmationKey,
+} from '../../lib/delivery-metadata';
 import {
   deliveryOutcome,
   DeliveryRecorder,
@@ -11,11 +15,15 @@ import {
   type DeliveryOutcome,
 } from '../delivery-recorder';
 import {
+  attemptTestNotification,
   ChannelConfirmationInput,
   CommunicationAdapter,
   createMDLink,
   SchemaChangeNotificationInput,
   slackCoderize,
+  TEST_NOTIFICATION_TIMEOUT_MS,
+  TestNotificationInput,
+  testNotificationText,
 } from './common';
 
 @Injectable()
@@ -179,6 +187,35 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
     }
   }
 
+  async sendTestNotification(input: TestNotificationInput) {
+    this.logger.debug(
+      `Sending Test Notification over Microsoft Teams (organization=%s, project=%s)`,
+      input.organization.id,
+      input.project.id,
+    );
+
+    const projectLink = createMDLink({
+      text: input.project.name,
+      url: `${this.appBaseUrl}/${input.organization.slug}/${input.project.slug}`,
+    });
+    const headers = buildHiveTestWebhookHeaders(
+      this.deliveries.describe({ event: 'test', idempotencyKey: input.idempotencyKey }),
+    );
+
+    return attemptTestNotification(
+      this.logger,
+      () =>
+        this.sendTeamsMessage(
+          input.destination,
+          testNotificationText(projectLink),
+          undefined,
+          headers,
+          AbortSignal.timeout(TEST_NOTIFICATION_TIMEOUT_MS),
+        ),
+      describeTeamsError,
+    );
+  }
+
   private pluralize(word: string, num: number): string {
     return word + (num > 1 ? 's' : '');
   }
@@ -191,6 +228,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
     message: string,
     fullReportMdLink?: string,
     headers: Record<string, string> = {},
+    signal?: AbortSignal,
   ): Promise<DeliveryOutcome> {
     if (message.length > 27000) {
       message = message.slice(0, 27000) + `\n\n... message truncated. ${fullReportMdLink ?? ''}`;
@@ -217,6 +255,7 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
         ...headers,
       },
       body: JSON.stringify(payload),
+      signal,
     });
 
     if (!response.ok) {
@@ -254,6 +293,9 @@ const FETCH_TIMEOUT_CODES = new Set([
 export function describeTeamsError(error: unknown): DeliveryOutcome | null {
   if (error instanceof TeamsWebhookError) {
     return deliveryOutcome(error.statusCode, error.statusText);
+  }
+  if (isRecord(error) && error.name === 'TimeoutError') {
+    return deliveryOutcome(null, TIMED_OUT);
   }
   const cause = isRecord(error) && isRecord(error.cause) ? error.cause : null;
   const code = typeof cause?.code === 'string' ? cause.code : null;

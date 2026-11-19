@@ -4,7 +4,11 @@ import { SchemaChangeType } from '@hive/storage';
 import { HiveHttpClientError, HttpClient } from '../../../shared/providers/http-client';
 import { Logger } from '../../../shared/providers/logger';
 import { WEB_APP_URL } from '../../../shared/providers/tokens';
-import { buildHiveWebhookHeaders, channelConfirmationKey } from '../../lib/delivery-metadata';
+import {
+  buildHiveTestWebhookHeaders,
+  buildHiveWebhookHeaders,
+  channelConfirmationKey,
+} from '../../lib/delivery-metadata';
 import {
   deliveryOutcome,
   DeliveryRecorder,
@@ -12,11 +16,15 @@ import {
   type DeliveryOutcome,
 } from '../delivery-recorder';
 import {
+  attemptTestNotification,
   ChannelConfirmationInput,
   CommunicationAdapter,
   createMDLink,
   SchemaChangeNotificationInput,
   slackCoderize,
+  TEST_NOTIFICATION_TIMEOUT_MS,
+  TestNotificationInput,
+  testNotificationText,
 } from './common';
 
 const DISCORD_RED = 0xe74c3c;
@@ -242,6 +250,34 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     }
   }
 
+  async sendTestNotification(input: TestNotificationInput) {
+    this.logger.debug(
+      `Sending Test Notification over Discord (organization=%s, project=%s)`,
+      input.organization.id,
+      input.project.id,
+    );
+
+    const projectLink = createMDLink({
+      text: input.project.name,
+      url: `${this.appBaseUrl}/${input.organization.slug}/${input.project.slug}`,
+    });
+    const headers = buildHiveTestWebhookHeaders(
+      this.deliveries.describe({ event: 'test', idempotencyKey: input.idempotencyKey }),
+    );
+
+    return attemptTestNotification(
+      this.logger,
+      () =>
+        this.sendDiscordMessage(
+          input.destination,
+          { content: testNotificationText(projectLink) },
+          headers,
+          TEST_NOTIFICATION_TIMEOUT_MS,
+        ),
+      describeDiscordError,
+    );
+  }
+
   private pluralize(word: string, num: number): string {
     return word + (num !== 1 ? 's' : '');
   }
@@ -250,6 +286,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
     webhookUrl: string,
     payload: DiscordWebhookPayload,
     headers: Record<string, string> = {},
+    timeoutMs?: number,
   ): Promise<DeliveryOutcome> {
     const normalizedPayload: DiscordWebhookPayload = {
       username: 'GraphQL Hive',
@@ -264,6 +301,7 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
         ...headers,
       },
       json: normalizedPayload,
+      ...(timeoutMs === undefined ? {} : { timeout: { request: timeoutMs } }),
       context: {
         logger: this.logger,
       },

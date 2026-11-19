@@ -32,6 +32,7 @@ import type {
   SchemaPublishInput,
   SchemaVersionPromoteInput,
   TargetSelectorInput,
+  TestDeliveryChannelInput,
   UpdateAlertChannelInput,
   UpdateBaseSchemaInput,
   UpdateGroupMappingInput,
@@ -743,6 +744,28 @@ export function updateAlertChannel(input: UpdateAlertChannelInput, authToken: st
               slackChannel
               name
             }
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
+  });
+}
+
+export function testDeliveryChannel(input: TestDeliveryChannelInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_TestDeliveryChannel($input: TestDeliveryChannelInput!) {
+        testDeliveryChannel(input: $input) {
+          ok {
+            idempotencyKey
+          }
+          error {
+            message
+            idempotencyKey
           }
         }
       }
