@@ -37,8 +37,8 @@ catalogs:
       specifier: 1.5.4
       version: 1.5.4
     '@graphql-inspector/core':
-      specifier: 8.0.3
-      version: 8.0.3
+      specifier: 8.1.1
+      version: 8.1.1
     '@graphql-inspector/patch':
       specifier: 1.0.0
       version: 1.0.0
@@ -399,11 +399,11 @@ importers:
         specifier: 4.4.2
         version: 4.4.2(@apollo/subgraph@2.14.0(graphql@16.14.2))(@types/node@24.13.3)(cosmiconfig-toml-loader@1.0.0)(eslint@8.57.1)(graphql@16.14.2)(typescript@5.7.3)
       '@graphql-inspector/cli':
-        specifier: 7.0.0
-        version: 7.0.0(@types/node@24.13.3)(graphql@16.14.2)
+        specifier: 7.0.6
+        version: 7.0.6(@types/node@24.13.3)(graphql@16.14.2)
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.0.3(graphql@16.14.2)
+        version: 8.1.1(graphql@16.14.2)
       '@graphql-inspector/patch':
         specifier: 'catalog:'
         version: 1.0.0(graphql@16.14.2)
@@ -1342,7 +1342,7 @@ importers:
         version: 1.0.0
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.0.3(graphql@16.14.2)
+        version: 8.1.1(graphql@16.14.2)
       '@graphql-tools/merge':
         specifier: 'catalog:'
         version: 9.2.6(graphql@16.14.2)
@@ -2013,7 +2013,7 @@ importers:
     devDependencies:
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.0.3(graphql@16.14.2)
+        version: 8.1.1(graphql@16.14.2)
       '@hive/postgres':
         specifier: workspace:*
         version: link:../../internal/postgres
@@ -2160,7 +2160,7 @@ importers:
         version: 1.1.0(pino@10.3.0)
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.0.3(graphql@16.14.2)
+        version: 8.1.1(graphql@16.14.2)
       '@graphql-inspector/patch':
         specifier: 'catalog:'
         version: 1.0.0(graphql@16.14.2)
@@ -2259,7 +2259,7 @@ importers:
         version: link:../../libraries/laboratory
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.0.3(graphql@16.14.2)
+        version: 8.1.1(graphql@16.14.2)
       '@graphql-inspector/patch':
         specifier: 'catalog:'
         version: 1.0.0(graphql@16.14.2)
@@ -3116,12 +3116,6 @@ packages:
     resolution: {integrity: sha512-hnORnjP/1P/zFEndoeX+n+t1RwWRJiJpM/jO7FW32Kn9r5+sJB2JWOdYo4L6k78j15eCwY3Gm/7364B1EMwtNg==}
     engines: {node: '>=6.0.0'}
     hasBin: true
-
-  '@babel/plugin-syntax-import-assertions@7.29.7':
-    resolution: {integrity: sha512-/An1OCBN93thpBAGyfsK2pcf0jvju1SAtKkL2Ny++B5Sy6sqgzXDQH1cZxWbF96Wuk+bn41MDA9bLd4VVAw6rw==}
-    engines: {node: '>=6.9.0'}
-    peerDependencies:
-      '@babel/core': 7.29.7
 
   '@babel/plugin-syntax-jsx@7.23.3':
     resolution: {integrity: sha512-EB2MELswq55OHUoRZLGg/zC7QWUKfNLpE57m/S2yr1uEneIgsTgrSzXP3NXEsMkVn76OlaVVnzN+ugObuYGwhg==}
@@ -4130,14 +4124,14 @@ packages:
     resolution: {integrity: sha512-Pz8wB3K0iU6ae9S1fWfsmJX24CcGeTo6hE7T44ucmV/ALKRj+bxClmqrYcDT7v3f0d12Rh4FAXBb6gon+WkDpQ==}
     engines: {node: '>=20.0.0'}
 
-  '@graphql-inspector/audit-command@6.0.0':
-    resolution: {integrity: sha512-aptE1L9b4CUzVLColM9iej5oVOk3S8270dj7LViqCrEu5J49SHUzpMwRbAxIBYdhbHWPTn2UMZaIO8dDOxtpzw==}
+  '@graphql-inspector/audit-command@6.0.6':
+    resolution: {integrity: sha512-7kTzUrWXwZeu9gfmi9tv1/fYod9itj0Zh/qxKBeSQXwJCUBtWQl0wsCjEB//9j+75H6+Cqp0CWRDyXNUlfq2QA==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/cli@7.0.0':
-    resolution: {integrity: sha512-s+6I8t/dOYE6S+k3JvxddngoggZcrvwtD7A1hqZxA8unaRhxi97YKZcvNIm1VLWOAVr/0RWRvyQXdYsasFFDbw==}
+  '@graphql-inspector/cli@7.0.6':
+    resolution: {integrity: sha512-EhqSn4H6lCGcGDMMbS5saUiZ3bUpv5CMvqb6+vjPAdMwB8JZgsA596E9ACSa/ftZs3XGc4aWB0c6uLB2QQRE5w==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -4149,8 +4143,8 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/commands@7.0.0':
-    resolution: {integrity: sha512-hPDJkFbWIMMnZEC19+SIfyOXkUgvDyPhsbVQh5vLcg+m9uDmLBAtmd1W6hjQFyG+1L76OUyzjdeFKAugKYIGqw==}
+  '@graphql-inspector/commands@7.0.1':
+    resolution: {integrity: sha512-7oDCAs0M+ibVPyK58EBtzAlfFBhjXA48nF0hw+RQ33Pwh1yah3mliPbqYmLPKwthGbYkd7kxxRq9HedvF9cZEQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@graphql-inspector/config': ^5.0.0
@@ -4170,20 +4164,26 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/coverage-command@7.0.0':
-    resolution: {integrity: sha512-9HFBZBFBc3todChz2kdZjD9GXQnb3G9KjTG0bZn05hsBaCYm30PL8RSEnXdKNoV//f6aNY/JuHCOSy7rVGL5dA==}
+  '@graphql-inspector/core@8.1.1':
+    resolution: {integrity: sha512-Pj9ySqyghPuZHxHlaJs2j0XQ0at2VYQf3nuM4pNKL/RdkOtba3hMFDAbfNZd3r9PbKtgkxvG6yMasp2A4CZj0g==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/diff-command@7.0.0':
-    resolution: {integrity: sha512-RI6G0ci21e/IuWdOw3/YZ3xkCmHyw26dbfA9DLuOn+5QlWtt389XabnrhrdkY+LOTG2vVAvFhITuOSqbQnLOPQ==}
+  '@graphql-inspector/coverage-command@7.0.6':
+    resolution: {integrity: sha512-ftBFPch9yaUGuSTxfzRglr3to9UbjjScLPqrGXbhVS0Cl5nmjQFtiaokrUXCQmR9JZ6oci1aa1yi3qMoJDYvQg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/docs-command@6.0.0':
-    resolution: {integrity: sha512-bwpICZ/zT3CH59b+wbHNnCLmgZiZkKU0KiLwmXOLgtaITbgmTb/S+5csCMxJqJxAfQIO7WqYnHRMgqjHRL3+0w==}
+  '@graphql-inspector/diff-command@7.0.6':
+    resolution: {integrity: sha512-2znAd0V/9sgzPVWGwh4xowrJdibrQ/h7AHJGPHTIJabsGoRLe5rNlkLEBpwvKNRP7ajvl1idymqyC3ocwS6fZA==}
+    engines: {node: '>=18.0.0'}
+    peerDependencies:
+      graphql: 16.14.2
+
+  '@graphql-inspector/docs-command@6.0.1':
+    resolution: {integrity: sha512-BbOx57Z2+8ZD0PgYsUh52ZrFRg/oxl40sIQd70DEQrlNZTMKLhWqxAa5aXOTSqrQIYHorWhs1kMOeYnRn/CR9Q==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 16.14.2
@@ -4206,8 +4206,8 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/introspect-command@6.0.0':
-    resolution: {integrity: sha512-fR9t+UGsumQ9BBGNdk1/d0RZW9sQBaC5wUTXhI5Pj9TVnIRUjISxCHlXhgWmnLKEYxCNmj2hDok8vyx0eN/HYA==}
+  '@graphql-inspector/introspect-command@6.0.6':
+    resolution: {integrity: sha512-haRtlqePJ4CGFaDbTBwLEVusKOfRV4FrOKLb6kxT6Vb+jnZYkv/beMI/2wjHHXyd7KtgjpS43s1ran7P5isUSg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 16.14.2
@@ -4235,14 +4235,14 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/serve-command@6.0.0':
-    resolution: {integrity: sha512-Kq6rtdInF4DeAqDx0snWK7RqOuY/Spkhh8+ZMIfjEKmvosOemqhHT6BjR5ivKXeu9JQjhgXEAfDJ9ZDrec6xVw==}
+  '@graphql-inspector/serve-command@6.0.1':
+    resolution: {integrity: sha512-Tj8esBPMjsuMOQ7c6nSNkx1ZDkrLpwymqh/b+2mhERDPF2eVR4w7+6nIDHHmAZP1d0ZF9u6kAElu5JX3QKrnkQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/similar-command@6.0.0':
-    resolution: {integrity: sha512-iahXGKDllPQH3tZvxuc8gW+kAZ80aBCnhEsz2HE5v57GcilGjM5J72ZsU5ElIQXvZxWB7UUeWGTNrnt/2LdOCQ==}
+  '@graphql-inspector/similar-command@6.0.6':
+    resolution: {integrity: sha512-lvJLDzWTYf5h0qCmcJLcjK45vO8AuoZbWj4zkFgHotlwLH5KSSqBjzBDWtgixFq3Chwb0gXxwpDdYHz7bIeZXw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 16.14.2
@@ -4253,8 +4253,8 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-inspector/validate-command@6.0.0':
-    resolution: {integrity: sha512-NDvMobJNp2M9mbSZhjDeux/QdDXB1cJD8fQvp7vn06INPkoJK3uecO2rfDW+HH2AAFWJCTFULmK9pCdIGeSuWw==}
+  '@graphql-inspector/validate-command@6.0.6':
+    resolution: {integrity: sha512-2/I/eS9Yn6RBJEDQPLdJu9eQhf8I7OMs1CQynTYjlmem0QVgx6Mc77v7Yef6QRqXvllqWOxkkgd2jVnwDBUDSQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 16.14.2
@@ -4498,12 +4498,6 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-tools/git-loader@8.0.41':
-    resolution: {integrity: sha512-KhEaFCWRYfPDwvAEIaNgdkvOepclJL/1lwmfpn2LO1/Isq8u8wZwOu1TSaZkp/ICip0UkhzWTnx84FBPCfds5w==}
-    engines: {node: '>=16.0.0'}
-    peerDependencies:
-      graphql: 16.14.2
-
   '@graphql-tools/git-loader@8.0.44':
     resolution: {integrity: sha512-S3hGEa8cPuQUAhRrAmlakm1l4wBeu2B/IDRZz05taDf2Ewt4uoQESLJBUb30/rmAMz6DRITDWSrdkjUrjVG/NA==}
     engines: {node: '>=16.0.0'}
@@ -4516,20 +4510,8 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@graphql-tools/github-loader@9.1.7':
-    resolution: {integrity: sha512-VcA9JFh6G/kBN8bosgs6lZLF3VlW270o1IbA17e+Kqg6atKhEqLQSZ3eJ0RYoL02Nl7DI7hS+N9O5uTO31FZqw==}
-    engines: {node: '>=20.0.0'}
-    peerDependencies:
-      graphql: 16.14.2
-
   '@graphql-tools/graphql-file-loader@8.1.22':
     resolution: {integrity: sha512-vEhO76Sznim4xe13U7oDlku+k9o7JbNA1xoTuPPnzRbyZy7x22cwKYYQQzzJjEqAq1tf6+znrJaC84mHgKnB3A==}
-    engines: {node: '>=16.0.0'}
-    peerDependencies:
-      graphql: 16.14.2
-
-  '@graphql-tools/graphql-tag-pluck@8.3.36':
-    resolution: {integrity: sha512-o+J7i2i1MhswlCcfuWg2JmHZMcKTtFtSzTdDmDOC0/jroHL0pQTtnGPg4yM3UqKAaqntSYPTUW0QSphq8+xCEQ==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
       graphql: 16.14.2
@@ -15719,10 +15701,6 @@ packages:
   swap-case@3.0.3:
     resolution: {integrity: sha512-6p4op8wE9CQv7uDFzulI6YXUw4lD9n4oQierdbFThEKVWVQcbQcUjdP27W8XE7V4QnWmnq9jueSHceyyQnqQVA==}
 
-  sync-fetch@0.6.0:
-    resolution: {integrity: sha512-IELLEvzHuCfc1uTsshPK58ViSdNqXxlml1U+fmwJIKLYKOr/rAtBrorE2RYm5IHaMpDNlmC0fr1LAvdXvyheEQ==}
-    engines: {node: '>=18'}
-
   sync-fetch@0.7.1:
     resolution: {integrity: sha512-tTw2sPVgJb/ZO+Uz5Cs1haWg7aL0cw+DvD8mXos+ws5YaelM3IBZ50M717T1+RD5Qq0TdeZ/EI/wVMnAdJA0Eg==}
     engines: {node: '>=22.12.0'}
@@ -18094,11 +18072,6 @@ snapshots:
     dependencies:
       '@babel/types': 7.29.7
 
-  '@babel/plugin-syntax-import-assertions@7.29.7(@babel/core@7.29.7)':
-    dependencies:
-      '@babel/core': 7.29.7
-      '@babel/helper-plugin-utils': 7.29.7
-
   '@babel/plugin-syntax-jsx@7.23.3(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
@@ -19442,10 +19415,10 @@ snapshots:
 
   '@graphql-hive/signal@2.0.0': {}
 
-  '@graphql-inspector/audit-command@6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/audit-command@6.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
     dependencies:
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/core': 8.0.3(graphql@16.14.2)
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/core': 8.1.1(graphql@16.14.2)
       '@graphql-inspector/logger': 6.0.0
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       cli-table3: 0.6.5
@@ -19456,29 +19429,29 @@ snapshots:
       - '@graphql-inspector/loaders'
       - yargs
 
-  '@graphql-inspector/cli@7.0.0(@types/node@24.13.3)(graphql@16.14.2)':
+  '@graphql-inspector/cli@7.0.6(@types/node@24.13.3)(graphql@16.14.2)':
     dependencies:
       '@babel/core': 7.29.7
-      '@graphql-inspector/audit-command': 6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
+      '@graphql-inspector/audit-command': 6.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
       '@graphql-inspector/code-loader': 6.0.0(graphql@16.14.2)
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
       '@graphql-inspector/config': 5.0.0(graphql@16.14.2)
-      '@graphql-inspector/coverage-command': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/diff-command': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/docs-command': 6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
+      '@graphql-inspector/coverage-command': 7.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/diff-command': 7.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/docs-command': 6.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
       '@graphql-inspector/git-loader': 6.0.0(graphql@16.14.2)
       '@graphql-inspector/github-loader': 6.0.0(@types/node@24.13.3)(graphql@16.14.2)
       '@graphql-inspector/graphql-loader': 6.0.0(graphql@16.14.2)
-      '@graphql-inspector/introspect-command': 6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
+      '@graphql-inspector/introspect-command': 6.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
       '@graphql-inspector/json-loader': 6.0.0(graphql@16.14.2)
       '@graphql-inspector/loaders': 5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2)
-      '@graphql-inspector/serve-command': 6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/similar-command': 6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
+      '@graphql-inspector/serve-command': 6.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/similar-command': 6.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
       '@graphql-inspector/url-loader': 6.0.0(@types/node@24.13.3)(graphql@16.14.2)
-      '@graphql-inspector/validate-command': 6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
+      '@graphql-inspector/validate-command': 6.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
       graphql: 16.14.2
       tslib: 2.6.2
-      yargs: 17.7.2
+      yargs: 17.7.3
     transitivePeerDependencies:
       - '@fastify/websocket'
       - '@types/node'
@@ -19496,13 +19469,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@graphql-inspector/commands@7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/commands@7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
     dependencies:
       '@graphql-inspector/config': 5.0.0(graphql@16.14.2)
       '@graphql-inspector/loaders': 5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2)
       graphql: 16.14.2
       tslib: 2.6.2
-      yargs: 17.7.2
+      yargs: 17.7.3
 
   '@graphql-inspector/config@5.0.0(graphql@16.14.2)':
     dependencies:
@@ -19516,10 +19489,17 @@ snapshots:
       object-inspect: 1.13.4
       tslib: 2.6.2
 
-  '@graphql-inspector/coverage-command@7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/core@8.1.1(graphql@16.14.2)':
     dependencies:
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/core': 8.0.3(graphql@16.14.2)
+      dependency-graph: 1.0.0
+      graphql: 16.14.2
+      object-inspect: 1.13.4
+      tslib: 2.6.2
+
+  '@graphql-inspector/coverage-command@7.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
+    dependencies:
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/core': 8.1.1(graphql@16.14.2)
       '@graphql-inspector/logger': 6.0.0
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       graphql: 16.14.2
@@ -19529,10 +19509,10 @@ snapshots:
       - '@graphql-inspector/loaders'
       - yargs
 
-  '@graphql-inspector/diff-command@7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/diff-command@7.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
     dependencies:
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/core': 8.0.3(graphql@16.14.2)
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/core': 8.1.1(graphql@16.14.2)
       '@graphql-inspector/logger': 6.0.0
       graphql: 16.14.2
       tslib: 2.6.2
@@ -19541,9 +19521,9 @@ snapshots:
       - '@graphql-inspector/loaders'
       - yargs
 
-  '@graphql-inspector/docs-command@6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/docs-command@6.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
     dependencies:
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
       graphql: 16.14.2
       open: 8.4.2
       tslib: 2.6.2
@@ -19554,7 +19534,7 @@ snapshots:
 
   '@graphql-inspector/git-loader@6.0.0(graphql@16.14.2)':
     dependencies:
-      '@graphql-tools/git-loader': 8.0.41(graphql@16.14.2)
+      '@graphql-tools/git-loader': 8.0.44(graphql@16.14.2)
       graphql: 16.14.2
       tslib: 2.6.2
     transitivePeerDependencies:
@@ -19562,7 +19542,7 @@ snapshots:
 
   '@graphql-inspector/github-loader@6.0.0(@types/node@24.13.3)(graphql@16.14.2)':
     dependencies:
-      '@graphql-tools/github-loader': 9.1.7(@types/node@24.13.3)(graphql@16.14.2)
+      '@graphql-tools/github-loader': 9.1.11(@types/node@24.13.3)(graphql@16.14.2)
       graphql: 16.14.2
       tslib: 2.6.2
     transitivePeerDependencies:
@@ -19575,10 +19555,10 @@ snapshots:
       graphql: 16.14.2
       tslib: 2.6.2
 
-  '@graphql-inspector/introspect-command@6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/introspect-command@6.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
     dependencies:
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/core': 8.0.3(graphql@16.14.2)
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/core': 8.1.1(graphql@16.14.2)
       '@graphql-inspector/logger': 6.0.0
       graphql: 16.14.2
       tslib: 2.6.2
@@ -19618,9 +19598,9 @@ snapshots:
       graphql: 16.14.2
       tslib: 2.6.2
 
-  '@graphql-inspector/serve-command@6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/serve-command@6.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
     dependencies:
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
       '@graphql-inspector/logger': 6.0.0
       graphql: 16.14.2
       graphql-yoga: 5.24.4(graphql@16.14.2)
@@ -19631,10 +19611,10 @@ snapshots:
       - '@graphql-inspector/loaders'
       - yargs
 
-  '@graphql-inspector/similar-command@6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/similar-command@6.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
     dependencies:
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/core': 8.0.3(graphql@16.14.2)
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/core': 8.1.1(graphql@16.14.2)
       '@graphql-inspector/logger': 6.0.0
       graphql: 16.14.2
       tslib: 2.6.2
@@ -19656,10 +19636,10 @@ snapshots:
       - uWebSockets.js
       - utf-8-validate
 
-  '@graphql-inspector/validate-command@6.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)':
+  '@graphql-inspector/validate-command@6.0.6(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)':
     dependencies:
-      '@graphql-inspector/commands': 7.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.2)
-      '@graphql-inspector/core': 8.0.3(graphql@16.14.2)
+      '@graphql-inspector/commands': 7.0.1(@graphql-inspector/config@5.0.0(graphql@16.14.2))(@graphql-inspector/loaders@5.0.0(@graphql-inspector/config@5.0.0(graphql@16.14.2))(graphql@16.14.2))(graphql@16.14.2)(yargs@17.7.3)
+      '@graphql-inspector/core': 8.1.1(graphql@16.14.2)
       '@graphql-inspector/logger': 6.0.0
       '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
       graphql: 16.14.2
@@ -20300,18 +20280,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@graphql-tools/git-loader@8.0.41(graphql@16.14.2)':
-    dependencies:
-      '@graphql-tools/graphql-tag-pluck': 8.3.36(graphql@16.14.2)
-      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
-      graphql: 16.14.2
-      is-glob: 4.0.3
-      micromatch: 4.0.8
-      tslib: 2.8.1
-      unixify: 1.0.0
-    transitivePeerDependencies:
-      - supports-color
-
   '@graphql-tools/git-loader@8.0.44(graphql@16.14.2)':
     dependencies:
       '@graphql-tools/graphql-tag-pluck': 8.3.39(graphql@16.14.2)
@@ -20338,20 +20306,6 @@ snapshots:
       - '@types/node'
       - supports-color
 
-  '@graphql-tools/github-loader@9.1.7(@types/node@24.13.3)(graphql@16.14.2)':
-    dependencies:
-      '@graphql-tools/executor-http': 3.4.1(@types/node@24.13.3)(graphql@16.14.2)
-      '@graphql-tools/graphql-tag-pluck': 8.3.39(graphql@16.14.2)
-      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
-      '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
-      '@whatwg-node/promise-helpers': 1.3.2
-      graphql: 16.14.2
-      sync-fetch: 0.6.0
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - '@types/node'
-      - supports-color
-
   '@graphql-tools/graphql-file-loader@8.1.22(graphql@16.14.2)':
     dependencies:
       '@graphql-tools/import': 7.2.2(graphql@16.14.2)
@@ -20360,19 +20314,6 @@ snapshots:
       graphql: 16.14.2
       tslib: 2.8.1
       unixify: 1.0.0
-
-  '@graphql-tools/graphql-tag-pluck@8.3.36(graphql@16.14.2)':
-    dependencies:
-      '@babel/core': 7.29.7
-      '@babel/parser': 7.29.7
-      '@babel/plugin-syntax-import-assertions': 7.29.7(@babel/core@7.29.7)
-      '@babel/traverse': 7.29.7
-      '@babel/types': 7.29.7
-      '@graphql-tools/utils': 12.0.3(graphql@16.14.2)
-      graphql: 16.14.2
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@graphql-tools/graphql-tag-pluck@8.3.39(graphql@16.14.2)':
     dependencies:
@@ -33479,12 +33420,6 @@ snapshots:
       tslib: 2.8.1
 
   swap-case@3.0.3: {}
-
-  sync-fetch@0.6.0:
-    dependencies:
-      node-fetch: 3.3.2
-      timeout-signal: 2.0.0
-      whatwg-mimetype: 4.0.0
 
   sync-fetch@0.7.1:
     dependencies:
