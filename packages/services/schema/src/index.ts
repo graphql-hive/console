@@ -57,6 +57,14 @@ async function main() {
     env.compositionWorker.maxOldGenerationSizeMb,
   );
 
+  const diffScheduler = new CompositionScheduler(
+    server.log,
+    env.diffWorker.count,
+    env.diffWorker.maxOldGenerationSizeMb,
+    undefined,
+    'diff',
+  );
+
   if (tracing) {
     await server.register(...tracing.instrumentFastify());
   }
@@ -93,7 +101,13 @@ async function main() {
             failure: env.timings.cacheTTL,
           },
         });
-        return { cache, req, broker: env.requestBroker, compositionScheduler };
+        return {
+          cache,
+          req,
+          broker: env.requestBroker,
+          compositionScheduler,
+          diffScheduler,
+        };
       },
     });
 

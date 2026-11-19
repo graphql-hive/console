@@ -42,6 +42,8 @@ const EnvironmentModel = zod.object({
   COMPOSITION_WORKER_TRACK_MEMORY_USAGE: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]),
   ).optional(),
+  DIFF_WORKER_COUNT: NumberFromString(1).optional().default(2),
+  DIFF_WORKER_MAX_OLD_GENERATION_SIZE_MB: NumberFromString(1).optional().default(512),
   TRANSFORM_EXTERNAL_SUPERGRAPH_TO_PUBLIC_SDL: emptyString(
     zod.union([zod.literal('1'), zod.literal('0')]),
   ).optional(),
@@ -212,6 +214,10 @@ export const env = {
     count: base.COMPOSITION_WORKER_COUNT,
     maxOldGenerationSizeMb: base.COMPOSITION_WORKER_MAX_OLD_GENERATION_SIZE_MB,
     trackMemoryUsage: base.COMPOSITION_WORKER_TRACK_MEMORY_USAGE === '1',
+  },
+  diffWorker: {
+    count: base.DIFF_WORKER_COUNT,
+    maxOldGenerationSizeMb: base.DIFF_WORKER_MAX_OLD_GENERATION_SIZE_MB,
   },
   transformExternalSupergraphToPublicSdl: base.TRANSFORM_EXTERNAL_SUPERGRAPH_TO_PUBLIC_SDL === '1',
 } as const;
