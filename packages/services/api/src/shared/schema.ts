@@ -6,8 +6,10 @@ import {
   DocumentNode,
   EnumValueDefinitionNode,
   FieldDefinitionNode,
+  GraphQLDirective,
   GraphQLSchema,
   InputValueDefinitionNode,
+  isTypeSystemExtensionNode,
   Kind,
   lexicographicSortSchema,
   NamedTypeNode,
@@ -39,12 +41,149 @@ export const buildSortedSchemaFromSchemaObject = traceInlineSync(
     transformError = (error: unknown) => error,
   ): GraphQLSchema => {
     try {
-      return lexicographicSortSchema(buildASTSchema(schema.document));
+      return buildLexicographicallySortedSchema(schema.document);
     } catch (error) {
       throw transformError(error);
     }
   },
 );
+
+/**
+ * Equivalent to `lexicographicSortSchema(buildASTSchema(document))`: types, directives, fields, arguments,
+ * input fields, enum values, interfaces, union members and directive locations end up in the same order.
+ *
+ * `lexicographicSortSchema` re-creates every type of an already built schema, which costs about as much as building it.
+ * Instead, the lists inside the AST are sorted before building the schema once,
+ * and the (unchanged) types and directives are then passed to a new GraphQLSchema in sorted order.
+ *
+ * The equivalence is covered by `__tests__/schema.spec.ts`.
+ */
+export function buildLexicographicallySortedSchema(document: DocumentNode): GraphQLSchema {
+  // Fields of type extensions are appended to the fields of the extended type when building the schema,
+  // so sorting the AST would not produce a sorted result. Extensions only appear in SDL of individual services.
+  if (document.definitions.some(isTypeSystemExtensionNode)) {
+    return lexicographicSortSchema(buildASTSchema(document));
+  }
+
+  const config = buildASTSchema(sortDocumentListsForSchema(document)).toConfig();
+
+  // The type map follows the order of the types list.
+  // This also sorts the built-in scalars and introspection types, as `lexicographicSortSchema` does.
+  // Directives are re-created with sorted arguments and locations, including the built-in ones (e.g. @deprecated),
+  // as `lexicographicSortSchema` does. There are only a few of them.
+  return new GraphQLSchema({
+    ...config,
+    types: sortBy(config.types, type => type.name),
+    directives: sortBy(config.directives, directive => directive.name).map(directive => {
+      const directiveConfig = directive.toConfig();
+      return new GraphQLDirective({
+        ...directiveConfig,
+        locations: sortBy(directiveConfig.locations, location => location),
+        args: Object.fromEntries(
+          Object.keys(directiveConfig.args)
+            .sort(naturalCompare)
+            .map(name => [name, directiveConfig.args[name]]),
+        ),
+      });
+    }),
+  });
+}
+
+function sortDocumentListsForSchema(document: DocumentNode): DocumentNode {
+  return {
+    ...document,
+    definitions: document.definitions.map(definition => {
+      switch (definition.kind) {
+        case Kind.OBJECT_TYPE_DEFINITION:
+        case Kind.INTERFACE_TYPE_DEFINITION:
+          return {
+            ...definition,
+            interfaces: sortByNodeName(definition.interfaces),
+            fields: sortByNodeName(definition.fields)?.map(field =>
+              field.arguments && field.arguments.length > 1
+                ? { ...field, arguments: sortByNodeName(field.arguments) }
+                : field,
+            ),
+          };
+        case Kind.INPUT_OBJECT_TYPE_DEFINITION:
+          return { ...definition, fields: sortByNodeName(definition.fields) };
+        case Kind.ENUM_TYPE_DEFINITION:
+          return { ...definition, values: sortByNodeName(definition.values) };
+        case Kind.UNION_TYPE_DEFINITION:
+          return { ...definition, types: sortByNodeName(definition.types) };
+        default:
+          return definition;
+      }
+    }),
+  };
+}
+
+function sortByNodeName<T extends { readonly name: { readonly value: string } }>(
+  nodes: ReadonlyArray<T> | undefined,
+): ReadonlyArray<T> | undefined {
+  return nodes && nodes.length > 1 ? sortBy(nodes, node => node.name.value) : nodes;
+}
+
+/** Stable sort, using the same comparison as `lexicographicSortSchema`. */
+function sortBy<T>(items: ReadonlyArray<T>, toKey: (item: T) => string): Array<T> {
+  return items.slice().sort((a, b) => naturalCompare(toKey(a), toKey(b)));
+}
+
+/**
+ * Copy of graphql-js' internal `naturalCompare` (used by `lexicographicSortSchema`),
+ * which compares sequences of digits by their numeric value, e.g. `Type2` < `Type10`.
+ */
+function naturalCompare(aStr: string, bStr: string): number {
+  let aIndex = 0;
+  let bIndex = 0;
+
+  while (aIndex < aStr.length && bIndex < bStr.length) {
+    let aChar = aStr.charCodeAt(aIndex);
+    let bChar = bStr.charCodeAt(bIndex);
+
+    if (isDigit(aChar) && isDigit(bChar)) {
+      let aNum = 0;
+      do {
+        ++aIndex;
+        aNum = aNum * 10 + aChar - DIGIT_0;
+        aChar = aStr.charCodeAt(aIndex);
+      } while (isDigit(aChar) && aNum > 0);
+
+      let bNum = 0;
+      do {
+        ++bIndex;
+        bNum = bNum * 10 + bChar - DIGIT_0;
+        bChar = bStr.charCodeAt(bIndex);
+      } while (isDigit(bChar) && bNum > 0);
+
+      if (aNum < bNum) {
+        return -1;
+      }
+
+      if (aNum > bNum) {
+        return 1;
+      }
+    } else {
+      if (aChar < bChar) {
+        return -1;
+      }
+      if (aChar > bChar) {
+        return 1;
+      }
+      ++aIndex;
+      ++bIndex;
+    }
+  }
+
+  return aStr.length - bStr.length;
+}
+
+const DIGIT_0 = 48;
+const DIGIT_9 = 57;
+
+function isDigit(code: number): boolean {
+  return !Number.isNaN(code) && DIGIT_0 <= code && code <= DIGIT_9;
+}
 
 /**
  * Builds GraphQLSchema without validation of SDL
