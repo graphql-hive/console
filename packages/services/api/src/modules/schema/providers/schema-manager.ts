@@ -22,6 +22,7 @@ import { HiveError } from '../../../shared/errors';
 import { atomic, cache, stringifySelector } from '../../../shared/helpers';
 import { isUUID } from '../../../shared/is-uuid';
 import { parseGraphQLSource } from '../../../shared/schema';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { GraphStore, type Graph } from '../../graph/providers/graph-store';
 import { GitHubIntegrationManager } from '../../integrations/providers/github-integration-manager';
@@ -87,6 +88,7 @@ export class SchemaManager {
     private idTranslator: IdTranslator,
     private schemaVersions: SchemaVersionStore,
     private graphs: GraphStore,
+    private auditLog: AuditLogRecorder,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
   ) {
     this.logger = logger.child({ source: 'SchemaManager' });
@@ -1077,6 +1079,18 @@ export class SchemaManager {
         reason: "Schema check doesn't exist.",
       } as const;
     }
+
+    await this.auditLog.record({
+      eventType: 'SCHEMA_CHECK_APPROVED',
+      organizationId: args.organizationId,
+      metadata: {
+        projectId: args.projectId,
+        targetId: args.targetId,
+        schemaCheckId: schemaCheck.id,
+        serviceName: schemaCheck.serviceName ?? null,
+        targetAccessToken: AuditLogRecorder.resolveTargetAccessToken(this.session),
+      },
+    });
 
     return {
       type: 'ok',

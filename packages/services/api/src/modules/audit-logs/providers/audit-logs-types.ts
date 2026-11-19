@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { ResourceAssignmentModel } from '../../organization/lib/resource-assignment-model';
 
+/** Set when a legacy target access token caused the event, as such a token has no actor. */
+const TargetAccessTokenModel = z.object({ token: z.string() }).nullable();
+
 export const AuditLogModel = z.union([
   z.object({
     eventType: z.literal('USER_INVITED'),
@@ -445,6 +448,46 @@ export const AuditLogModel = z.union([
     metadata: z.object({
       filterId: z.uuid(),
       filterName: z.string(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SCHEMA_PUBLISHED'),
+    metadata: z.object({
+      projectId: z.uuid(),
+      targetId: z.uuid(),
+      schemaVersionId: z.uuid(),
+      serviceName: z.string().nullable(),
+      targetAccessToken: TargetAccessTokenModel,
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SCHEMA_DELETED'),
+    metadata: z.object({
+      projectId: z.uuid(),
+      targetId: z.uuid(),
+      schemaVersionId: z.uuid(),
+      serviceName: z.string(),
+      targetAccessToken: TargetAccessTokenModel,
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SCHEMA_VERSION_PROMOTED'),
+    metadata: z.object({
+      projectId: z.uuid(),
+      targetId: z.uuid(),
+      schemaVersionId: z.uuid(),
+      sourceTargetId: z.uuid(),
+      sourceSchemaVersionId: z.uuid(),
+    }),
+  }),
+  z.object({
+    eventType: z.literal('SCHEMA_CHECK_APPROVED'),
+    metadata: z.object({
+      projectId: z.uuid(),
+      targetId: z.uuid(),
+      schemaCheckId: z.uuid(),
+      serviceName: z.string().nullable(),
+      targetAccessToken: TargetAccessTokenModel,
     }),
   }),
 ]);

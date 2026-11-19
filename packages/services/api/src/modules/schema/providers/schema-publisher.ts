@@ -32,6 +32,7 @@ import { isGitHubRepositoryString } from '../../../shared/is-github-repository-s
 import { bolderize } from '../../../shared/markdown';
 import { AlertsManager } from '../../alerts/providers/alerts-manager';
 import { AppDeployments } from '../../app-deployments/providers/app-deployments';
+import { AuditLogRecorder } from '../../audit-logs/providers/audit-log-recorder';
 import { Session } from '../../auth/lib/authz';
 import { RateLimitProvider } from '../../commerce/providers/rate-limit.provider';
 import { GraphStore, type Graph } from '../../graph/providers/graph-store';
@@ -205,6 +206,7 @@ export class SchemaPublisher {
     private schemaRevisions: SchemaRevisionStore,
     private graphStore: GraphStore,
     private schemaHelper: SchemaHelper,
+    private auditLog: AuditLogRecorder,
     @Inject(SCHEMA_MODULE_CONFIG) private schemaModuleConfig: SchemaModuleConfig,
     singleModel: SingleModel,
     compositeModel: CompositeModel,
@@ -1874,6 +1876,18 @@ export class SchemaPublisher {
                     this.logger.error('Failed to trigger schema change notifications', err);
                   });
               }
+
+              await this.auditLog.record({
+                eventType: 'SCHEMA_DELETED',
+                organizationId: selector.organizationId,
+                metadata: {
+                  projectId: selector.projectId,
+                  targetId: selector.targetId,
+                  schemaVersionId: schemaVersion.id,
+                  serviceName: input.serviceName,
+                  targetAccessToken: AuditLogRecorder.resolveTargetAccessToken(this.session),
+                },
+              });
             }
 
             return {
@@ -2495,6 +2509,18 @@ export class SchemaPublisher {
           this.logger.error('Failed to trigger schema change notifications (error=%s)', errorText);
         });
     }
+
+    await this.auditLog.record({
+      eventType: 'SCHEMA_PUBLISHED',
+      organizationId,
+      metadata: {
+        projectId: project.id,
+        targetId: target.id,
+        schemaVersionId: result.schemaVersion.id,
+        serviceName: serviceName ?? null,
+        targetAccessToken: AuditLogRecorder.resolveTargetAccessToken(this.session),
+      },
+    });
 
     const linkToWebsite =
       typeof this.schemaModuleConfig.schemaPublishLink === 'function'
@@ -3382,6 +3408,18 @@ export class SchemaPublisher {
       target.id,
       schemaVersion.id,
     );
+
+    await this.auditLog.record({
+      eventType: 'SCHEMA_VERSION_PROMOTED',
+      organizationId: target.orgId,
+      metadata: {
+        projectId: target.projectId,
+        targetId: target.id,
+        schemaVersionId: schemaVersion.id,
+        sourceTargetId: originTarget.id,
+        sourceSchemaVersionId: originSchemaVersion.id,
+      },
+    });
 
     const linkToWebsite =
       typeof this.schemaModuleConfig.schemaPublishLink === 'function'
