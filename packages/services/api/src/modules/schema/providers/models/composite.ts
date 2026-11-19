@@ -771,11 +771,6 @@ export class CompositeModel {
         serviceChanges: serviceDiffCheck.result?.all ?? serviceDiffCheck.reason?.all ?? null,
         supergraphChanges:
           supergraphDiffCheck.result?.all ?? supergraphDiffCheck.reason?.all ?? null,
-        coordinatesDiff:
-          diffCheck.result?.coordinatesDiff ??
-          diffCheck.reason?.coordinatesDiff ??
-          diffCheck.data?.coordinatesDiff ??
-          null,
         messages,
         breakingChanges: null,
         compositionErrors: compositionCheck.reason?.errors ?? null,
@@ -968,11 +963,6 @@ export class CompositeModel {
         ...composablePartial,
         changes,
         breakingChanges,
-        coordinatesDiff:
-          diffCheck.result?.coordinatesDiff ??
-          diffCheck.reason?.coordinatesDiff ??
-          diffCheck.data?.coordinatesDiff ??
-          null,
         compositionErrors: compositionCheck.reason?.errors ?? [],
         supergraph: compositionCheck.result?.supergraph ?? null,
         supergraphChanges:
