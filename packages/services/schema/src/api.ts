@@ -4,7 +4,6 @@ import { handleTRPCError } from '@hive/service-common';
 import type { inferRouterInputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Cache } from './cache';
-import type { CompositionScheduler } from './composition-scheduler';
 import type { CompositionResultEvent } from './composition-worker';
 import { type ComposeFederationArgs } from './composition/federation';
 import type { CompositionErrorType } from './composition/shared';
@@ -13,6 +12,7 @@ import { ComposeStitchingArgs } from './composition/stitching';
 import { DiffInputModel, resolveDiffInput, type DiffResponse } from './diff';
 import { composeAndValidateCounter, schemaDiffCounter } from './metrics';
 import type { Metadata } from './types';
+import type { WorkerScheduler } from './worker-scheduler';
 
 export type { CompositionFailureError, CompositionErrorSource } from './lib/errors';
 export type { DiffInput, DiffResponse, SdlRef, SerializedSchemaChange } from './diff';
@@ -24,9 +24,9 @@ export interface Context {
     endpoint: string;
     signature: string;
   } | null;
-  compositionScheduler: CompositionScheduler;
+  compositionScheduler: WorkerScheduler;
   /** Runs diffs in separate workers, so they do not queue behind compositions. */
-  diffScheduler: CompositionScheduler;
+  diffScheduler: WorkerScheduler;
 }
 
 const t = initTRPC.context<Context>().create();
