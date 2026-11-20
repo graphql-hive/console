@@ -39,7 +39,7 @@
     "oclif:upload": "pnpm oclif upload tarballs --no-xz",
     "postpack": "rm -f oclif.manifest.json",
     "prebuild": "tsc --build --clean",
-    "prepack": "node scripts/replace-workspace.mjs rimraf lib && tsc -b && oclif manifest && oclif readme && node scripts/generate-errors.mjs",
+    "prepack": "node scripts/replace-workspace.mjs && tsc -b && oclif manifest && oclif readme && node scripts/generate-errors.mjs",
     "prepublishOnly": "oclif manifest && oclif readme && node scripts/generate-errors.mjs",
     "schema:check:federation": "pnpm start schema:check examples/federation.reviews.graphql --service reviews",
     "schema:check:single": "pnpm start schema:check examples/single.graphql",
@@ -75,7 +75,6 @@
     "@types/env-ci": "3.1.4",
     "graphql": "16.14.2",
     "oclif": "4.22.65",
-    "rimraf": "6.1.3",
     "tsx": "4.19.2",
     "typescript": "5.7.3"
   },
