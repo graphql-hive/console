@@ -49,7 +49,6 @@ import {
   SubPageLayoutHeader,
 } from '@/components/ui/page-content-layout';
 import { Button } from '@/components/ui/primitives/button/button';
-import { Checkbox } from '@/components/ui/primitives/checkbox/checkbox';
 import { AlertDialog } from '@/components/ui/primitives/overlays/alert-dialog/alert-dialog';
 import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { Switch } from '@/components/ui/primitives/switch/switch';
@@ -853,36 +852,33 @@ export const BreakingChanges = () => {
       </SubPageLayout>
       <SubPageLayout>
         <SubPageLayoutHeader
-          subPageTitle="Self-Approval of Failed Checks"
-          description="By default, the author of a change cannot approve their own failed schema check. Enable this to let authors who have permission to approve schema checks approve their own."
-        />
-        <div className="flex items-center">
-          <Checkbox
-            id="allowSchemaCheckSelfApproval"
-            checked={targetSettings.data?.target?.allowSchemaCheckSelfApproval ?? false}
-            onCheckedChange={async allowSchemaCheckSelfApproval => {
-              await updateTargetSchemaCheckSelfApproval({
-                input: {
-                  allowSchemaCheckSelfApproval,
-                  target: {
-                    bySelector: {
-                      organizationSlug,
-                      projectSlug,
-                      targetSlug,
+          subPageTitle="Allow Self-Approval of Failed Checks"
+          description="By default, the author of a change cannot approve their own failed schema check. Enable this to let authors with `schemaCheck:approve` permission approve their own failed schema checks."
+          sideContent={
+            targetSettings.fetching ? (
+              <Spinner />
+            ) : (
+              <Switch
+                checked={targetSettings.data?.target?.allowSchemaCheckSelfApproval ?? false}
+                onCheckedChange={async allowSchemaCheckSelfApproval => {
+                  await updateTargetSchemaCheckSelfApproval({
+                    input: {
+                      allowSchemaCheckSelfApproval,
+                      target: {
+                        bySelector: {
+                          organizationSlug,
+                          projectSlug,
+                          targetSlug,
+                        },
+                      },
                     },
-                  },
-                },
-              });
-            }}
-            disabled={targetSettings.fetching || selfApproval.fetching}
-          />
-          <label
-            htmlFor="allowSchemaCheckSelfApproval"
-            className="ml-2 inline-block text-sm text-fg-default"
-          >
-            Allow change authors to approve their own failed schema checks
-          </label>
-        </div>
+                  });
+                }}
+                disabled={selfApproval.fetching}
+              />
+            )
+          }
+        />
         {selfApprovalError && <p className="mt-2 text-sm text-critical">{selfApprovalError}</p>}
       </SubPageLayout>
     </>
