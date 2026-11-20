@@ -59,9 +59,9 @@
     "@graphql-tools/url-loader": "^9.1.12",
     "@graphql-tools/utils": "^12.0.3",
     "@graphql-typed-document-node/core": "3.2.0",
-    "@oclif/core": "3.26.6",
-    "@oclif/plugin-help": "6.2.36",
-    "@oclif/plugin-update": "4.7.16",
+    "@oclif/core": "3.27.0",
+    "@oclif/plugin-help": "6.3.0",
+    "@oclif/plugin-update": "4.8.0",
     "@theguild/federation-composition": "0.27.2",
     "cli-table3": "0.6.5",
     "colors": "1.4.0",
@@ -74,7 +74,7 @@
   "devDependencies": {
     "@types/env-ci": "3.1.4",
     "graphql": "16.14.2",
-    "oclif": "4.22.65",
+    "oclif": "4.24.0",
     "tsx": "4.19.2",
     "typescript": "5.7.3"
   },
