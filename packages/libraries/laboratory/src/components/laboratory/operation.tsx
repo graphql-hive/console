@@ -536,6 +536,10 @@ export const Query = (props: {
         return;
       }
 
+      if (response.errors?.length && !response.data) {
+        toast.error(response.errors[0].message);
+      }
+
       const extensionsResponse = (response.extensions?.response as {
         status: number;
         headers: Record<string, string>;
