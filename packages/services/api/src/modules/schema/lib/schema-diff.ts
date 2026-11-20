@@ -106,15 +106,25 @@ export async function diffSchemas(
   incoming: GraphQLSchema,
   rules?: Rule[],
 ): Promise<SchemaChangeType[]> {
-  const changes = await diff(existing, incoming, rules);
+  const rawChanges = await diff(existing, incoming, rules);
 
-  return changes.filter(dropTrimmedDescriptionChangedChange).map(change =>
-    HiveSchemaChangeModel.parse({
-      type: change.type,
-      meta: change.meta,
-      isSafeBasedOnUsage: change.criticality.isSafeBasedOnUsage,
-    }),
-  );
+  const changes: SchemaChangeType[] = [];
+
+  for (const change of rawChanges) {
+    if (shouldDropChange(change)) {
+      continue;
+    }
+
+    changes.push(
+      HiveSchemaChangeModel.parse({
+        type: change.type,
+        meta: change.meta,
+        isSafeBasedOnUsage: change.criticality.isSafeBasedOnUsage,
+      }),
+    );
+  }
+
+  return changes;
 }
 
 /**
@@ -241,49 +251,49 @@ export function addTypeForExtensions(ast: DocumentNode) {
  * If they are equal, it means that the change is no longer relevant and can be dropped.
  * All other changes are kept.
  */
-function dropTrimmedDescriptionChangedChange(change: Change<TypeOfChangeType>): boolean {
+function shouldDropChange(change: Change<TypeOfChangeType>): boolean {
   return (
     matchChange(change, {
       [ChangeType.DirectiveArgumentDescriptionChanged]: change =>
-        shouldKeepDescriptionChangedChange(
+        isDescriptionUnchangedAfterTrim(
           change,
           'newDirectiveArgumentDescription',
           'oldDirectiveArgumentDescription',
         ),
       [ChangeType.DirectiveDescriptionChanged]: change => {
-        return shouldKeepDescriptionChangedChange(
+        return isDescriptionUnchangedAfterTrim(
           change,
           'oldDirectiveDescription',
           'newDirectiveDescription',
         );
       },
       [ChangeType.EnumValueDescriptionChanged]: change =>
-        shouldKeepDescriptionChangedChange(
+        isDescriptionUnchangedAfterTrim(
           change,
           'oldEnumValueDescription',
           'newEnumValueDescription',
         ),
       [ChangeType.FieldArgumentDescriptionChanged]: change => {
-        return shouldKeepDescriptionChangedChange(change, 'newDescription', 'oldDescription');
+        return isDescriptionUnchangedAfterTrim(change, 'newDescription', 'oldDescription');
       },
       [ChangeType.FieldDescriptionChanged]: change => {
-        return shouldKeepDescriptionChangedChange(change, 'newDescription', 'oldDescription');
+        return isDescriptionUnchangedAfterTrim(change, 'newDescription', 'oldDescription');
       },
       [ChangeType.InputFieldDescriptionChanged]: change => {
-        return shouldKeepDescriptionChangedChange(
+        return isDescriptionUnchangedAfterTrim(
           change,
           'newInputFieldDescription',
           'oldInputFieldDescription',
         );
       },
       [ChangeType.TypeDescriptionChanged]: change => {
-        return shouldKeepDescriptionChangedChange(
+        return isDescriptionUnchangedAfterTrim(
           change,
           'newTypeDescription',
           'oldTypeDescription',
         );
       },
-    }) ?? true
+    }) ?? false
   );
 }
 
@@ -298,13 +308,13 @@ function trimDescription(description: unknown): string {
 // Limits the name of properties to only those that ends with Description
 type PropEndsWith<T, E extends string> = T extends `${any}${E}` ? T : never;
 
-function shouldKeepDescriptionChangedChange<
+function isDescriptionUnchangedAfterTrim<
   T extends TypeOfChangeType,
   TO extends PropEndsWith<keyof Change<T>['meta'], 'Description'>,
   // Prevents comparing values of the same key (e.g. newDescription, newDescription will result in TS error)
   TN extends Exclude<PropEndsWith<keyof Change<T>['meta'], 'Description'>, TO>,
 >(change: Change<T>, oldKey: TO, newKey: TN) {
-  return trimDescription(change.meta[oldKey]) !== trimDescription(change.meta[newKey]);
+  return trimDescription(change.meta[oldKey]) === trimDescription(change.meta[newKey]);
 }
 
 function matchChange<R, T extends TypeOfChangeType>(
