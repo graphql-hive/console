@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { handleTRPCError } from '@hive/service-common';
 import type { inferRouterInputs } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import type { SchemaDiffInput } from '../../api/src/modules/schema/lib/schema-diff';
 import type { Cache } from './cache';
 import type { CompositionScheduler } from './composition-scheduler';
 import type { CompositionResultEvent } from './composition-worker';
@@ -225,17 +224,15 @@ export const schemaBuilderApiRouter = t.router({
   diff: procedure.input(DiffInputModel).mutation(async ({ ctx, input }): Promise<DiffResponse> => {
     schemaDiffCounter.inc({ source: input.source });
 
-    return await ctx.cache.reuse('diff', async (args: SchemaDiffInput, abortSignal) => {
-      const result = await ctx.diffScheduler.process({
-        data: {
-          type: 'diff',
-          args,
-        },
-        abortSignal,
-        requestId: ctx.req.id,
-      });
-      return expectDiffResult(result);
-    })(resolveDiffInput(input));
+    const result = await ctx.diffScheduler.process({
+      data: {
+        type: 'diff',
+        args: resolveDiffInput(input),
+      },
+      abortSignal: AbortSignal.timeout(ctx.cache.timeoutMs),
+      requestId: ctx.req.id,
+    });
+    return expectDiffResult(result);
   }),
 });
 
