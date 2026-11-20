@@ -944,7 +944,7 @@ export default gql`
     members(
       first: Int @tag(name: "public")
       after: String @tag(name: "public")
-      filters: MembersFilter
+      filters: MembersFilter @tag(name: "private")
     ): MemberConnection! @tag(name: "public")
     """
     The number of members awaiting confirmation of SCIM management.

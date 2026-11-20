@@ -41,7 +41,7 @@ catalog:
   '@slack/web-api': 7.10.0
   '@tailwindcss/vite': 4.3.3
   '@swc/core': 1.16.0
-  '@theguild/federation-composition': 0.27.0
+  '@theguild/federation-composition': 0.27.2
   '@trpc/client': 10.45.3
   '@trpc/server': 10.45.3
   '@types/async-retry': 1.4.8
