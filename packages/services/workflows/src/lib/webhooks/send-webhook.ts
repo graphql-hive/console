@@ -4,6 +4,7 @@ import {
   deliveryOutcome,
   TIMED_OUT,
   trackDelivery,
+  unreachableOutcome,
   type DeliveryMeta,
   type DeliveryOutcome,
   type DeliveryRecorder,
@@ -113,8 +114,8 @@ export async function sendWebhook(
 /**
  * The outcome of a failed post: the status the endpoint answered, which got keeps on the
  * response (through the request broker, the broker relays the endpoint's status the same way),
- * or a timeout, got's own 10 s one or the socket's. Null for anything else, which the recorder
- * masks.
+ * a timeout, got's own 10 s one or the socket's, or that the endpoint was not reached. Null for
+ * anything else, which the recorder masks.
  */
 export function describeWebhookError(error: unknown): DeliveryOutcome | null {
   if (typeof error !== 'object' || error === null) {
@@ -130,5 +131,5 @@ export function describeWebhookError(error: unknown): DeliveryOutcome | null {
       return deliveryOutcome(statusCode, typeof statusMessage === 'string' ? statusMessage : '');
     }
   }
-  return code === 'ETIMEDOUT' ? deliveryOutcome(null, TIMED_OUT) : null;
+  return code === 'ETIMEDOUT' ? deliveryOutcome(null, TIMED_OUT) : unreachableOutcome(code);
 }

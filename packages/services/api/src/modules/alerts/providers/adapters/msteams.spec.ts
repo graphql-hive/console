@@ -381,7 +381,7 @@ describe('describeTeamsError', () => {
           code: 'ECONNREFUSED',
         }),
       }),
-      null,
+      { statusCode: null, statusText: 'Connection refused' },
     ],
     ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
   ])('%s', (_name, error, expected) => {
