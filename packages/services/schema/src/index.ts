@@ -14,8 +14,8 @@ import {
 import * as Sentry from '@sentry/node';
 import { Context, schemaBuilderApiRouter } from './api';
 import { createCache } from './cache';
-import { CompositionScheduler } from './composition-scheduler';
 import { env } from './environment';
+import { WorkerScheduler } from './worker-scheduler';
 
 async function main() {
   let tracing: TracingInstance | undefined;
@@ -51,10 +51,18 @@ async function main() {
     bodyLimit: env.http.bodyLimit,
   });
 
-  const compositionScheduler = new CompositionScheduler(
+  const compositionScheduler = new WorkerScheduler(
     server.log,
     env.compositionWorker.count,
     env.compositionWorker.maxOldGenerationSizeMb,
+  );
+
+  const diffScheduler = new WorkerScheduler(
+    server.log,
+    env.diffWorker.count,
+    env.diffWorker.maxOldGenerationSizeMb,
+    undefined,
+    'diff',
   );
 
   if (tracing) {
@@ -93,7 +101,13 @@ async function main() {
             failure: env.timings.cacheTTL,
           },
         });
-        return { cache, req, broker: env.requestBroker, compositionScheduler };
+        return {
+          cache,
+          req,
+          broker: env.requestBroker,
+          compositionScheduler,
+          diffScheduler,
+        };
       },
     });
 

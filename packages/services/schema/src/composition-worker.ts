@@ -4,10 +4,16 @@ import type { MessagePort } from 'node:worker_threads';
 import type { FastifyBaseLogger } from 'fastify';
 import { GraphQLError } from 'graphql';
 import type { Logger } from '@hive/api';
+import {
+  computeSchemaChanges,
+  serializeSchemaChange,
+  type SchemaDiffInput,
+} from '../../api/src/modules/schema/lib/schema-diff';
 import { CompositionResponse } from './api';
 import { createComposeFederation, type ComposeFederationArgs } from './composition/federation';
 import { composeSingle, type ComposeSingleArgs } from './composition/single';
 import { composeStitching, type ComposeStitchingArgs } from './composition/stitching';
+import type { DiffResponse } from './diff';
 import type { env } from './environment';
 import { errorWithSource } from './lib/errors';
 
@@ -65,6 +71,22 @@ export function createCompositionWorker(args: {
 
     try {
       if (message.event === 'composition') {
+        if (message.data.type === 'diff') {
+          const outcome = await computeSchemaChanges(message.data.args);
+          postResult({
+            event: 'compositionResult',
+            id: message.id,
+            data: {
+              type: 'diff',
+              result:
+                outcome.status === 'skipped'
+                  ? { status: 'skipped' }
+                  : { status: 'completed', changes: outcome.changes.map(serializeSchemaChange) },
+            },
+          } satisfies CompositionResultEvent);
+          return;
+        }
+
         if (message.data.type === 'federation') {
           const composeFederation = createComposeFederation({
             decrypt,
@@ -132,7 +154,7 @@ export function createCompositionWorker(args: {
       }
       assertAllCasesExhausted(message.event);
     } catch (err: unknown) {
-      if (err instanceof GraphQLError) {
+      if (err instanceof GraphQLError && message.data.type !== 'diff') {
         postResult({
           event: 'compositionResult',
           id: message.id,
@@ -186,18 +208,27 @@ export type CompositionEvent = {
     | {
         type: 'stitching';
         args: ComposeStitchingArgs;
+      }
+    | {
+        type: 'diff';
+        args: SchemaDiffInput;
       };
 };
 
 export type CompositionResultEvent = {
   id: string;
   event: 'compositionResult';
-  data: {
-    type: 'federation' | 'single' | 'stitching';
-    result: CompositionResponse & {
-      includesException?: boolean;
-    };
-  };
+  data:
+    | {
+        type: 'federation' | 'single' | 'stitching';
+        result: CompositionResponse & {
+          includesException?: boolean;
+        };
+      }
+    | {
+        type: 'diff';
+        result: DiffResponse;
+      };
   ctx?: {
     /** Amount of memory used during composition. Can be undefined if memory was freed during the run or if trackMemoryUsage is disabled */
     heapUsed?: number;
