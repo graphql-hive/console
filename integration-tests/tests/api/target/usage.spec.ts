@@ -820,6 +820,74 @@ test.concurrent(
 );
 
 test.concurrent(
+  'affected client counts only requests that use the changed field',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { organization, createProject } = await createOrg();
+    const {
+      project,
+      target,
+      createTargetAccessToken,
+      toggleTargetValidation,
+      updateTargetValidationSettings,
+      waitForRequestsCollected,
+    } = await createProject(ProjectType.Single);
+    const token = await createTargetAccessToken({});
+
+    await token
+      .publishSchema({
+        author: 'User',
+        commit: 'initial',
+        sdl: 'type Query { ping: String me: String }',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    const operation = (name: 'me' | 'ping'): CollectedOperation => ({
+      timestamp: Date.now(),
+      operation: `query ${name} { ${name} }`,
+      operationName: name,
+      fields: ['Query', `Query.${name}`],
+      execution: { ok: true, duration: 200_000_000, errorsTotal: 0 },
+      metadata: { client: { name: 'app', version: '1' } },
+    });
+    const collected = await token.collectLegacyOperations([
+      operation('me'),
+      ...Array.from({ length: 9 }, () => operation('ping')),
+    ]);
+    expect(collected.status).toEqual(200);
+    await waitForRequestsCollected(10);
+
+    await toggleTargetValidation(true);
+    await updateTargetValidationSettings({ percentage: 0 });
+
+    const check = await token
+      .checkSchema('type Query { ping: String }')
+      .then(r => r.expectNoGraphQLErrors());
+    assert(check.schemaCheck.__typename === 'SchemaCheckError');
+
+    const result = await execute({
+      document: SubscriptionSchemaCheckQuery,
+      variables: {
+        id: check.schemaCheck.schemaCheck!.id,
+        selector: {
+          organizationSlug: organization.slug,
+          projectSlug: project.slug,
+          targetSlug: target.slug,
+        },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+
+    const change = result.target?.schemaCheck?.breakingSchemaChanges?.nodes.find(
+      node => node.path?.join('.') === 'Query.me',
+    );
+    expect(change?.usageStatistics?.topAffectedClients).toEqual([
+      { name: 'app', countFormatted: '1', percentage: 10, percentageFormatted: '10.00%' },
+    ]);
+  },
+);
+
+test.concurrent(
   'leaves out a target only excluded clients used, even when others send the same operation',
   async ({ expect }) => {
     const { createOrg, ownerToken } = await initSeed().createOwner();
