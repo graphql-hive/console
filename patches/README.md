@@ -74,7 +74,7 @@ carries an unfixed ReDoS (CVE-2022-37620) that trips scanners, and we never mini
 Retire with mjml 5, which replaced html-minifier with htmlnano. Every 4.x release still depends on
 html-minifier, so a 4.x bump only re-cuts the patch.
 
-## `oclif@4.22.65.patch`
+## `oclif@4.24.0.patch`
 
 The CLI build and release tool (`oclif pack`, `upload`, `promote`), not the runtime. Three changes:
 
