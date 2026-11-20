@@ -40,6 +40,8 @@ export type ComposeFederationDeps = {
   decrypt: (value: string) => string;
   requestTimeoutMs: number;
   transformToPublicSdl?: boolean;
+  /** Forwarded to the external composition service. Kept out of the args, as they are the cache key. */
+  requestId: string;
 };
 
 export type ComposeFederationArgs = {
@@ -47,7 +49,6 @@ export type ComposeFederationArgs = {
   external: ExternalComposition;
   native: boolean;
   contracts: ContractsInputType | undefined;
-  requestId: string;
 };
 
 export const createComposeFederation = (deps: ComposeFederationDeps) =>
@@ -153,7 +154,7 @@ export const createComposeFederation = (deps: ComposeFederationDeps) =>
           decrypt: deps.decrypt,
           external,
           logger: deps.logger,
-          requestId: args.requestId,
+          requestId: deps.requestId,
           subgraphs,
           deadline,
           transformToPublicSdl: deps.transformToPublicSdl,

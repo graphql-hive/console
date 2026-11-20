@@ -121,7 +121,6 @@ export const schemaBuilderApiRouter = t.router({
                 : null,
             native: 'native' in input && input.native ? true : false,
             contracts: 'contracts' in input && input.contracts ? input.contracts : undefined,
-            requestId: ctx.req.id,
           });
         }
 
