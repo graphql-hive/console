@@ -879,7 +879,7 @@ export const BreakingChanges = () => {
             )
           }
         />
-        {selfApprovalError && <p className="mt-2 text-sm text-critical">{selfApprovalError}</p>}
+        {selfApprovalError && <span className="ml-2 text-critical">{selfApprovalError}</span>}
       </SubPageLayout>
     </>
   );
