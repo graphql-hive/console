@@ -7,6 +7,13 @@ import type {
   Project,
   Target,
 } from '../../../../shared/entities';
+import type { Logger } from '../../../shared/providers/logger';
+import {
+  deliveryOutcome,
+  UNEXPECTED_ERROR,
+  type DeliveryOutcome,
+  type DescribeDeliveryError,
+} from '../delivery-recorder';
 
 interface NotificationIntegrations {
   slack: {
@@ -65,9 +72,44 @@ export interface ChannelConfirmationInput {
   integrations: NotificationIntegrations;
 }
 
+export const TEST_NOTIFICATION_TIMEOUT_MS = 10_000;
+
+export interface TestNotificationInput {
+  organization: Pick<Organization, 'id' | 'slug' | 'name'>;
+  project: Pick<Project, 'id' | 'slug' | 'name'>;
+  destination: string;
+  idempotencyKey: string | null;
+  integrations: NotificationIntegrations;
+}
+
 export interface CommunicationAdapter {
   sendSchemaChangeNotification(input: SchemaChangeNotificationInput): Promise<void>;
   sendChannelConfirmation(input: ChannelConfirmationInput): Promise<void>;
+  /** Null when the destination accepted the test; otherwise how it failed. */
+  sendTestNotification(input: TestNotificationInput): Promise<DeliveryOutcome | null>;
+}
+
+/** Masks unrecognised errors, as `DeliveryRecorder.track` does for a recorded delivery. */
+export async function attemptTestNotification(
+  logger: Logger,
+  send: () => Promise<unknown>,
+  describeError: DescribeDeliveryError,
+): Promise<DeliveryOutcome | null> {
+  try {
+    await send();
+    return null;
+  } catch (error) {
+    const outcome = describeError(error);
+    if (outcome) {
+      return outcome;
+    }
+    logger.warn('Test notification failed unexpectedly (error=%s)', String(error));
+    return deliveryOutcome(null, UNEXPECTED_ERROR);
+  }
+}
+
+export function testNotificationText(projectLink: string): string {
+  return `This is a test notification from GraphQL Hive for your ${projectLink} project.`;
 }
 
 export function slackCoderize(msg: string): string {

@@ -12,14 +12,16 @@ export type AlertChannelDeliveryEvent = 'schema_change' | 'metric_alert' | 'chan
 export interface DeliveryMetadataInput {
   /** Hive's request id; null when the call is not made while serving a request. */
   requestId: string | null;
-  event: AlertChannelDeliveryEvent;
+  /** `test` is never recorded as a delivery: the recorder's event type leaves it out. */
+  event: AlertChannelDeliveryEvent | 'test';
   /** Target the event belongs to; absent for channel confirmations. */
   targetId?: string | null;
   /** Schema version id; schema changes only. */
   schemaId?: string | null;
   /** Hive release, for the User-Agent. */
   release: string;
-  idempotencyKey: string;
+  /** Null only for a test notification sent without a request id. */
+  idempotencyKey: string | null;
 }
 
 /**
@@ -39,6 +41,14 @@ export function channelConfirmationKey(
   return `${key}:${createHash('sha256').update(destination).digest('hex').slice(0, 8)}`;
 }
 
+export function testNotificationKey(requestId: string, channelId: string): string {
+  return `test:${requestId}:${channelId}`;
+}
+
+export function buildHiveTestWebhookHeaders(input: DeliveryMetadataInput): Record<string, string> {
+  return { ...buildHiveWebhookHeaders(input), 'Hive-Test': 'true' };
+}
+
 export function hiveWebhooksUserAgent(release: string): string {
   return `Hive-Webhooks/${release}`;
 }
@@ -50,7 +60,7 @@ export function buildHiveWebhookHeaders(input: DeliveryMetadataInput): Record<st
     ...(input.targetId ? { 'Hive-Target-ID': input.targetId } : {}),
     ...(input.schemaId ? { 'Hive-Schema-ID': input.schemaId } : {}),
     'User-Agent': hiveWebhooksUserAgent(input.release),
-    'Idempotency-Key': input.idempotencyKey,
+    ...(input.idempotencyKey ? { 'Idempotency-Key': input.idempotencyKey } : {}),
   };
 }
 
@@ -68,7 +78,7 @@ export function buildHiveSlackMetadata(input: DeliveryMetadataInput): SlackMessa
       ...(input.requestId ? { hive_request_id: input.requestId } : {}),
       ...(input.targetId ? { hive_target_id: input.targetId } : {}),
       ...(input.schemaId ? { hive_schema_id: input.schemaId } : {}),
-      idempotency_key: input.idempotencyKey,
+      ...(input.idempotencyKey ? { idempotency_key: input.idempotencyKey } : {}),
       user_agent: hiveWebhooksUserAgent(input.release),
     },
   };

@@ -13,6 +13,17 @@ export class ClientIPHeaderName {
   constructor(readonly headerName: string | null) {}
 }
 
+/** The request broker for calls to customer endpoints; null when they are made directly. */
+@Injectable()
+export class RequestBrokerConfig {
+  constructor(
+    public readonly config: null | {
+      endpoint: string;
+      signature: string;
+    },
+  ) {}
+}
+
 @Injectable()
 export class RateLimitConfig {
   constructor(

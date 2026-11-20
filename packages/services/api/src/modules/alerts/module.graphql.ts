@@ -7,6 +7,12 @@ export default gql`
     deleteAlertChannels(input: DeleteAlertChannelsInput!): DeleteAlertChannelsResult!
     enableAlertChannel(input: EnableAlertChannelInput!): EnableAlertChannelResult!
     disableAlertChannel(input: DisableAlertChannelInput!): DisableAlertChannelResult!
+    """
+    Sends one test notification to the given destination, saved on the channel or not. It is not
+    part of the channel's deliveries. Limited to 10 per minute for each channel when rate limiting
+    is enabled.
+    """
+    testDeliveryChannel(input: TestDeliveryChannelInput!): TestDeliveryChannelResult!
     addAlert(input: AddAlertInput!): AddAlertResult!
     deleteAlerts(input: DeleteAlertsInput!): DeleteAlertsResult!
   }
@@ -84,6 +90,41 @@ export default gql`
 
   type DisableAlertChannelError implements Error {
     message: String!
+  }
+
+  input TestDeliveryChannelInput {
+    channelId: ID!
+    destination: TestDeliveryChannelDestinationInput!
+  }
+
+  input TestDeliveryChannelDestinationInput @oneOf {
+    slack: SlackChannelInput
+    webhook: WebhookChannelInput
+  }
+
+  """
+  @oneOf
+  """
+  type TestDeliveryChannelResult {
+    ok: TestDeliveryChannelOk
+    error: TestDeliveryChannelError
+  }
+
+  type TestDeliveryChannelOk {
+    """
+    Sent with the test as the Idempotency-Key header, or in a Slack message's metadata. Null
+    when the test carried none.
+    """
+    idempotencyKey: String
+  }
+
+  type TestDeliveryChannelError implements Error {
+    """
+    What the destination answered, as the delivery log shows it (for example 404 Not Found), or
+    why no test was sent.
+    """
+    message: String!
+    idempotencyKey: String
   }
 
   type AddAlertResult {
