@@ -1,5 +1,62 @@
 # hive
 
+## 15.6.0
+
+### Minor Changes
+
+- [#8935](https://github.com/graphql-hive/console/pull/8935)
+  [`b77ec0a`](https://github.com/graphql-hive/console/commit/b77ec0a511a4cf82ab3f90e943595419bbaa197c)
+  Thanks [@jdolle](https://github.com/jdolle)! - The "Edit channel" sheet of an alert channel has a
+  "Test configuration" button under "Advanced". It sends a test notification to the destination in
+  the form, saved or not, so a Slack channel or an endpoint can be tried before the channel is
+  pointed at it. The sheet shows whether the destination accepted it, and the idempotency key sent
+  with it, to find the request on the receiving side. Tests are not part of the channel's delivery
+  history and are limited to 10 per minute for each channel.
+
+  Slack, MS Teams and Discord receive a one-line message. A webhook receives a schema change request
+  with made-up data and a `Hive-Test: true` header.
+
+  Self-hosting: the test request of a webhook channel is sent by the API service (`server`), while
+  real webhook deliveries are sent by `workflows`. Without a request broker, `server` needs outbound
+  access to the webhook endpoint for a test to succeed.
+
+- [#8959](https://github.com/graphql-hive/console/pull/8959)
+  [`2ce0d7b`](https://github.com/graphql-hive/console/commit/2ce0d7b4ad1300ae5fba931bce973447f89e7c42)
+  Thanks [@jdolle](https://github.com/jdolle)! - The audit log records schema registry actions:
+  `SCHEMA_PUBLISHED`, `SCHEMA_DELETED`, `SCHEMA_VERSION_PROMOTED` and `SCHEMA_CHECK_APPROVED`. An
+  event is written once the action has taken effect, so a rejected publish or a dry-run delete
+  records nothing.
+
+  Actions done with a legacy registry access token have no user or organization access token to
+  attribute the event to. Those events identify the token in `metadata.targetAccessToken`.
+
+- [#8957](https://github.com/graphql-hive/console/pull/8957)
+  [`f45f0da`](https://github.com/graphql-hive/console/commit/f45f0da7668076339c0d746906bc4d8b78f7eb88)
+  Thanks [@jdolle](https://github.com/jdolle)! - Add a target setting that allows the author of a
+  change to approve their own failed schema check. It is off by default, so the author of a change
+  still cannot approve their own failed check unless the setting is enabled for the target under
+  Settings → Breaking Changes. Changing the setting requires the "Modify settings" target permission
+  and is recorded in the audit log.
+
+### Patch Changes
+
+- [#8954](https://github.com/graphql-hive/console/pull/8954)
+  [`1cc6175`](https://github.com/graphql-hive/console/commit/1cc6175bb73e30c776d4a1c4a714735340bcd1e5)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrades federation composition library to
+  `v0.27.2`.
+
+  - Preserve `@external`, `@requires`, and `@provides` metadata when composing fields contributed by
+    `@interfaceObject` subgraphs.
+  - Fix a crash when a directive shares its name with a type (e.g. `directive @TaskStatus` next to
+    `enum TaskStatus`).
+  - Keep untagged arguments of included fields in schema contracts. Arguments without their own
+    `@tag` now inherit the tags of their fieldr.
+
+- [#8955](https://github.com/graphql-hive/console/pull/8955)
+  [`5205928`](https://github.com/graphql-hive/console/commit/5205928dfe330e72b67ea231f3ea82c80a61505e)
+  Thanks [@jonathanawesome](https://github.com/jonathanawesome)! - Breaking change client counts now
+  include only requests that use the changed field.
+
 ## 15.5.0
 
 ### Minor Changes

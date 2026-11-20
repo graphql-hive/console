@@ -1,5 +1,21 @@
 # @graphql-hive/cli
 
+## 0.68.6
+
+### Patch Changes
+
+- [#8954](https://github.com/graphql-hive/console/pull/8954)
+  [`1cc6175`](https://github.com/graphql-hive/console/commit/1cc6175bb73e30c776d4a1c4a714735340bcd1e5)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrades federation composition library to
+  `v0.27.2`.
+
+  - Preserve `@external`, `@requires`, and `@provides` metadata when composing fields contributed by
+    `@interfaceObject` subgraphs.
+  - Fix a crash when a directive shares its name with a type (e.g. `directive @TaskStatus` next to
+    `enum TaskStatus`).
+  - Keep untagged arguments of included fields in schema contracts. Arguments without their own
+    `@tag` now inherit the tags of their fieldr.
+
 ## 0.68.5
 
 ### Patch Changes
