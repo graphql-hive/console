@@ -1,19 +1,13 @@
 import { useState } from 'react';
-import { useForm, type UseFormReturn } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
-import { CopyIconButton } from '@/components/ui/copy-icon-button';
 import { Button } from '@/components/ui/primitives/button/button';
 import { Collapsible } from '@/components/ui/primitives/collapsible/collapsible';
-import { labelVariants } from '@/components/ui/primitives/label/label';
 import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
-import { ScrollArea } from '@/components/ui/primitives/scroll-area/scroll-area';
-import { controlSurface } from '@/components/ui/primitives/shared-styles';
-import { Spinner } from '@/components/ui/primitives/spinner/spinner';
 import { useToast } from '@/components/ui/primitives/toast/toast';
 import { graphql } from '@/gql';
 import { AlertChannelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
-import { cn } from '@/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   CHANNEL_FORM_ID,
@@ -21,6 +15,7 @@ import {
   ChannelFormSchema,
   type ChannelFormValues,
 } from './channel-form';
+import { SendChannelTest } from './send-channel-test';
 
 // The edited channel comes back with the details panel's fragment, so the page and the panel pick
 // the new values up from the cache without a refetch.
@@ -39,20 +34,6 @@ export const EditChannelSheet_UpdateAlertChannelMutation = graphql(`
           webhookEndpoint
           slackChannel
         }
-      }
-    }
-  }
-`);
-
-export const EditChannelSheet_TestDeliveryChannelMutation = graphql(`
-  mutation EditChannelSheet_TestDeliveryChannel($input: TestDeliveryChannelInput!) {
-    testDeliveryChannel(input: $input) {
-      ok {
-        idempotencyKey
-      }
-      error {
-        message
-        idempotencyKey
       }
     }
   }
@@ -186,113 +167,10 @@ function EditChannelSheetSession({
         <ChannelForm form={form} onSubmit={onSubmit} typeDisabled />
         <Collapsible trigger="Advanced">
           <div className="px-2 pt-2 pb-1">
-            <SendChannelTest channel={channel} form={form} disabled={mutation.fetching} />
+            <SendChannelTest channelId={channel.id} form={form} disabled={mutation.fetching} />
           </div>
         </Collapsible>
       </div>
     </Sheet>
-  );
-}
-
-type TestOutcome = {
-  delivered: boolean;
-  message: string | null;
-  idempotencyKey: string | null;
-};
-
-function SendChannelTest(props: {
-  channel: EditableChannel;
-  form: UseFormReturn<ChannelFormValues>;
-  disabled: boolean;
-}) {
-  const [mutation, mutate] = useMutation(EditChannelSheet_TestDeliveryChannelMutation);
-  const [outcome, setOutcome] = useState<TestOutcome | null>(null);
-  const isSlack = props.channel.type === AlertChannelType.Slack;
-
-  async function sendTest() {
-    setOutcome(null);
-    const field = isSlack ? 'slackChannel' : 'endpoint';
-    if (!(await props.form.trigger(field))) {
-      return;
-    }
-    const destination = props.form.getValues(field);
-    const { data, error } = await mutate({
-      input: {
-        channelId: props.channel.id,
-        destination: isSlack
-          ? { slack: { channel: destination } }
-          : { webhook: { endpoint: destination } },
-      },
-    });
-    const result = data?.testDeliveryChannel;
-    if (result?.ok) {
-      setOutcome({
-        delivered: true,
-        message: null,
-        idempotencyKey: result.ok.idempotencyKey ?? null,
-      });
-      return;
-    }
-    setOutcome({
-      delivered: false,
-      message: result?.error?.message ?? error?.message ?? 'Unexpected error',
-      idempotencyKey: result?.error?.idempotencyKey ?? null,
-    });
-  }
-
-  return (
-    <div className="flex flex-col items-start gap-2">
-      <p className="text-sm text-fg-default">
-        Verify your configuration with a test event sent from Hive using the configuration above.
-      </p>
-      <div className="py-2">
-        <Button
-          type="button"
-          onSurface="raised"
-          disabled={props.disabled || mutation.fetching}
-          onClick={() => void sendTest()}
-        >
-          Test configuration
-        </Button>
-      </div>
-      <div
-        className={cn('flex h-32 w-full flex-col rounded-md border', controlSurface.raised)}
-        aria-live="polite"
-      >
-        {mutation.fetching ? (
-          <div className="flex grow items-center justify-center">
-            <Spinner label="Testing configuration" />
-          </div>
-        ) : outcome ? (
-          <ScrollArea axis="both" fill>
-            <div className="flex flex-col gap-4 p-3 text-sm">
-              <div className="flex flex-col gap-1">
-                <span className={labelVariants({ variant: 'caps' })}>Status</span>
-                {outcome.delivered ? (
-                  <p>Success</p>
-                ) : (
-                  <p className="text-critical">Failed: {outcome.message}</p>
-                )}
-              </div>
-              {outcome.idempotencyKey ? (
-                <div className="flex flex-col">
-                  <span className={labelVariants({ variant: 'caps' })}>Idempotency key</span>
-                  <div className="flex items-center gap-1">
-                    <code className="font-mono text-xs whitespace-nowrap">
-                      {outcome.idempotencyKey}
-                    </code>
-                    <CopyIconButton label="Copy idempotency key" value={outcome.idempotencyKey} />
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </ScrollArea>
-        ) : (
-          <p className="flex grow items-center justify-center text-sm text-fg-subtle">
-            No test results yet.
-          </p>
-        )}
-      </div>
-    </div>
   );
 }

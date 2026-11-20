@@ -11,7 +11,7 @@ import {
   CreateAlertModal_AlertChannelFragment,
   CreateAlertModal_TargetFragment,
 } from '@/components/project/alerts/create-alert';
-import { CreateChannelModal } from '@/components/project/alerts/create-channel';
+import { CreateChannelSheet } from '@/components/project/alerts/create-channel';
 import { DeleteAlertsButton } from '@/components/project/alerts/delete-alerts-button';
 import { DeleteChannelsButton } from '@/components/project/alerts/delete-channels-button';
 import { DocsLink } from '@/components/ui/docs-note';
@@ -26,8 +26,8 @@ import { useNavigate } from '@tanstack/react-router';
 
 function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChannelFragment>[] }) {
   const [selected, setSelected] = useState<string[]>([]);
-  const [isModalOpen, toggleModalOpen] = useToggle();
-  const [modalSession, setModalSession] = useState(0);
+  const [isSheetOpen, toggleSheetOpen] = useToggle();
+  const [sheetSession, setSheetSession] = useState(0);
   const channels = props.channels ?? [];
   const { organizationSlug, projectSlug } = useSlugs('project');
   const navigate = useNavigate();
@@ -59,7 +59,7 @@ function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChan
         }}
       />
       <div className="mt-4 flex items-center gap-x-2">
-        <Button onClick={toggleModalOpen}>Add channel</Button>
+        <Button onClick={toggleSheetOpen}>Add channel</Button>
         {channels.length > 0 && (
           <DeleteChannelsButton
             selected={selected}
@@ -69,13 +69,13 @@ function Channels(props: { channels: FragmentType<typeof ChannelsTable_AlertChan
           />
         )}
       </div>
-      <CreateChannelModal
-        key={modalSession}
-        isOpen={isModalOpen}
-        toggleModalOpen={toggleModalOpen}
+      <CreateChannelSheet
+        key={sheetSession}
+        isOpen={isSheetOpen}
+        toggleOpen={toggleSheetOpen}
         onOpenChangeComplete={open => {
           if (!open) {
-            setModalSession(s => s + 1);
+            setSheetSession(s => s + 1);
           }
         }}
       />

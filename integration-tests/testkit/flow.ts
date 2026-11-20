@@ -33,6 +33,7 @@ import type {
   SchemaVersionPromoteInput,
   TargetSelectorInput,
   TestDeliveryChannelInput,
+  TestNewDeliveryChannelInput,
   UpdateAlertChannelInput,
   UpdateBaseSchemaInput,
   UpdateGroupMappingInput,
@@ -760,6 +761,28 @@ export function testDeliveryChannel(input: TestDeliveryChannelInput, authToken: 
     document: graphql(`
       mutation IntegrationTests_TestDeliveryChannel($input: TestDeliveryChannelInput!) {
         testDeliveryChannel(input: $input) {
+          ok {
+            idempotencyKey
+          }
+          error {
+            message
+            idempotencyKey
+          }
+        }
+      }
+    `),
+    variables: {
+      input,
+    },
+    authToken,
+  });
+}
+
+export function testNewDeliveryChannel(input: TestNewDeliveryChannelInput, authToken: string) {
+  return execute({
+    document: graphql(`
+      mutation IntegrationTests_TestNewDeliveryChannel($input: TestNewDeliveryChannelInput!) {
+        testNewDeliveryChannel(input: $input) {
           ok {
             idempotencyKey
           }
