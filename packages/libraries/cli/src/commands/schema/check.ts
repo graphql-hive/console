@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { Args, Errors, Flags } from '@oclif/core';
 import Command from '../../base-command';
-import { DocumentType, graphql } from '../../gql';
+import { DocumentType, graphql, useFragment } from '../../gql';
 import * as GraphQLSchema from '../../gql/graphql';
 import { graphqlEndpoint } from '../../helpers/config';
 import {
@@ -27,9 +27,12 @@ import {
   loadSchemaSdl,
   minifySchema,
   renderChanges,
+  RenderChanges_SchemaChanges,
   renderErrors,
+  RenderErrors_SchemaErrorConnectionFragment,
   renderWarnings,
 } from '../../helpers/schema';
+import { createSchemaCheckJsonOutput } from '../../helpers/schema-check-output';
 import * as TargetInput from '../../helpers/target-input';
 
 const approveFailedSchemaCheckMutation = graphql(/* GraphQL */ `
@@ -216,6 +219,13 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       description:
         "File path to output a JSON file containing the command's result. Useful for e.g. CI scripting with `jq`.",
     }),
+    output: Flags.string({
+      description:
+        'Format of the command output. With "json", only the JSON result is written to stdout ' +
+        '(including the schema check ID and URL) and all other messages are written to stderr.',
+      options: ['text', 'json'],
+      default: 'text',
+    }),
     forceSafe: Flags.boolean({
       description: 'mark the check as safe, breaking changes are expected',
     }),
@@ -286,6 +296,7 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       const service = flags.service;
       const forceSafe = flags.forceSafe;
       const usesGitHubApp = flags.github === true;
+      const jsonOutput = flags.output === 'json';
       let endpoint: string, accessToken: string;
       try {
         endpoint = this.ensure({
@@ -474,6 +485,55 @@ export default class SchemaCheck extends Command<typeof SchemaCheck> {
       }
 
       const payload = result.schemaCheck;
+
+      if (jsonOutput) {
+        if (
+          payload.__typename === 'SchemaCheckSuccess' ||
+          payload.__typename === 'SchemaCheckError'
+        ) {
+          this.log(
+            JSON.stringify(
+              createSchemaCheckJsonOutput({
+                valid: payload.valid,
+                initial: payload.__typename === 'SchemaCheckSuccess' ? payload.initial : undefined,
+                schemaCheck: payload.schemaCheck,
+                changes: payload.changes
+                  ? useFragment(RenderChanges_SchemaChanges, payload.changes)
+                  : null,
+                warnings: payload.warnings,
+                errors:
+                  payload.__typename === 'SchemaCheckError'
+                    ? useFragment(RenderErrors_SchemaErrorConnectionFragment, payload.errors)
+                    : null,
+              }),
+              null,
+              2,
+            ),
+          );
+          if (payload.__typename === 'SchemaCheckError') {
+            await handleFailedCheck(payload.schemaCheck?.id);
+          }
+        } else if (payload.__typename === 'GitHubSchemaCheckSuccess') {
+          const gitHubResult = payload as GitHubSchemaCheckSuccessResult;
+          this.log(
+            JSON.stringify(
+              createSchemaCheckJsonOutput({
+                valid: gitHubResult.isValid,
+                message: gitHubResult.message,
+                schemaCheck: gitHubResult.schemaCheck,
+              }),
+              null,
+              2,
+            ),
+          );
+          if (!gitHubResult.isValid) {
+            await handleFailedCheck(gitHubResult.schemaCheck?.id);
+          }
+        } else {
+          throw new APIError(payload.message);
+        }
+        return;
+      }
 
       if (payload.__typename === 'SchemaCheckSuccess') {
         const changes = payload.changes;
