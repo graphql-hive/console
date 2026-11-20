@@ -12,6 +12,7 @@ import {
   deliveryOutcome,
   DeliveryRecorder,
   TIMED_OUT,
+  unreachableOutcome,
   type DeliveryOutcome,
 } from '../delivery-recorder';
 import {
@@ -287,8 +288,8 @@ const FETCH_TIMEOUT_CODES = new Set([
 ]);
 
 /**
- * The outcome of a failed webhook call: the status Teams answered, or a timeout of the request.
- * Null for anything else, which the recorder masks.
+ * The outcome of a failed webhook call: the status Teams answered, a timeout of the request, or
+ * that the endpoint was not reached. Null for anything else, which the recorder masks.
  */
 export function describeTeamsError(error: unknown): DeliveryOutcome | null {
   if (error instanceof TeamsWebhookError) {
@@ -299,7 +300,9 @@ export function describeTeamsError(error: unknown): DeliveryOutcome | null {
   }
   const cause = isRecord(error) && isRecord(error.cause) ? error.cause : null;
   const code = typeof cause?.code === 'string' ? cause.code : null;
-  return code !== null && FETCH_TIMEOUT_CODES.has(code) ? deliveryOutcome(null, TIMED_OUT) : null;
+  return code !== null && FETCH_TIMEOUT_CODES.has(code)
+    ? deliveryOutcome(null, TIMED_OUT)
+    : unreachableOutcome(code);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -62,8 +62,8 @@ export default gql`
     statusCode: Int
     """
     One line describing the outcome: the reason phrase, the Slack API result code, the mail
-    provider's refusal with its error code, or "Timed out" or "Unexpected error" when nothing
-    usable answered. Never an exception's message.
+    provider's refusal with its error code, or "Timed out", "Connection refused", "Host not found"
+    or "Unexpected error" when nothing usable answered. Never an exception's message.
     """
     statusText: String!
     durationMs: Int!
