@@ -1,14 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import { CONTEXT, Inject, Injectable, Scope } from 'graphql-modules';
 import { formatDateTime } from '@hive/clickhouse';
-import type { FastifyRequest } from '@hive/service-common';
+import { maskToken, type FastifyRequest } from '@hive/service-common';
 import { captureException } from '@sentry/node';
 import { resolveClientIP } from '../../../shared/resolve-client-ip';
 import type { Actor } from '../../auth/lib/authz';
 import { Session } from '../../auth/lib/authz';
+import { TargetAccessTokenSession } from '../../auth/lib/target-access-token-strategy';
 import { ClickHouse, sql } from '../../operations/providers/clickhouse-client';
 import { Logger } from '../../shared/providers/logger';
 import { ClientIPHeaderName } from '../../shared/providers/tokens';
+import { hashTargetToken } from '../../token/providers/target-token-storage';
 import { AuditLogModel, AuditLogSchemaEvent } from './audit-logs-types';
 
 /** The client (e.g. browser or CLI) that triggered the audit log event. */
@@ -46,13 +48,22 @@ export class AuditLogRecorder {
     };
   }
 
+  /** Identifies a legacy target access token session by the value `TARGET_TOKEN_CREATED` stores. */
+  static resolveTargetAccessToken(session: Session): { token: string } | null {
+    return session instanceof TargetAccessTokenSession
+      ? { token: maskToken(hashTargetToken(session.token)) }
+      : null;
+  }
+
   async record(data: AuditLogSchemaEvent & { organizationId: string }): Promise<void> {
-    let actor: Actor;
-    try {
-      actor = await this.session.getActor();
-    } catch (error) {
-      AuditLogRecorder.reportError(this.logger, error, data);
-      return;
+    let actor: Actor | null = null;
+    if (this.session instanceof TargetAccessTokenSession === false) {
+      try {
+        actor = await this.session.getActor();
+      } catch (error) {
+        AuditLogRecorder.reportError(this.logger, error, data);
+        return;
+      }
     }
 
     await AuditLogRecorder.record(
