@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import type { Logger } from '../../api/src/modules/shared/providers/logger';
-import { CompositionScheduler } from '../src/composition-scheduler';
+import { WorkerScheduler } from '../src/worker-scheduler';
 
 const stubWorkerPath = fileURLToPath(
   new URL('./fixtures/composition-worker-stub.mjs', import.meta.url),
@@ -19,10 +19,10 @@ function createLogger(): Logger {
   return logger as unknown as Logger;
 }
 
-let scheduler: CompositionScheduler;
+let scheduler: WorkerScheduler;
 
 function createScheduler(workerCount = 1) {
-  scheduler = new CompositionScheduler(createLogger(), workerCount, 128, stubWorkerPath);
+  scheduler = new WorkerScheduler(createLogger(), workerCount, 128, stubWorkerPath);
 }
 
 /** The stub worker interprets the first schema's `raw` field as a command. */

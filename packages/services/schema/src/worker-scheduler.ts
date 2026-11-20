@@ -45,7 +45,7 @@ type QueueData = {
  */
 export type SchedulerPool = 'composition' | 'diff';
 
-export class CompositionScheduler {
+export class WorkerScheduler {
   private logger: Logger;
   private pool: SchedulerPool;
   /** The amount of parallel workers */
@@ -68,7 +68,7 @@ export class CompositionScheduler {
     this.workerCount = workerCount;
     this.maxOldGenerationSizeMb = maxOldGenerationSizeMb;
     this.workerScriptPath = workerScriptPath;
-    this.logger = logger.child({ source: 'CompositionScheduler', pool });
+    this.logger = logger.child({ source: 'WorkerScheduler', pool });
     const workers = Array.from({ length: this.workerCount }, (_, i) => this.createWorker(i));
     this.workers = workers;
 
