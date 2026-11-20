@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type * as Urql from 'urql';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { CreateChannelModal } from './create-channel';
+import { CreateChannelSheet } from './create-channel';
 
 /** The stubs the mocked urql hooks read from; each test resets them. */
 const urql = vi.hoisted(() => ({
@@ -16,18 +16,18 @@ vi.mock('urql', async importOriginal => ({
 
 const slugs = { organizationSlug: 'acme', projectSlug: 'shop' };
 
-// The modal reads the current project from the URL; here it renders outside a router.
+// The sheet reads the current project from the URL; here it renders outside a router.
 vi.mock('@/lib/hooks', async importOriginal => ({
   ...(await importOriginal<typeof import('@/lib/hooks')>()),
   useSlugs: () => slugs,
 }));
 
-function renderModal() {
-  const toggleModalOpen = vi.fn();
+function renderSheet() {
+  const toggleOpen = vi.fn();
   // A fresh element each time, or React skips the update and never reads the mutation state.
-  const element = () => <CreateChannelModal isOpen toggleModalOpen={toggleModalOpen} />;
+  const element = () => <CreateChannelSheet isOpen toggleOpen={toggleOpen} />;
   const view = render(element());
-  return { ...view, element, toggleModalOpen };
+  return { ...view, element, toggleOpen };
 }
 
 const typeTrigger = () => screen.getByRole('combobox', { name: 'Type' });
@@ -67,9 +67,9 @@ beforeEach(() => {
   urql.mutate.mockReset();
 });
 
-describe('CreateChannelModal', () => {
+describe('CreateChannelSheet', () => {
   it('needs a name and a type before it sends anything', async () => {
-    renderModal();
+    renderSheet();
     await submit();
     expect(screen.getByText('Must enter name')).toBeTruthy();
     expect(screen.getByText(/Must select type|type must be one of/)).toBeTruthy();
@@ -80,7 +80,7 @@ describe('CreateChannelModal', () => {
     urql.mutate.mockResolvedValue({
       data: { addAlertChannel: { ok: { updatedProject: { id: 'p1' } }, error: null } },
     });
-    const { toggleModalOpen } = renderModal();
+    const { toggleOpen } = renderSheet();
     await fill('Name', 'Hive alerts');
     await pickType('Slack');
     expect(screen.queryByLabelText('Endpoint')).toBeNull();
@@ -98,22 +98,35 @@ describe('CreateChannelModal', () => {
         webhook: null,
       },
     });
-    expect(toggleModalOpen).toHaveBeenCalledTimes(1);
+    expect(toggleOpen).toHaveBeenCalledTimes(1);
   });
 
   it('creates a webhook channel with a valid endpoint', async () => {
     urql.mutate.mockResolvedValue({
       data: { addAlertChannel: { ok: { updatedProject: { id: 'p1' } }, error: null } },
     });
-    renderModal();
+    renderSheet();
     await fill('Name', 'Ops hook');
     await pickType('Webhook');
     expect(screen.queryByLabelText('Slack Channel')).toBeNull();
     await fill('Endpoint', 'not a url');
     expect(screen.getByText(/valid URL/)).toBeTruthy();
     await fill('Endpoint', 'https://hooks.example.com/hive');
-    await submit();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Test configuration' }));
+    });
     expect(urql.mutate.mock.calls[0][0]).toEqual({
+      input: {
+        project: { bySelector: slugs },
+        type: 'WEBHOOK',
+        destination: { webhook: { endpoint: 'https://hooks.example.com/hive' } },
+      },
+    });
+    await submit();
+    expect(urql.mutate.mock.calls[1][0]).toEqual({
       input: {
         ...slugs,
         name: 'Ops hook',
@@ -125,7 +138,7 @@ describe('CreateChannelModal', () => {
   });
 
   it('points at the setup guide for MS Teams until an endpoint is pasted in', async () => {
-    renderModal();
+    renderSheet();
     await pickType('MS Teams Webhook');
     const guide = /set up an incoming webhook connector in MS Teams/;
     expect(screen.getByRole('link', { name: guide })).toBeTruthy();
@@ -146,7 +159,7 @@ describe('CreateChannelModal', () => {
       },
     };
     urql.mutate.mockResolvedValue(result);
-    const { rerender, element, toggleModalOpen } = renderModal();
+    const { rerender, element, toggleOpen } = renderSheet();
     await fill('Name', 'Hive alerts');
     await pickType('Slack');
     await fill('Slack Channel', '#general');
@@ -154,6 +167,6 @@ describe('CreateChannelModal', () => {
     urql.mutation.data = result.data;
     rerender(element());
     expect(screen.getByText('Name is taken')).toBeTruthy();
-    expect(toggleModalOpen).not.toHaveBeenCalled();
+    expect(toggleOpen).not.toHaveBeenCalled();
   });
 });

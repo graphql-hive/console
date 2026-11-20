@@ -2,7 +2,8 @@ import { ReactElement } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'urql';
 import { Button } from '@/components/ui/primitives/button/button';
-import { Dialog } from '@/components/ui/primitives/overlays/dialog/dialog';
+import { Collapsible } from '@/components/ui/primitives/collapsible/collapsible';
+import { Sheet } from '@/components/ui/primitives/overlays/sheet/sheet';
 import { graphql } from '@/gql';
 import { AlertChannelType } from '@/gql/graphql';
 import { useSlugs } from '@/lib/hooks';
@@ -14,6 +15,7 @@ import {
   isWebhookLike,
   type ChannelFormValues,
 } from './channel-form';
+import { SendChannelTest } from './send-channel-test';
 
 export const CreateChannel_AddAlertChannelMutation = graphql(`
   mutation CreateChannel_AddAlertChannel($input: AddAlertChannelInput!) {
@@ -38,13 +40,13 @@ export const CreateChannel_AddAlertChannelMutation = graphql(`
   }
 `);
 
-export const CreateChannelModal = ({
+export const CreateChannelSheet = ({
   isOpen,
-  toggleModalOpen,
+  toggleOpen,
   onOpenChangeComplete,
 }: {
   isOpen: boolean;
-  toggleModalOpen: () => void;
+  toggleOpen: () => void;
   onOpenChangeComplete?: (open: boolean) => void;
 }): ReactElement => {
   const { organizationSlug, projectSlug } = useSlugs('project');
@@ -89,19 +91,19 @@ export const CreateChannelModal = ({
       }
     }
     if (data?.addAlertChannel.ok) {
-      toggleModalOpen();
+      toggleOpen();
     }
   }
 
   return (
-    <Dialog
+    <Sheet
       open={isOpen}
-      onOpenChange={toggleModalOpen}
+      onOpenChange={toggleOpen}
       onOpenChangeComplete={onOpenChangeComplete}
       title="Create a channel"
       footer={
         <>
-          <Button type="button" variant="outline" onClick={toggleModalOpen}>
+          <Button onSurface="raised" type="button" variant="outline" onClick={toggleOpen}>
             Cancel
           </Button>
           <Button
@@ -115,7 +117,14 @@ export const CreateChannelModal = ({
         </>
       }
     >
-      <ChannelForm form={form} onSubmit={onSubmit} />
-    </Dialog>
+      <div className="flex flex-col gap-5">
+        <ChannelForm form={form} onSubmit={onSubmit} />
+        <Collapsible trigger="Advanced">
+          <div className="px-2 pt-2 pb-1">
+            <SendChannelTest channelId={null} form={form} disabled={mutation.fetching} />
+          </div>
+        </Collapsible>
+      </div>
+    </Sheet>
   );
 };
