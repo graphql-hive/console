@@ -303,6 +303,55 @@ export class TargetManager {
     return this.getTarget(selector);
   }
 
+  async updateTargetSchemaCheckSelfApproval(args: {
+    target: GraphQLSchema.TargetReferenceInput;
+    allowSchemaCheckSelfApproval: boolean;
+  }) {
+    this.logger.debug('Updating target schema check self-approval (target=%o)', args.target);
+    const selector = await this.idTranslator.resolveTargetReference({ reference: args.target });
+
+    if (!selector) {
+      this.session.raise('target:modifySettings');
+    }
+
+    await this.session.assertPerformAction({
+      action: 'target:modifySettings',
+      organizationId: selector.organizationId,
+      params: {
+        organizationId: selector.organizationId,
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+      },
+    });
+
+    const target = await this.targetStore.updateTargetSchemaCheckSelfApproval({
+      ...selector,
+      allowSchemaCheckSelfApproval: args.allowSchemaCheckSelfApproval,
+    });
+
+    if (!target) {
+      return {
+        type: 'error',
+        reason: 'Target not found.',
+      } as const;
+    }
+
+    await this.auditLog.record({
+      eventType: 'TARGET_SCHEMA_CHECK_SELF_APPROVAL_UPDATED',
+      organizationId: selector.organizationId,
+      metadata: {
+        projectId: selector.projectId,
+        targetId: selector.targetId,
+        allowSchemaCheckSelfApproval: args.allowSchemaCheckSelfApproval,
+      },
+    });
+
+    return {
+      type: 'ok',
+      target,
+    } as const;
+  }
+
   async updateTargetFailingDangerousChanges(args: {
     target: GraphQLSchema.TargetReferenceInput;
     all: boolean;

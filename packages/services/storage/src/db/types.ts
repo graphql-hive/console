@@ -606,6 +606,7 @@ export interface target_validation {
 }
 
 export interface targets {
+  allow_schema_check_self_approval: boolean;
   app_deployment_protection_enabled: boolean;
   app_deployment_protection_max_traffic_percentage: number;
   app_deployment_protection_min_days_inactive: number;

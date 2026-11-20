@@ -180,6 +180,14 @@ export const AuditLogModel = z.union([
     }),
   }),
   z.object({
+    eventType: z.literal('TARGET_SCHEMA_CHECK_SELF_APPROVAL_UPDATED'),
+    metadata: z.object({
+      projectId: z.uuid(),
+      targetId: z.uuid(),
+      allowSchemaCheckSelfApproval: z.boolean(),
+    }),
+  }),
+  z.object({
     eventType: z.literal('TARGET_SCHEMA_COMPOSITION_UPDATED'),
     metadata: z.object({
       projectId: z.uuid(),

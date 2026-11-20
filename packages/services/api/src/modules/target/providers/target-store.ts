@@ -476,6 +476,20 @@ export class TargetStore {
     return result === null ? null : { ...TargetModel.parse(result), orgId: args.organizationId };
   }
 
+  async updateTargetSchemaCheckSelfApproval(args: {
+    organizationId: string;
+    projectId: string;
+    targetId: string;
+    allowSchemaCheckSelfApproval: boolean;
+  }) {
+    const result = await this.pg.maybeOne(psql`/* updateTargetSchemaCheckSelfApproval */
+      UPDATE targets SET allow_schema_check_self_approval = ${args.allowSchemaCheckSelfApproval}
+      WHERE id = ${args.targetId} AND project_id = ${args.projectId}
+      RETURNING ${targetFields}
+    `);
+    return result === null ? null : { ...TargetModel.parse(result), orgId: args.organizationId };
+  }
+
   async updateTargetSchemaComposition(args: {
     organizationId: string;
     projectId: string;
@@ -523,7 +537,8 @@ const targetFields = psql`
   graphql_endpoint_url AS "graphqlEndpointUrl",
   fail_diff_on_dangerous_change AS "failDiffOnDangerousChange",
   fail_all_dangerous_changes AS "failAllDangerousChanges",
-  fail_dangerous_change_types AS "failDangerousChangeTypes"
+  fail_dangerous_change_types AS "failDangerousChangeTypes",
+  allow_schema_check_self_approval AS "allowSchemaCheckSelfApproval"
 `;
 
 const TargetModel = z.object({
@@ -535,6 +550,7 @@ const TargetModel = z.object({
   failDiffOnDangerousChange: z.boolean(),
   failAllDangerousChanges: z.boolean(),
   failDangerousChangeTypes: z.array(z.string()),
+  allowSchemaCheckSelfApproval: z.boolean(),
 });
 const TargetWithOrgIdModel = TargetModel.extend({ orgId: z.string() });
 const TargetIdModel = z.object({ id: z.string() });

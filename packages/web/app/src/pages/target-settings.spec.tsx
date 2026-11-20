@@ -630,10 +630,10 @@ describe('BreakingChanges', () => {
     expect((await screen.findAllByText('Invalid configuration')).length).toBeGreaterThan(0);
   });
 
-  it('flips both switches straight away and greys the rules out while off', async () => {
+  it('flips every switch straight away and greys the rules out while off', async () => {
     urql.mutate.mockResolvedValue({ data: {} });
     renderSection();
-    const [dangerousSwitch, conditionalSwitch] = screen.getAllByRole('switch');
+    const [dangerousSwitch, conditionalSwitch, selfApprovalSwitch] = screen.getAllByRole('switch');
     await act(async () => {
       fireEvent.click(conditionalSwitch);
     });
@@ -648,6 +648,12 @@ describe('BreakingChanges', () => {
     });
     expect(urql.mutate.mock.calls[1][0]).toEqual({
       input: { failDiffOnDangerousChange: false, target: { bySelector: selector } },
+    });
+    await act(async () => {
+      fireEvent.click(selfApprovalSwitch);
+    });
+    expect(urql.mutate.mock.calls[2][0]).toEqual({
+      input: { allowSchemaCheckSelfApproval: true, target: { bySelector: selector } },
     });
     expect(numberInput('period').closest('.opacity-25')).toBeNull();
 

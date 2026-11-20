@@ -59,6 +59,30 @@ export default gql`
     updateTargetFailingDangerousChanges(
       input: UpdateTargetFailingDangerousChangesInput!
     ): UpdateTargetFailingDangerousChangesResult!
+    """
+    Update whether the author of a change may approve their own failed schema check on this target.
+    """
+    updateTargetSchemaCheckSelfApproval(
+      input: UpdateTargetSchemaCheckSelfApprovalInput!
+    ): UpdateTargetSchemaCheckSelfApprovalResult!
+  }
+
+  input UpdateTargetSchemaCheckSelfApprovalInput {
+    target: TargetReferenceInput!
+    allowSchemaCheckSelfApproval: Boolean!
+  }
+
+  type UpdateTargetSchemaCheckSelfApprovalResult {
+    ok: UpdateTargetSchemaCheckSelfApprovalOk
+    error: UpdateTargetSchemaCheckSelfApprovalError
+  }
+
+  type UpdateTargetSchemaCheckSelfApprovalOk {
+    target: Target!
+  }
+
+  type UpdateTargetSchemaCheckSelfApprovalError {
+    message: String!
   }
 
   type UpdateTargetFailingDangerousChangesResult {
@@ -359,6 +383,10 @@ export default gql`
     this list determines which dangerous changes are considered failures.
     """
     failDangerousChangeTypes: [DangerousChangeType!]!
+    """
+    Whether the author of a change may approve their own failed schema check.
+    """
+    allowSchemaCheckSelfApproval: Boolean!
     """
     Configuration for conditional breaking change detection.
     """

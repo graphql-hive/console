@@ -151,5 +151,6 @@ export const runPGMigrations = async (args: {
       import('./actions/2026.10.09T00-00-03.drop-contract-checks-contract-id-foreign-key'),
       import('./actions/2026.11.10T00-00-00.alert-channels-disabled'),
       import('./actions/2026.11.17T00-00-00.schema-log-drop-target-id-indexes'),
+      import('./actions/2026.11.19T00-00-00.target-allow-schema-check-self-approval'),
     ]),
   });

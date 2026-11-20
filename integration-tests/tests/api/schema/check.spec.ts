@@ -242,6 +242,22 @@ const ApproveFailedSchemaCheckMutation = graphql(/* GraphQL */ `
   }
 `);
 
+const UpdateTargetSchemaCheckSelfApprovalMutation = graphql(/* GraphQL */ `
+  mutation UpdateTargetSchemaCheckSelfApproval($input: UpdateTargetSchemaCheckSelfApprovalInput!) {
+    updateTargetSchemaCheckSelfApproval(input: $input) {
+      ok {
+        target {
+          id
+          allowSchemaCheckSelfApproval
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 test.concurrent(
   'successful check without previously published schema is persisted',
   async ({ expect }) => {
@@ -1689,7 +1705,7 @@ test.concurrent(
   },
 );
 
-test.concurrent('the author of a schema check can not approve it', async ({ expect }) => {
+test.concurrent('a schema check author can approve it only when allowed', async ({ expect }) => {
   const { createOrg, ownerToken, ownerEmail } = await initSeed().createOwner();
   const { createProject, organization } = await createOrg();
   const { createTargetAccessToken, project, target } = await createProject(ProjectType.Single);
@@ -1703,21 +1719,25 @@ test.concurrent('the author of a schema check can not approve it', async ({ expe
   await token
     .publishSchema({ sdl: 'type Query { ping: String }' })
     .then(r => r.expectNoGraphQLErrors());
-  const checkResult = await token
-    .checkSchema('type Query { ping: Float }', undefined, {
-      author: `Owner <${ownerEmail}>`,
-      commit: 'abc123',
-    })
-    .then(r => r.expectNoGraphQLErrors());
-  if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
-    throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
-  }
-  const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
-  if (!schemaCheckId) {
-    throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
-  }
 
-  const approve = (authToken: string) =>
+  const checkAsOwner = async () => {
+    const checkResult = await token
+      .checkSchema('type Query { ping: Float }', undefined, {
+        author: `Owner <${ownerEmail}>`,
+        commit: 'abc123',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+    if (checkResult.schemaCheck.__typename !== 'SchemaCheckError') {
+      throw new Error('Invalid result: ' + checkResult.schemaCheck.__typename);
+    }
+    const schemaCheckId = checkResult.schemaCheck.schemaCheck?.id;
+    if (!schemaCheckId) {
+      throw new Error('Invalid result: ' + JSON.stringify(checkResult, null, 2));
+    }
+    return schemaCheckId;
+  };
+
+  const approve = (authToken: string, schemaCheckId: string) =>
     execute({
       document: ApproveFailedSchemaCheckMutation,
       variables: { input: { ...selector, schemaCheckId } },
@@ -1726,20 +1746,47 @@ test.concurrent('the author of a schema check can not approve it', async ({ expe
       .then(r => r.expectNoGraphQLErrors())
       .then(r => r.approveFailedSchemaCheck);
 
-  await expect(
+  const schemaCheckAsOwner = (schemaCheckId: string) =>
     execute({
       document: SchemaCheckQuery,
       variables: { selector, id: schemaCheckId },
       authToken: ownerToken,
     })
       .then(r => r.expectNoGraphQLErrors())
-      .then(r => r.target?.schemaCheck),
-  ).resolves.toMatchObject({ canBeApprovedByViewer: false });
-  await expect(approve(ownerToken)).resolves.toMatchObject({
+      .then(r => r.target?.schemaCheck);
+
+  const schemaCheckId = await checkAsOwner();
+  await expect(schemaCheckAsOwner(schemaCheckId)).resolves.toMatchObject({
+    canBeApprovedByViewer: false,
+  });
+  await expect(approve(ownerToken, schemaCheckId)).resolves.toMatchObject({
     ok: null,
     error: { message: expect.any(String) },
   });
-  await expect(approve(token.secret)).resolves.toMatchObject({
+  await expect(approve(token.secret, schemaCheckId)).resolves.toMatchObject({
+    ok: { schemaCheck: { __typename: 'SuccessfulSchemaCheck', isApproved: true } },
+    error: null,
+  });
+
+  await expect(
+    execute({
+      document: UpdateTargetSchemaCheckSelfApprovalMutation,
+      variables: {
+        input: { target: { bySelector: selector }, allowSchemaCheckSelfApproval: true },
+      },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors()),
+  ).resolves.toMatchObject({
+    updateTargetSchemaCheckSelfApproval: {
+      ok: { target: { allowSchemaCheckSelfApproval: true } },
+    },
+  });
+
+  const allowedSchemaCheckId = await checkAsOwner();
+  await expect(schemaCheckAsOwner(allowedSchemaCheckId)).resolves.toMatchObject({
+    canBeApprovedByViewer: true,
+  });
+  await expect(approve(ownerToken, allowedSchemaCheckId)).resolves.toMatchObject({
     ok: { schemaCheck: { __typename: 'SuccessfulSchemaCheck', isApproved: true } },
     error: null,
   });

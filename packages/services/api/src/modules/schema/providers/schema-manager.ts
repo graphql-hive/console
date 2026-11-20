@@ -932,7 +932,15 @@ export class SchemaManager {
     }
 
     if (this.isSchemaCheckAuthoredBy(schemaCheck, await this.session.getViewer())) {
-      return false;
+      const target = await this.targetStore.getTarget({
+        organizationId: schemaCheck.selector.organizationId,
+        projectId: schemaCheck.selector.projectId,
+        targetId: schemaCheck.targetId,
+      });
+
+      if (!target.allowSchemaCheckSelfApproval) {
+        return false;
+      }
     }
 
     return await this.getFailedSchemaCheckCanBeApproved(schemaCheck);
@@ -1006,7 +1014,7 @@ export class SchemaManager {
       } as const;
     }
 
-    if (this.isSchemaCheckAuthoredBy(schemaCheck, viewer)) {
+    if (!target.allowSchemaCheckSelfApproval && this.isSchemaCheckAuthoredBy(schemaCheck, viewer)) {
       this.logger.debug('Schema check can not be approved by its author. (args=%o)', args);
       return {
         type: 'error',

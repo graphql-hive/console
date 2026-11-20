@@ -496,6 +496,7 @@ export const TargetSettingsPage_TargetSettingsQuery = graphql(`
       failDiffOnDangerousChange
       failAllDangerousChanges
       failDangerousChangeTypes
+      allowSchemaCheckSelfApproval
       conditionalBreakingChangeConfiguration {
         ...TargetSettings_ConditionalBreakingChangeConfigurationFragment
       }
@@ -562,6 +563,24 @@ const TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation = gra
   }
 `);
 
+const TargetSettingsPage_UpdateTargetSchemaCheckSelfApprovalMutation = graphql(`
+  mutation TargetSettingsPage_UpdateTargetSchemaCheckSelfApprovalMutation(
+    $input: UpdateTargetSchemaCheckSelfApprovalInput!
+  ) {
+    updateTargetSchemaCheckSelfApproval(input: $input) {
+      ok {
+        target {
+          id
+          allowSchemaCheckSelfApproval
+        }
+      }
+      error {
+        message
+      }
+    }
+  }
+`);
+
 const TargetSettingsPage_UpdateTargetAppDeploymentProtectionConfigurationMutation = graphql(`
   mutation TargetSettingsPage_UpdateTargetAppDeploymentProtectionConfigurationMutation(
     $input: UpdateTargetAppDeploymentProtectionConfigurationInput!
@@ -601,6 +620,9 @@ export const BreakingChanges = () => {
   const [dangerousAsBreaking, updateTargetDangerousChangeClassification] = useMutation(
     TargetSettingsPage_UpdateTargetDangerousChangeClassificationMutation,
   );
+  const [selfApproval, updateTargetSchemaCheckSelfApproval] = useMutation(
+    TargetSettingsPage_UpdateTargetSchemaCheckSelfApprovalMutation,
+  );
   const [targetSettings] = useQuery({
     query: TargetSettingsPage_TargetSettingsQuery,
     variables: {
@@ -626,6 +648,10 @@ export const BreakingChanges = () => {
 
   const considerDangerousAsBreaking =
     targetSettings?.data?.target?.failDiffOnDangerousChange || false;
+  const selfApprovalError =
+    selfApproval.error?.graphQLErrors[0]?.message ??
+    selfApproval.error?.message ??
+    selfApproval.data?.updateTargetSchemaCheckSelfApproval?.error?.message;
   const isEnabled = configuration?.isEnabled || false;
   const possibleTargets = targetSettings.data?.targets.edges.map(edge => edge.node);
   const { toast } = useToast();
@@ -823,6 +849,37 @@ export const BreakingChanges = () => {
           )}
           error={mutation.error?.graphQLErrors[0]?.message ?? mutation.error?.message}
         />
+      </SubPageLayout>
+      <SubPageLayout>
+        <SubPageLayoutHeader
+          subPageTitle="Allow Self-Approval of Failed Checks"
+          description="By default, the author of a change cannot approve their own failed schema check. Enable this to let authors with `schemaCheck:approve` permission approve their own failed schema checks."
+          sideContent={
+            targetSettings.fetching ? (
+              <Spinner />
+            ) : (
+              <Switch
+                checked={targetSettings.data?.target?.allowSchemaCheckSelfApproval ?? false}
+                onCheckedChange={async allowSchemaCheckSelfApproval => {
+                  await updateTargetSchemaCheckSelfApproval({
+                    input: {
+                      allowSchemaCheckSelfApproval,
+                      target: {
+                        bySelector: {
+                          organizationSlug,
+                          projectSlug,
+                          targetSlug,
+                        },
+                      },
+                    },
+                  });
+                }}
+                disabled={selfApproval.fetching}
+              />
+            )
+          }
+        />
+        {selfApprovalError && <span className="ml-2 text-critical">{selfApprovalError}</span>}
       </SubPageLayout>
     </>
   );

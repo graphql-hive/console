@@ -351,6 +351,7 @@ export interface Target {
   failDiffOnDangerousChange: boolean;
   failAllDangerousChanges: boolean;
   failDangerousChangeTypes: string[];
+  allowSchemaCheckSelfApproval: boolean;
 }
 
 export interface Token {
