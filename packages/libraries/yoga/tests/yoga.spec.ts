@@ -398,6 +398,7 @@ test('reports usage', async ({ expect }) => {
       f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
         fields: [
           Query.hi,
+          String,
         ],
         operation: {hi},
         operationName: anonymous,
@@ -490,7 +491,7 @@ test('reports usage with response cache', async ({ expect }) => {
 
     expect(body.map).toEqual({
       f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
-        fields: ['Query.hi'],
+        fields: ['Query.hi', 'String'],
         operation: '{hi}',
         operationName: 'anonymous',
       },
@@ -871,7 +872,7 @@ describe('subscription usage reporting', () => {
 
       expect(body.map).toEqual({
         '74cf03b67c3846231d04927b02e1fca45e727223': {
-          fields: ['Subscription.hi'],
+          fields: ['Subscription.hi', 'String'],
           operation: 'subscription{hi}',
           operationName: 'anonymous',
         },
@@ -975,6 +976,7 @@ describe('subscription usage reporting', () => {
           74cf03b67c3846231d04927b02e1fca45e727223: {
             fields: [
               Subscription.hi,
+              String,
             ],
             operation: subscription{hi},
             operationName: anonymous,
@@ -1090,6 +1092,7 @@ describe('subscription usage reporting', () => {
             74cf03b67c3846231d04927b02e1fca45e727223: {
               fields: [
                 Subscription.hi,
+                String,
               ],
               operation: subscription{hi},
               operationName: anonymous,
@@ -1344,6 +1347,7 @@ describe('subscription usage reporting', () => {
           74cf03b67c3846231d04927b02e1fca45e727223: {
             fields: [
               Subscription.hi,
+              String,
             ],
             operation: subscription{hi},
             operationName: anonymous,
@@ -1615,6 +1619,7 @@ describe('incremental delivery usage reporting', () => {
             b78b2367025b1253b17f5362d5f0b4d5b27c4a08: {
               fields: [
                 Query.greetings,
+                String,
               ],
               operation: {greetings@stream},
               operationName: anonymous,
@@ -1708,6 +1713,7 @@ describe('request batching usage reporting', () => {
           43e84c7ba2c9fff1700237aa7822544e3a66f038: {
             fields: [
               Query.a,
+              String,
             ],
             operation: query A{a},
             operationName: A,
@@ -1715,6 +1721,7 @@ describe('request batching usage reporting', () => {
           727c980e5b1ce7c94b587c835cd1388b79714fcc: {
             fields: [
               Query.b,
+              String,
             ],
             operation: query B{b},
             operationName: B,
