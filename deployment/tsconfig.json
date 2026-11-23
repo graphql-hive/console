@@ -2,6 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "outDir": "bin",
+    "rootDir": ".",
     "target": "es2016",
     "module": "commonjs",
     "moduleResolution": "bundler",
