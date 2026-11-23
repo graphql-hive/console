@@ -108,14 +108,20 @@ describe('EditChannelSheet', () => {
       data: { testDeliveryChannel: { ok: { idempotencyKey: 'test:req-1:c1' }, error: null } },
     });
     await open(webhookChannel);
+    const sendTest = () =>
+      act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Test configuration' }));
+      });
 
-    await fill('Endpoint', 'https://hooks.example.com/other');
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Advanced' }));
     });
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Test configuration' }));
-    });
+    await fill('Endpoint', 'localhost:3000/hook');
+    await sendTest();
+    expect(urql.mutate).not.toHaveBeenCalled();
+
+    await fill('Endpoint', 'https://hooks.example.com/other');
+    await sendTest();
 
     expect(urql.mutate.mock.calls[0][0]).toEqual({
       input: {

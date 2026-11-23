@@ -226,7 +226,7 @@ test.concurrent(
         projectSlug: project.slug,
         name: 'webhook',
         type: AlertChannelType.Webhook,
-        webhook: { endpoint: 'not-a-url' },
+        webhook: { endpoint: 'localhost:3000/webhook' },
       },
       ownerToken,
     ).then(r => r.expectNoGraphQLErrors());

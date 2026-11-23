@@ -10,7 +10,12 @@ import { Logger } from '../../../shared/providers/logger';
 import { HiveConsoleReleaseVersion, RequestBrokerConfig } from '../../../shared/providers/tokens';
 import { buildHiveTestWebhookHeaders } from '../../lib/delivery-metadata';
 import { createTestSchemaChangeEvent } from '../../lib/test-notification';
-import { deliveryOutcome, TIMED_OUT, type DeliveryOutcome } from '../delivery-recorder';
+import {
+  deliveryOutcome,
+  TIMED_OUT,
+  unreachableOutcome,
+  type DeliveryOutcome,
+} from '../delivery-recorder';
 import {
   attemptTestNotification,
   TEST_NOTIFICATION_TIMEOUT_MS,
@@ -106,5 +111,7 @@ function describeWebhookError(error: unknown): DeliveryOutcome | null {
   if (error.statusCode !== undefined) {
     return deliveryOutcome(error.statusCode, error.statusText ?? '');
   }
-  return error.code === 'ETIMEDOUT' ? deliveryOutcome(null, TIMED_OUT) : null;
+  return error.code === 'ETIMEDOUT'
+    ? deliveryOutcome(null, TIMED_OUT)
+    : unreachableOutcome(error.code);
 }
