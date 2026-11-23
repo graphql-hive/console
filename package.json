@@ -12,10 +12,10 @@
   },
   "license": "MIT",
   "private": true,
-  "packageManager": "pnpm@10.33.2+sha512.a90faf6feeab71ad6c6e57f94e0fe1a12f5dcc22cd754db40ae9593eb6a3e0b6b12e3540218bb37ae083404b1f2ce6db2a4121e979829b4aff94b99f49da1cf8",
+  "packageManager": "pnpm@10.34.9+sha512.f49b5a8ea0fdedb44bb3c0c1d6575092a53c2950d95b7ad15df11f17974877a2de3a01c07e934e9b28ce716e51c09a94962c7306d09be2e1e4b18a8c8762fd32",
   "engines": {
     "node": ">=26.13.1",
-    "pnpm": ">=10.33.2"
+    "pnpm": ">=10.34.9"
   },
   "scripts": {
     "build": "pnpm turbo build --filter='@hive/app' --concurrency=1 --color && pnpm turbo build --concurrency=4 --color --filter '!@hive/app'",
