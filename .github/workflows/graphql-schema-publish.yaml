@@ -22,15 +22,15 @@ jobs:
       - name: schema publish
         env:
           HIVE_TOKEN: ${{ secrets.hiveToken }}
-          HIVE_CLI_VERSION: 0.68.2
-          HIVE_CLI_SHA512: 643c02e88d2041f26ec12260dd39ebe8f934992e5e7ca3ccba974514532389ce6fa7bf06c0481a0064be546521ebf383e52b2cac47e73739a1c498245ba460fc
+          HIVE_CLI_VERSION: 0.68.7
+          HIVE_CLI_SHA256: fb783f292b1de4b26be0de5af84a0da5609e6f68eb0e0309c85320fd56bb523d
         run: |
           set -euo pipefail
           archive="hive-v${HIVE_CLI_VERSION}-linux-x64.tar.gz"
           curl --fail --location --silent --show-error \
             "https://github.com/graphql-hive/console/releases/download/%40graphql-hive%2Fcli%40${HIVE_CLI_VERSION}/${archive}" \
             --output "$archive"
-          printf '%s  %s\n' "$HIVE_CLI_SHA512" "$archive" | sha512sum -c -
+          printf '%s  %s\n' "$HIVE_CLI_SHA256" "$archive" | sha256sum -c -
           tar -xzf "$archive"
           node ./hive/bin/run schema:publish "schema.graphql" \
             --service "graphql"
