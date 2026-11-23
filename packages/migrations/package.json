@@ -25,7 +25,6 @@
     "@types/pg": "catalog:",
     "@whatwg-node/fetch": "0.10.13",
     "bcryptjs": "catalog:",
-    "copyfiles": "2.4.1",
     "date-fns": "catalog:",
     "dotenv": "catalog:",
     "got": "catalog:",

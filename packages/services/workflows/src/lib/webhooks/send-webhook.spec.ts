@@ -151,12 +151,12 @@ describe('describeWebhookError', () => {
     [
       'the connection was refused',
       Object.assign(new Error('connect ECONNREFUSED 10.0.0.5:443'), { code: 'ECONNREFUSED' }),
-      null,
+      { statusCode: null, statusText: 'Connection refused' },
     ],
     [
       'the host did not resolve',
       Object.assign(new Error('getaddrinfo ENOTFOUND hooks.example.com'), { code: 'ENOTFOUND' }),
-      null,
+      { statusCode: null, statusText: 'Host not found' },
     ],
     ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
     ['not an error', 'nope', null],

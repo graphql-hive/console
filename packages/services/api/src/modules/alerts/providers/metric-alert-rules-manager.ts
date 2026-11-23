@@ -170,7 +170,8 @@ export class MetricAlertRulesManager {
     // target. The DB foreign keys allow cross-project references on their
     // own; explicit checks close that gap.
     await this.assertChannelsBelongToProject(input.channelIds, input.projectId);
-    if (input.savedFilterId) {
+    // Strict null check: an empty string is still a filter id and must be validated.
+    if (input.savedFilterId != null) {
       await this.assertSavedFilterBelongsToProject(input.savedFilterId, input.projectId);
     }
 
@@ -268,7 +269,8 @@ export class MetricAlertRulesManager {
       await this.assertChannelsBelongToProject(input.channelIds, input.projectId);
     }
 
-    if (input.savedFilterId) {
+    // Strict null check: an empty string is still a filter id and must be validated.
+    if (input.savedFilterId != null) {
       await this.assertSavedFilterBelongsToProject(input.savedFilterId, input.projectId);
     }
 

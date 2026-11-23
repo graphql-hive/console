@@ -34,6 +34,17 @@ export function deliveryOutcome(statusCode: number | null, statusText: string): 
   return { statusCode, statusText: truncateStatusText(statusText) };
 }
 
+const UNREACHABLE_TEXT = new Map([
+  ['ECONNREFUSED', 'Connection refused'],
+  ['ENOTFOUND', 'Host not found'],
+]);
+
+/** The outcome for a socket error code saying the destination was not reached; null for any other. */
+export function unreachableOutcome(code: unknown): DeliveryOutcome | null {
+  const text = typeof code === 'string' ? UNREACHABLE_TEXT.get(code) : undefined;
+  return text ? deliveryOutcome(null, text) : null;
+}
+
 /** Slack's API answered `ok: true`; the SDK exposes no HTTP status on success. */
 export const SLACK_OK: DeliveryOutcome = { statusCode: null, statusText: 'ok' };
 

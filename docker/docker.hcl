@@ -44,6 +44,17 @@ variable "BUILD_PLATFORM" {
   default = "linux/amd64,linux/arm64"
 }
 
+# Changes the OS package upgrade layer once per day, so Debian security fixes are picked up even when
+# the base image and Dockerfile are unchanged and the layer would otherwise come from the build cache.
+variable "APT_UPGRADE_CACHE_BUST" {
+  default = ""
+}
+
+function "apt_upgrade_cache_bust" {
+  params = []
+  result = notequal("", APT_UPGRADE_CACHE_BUST) ? APT_UPGRADE_CACHE_BUST : formatdate("YYYY-MM-DD", timestamp())
+}
+
 function "get_target" {
   params = []
   result = notequal("", BUILD_TYPE) ? notequal("ci", BUILD_TYPE) ? "target-publish" : "target-ci" : "target-dev"
@@ -73,6 +84,7 @@ target "migrations-base" {
   dockerfile = "${PWD}/docker/migrations.dockerfile"
   args = {
     NODE_VERSION_TAG = NODE_VERSION_TAG
+    APT_UPGRADE_CACHE_BUST = apt_upgrade_cache_bust()
     RELEASE = "${RELEASE}"
   }
 }
@@ -81,6 +93,7 @@ target "service-base" {
   dockerfile = "${PWD}/docker/services.dockerfile"
   args = {
     NODE_VERSION_TAG = NODE_VERSION_TAG
+    APT_UPGRADE_CACHE_BUST = apt_upgrade_cache_bust()
     RELEASE = "${RELEASE}"
   }
 }
@@ -103,6 +116,7 @@ target "cli-base" {
   dockerfile = "${PWD}/docker/cli.dockerfile"
   args = {
     NODE_VERSION_TAG = NODE_VERSION_TAG
+    APT_UPGRADE_CACHE_BUST = apt_upgrade_cache_bust()
     RELEASE = "${RELEASE}"
   }
 }
