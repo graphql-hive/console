@@ -1,5 +1,36 @@
 # hive
 
+## 15.6.1
+
+### Patch Changes
+
+- [#8961](https://github.com/graphql-hive/console/pull/8961)
+  [`89a1415`](https://github.com/graphql-hive/console/commit/89a1415f50ab699713849c52f09dbfd57e339f75)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix the schema service cache for federation
+  compositions. The request id was part of the cache key, so identical compositions of different
+  schema checks and publishes were never reused.
+
+- [#8966](https://github.com/graphql-hive/console/pull/8966)
+  [`1fd146f`](https://github.com/graphql-hive/console/commit/1fd146f69ccda7777460a2e4223ab48d34140540)
+  Thanks [@jdolle](https://github.com/jdolle)! - Remove unused dependencies from the services:
+  `@opentelemetry/auto-instrumentations-node`, `@opentelemetry/sdk-node`,
+  `@aws-sdk/s3-request-presigner`, `@aws-sdk/client-s3`, `copyfiles` and `itty-router-extras`. None
+  of them were included in the service builds, so behavior is unchanged.
+
+- [#8963](https://github.com/graphql-hive/console/pull/8963)
+  [`cd30468`](https://github.com/graphql-hive/console/commit/cd304683ce53177e835b5cff1e764f24cca4f5e1)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade `@graphql-inspector/core` from 8.1.1 to
+  8.1.3.
+
+  Schema checks and publishes compute schema changes faster when large parts of the schema are
+  added, for example when a new subgraph is added to a federated graph.
+
+- [#8970](https://github.com/graphql-hive/console/pull/8970)
+  [`9196b26`](https://github.com/graphql-hive/console/commit/9196b2622d714298369055da78c0b98f91464a46)
+  Thanks [@ArvinSaini](https://github.com/ArvinSaini)! - Return "not found" instead of an unexpected
+  database error when a metric alert rule, notification channel, or saved filter id that is not a
+  valid UUID is provided.
+
 ## 15.6.0
 
 ### Minor Changes
