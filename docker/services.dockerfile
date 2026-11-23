@@ -2,7 +2,9 @@ ARG NODE_VERSION_TAG
 FROM node${NODE_VERSION_TAG}
 
 # The node base image lags behind Debian security updates; upgrade so OS-level CVE fixes land without waiting for a new node image.
-RUN apt-get update && apt-get upgrade -y && apt-get install -y wget ca-certificates && rm -rf /var/lib/apt/lists/*
+# Changes daily (set by docker.hcl) so this layer is not reused from the build cache indefinitely.
+ARG APT_UPGRADE_CACHE_BUST
+RUN echo "apt upgrade: $APT_UPGRADE_CACHE_BUST" && apt-get update && apt-get upgrade -y && apt-get install -y wget ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # The services execute Node.js directly and do not need package managers at runtime.
 RUN rm -rf /usr/local/lib/node_modules/npm \

@@ -1,7 +1,9 @@
 ARG NODE_VERSION_TAG
 FROM node${NODE_VERSION_TAG}
 
-RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/*
+# Changes daily (set by docker.hcl) so this layer is not reused from the build cache indefinitely.
+ARG APT_UPGRADE_CACHE_BUST
+RUN echo "apt upgrade: $APT_UPGRADE_CACHE_BUST" && apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends ca-certificates git && rm -rf /var/lib/apt/lists/*
 
 ARG CLI_VERSION
 
