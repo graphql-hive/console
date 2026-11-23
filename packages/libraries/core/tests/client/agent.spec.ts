@@ -1,5 +1,5 @@
-import { createHiveTestingLogger } from 'test-utils.js';
 import { createAgent } from '../../src/client/agent.js';
+import { createHiveTestingLogger } from '../test-utils.js';
 
 describe('createAgent', () => {
   it('should gracefully handle and log rejected promises passed to capture()', async () => {

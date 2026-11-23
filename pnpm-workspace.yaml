@@ -94,7 +94,7 @@ catalog:
   tailwind-merge: 3.7.0
   toucan-js: 4.1.0
   tsx: 4.23.15
-  typescript: 5.7.3
+  typescript: 6.0.3
   undici: 7.30.1
   vite: 8.3.8
   vite-plugin-monaco-editor: 1.1.0

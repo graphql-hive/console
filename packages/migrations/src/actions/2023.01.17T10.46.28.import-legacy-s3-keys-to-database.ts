@@ -536,7 +536,7 @@ class AwsV4Signer {
 }
 
 async function hmac(
-  key: string | ArrayBufferView | ArrayBuffer,
+  key: string | ArrayBufferView<ArrayBuffer> | ArrayBuffer,
   string: string,
 ): Promise<ArrayBuffer> {
   const cryptoKey = await crypto.subtle.importKey(
@@ -549,7 +549,9 @@ async function hmac(
   return crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(string));
 }
 
-async function hash(content: string | ArrayBufferView | ArrayBuffer): Promise<ArrayBuffer> {
+async function hash(
+  content: string | ArrayBufferView<ArrayBuffer> | ArrayBuffer,
+): Promise<ArrayBuffer> {
   return crypto.subtle.digest(
     'SHA-256',
     typeof content === 'string' ? encoder.encode(content) : content,

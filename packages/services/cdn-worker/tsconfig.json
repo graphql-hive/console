@@ -8,7 +8,6 @@
     "alwaysStrict": true,
     "strict": true,
     "preserveConstEnums": true,
-    "moduleResolution": "node",
     "sourceMap": true,
     "esModuleInterop": true,
     "types": ["@cloudflare/workers-types", "@types/service-worker-mock"]

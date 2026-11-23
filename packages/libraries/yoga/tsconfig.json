@@ -2,7 +2,7 @@
   "extends": "../../../tsconfig.json",
   "include": ["src"],
   "compilerOptions": {
-    "baseUrl": ".",
+    "paths": {},
     "outDir": "dist",
     "rootDir": "src",
     "target": "es2017",
