@@ -4,6 +4,7 @@ import {
   deleteMetricAlertRules as rawDeleteMetricAlertRules,
   updateMetricAlertRule as rawUpdateMetricAlertRule,
 } from 'testkit/flow';
+import { graphql } from 'testkit/gql';
 import {
   AlertChannelType,
   MetricAlertRuleDirection,
@@ -14,6 +15,7 @@ import {
   ProjectType,
   SavedFilterVisibilityType,
 } from 'testkit/gql/graphql';
+import { execute } from 'testkit/graphql';
 import { initSeed } from '../../../testkit/seed';
 
 test.concurrent('can create, read, update, and delete a metric alert rule', async ({ expect }) => {
@@ -815,5 +817,85 @@ test.concurrent(
     ).toBeTruthy();
     const resaved = await updateMetricAlertRule({ ...byProject, ruleId, timeWindowMinutes: 10080 });
     expect(resaved.error!.message).toContain('retention');
+  },
+);
+
+const MetricAlertRuleByIdQuery = graphql(`
+  query IntegrationTests_MetricAlertRuleById($target: TargetReferenceInput!, $id: ID!) {
+    target(reference: $target) {
+      metricAlertRule(id: $id) {
+        id
+      }
+    }
+  }
+`);
+
+test.concurrent(
+  'malformed ids are treated as not found instead of reaching Postgres',
+  async ({ expect }) => {
+    const { createOrg, ownerToken } = await initSeed().createOwner();
+    const { createProject, organization, setFeatureFlag } = await createOrg();
+    await setFeatureFlag('metricAlertRules', true);
+    const { project, target, addMetricAlertRule, updateMetricAlertRule, deleteMetricAlertRules } =
+      await createProject(ProjectType.Single);
+
+    const organizationSlug = organization.slug;
+    const projectSlug = project.slug;
+    const targetReference = {
+      bySelector: { organizationSlug, projectSlug, targetSlug: target.slug },
+    };
+    const byProject = { project: { bySelector: { organizationSlug, projectSlug } } };
+    const ruleInput = {
+      target: targetReference,
+      name: 'Traffic Alert',
+      type: MetricAlertRuleType.Traffic,
+      timeWindowMinutes: 30,
+      thresholdType: MetricAlertRuleThresholdType.FixedValue,
+      thresholdValue: 100,
+      direction: MetricAlertRuleDirection.Above,
+      severity: MetricAlertRuleSeverity.Warning,
+      channelIds: [] as string[],
+    };
+
+    const byId = await execute({
+      document: MetricAlertRuleByIdQuery,
+      variables: { target: targetReference, id: 'not-a-uuid' },
+      authToken: ownerToken,
+    }).then(r => r.expectNoGraphQLErrors());
+    expect(byId.target?.metricAlertRule).toBeNull();
+
+    const badChannel = await addMetricAlertRule({ ...ruleInput, channelIds: ['not-a-uuid'] });
+    expect(badChannel.error?.message).toContain('notification channels');
+
+    const badFilter = await addMetricAlertRule({ ...ruleInput, savedFilterId: 'not-a-uuid' });
+    expect(badFilter.error?.message).toContain('Saved filter');
+
+    // An empty string is an id, not "no filter", so it must be validated too.
+    const emptyFilter = await addMetricAlertRule({ ...ruleInput, savedFilterId: '' });
+    expect(emptyFilter.error?.message).toContain('Saved filter');
+
+    const created = await addMetricAlertRule(ruleInput);
+    expect(created.ok).toBeTruthy();
+    const ruleId = created.ok!.addedMetricAlertRule.id;
+
+    const badUpdate = await updateMetricAlertRule({ ...byProject, ruleId: 'not-a-uuid' });
+    expect(badUpdate.error?.message).toBe('Metric alert rule not found.');
+
+    const emptyFilterUpdate = await updateMetricAlertRule({
+      ...byProject,
+      ruleId,
+      savedFilterId: '',
+    });
+    expect(emptyFilterUpdate.error?.message).toContain('Saved filter');
+
+    const badDelete = await deleteMetricAlertRules({ ...byProject, ruleIds: ['not-a-uuid'] });
+    expect(badDelete.ok?.deletedMetricAlertRuleIds).toEqual([]);
+
+    // A malformed id does not prevent valid ids in the same call from being deleted.
+    const mixedDelete = await deleteMetricAlertRules({
+      ...byProject,
+      ruleIds: ['not-a-uuid', ruleId],
+    });
+    expect(mixedDelete.ok?.deletedMetricAlertRuleIds).toEqual([ruleId]);
   },
 );
