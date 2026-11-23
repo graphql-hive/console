@@ -287,11 +287,7 @@ function shouldDropChange(change: Change<TypeOfChangeType>): boolean {
         );
       },
       [ChangeType.TypeDescriptionChanged]: change => {
-        return isDescriptionUnchangedAfterTrim(
-          change,
-          'newTypeDescription',
-          'oldTypeDescription',
-        );
+        return isDescriptionUnchangedAfterTrim(change, 'newTypeDescription', 'oldTypeDescription');
       },
     }) ?? false
   );
