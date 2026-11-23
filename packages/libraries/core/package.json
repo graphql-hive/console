@@ -61,7 +61,6 @@
     "@apollo/federation": "catalog:",
     "@apollo/subgraph": "2.13.2",
     "@types/async-retry": "catalog:",
-    "@types/js-md5": "0.8.0",
     "@types/lodash.sortby": "4.7.9",
     "graphql": "catalog:",
     "nock": "catalog:",

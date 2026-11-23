@@ -25,9 +25,7 @@
     "reflect-metadata": "0.2.2"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "catalog:",
     "@aws-sdk/credential-providers": "catalog:",
-    "@aws-sdk/s3-request-presigner": "3.1035.0",
     "@bentocache/plugin-prometheus": "0.2.0",
     "@date-fns/utc": "catalog:",
     "@graphql-hive/core": "workspace:*",
