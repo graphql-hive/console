@@ -217,7 +217,7 @@
       "mjml-core@4.14.0": "patches/mjml-core@4.14.0.patch",
       "@apollo/federation@0.38.1": "patches/@apollo__federation@0.38.1.patch",
       "got@16.1.0": "patches/got@16.1.0.patch",
-      "oclif@4.22.65": "patches/oclif@4.22.65.patch",
+      "oclif@4.24.0": "patches/oclif@4.24.0.patch",
       "@slonik/pg-driver@48.19.0": "patches/@slonik__pg-driver@48.19.0.patch",
       "@whatwg-node/fetch@0.12.1": "patches/@whatwg-node__fetch@0.12.1.patch",
       "@graphql-tools/executor@1.5.0": "patches/@graphql-tools__executor@1.5.0.patch"
