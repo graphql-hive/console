@@ -106,7 +106,6 @@ describe('CreateChannelSheet', () => {
       data: { addAlertChannel: { ok: { updatedProject: { id: 'p1' } }, error: null } },
     });
     renderSheet();
-    await fill('Name', 'Ops hook');
     await pickType('Webhook');
     expect(screen.queryByLabelText('Slack Channel')).toBeNull();
     await fill('Endpoint', 'not a url');
@@ -125,6 +124,7 @@ describe('CreateChannelSheet', () => {
         destination: { webhook: { endpoint: 'https://hooks.example.com/hive' } },
       },
     });
+    await fill('Name', 'Ops hook');
     await submit();
     expect(urql.mutate.mock.calls[1][0]).toEqual({
       input: {

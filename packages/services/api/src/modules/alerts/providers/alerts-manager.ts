@@ -324,8 +324,6 @@ export class AlertsManager {
         projectId: channel.projectId,
         type: channel.type,
         subjectId: channel.id,
-        rateLimitKey: `testDeliveryChannel:${channel.id}`,
-        rateLimitedMessage: 'Too many test notifications for this channel. Try again in a minute.',
       },
       parsed.data,
       req,
@@ -340,6 +338,15 @@ export class AlertsManager {
     },
     req: FastifyRequest,
   ): Promise<TestChannelResult> {
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
+    });
+
     this.logger.debug(
       'Testing new Alert Channel (organization=%s, project=%s, type=%s)',
       input.organizationId,
@@ -351,23 +358,12 @@ export class AlertsManager {
       return notSent(parsed.error.issues[0].message);
     }
 
-    await this.session.assertPerformAction({
-      action: 'alert:modify',
-      organizationId: input.organizationId,
-      params: {
-        organizationId: input.organizationId,
-        projectId: input.projectId,
-      },
-    });
     return this.sendTestNotification(
       {
         organizationId: input.organizationId,
         projectId: input.projectId,
         type: input.type,
         subjectId: input.projectId,
-        rateLimitKey: `testDeliveryChannel:new:${input.projectId}:${input.type}`,
-        rateLimitedMessage:
-          'Too many test notifications for this channel type. Try again in a minute.',
       },
       parsed.data,
       req,
@@ -378,8 +374,6 @@ export class AlertsManager {
     channel: ProjectSelector & {
       type: AlertChannel['type'];
       subjectId: string;
-      rateLimitKey: string;
-      rateLimitedMessage: string;
     },
     destinations: z.output<typeof TestDestinationModel>,
     req: FastifyRequest,
@@ -400,12 +394,12 @@ export class AlertsManager {
     const rateLimited = await this.rateLimiter.isOrganizationRateLimited(
       req,
       channel.organizationId,
-      channel.rateLimitKey,
+      `testDeliveryChannel:${channel.projectId}`,
       60,
       MAX_CHANNEL_TESTS_PER_MINUTE,
     );
     if (rateLimited) {
-      return notSent(channel.rateLimitedMessage);
+      return notSent('Too many test notifications for this project. Try again in a minute.');
     }
 
     let slackToken: string | null = null;
