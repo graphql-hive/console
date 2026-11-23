@@ -5,6 +5,7 @@
     "target": "es2016",
     "module": "commonjs",
     "moduleResolution": "bundler",
+    "resolvePackageJsonExports": false,
     "types": ["node"],
     "sourceMap": true,
     "experimentalDecorators": true,
