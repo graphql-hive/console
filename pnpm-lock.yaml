@@ -79,8 +79,8 @@ catalogs:
       specifier: 4.3.3
       version: 4.3.3
     '@theguild/federation-composition':
-      specifier: 0.27.2
-      version: 0.27.2
+      specifier: 0.27.3
+      version: 0.27.3
     '@trpc/client':
       specifier: 10.45.3
       version: 10.45.3
@@ -430,7 +430,7 @@ importers:
         version: 0.12.1(eslint@8.57.1)(typescript@5.7.3)
       '@theguild/federation-composition':
         specifier: 'catalog:'
-        version: 0.27.2(graphql@16.14.2)
+        version: 0.27.3(graphql@16.14.2)
       '@theguild/prettier-config':
         specifier: 2.0.7
         version: 2.0.7(prettier@3.4.2)
@@ -614,7 +614,7 @@ importers:
         version: link:../packages/services/workflows
       '@theguild/federation-composition':
         specifier: 'catalog:'
-        version: 0.27.2(graphql@16.14.2)
+        version: 0.27.3(graphql@16.14.2)
       '@trpc/client':
         specifier: 'catalog:'
         version: 10.45.3(@trpc/server@10.45.3)
@@ -783,8 +783,8 @@ importers:
         specifier: 4.8.0
         version: 4.8.0
       '@theguild/federation-composition':
-        specifier: 0.27.2
-        version: 0.27.2(graphql@16.14.2)
+        specifier: 0.27.3
+        version: 0.27.3(graphql@16.14.2)
       cli-table3:
         specifier: 0.6.5
         version: 0.6.5
@@ -1093,7 +1093,7 @@ importers:
         version: 0.52.2
       monaco-graphql:
         specifier: ^1.7.3
-        version: 1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2)
+        version: 1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1)
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -1369,7 +1369,7 @@ importers:
         version: 7.10.0
       '@theguild/federation-composition':
         specifier: 'catalog:'
-        version: 0.27.2(graphql@16.14.2)
+        version: 0.27.3(graphql@16.14.2)
       '@trpc/client':
         specifier: 'catalog:'
         version: 10.45.3(@trpc/server@10.45.3)
@@ -1603,7 +1603,7 @@ importers:
         version: 2.13.2(graphql@16.14.2)
       '@theguild/federation-composition':
         specifier: 'catalog:'
-        version: 0.27.2(graphql@16.14.2)
+        version: 0.27.3(graphql@16.14.2)
       graphql:
         specifier: 'catalog:'
         version: 16.14.2
@@ -1718,7 +1718,7 @@ importers:
         version: 11.9.0(rollup@4.59.0)
       '@theguild/federation-composition':
         specifier: 'catalog:'
-        version: 0.27.2(graphql@16.14.2)
+        version: 0.27.3(graphql@16.14.2)
       '@trpc/server':
         specifier: 'catalog:'
         version: 10.45.3
@@ -1841,7 +1841,7 @@ importers:
         version: 1.16.0
       '@theguild/federation-composition':
         specifier: 'catalog:'
-        version: 0.27.2(graphql@16.14.2)
+        version: 0.27.3(graphql@16.14.2)
       '@whatwg-node/server':
         specifier: 'catalog:'
         version: 0.10.17
@@ -2376,7 +2376,7 @@ importers:
         version: 0.52.2
       monaco-graphql:
         specifier: 1.9.0
-        version: 1.9.0(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2)
+        version: 1.9.0(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1)
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -8679,8 +8679,8 @@ packages:
     peerDependencies:
       graphql: 16.14.2
 
-  '@theguild/federation-composition@0.27.2':
-    resolution: {integrity: sha512-ZrVO+u9+2E6YbBjoTKAxB0AaeBEf51XZSZPexB+fSXu+X9RWZA6RJw3Ajd8p0KGKM5rEphMGwavg0F8X+YhHVg==}
+  '@theguild/federation-composition@0.27.3':
+    resolution: {integrity: sha512-YzuQCZPfwFBiu59Z7ghaEgqIJ15hJxdmvHNMHYz612PPNhSgodxCgovFCCuJLS7a23ljNlW7mAzWFMKNEKTegQ==}
     engines: {node: '>=18'}
     peerDependencies:
       graphql: 16.14.2
@@ -24151,7 +24151,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@theguild/federation-composition@0.27.2(graphql@16.14.2)':
+  '@theguild/federation-composition@0.27.3(graphql@16.14.2)':
     dependencies:
       constant-case: 3.0.4
       debug: 4.4.3(supports-color@8.1.1)
@@ -29467,21 +29467,21 @@ snapshots:
 
   monaco-editor@0.52.2: {}
 
-  monaco-graphql@1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2):
+  monaco-graphql@1.7.3(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1):
     dependencies:
       graphql: 16.14.2
       graphql-language-service: 5.5.0(graphql@16.14.2)
       monaco-editor: 0.52.2
       picomatch-browser: 2.2.6
-      prettier: 3.4.2
+      prettier: 3.8.1
 
-  monaco-graphql@1.9.0(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.4.2):
+  monaco-graphql@1.9.0(graphql@16.14.2)(monaco-editor@0.52.2)(prettier@3.8.1):
     dependencies:
       graphql: 16.14.2
       graphql-language-service: 5.7.0(graphql@16.14.2)
       monaco-editor: 0.52.2
       picomatch-browser: 2.2.6
-      prettier: 3.4.2
+      prettier: 3.8.1
 
   moo@0.5.2: {}
 
