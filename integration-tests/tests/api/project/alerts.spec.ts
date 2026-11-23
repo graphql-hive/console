@@ -2,7 +2,12 @@ import 'reflect-metadata';
 import { createHash } from 'node:crypto';
 import asyncRetry from 'async-retry';
 import { clickHouseInsert, clickHouseQuery, flushAsyncInserts } from 'testkit/clickhouse';
-import { addAlertChannel, testDeliveryChannel, updateAlertChannel } from 'testkit/flow';
+import {
+  addAlertChannel,
+  testDeliveryChannel,
+  testNewDeliveryChannel,
+  updateAlertChannel,
+} from 'testkit/flow';
 import { graphql } from 'testkit/gql';
 import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -728,6 +733,30 @@ test.concurrent(
       r.expectGraphQLErrors(),
     );
     expect(errors[0].message).toContain('Missing permission for performing');
+
+    const newChannelEndpoint = await generateMockEndpoint();
+    const sendForNewChannel = (token: string) =>
+      testNewDeliveryChannel(
+        {
+          project: {
+            bySelector: { organizationSlug: organization.slug, projectSlug: project.slug },
+          },
+          type: AlertChannelType.Webhook,
+          destination: { webhook: { endpoint: newChannelEndpoint.url } },
+        },
+        token,
+      );
+    const deliveredForNewChannel = await sendForNewChannel(ownerToken).then(r =>
+      r.expectNoGraphQLErrors(),
+    );
+    expect(deliveredForNewChannel.testNewDeliveryChannel.ok).not.toBeNull();
+    expect(
+      (await getRecordedRequests()).some(request => request.path === newChannelEndpoint.path),
+    ).toBe(true);
+    const newChannelErrors = await sendForNewChannel(outsiderToken).then(r =>
+      r.expectGraphQLErrors(),
+    );
+    expect(newChannelErrors[0].message).toContain('Missing permission for performing');
 
     await flushAsyncInserts();
     const { data: rows } = await clickHouseQuery<{ event: string }>(

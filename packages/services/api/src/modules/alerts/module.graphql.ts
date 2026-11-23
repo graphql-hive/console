@@ -9,10 +9,15 @@ export default gql`
     disableAlertChannel(input: DisableAlertChannelInput!): DisableAlertChannelResult!
     """
     Sends one test notification to the given destination, saved on the channel or not. It is not
-    part of the channel's deliveries. Limited to 10 per minute for each channel when rate limiting
-    is enabled.
+    part of the channel's deliveries. Limited to 10 per minute for each project, counted together
+    with testNewDeliveryChannel, when rate limiting is enabled.
     """
     testDeliveryChannel(input: TestDeliveryChannelInput!): TestDeliveryChannelResult!
+    """
+    Sends one test notification for a channel that has not been created yet. Nothing is saved or
+    recorded. Counts toward the same limit as testDeliveryChannel.
+    """
+    testNewDeliveryChannel(input: TestNewDeliveryChannelInput!): TestDeliveryChannelResult!
     addAlert(input: AddAlertInput!): AddAlertResult!
     deleteAlerts(input: DeleteAlertsInput!): DeleteAlertsResult!
   }
@@ -100,6 +105,12 @@ export default gql`
   input TestDeliveryChannelDestinationInput @oneOf {
     slack: SlackChannelInput
     webhook: WebhookChannelInput
+  }
+
+  input TestNewDeliveryChannelInput {
+    project: ProjectReferenceInput!
+    type: AlertChannelType!
+    destination: TestDeliveryChannelDestinationInput!
   }
 
   """
