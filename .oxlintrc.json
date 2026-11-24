@@ -1,8 +1,30 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "import", "promise", "node", "react", "jsx-a11y"],
+  "jsPlugins": [
+    {
+      "name": "eslint-js",
+      "specifier": "oxlint-plugin-eslint"
+    },
+    {
+      "name": "import-js",
+      "specifier": "eslint-plugin-import"
+    },
+    {
+      "name": "react-js",
+      "specifier": "eslint-plugin-react"
+    },
+    "eslint-plugin-sonarjs",
+    "eslint-plugin-better-tailwindcss"
+  ],
   "categories": {
     "correctness": "off"
+  },
+  "settings": {
+    "better-tailwindcss": {
+      "entryPoint": "packages/web/app/src/index.css",
+      "callees": ["clsx", "cn", "cva", "cx"]
+    }
   },
   "ignorePatterns": [
     "scripts",
@@ -95,10 +117,65 @@
     "require-yield": "error",
     "use-isnan": "error",
     "valid-typeof": "error",
+    "eslint-js/no-restricted-syntax": [
+      "error",
+      {
+        "selector": ":matches(Literal[value=\"0.0.0.0\"], TemplateElement[value.raw=\"0.0.0.0\"])",
+        "message": "Use \"::\" to make it compatible with both IPv4 and IPv6"
+      },
+      {
+        "selector": "CallExpression[callee.name=/readFileSync|readFile|writeFileSync|writeFile/] > .arguments:last-child[type=ObjectExpression][properties.length=1] Property[key.name=encoding]",
+        "message": "Specify encoding as last argument instead of object with encoding key"
+      },
+      {
+        "selector": "CallExpression[callee.name=/readFileSync|readFile|writeFileSync|writeFile/] > .arguments:last-child[type=ObjectExpression][properties.length=0]",
+        "message": "Specify encoding as last argument"
+      },
+      {
+        "selector": "CallExpression[callee.name=readFileSync][parent.property.name=toString]",
+        "message": "toString is redundant, specify encoding as last argument"
+      },
+      {
+        "selector": "CallExpression[callee.type=MemberExpression][callee.property.name=/readFileSync|readFile|writeFileSync|writeFile/] > .arguments:last-child[type=ObjectExpression][properties.length=1] Property[key.name=encoding]",
+        "message": "Specify encoding as last argument instead of object with encoding key"
+      },
+      {
+        "selector": "CallExpression[callee.type=MemberExpression][callee.property.name=/readFileSync|readFile|writeFileSync|writeFile/] > .arguments:last-child[type=ObjectExpression][properties.length=0]",
+        "message": "Specify encoding as last argument"
+      },
+      {
+        "selector": "CallExpression[callee.name=Boolean][arguments.1.elements.length!=0]",
+        "message": "Prefer `!!…` over `Boolean(…)` because TypeScript infers a narrow literal boolean `type: true` instead of `type: boolean`."
+      },
+      {
+        "selector": "ExpressionStatement[expression.object.name=process][expression.property.name=browser]",
+        "message": "`process.browser` is deprecated, use `!!globalThis.window`"
+      }
+    ],
     "import/first": "error",
     "import/no-absolute-path": "error",
     "import/no-self-import": "error",
+    "import-js/no-extraneous-dependencies": [
+      "error",
+      {
+        "devDependencies": [
+          "packages/services/storage/tools/*.js",
+          "packages/services/**",
+          "packages/migrations/**",
+          "packages/web/app/**",
+          "e2e/**/*.ts",
+          "packages/libraries/laboratory/**",
+          "playwright.config.ts",
+          "**/*.spec.ts",
+          "**/*.test.ts",
+          "**/*.e2e.ts"
+        ],
+        "optionalDependencies": false
+      }
+    ],
     "node/no-process-env": "error",
+    "sonarjs/no-inverted-boolean-check": "warn",
+    "sonarjs/no-unused-collection": "warn",
     "typescript/ban-ts-comment": "error",
     "typescript/no-duplicate-enum-values": "error",
     "typescript/no-extra-non-null-assertion": "error",
@@ -213,6 +290,72 @@
         ],
         "prefer-object-has-own": "error",
         "yoda": "error",
+        "better-tailwindcss/no-conflicting-classes": "error",
+        "better-tailwindcss/no-deprecated-classes": "error",
+        "better-tailwindcss/no-duplicate-classes": "warn",
+        "better-tailwindcss/no-unknown-classes": [
+          "error",
+          {
+            "ignore": [
+              "drag-none",
+              "animate-in",
+              "animate-out",
+              "fade-in-.*",
+              "fade-out-.*",
+              "zoom-in-.*",
+              "zoom-out-.*",
+              "slide-in-from-.*",
+              "slide-out-to-.*",
+              "rounded-xs",
+              "ring-offset-.*",
+              "data-\\[side=(top|right|bottom|left)\\]:animate-slide-(up|down|left|right)-fade",
+              "hive-.*",
+              "schema-doc-row-.*",
+              "no-scrollbar",
+              ".*-\\(--.*\\)"
+            ]
+          }
+        ],
+        "better-tailwindcss/no-unnecessary-whitespace": "warn",
+        "eslint-js/no-restricted-syntax": [
+          "error",
+          {
+            "selector": ":matches(Literal[value=\"0.0.0.0\"], TemplateElement[value.raw=\"0.0.0.0\"])",
+            "message": "Use \"::\" to make it compatible with both IPv4 and IPv6"
+          },
+          {
+            "selector": "CallExpression[callee.name=/readFileSync|readFile|writeFileSync|writeFile/] > .arguments:last-child[type=ObjectExpression][properties.length=1] Property[key.name=encoding]",
+            "message": "Specify encoding as last argument instead of object with encoding key"
+          },
+          {
+            "selector": "CallExpression[callee.name=/readFileSync|readFile|writeFileSync|writeFile/] > .arguments:last-child[type=ObjectExpression][properties.length=0]",
+            "message": "Specify encoding as last argument"
+          },
+          {
+            "selector": "CallExpression[callee.name=readFileSync][parent.property.name=toString]",
+            "message": "toString is redundant, specify encoding as last argument"
+          },
+          {
+            "selector": "CallExpression[callee.type=MemberExpression][callee.property.name=/readFileSync|readFile|writeFileSync|writeFile/] > .arguments:last-child[type=ObjectExpression][properties.length=1] Property[key.name=encoding]",
+            "message": "Specify encoding as last argument instead of object with encoding key"
+          },
+          {
+            "selector": "CallExpression[callee.type=MemberExpression][callee.property.name=/readFileSync|readFile|writeFileSync|writeFile/] > .arguments:last-child[type=ObjectExpression][properties.length=0]",
+            "message": "Specify encoding as last argument"
+          },
+          {
+            "selector": "CallExpression[callee.name=Boolean][arguments.1.elements.length!=0]",
+            "message": "Prefer `!!…` over `Boolean(…)` because TypeScript infers a narrow literal boolean `type: true` instead of `type: boolean`."
+          },
+          {
+            "selector": "ExpressionStatement[expression.object.name=process][expression.property.name=browser]",
+            "message": "`process.browser` is deprecated, use `!!globalThis.window`"
+          },
+          {
+            "selector": "CallExpression[callee.name=useMemo][arguments.1.type=ArrayExpression][arguments.1.elements.length=0]",
+            "message": "`useMemo` with an empty dependency array can't provide a stable reference, use `useRef` instead."
+          }
+        ],
         "import/extensions": [
           "error",
           "ignorePackages",
@@ -222,6 +365,7 @@
           }
         ],
         "import/no-duplicates": "error",
+        "import-js/no-useless-path-segments": "error",
         "jsx-a11y/alt-text": [
           "warn",
           {
@@ -345,6 +489,14 @@
         "react/require-render-return": "error",
         "react/rules-of-hooks": "error",
         "react/self-closing-comp": "error",
+        "react-js/no-deprecated": "error",
+        "react-js/no-unused-state": "error",
+        "sonarjs/no-gratuitous-expressions": "error",
+        "sonarjs/no-identical-conditions": "error",
+        "sonarjs/no-inverted-boolean-check": "error",
+        "sonarjs/no-nested-switch": "error",
+        "sonarjs/no-unused-collection": "error",
+        "sonarjs/no-use-of-empty-return-value": "error",
         "typescript/consistent-type-assertions": "error",
         "typescript/no-namespace": "error",
         "typescript/triple-slash-reference": "error",
