@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { beforeEach, vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
+import { AlertChannel } from '../../../../shared/entities';
 import { HiveHttpClientError } from '../../../shared/providers/http-client';
 import { HiveConsoleReleaseVersion } from '../../../shared/providers/tokens';
 import { DeliveryRecorder } from '../delivery-recorder';
@@ -399,9 +399,9 @@ describe('describeDiscordError', () => {
       { statusCode: null, statusText: 'Timed out' },
     ],
     [
-      'connection refused',
-      new HiveHttpClientError('connect ECONNREFUSED 10.0.0.5:443', 'ECONNREFUSED'),
-      null,
+      'the host did not resolve',
+      new HiveHttpClientError('getaddrinfo ENOTFOUND hooks.example.com', 'ENOTFOUND'),
+      { statusCode: null, statusText: 'Host not found' },
     ],
     ['an exception of our own', new TypeError('Cannot read properties of undefined'), null],
   ])('%s', (_name, error, expected) => {

@@ -28,7 +28,6 @@
     "fastify": "catalog:",
     "graphql": "catalog:",
     "itty-router": "catalog:",
-    "itty-router-extras": "0.4.6",
     "toucan-js": "catalog:",
     "undici": "catalog:",
     "zod": "catalog:"

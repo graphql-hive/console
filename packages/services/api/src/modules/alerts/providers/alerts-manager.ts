@@ -313,13 +313,73 @@ export class AlertsManager {
     if (!parsed.success) {
       return notSent(parsed.error.issues[0].message);
     }
-    const slackChannel = parsed.data.slack?.channel ?? null;
-    const webhookEndpoint = parsed.data.webhook?.endpoint ?? null;
 
     const channel = await this.getChannelToModify(input.channelId);
     if (!channel) {
       return notSent('Alert channel not found.');
     }
+    return this.sendTestNotification(
+      {
+        organizationId: channel.organizationId,
+        projectId: channel.projectId,
+        type: channel.type,
+        subjectId: channel.id,
+      },
+      parsed.data,
+      req,
+    );
+  }
+
+  /** As testChannel, for a channel that has not been created yet. */
+  async testNewChannel(
+    input: ProjectSelector & {
+      type: AlertChannel['type'];
+      destination: z.input<typeof TestDestinationModel>;
+    },
+    req: FastifyRequest,
+  ): Promise<TestChannelResult> {
+    await this.session.assertPerformAction({
+      action: 'alert:modify',
+      organizationId: input.organizationId,
+      params: {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+      },
+    });
+
+    this.logger.debug(
+      'Testing new Alert Channel (organization=%s, project=%s, type=%s)',
+      input.organizationId,
+      input.projectId,
+      input.type,
+    );
+    const parsed = TestDestinationModel.safeParse(input.destination);
+    if (!parsed.success) {
+      return notSent(parsed.error.issues[0].message);
+    }
+
+    return this.sendTestNotification(
+      {
+        organizationId: input.organizationId,
+        projectId: input.projectId,
+        type: input.type,
+        subjectId: input.projectId,
+      },
+      parsed.data,
+      req,
+    );
+  }
+
+  private async sendTestNotification(
+    channel: ProjectSelector & {
+      type: AlertChannel['type'];
+      subjectId: string;
+    },
+    destinations: z.output<typeof TestDestinationModel>,
+    req: FastifyRequest,
+  ): Promise<TestChannelResult> {
+    const slackChannel = destinations.slack?.channel ?? null;
+    const webhookEndpoint = destinations.webhook?.endpoint ?? null;
     if (slackChannel !== null && channel.type !== 'SLACK') {
       return notSent('Only a Slack channel has a Slack channel.');
     }
@@ -334,12 +394,12 @@ export class AlertsManager {
     const rateLimited = await this.rateLimiter.isOrganizationRateLimited(
       req,
       channel.organizationId,
-      `testDeliveryChannel:${channel.id}`,
+      `testDeliveryChannel:${channel.projectId}`,
       60,
       MAX_CHANNEL_TESTS_PER_MINUTE,
     );
     if (rateLimited) {
-      return notSent('Too many test notifications for this channel. Try again in a minute.');
+      return notSent('Too many test notifications for this project. Try again in a minute.');
     }
 
     let slackToken: string | null = null;
@@ -363,7 +423,7 @@ export class AlertsManager {
       }),
     ]);
     const requestId = getRequestId();
-    const idempotencyKey = requestId ? testNotificationKey(requestId, channel.id) : null;
+    const idempotencyKey = requestId ? testNotificationKey(requestId, channel.subjectId) : null;
     const adapter: CommunicationAdapter =
       channel.type === 'SLACK'
         ? this.slack

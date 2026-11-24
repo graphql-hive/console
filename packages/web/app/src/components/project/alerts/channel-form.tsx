@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/primitives/input/input';
 import { AlertChannelType } from '@/gql/graphql';
 
-/** The dialog footer's submit button lives outside the form and targets it by this id. */
+/** The sheet footer's submit button lives outside the form and targets it by this id. */
 export const CHANNEL_FORM_ID = 'create-channel-form';
 
 /** How each channel type is named in the UI. */
@@ -74,8 +74,12 @@ export const ChannelFormSchema = z
     if (isWebhookLike(values.type)) {
       if (!values.endpoint) {
         ctx.addIssue({ code: 'custom', path: ['endpoint'], message: 'Must enter endpoint' });
-      } else if (!z.url().safeParse(values.endpoint).success) {
-        ctx.addIssue({ code: 'custom', path: ['endpoint'], message: 'Must be a valid URL' });
+      } else if (!z.url({ protocol: /^https?$/ }).safeParse(values.endpoint).success) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['endpoint'],
+          message: 'Must be a valid URL starting with http:// or https://',
+        });
       }
     }
   });
@@ -83,7 +87,7 @@ export const ChannelFormSchema = z
 export type ChannelFormValues = z.infer<typeof ChannelFormSchema>;
 
 /**
- * The body of the create channel dialog and the edit channel sheet: name and type, then the field
+ * The body of the create channel and edit channel sheets: name and type, then the field
  * the type calls for. The host owns the form state and the mutation. Editing keeps the type, since
  * the channel's delivery history is kept by it.
  */

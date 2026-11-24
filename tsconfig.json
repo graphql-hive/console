@@ -4,7 +4,6 @@
     "target": "esnext",
     "lib": ["esnext", "dom"],
     "types": ["vitest/globals"],
-    "baseUrl": ".",
     "outDir": "dist",
     "rootDir": ".",
 
@@ -22,7 +21,8 @@
     "declarationMap": false,
     "resolveJsonModule": false,
 
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
+    "resolvePackageJsonExports": false,
     "strict": true,
     "paths": {
       "@hive/clickhouse": ["./packages/internal/clickhouse/src/index.ts"],

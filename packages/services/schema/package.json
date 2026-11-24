@@ -18,7 +18,6 @@
     "@sentry/node": "catalog:",
     "@theguild/federation-composition": "catalog:",
     "@trpc/server": "catalog:",
-    "@types/async-retry": "catalog:",
     "@types/ioredis-mock": "catalog:",
     "dotenv": "catalog:",
     "fast-json-stable-stringify": "catalog:",

@@ -1,6 +1,4 @@
 import { createServer, IncomingMessage, Server } from 'node:http';
-import bodyParser from 'body-parser';
-import express from 'express';
 import { execute, subscribe } from 'graphql';
 import { createClient } from 'graphql-ws';
 import { useServer } from 'graphql-ws/use/ws';
@@ -10,7 +8,6 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { ApolloServer } from '@apollo/server';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { startStandaloneServer } from '@apollo/server/standalone';
-import { expressMiddleware } from '@as-integrations/express4';
 import { http } from '@graphql-hive/core';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { createHiveTestingLogger } from '../../core/tests/test-utils';
@@ -766,8 +763,7 @@ describe('graphql-ws usage reporting setup', async () => {
             `,
           });
 
-          const app = express();
-          httpServer = createServer(app);
+          httpServer = createServer();
           const wsServer = new WebSocketServer({
             server: httpServer,
             path: '/graphql',
@@ -819,13 +815,6 @@ describe('graphql-ws usage reporting setup', async () => {
             ],
           });
           await server.start();
-          app.use(
-            '/graphql',
-            bodyParser.json(),
-            expressMiddleware(server, {
-              context: async ({ req }) => ({ req }),
-            }),
-          );
 
           await new Promise<void>(resolve =>
             httpServer?.listen(() => {

@@ -9,6 +9,7 @@ import type {
   MetricAlertRuleState,
   MetricAlertStateLogEntry,
 } from '../../../shared/entities';
+import { isUUID } from '../../../shared/is-uuid';
 import { METRIC_ALERT_RULES_PER_TARGET_LIMIT } from '../../commerce/constants';
 import { AlertChannelRowSchema } from './alert-channels-storage';
 
@@ -246,6 +247,10 @@ export class MetricAlertRulesStorage {
   // --- Alert Rule CRUD ---
 
   async getMetricAlertRule(args: { id: string }): Promise<MetricAlertRule | null> {
+    // Postgres rejects a malformed uuid; treat it as not found.
+    if (!isUUID(args.id)) {
+      return null;
+    }
     const result = await this.pool.maybeOne(psql`/* getMetricAlertRule */
       SELECT ${METRIC_ALERT_RULE_SELECT}
       FROM "metric_alert_rules"
@@ -485,11 +490,16 @@ export class MetricAlertRulesStorage {
     projectId: string;
     ruleIds: string[];
   }): Promise<MetricAlertRule[]> {
+    // A malformed uuid cannot match a rule, and Postgres would reject the whole array.
+    const ruleIds = args.ruleIds.filter(isUUID);
+    if (ruleIds.length === 0) {
+      return [];
+    }
     const result = await this.pool.any(psql`/* deleteMetricAlertRules */
       DELETE FROM "metric_alert_rules"
       WHERE
         "project_id" = ${args.projectId}
-        AND "id" = ANY(${psql.array(args.ruleIds, 'uuid')})
+        AND "id" = ANY(${psql.array(ruleIds, 'uuid')})
       RETURNING ${METRIC_ALERT_RULE_SELECT}
     `);
 
@@ -531,11 +541,13 @@ export class MetricAlertRulesStorage {
    * input length to detect them.
    */
   async getChannelProjectIds(channelIds: ReadonlyArray<string>): Promise<string[]> {
-    if (channelIds.length === 0) return [];
+    // Malformed uuids cannot match a channel, so they are dropped like missing rows.
+    const validChannelIds = channelIds.filter(isUUID);
+    if (validChannelIds.length === 0) return [];
     const result = await this.pool.anyFirst(psql`/* getChannelProjectIds */
       SELECT "project_id"
       FROM "alert_channels"
-      WHERE "id" = ANY(${psql.array([...channelIds], 'uuid')})
+      WHERE "id" = ANY(${psql.array(validChannelIds, 'uuid')})
     `);
     return result.map(id => zod.string().parse(id));
   }
@@ -547,6 +559,10 @@ export class MetricAlertRulesStorage {
   async getSavedFilterScope(
     savedFilterId: string,
   ): Promise<{ projectId: string; visibility: 'private' | 'shared' } | null> {
+    // Postgres rejects a malformed uuid; treat it as not found.
+    if (!isUUID(savedFilterId)) {
+      return null;
+    }
     const result = await this.pool.maybeOne(psql`/* getSavedFilterScope */
       SELECT "project_id" as "projectId", "visibility"
       FROM "saved_filters"

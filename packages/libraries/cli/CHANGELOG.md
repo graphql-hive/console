@@ -1,5 +1,14 @@
 # @graphql-hive/cli
 
+## 0.68.7
+
+### Patch Changes
+
+- [#8971](https://github.com/graphql-hive/console/pull/8971)
+  [`765931e`](https://github.com/graphql-hive/console/commit/765931e359fce0965631a6645c62d38e0fd82daa)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix `ERR_INVALID_STATE` crash ("A FileHandle object
+  was closed during garbage collection") on Node.js 26.
+
 ## 0.68.6
 
 ### Patch Changes

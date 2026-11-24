@@ -262,13 +262,13 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
             didResolveSource = true;
           },
           async validationDidStart() {
-            return function onErrors(errors) {
+            return function onErrors(errors: any) {
               if (errors === null || errors === void 0 ? void 0 : errors.length) {
                 didFailValidation = true;
               }
             };
           },
-          async willSendResponse(ctx) {
+          async willSendResponse(ctx: any) {
             if (didFailValidation) {
               void usageCollection.finish(args, {
                 action: 'abort',
@@ -299,7 +299,7 @@ export function useHive(clientOrOptions: HiveClient | HivePluginOptions): Apollo
             doc = ctx.document!;
             void usageCollection.finish(args, ctx.response as any);
           },
-        });
+        } as any);
       }
 
       return (async () => {

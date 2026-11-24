@@ -3,12 +3,11 @@
   "include": ["src"],
   "compilerOptions": {
     "types": ["node"],
-    "baseUrl": ".",
+    "paths": {},
     "outDir": "dist",
     "rootDir": "src",
     "target": "es2017",
     "module": "esnext",
-    "moduleResolution": "node",
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true

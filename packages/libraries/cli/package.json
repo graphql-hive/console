@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/cli",
-  "version": "0.68.6",
+  "version": "0.68.7",
   "description": "A CLI util to manage and control your GraphQL Hive",
   "repository": {
     "type": "git",
@@ -39,7 +39,7 @@
     "oclif:upload": "pnpm oclif upload tarballs --no-xz",
     "postpack": "rm -f oclif.manifest.json",
     "prebuild": "tsc --build --clean",
-    "prepack": "node scripts/replace-workspace.mjs rimraf lib && tsc -b && oclif manifest && oclif readme && node scripts/generate-errors.mjs",
+    "prepack": "node scripts/replace-workspace.mjs && tsc -b && oclif manifest && oclif readme && node scripts/generate-errors.mjs",
     "prepublishOnly": "oclif manifest && oclif readme && node scripts/generate-errors.mjs",
     "schema:check:federation": "pnpm start schema:check examples/federation.reviews.graphql --service reviews",
     "schema:check:single": "pnpm start schema:check examples/single.graphql",
@@ -59,10 +59,10 @@
     "@graphql-tools/url-loader": "^9.1.12",
     "@graphql-tools/utils": "^12.0.3",
     "@graphql-typed-document-node/core": "3.2.0",
-    "@oclif/core": "3.26.6",
-    "@oclif/plugin-help": "6.2.36",
-    "@oclif/plugin-update": "4.7.16",
-    "@theguild/federation-composition": "0.27.2",
+    "@oclif/core": "3.27.0",
+    "@oclif/plugin-help": "6.3.0",
+    "@oclif/plugin-update": "4.8.0",
+    "@theguild/federation-composition": "0.27.3",
     "cli-table3": "0.6.5",
     "colors": "1.4.0",
     "env-ci": "7.3.0",
@@ -74,10 +74,9 @@
   "devDependencies": {
     "@types/env-ci": "3.1.4",
     "graphql": "16.14.2",
-    "oclif": "4.22.65",
-    "rimraf": "6.1.3",
-    "tsx": "4.19.2",
-    "typescript": "5.7.3"
+    "oclif": "4.24.0",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
   },
   "publishConfig": {
     "access": "public"

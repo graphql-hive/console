@@ -13,6 +13,7 @@ import {
   deliveryOutcome,
   DeliveryRecorder,
   TIMED_OUT,
+  unreachableOutcome,
   type DeliveryOutcome,
 } from '../delivery-recorder';
 import {
@@ -313,8 +314,8 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
 
 /**
  * The outcome of a failed webhook call through the HTTP client: the status Discord answered, or
- * a socket timeout, which the client keeps as its code (it sets no timeout of its own). Null for
- * anything else, which the recorder masks.
+ * a socket timeout, which the client keeps as its code (it sets no timeout of its own), or that
+ * the endpoint was not reached. Null for anything else, which the recorder masks.
  */
 export function describeDiscordError(error: unknown): DeliveryOutcome | null {
   if (!(error instanceof HiveHttpClientError)) {
@@ -323,7 +324,9 @@ export function describeDiscordError(error: unknown): DeliveryOutcome | null {
   if (error.statusCode !== undefined) {
     return deliveryOutcome(error.statusCode, error.statusText ?? '');
   }
-  return error.code === 'ETIMEDOUT' ? deliveryOutcome(null, TIMED_OUT) : null;
+  return error.code === 'ETIMEDOUT'
+    ? deliveryOutcome(null, TIMED_OUT)
+    : unreachableOutcome(error.code);
 }
 
 function createDetailsText(

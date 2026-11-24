@@ -236,7 +236,7 @@ const ENTRIES = [
   },
   {
     source: 'components/project/alerts/channel-form.tsx',
-    what: 'New alert channel, in a dialog: the fields follow the channel type',
+    what: 'New alert channel, in a sheet: the fields follow the channel type',
     coveredBy: 'Project settings',
   },
   {
@@ -976,9 +976,9 @@ function ChannelExample() {
     <CallSite
       source="components/project/alerts/create-channel.tsx"
       origin="base"
-      note="In a dialog. Pick a type: Slack asks for a channel, the webhook kinds for an endpoint with a setup guide under it."
+      note="In a sheet. Pick a type: Slack asks for a channel, the webhook kinds for an endpoint with a setup guide under it."
     >
-      <Raised width="dialog">
+      <Raised width="sheet">
         <ChannelForm form={form} onSubmit={setSubmitted} />
         <Submitted values={submitted} />
       </Raised>

@@ -41,8 +41,9 @@ export function channelConfirmationKey(
   return `${key}:${createHash('sha256').update(destination).digest('hex').slice(0, 8)}`;
 }
 
-export function testNotificationKey(requestId: string, channelId: string): string {
-  return `test:${requestId}:${channelId}`;
+/** The subject is the channel's id, or the project's while the channel has not been created. */
+export function testNotificationKey(requestId: string, subjectId: string): string {
+  return `test:${requestId}:${subjectId}`;
 }
 
 export function buildHiveTestWebhookHeaders(input: DeliveryMetadataInput): Record<string, string> {
