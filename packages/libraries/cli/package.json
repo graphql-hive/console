@@ -76,7 +76,7 @@
     "graphql": "16.14.2",
     "oclif": "4.24.0",
     "tsx": "4.23.15",
-    "typescript": "6.0.3"
+    "typescript": "npm:@typescript/typescript6@6.0.2"
   },
   "publishConfig": {
     "access": "public"

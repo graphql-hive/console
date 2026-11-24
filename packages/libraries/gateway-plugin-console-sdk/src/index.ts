@@ -187,13 +187,13 @@ export function useHive(clientOrOptions: HiveClient | GatewayPluginOptions): Gat
         onExecuteDone({ result, args }) {
           if (!isAsyncIterable(result)) {
             if (result.errors) {
+              /**
+               * DOWNSTREAM_SERVICE_ERROR is set by the executor to wrap subgraph errors. A serviceName is also
+               * used to indicate the source of the error. If either of these are found, then it's safe to assume
+               * the error was not thrown in the gateway.
+               */
               const gatewayErrors = result.errors?.filter(
                 e =>
-                  /**
-                   * DOWNSTREAM_SERVICE_ERROR is set by the executor to wrap subgraph errors. A serviceName is also
-                   * used to indicate the source of the error. If either of these are found, then it's safe to assume
-                   * the error was not thrown in the gateway.
-                   */
                   e.extensions?.code !== 'DOWNSTREAM_SERVICE_ERROR' && !e.extensions?.serviceName,
               );
               if (cache && gatewayErrors?.length > 0) {
