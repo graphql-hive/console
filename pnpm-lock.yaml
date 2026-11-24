@@ -1761,9 +1761,6 @@ importers:
       '@envelop/core':
         specifier: 6.0.1
         version: 6.0.1
-      '@envelop/graphql-jit':
-        specifier: 12.0.1
-        version: 12.0.1(@envelop/core@6.0.1)(@graphql-hive/logger@2.0.0(pino@10.3.0))(graphql@17.1.0)
       '@envelop/graphql-modules':
         specifier: 10.0.1
         version: 10.0.1(@envelop/core@6.0.1)(graphql-modules@4.0.0(graphql@17.1.0))(graphql@17.1.0)
@@ -3296,14 +3293,6 @@ packages:
     engines: {node: '>=22.15.0'}
     peerDependencies:
       '@envelop/core': ^6.0.1
-      graphql: 17.1.0
-
-  '@envelop/graphql-jit@12.0.1':
-    resolution: {integrity: sha512-/Imi5jKA8gyYItpJVQc0u6/Q5cKY9I9Ot08GEWGs/lVxJeT7pWdF7tJM25Ao190JP9bkDQVZ7WpFNsHn1TDoZg==}
-    engines: {node: '>=22.15.0'}
-    peerDependencies:
-      '@envelop/core': ^6.0.1
-      '@graphql-hive/logger': ^1.1.1
       graphql: 17.1.0
 
   '@envelop/graphql-modules@10.0.1':
@@ -11219,11 +11208,6 @@ packages:
     peerDependencies:
       graphql: 17.1.0
 
-  graphql-jit@0.9.5:
-    resolution: {integrity: sha512-A4j95zR+DiItkoIaf2DyHJ+ub7uAY0tcxt78MEcZzsaentsD/sDyDachHrjxlEyZ5ha1mOyNRn14pZsRXC8MEQ==}
-    peerDependencies:
-      graphql: 17.1.0
-
   graphql-language-service@5.7.0:
     resolution: {integrity: sha512-5mwDb9HyHxMcO9RCLLieg6rC1u9XKJKWhFuvaZFJi3broQZDz1fcFNlm96UCMrIgI6MSsb9RwwqKKp2sZOZ9Gw==}
     hasBin: true
@@ -17077,15 +17061,6 @@ snapshots:
       '@graphql-tools/utils': 13.2.2(graphql@17.1.0)
       '@whatwg-node/promise-helpers': 2.0.2
       graphql: 17.1.0
-      tslib: 2.8.1
-
-  '@envelop/graphql-jit@12.0.1(@envelop/core@6.0.1)(@graphql-hive/logger@2.0.0(pino@10.3.0))(graphql@17.1.0)':
-    dependencies:
-      '@envelop/core': 6.0.1
-      '@graphql-hive/logger': 2.0.0(pino@10.3.0)
-      '@whatwg-node/promise-helpers': 2.0.2
-      graphql: 17.1.0
-      graphql-jit: 0.9.5(graphql@17.1.0)
       tslib: 2.8.1
 
   '@envelop/graphql-modules@10.0.1(@envelop/core@6.0.1)(graphql-modules@4.0.0(graphql@17.1.0))(graphql@17.1.0)':
@@ -26472,16 +26447,6 @@ snapshots:
       - utf-8-validate
 
   graphql-jit@0.8.10(graphql@17.1.0):
-    dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@17.1.0)
-      fast-json-stringify: 7.0.1
-      generate-function: 2.3.1
-      graphql: 17.1.0
-      lodash.memoize: 4.1.2
-      lodash.merge: 4.6.2
-      lodash.mergewith: 4.6.2
-
-  graphql-jit@0.9.5(graphql@17.1.0):
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@17.1.0)
       fast-json-stringify: 7.0.1
