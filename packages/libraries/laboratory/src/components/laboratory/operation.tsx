@@ -552,6 +552,13 @@ export const Query = (props: {
       }
 
       const status = extensionsResponse.status;
+
+      if (status === 0 && response.errors?.length) {
+        toast.error('Could not reach endpoint', {
+          description: response.errors[0].message,
+        });
+      }
+
       const duration = performance.now() - startTime;
       const responseText = JSON.stringify(response, null, 2);
       const size = new TextEncoder().encode(responseText).length;

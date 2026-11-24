@@ -534,10 +534,10 @@ export const useOperations = (
         }
 
         if (error instanceof Error) {
-          return new GraphQLError(error.message);
+          return { errors: [new GraphQLError(error.message)] };
         }
 
-        return new GraphQLError('An unknown error occurred');
+        return { errors: [new GraphQLError('An unknown error occurred')] };
       }
     },
     [activeOperation, props.preflightApi, props.envApi, props.pluginsApi, props.settingsApi],

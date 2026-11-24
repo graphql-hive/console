@@ -298,6 +298,26 @@ describe('runActiveOperation', () => {
       }),
     );
   });
+
+  it('resolves with a GraphQL error result when the executor rejects', async () => {
+    executor.mockRejectedValue(new Error('boom'));
+
+    const { result } = renderHook(() =>
+      useOperations({
+        checkPermissions: () => true,
+        defaultOperations: [op('op1')],
+        tabsApi: tabsApiFor('op1'),
+      }),
+    );
+
+    let response: Awaited<ReturnType<typeof result.current.runActiveOperation>>;
+
+    await act(async () => {
+      response = await result.current.runActiveOperation('http://localhost:4000/graphql');
+    });
+
+    expect(response!).toEqual({ errors: [expect.objectContaining({ message: 'boom' })] });
+  });
 });
 
 describe('replaceOperationId', () => {
