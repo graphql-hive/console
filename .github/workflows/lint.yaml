@@ -2,7 +2,7 @@ on:
   workflow_call:
 
 jobs:
-  eslint-and-prettier:
+  lint-and-prettier:
     runs-on: ubuntu-22.04
 
     steps:
