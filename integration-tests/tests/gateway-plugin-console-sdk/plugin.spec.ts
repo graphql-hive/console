@@ -10,7 +10,7 @@ import {
   type DocumentNode,
   type FieldNode,
 } from 'graphql';
-import { createLogger, createYoga } from 'graphql-yoga';
+import { createYoga, Logger } from 'graphql-yoga';
 import { pollFor, readOperationsStats, waitForExpectations } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
@@ -88,7 +88,7 @@ async function setup(
       fieldLevelMetricsEnabled: true,
     },
     agent: {
-      logger: createLogger('debug'),
+      logger: new Logger({ level: 'debug' }),
       maxSize: 1,
     },
     selfHosting: {
@@ -96,7 +96,7 @@ async function setup(
       graphqlEndpoint: 'http://noop/',
       applicationUrl: 'http://noop/',
     },
-    logger: createLogger('debug') as any,
+    logger: new Logger({ level: 'debug' }) as any,
   });
 
   const services = await Promise.all(

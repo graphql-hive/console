@@ -643,7 +643,7 @@ export async function main() {
         method: ['GET'],
         url: '/artifacts/v1/*',
         async handler(req, reply) {
-          const response = await artifactRouteHandler.handleNodeRequest(req);
+          const response = await artifactRouteHandler.handleNodeRequestAndResponse(req, reply);
 
           if (response === undefined) {
             void reply.status(404).send('Not found.');

@@ -8,7 +8,12 @@ import { requestIdStorage, TracingInstance } from '@hive/service-common';
 import { withIsolationScope } from '@sentry/node';
 import { authenticateRequest } from './authenticate-request';
 import { type HiveUsageConfig } from './environment';
-import { useHiveErrorHandler, useHiveTracing, type Context } from './graphql-handler';
+import {
+  createYogaLogger,
+  useHiveErrorHandler,
+  useHiveTracing,
+  type Context,
+} from './graphql-handler';
 import { createPublicGraphQLSchema } from './public-graphql-schema';
 import { useArmor } from './use-armor';
 
@@ -30,7 +35,7 @@ export const createPublicGraphQLHandler = (
 ): RouteHandlerMethod => {
   const publicSchema = createPublicGraphQLSchema<Context>(args.registry);
   const server = createYoga<Context>({
-    logging: args.logger,
+    logging: createYogaLogger(args.logger),
     graphiql: {
       title: 'Hive Console - GraphQL API',
       defaultQuery,

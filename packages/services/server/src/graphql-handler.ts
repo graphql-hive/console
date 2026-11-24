@@ -3,6 +3,7 @@ import type { FastifyBaseLogger, FastifyReply, FastifyRequest, RouteHandlerMetho
 import { GraphQLError, ValidationContext, ValidationRule } from 'graphql';
 import {
   createYoga,
+  Logger,
   Plugin,
   useErrorHandler,
   useExecutionCancellation,
@@ -199,9 +200,32 @@ export function useHiveTracing(): Plugin {
   };
 }
 
+/**
+ * graphql-yoga@6 only accepts a Hive `Logger` for `logging`.
+ * Forward its records to our (msg-first) Fastify logger, which tags them with the request id.
+ */
+export function createYogaLogger(logger: FastifyBaseLogger): Logger {
+  return new Logger({
+    // let the Fastify logger decide what to drop
+    level: 'trace',
+    writers: [
+      {
+        write(level, attrs, msg) {
+          const log: (msg: string, ...args: unknown[]) => void = logger[level].bind(logger);
+          if (attrs) {
+            log(msg ?? '', attrs);
+          } else {
+            log(msg ?? '');
+          }
+        },
+      },
+    ],
+  });
+}
+
 export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMethod => {
   const server = createYoga<Context>({
-    logging: options.logger,
+    logging: createYogaLogger(options.logger),
     plugins: [
       // The session cookie is `SameSite=Lax`, so it is sent along with cross-site top-level GET navigations.
       // Reject requests that did not go through a CORS preflight unless they carry a custom header.

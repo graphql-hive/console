@@ -20,7 +20,7 @@
     "@graphql-hive/laboratory": "workspace:*",
     "@graphql-inspector/core": "catalog:",
     "@graphql-inspector/patch": "catalog:",
-    "@graphql-tools/mock": "9.1.16",
+    "@graphql-tools/mock": "10.1.4",
     "@graphql-typed-document-node/core": "catalog:",
     "@hive/service-common": "workspace:*",
     "@hookform/resolvers": "5.9.1",

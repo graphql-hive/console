@@ -1,11 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { context, propagation, trace } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 import {
   BatchSpanProcessor,
-  NodeTracerProvider,
+  TracerProvider,
   type ReadableSpan,
   type SpanExporter,
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import { configureTracing } from './tracing';
 
 const exported: Array<ReadableSpan> = [];
@@ -16,13 +22,20 @@ const exporter: SpanExporter = {
   },
   shutdown: () => Promise.resolve(),
 };
-const provider = new NodeTracerProvider({
-  spanProcessors: [new BatchSpanProcessor(exporter, { scheduledDelayMillis: 60_000 })],
+const provider = new TracerProvider({
+  spanProcessors: [new BatchSpanProcessor({ exporter, scheduledDelayMillis: 60_000 })],
 });
 
 beforeAll(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
-  provider.register();
+  // what NodeTracerProvider#register() did before @opentelemetry/sdk-trace@3
+  trace.setGlobalTracerProvider(provider);
+  context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
+  propagation.setGlobalPropagator(
+    new CompositePropagator({
+      propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
+    }),
+  );
 });
 
 afterAll(() => {
