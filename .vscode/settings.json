@@ -27,7 +27,6 @@
     "source.organizeImports": "never"
   },
   "editor.acceptSuggestionOnCommitCharacter": false,
-  "eslint.format.enable": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "yaml.schemas": {

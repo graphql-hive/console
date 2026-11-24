@@ -3,6 +3,7 @@
     "fabiospampinato.vscode-terminals",
     "fabiospampinato.vscode-commands",
     "esbenp.prettier-vscode",
+    "oxc.oxc-vscode",
     "thebearingedge.vscode-sql-lit",
     "hashicorp.hcl",
     "GraphQL.vscode-graphql"
