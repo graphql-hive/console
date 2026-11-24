@@ -22,8 +22,20 @@ jobs:
       - name: build libraries
         run: pnpm build:libraries
 
+      # The CLI depends on @graphql-hive/core via workspace:*. On a PR, the version in core's
+      # package.json is the last published one, which lacks any unreleased core changes, so we
+      # bundle the locally built core instead. Stable releases publish core first (release.yaml).
+      - name: pack local @graphql-hive/core
+        id: core
+        working-directory: packages/libraries/core/dist
+        run: |
+          TARBALL="$(npm pack --pack-destination "$RUNNER_TEMP" | tail -n 1)"
+          echo "tarball=$RUNNER_TEMP/$TARBALL" >> "$GITHUB_OUTPUT"
+
       - name: pack tarballs
         working-directory: packages/libraries/cli
+        env:
+          HIVE_CORE_TARBALL: ${{ steps.core.outputs.tarball }}
         run: pnpm oclif:pack
 
       - name: upload darwin arm64
