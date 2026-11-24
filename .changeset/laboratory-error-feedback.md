@@ -2,4 +2,4 @@
 '@graphql-hive/laboratory': patch
 ---
 
-Show an error in the response panel and a toast when a laboratory operation fails to execute, instead of failing silently.
+Show a "Could not reach endpoint" toast when a laboratory operation gets no HTTP response, and return execution failures as a GraphQL error result.
