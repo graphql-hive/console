@@ -32,7 +32,7 @@
     "@opentelemetry/semantic-conventions": "1.45.0",
     "@sentry/node": "catalog:",
     "@smithy/protocol-http": "5.4.3",
-    "@smithy/signature-v4": "5.4.3",
+    "@smithy/signature-v4": "5.7.5",
     "aws-msk-iam-sasl-signer-js": "1.0.3",
     "fastify": "catalog:",
     "fastify-plugin": "6.0.0",

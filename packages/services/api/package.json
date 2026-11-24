@@ -53,7 +53,7 @@
     "@trpc/server": "catalog:",
     "@types/bcryptjs": "catalog:",
     "@types/ioredis-mock": "catalog:",
-    "@types/lodash": "4.17.14",
+    "@types/lodash": "4.17.23",
     "@types/ms": "0.7.34",
     "@types/object-hash": "3.0.6",
     "agentkeepalive": "catalog:",

@@ -13,8 +13,8 @@ catalogs:
       specifier: 0.38.1
       version: 0.38.1
     '@aws-sdk/client-s3':
-      specifier: 3.1035.0
-      version: 3.1035.0
+      specifier: 3.1175.0
+      version: 3.1175.0
     '@aws-sdk/credential-providers':
       specifier: 3.1035.0
       version: 3.1035.0
@@ -37,8 +37,8 @@ catalogs:
       specifier: 2.0.0
       version: 2.0.0
     '@graphql-inspector/core':
-      specifier: 8.1.3
-      version: 8.1.3
+      specifier: 8.1.4
+      version: 8.1.4
     '@graphql-inspector/patch':
       specifier: 1.0.0
       version: 1.0.0
@@ -127,8 +127,8 @@ catalogs:
       specifier: 4.6.0
       version: 4.6.0
     ajv:
-      specifier: 8.18.0
-      version: 8.18.0
+      specifier: 8.20.0
+      version: 8.20.0
     bcryptjs:
       specifier: 2.4.3
       version: 2.4.3
@@ -169,8 +169,8 @@ catalogs:
       specifier: 11.1.21
       version: 11.1.21
     ioredis-mock:
-      specifier: 8.9.0
-      version: 8.9.0
+      specifier: 8.13.1
+      version: 8.13.1
     itty-router:
       specifier: 4.2.2
       version: 4.2.2
@@ -181,8 +181,8 @@ catalogs:
       specifier: 2.2.4
       version: 2.2.4
     lru-cache:
-      specifier: 11.5.2
-      version: 11.5.2
+      specifier: 11.5.3
+      version: 11.5.3
     lucide-react:
       specifier: 1.51.0
       version: 1.51.0
@@ -205,8 +205,8 @@ catalogs:
       specifier: 11.3.0
       version: 11.3.0
     prettier:
-      specifier: 3.4.2
-      version: 3.4.2
+      specifier: 3.8.1
+      version: 3.8.1
     prom-client:
       specifier: 15.1.3
       version: 15.1.3
@@ -397,7 +397,7 @@ importers:
         version: 7.0.9(@types/node@26.6.6)(graphql@17.1.0)
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.1.3(graphql@17.1.0)
+        version: 8.1.4(graphql@17.1.0)
       '@graphql-inspector/patch':
         specifier: 'catalog:'
         version: 1.0.0(graphql@17.1.0)
@@ -427,7 +427,7 @@ importers:
         version: 0.27.3(graphql@17.1.0)
       '@theguild/prettier-config':
         specifier: 2.0.7
-        version: 2.0.7(prettier@3.4.2)
+        version: 2.0.7(prettier@3.8.1)
       '@types/node':
         specifier: 'catalog:'
         version: 26.6.6
@@ -463,13 +463,13 @@ importers:
         version: 8.23.1
       prettier:
         specifier: 'catalog:'
-        version: 3.4.2
+        version: 3.8.1
       prettier-plugin-sql:
         specifier: 0.18.1
-        version: 0.18.1(prettier@3.4.2)
+        version: 0.18.1(prettier@3.8.1)
       prettier-plugin-tailwindcss:
         specifier: 0.6.9
-        version: 0.6.9(@ianvs/prettier-plugin-sort-imports@4.3.1(prettier@3.4.2))(prettier@3.4.2)
+        version: 0.6.9(@ianvs/prettier-plugin-sort-imports@4.3.1(prettier@3.8.1))(prettier@3.8.1)
       rimraf:
         specifier: 6.1.3
         version: 6.1.3
@@ -532,7 +532,7 @@ importers:
         version: 2.14.1
       prettier:
         specifier: 'catalog:'
-        version: 3.4.2
+        version: 3.8.1
     devDependencies:
       '@graphql-hive/gateway':
         specifier: 3.0.0
@@ -566,7 +566,7 @@ importers:
         version: 2.17.0(graphql@17.1.0)
       '@aws-sdk/client-s3':
         specifier: 'catalog:'
-        version: 3.1035.0
+        version: 3.1175.0
       '@esm2cjs/execa':
         specifier: 6.1.1-cjs.1
         version: 6.1.1-cjs.1
@@ -661,8 +661,8 @@ importers:
         specifier: 2.7.1
         version: 2.7.1
       strip-ansi:
-        specifier: 7.1.2
-        version: 7.1.2
+        specifier: 7.2.0
+        version: 7.2.0
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -687,8 +687,8 @@ importers:
   packages/internal/postgres:
     dependencies:
       '@standard-schema/spec':
-        specifier: 1.0.0
-        version: 1.0.0
+        specifier: 1.1.0
+        version: 1.1.0
       slonik:
         specifier: 48.19.0
         version: 48.19.0
@@ -1038,8 +1038,8 @@ importers:
         specifier: 'catalog:'
         version: 18.3.5(@types/react@18.3.18)
       '@types/ws':
-        specifier: 8.18.1
-        version: 8.18.1
+        specifier: 8.18.2
+        version: 8.18.2
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.2(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.1)(jiti@2.7.0)(less@4.2.0)(terser@5.37.0)(tsx@4.23.15)(yaml@2.8.3))
@@ -1090,7 +1090,7 @@ importers:
         version: 0.52.2
       monaco-graphql:
         specifier: ^1.7.3
-        version: 1.9.0(graphql@17.1.0)(monaco-editor@0.52.2)(prettier@3.4.2)
+        version: 1.9.0(graphql@17.1.0)(monaco-editor@0.52.2)(prettier@3.8.1)
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -1312,7 +1312,7 @@ importers:
         version: 3.0.0
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.1.3(graphql@17.1.0)
+        version: 8.1.4(graphql@17.1.0)
       '@graphql-tools/merge':
         specifier: 'catalog:'
         version: 10.0.9(graphql@17.1.0)
@@ -1380,8 +1380,8 @@ importers:
         specifier: 'catalog:'
         version: 8.2.5
       '@types/lodash':
-        specifier: 4.17.14
-        version: 4.17.14
+        specifier: 4.17.23
+        version: 4.17.23
       '@types/ms':
         specifier: 0.7.34
         version: 0.7.34
@@ -1432,7 +1432,7 @@ importers:
         version: 6.1.1(graphql@17.1.0)(pino@10.3.0)
       ioredis-mock:
         specifier: 'catalog:'
-        version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@6.0.0)
+        version: 8.13.1(@types/ioredis-mock@8.2.5)(ioredis@6.0.0)
       jsonwebtoken:
         specifier: 9.0.3
         version: 9.0.3
@@ -1441,7 +1441,7 @@ importers:
         version: 4.18.1
       lru-cache:
         specifier: 'catalog:'
-        version: 11.5.2
+        version: 11.5.3
       ms:
         specifier: 2.1.3
         version: 2.1.3
@@ -1637,7 +1637,7 @@ importers:
         version: 17.1.0
       lru-cache:
         specifier: 'catalog:'
-        version: 11.5.2
+        version: 11.5.3
       zod:
         specifier: 'catalog:'
         version: 4.6.6
@@ -1664,13 +1664,13 @@ importers:
         version: 4.3.7
       ajv:
         specifier: 'catalog:'
-        version: 8.18.0
+        version: 8.20.0
       dotenv:
         specifier: 'catalog:'
         version: 16.4.7
       esquery:
-        specifier: 1.5.0
-        version: 1.5.0
+        specifier: 1.7.0
+        version: 1.7.0
       fastify:
         specifier: 'catalog:'
         version: 5.12.6
@@ -1742,7 +1742,7 @@ importers:
         version: 17.1.0
       ioredis-mock:
         specifier: 'catalog:'
-        version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@6.0.0)
+        version: 8.13.1(@types/ioredis-mock@8.2.5)(ioredis@6.0.0)
       nock:
         specifier: 'catalog:'
         version: 14.0.10
@@ -1940,8 +1940,8 @@ importers:
         specifier: 5.4.3
         version: 5.4.3
       '@smithy/signature-v4':
-        specifier: 5.4.3
-        version: 5.4.3
+        specifier: 5.7.5
+        version: 5.7.5
       aws-msk-iam-sasl-signer-js:
         specifier: 1.0.3
         version: 1.0.3
@@ -1971,7 +1971,7 @@ importers:
     devDependencies:
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.1.3(graphql@17.1.0)
+        version: 8.1.4(graphql@17.1.0)
       '@hive/postgres':
         specifier: workspace:*
         version: link:../../internal/postgres
@@ -2037,7 +2037,7 @@ importers:
         version: 10.45.3(@trpc/server@10.45.3)
       ajv:
         specifier: 'catalog:'
-        version: 8.18.0
+        version: 8.20.0
       dotenv:
         specifier: 'catalog:'
         version: 16.4.7
@@ -2049,7 +2049,7 @@ importers:
         version: 2.2.4
       lru-cache:
         specifier: 'catalog:'
-        version: 11.5.2
+        version: 11.5.3
       p-limit:
         specifier: 'catalog:'
         version: 6.2.0
@@ -2118,7 +2118,7 @@ importers:
         version: 1.1.1(pino@10.3.0)
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.1.3(graphql@17.1.0)
+        version: 8.1.4(graphql@17.1.0)
       '@graphql-inspector/patch':
         specifier: 'catalog:'
         version: 1.0.0(graphql@17.1.0)
@@ -2217,7 +2217,7 @@ importers:
         version: link:../../libraries/laboratory
       '@graphql-inspector/core':
         specifier: 'catalog:'
-        version: 8.1.3(graphql@17.1.0)
+        version: 8.1.4(graphql@17.1.0)
       '@graphql-inspector/patch':
         specifier: 'catalog:'
         version: 1.0.0(graphql@17.1.0)
@@ -2373,7 +2373,7 @@ importers:
         version: 0.52.2
       monaco-graphql:
         specifier: 1.9.0
-        version: 1.9.0(graphql@17.1.0)(monaco-editor@0.52.2)(prettier@3.4.2)
+        version: 1.9.0(graphql@17.1.0)(monaco-editor@0.52.2)(prettier@3.8.1)
       react:
         specifier: 'catalog:'
         version: 18.3.1
@@ -2663,16 +2663,6 @@ packages:
     resolution: {integrity: sha512-EgmJ7oEaGQECTn3H3wmnQpEy4hKY66VvM7VQndwPIQob3p877BgbyOUE3EX0LgXQCciF2H8KMdR+RznqjMNOLw==}
     engines: {node: ^22.22.2 || ^24.15.0 || >=26.0.0}
 
-  '@aws-crypto/crc32@5.2.0':
-    resolution: {integrity: sha512-nLbCWqQNgUiwwtFsen1AdzAtvuLRsQS8rYgMuxCrdKf9kOssamGLuPwyTY9wyYblNr9+1XM8v6zoDTPPSIeANg==}
-    engines: {node: '>=16.0.0'}
-
-  '@aws-crypto/crc32c@5.2.0':
-    resolution: {integrity: sha512-+iWb8qaHLYKrNvGRbiYRHSdKRWhto5XlZUEBwDjYNf+ly5SVYG6zEoYIdxvf5R3zyeP16w4PLBn3rH1xc74Rag==}
-
-  '@aws-crypto/sha1-browser@5.2.0':
-    resolution: {integrity: sha512-OH6lveCFfcDjX4dbAvCFSYUjJZjDr/3XJ3xHtjn3Oj5b9RjojQo8npoLeA/bNwkOkrSQ0wgrHzXk4tDRxGKJeg==}
-
   '@aws-crypto/sha256-browser@5.2.0':
     resolution: {integrity: sha512-AXfN/lGotSQwu6HNcEsIASo7kWXZ5HYWvfOmSNKDsEqC4OashTp8alTmaz+F7TC2L083SFv5RdB+qU3Vs1kZqw==}
 
@@ -2704,10 +2694,6 @@ packages:
     resolution: {integrity: sha512-sHjCtR5GdKVXZ/bEXwqUMoGzak9fnI4Ny/NyG7+gAkYC1Z+CIg5Kr4QSrqGjA+N2iwCly8f2/rGAsNo+JGeaNA==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/client-s3@3.1035.0':
-    resolution: {integrity: sha512-Bh1h96CjHMpxg6Rn2G4EE30YiiBh9w/7WmSZIfwLB0X/6lblaJcHggcryrq2uNN2Bx1/CNErMjTpGQzqhA7Rhg==}
-    engines: {node: '>=20.0.0'}
-
   '@aws-sdk/client-s3@3.1175.0':
     resolution: {integrity: sha512-vBbIL3dsLsCLfoq7M8PXAybnPkFz7hbGiy6l+RCA81z6vXS88HfxPuxT+e3iuNjR4gXS7QxRSJa/4oSbsEc/Ag==}
     engines: {node: '>=20.0.0'}
@@ -2718,10 +2704,6 @@ packages:
 
   '@aws-sdk/core@3.981.1':
     resolution: {integrity: sha512-sERtJaZjzvBdFMm2uei4k0WwPNUJtIrMBH9h0AEw7G0KkhIbnN3e5ZcwGjbVKClR+rrJCmyL1jhtXkseE7DU4A==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/crc64-nvme@3.972.7':
-    resolution: {integrity: sha512-QUagVVBbC8gODCF6e1aV0mE2TXWB9Opz4k8EJFdNrujUVQm5R4AjJa1mpOqzwOuROBzqJU9zawzig7M96L8Ejg==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/credential-provider-cognito-identity@3.972.36':
@@ -2764,24 +2746,8 @@ packages:
     resolution: {integrity: sha512-HimZ+jVYJzeD6+pwXvhKX2mvx2fScLbjC4+oz1HF9Vuls/3lAWKHssLLVpCIuXL8Ov6cWe1vQIbwpFajuTAmEA==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/middleware-bucket-endpoint@3.972.10':
-    resolution: {integrity: sha512-Vbc2frZH7wXlMNd+ZZSXUEs/l1Sv8Jj4zUnIfwrYF5lwaLdXHZ9xx4U3rjUcaye3HRhFVc+E5DbBxpRAbB16BA==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/middleware-expect-continue@3.972.10':
-    resolution: {integrity: sha512-2Yn0f1Qiq/DjxYR3wfI3LokXnjOhFM7Ssn4LTdFDIxRMCE6I32MAsVnhPX1cUZsuVA9tiZtwwhlSLAtFGxAZlQ==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/middleware-flexible-checksums@3.974.12':
-    resolution: {integrity: sha512-v7n0//P95g+UnmyjCpJkDJFB+EP/9Wx/fQJC5BEiK9Y7VHgmhh6RNPVbqDYz9gsz8mXnxzyYt3tCEVJ1kzo01w==}
-    engines: {node: '>=20.0.0'}
-
   '@aws-sdk/middleware-host-header@3.972.10':
     resolution: {integrity: sha512-IJSsIMeVQ8MMCPbuh1AbltkFhLBLXn7aejzfX5YKT/VLDHn++Dcz8886tXckE+wQssyPUhaXrJhdakO2VilRhg==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/middleware-location-constraint@3.972.10':
-    resolution: {integrity: sha512-rI3NZvJcEvjoD0+0PI0iUAwlPw2IlSlhyvgBK/3WkKJQE/YiKFedd9dMN2lVacdNxPNhxL/jzQaKQdrGtQagjQ==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/middleware-logger@3.972.10':
@@ -2794,10 +2760,6 @@ packages:
 
   '@aws-sdk/middleware-sdk-s3@3.972.91':
     resolution: {integrity: sha512-L4rY9o4i85P/UJ8rGiHH4JYC/PnFwdAbCrXAs3g1UCxnyrnKboYm6blgx38xbOzVaZ1odpkrBRlMNMWI+aTfgg==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/middleware-ssec@3.972.10':
-    resolution: {integrity: sha512-Gli9A0u8EVVb+5bFDGS/QbSVg28w/wpEidg1ggVcSj65BDTdGR6punsOcVjqdiu1i42WHWo51MCvARPIIz9juw==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/middleware-user-agent@3.972.38':
@@ -2826,10 +2788,6 @@ packages:
 
   '@aws-sdk/types@3.975.1':
     resolution: {integrity: sha512-7rGxUkCB2QPoQOeJmonmAICTN2zrH+fpmi1p4Iwu72lnxNaMhOgqcbpyddifnM1DBb19TWQ1u6z/XjkaFNEDWw==}
-    engines: {node: '>=20.0.0'}
-
-  '@aws-sdk/util-arn-parser@3.972.3':
-    resolution: {integrity: sha512-HzSD8PMFrvgi2Kserxuff5VitNq2sgf3w9qxmskKDiDTThWfVteJxuCS9JXiPIPtmCrp+7N9asfIaVhBFORllA==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/util-endpoints@3.996.8':
@@ -3992,12 +3950,6 @@ packages:
 
   '@graphql-inspector/config@5.0.0':
     resolution: {integrity: sha512-9oPPt8NKerrx3jgG4ML9bSlWm1XqkjQYI3XFxkM9heboCwKARyrOPHvQfIbv9B4k82fWFfKZcJ9C6ow4AX3j6w==}
-    engines: {node: '>=18.0.0'}
-    peerDependencies:
-      graphql: 17.1.0
-
-  '@graphql-inspector/core@8.1.3':
-    resolution: {integrity: sha512-yQmyGTl4qepUYlHi4bwOCmEuD+CuWIG+MA9d9UR0HfmhlyhN/efTWfOzI76HuCFMpoPNwLIEEYKMtNfp79KMiQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       graphql: 17.1.0
@@ -7965,14 +7917,6 @@ packages:
     peerDependencies:
       zod: ^3.25 || ^4
 
-  '@smithy/chunked-blob-reader-native@4.2.3':
-    resolution: {integrity: sha512-jA5k5Udn7Y5717L86h4EIv06wIr3xn8GM1qHRi/Nf31annXcXHJjBKvgztnbn2TxH3xWrPBfgwHsOwZf0UmQWw==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/chunked-blob-reader@5.2.2':
-    resolution: {integrity: sha512-St+kVicSyayWQca+I1rGitaOEH6uKgE8IUWoYnnEX26SWdWQcL6LvMSD19Lg+vYHKdT9B2Zuu7rd3i6Wnyb/iw==}
-    engines: {node: '>=18.0.0'}
-
   '@smithy/config-resolver@4.4.17':
     resolution: {integrity: sha512-TzDZcAnhTyAHbXVxWZo7/tEcrIeFq20IBk8So3OLOetWpR8EwY/yEqBMBFaJMeyEiREDq4NfEl+qO3OAUD+vbQ==}
     engines: {node: '>=18.0.0'}
@@ -7985,40 +7929,12 @@ packages:
     resolution: {integrity: sha512-A9uSdn72ozbRUSit0eib0TW7nXuNPlaeM0zcGkJ+nE6tFcSDbnmtwoxbTCFBukVQcszDAyvsd7+rTduPTXpygg==}
     engines: {node: '>=18.0.0'}
 
-  '@smithy/eventstream-codec@4.2.14':
-    resolution: {integrity: sha512-erZq0nOIpzfeZdCyzZjdJb4nVSKLUmSkaQUVkRGQTXs30gyUGeKnrYEg+Xe1W5gE3aReS7IgsvANwVPxSzY6Pw==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/eventstream-serde-browser@4.2.14':
-    resolution: {integrity: sha512-8IelTCtTctWRbb+0Dcy+C0aICh1qa0qWXqgjcXDmMuCvPJRnv26hiDZoAau2ILOniki65mCPKqOQs/BaWvO4CQ==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/eventstream-serde-config-resolver@4.3.14':
-    resolution: {integrity: sha512-sqHiHpYRYo3FJlaIxD1J8PhbcmJAm7IuM16mVnwSkCToD7g00IBZzKuiLNMGmftULmEUX6/UAz8/NN5uMP8bVA==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/eventstream-serde-node@4.2.14':
-    resolution: {integrity: sha512-Ht/8BuGlKfFTy0H3+8eEu0vdpwGztCnaLLXtpXNdQqiR7Hj4vFScU3T436vRAjATglOIPjJXronY+1WxxNLSiw==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/eventstream-serde-universal@4.2.14':
-    resolution: {integrity: sha512-lWyt4T2XQZUZgK3tQ3Wn0w3XBvZsK/vjTuJl6bXbnGZBHH0ZUSONTYiK9TgjTTzU54xQr3DRFwpjmhp0oLm3gg==}
-    engines: {node: '>=18.0.0'}
-
   '@smithy/fetch-http-handler@5.8.1':
     resolution: {integrity: sha512-h8BdMUrUBhMhMaeK7QqAdINRZezCGuYOCpcOZZ1ewxbHST9rdTd09xwNpvLTYfzDRehxQiReK4SKbdYZxBA+ew==}
     engines: {node: '>=18.0.0'}
 
-  '@smithy/hash-blob-browser@4.2.15':
-    resolution: {integrity: sha512-0PJ4Al3fg2nM4qKrAIxyNcApgqHAXcBkN8FeizOz69z0rb26uZ6lMESYtxegaTlXB5Hj84JfwMPavMrwDMjucA==}
-    engines: {node: '>=18.0.0'}
-
   '@smithy/hash-node@4.2.14':
     resolution: {integrity: sha512-8ZBDY2DD4wr+GGjTpPtiglEsqr0lUP+KHqgZcWczFf6qeZ/YRjMIOoQWVQlmwu7EtxKTd8YXD8lblmYcpBIA1g==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/hash-stream-node@4.2.14':
-    resolution: {integrity: sha512-tw4GANWkZPb6+BdD4Fgucqzey2+r73Z/GRo9zklsCdwrnxxumUV83ZIaBDdudV4Ylazw3EPTiJZhpX42105ruQ==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/invalid-dependency@4.2.14':
@@ -8031,10 +7947,6 @@ packages:
 
   '@smithy/is-array-buffer@4.2.2':
     resolution: {integrity: sha512-n6rQ4N8Jj4YTQO3YFrlgZuwKodf4zUFs7EJIWH86pSCWBaAtAGBFfCM7Wx6D2bBJ2xqFNxGBSrUWswT3M0VJow==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/md5-js@4.2.14':
-    resolution: {integrity: sha512-V2v0vx+h0iUSNG1Alt+GNBMSLGCrl9iVsdd+Ap67HPM9PN479x12V8LkuMoKImNZxn3MXeuyUjls+/7ZACZghA==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/middleware-content-length@4.2.14':
@@ -8084,10 +7996,6 @@ packages:
   '@smithy/signature-v4@2.3.0':
     resolution: {integrity: sha512-ui/NlpILU+6HAQBfJX8BBsDXuKSNrjTSuOYArRblcrErwKFutjrCNb/OExfVRyj9+26F9J+ZmfWT+fKWuDrH3Q==}
     engines: {node: '>=14.0.0'}
-
-  '@smithy/signature-v4@5.4.3':
-    resolution: {integrity: sha512-53+75QuPl6DL+ct6vVEB51FDO5oulXr20TPV46VvJZg76lIlXNWfxi8j+G2V/t0I2qxCBOa3vX/8bmjrpFVo9g==}
-    engines: {node: '>=18.0.0'}
 
   '@smithy/signature-v4@5.7.5':
     resolution: {integrity: sha512-WPjdr5oWOk1LArpI4pavu+fSo+/evi0Re1olxGvqwuZopd4gYR1UGCi+Soyn/IjmafqbWs+ZC+3AKxJS3ZpwUg==}
@@ -8149,10 +8057,6 @@ packages:
     resolution: {integrity: sha512-7iKXR+/4TpLK194pVjKiasIyqMtTYJsgKgM242Y9uzt5dhHnUDvMNb+3xIhRJ9QhvqGii/5cRUt4fJn3dtXNHQ==}
     engines: {node: '>=14.0.0'}
 
-  '@smithy/util-hex-encoding@4.2.2':
-    resolution: {integrity: sha512-Qcz3W5vuHK4sLQdyT93k/rfrUwdJ8/HZ+nMUOyGdpeGA1Wxt65zYwi3oEl9kOM+RswvYq90fzkNDahPS8K0OIg==}
-    engines: {node: '>=18.0.0'}
-
   '@smithy/util-middleware@2.2.0':
     resolution: {integrity: sha512-L1qpleXf9QD6LwLCJ5jddGkgWyuSvWBkJwWAZ6kFkdifdso+sk3L3O1HdmPvCdnCK3IS4qWyPxev01QMnfHSBw==}
     engines: {node: '>=14.0.0'}
@@ -8163,10 +8067,6 @@ packages:
 
   '@smithy/util-retry@4.4.1':
     resolution: {integrity: sha512-qkgWgwn1xw0GoY9Ea/B6FrYSPfHA0zyOtJkokwxZuvucRf2+2lfTut6adi4e4Y7LEAaxsFG7r6i05mtDCxbHKA==}
-    engines: {node: '>=18.0.0'}
-
-  '@smithy/util-stream@4.6.1':
-    resolution: {integrity: sha512-GjZfEft0M0V3n2YM/LGkr5LeLd8gxHUIzW0rUz6VtTtlAq245GxHlJghvoPEjJHKTj255iHFAiA4IsIdK40Ueg==}
     engines: {node: '>=18.0.0'}
 
   '@smithy/util-uri-escape@2.2.0':
@@ -8181,15 +8081,8 @@ packages:
     resolution: {integrity: sha512-75MeYpjdWRe8M5E3AW0O4Cx3UadweS+cwdXjwYGBW5h/gxxnbeZ877sLPX/ZJA9GVTlL/qG0dXP29JWFCD1Ayw==}
     engines: {node: '>=18.0.0'}
 
-  '@smithy/util-waiter@4.2.16':
-    resolution: {integrity: sha512-GtclrKoZ3Lt7jPQ7aTIYKfjY92OgceScftVnkTsG8e1KV8rkvZgN+ny6YSRhd9hxB8rZtwVbmln7NTvE5O3GmQ==}
-    engines: {node: '>=18.0.0'}
-
   '@speed-highlight/core@1.2.24':
     resolution: {integrity: sha512-qeW2e1l78afw8VhRPfPQ1Gjj+KU5XFQ/OFV5ti6eTa9bruO7mJyZtA4vw0ofqmA3tKCkROE9xLk3VZoeRc98nw==}
-
-  '@standard-schema/spec@1.0.0':
-    resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -8753,9 +8646,6 @@ packages:
   '@types/lodash.sortby@4.7.9':
     resolution: {integrity: sha512-PDmjHnOlndLS59GofH0pnxIs+n9i4CWeXGErSB5JyNFHu2cmvW6mQOaUKjG8EDPkni14IgF8NsRW8bKvFzTm9A==}
 
-  '@types/lodash@4.17.14':
-    resolution: {integrity: sha512-jsxagdikDiDBeIRaPYtArcT8my4tN1og7MtMRquFT3XNA6axxyHDRUemqDz/taRDdOUn0GnGHRCuff4q48sW9A==}
-
   '@types/lodash@4.17.23':
     resolution: {integrity: sha512-RDvF6wTulMPjrNdCoYRC8gNR880JNGT8uB+REUpC2Ns4pRqQJhGz90wh7rgdXDPpCczF3VGktDuFGVnz8zP7HA==}
 
@@ -8904,9 +8794,6 @@ packages:
 
   '@types/wrap-ansi@3.0.0':
     resolution: {integrity: sha512-ltIpx+kM7g/MLRZfkbL7EsCEjfzCcScLpkg37eXEtx5kmrAKBkTJwd1GIAjDSL8wTpM6Hzn5YO4pSb91BEwu1g==}
-
-  '@types/ws@8.18.1':
-    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@types/ws@8.18.2':
     resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
@@ -9389,9 +9276,6 @@ packages:
 
   ajv@6.14.0:
     resolution: {integrity: sha512-IWrosm/yrn43eiKqkfkHis7QioDleaXQHdDVPKg0FSwwd/DuvyX79TZnFOnYpB7dcsFAMmtFztZuXPDvSePkFw==}
-
-  ajv@8.18.0:
-    resolution: {integrity: sha512-PlXPeEWMXMZ7sPYOHqmDyCJzcfNrUr3fGNKtezX14ykXOEIvyK81d+qydx89KY5O71FKMPaQ2vBfBFI5NHR63A==}
 
   ajv@8.20.0:
     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
@@ -10835,10 +10719,6 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  esquery@1.5.0:
-    resolution: {integrity: sha512-YQLXUplAwJgCydQ78IMJywZCceoqk1oH01OERdSAJc/7U2AylwjhSCLDEtqwg811idIS/9fIU5GjG73IgjKMVg==}
-    engines: {node: '>=0.10'}
-
   esquery@1.7.0:
     resolution: {integrity: sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==}
     engines: {node: '>=0.10'}
@@ -11683,13 +11563,6 @@ packages:
 
   ioredis-mock@8.13.1:
     resolution: {integrity: sha512-Wsi50AU+cMiI32nAgfwpUaJVBtb4iQdVsOHl9M6R3tePCO/8vGsToCVIG82XWAxN4Se55TZoOzVseu+QngFLyw==}
-    engines: {node: '>=12.22'}
-    peerDependencies:
-      '@types/ioredis-mock': ^8
-      ioredis: 6.0.0
-
-  ioredis-mock@8.9.0:
-    resolution: {integrity: sha512-yIglcCkI1lvhwJVoMsR51fotZVsPsSk07ecTCgRTRlicG0Vq3lke6aAaHklyjmRNRsdYAgswqC2A0bPtQK4LSw==}
     engines: {node: '>=12.22'}
     peerDependencies:
       '@types/ioredis-mock': ^8
@@ -12542,10 +12415,6 @@ packages:
   lru-cache@10.2.0:
     resolution: {integrity: sha512-2bIM8x+VAf6JT4bKAljS1qUWgMsqZRPGJS6FSahIMPVvctcNhyVp7AJu7quxOW9jwkryBReKZY5tY5JYv2n/7Q==}
     engines: {node: 14 || >=16.14}
-
-  lru-cache@11.5.2:
-    resolution: {integrity: sha512-4pfM1Ff0x50o0tQwb5ucw/RzNyD0/YJME6IVcStalZuMWxdt3sR3huStTtxz4PUmvZfRguvDejasvQ2kifR11g==}
-    engines: {node: 20 || >=22}
 
   lru-cache@11.5.3:
     resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
@@ -13918,11 +13787,6 @@ packages:
     engines: {node: '>=10.13.0'}
     hasBin: true
 
-  prettier@3.4.2:
-    resolution: {integrity: sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ==}
-    engines: {node: '>=14'}
-    hasBin: true
-
   prettier@3.8.1:
     resolution: {integrity: sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg==}
     engines: {node: '>=14'}
@@ -14855,10 +14719,6 @@ packages:
   strip-ansi@6.0.1:
     resolution: {integrity: sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==}
     engines: {node: '>=8'}
-
-  strip-ansi@7.1.2:
-    resolution: {integrity: sha512-gmBGslpoQJtgnMAvOVqGZpEz9dyoKTCzy2nfz/n8aIFhN/jCE/rCmcxabB6jOOHV+0WNnylOxaxBQPSvcWklhA==}
-    engines: {node: '>=12'}
 
   strip-ansi@7.2.0:
     resolution: {integrity: sha512-yDPMNjp4WyfYBkHnjIRLfca1i6KMyGCtsVgoKe/z1+6vukgaENdgGBZt+ZmKPc4gavvEZ5OgHfHdrazhgNyG7w==}
@@ -16199,27 +16059,6 @@ snapshots:
       is-potential-custom-element-name: 1.0.1
       lru-cache: 11.5.3
 
-  '@aws-crypto/crc32@5.2.0':
-    dependencies:
-      '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.975.1
-      tslib: 2.8.1
-
-  '@aws-crypto/crc32c@5.2.0':
-    dependencies:
-      '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.975.1
-      tslib: 2.8.1
-
-  '@aws-crypto/sha1-browser@5.2.0':
-    dependencies:
-      '@aws-crypto/supports-web-crypto': 5.2.0
-      '@aws-crypto/util': 5.2.0
-      '@aws-sdk/types': 3.975.1
-      '@aws-sdk/util-locate-window': 3.208.0
-      '@smithy/util-utf8': 2.3.0
-      tslib: 2.8.1
-
   '@aws-crypto/sha256-browser@5.2.0':
     dependencies:
       '@aws-crypto/sha256-js': 5.2.0
@@ -16321,66 +16160,6 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/client-s3@3.1035.0':
-    dependencies:
-      '@aws-crypto/sha1-browser': 5.2.0
-      '@aws-crypto/sha256-browser': 5.2.0
-      '@aws-crypto/sha256-js': 5.2.0
-      '@aws-sdk/core': 3.981.1
-      '@aws-sdk/credential-provider-node': 3.972.98
-      '@aws-sdk/middleware-bucket-endpoint': 3.972.10
-      '@aws-sdk/middleware-expect-continue': 3.972.10
-      '@aws-sdk/middleware-flexible-checksums': 3.974.12
-      '@aws-sdk/middleware-host-header': 3.972.10
-      '@aws-sdk/middleware-location-constraint': 3.972.10
-      '@aws-sdk/middleware-logger': 3.972.10
-      '@aws-sdk/middleware-recursion-detection': 3.972.11
-      '@aws-sdk/middleware-sdk-s3': 3.972.91
-      '@aws-sdk/middleware-ssec': 3.972.10
-      '@aws-sdk/middleware-user-agent': 3.972.38
-      '@aws-sdk/region-config-resolver': 3.972.13
-      '@aws-sdk/signature-v4-multi-region': 3.996.52
-      '@aws-sdk/types': 3.975.1
-      '@aws-sdk/util-endpoints': 3.996.8
-      '@aws-sdk/util-user-agent-browser': 3.972.10
-      '@aws-sdk/util-user-agent-node': 3.973.24
-      '@smithy/config-resolver': 4.4.17
-      '@smithy/core': 3.41.0
-      '@smithy/eventstream-serde-browser': 4.2.14
-      '@smithy/eventstream-serde-config-resolver': 4.3.14
-      '@smithy/eventstream-serde-node': 4.2.14
-      '@smithy/fetch-http-handler': 5.8.1
-      '@smithy/hash-blob-browser': 4.2.15
-      '@smithy/hash-node': 4.2.14
-      '@smithy/hash-stream-node': 4.2.14
-      '@smithy/invalid-dependency': 4.2.14
-      '@smithy/md5-js': 4.2.14
-      '@smithy/middleware-content-length': 4.2.14
-      '@smithy/middleware-endpoint': 4.5.1
-      '@smithy/middleware-retry': 4.6.1
-      '@smithy/middleware-serde': 4.3.1
-      '@smithy/middleware-stack': 4.2.14
-      '@smithy/node-config-provider': 4.3.14
-      '@smithy/node-http-handler': 4.14.2
-      '@smithy/protocol-http': 5.4.3
-      '@smithy/smithy-client': 4.13.1
-      '@smithy/types': 4.20.0
-      '@smithy/url-parser': 4.2.14
-      '@smithy/util-base64': 4.3.2
-      '@smithy/util-body-length-browser': 4.2.2
-      '@smithy/util-body-length-node': 4.2.3
-      '@smithy/util-defaults-mode-browser': 4.4.1
-      '@smithy/util-defaults-mode-node': 4.3.1
-      '@smithy/util-endpoints': 3.4.2
-      '@smithy/util-middleware': 4.2.14
-      '@smithy/util-retry': 4.4.1
-      '@smithy/util-stream': 4.6.1
-      '@smithy/util-utf8': 4.2.2
-      '@smithy/util-waiter': 4.2.16
-      tslib: 2.8.1
-    transitivePeerDependencies:
-      - aws-crt
-
   '@aws-sdk/client-s3@3.1175.0':
     dependencies:
       '@aws-sdk/checksums': 3.1002.6
@@ -16416,11 +16195,6 @@ snapshots:
       '@smithy/signature-v4': 5.7.5
       '@smithy/types': 4.20.0
       bowser: 2.11.0
-      tslib: 2.8.1
-
-  '@aws-sdk/crc64-nvme@3.972.7':
-    dependencies:
-      '@smithy/types': 4.20.0
       tslib: 2.8.1
 
   '@aws-sdk/credential-provider-cognito-identity@3.972.36':
@@ -16540,50 +16314,10 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@aws-sdk/middleware-bucket-endpoint@3.972.10':
-    dependencies:
-      '@aws-sdk/types': 3.975.1
-      '@aws-sdk/util-arn-parser': 3.972.3
-      '@smithy/node-config-provider': 4.3.14
-      '@smithy/protocol-http': 5.4.3
-      '@smithy/types': 4.20.0
-      '@smithy/util-config-provider': 4.2.2
-      tslib: 2.8.1
-
-  '@aws-sdk/middleware-expect-continue@3.972.10':
-    dependencies:
-      '@aws-sdk/types': 3.975.1
-      '@smithy/protocol-http': 5.4.3
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
-  '@aws-sdk/middleware-flexible-checksums@3.974.12':
-    dependencies:
-      '@aws-crypto/crc32': 5.2.0
-      '@aws-crypto/crc32c': 5.2.0
-      '@aws-crypto/util': 5.2.0
-      '@aws-sdk/core': 3.981.1
-      '@aws-sdk/crc64-nvme': 3.972.7
-      '@aws-sdk/types': 3.975.1
-      '@smithy/is-array-buffer': 4.2.2
-      '@smithy/node-config-provider': 4.3.14
-      '@smithy/protocol-http': 5.4.3
-      '@smithy/types': 4.20.0
-      '@smithy/util-middleware': 4.2.14
-      '@smithy/util-stream': 4.6.1
-      '@smithy/util-utf8': 4.2.2
-      tslib: 2.8.1
-
   '@aws-sdk/middleware-host-header@3.972.10':
     dependencies:
       '@aws-sdk/types': 3.975.1
       '@smithy/protocol-http': 5.4.3
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
-  '@aws-sdk/middleware-location-constraint@3.972.10':
-    dependencies:
-      '@aws-sdk/types': 3.975.1
       '@smithy/types': 4.20.0
       tslib: 2.8.1
 
@@ -16607,12 +16341,6 @@ snapshots:
       '@aws-sdk/signature-v4-multi-region': 3.996.52
       '@aws-sdk/types': 3.975.1
       '@smithy/core': 3.41.0
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
-  '@aws-sdk/middleware-ssec@3.972.10':
-    dependencies:
-      '@aws-sdk/types': 3.975.1
       '@smithy/types': 4.20.0
       tslib: 2.8.1
 
@@ -16649,7 +16377,7 @@ snapshots:
       '@smithy/invalid-dependency': 4.2.14
       '@smithy/node-config-provider': 4.3.14
       '@smithy/protocol-http': 5.4.3
-      '@smithy/signature-v4': 5.4.3
+      '@smithy/signature-v4': 5.7.5
       '@smithy/types': 4.20.0
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -16682,10 +16410,6 @@ snapshots:
   '@aws-sdk/types@3.975.1':
     dependencies:
       '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
-  '@aws-sdk/util-arn-parser@3.972.3':
-    dependencies:
       tslib: 2.8.1
 
   '@aws-sdk/util-endpoints@3.996.8':
@@ -18252,13 +17976,6 @@ snapshots:
       graphql: 17.1.0
       tslib: 2.6.2
 
-  '@graphql-inspector/core@8.1.3(graphql@17.1.0)':
-    dependencies:
-      dependency-graph: 1.0.0
-      graphql: 17.1.0
-      object-inspect: 1.13.4
-      tslib: 2.6.2
-
   '@graphql-inspector/core@8.1.4(graphql@17.1.0)':
     dependencies:
       dependency-graph: 1.0.0
@@ -18955,7 +18672,7 @@ snapshots:
   '@graphql-tools/executor-legacy-ws@1.1.37(graphql@17.1.0)':
     dependencies:
       '@graphql-tools/utils': 12.1.0(graphql@17.1.0)
-      '@types/ws': 8.18.1
+      '@types/ws': 8.18.2
       graphql: 17.1.0
       isomorphic-ws: 5.0.0(ws@8.22.0)
       tslib: 2.8.1
@@ -19271,7 +18988,7 @@ snapshots:
       '@graphql-tools/executor-legacy-ws': 1.1.37(graphql@17.1.0)
       '@graphql-tools/utils': 12.1.0(graphql@17.1.0)
       '@graphql-tools/wrap': 11.2.1(graphql@17.1.0)
-      '@types/ws': 8.18.1
+      '@types/ws': 8.18.2
       '@whatwg-node/fetch': 0.12.1(patch_hash=a553550265e6f9096870398e41fd44d4f0151d294a5eb4ccc2d26f2fcb712826)
       '@whatwg-node/promise-helpers': 2.0.2
       graphql: 17.1.0
@@ -19536,14 +19253,14 @@ snapshots:
 
   '@humanwhocodes/object-schema@2.0.3': {}
 
-  '@ianvs/prettier-plugin-sort-imports@4.3.1(prettier@3.4.2)':
+  '@ianvs/prettier-plugin-sort-imports@4.3.1(prettier@3.8.1)':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/generator': 7.29.7
       '@babel/parser': 7.29.7
       '@babel/traverse': 7.29.7
       '@babel/types': 7.29.7
-      prettier: 3.4.2
+      prettier: 3.8.1
       semver: 7.8.5
     transitivePeerDependencies:
       - supports-color
@@ -19952,7 +19669,7 @@ snapshots:
     dependencies:
       string-width: 5.1.2
       string-width-cjs: string-width@4.2.3
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
       strip-ansi-cjs: strip-ansi@6.0.1
       wrap-ansi: 8.1.0
       wrap-ansi-cjs: wrap-ansi@7.0.0
@@ -23072,15 +22789,6 @@ snapshots:
       '@slonik/types': 48.19.0(zod@4.6.6)
       zod: 4.6.6
 
-  '@smithy/chunked-blob-reader-native@4.2.3':
-    dependencies:
-      '@smithy/util-base64': 4.3.2
-      tslib: 2.8.1
-
-  '@smithy/chunked-blob-reader@5.2.2':
-    dependencies:
-      tslib: 2.8.1
-
   '@smithy/config-resolver@4.4.17':
     dependencies:
       '@smithy/node-config-provider': 4.3.14
@@ -23101,46 +22809,9 @@ snapshots:
       '@smithy/types': 4.20.0
       tslib: 2.8.1
 
-  '@smithy/eventstream-codec@4.2.14':
-    dependencies:
-      '@aws-crypto/crc32': 5.2.0
-      '@smithy/types': 4.20.0
-      '@smithy/util-hex-encoding': 4.2.2
-      tslib: 2.8.1
-
-  '@smithy/eventstream-serde-browser@4.2.14':
-    dependencies:
-      '@smithy/eventstream-serde-universal': 4.2.14
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
-  '@smithy/eventstream-serde-config-resolver@4.3.14':
-    dependencies:
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
-  '@smithy/eventstream-serde-node@4.2.14':
-    dependencies:
-      '@smithy/eventstream-serde-universal': 4.2.14
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
-  '@smithy/eventstream-serde-universal@4.2.14':
-    dependencies:
-      '@smithy/eventstream-codec': 4.2.14
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
   '@smithy/fetch-http-handler@5.8.1':
     dependencies:
       '@smithy/core': 3.41.0
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
-  '@smithy/hash-blob-browser@4.2.15':
-    dependencies:
-      '@smithy/chunked-blob-reader': 5.2.2
-      '@smithy/chunked-blob-reader-native': 4.2.3
       '@smithy/types': 4.20.0
       tslib: 2.8.1
 
@@ -23148,12 +22819,6 @@ snapshots:
     dependencies:
       '@smithy/types': 4.20.0
       '@smithy/util-buffer-from': 4.2.2
-      '@smithy/util-utf8': 4.2.2
-      tslib: 2.8.1
-
-  '@smithy/hash-stream-node@4.2.14':
-    dependencies:
-      '@smithy/types': 4.20.0
       '@smithy/util-utf8': 4.2.2
       tslib: 2.8.1
 
@@ -23168,12 +22833,6 @@ snapshots:
 
   '@smithy/is-array-buffer@4.2.2':
     dependencies:
-      tslib: 2.8.1
-
-  '@smithy/md5-js@4.2.14':
-    dependencies:
-      '@smithy/types': 4.20.0
-      '@smithy/util-utf8': 4.2.2
       tslib: 2.8.1
 
   '@smithy/middleware-content-length@4.2.14':
@@ -23243,12 +22902,6 @@ snapshots:
       '@smithy/util-middleware': 2.2.0
       '@smithy/util-uri-escape': 2.2.0
       '@smithy/util-utf8': 2.3.0
-      tslib: 2.8.1
-
-  '@smithy/signature-v4@5.4.3':
-    dependencies:
-      '@smithy/core': 3.41.0
-      '@smithy/types': 4.20.0
       tslib: 2.8.1
 
   '@smithy/signature-v4@5.7.5':
@@ -23325,10 +22978,6 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@smithy/util-hex-encoding@4.2.2':
-    dependencies:
-      tslib: 2.8.1
-
   '@smithy/util-middleware@2.2.0':
     dependencies:
       '@smithy/types': 2.12.0
@@ -23340,11 +22989,6 @@ snapshots:
       tslib: 2.8.1
 
   '@smithy/util-retry@4.4.1':
-    dependencies:
-      '@smithy/core': 3.41.0
-      tslib: 2.8.1
-
-  '@smithy/util-stream@4.6.1':
     dependencies:
       '@smithy/core': 3.41.0
       tslib: 2.8.1
@@ -23363,17 +23007,9 @@ snapshots:
       '@smithy/util-buffer-from': 4.2.2
       tslib: 2.8.1
 
-  '@smithy/util-waiter@4.2.16':
-    dependencies:
-      '@smithy/types': 4.20.0
-      tslib: 2.8.1
-
   '@speed-highlight/core@1.2.24': {}
 
-  '@standard-schema/spec@1.0.0': {}
-
-  '@standard-schema/spec@1.1.0':
-    optional: true
+  '@standard-schema/spec@1.1.0': {}
 
   '@standard-schema/utils@0.3.0': {}
 
@@ -23700,12 +23336,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@theguild/prettier-config@2.0.7(prettier@3.4.2)':
+  '@theguild/prettier-config@2.0.7(prettier@3.8.1)':
     dependencies:
-      '@ianvs/prettier-plugin-sort-imports': 4.3.1(prettier@3.4.2)
-      prettier: 3.4.2
-      prettier-plugin-pkg: 0.18.0(prettier@3.4.2)
-      prettier-plugin-sh: 0.19.0(prettier@3.4.2)
+      '@ianvs/prettier-plugin-sort-imports': 4.3.1(prettier@3.8.1)
+      prettier: 3.8.1
+      prettier-plugin-pkg: 0.18.0(prettier@3.8.1)
+      prettier-plugin-sh: 0.19.0(prettier@3.8.1)
     transitivePeerDependencies:
       - '@vue/compiler-sfc'
       - supports-color
@@ -23910,8 +23546,6 @@ snapshots:
     dependencies:
       '@types/lodash': 4.17.23
 
-  '@types/lodash@4.17.14': {}
-
   '@types/lodash@4.17.23': {}
 
   '@types/long@4.0.2': {}
@@ -24058,10 +23692,6 @@ snapshots:
   '@types/whatwg-mimetype@3.0.2': {}
 
   '@types/wrap-ansi@3.0.0': {}
-
-  '@types/ws@8.18.1':
-    dependencies:
-      '@types/node': 26.6.6
 
   '@types/ws@8.18.2':
     dependencies:
@@ -24468,13 +24098,6 @@ snapshots:
       fast-json-stable-stringify: 2.1.0
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
-
-  ajv@8.18.0:
-    dependencies:
-      fast-deep-equal: 3.1.3
-      fast-uri: 3.1.9
-      json-schema-traverse: 1.0.0
-      require-from-string: 2.0.2
 
   ajv@8.20.0:
     dependencies:
@@ -25163,7 +24786,7 @@ snapshots:
   cliui@9.0.1:
     dependencies:
       string-width: 7.2.0
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
       wrap-ansi: 9.0.2
 
   clone-response@1.0.3:
@@ -26125,7 +25748,7 @@ snapshots:
       clean-regexp: 1.0.0
       core-js-compat: 3.49.0
       eslint: 8.57.1
-      esquery: 1.5.0
+      esquery: 1.7.0
       globals: 15.15.0
       indent-string: 4.0.0
       is-builtin-module: 3.2.1
@@ -26176,7 +25799,7 @@ snapshots:
       eslint-scope: 7.2.2
       eslint-visitor-keys: 3.4.3
       espree: 9.6.1
-      esquery: 1.5.0
+      esquery: 1.7.0
       esutils: 2.0.3
       fast-deep-equal: 3.1.3
       file-entry-cache: 6.0.1
@@ -26213,10 +25836,6 @@ snapshots:
       eslint-visitor-keys: 3.4.3
 
   esprima@4.0.1: {}
-
-  esquery@1.5.0:
-    dependencies:
-      estraverse: 5.3.0
 
   esquery@1.7.0:
     dependencies:
@@ -26956,7 +26575,7 @@ snapshots:
     dependencies:
       '@types/node': 26.6.6
       '@types/whatwg-mimetype': 3.0.2
-      '@types/ws': 8.18.1
+      '@types/ws': 8.18.2
       buffer-image-size: 0.6.4
       entities: 7.0.1
       whatwg-mimetype: 3.0.0
@@ -27275,16 +26894,6 @@ snapshots:
       loose-envify: 1.4.0
 
   ioredis-mock@8.13.1(@types/ioredis-mock@8.2.5)(ioredis@6.0.0):
-    dependencies:
-      '@ioredis/as-callback': 3.0.0
-      '@ioredis/commands': 1.5.1
-      '@types/ioredis-mock': 8.2.5
-      fengari: 0.1.4
-      fengari-interop: 0.1.3(fengari@0.1.4)
-      ioredis: 6.0.0
-      semver: 7.8.5
-
-  ioredis-mock@8.9.0(@types/ioredis-mock@8.2.5)(ioredis@6.0.0):
     dependencies:
       '@ioredis/as-callback': 3.0.0
       '@ioredis/commands': 1.5.1
@@ -28036,7 +27645,7 @@ snapshots:
       ansi-escapes: 7.1.1
       cli-cursor: 5.0.0
       slice-ansi: 7.1.2
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
       wrap-ansi: 9.0.2
 
   loglevel@1.9.2: {}
@@ -28062,8 +27671,6 @@ snapshots:
   lowercase-keys@4.0.1: {}
 
   lru-cache@10.2.0: {}
-
-  lru-cache@11.5.2: {}
 
   lru-cache@11.5.3: {}
 
@@ -28945,13 +28552,13 @@ snapshots:
 
   monaco-editor@0.52.2: {}
 
-  monaco-graphql@1.9.0(graphql@17.1.0)(monaco-editor@0.52.2)(prettier@3.4.2):
+  monaco-graphql@1.9.0(graphql@17.1.0)(monaco-editor@0.52.2)(prettier@3.8.1):
     dependencies:
       graphql: 17.1.0
       graphql-language-service: 5.7.0(graphql@17.1.0)
       monaco-editor: 0.52.2
       picomatch-browser: 2.2.6
-      prettier: 3.4.2
+      prettier: 3.8.1
 
   moo@0.5.2: {}
 
@@ -29897,33 +29504,31 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-pkg@0.18.0(prettier@3.4.2):
+  prettier-plugin-pkg@0.18.0(prettier@3.8.1):
     dependencies:
-      prettier: 3.4.2
+      prettier: 3.8.1
 
-  prettier-plugin-sh@0.19.0(prettier@3.4.2):
+  prettier-plugin-sh@0.19.0(prettier@3.8.1):
     dependencies:
       '@reteps/dockerfmt': 0.5.4
-      prettier: 3.4.2
+      prettier: 3.8.1
       sh-syntax: 0.6.0
 
-  prettier-plugin-sql@0.18.1(prettier@3.4.2):
+  prettier-plugin-sql@0.18.1(prettier@3.8.1):
     dependencies:
       jsox: 1.2.119
       node-sql-parser: 4.12.0
-      prettier: 3.4.2
+      prettier: 3.8.1
       sql-formatter: 15.0.2
       tslib: 2.8.1
 
-  prettier-plugin-tailwindcss@0.6.9(@ianvs/prettier-plugin-sort-imports@4.3.1(prettier@3.4.2))(prettier@3.4.2):
+  prettier-plugin-tailwindcss@0.6.9(@ianvs/prettier-plugin-sort-imports@4.3.1(prettier@3.8.1))(prettier@3.8.1):
     dependencies:
-      prettier: 3.4.2
+      prettier: 3.8.1
     optionalDependencies:
-      '@ianvs/prettier-plugin-sort-imports': 4.3.1(prettier@3.4.2)
+      '@ianvs/prettier-plugin-sort-imports': 4.3.1(prettier@3.8.1)
 
   prettier@2.8.8: {}
-
-  prettier@3.4.2: {}
 
   prettier@3.8.1: {}
 
@@ -30825,7 +30430,7 @@ snapshots:
       '@slonik/pg-driver': 48.19.0(patch_hash=e12360d0c0740724e0317b8f5e2e4b4ab6cca28dd48bf04eef7ce550e8f08519)(zod@4.6.6)
       '@slonik/sql-tag': 48.19.0
       '@slonik/utilities': 48.19.0(zod@4.6.6)
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       iso8601-duration: 2.1.3
       p-queue: 9.3.3
       postgres-interval: 4.0.2
@@ -30994,24 +30599,24 @@ snapshots:
     dependencies:
       eastasianwidth: 0.2.0
       emoji-regex: 9.2.2
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
 
   string-width@6.1.0:
     dependencies:
       eastasianwidth: 0.2.0
       emoji-regex: 10.3.0
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
 
   string-width@7.2.0:
     dependencies:
       emoji-regex: 10.3.0
       get-east-asian-width: 1.6.0
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
 
   string-width@8.2.2:
     dependencies:
       get-east-asian-width: 1.6.0
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
 
   string.prototype.includes@2.0.1:
     dependencies:
@@ -31075,10 +30680,6 @@ snapshots:
   strip-ansi@6.0.1:
     dependencies:
       ansi-regex: 5.0.1
-
-  strip-ansi@7.1.2:
-    dependencies:
-      ansi-regex: 6.6.0
 
   strip-ansi@7.2.0:
     dependencies:
@@ -32047,7 +31648,7 @@ snapshots:
     dependencies:
       ansi-styles: 6.2.3
       string-width: 8.2.2
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
 
   wrap-ansi@6.2.0:
     dependencies:
@@ -32065,13 +31666,13 @@ snapshots:
     dependencies:
       ansi-styles: 6.2.3
       string-width: 5.1.2
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
 
   wrap-ansi@9.0.2:
     dependencies:
       ansi-styles: 6.2.3
       string-width: 7.2.0
-      strip-ansi: 7.1.2
+      strip-ansi: 7.2.0
 
   wrappy@1.0.2: {}
 

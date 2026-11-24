@@ -47,7 +47,7 @@
     "graphql-yoga": "catalog:",
     "human-id": "4.1.1",
     "set-cookie-parser": "2.7.1",
-    "strip-ansi": "7.1.2",
+    "strip-ansi": "7.2.0",
     "tslib": "2.8.1",
     "vite": "catalog:",
     "vitest": "catalog:",
