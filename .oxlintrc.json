@@ -18,6 +18,9 @@
     "eslint-plugin-better-tailwindcss",
     "eslint-plugin-hive"
   ],
+  "options": {
+    "typeAware": true
+  },
   "categories": {
     "correctness": "off"
   },
@@ -187,6 +190,7 @@
     "typescript/ban-ts-comment": "error",
     "typescript/no-duplicate-enum-values": "error",
     "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-floating-promises": "error",
     "typescript/no-misused-new": "error",
     "typescript/no-non-null-asserted-optional-chain": "error",
     "typescript/no-this-alias": "error",
@@ -507,6 +511,7 @@
         "sonarjs/no-use-of-empty-return-value": "error",
         "typescript/consistent-type-assertions": "error",
         "typescript/no-namespace": "error",
+        "typescript/prefer-optional-chain": "error",
         "typescript/triple-slash-reference": "error",
         "unicorn/no-array-for-each": "error",
         "unicorn/no-empty-file": "error",

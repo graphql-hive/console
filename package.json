@@ -113,6 +113,7 @@
     "jest-snapshot-serializer-raw": "2.0.0",
     "oxlint": "1.95.0",
     "oxlint-plugin-eslint": "1.95.0",
+    "oxlint-tsgolint": "7.0.2008",
     "pg": "8.23.1",
     "prettier": "catalog:",
     "prettier-plugin-sql": "0.18.1",
