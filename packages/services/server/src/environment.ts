@@ -669,7 +669,7 @@ export const env = {
   schemaDiffWorker: {
     workerCount: base.SCHEMA_DIFF_WORKER_COUNT ?? 2,
     maxOldGenerationSizeMb: base.SCHEMA_DIFF_WORKER_MAX_OLD_GENERATION_SIZE_MB ?? 1536,
-    timeoutMs: base.SCHEMA_DIFF_WORKER_TIMEOUT_MS ?? 10_000,
+    timeoutMs: base.SCHEMA_DIFF_WORKER_TIMEOUT_MS ?? 15_000,
   },
   http: {
     port: base.PORT ?? 3001,

@@ -1,5 +1,10 @@
 import { Worker } from 'node:worker_threads';
-import { metrics, setErrorSource } from '@hive/service-common';
+import {
+  getRequestId,
+  injectActiveTraceContext,
+  metrics,
+  setErrorSource,
+} from '@hive/service-common';
 import type { Logger } from '../providers/logger';
 import {
   deserializeWorkerError,
@@ -27,6 +32,8 @@ type QueuedTask<TInput, TOutput> = {
   id: string;
   data: TInput;
   enqueuedAt: number;
+  traceContext: Record<string, string>;
+  requestId: string | undefined;
   resolve: (data: TOutput) => void;
   reject: (error: unknown) => void;
 };
@@ -79,7 +86,15 @@ export class WorkerPool<TInput, TOutput> {
     }
 
     const { promise, resolve, reject } = Promise.withResolvers<TOutput>();
-    this.queue.push({ id: crypto.randomUUID(), data, enqueuedAt: Date.now(), resolve, reject });
+    this.queue.push({
+      id: crypto.randomUUID(),
+      data,
+      enqueuedAt: Date.now(),
+      traceContext: injectActiveTraceContext(),
+      requestId: getRequestId(),
+      resolve,
+      reject,
+    });
     this.dispatch();
     return promise;
   }
@@ -211,6 +226,9 @@ export class WorkerPool<TInput, TOutput> {
         event: 'task',
         id: queued.id,
         data: queued.data,
+        traceContext: queued.traceContext,
+        requestId: queued.requestId,
+        enqueuedAt: queued.enqueuedAt,
       } satisfies WorkerTaskEvent<TInput>);
     }
   }

@@ -12,6 +12,9 @@ parentPort.on('message', message => {
     case 'echo':
       parentPort.postMessage({ event: 'taskResult', id, data: data.value });
       return;
+    case 'requestId':
+      parentPort.postMessage({ event: 'taskResult', id, data: message.requestId ?? null });
+      return;
     case 'sleep':
       setTimeout(
         () => parentPort.postMessage({ event: 'taskResult', id, data: data.value }),

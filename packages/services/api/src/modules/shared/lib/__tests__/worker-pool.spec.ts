@@ -1,9 +1,11 @@
 import { fileURLToPath } from 'node:url';
+import { requestIdStorage } from '@hive/service-common';
 import { NoopLogger } from '../../providers/logger';
 import { WorkerPool } from '../worker-pool';
 
 type Task =
   | { kind: 'echo'; value: string }
+  | { kind: 'requestId' }
   | { kind: 'sleep'; value: string; ms: number }
   | { kind: 'hang' }
   | { kind: 'fail'; message: string }
@@ -31,6 +33,13 @@ afterEach(async () => {
 test('runs a task in a worker', async () => {
   const pool = createPool();
   await expect(pool.run({ kind: 'echo', value: 'hi' })).resolves.toBe('hi');
+});
+
+test('passes the request id of the caller to the worker', async () => {
+  const pool = createPool();
+  await expect(
+    requestIdStorage.run({ requestId: 'req-1' }, () => pool.run({ kind: 'requestId' })),
+  ).resolves.toBe('req-1');
 });
 
 test('queues tasks until a worker is idle', async () => {

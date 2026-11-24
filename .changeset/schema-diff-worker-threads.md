@@ -12,4 +12,4 @@ The behavior can be configured via the following environment variables of the `s
 - `SCHEMA_DIFF_WORKER_MAX_OLD_GENERATION_SIZE_MB`: heap limit of a schema diff worker thread in MB
   (default: `1536`).
 - `SCHEMA_DIFF_WORKER_TIMEOUT_MS`: a schema diff running longer than this fails and its worker
-  thread is replaced (default: `10000`).
+  thread is replaced (default: `15000`).
