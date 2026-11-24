@@ -1,0 +1,457 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "import", "promise", "node", "react", "jsx-a11y"],
+  "categories": {
+    "correctness": "off"
+  },
+  "ignorePatterns": [
+    "scripts",
+    "rules",
+    "out",
+    ".hive",
+    "packages/web/app/.ladle/**",
+    "public",
+    "packages/web/app/src/graphql/index.ts",
+    "packages/libraries/cli/src/sdk.ts",
+    "packages/libraries/cli/src/gql/**/*",
+    "packages/services/storage/src/db/types.ts",
+    "packages/web/app/src/gql/**/*",
+    "codegen.mts",
+    "tsup",
+    "packages/libraries/render-laboratory/src/laboratory.ts",
+    "packages/web/app/vite.config.ts",
+    "**/*.{js,jsx,cjs,mjs,cts,mts}"
+  ],
+  "rules": {
+    "for-direction": "error",
+    "no-array-constructor": "error",
+    "no-async-promise-executor": "error",
+    "no-case-declarations": "error",
+    "no-class-assign": "error",
+    "no-compare-neg-zero": "error",
+    "no-cond-assign": "error",
+    "no-constant-condition": "error",
+    "no-control-regex": "error",
+    "no-debugger": "error",
+    "no-delete-var": "error",
+    "no-dupe-else-if": "error",
+    "no-duplicate-case": "error",
+    "no-else-return": [
+      "error",
+      {
+        "allowElseIf": false
+      }
+    ],
+    "no-empty": [
+      "error",
+      {
+        "allowEmptyCatch": true
+      }
+    ],
+    "no-empty-character-class": "error",
+    "no-empty-pattern": "error",
+    "no-ex-assign": "error",
+    "no-extra-boolean-cast": "error",
+    "no-fallthrough": "error",
+    "no-global-assign": "error",
+    "no-invalid-regexp": "error",
+    "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
+    "no-misleading-character-class": "error",
+    "no-nonoctal-decimal-escape": "error",
+    "no-prototype-builtins": "error",
+    "no-regex-spaces": "error",
+    "no-restricted-globals": [
+      "error",
+      "stop",
+      "close",
+      {
+        "name": "isNaN",
+        "message": "Use Number.isNaN instead"
+      }
+    ],
+    "no-self-assign": "error",
+    "no-shadow-restricted-names": "error",
+    "no-sparse-arrays": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-unused-labels": "error",
+    "no-unused-vars": [
+      "error",
+      {
+        "caughtErrors": "none",
+        "argsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_",
+        "destructuredArrayIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
+    "no-useless-backreference": "error",
+    "no-useless-catch": "error",
+    "no-var": "error",
+    "no-with": "error",
+    "prefer-rest-params": "error",
+    "prefer-spread": "error",
+    "require-yield": "error",
+    "use-isnan": "error",
+    "valid-typeof": "error",
+    "import/first": "error",
+    "import/no-absolute-path": "error",
+    "import/no-self-import": "error",
+    "node/no-process-env": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-this-alias": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-var-requires": "error",
+    "typescript/prefer-as-const": "error",
+    "unicorn/prefer-includes": "error",
+    "unicorn/prefer-single-call": "error"
+  },
+  "overrides": [
+    {
+      "files": ["packages/**/environment.ts", "e2e/**"],
+      "rules": {
+        "node/no-process-env": "off"
+      }
+    },
+    {
+      "files": ["packages/web/app/**"],
+      "env": {
+        "browser": true
+      },
+      "rules": {
+        "eqeqeq": [
+          "error",
+          "always",
+          {
+            "null": "ignore"
+          }
+        ],
+        "logical-assignment-operators": [
+          "error",
+          "always",
+          {
+            "enforceForIfStatements": true
+          }
+        ],
+        "no-inner-declarations": "error",
+        "no-lonely-if": "error",
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["PropsWithChildren"],
+                "message": "`PropsWithChildren` set `children` as optional, explicitly define `children` field in your type"
+              },
+              {
+                "name": "axios",
+                "message": "Use `fetch/node-fetch` instead."
+              },
+              {
+                "name": "moment",
+                "message": "Use `dayjs/date-fns` instead."
+              },
+              {
+                "name": "classnames",
+                "message": "Use `clsx` instead because he is faster."
+              },
+              {
+                "name": "lodash/isString.js",
+                "message": "Use `typeof yourVar === 'string'` instead."
+              },
+              {
+                "name": "lodash/isArray.js",
+                "message": "Use `Array.isArray` instead."
+              },
+              {
+                "name": "lodash/flatten.js",
+                "message": "Use `Array#flat()` instead."
+              },
+              {
+                "name": "lodash/compact.js",
+                "message": "Use `Array#filter(Boolean)` instead."
+              },
+              {
+                "name": "lodash/identity.js",
+                "message": "Use `(value) => value` instead."
+              }
+            ]
+          }
+        ],
+        "no-self-compare": "error",
+        "no-unreachable-loop": "error",
+        "no-unused-expressions": "error",
+        "no-unused-vars": [
+          "error",
+          {
+            "caughtErrors": "none",
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^_"
+          }
+        ],
+        "object-shorthand": ["error", "always"],
+        "prefer-arrow-callback": [
+          "error",
+          {
+            "allowNamedFunctions": true,
+            "allowUnboundThis": true
+          }
+        ],
+        "prefer-const": [
+          "error",
+          {
+            "destructuring": "all",
+            "ignoreReadBeforeAssign": false
+          }
+        ],
+        "prefer-object-has-own": "error",
+        "yoda": "error",
+        "import/extensions": [
+          "error",
+          "ignorePackages",
+          {
+            "tsx": "never",
+            "ts": "never"
+          }
+        ],
+        "import/no-duplicates": "error",
+        "jsx-a11y/alt-text": [
+          "warn",
+          {
+            "elements": ["img"],
+            "img": ["Image", "NextImage"]
+          }
+        ],
+        "jsx-a11y/anchor-has-content": "error",
+        "jsx-a11y/aria-activedescendant-has-tabindex": "error",
+        "jsx-a11y/aria-props": "error",
+        "jsx-a11y/aria-proptypes": "error",
+        "jsx-a11y/aria-role": "error",
+        "jsx-a11y/aria-unsupported-elements": "error",
+        "jsx-a11y/autocomplete-valid": "error",
+        "jsx-a11y/heading-has-content": "error",
+        "jsx-a11y/html-has-lang": "error",
+        "jsx-a11y/iframe-has-title": "error",
+        "jsx-a11y/img-redundant-alt": "error",
+        "jsx-a11y/interactive-supports-focus": [
+          "error",
+          {
+            "tabbable": [
+              "button",
+              "checkbox",
+              "link",
+              "searchbox",
+              "spinbutton",
+              "switch",
+              "textbox"
+            ]
+          }
+        ],
+        "jsx-a11y/media-has-caption": "error",
+        "jsx-a11y/mouse-events-have-key-events": "error",
+        "jsx-a11y/no-access-key": "error",
+        "jsx-a11y/no-autofocus": "error",
+        "jsx-a11y/no-distracting-elements": "error",
+        "jsx-a11y/no-interactive-element-to-noninteractive-role": [
+          "error",
+          {
+            "tr": ["none", "presentation"],
+            "canvas": ["img"]
+          }
+        ],
+        "jsx-a11y/no-noninteractive-element-interactions": [
+          "error",
+          {
+            "handlers": [
+              "onClick",
+              "onError",
+              "onLoad",
+              "onMouseDown",
+              "onMouseUp",
+              "onKeyPress",
+              "onKeyDown",
+              "onKeyUp"
+            ],
+            "alert": ["onKeyUp", "onKeyDown", "onKeyPress"],
+            "body": ["onError", "onLoad"],
+            "dialog": ["onKeyUp", "onKeyDown", "onKeyPress"],
+            "iframe": ["onError", "onLoad"],
+            "img": ["onError", "onLoad"]
+          }
+        ],
+        "jsx-a11y/no-noninteractive-element-to-interactive-role": [
+          "error",
+          {
+            "ul": ["listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"],
+            "ol": ["listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"],
+            "li": [
+              "menuitem",
+              "menuitemradio",
+              "menuitemcheckbox",
+              "option",
+              "row",
+              "tab",
+              "treeitem"
+            ],
+            "table": ["grid"],
+            "td": ["gridcell"],
+            "fieldset": ["radiogroup", "presentation"]
+          }
+        ],
+        "jsx-a11y/no-noninteractive-tabindex": [
+          "error",
+          {
+            "tags": [],
+            "roles": ["tabpanel"],
+            "allowExpressionValues": true
+          }
+        ],
+        "jsx-a11y/no-redundant-roles": "error",
+        "jsx-a11y/role-has-required-aria-props": "error",
+        "jsx-a11y/role-supports-aria-props": "error",
+        "jsx-a11y/scope": "error",
+        "jsx-a11y/tabindex-no-positive": "error",
+        "promise/no-multiple-resolved": "error",
+        "promise/no-nesting": "error",
+        "react/hook-use-state": "error",
+        "react/iframe-missing-sandbox": "error",
+        "react/jsx-boolean-value": "error",
+        "react/jsx-curly-brace-presence": "error",
+        "react/jsx-filename-extension": [
+          "error",
+          {
+            "extensions": [".tsx", ".jsx"],
+            "allow": "as-needed"
+          }
+        ],
+        "react/jsx-key": "warn",
+        "react/jsx-no-comment-textnodes": "error",
+        "react/jsx-no-duplicate-props": "error",
+        "react/jsx-no-target-blank": "error",
+        "react/no-children-prop": "error",
+        "react/no-danger-with-children": "error",
+        "react/no-direct-mutation-state": "error",
+        "react/no-find-dom-node": "error",
+        "react/no-is-mounted": "error",
+        "react/no-render-return-value": "error",
+        "react/no-string-refs": "error",
+        "react/require-render-return": "error",
+        "react/rules-of-hooks": "error",
+        "react/self-closing-comp": "error",
+        "typescript/consistent-type-assertions": "error",
+        "typescript/no-namespace": "error",
+        "typescript/triple-slash-reference": "error",
+        "unicorn/no-array-for-each": "error",
+        "unicorn/no-empty-file": "error",
+        "unicorn/no-instanceof-array": "error",
+        "unicorn/no-lonely-if": "error",
+        "unicorn/no-useless-fallback-in-spread": "error",
+        "unicorn/no-useless-spread": "error",
+        "unicorn/numeric-separators-style": "error",
+        "unicorn/prefer-array-find": "error",
+        "unicorn/prefer-export-from": [
+          "error",
+          {
+            "checkUsedVariables": false
+          }
+        ],
+        "unicorn/prefer-logical-operator-over-ternary": "error",
+        "unicorn/prefer-node-protocol": "error",
+        "unicorn/prefer-string-trim-start-end": "error"
+      }
+    },
+    {
+      "files": ["packages/web/app/src/**/*.{ts,tsx}"],
+      "excludeFiles": [
+        "packages/web/app/src/routes/**",
+        "packages/web/app/src/main.tsx",
+        "packages/web/app/src/lib/testing/**",
+        "packages/web/app/src/**/*.spec.{ts,tsx}"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["PropsWithChildren"],
+                "message": "`PropsWithChildren` set `children` as optional, explicitly define `children` field in your type"
+              },
+              {
+                "name": "@/components/layouts/organization",
+                "message": "The route in src/routes renders this layout around its <Outlet/>; a page renders <LayoutContent> inside it.",
+                "allowTypeImports": true
+              },
+              {
+                "name": "@/components/layouts/project",
+                "message": "The route in src/routes renders this layout around its <Outlet/>; a page renders <LayoutContent> inside it.",
+                "allowTypeImports": true
+              },
+              {
+                "name": "@/components/layouts/target",
+                "message": "The route in src/routes renders this layout around its <Outlet/>; a page renders <LayoutContent> inside it.",
+                "allowTypeImports": true
+              },
+              {
+                "name": "@/router",
+                "message": "Only main.tsx mounts the router. Read route state with getRouteApi(<route id>) and navigate with a route API's useNavigate."
+              },
+              {
+                "name": "axios",
+                "message": "Use `fetch/node-fetch` instead."
+              },
+              {
+                "name": "moment",
+                "message": "Use `dayjs/date-fns` instead."
+              },
+              {
+                "name": "classnames",
+                "message": "Use `clsx` instead because he is faster."
+              },
+              {
+                "name": "lodash/isString.js",
+                "message": "Use `typeof yourVar === 'string'` instead."
+              },
+              {
+                "name": "lodash/isArray.js",
+                "message": "Use `Array.isArray` instead."
+              },
+              {
+                "name": "lodash/flatten.js",
+                "message": "Use `Array#flat()` instead."
+              },
+              {
+                "name": "lodash/compact.js",
+                "message": "Use `Array#filter(Boolean)` instead."
+              },
+              {
+                "name": "lodash/identity.js",
+                "message": "Use `(value) => value` instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["packages/web/app/**/*.preview.tsx"],
+      "rules": {
+        "react/rules-of-hooks": "off"
+      }
+    },
+    {
+      "files": ["packages/web/app/**/*.d.ts"],
+      "rules": {
+        "no-var": "off"
+      }
+    }
+  ]
+}
