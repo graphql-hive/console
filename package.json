@@ -137,6 +137,7 @@
     "overrides.ajv@8.x.x": "address https://github.com/graphql-hive/console/security/dependabot/507",
     "overrides.yauzl@2.x.x": "address https://github.com/graphql-hive/console/security/dependabot/542",
     "overrides.path-to-regexp@0.x.x": "address https://github.com/graphql-hive/console/security/dependabot/619",
+    "overrides.@apollo/server>@graphql-tools/utils": "@apollo/server@5 caps utils at <12.0.2 only to keep Node v20 installs working (apollographql/apollo-server#8232). We run Node 26, so dedupe onto 12.1.0. Remove once on @apollo/server v6, which drops the cap.",
     "overrides.graphile-worker>@types/pg": "Keep graphile-worker on the catalog @types/pg version; a newer transitive @types/pg makes the pg Pool passed in services/workflows/src/kit.ts type-incompatible",
     "overrides.@graphql-hive/gateway-plugin-console-sdk": "Use the in-repository version.",
     "overrides.@graphql-hive/yoga": "Use the in-repository version.",
@@ -147,6 +148,7 @@
     "overrides": {
       "graphql-jit@0.8.x": "0.8.10",
       "graphile-worker>@types/pg": "8.11.10",
+      "@apollo/server>@graphql-tools/utils": "12.1.0",
       "esbuild": "0.28.1",
       "csstype": "3.1.2",
       "mjml-core@4.14.0>html-minifier": "-",
