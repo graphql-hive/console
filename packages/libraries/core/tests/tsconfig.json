@@ -2,7 +2,7 @@
   "extends": "../../../../tsconfig.json",
   "include": ["."],
   "compilerOptions": {
-    "baseUrl": ".",
+    "paths": {},
     "rootDir": "..",
     "target": "es2017",
     "module": "esnext",

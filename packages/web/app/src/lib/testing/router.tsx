@@ -33,6 +33,7 @@ if (typeof window !== 'undefined' && typeof window.IntersectionObserver !== 'fun
   window.IntersectionObserver = class {
     readonly root = null;
     readonly rootMargin = '';
+    readonly scrollMargin = '';
     readonly thresholds = [];
     observe() {}
     unobserve() {}

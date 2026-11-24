@@ -3,7 +3,7 @@
   "include": ["src"],
   "compilerOptions": {
     "types": ["node"],
-    "baseUrl": ".",
+    "paths": {},
     "outDir": "dist",
     "rootDir": "src",
     "target": "es2017",

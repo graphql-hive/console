@@ -1,6 +1,6 @@
-import { AlertChannel } from 'packages/services/api/src/shared/entities';
 import { vi } from 'vitest';
 import { SchemaChangeType } from '@hive/storage';
+import { AlertChannel } from '../../../../shared/entities';
 import { HiveConsoleReleaseVersion } from '../../../shared/providers/tokens';
 import { DeliveryRecorder } from '../delivery-recorder';
 import { ChannelConfirmationInput, SchemaChangeNotificationInput } from './common';
