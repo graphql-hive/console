@@ -190,7 +190,7 @@ describe('traces filter values', () => {
       const { client } = await loadedAt(`${RANGE}&status=error&operationNames=%5B%22GetUser%22%5D`);
 
       const [values] = client.requests(VALUES_DOCUMENT);
-      const listPeriod = (client.requests(LIST_DOCUMENT)[0]?.variables as any).filter.period;
+      const listPeriod = (client.requests(LIST_DOCUMENT)[0]?.variables as any)?.filter.period;
       expect(values?.variables).toEqual({ targetRef: SLUGS, period: listPeriod });
       expect(values?.context.requestPolicy).toBe('cache-first');
     },

@@ -8,7 +8,7 @@ export function createBuilder() {
   return {
     newLine(props: { type: 'removal' | 'addition' | 'mutual'; indent?: number }) {
       // dont add a newline for the very first line
-      if (lines.length === 1 && currentLine && currentLine.words.length === 0) {
+      if (lines.length === 1 && currentLine?.words.length === 0) {
         currentLine.change = props.type;
         currentLine.indent = props.indent ?? 0;
         return;

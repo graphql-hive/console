@@ -135,7 +135,7 @@ test('fails fast if circuit breaker kicks in', async () => {
     `[Error: Failed to look up persisted operation.]`,
   );
 
-  expect((logWriter.logs.pop()?.attrs as any).error?.code).toEqual('EOPENBREAKER');
+  expect((logWriter.logs.pop()?.attrs as any)?.error?.code).toEqual('EOPENBREAKER');
 });
 
 test('validates document ID format - missing hash', async () => {

@@ -89,7 +89,7 @@ describe('SchemaEditor onSyntaxErrors', () => {
       editor,
       instance,
       subscription,
-      mount: () => (monaco.props?.onMount as OnMount)(editor as never, instance as never),
+      mount: () => (monaco.props!.onMount as OnMount)(editor as never, instance as never),
       edit: (next: string) => {
         text = next;
         for (const listener of contentListeners) {
