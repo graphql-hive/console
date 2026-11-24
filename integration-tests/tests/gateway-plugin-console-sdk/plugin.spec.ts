@@ -1,15 +1,5 @@
 import { AddressInfo } from 'node:net';
-import {
-  GraphQLError,
-  parse,
-  TypeInfo,
-  ValidationContext,
-  visit,
-  visitInParallel,
-  visitWithTypeInfo,
-  type DocumentNode,
-  type FieldNode,
-} from 'graphql';
+import { GraphQLError, parse, TypeInfo, type DocumentNode } from 'graphql';
 import { createYoga, Logger } from 'graphql-yoga';
 import { pollFor, readOperationsStats, waitForExpectations } from 'testkit/flow';
 import { ProjectType } from 'testkit/gql/graphql';
