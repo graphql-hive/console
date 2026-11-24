@@ -39,6 +39,7 @@
     "lint": "NODE_OPTIONS=\"--max-old-space-size=8192\" eslint --cache --ignore-path .gitignore \"{packages,e2e}/**/*.{ts,tsx,graphql}\"",
     "lint:env-template": "tsx scripts/check-env-template.ts",
     "lint:fix": "pnpm lint --fix",
+    "lint:graphql": "graphql-inspector validate \"packages/web/app/src/**/*.{graphql,ts,tsx}|packages/libraries/cli/**/*.graphql\" \"packages/**/module.graphql.ts\" --deprecated --maxDepth=20 --maxAliasCount=20 --maxDirectiveCount=20 --maxTokenCount=1000",
     "lint:prettier": "prettier --cache --check .",
     "local:setup": "docker compose -f ./docker/docker-compose.dev.yml up -d --build --remove-orphans && pnpm --filter @hive/migrations db:init",
     "postinstall": "node ./scripts/patch-manifests.js && pnpm env:sync && node ./scripts/turborepo-cleanup.js",
