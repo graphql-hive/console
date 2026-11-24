@@ -15,7 +15,8 @@
       "specifier": "eslint-plugin-react"
     },
     "eslint-plugin-sonarjs",
-    "eslint-plugin-better-tailwindcss"
+    "eslint-plugin-better-tailwindcss",
+    "eslint-plugin-hive"
   ],
   "categories": {
     "correctness": "off"
@@ -150,6 +151,13 @@
       {
         "selector": "ExpressionStatement[expression.object.name=process][expression.property.name=browser]",
         "message": "`process.browser` is deprecated, use `!!globalThis.window`"
+      }
+    ],
+    "hive/enforce-deps-in-dev": [
+      "error",
+      {
+        "scopes": ["@hive", "@graphql-hive"],
+        "ignored": ["packages/libraries/**", "packages/web/**"]
       }
     ],
     "import/first": "error",
