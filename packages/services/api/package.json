@@ -66,7 +66,7 @@
     "got": "catalog:",
     "graphile-worker": "0.18.0",
     "graphql": "catalog:",
-    "graphql-modules": "3.1.3",
+    "graphql-modules": "4.0.0",
     "graphql-parse-resolve-info": "4.14.1",
     "graphql-scalars": "2.0.1",
     "graphql-yoga": "catalog:",
