@@ -19,7 +19,8 @@
     "eslint-plugin-hive"
   ],
   "options": {
-    "typeAware": true
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "warn"
   },
   "categories": {
     "correctness": "off"
@@ -56,7 +57,12 @@
     "no-class-assign": "error",
     "no-compare-neg-zero": "error",
     "no-cond-assign": "error",
-    "no-constant-condition": "error",
+    "no-constant-condition": [
+      "error",
+      {
+        "checkLoops": "all"
+      }
+    ],
     "no-control-regex": "error",
     "no-debugger": "error",
     "no-delete-var": "error",

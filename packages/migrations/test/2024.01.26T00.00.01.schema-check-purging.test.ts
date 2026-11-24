@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
-// eslint-disable-next-line import/no-extraneous-dependencies
+// eslint-disable-next-line import-js/no-extraneous-dependencies
 import 'reflect-metadata';
 import assert from 'node:assert';
 import { describe, test } from 'node:test';

@@ -36,7 +36,7 @@
     "graphql:generate": "VERBOSE=1 graphql-codegen --config codegen.mts",
     "graphql:generate:watch": "pnpm graphql:generate --watch",
     "integration:prepare": "cd integration-tests && ./local.sh",
-    "lint": "NODE_OPTIONS=\"--max-old-space-size=8192\" eslint --cache --ignore-path .gitignore \"{packages,e2e}/**/*.{ts,tsx}\"",
+    "lint": "oxlint packages e2e",
     "lint:env-template": "tsx scripts/check-env-template.ts",
     "lint:fix": "pnpm lint --fix",
     "lint:graphql": "graphql-inspector validate \"packages/web/app/src/**/*.{graphql,ts,tsx}|packages/libraries/cli/**/*.graphql\" \"packages/**/module.graphql.ts\" --deprecated --maxDepth=20 --maxAliasCount=20 --maxDirectiveCount=20 --maxTokenCount=1000",

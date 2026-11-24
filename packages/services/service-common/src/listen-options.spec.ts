@@ -1,7 +1,7 @@
 import { resolveServerListenOptions } from './listen-options';
 
 describe('resolveServerListenOptions', () => {
-  // eslint-disable-next-line no-restricted-syntax -- explicit IPv4 literal required for validation coverage
+  // eslint-disable-next-line eslint-js/no-restricted-syntax -- explicit IPv4 literal required for validation coverage
   const ipv4Host = '0.0.0.0';
 
   test('defaults to dual-stack host', () => {

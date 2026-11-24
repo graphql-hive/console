@@ -15,7 +15,6 @@ export const useResetState = <T>(
   initialValueOrCreateValue: T | (() => T),
   dependencyList: Array<unknown> = [],
 ): [T, (value: T | ((value: T) => T)) => void] => {
-  // eslint-disable-next-line react/hook-use-state
   const [, triggerRerender] = React.useState(0);
   const stateRef = React.useRef({
     state:

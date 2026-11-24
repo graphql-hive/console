@@ -1,4 +1,4 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
+// eslint-disable-next-line import-js/no-extraneous-dependencies
 import { describe, expect, test, vi } from 'vitest';
 import { AwsClient, type S3CredentialProvider } from '../src/aws';
 

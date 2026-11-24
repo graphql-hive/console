@@ -43,7 +43,7 @@ const metricAlertFiring = {
   },
   currentValue: 742.5,
   previousValue: 418.2,
-  changePercent: 77.546_628_407_460_55,
+  changePercent: 77.54662840746055,
   threshold: {
     type: 'FIXED_VALUE',
     value: 500,
@@ -167,7 +167,7 @@ export const WEBHOOK_PAYLOAD_EXAMPLES: WebhookPayloadExample[] = [
       state: 'resolved',
       currentValue: 386.4,
       previousValue: 742.5,
-      changePercent: -47.959_595_959_595_966,
+      changePercent: -47.959595959595966,
     },
   },
 ];

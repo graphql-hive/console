@@ -618,5 +618,4 @@ export interface Storage {
 }
 
 @Injectable()
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export class Storage implements Storage {}
