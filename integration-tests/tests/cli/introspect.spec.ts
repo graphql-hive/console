@@ -52,41 +52,45 @@ export async function createHTTPGraphQLServer() {
   const yogaFederation = createYoga({
     graphqlEndpoint: '/graphql-federation',
     logging: false,
-    schema: buildSubgraphSchema({
-      typeDefs: parse(/* GraphQL */ `
-        extend type Query {
-          me: User
-          user(id: ID!): User
-          users: [User]
-        }
+    schema: buildSubgraphSchema([
+      {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            me: User
+            user(id: ID!): User
+            users: [User]
+          }
 
-        type User @key(fields: "id") {
-          id: ID!
-          name: String
-          username: String
-        }
-      `),
-    }),
+          type User @key(fields: "id") {
+            id: ID!
+            name: String
+            username: String
+          }
+        `),
+      },
+    ]),
   });
 
   const yogaFederationProtected = createYoga({
     graphqlEndpoint: '/graphql-federation-protected',
     logging: false,
-    schema: buildSubgraphSchema({
-      typeDefs: parse(/* GraphQL */ `
-        extend type Query {
-          me: User
-          user(id: ID!): User
-          users: [User]
-        }
+    schema: buildSubgraphSchema([
+      {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            me: User
+            user(id: ID!): User
+            users: [User]
+          }
 
-        type User @key(fields: "id") {
-          id: ID!
-          name: String
-          username: String
-        }
-      `),
-    }),
+          type User @key(fields: "id") {
+            id: ID!
+            name: String
+            username: String
+          }
+        `),
+      },
+    ]),
     plugins: [
       {
         onRequest(ctx) {
@@ -139,21 +143,23 @@ export async function createHTTPGraphQLServer() {
   const yogaFederationNoIntrospection = createYoga({
     graphqlEndpoint: '/graphql-federation-no-introspection',
     logging: false,
-    schema: buildSubgraphSchema({
-      typeDefs: parse(/* GraphQL */ `
-        extend type Query {
-          me: User
-          user(id: ID!): User
-          users: [User]
-        }
+    schema: buildSubgraphSchema([
+      {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            me: User
+            user(id: ID!): User
+            users: [User]
+          }
 
-        type User @key(fields: "id") {
-          id: ID!
-          name: String
-          username: String
-        }
-      `),
-    }),
+          type User @key(fields: "id") {
+            id: ID!
+            name: String
+            username: String
+          }
+        `),
+      },
+    ]),
     plugins: [useDisableIntrospection()],
   });
 

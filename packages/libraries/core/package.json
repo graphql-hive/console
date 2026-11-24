@@ -43,7 +43,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "graphql": "^15.0.0 || ^16.0.0"
+    "graphql": "^16.0.0 || ^17.0.0"
   },
   "dependencies": {
     "@graphql-hive/logger": "^1.1.1",
@@ -59,7 +59,7 @@
   },
   "devDependencies": {
     "@apollo/federation": "catalog:",
-    "@apollo/subgraph": "2.13.2",
+    "@apollo/subgraph": "2.17.0",
     "@types/async-retry": "catalog:",
     "@types/lodash.sortby": "4.7.9",
     "graphql": "catalog:",

@@ -24,7 +24,7 @@
     "@types/pg": "catalog:",
     "dotenv": "catalog:",
     "fast-json-stable-stringify": "catalog:",
-    "graphql": "^15.0.0 || ^16.0.0",
+    "graphql": "^16.0.0 || ^17.0.0",
     "pg-promise": "catalog:",
     "typescript": "catalog:",
     "zod": "catalog:"

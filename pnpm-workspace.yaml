@@ -16,7 +16,7 @@ packages:
   - load-tests/otel-traces
 
 catalog:
-  '@apollo/composition': 2.14.0
+  '@apollo/composition': 2.14.5
   '@apollo/federation': 0.38.1
   '@aws-sdk/client-s3': 3.1035.0
   '@aws-sdk/credential-providers': 3.1035.0
@@ -101,9 +101,9 @@ catalog:
   vite-plugin-monaco-editor: 1.1.0
   vitest: 5.1.1
   ws: 8.22.0
-  graphql-ws: 6.0.6
-  graphql-sse: 2.6.0
-  graphql: 16.15.0
+  graphql-ws: 6.4.3
+  graphql-sse: 2.6.4
+  graphql: 17.1.0
   zod: 4.6.6
 
 minimumReleaseAge: 1440

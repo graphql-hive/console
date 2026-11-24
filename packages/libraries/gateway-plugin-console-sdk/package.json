@@ -45,7 +45,7 @@
   "peerDependencies": {
     "@envelop/types": "^5.0.0 || ^6.0.0",
     "@graphql-hive/gateway-runtime": "^1.0.0 || ^2.0.0 || ^3.0.0",
-    "graphql": "^15.0.0 || ^16.0.0"
+    "graphql": "^16.0.0 || ^17.0.0"
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*",

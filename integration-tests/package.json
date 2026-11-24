@@ -12,9 +12,9 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@apollo/gateway": "2.14.2",
-    "@apollo/server": "5.5.1",
-    "@apollo/subgraph": "2.14.0",
+    "@apollo/gateway": "2.14.5",
+    "@apollo/server": "5.5.2",
+    "@apollo/subgraph": "2.17.0",
     "@aws-sdk/client-s3": "catalog:",
     "@esm2cjs/execa": "6.1.1-cjs.1",
     "@graphql-hive/apollo": "workspace:*",

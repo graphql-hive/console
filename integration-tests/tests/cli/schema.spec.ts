@@ -1551,21 +1551,23 @@ test.concurrent('schema:check works with federated subgraphs', async () => {
   const yogaFederation = createYoga({
     logging: false,
     plugins: [useDisableIntrospection()],
-    schema: buildSubgraphSchema({
-      typeDefs: parse(/* GraphQL */ `
-        extend type Query {
-          me: User
-          user(id: ID!): User
-          users: [User]
-        }
+    schema: buildSubgraphSchema([
+      {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            me: User
+            user(id: ID!): User
+            users: [User]
+          }
 
-        type User @key(fields: "id") {
-          id: ID!
-          name: String
-          username: String
-        }
-      `),
-    }),
+          type User @key(fields: "id") {
+            id: ID!
+            name: String
+            username: String
+          }
+        `),
+      },
+    ]),
   });
 
   server.route({

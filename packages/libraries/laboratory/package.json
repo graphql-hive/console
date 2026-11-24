@@ -87,7 +87,7 @@
     "crypto-js": "catalog:",
     "date-fns": "catalog:",
     "esbuild": "catalog:",
-    "graphql": "^16.14.0",
+    "graphql": "catalog:",
     "graphql-ws": "catalog:",
     "graphql-yoga": "catalog:",
     "happy-dom": "^21.0.4",

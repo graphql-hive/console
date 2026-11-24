@@ -101,7 +101,7 @@ async function setup(
 
   const services = await Promise.all(
     Object.entries(subgraphs).map(async ([name, def]): Promise<ServiceDefinition> => {
-      const service = await createSubgraphService(name, def);
+      const service = await createSubgraphService(name, [def]);
       return {
         name,
         typeDefs: def.typeDefs,

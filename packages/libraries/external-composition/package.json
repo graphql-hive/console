@@ -57,7 +57,7 @@
     "example": "pnpm build && PORT=3012 SECRET=secretsecret node dist/example.js"
   },
   "peerDependencies": {
-    "graphql": "^15.0.0 || ^16.0.0"
+    "graphql": "^16.0.0 || ^17.0.0"
   },
   "devDependencies": {
     "@apollo/composition": "catalog:",

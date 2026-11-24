@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import type { Plugin } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defaultExclude, defineConfig } from 'vitest/config';
 
@@ -7,7 +8,24 @@ const yogaRequire = createRequire(
   new URL('./packages/libraries/yoga/package.json', import.meta.url),
 );
 
+// graphql@17 publishes several builds behind export conditions (CJS, ESM, a `__dev__` build). Vite
+// picks a different one than Node does for the dependencies it loads natively, so two graphql
+// instances end up in the same process and schemas fail the "from another module or realm" check.
+// Resolve graphql the way Node does, so both sides share one instance.
+const rootRequire = createRequire(import.meta.url);
+const singleGraphQLInstance: Plugin = {
+  name: 'single-graphql-instance',
+  enforce: 'pre',
+  resolveId(id) {
+    if (id === 'graphql' || id.startsWith('graphql/')) {
+      return rootRequire.resolve(id);
+    }
+    return null;
+  },
+};
+
 export default defineConfig({
+  plugins: [singleGraphQLInstance],
   resolve: { tsconfigPaths: true },
   test: {
     alias: {

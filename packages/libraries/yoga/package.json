@@ -43,7 +43,7 @@
     "check:build": "bob check"
   },
   "peerDependencies": {
-    "graphql": "^15.0.0 || ^16.0.0",
+    "graphql": "^16.0.0 || ^17.0.0",
     "graphql-yoga": "^5.24.4 || ^6.0.1"
   },
   "dependencies": {
