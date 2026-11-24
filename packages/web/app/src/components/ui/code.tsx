@@ -1,10 +1,10 @@
-import { useRef, type ComponentProps, type FC } from 'react';
+import { useRef, type ComponentProps } from 'react';
 import cn from 'clsx';
 import { CheckIcon, CopyIcon } from 'lucide-react';
 import { useHover } from '@/lib/hooks/use-hover';
 import { useTimed } from '@/lib/hooks/use-timed';
 
-export const Code: FC<ComponentProps<'code'>> = ({ children, className, ...props }) => {
+export const Code = ({ children, className, ...props }: ComponentProps<'code'>) => {
   const [copied, startCopyTimer] = useTimed(1500);
   const [ref, hovering] = useHover();
   const codeRef = useRef<HTMLElement | null>(null);
