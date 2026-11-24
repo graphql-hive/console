@@ -17,6 +17,7 @@ const exclude = RUN_MEMORY_LEAKS_TESTS
 const include = RUN_MEMORY_LEAKS_TESTS ? ['tests/api/memory-leaks.spec.ts'] : defaultInclude;
 
 export default defineConfig({
+  ssr: { resolve: { conditions: ['module-sync'] } },
   test: {
     globals: true,
     alias: {
