@@ -1,5 +1,21 @@
 # @graphql-hive/laboratory
 
+## 0.4.1
+
+### Patch Changes
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade `@graphql-tools/*` to their latest majors
+  (`@graphql-tools/utils@13`, `@graphql-tools/load@9`, `@graphql-tools/url-loader@10` and the file
+  loaders). `@graphql-tools/utils@13` requires Node.js `>=22.18.0`.
+
+- [#8969](https://github.com/graphql-hive/console/pull/8969)
+  [`f2e6c5d`](https://github.com/graphql-hive/console/commit/f2e6c5d1792664c0b37431fa9cb23b1d74d55945)
+  Thanks [@jo1-yo](https://github.com/jo1-yo)! - Show a "Could not reach endpoint" toast when a
+  laboratory operation gets no HTTP response, and return execution failures as a GraphQL error
+  result.
+
 ## 0.4.0
 
 ### Minor Changes

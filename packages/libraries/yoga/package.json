@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/yoga",
-  "version": "0.50.2",
+  "version": "0.51.0",
   "type": "module",
   "description": "Hive Console + GraphQL Yoga",
   "repository": {
