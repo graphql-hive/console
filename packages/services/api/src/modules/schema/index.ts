@@ -3,11 +3,11 @@ import { SchemaProposalStorage } from '../proposals/providers/schema-proposal-st
 import { BreakingSchemaChangeUsageHelper } from './providers/breaking-schema-changes-helper';
 import { Contracts } from './providers/contracts';
 import { ContractsManager } from './providers/contracts-manager';
-import { Inspector } from './providers/inspector';
 import { models } from './providers/models';
 import { CompositionOrchestrator } from './providers/orchestrator/composition-orchestrator';
 import { RegistryChecks } from './providers/registry-checks';
 import { SchemaCheckManager } from './providers/schema-check-manager';
+import { SchemaDiffScheduler } from './providers/schema-diff-scheduler';
 import { SchemaHelper } from './providers/schema-helper';
 import { SchemaManager } from './providers/schema-manager';
 import { SchemaPublisher } from './providers/schema-publisher';
@@ -29,7 +29,7 @@ export const schemaModule = createModule({
     SchemaPublisher,
     SchemaPusher,
     SchemaRevisionStore,
-    Inspector,
+    SchemaDiffScheduler,
     SchemaHelper,
     RegistryChecks,
     SchemaVersionHelper,

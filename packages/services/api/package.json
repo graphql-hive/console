@@ -21,7 +21,7 @@
     "./modules/organization/providers/provisioned-users-store": "./src/modules/organization/providers/provisioned-users-store.ts"
   },
   "peerDependencies": {
-    "graphql": "^16.0.0",
+    "graphql": "^17.0.0",
     "reflect-metadata": "0.2.2"
   },
   "devDependencies": {
@@ -29,7 +29,7 @@
     "@bentocache/plugin-prometheus": "0.2.0",
     "@date-fns/utc": "catalog:",
     "@graphql-hive/core": "workspace:*",
-    "@graphql-hive/signal": "1.0.0",
+    "@graphql-hive/signal": "3.0.0",
     "@graphql-inspector/core": "catalog:",
     "@graphql-tools/merge": "catalog:",
     "@hive/cdn-script": "workspace:*",
@@ -53,7 +53,7 @@
     "@trpc/server": "catalog:",
     "@types/bcryptjs": "catalog:",
     "@types/ioredis-mock": "catalog:",
-    "@types/lodash": "4.17.14",
+    "@types/lodash": "4.17.23",
     "@types/ms": "0.7.34",
     "@types/object-hash": "3.0.6",
     "agentkeepalive": "catalog:",
@@ -66,8 +66,8 @@
     "got": "catalog:",
     "graphile-worker": "0.18.0",
     "graphql": "catalog:",
-    "graphql-modules": "3.1.2",
-    "graphql-parse-resolve-info": "4.13.0",
+    "graphql-modules": "4.0.0",
+    "graphql-parse-resolve-info": "4.14.1",
     "graphql-scalars": "2.0.1",
     "graphql-yoga": "catalog:",
     "ioredis-mock": "catalog:",

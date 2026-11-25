@@ -1,6 +1,6 @@
 {
   "name": "@graphql-hive/render-laboratory",
-  "version": "0.1.22",
+  "version": "0.2.0",
   "type": "module",
   "description": "",
   "repository": {
@@ -11,7 +11,7 @@
   "author": "Michael Skorokhodov <michael@the-guild.dev>",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.23.5"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -58,7 +58,7 @@
     "check": "tsc --pretty --noEmit"
   },
   "peerDependencies": {
-    "graphql-yoga": "^5"
+    "graphql-yoga": "^5 || ^6"
   },
   "dependencies": {
     "@graphql-hive/laboratory": "workspace:*"

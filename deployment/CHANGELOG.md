@@ -1,5 +1,69 @@
 # hive
 
+## 15.7.0
+
+### Minor Changes
+
+- [#8967](https://github.com/graphql-hive/console/pull/8967)
+  [`660c32e`](https://github.com/graphql-hive/console/commit/660c32e437f9f9f0faf8720e492cc3b105d11751)
+  Thanks [@jdolle](https://github.com/jdolle)! - Creating an alert channel now happens in a side
+  sheet, like editing one, and has the same "Test configuration" button under "Advanced", so a Slack
+  channel or an endpoint can be tried before the channel is created. Test notifications are now
+  limited to 10 per minute for each project, counting saved and new channels together. Before, the
+  limit was 10 per minute for each channel.
+
+- [#8965](https://github.com/graphql-hive/console/pull/8965)
+  [`8edd02e`](https://github.com/graphql-hive/console/commit/8edd02e939518f2c4f66c3854905748ecb01f409)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade the Node.js runtime of all Docker images
+  from v24 to v26.
+
+- [#8974](https://github.com/graphql-hive/console/pull/8974)
+  [`ed1e0a8`](https://github.com/graphql-hive/console/commit/ed1e0a8d1b91b8997d6624abd2f8708810803972)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Compute schema diffs in worker threads instead of
+  on the main thread, so diffing large schemas no longer blocks the event loop of the server.
+
+  The behavior can be configured via the following environment variables of the `server` service:
+
+  - `SCHEMA_DIFF_WORKER_COUNT`: number of worker threads computing schema diffs (default: `2`). Set
+    to `0` to compute schema diffs on the main thread.
+  - `SCHEMA_DIFF_WORKER_MAX_OLD_GENERATION_SIZE_MB`: heap limit of a schema diff worker thread in MB
+    (default: `1536`).
+  - `SCHEMA_DIFF_WORKER_TIMEOUT_MS`: a schema diff running longer than this fails and its worker
+    thread is replaced (default: `15000`).
+
+### Patch Changes
+
+- [#8968](https://github.com/graphql-hive/console/pull/8968)
+  [`9a28f95`](https://github.com/graphql-hive/console/commit/9a28f9540c18bee83c0efd615deca9c98b2c2af0)
+  Thanks [@jdolle](https://github.com/jdolle)! - A failed request to a webhook, MS Teams or Discord
+  alert channel now says "Connection refused" or "Host not found" when the endpoint could not be
+  reached, instead of "Unexpected error". This applies to the channel's delivery log and to "Test
+  configuration".
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade Hive Gateway (public GraphQL API gateway)
+  to v3, GraphQL Yoga to v6, `@graphql-tools/*` to their latest majors, OpenTelemetry to the SDK 3.x
+  line, and `graphql` to v17.
+
+- [#8978](https://github.com/graphql-hive/console/pull/8978)
+  [`3b17103`](https://github.com/graphql-hive/console/commit/3b1710364ea63af3247270245384b1d3f25787e4)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade TypeScript from v5.7 to v7.0. This only
+  changes how Hive is built and has no runtime impact.
+
+- [#8968](https://github.com/graphql-hive/console/pull/8968)
+  [`9a28f95`](https://github.com/graphql-hive/console/commit/9a28f9540c18bee83c0efd615deca9c98b2c2af0)
+  Thanks [@jdolle](https://github.com/jdolle)! - Alert channel webhook endpoints must start with
+  `http://` or `https://`. An endpoint without a scheme, such as `localhost:3000/webhook`, was
+  accepted when creating, editing or testing a channel, and every request to it then failed with
+  "Unexpected error".
+
+- [#8976](https://github.com/graphql-hive/console/pull/8976)
+  [`a8547ef`](https://github.com/graphql-hive/console/commit/a8547efb129928eb7951a452bc4f494ee5249e02)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade '@theguild/federation-composition' to
+  validate composition results that could produce a schema with an interface whose implementation
+  has a deprecated field when the interface has not yet deprecated the field
+
 ## 15.6.1
 
 ### Patch Changes

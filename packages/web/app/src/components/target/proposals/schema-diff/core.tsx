@@ -32,6 +32,8 @@ import {
   type GraphQLSchema,
 } from 'graphql';
 import { isPrintableAsBlockString } from 'graphql/language/blockString';
+// `graphql` only exports the type; the class lives in its definition module
+import { GraphQLField as GraphQLFieldImpl } from 'graphql/type/definition';
 import { isPrimitive } from '@graphql-inspector/core/utils/graphql';
 import { Builder, createBuilder } from './builder';
 import { compareDirectiveLists, compareLists, diffArrays, matchArrays } from './compare-lists';
@@ -186,6 +188,17 @@ type RootFieldsType = {
   subscription: GraphQLField<any, any> | null;
 };
 
+/** Represents a schema root operation type as a field, so it can be diffed like one. */
+function rootField(
+  name: string,
+  type: GraphQLObjectType | null | undefined,
+): GraphQLField<any, any> | null {
+  if (!type) {
+    return null;
+  }
+  return new GraphQLFieldImpl(undefined, name, { type });
+}
+
 function schemaDefinitionDiff({
   oldSchema,
   newSchema,
@@ -195,82 +208,15 @@ function schemaDefinitionDiff({
   newSchema: GraphQLSchema | undefined | null;
   builder: Builder;
 }) {
-  const oldQuery = oldSchema?.getQueryType();
-  const oldMutation = oldSchema?.getMutationType();
-  const oldSubscription = oldSchema?.getSubscriptionType();
   const oldRoot: RootFieldsType = {
-    query: oldQuery
-      ? {
-          args: [],
-          name: 'query',
-          type: oldQuery,
-          astNode: null,
-          deprecationReason: null,
-          description: null,
-          extensions: {},
-        }
-      : null,
-    mutation: oldMutation
-      ? {
-          args: [],
-          name: 'mutation',
-          type: oldMutation,
-          astNode: null,
-          deprecationReason: null,
-          description: null,
-          extensions: {},
-        }
-      : null,
-    subscription: oldSubscription
-      ? {
-          args: [],
-          name: 'subscription',
-          type: oldSubscription,
-          astNode: null,
-          deprecationReason: null,
-          description: null,
-          extensions: {},
-        }
-      : null,
+    query: rootField('query', oldSchema?.getQueryType()),
+    mutation: rootField('mutation', oldSchema?.getMutationType()),
+    subscription: rootField('subscription', oldSchema?.getSubscriptionType()),
   };
-
-  const newQuery = newSchema?.getQueryType();
-  const newMutation = newSchema?.getMutationType();
-  const newSubscription = newSchema?.getSubscriptionType();
   const newRoot: RootFieldsType = {
-    query: newQuery
-      ? {
-          args: [],
-          name: 'query',
-          type: newQuery,
-          astNode: null,
-          deprecationReason: null,
-          description: null,
-          extensions: {},
-        }
-      : null,
-    mutation: newMutation
-      ? {
-          args: [],
-          name: 'mutation',
-          type: newMutation,
-          astNode: null,
-          deprecationReason: null,
-          description: null,
-          extensions: {},
-        }
-      : null,
-    subscription: newSubscription
-      ? {
-          args: [],
-          name: 'subscription',
-          type: newSubscription,
-          astNode: null,
-          deprecationReason: null,
-          description: null,
-          extensions: {},
-        }
-      : null,
+    query: rootField('query', newSchema?.getQueryType()),
+    mutation: rootField('mutation', newSchema?.getMutationType()),
+    subscription: rootField('subscription', newSchema?.getSubscriptionType()),
   };
   const path = [''];
   const changeType = determineChangeType(oldSchema, newSchema);

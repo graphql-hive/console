@@ -395,7 +395,7 @@ test('reports usage', async ({ expect }) => {
   const body = JSON.parse(init.body as string);
   expect(body.map).toMatchInlineSnapshot(`
     {
-      f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
+      85c35ecb16ca71058e6057fb207d0811c221294b: {
         fields: [
           Query.hi,
         ],
@@ -489,7 +489,7 @@ test('reports usage with response cache', async ({ expect }) => {
     });
 
     expect(body.map).toEqual({
-      f25063b60ab942d0c0d14cdd9cd3172de2e7ebc4: {
+      '85c35ecb16ca71058e6057fb207d0811c221294b': {
         fields: ['Query.hi'],
         operation: '{hi}',
         operationName: 'anonymous',
@@ -777,7 +777,7 @@ describe('subscription usage reporting', () => {
       :
 
       event: next
-      data: {"errors":[{"message":"Schema is not configured to execute subscription operation.","locations":[{"line":1,"column":1}]}]}
+      data: {"errors":[{"message":"The subscription operation is not supported by the schema.","locations":[{"line":1,"column":1}],"extensions":{"code":"GRAPHQL_VALIDATION_FAILED"}}]}
 
       event: complete
       data:
@@ -870,7 +870,7 @@ describe('subscription usage reporting', () => {
       const body = JSON.parse(init.body as string);
 
       expect(body.map).toEqual({
-        '74cf03b67c3846231d04927b02e1fca45e727223': {
+        '3db3a0c8753034709fdb95ee1860262c46f612c7': {
           fields: ['Subscription.hi'],
           operation: 'subscription{hi}',
           operationName: 'anonymous',
@@ -880,7 +880,7 @@ describe('subscription usage reporting', () => {
       expect(body.operations).toBeUndefined();
       expect(body.subscriptionOperations).toMatchObject([
         {
-          operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
+          operationMapKey: '3db3a0c8753034709fdb95ee1860262c46f612c7',
           metadata: {
             client: {
               name: 'brrr',
@@ -972,7 +972,7 @@ describe('subscription usage reporting', () => {
 
       expect(body.map).toMatchInlineSnapshot(`
         {
-          74cf03b67c3846231d04927b02e1fca45e727223: {
+          3db3a0c8753034709fdb95ee1860262c46f612c7: {
             fields: [
               Subscription.hi,
             ],
@@ -985,7 +985,7 @@ describe('subscription usage reporting', () => {
       expect(body).toMatchObject({
         subscriptionOperations: [
           {
-            operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
+            operationMapKey: '3db3a0c8753034709fdb95ee1860262c46f612c7',
             metadata: {
               client: {
                 name: 'brrr',
@@ -1087,7 +1087,7 @@ describe('subscription usage reporting', () => {
 
       expect(body.map).toMatchInlineSnapshot(`
           {
-            74cf03b67c3846231d04927b02e1fca45e727223: {
+            3db3a0c8753034709fdb95ee1860262c46f612c7: {
               fields: [
                 Subscription.hi,
               ],
@@ -1187,7 +1187,7 @@ describe('subscription usage reporting', () => {
       const body = JSON.parse(init.body as string);
       expect(body.map).toMatchInlineSnapshot(`
           {
-            74cf03b67c3846231d04927b02e1fca45e727223: {
+            3db3a0c8753034709fdb95ee1860262c46f612c7: {
               fields: [
                 Subscription.hi,
               ],
@@ -1341,7 +1341,7 @@ describe('subscription usage reporting', () => {
       const body = JSON.parse(init.body as string);
       expect(body.map).toMatchInlineSnapshot(`
         {
-          74cf03b67c3846231d04927b02e1fca45e727223: {
+          3db3a0c8753034709fdb95ee1860262c46f612c7: {
             fields: [
               Subscription.hi,
             ],
@@ -1494,7 +1494,7 @@ describe('subscription usage reporting', () => {
 
       expect(body.map).toMatchInlineSnapshot(`
         {
-          74cf03b67c3846231d04927b02e1fca45e727223: {
+          3db3a0c8753034709fdb95ee1860262c46f612c7: {
             fields: [
               Subscription.hi,
             ],
@@ -1612,7 +1612,7 @@ describe('incremental delivery usage reporting', () => {
 
     expect(body.map).toMatchInlineSnapshot(`
           {
-            b78b2367025b1253b17f5362d5f0b4d5b27c4a08: {
+            9d36a1ca2bc72a2e59a794c52561c3fe6cb99c77: {
               fields: [
                 Query.greetings,
               ],
@@ -1705,14 +1705,14 @@ describe('request batching usage reporting', () => {
 
     expect(body.map).toMatchInlineSnapshot(`
         {
-          43e84c7ba2c9fff1700237aa7822544e3a66f038: {
+          4c13e930d84887a9832882cc37dd27293ebf41ca: {
             fields: [
               Query.a,
             ],
             operation: query A{a},
             operationName: A,
           },
-          727c980e5b1ce7c94b587c835cd1388b79714fcc: {
+          8a4704e8c820e203f477f3c5bae215b561605147: {
             fields: [
               Query.b,
             ],

@@ -15,6 +15,7 @@ import {
   isInterfaceType,
   isListType,
   isObjectType,
+  isSpecifiedDirective,
   isTypeSystemExtensionNode,
   Kind,
   lexicographicSortSchema,
@@ -77,12 +78,15 @@ export function buildLexicographicallySortedSchema(document: DocumentNode): Grap
 
   // The type map follows the order of the types list.
   // This also sorts the built-in scalars and introspection types, as `lexicographicSortSchema` does.
-  // Directives are re-created with sorted arguments and locations, including the built-in ones (e.g. @deprecated),
-  // as `lexicographicSortSchema` does. There are only a few of them.
+  // Custom directives are re-created with sorted arguments and locations, as `lexicographicSortSchema` does.
+  // Like `lexicographicSortSchema`, the built-in ones (e.g. @deprecated) are kept as they are.
   return new GraphQLSchema({
     ...config,
     types: sortBy(config.types, type => type.name),
     directives: sortBy(config.directives, directive => directive.name).map(directive => {
+      if (isSpecifiedDirective(directive)) {
+        return directive;
+      }
       const directiveConfig = directive.toConfig();
       return new GraphQLDirective({
         ...directiveConfig,

@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildASTSchema, parse } from 'graphql';
-import { createLogger } from 'graphql-yoga';
+import { Logger } from 'graphql-yoga';
 import { getServiceHost } from 'testkit/utils';
 import { createHive } from '@graphql-hive/core';
 import { appCheck, appCreate, appPublish, appRetire, cliErrorMessage } from '../../testkit/cli';
@@ -642,7 +642,7 @@ test('app:retire --force bypasses protection', async () => {
     usage: true,
     debug: false,
     agent: {
-      logger: createLogger('debug'),
+      logger: new Logger({ level: 'debug' }),
       maxSize: 1,
     },
     selfHosting: {

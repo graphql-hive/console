@@ -29,7 +29,7 @@ import {
   Sampler,
   SamplingDecision,
   SpanProcessor,
-} from '@opentelemetry/sdk-trace-node';
+} from '@opentelemetry/sdk-trace';
 import {
   SEMATTRS_HTTP_METHOD,
   SEMATTRS_HTTP_REQUEST_CONTENT_LENGTH,
@@ -65,7 +65,7 @@ export class TracingInstance {
     if (this.options.collectorEndpoint) {
       // Grafana endpoint
       const httpExporter = new OTLPTraceExporter({ url: this.options.collectorEndpoint });
-      processors.push(new ServiceBatchSpanProcessor(httpExporter));
+      processors.push(new ServiceBatchSpanProcessor({ exporter: httpExporter }));
     }
     if (this.options.hiveTracing) {
       // Hive Tracing endpoint

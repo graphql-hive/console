@@ -17,7 +17,7 @@
     "@types/lodash.lowercase": "4.3.7",
     "ajv": "catalog:",
     "dotenv": "catalog:",
-    "esquery": "1.5.0",
+    "esquery": "1.7.0",
     "fastify": "catalog:",
     "graphql": "catalog:",
     "json-schema-to-ts": "2.9.1",

@@ -4,8 +4,7 @@
  * Most of this code originates from there. The only modifications is to not instantiate a JS DateTime but keep the value as a string in order to retain
  * nano second precission.
  */
-import { GraphQLScalarType, Kind } from 'graphql';
-import { createGraphQLError } from 'graphql-yoga';
+import { GraphQLError, GraphQLScalarType, Kind } from 'graphql';
 
 const leapYear = (year: number): boolean => {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
@@ -86,20 +85,20 @@ export const DateTime64 = new GraphQLScalarType({
       if (validateJSDate(value)) {
         return value.toISOString();
       }
-      throw createGraphQLError('DateTime cannot represent an invalid Date instance');
+      throw new GraphQLError('DateTime cannot represent an invalid Date instance');
     } else if (typeof value === 'string') {
       if (validateDateTime(value)) {
         return parseDateTime(value);
       }
-      throw createGraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+      throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
     } else if (typeof value === 'number') {
       try {
         return new Date(value).toISOString();
       } catch {
-        throw createGraphQLError('DateTime cannot represent an invalid Unix timestamp ' + value);
+        throw new GraphQLError('DateTime cannot represent an invalid Unix timestamp ' + value);
       }
     } else {
-      throw createGraphQLError(
+      throw new GraphQLError(
         'DateTime cannot be serialized from a non string, ' +
           'non numeric or non Date type ' +
           JSON.stringify(value),
@@ -111,21 +110,21 @@ export const DateTime64 = new GraphQLScalarType({
       if (validateJSDate(value)) {
         return value.toISOString();
       }
-      throw createGraphQLError('DateTime cannot represent an invalid Date instance');
+      throw new GraphQLError('DateTime cannot represent an invalid Date instance');
     }
     if (typeof value === 'string') {
       if (validateDateTime(value)) {
         return parseDateTime(value);
       }
-      throw createGraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
+      throw new GraphQLError(`DateTime cannot represent an invalid date-time-string ${value}.`);
     }
-    throw createGraphQLError(
+    throw new GraphQLError(
       `DateTime cannot represent non string or Date type ${JSON.stringify(value)}`,
     );
   },
   parseLiteral(ast) {
     if (ast.kind !== Kind.STRING) {
-      throw createGraphQLError(
+      throw new GraphQLError(
         `DateTime cannot represent non string or Date type ${'value' in ast && ast.value}`,
         {
           nodes: ast,
@@ -136,7 +135,7 @@ export const DateTime64 = new GraphQLScalarType({
     if (validateDateTime(value)) {
       return parseDateTime(value);
     }
-    throw createGraphQLError(
+    throw new GraphQLError(
       `DateTime cannot represent an invalid date-time-string ${String(value)}.`,
       { nodes: ast },
     );

@@ -1,5 +1,39 @@
 # @graphql-hive/cli
 
+## 0.69.0
+
+### Minor Changes
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade the bundled `graphql` dependency from v16
+  to v17.
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Upgrade `@graphql-tools/*` to their latest majors
+  (`@graphql-tools/utils@13`, `@graphql-tools/load@9`, `@graphql-tools/url-loader@10` and the file
+  loaders). `@graphql-tools/utils@13` requires Node.js `>=22.18.0`.
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Require Node.js `>=22.23.5`, the latest Node.js 22
+  release. The upgraded `@graphql-tools/*`, `graphql-yoga` and Hive Gateway dependencies already
+  need at least `22.18.0`.
+
+### Patch Changes
+
+- [#8976](https://github.com/graphql-hive/console/pull/8976)
+  [`a8547ef`](https://github.com/graphql-hive/console/commit/a8547efb129928eb7951a452bc4f494ee5249e02)
+  Thanks [@jdolle](https://github.com/jdolle)! - Upgrade '@theguild/federation-composition' to
+  validate composition results that could produce a schema with an interface whose implementation
+  has a deprecated field when the interface has not yet deprecated the field
+- Updated dependencies
+  [[`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3),
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3),
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)]:
+  - @graphql-hive/core@0.25.0
+
 ## 0.68.7
 
 ### Patch Changes

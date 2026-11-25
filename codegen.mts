@@ -66,7 +66,7 @@ const config: CodegenConfig = {
       config: { includeDirectives: true },
     },
     './packages/web/app/src/gql/': {
-      documents: ['./packages/web/app/src/(components|lib|pages|server)/**/*.ts(x)?'],
+      documents: ['./packages/web/app/src/{components,lib,pages,server}/**/*.{ts,tsx}'],
       preset: 'client',
       config: {
         enumType: 'native',
@@ -94,7 +94,7 @@ const config: CodegenConfig = {
     },
     // CLI
     './packages/libraries/cli/src/gql/': {
-      documents: ['./packages/libraries/cli/src/(commands|helpers)/**/*.ts'],
+      documents: ['./packages/libraries/cli/src/{commands,helpers}/**/*.ts'],
       preset: 'client',
       config: {
         enumType: 'native',
@@ -111,7 +111,7 @@ const config: CodegenConfig = {
     },
     // Integration tests
     './integration-tests/testkit/gql/': {
-      documents: ['./integration-tests/(testkit|tests)/**/*.ts'],
+      documents: ['./integration-tests/{testkit,tests}/**/*.ts'],
       preset: 'client',
       config: {
         enumType: 'native',

@@ -3,13 +3,13 @@ import type { FastifyBaseLogger, FastifyReply, FastifyRequest, RouteHandlerMetho
 import { GraphQLError, ValidationContext, ValidationRule } from 'graphql';
 import {
   createYoga,
+  Logger,
   Plugin,
   useErrorHandler,
   useExecutionCancellation,
   useExtendContext,
 } from 'graphql-yoga';
 import { isGraphQLError } from '@envelop/core';
-import { useGraphQlJit } from '@envelop/graphql-jit';
 import { useGraphQLModules } from '@envelop/graphql-modules';
 import {
   useOpenTelemetry,
@@ -66,12 +66,6 @@ const NoIntrospection: ValidationRule = (context: ValidationContext) => ({
     }
   },
 });
-
-function hasFastifyRequest(ctx: unknown): ctx is {
-  req: FastifyRequest;
-} {
-  return !!ctx && typeof ctx === 'object' && 'req' in ctx;
-}
 
 export function useHiveErrorHandler(unexpectedErrorLogger: (err: unknown) => void): Plugin {
   return useErrorHandler(({ errors, context: unsafeContest, phase }): void => {
@@ -199,9 +193,32 @@ export function useHiveTracing(): Plugin {
   };
 }
 
+/**
+ * graphql-yoga@6 only accepts a Hive `Logger` for `logging`.
+ * Forward its records to our (msg-first) Fastify logger, which tags them with the request id.
+ */
+export function createYogaLogger(logger: FastifyBaseLogger): Logger {
+  return new Logger({
+    // let the Fastify logger decide what to drop
+    level: 'trace',
+    writers: [
+      {
+        write(level, attrs, msg) {
+          const log: (msg: string, ...args: unknown[]) => void = logger[level].bind(logger);
+          if (attrs) {
+            log(msg ?? '', attrs);
+          } else {
+            log(msg ?? '');
+          }
+        },
+      },
+    ],
+  });
+}
+
 export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMethod => {
   const server = createYoga<Context>({
-    logging: options.logger,
+    logging: createYogaLogger(options.logger),
     plugins: [
       // The session cookie is `SameSite=Lax`, so it is sent along with cross-site top-level GET navigations.
       // Reject requests that did not go through a CORS preflight unless they carry a custom header.
@@ -273,24 +290,6 @@ export const graphqlHandler = (options: GraphQLHandlerOptions): RouteHandlerMeth
         signature: options.signature,
         isNonProductionEnvironment: options.isProduction === false,
       }),
-      useGraphQlJit(
-        {},
-        {
-          enableIf(args) {
-            if (hasFastifyRequest(args.contextValue)) {
-              // Enable JIT only for Hive App
-              const name = args.contextValue.req.headers['graphql-client-name'] as string;
-
-              return name === 'Hive App';
-            }
-
-            return false;
-          },
-          onError(r) {
-            options.logger.error(r);
-          },
-        },
-      ),
       options.tracing ? useHiveTracing() : {},
       useExecutionCancellation(),
     ],

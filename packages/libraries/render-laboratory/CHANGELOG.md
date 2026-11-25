@@ -1,5 +1,28 @@
 # @graphql-yoga/render-graphiql
 
+## 0.2.0
+
+### Minor Changes
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Support Hive Gateway v3 and `graphql-yoga@6`. The
+  `@graphql-hive/gateway-runtime` peer dependency now accepts `^3.0.0`, and the `graphql-yoga` peer
+  dependency of `@graphql-hive/render-laboratory` now accepts `^6`.
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Require Node.js `>=22.23.5`, the latest Node.js 22
+  release. The upgraded `@graphql-tools/*`, `graphql-yoga` and Hive Gateway dependencies already
+  need at least `22.18.0`.
+
+### Patch Changes
+
+- Updated dependencies
+  [[`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3),
+  [`f2e6c5d`](https://github.com/graphql-hive/console/commit/f2e6c5d1792664c0b37431fa9cb23b1d74d55945)]:
+  - @graphql-hive/laboratory@0.4.1
+
 ## 0.1.22
 
 ### Patch Changes

@@ -18,13 +18,11 @@ import { collectSchemaCoordinates, preprocessOperation } from '@graphql-hive/cor
 import { buildOperationS3BucketKey } from '@hive/cdn-script/artifact-storage-reader';
 import { setErrorSource, traceFn, traceInlineSync } from '@hive/service-common';
 import { sql as c_sql, ClickHouse } from '../../operations/providers/clickhouse-client';
+import type { SerializedWorkerError } from '../../shared/lib/worker-task';
 import { Logger } from '../../shared/providers/logger';
 import { S3Writer } from '../../shared/providers/s3-writer';
 import type { R2ErrorTraceSummary, S3WriteMetric } from '../../shared/providers/s3-writer';
-import {
-  PERSISTED_DOCUMENT_BATCH_TIMEOUT_MS,
-  type SerializedWorkerError,
-} from './persisted-document-scheduler';
+import { PERSISTED_DOCUMENT_BATCH_TIMEOUT_MS } from './persisted-document-scheduler';
 
 type DocumentRecord = {
   appDeploymentId: string;

@@ -1,5 +1,35 @@
 # @graphql-hive/yoga
 
+## 0.51.0
+
+### Minor Changes
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - **BREAKING:** Support `graphql@17` and drop support
+  for `graphql@0.13`, `graphql@14` and `graphql@15`. The `graphql` peer dependency is now
+  `^16.0.0 || ^17.0.0`.
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Require Node.js `>=22.23.5`, the latest Node.js 22
+  release. The upgraded `@graphql-tools/*`, `graphql-yoga` and Hive Gateway dependencies already
+  need at least `22.18.0`.
+
+### Patch Changes
+
+- [#8981](https://github.com/graphql-hive/console/pull/8981)
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix logging with `graphql-yoga@6`, which replaced
+  `yoga.logger` with a Hive Logger at `yoga.log`. Previously, any log written by the Hive client or
+  the usage collector threw when used with `graphql-yoga@6`.
+
+- Updated dependencies
+  [[`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3),
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3),
+  [`7136537`](https://github.com/graphql-hive/console/commit/7136537bc60be496949ccdbba8692abc5aaeaed3)]:
+  - @graphql-hive/core@0.25.0
+
 ## 0.50.2
 
 ### Patch Changes

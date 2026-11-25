@@ -3,7 +3,7 @@ import { formatISO } from 'date-fns/formatISO';
 import { parse as parseDate } from 'date-fns/parse';
 import { subHours } from 'date-fns/subHours';
 import { buildASTSchema, buildSchema, parse, print, TypeInfo } from 'graphql';
-import { createLogger } from 'graphql-yoga';
+import { Logger } from 'graphql-yoga';
 import { graphql } from 'testkit/gql';
 import { BreakingChangeFormulaType, ProjectType } from 'testkit/gql/graphql';
 import { execute } from 'testkit/graphql';
@@ -3034,7 +3034,7 @@ test.concurrent(
       usage: true,
       debug: false,
       agent: {
-        logger: createLogger('debug'),
+        logger: new Logger({ level: 'debug' }),
         maxSize: 1,
       },
       selfHosting: {
@@ -3238,7 +3238,7 @@ test.concurrent(
       usage: true,
       debug: false,
       agent: {
-        logger: createLogger('debug'),
+        logger: new Logger({ level: 'debug' }),
         maxSize: 1,
       },
       selfHosting: {
@@ -3398,7 +3398,7 @@ test.concurrent(
       usage: true,
       debug: false,
       agent: {
-        logger: createLogger('debug'),
+        logger: new Logger({ level: 'debug' }),
         maxSize: 1,
       },
       selfHosting: {
@@ -3523,7 +3523,7 @@ test('subscription operation is used for conditional breaking change detection',
     usage: true,
     debug: false,
     agent: {
-      logger: createLogger('debug'),
+      logger: new Logger({ level: 'debug' }),
       maxSize: 1,
     },
     selfHosting: {

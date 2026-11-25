@@ -9,6 +9,7 @@ import { AwsClient } from '../../cdn/providers/aws';
 import type { S3CredentialProvider } from '../../cdn/providers/aws';
 import { ClickHouse } from '../../operations/providers/clickhouse-client';
 import type { ClickHouseConfig } from '../../operations/providers/tokens';
+import { serializeWorkerError } from '../../shared/lib/worker-task';
 import { HttpClient } from '../../shared/providers/http-client';
 import { Logger } from '../../shared/providers/logger';
 import { S3Config } from '../../shared/providers/s3-config';
@@ -21,7 +22,6 @@ import {
   type BatchProcessEvent,
   type BatchProcessingErrorEvent,
 } from '../providers/persisted-document-ingester';
-import { serializeWorkerError } from '../providers/persisted-document-scheduler';
 
 /**
  * Create a worker for processing incoming persisted operations.
