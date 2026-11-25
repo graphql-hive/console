@@ -32,17 +32,21 @@ export const Target: Pick<
       withChanges: isFieldRequestedDeep(info, [['SchemaVersion', 'supergraphChanges']]),
     });
   },
-  async schemaVersion(target, args, { injector }) {
+  async schemaVersion(target, args, { injector }, info) {
     const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
-    return await injector.get(SchemaManager).getSchemaVersionForGraphById(graph, args.id);
+    return await injector.get(SchemaManager).getSchemaVersionForGraphById(graph, args.id, {
+      withSDL: isSchemaVersionSDLRequested(info),
+    });
   },
   async latestSchemaVersion(target, _, { injector }) {
     const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
     return injector.get(SchemaManager).getMaybeLatestVersionForGraph(graph);
   },
-  async latestValidSchemaVersion(target, __, { injector }) {
+  async latestValidSchemaVersion(target, __, { injector }, info) {
     const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
-    return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph);
+    return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph, {
+      withSDL: isSchemaVersionSDLRequested(info),
+    });
   },
   baseSchema: (target, _, { injector }) => {
     return injector.get(SchemaManager).getBaseSchemaForTarget(target);
@@ -138,12 +142,15 @@ export function isSDLRequested(info: Parameters<typeof isFieldRequestedDeep>[0])
   ]);
 }
 
+/**
+ * Whether the operation reads a schema version's SDL directly, so loading it up front saves a query.
+ * The explorer, unused schema and deprecated schema read a cached snapshot instead and only load
+ * the SDL (on demand) when the snapshot has to be built.
+ */
 export function isSchemaVersionSDLRequested(info: Parameters<typeof isFieldRequestedDeep>[0]) {
   return isFieldRequestedDeep(
     info,
-    ['sdl', 'supergraph', 'explorer', 'unusedSchema', 'deprecatedSchema'].map(
-      fieldName => ['SchemaVersion', fieldName] as const,
-    ),
+    ['sdl', 'supergraph'].map(fieldName => ['SchemaVersion', fieldName] as const),
   );
 }
 

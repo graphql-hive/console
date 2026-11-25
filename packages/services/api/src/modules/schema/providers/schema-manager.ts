@@ -71,6 +71,11 @@ export class SchemaManager {
   private logger: Logger;
   private latestSchemaVersionLoader: DataLoader<TargetSelector, SchemaVersion>;
   private latestValidVersionByGraphLoader: DataLoader<Graph, StoredSchemaVersion | null, string>;
+  private latestValidVersionWithoutSDLByGraphLoader: DataLoader<
+    Graph,
+    StoredSchemaVersion | null,
+    string
+  >;
 
   constructor(
     logger: Logger,
@@ -117,6 +122,15 @@ export class SchemaManager {
       graphs =>
         Promise.all(
           graphs.map(graph => this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(graph)),
+        ),
+      { cacheKeyFn: graph => graph.id },
+    );
+    this.latestValidVersionWithoutSDLByGraphLoader = new DataLoader(
+      graphs =>
+        Promise.all(
+          graphs.map(graph =>
+            this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(graph, { withSDL: false }),
+          ),
         ),
       { cacheKeyFn: graph => graph.id },
     );
@@ -291,10 +305,25 @@ export class SchemaManager {
     return this.schemaVersions.getMatchingServiceSchemaOfVersions(versions);
   }
 
-  async getMaybeLatestValidVersionForGraph(graph: Graph) {
-    this.logger.debug('Fetching maybe latest valid version (graphId=%s)', graph.id);
+  /**
+   * `withSDL: false` leaves out the (large) SDL columns, for callers that do not need them or load
+   * them on demand through `SchemaVersionHelper`.
+   */
+  async getMaybeLatestValidVersionForGraph(
+    graph: Graph,
+    { withSDL = true }: { withSDL?: boolean } = {},
+  ) {
+    this.logger.debug(
+      'Fetching maybe latest valid version (graphId=%s, withSDL=%s)',
+      graph.id,
+      withSDL,
+    );
 
-    const version = await this.latestValidVersionByGraphLoader.load(graph);
+    const version = await (
+      withSDL
+        ? this.latestValidVersionByGraphLoader
+        : this.latestValidVersionWithoutSDLByGraphLoader
+    ).load(graph);
 
     if (!version) {
       return null;
@@ -1376,12 +1405,16 @@ export class SchemaManager {
     };
   }
 
-  async getSchemaVersionForGraphById(graph: Graph, id: string) {
+  async getSchemaVersionForGraphById(
+    graph: Graph,
+    id: string,
+    options: { withSDL?: boolean } = {},
+  ) {
     if (!isUUID(id)) {
       this.logger.debug('Invalid UUID provided. (versionId=%s)', id);
       return null;
     }
-    const version = await this.schemaVersions.getSchemaVersionForGraphById(graph, id);
+    const version = await this.schemaVersions.getSchemaVersionForGraphById(graph, id, options);
 
     if (!version) {
       return null;

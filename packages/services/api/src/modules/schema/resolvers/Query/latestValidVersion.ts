@@ -3,11 +3,13 @@ import { GraphStore } from '../../../graph/providers/graph-store';
 import { IdTranslator } from '../../../shared/providers/id-translator';
 import { TargetManager } from '../../../target/providers/target-manager';
 import { SchemaManager } from '../../providers/schema-manager';
+import { isSchemaVersionSDLRequested } from '../Target';
 
 export const latestValidVersion: NonNullable<QueryResolvers['latestValidVersion']> = async (
   _,
   args,
   { injector, session },
+  info,
 ) => {
   const selector = await injector.get(IdTranslator).resolveTargetReference({
     reference: args.target ?? null,
@@ -27,6 +29,8 @@ export const latestValidVersion: NonNullable<QueryResolvers['latestValidVersion'
 
     const target = await injector.get(TargetManager).getTargetById({ targetId: selector.targetId });
     const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target.id);
-    return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph);
+    return injector.get(SchemaManager).getMaybeLatestValidVersionForGraph(graph, {
+      withSDL: isSchemaVersionSDLRequested(info),
+    });
   }
 };

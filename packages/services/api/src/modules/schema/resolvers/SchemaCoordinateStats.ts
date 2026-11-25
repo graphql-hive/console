@@ -9,7 +9,8 @@ export const SchemaCoordinateStats: Pick<SchemaCoordinateStatsResolvers, 'superg
     const graph = await injector.get(GraphStore).getDefaultGraphForTargetId(target);
     const latestVersion = await injector
       .get(SchemaManager)
-      .getMaybeLatestValidVersionForGraph(graph);
+      // Owners come from the explorer snapshot, metadata from the version: no SDL needed.
+      .getMaybeLatestValidVersionForGraph(graph, { withSDL: false });
     if (!latestVersion) {
       return null;
     }

@@ -834,11 +834,17 @@ export class SchemaVersionStore {
     );
   }
 
-  async getMaybeLatestValidSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion | null> {
+  /**
+   * `withSDL: false` leaves out the (large) SDL columns; `SchemaVersionHelper` loads them on demand.
+   */
+  async getMaybeLatestValidSchemaVersionForGraph(
+    graph: Graph,
+    { withSDL = true }: { withSDL?: boolean } = {},
+  ): Promise<SchemaVersion | null> {
     let version = await this.pg.maybeOne(
       psql`/* getLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`"sv".`)}
+          ${schemaVersionSQLFields(psql`"sv".`, { withSDL, withChanges: true })}
         FROM
           "schema_versions" as "sv"
         WHERE
@@ -857,7 +863,7 @@ export class SchemaVersionStore {
     version = await this.pg.maybeOne(
       psql`/* getLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`"sv".`)}
+          ${schemaVersionSQLFields(psql`"sv".`, { withSDL, withChanges: true })}
         FROM
           "schema_versions" as "sv"
         WHERE
@@ -1102,8 +1108,15 @@ export class SchemaVersionStore {
   async getSchemaVersionForGraphById(
     graph: Graph,
     schemaVersionId: string,
+    { withSDL = true }: { withSDL?: boolean } = {},
   ): Promise<SchemaVersion | null> {
-    const schemaVersion = await this.getSchemaVersionById(schemaVersionId);
+    const schemaVersion = withSDL
+      ? await this.getSchemaVersionById(schemaVersionId)
+      : await this.getSchemaVersionByIdWithProjection({
+          schemaVersionId,
+          withSDL: false,
+          withChanges: true,
+        });
 
     if (
       schemaVersion &&

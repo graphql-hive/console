@@ -109,19 +109,32 @@ export class SchemaVersionHelper {
     return composition.errors?.length ? composition.errors : null;
   }
 
+  /**
+   * The schema version with its SDL columns. Versions loaded without them (to keep large SDLs out
+   * of requests that do not need them) get them with one query, shared by all callers of a request.
+   */
   @cache<SchemaVersion>(version => version.id)
-  async getCompositeSchemaSdl(schemaVersion: SchemaVersion): Promise<string | null> {
-    if (!schemaVersion.hasLoadedSDL) {
-      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
-      if (!fullSchemaVersion) {
-        return null;
-      }
-      schemaVersion = {
-        ...schemaVersion,
-        hasLoadedSDL: true,
-        compositeSchemaSDL: fullSchemaVersion.compositeSchemaSDL,
-        supergraphSDL: fullSchemaVersion.supergraphSDL,
-      };
+  private async withLoadedSDL(schemaVersion: SchemaVersion): Promise<SchemaVersion | null> {
+    if (schemaVersion.hasLoadedSDL) {
+      return schemaVersion;
+    }
+    const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
+    if (!fullSchemaVersion) {
+      return null;
+    }
+    return {
+      ...schemaVersion,
+      hasLoadedSDL: true,
+      compositeSchemaSDL: fullSchemaVersion.compositeSchemaSDL,
+      supergraphSDL: fullSchemaVersion.supergraphSDL,
+    };
+  }
+
+  @cache<SchemaVersion>(version => version.id)
+  async getCompositeSchemaSdl(version: SchemaVersion): Promise<string | null> {
+    const schemaVersion = await this.withLoadedSDL(version);
+    if (!schemaVersion) {
+      return null;
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
@@ -144,10 +157,12 @@ export class SchemaVersionHelper {
   }
 
   @cache<SchemaVersion>(version => version.id)
-  async getSupergraphSdl(schemaVersion: SchemaVersion): Promise<string | null> {
-    if (!schemaVersion.hasLoadedSDL) {
-      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
-      return fullSchemaVersion?.supergraphSDL ?? null;
+  async getSupergraphSdl(version: SchemaVersion): Promise<string | null> {
+    // Takes the same path whether or not the SDL was loaded with the version: older versions
+    // without persisted changes are composed in both cases.
+    const schemaVersion = await this.withLoadedSDL(version);
+    if (!schemaVersion) {
+      return null;
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
