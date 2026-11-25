@@ -1,4 +1,4 @@
-import { parse } from 'graphql';
+import { buildASTSchema, parse } from 'graphql';
 import { composeAndValidate } from '@apollo/federation';
 import { composeFederationV1, composeFederationV2 } from '../src/lib/compose';
 
@@ -30,6 +30,15 @@ test('patch', () => {
     },
     {
       typeDefs: parse(/* GraphQL */ `
+        directive @meta on ENUM
+
+        enum BarKind {
+          A
+          B
+        }
+
+        extend enum BarKind @meta
+
         type Query {
           bar: Bar
         }
@@ -43,6 +52,7 @@ test('patch', () => {
     },
   ]);
 
+  expect(result.schema.getType('Bar')).toBeDefined();
   expect(result.errors!.map(e => e.message)).not.toContainEqual(
     expect.stringMatching('Unknown type "Bar"'),
   );
@@ -167,6 +177,54 @@ test.each([
     ]);
   },
 );
+
+test('federation v1 keeps the definitions declared after a root type without fields', ({
+  expect,
+}) => {
+  const result = composeFederationV1([
+    {
+      typeDefs: parse(/* GraphQL */ `
+        type Query {
+          order: Order
+        }
+
+        type Order @key(fields: "id") {
+          id: ID!
+        }
+      `),
+      name: 'orders',
+      url: 'https://orders.example.com/graphql',
+    },
+    {
+      typeDefs: parse(/* GraphQL */ `
+        type Query
+
+        type Mutation
+
+        type Shipment @key(fields: "id") {
+          id: ID!
+        }
+
+        extend type Query {
+          shipment: Shipment
+        }
+
+        extend type Mutation {
+          createShipment: Shipment
+        }
+      `),
+      name: 'shipments',
+      url: 'https://shipments.example.com/graphql',
+    },
+  ]);
+
+  expect(result.type).toBe('success');
+  assert(result.type === 'success');
+  const schema = buildASTSchema(result.result.sdlDocumentNode);
+  expect(schema.getType('Shipment')).toBeDefined();
+  expect(schema.getQueryType()?.getFields()).toHaveProperty('shipment');
+  expect(schema.getMutationType()?.getFields()).toHaveProperty('createShipment');
+});
 
 test('federation v1 reports an internal composer exception as an unexpected composition error', ({
   expect,

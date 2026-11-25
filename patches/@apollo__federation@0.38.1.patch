@@ -1,8 +1,30 @@
 diff --git a/dist/composition/compose.js b/dist/composition/compose.js
-index dbf319952c630aa8c0f534e06bd0258e06bcaf8a..101e1afc8803a6899b11e31b2b20faba28c20345 100644
+index dbf319952c630aa8c0f534e06bd0258e06bcaf8a..6cd5c910e48c46fb07b8503ebb4afc75b04e6ddb 100644
 --- a/dist/composition/compose.js
 +++ b/dist/composition/compose.js
-@@ -148,7 +148,17 @@ function buildMapsFromServiceList(serviceList) {
+@@ -74,9 +74,7 @@ function buildMapsFromServiceList(serviceList) {
+                 const typeName = definition.name.value;
+                 if (definition.kind === graphql_1.Kind.OBJECT_TYPE_EXTENSION ||
+                     definition.kind === graphql_1.Kind.INPUT_OBJECT_TYPE_EXTENSION) {
+-                    if (!definition.fields)
+-                        break;
+-                    const fields = (0, utils_1.mapFieldNamesToServiceName)(definition.fields, serviceName);
++                    const fields = (0, utils_1.mapFieldNamesToServiceName)(definition.fields ?? [], serviceName);
+                     if (typeToServiceMap[typeName]) {
+                         typeToServiceMap[typeName].extensionFieldsToOwningServiceMap = {
+                             ...typeToServiceMap[typeName].extensionFieldsToOwningServiceMap,
+@@ -90,9 +88,7 @@ function buildMapsFromServiceList(serviceList) {
+                     }
+                 }
+                 if (definition.kind === graphql_1.Kind.ENUM_TYPE_EXTENSION) {
+-                    if (!definition.values)
+-                        break;
+-                    const values = (0, utils_1.mapFieldNamesToServiceName)(definition.values, serviceName);
++                    const values = (0, utils_1.mapFieldNamesToServiceName)(definition.values ?? [], serviceName);
+                     if (typeToServiceMap[typeName]) {
+                         typeToServiceMap[typeName].extensionFieldsToOwningServiceMap = {
+                             ...typeToServiceMap[typeName].extensionFieldsToOwningServiceMap,
+@@ -148,7 +144,17 @@ function buildMapsFromServiceList(serviceList) {
      };
  }
  exports.buildMapsFromServiceList = buildMapsFromServiceList;
@@ -20,7 +42,7 @@ index dbf319952c630aa8c0f534e06bd0258e06bcaf8a..101e1afc8803a6899b11e31b2b20faba
      let errors = undefined;
      const autoIncludedDirectiveDefinitions = directives_1.directivesWithAutoIncludedDefinitions.filter((directive) => directiveMetadata.hasUsages(directive.name));
      const { FieldSetScalar, JoinFieldDirective, JoinTypeDirective, JoinOwnerDirective, JoinGraphEnum, JoinGraphDirective, } = (0, joinSpec_1.getJoinDefinitions)(serviceList);
-@@ -169,6 +179,34 @@ function buildSchemaFromDefinitionsAndExtensions({ typeDefinitionsMap, typeExten
+@@ -169,6 +175,34 @@ function buildSchemaFromDefinitionsAndExtensions({ typeDefinitionsMap, typeExten
      function nodeHasInterfaces(node) {
          return 'interfaces' in node;
      }
@@ -55,7 +77,7 @@ index dbf319952c630aa8c0f534e06bd0258e06bcaf8a..101e1afc8803a6899b11e31b2b20faba
      const definitionsDocument = {
          kind: graphql_1.Kind.DOCUMENT,
          definitions: [
-@@ -200,12 +238,13 @@ function buildSchemaFromDefinitionsAndExtensions({ typeDefinitionsMap, typeExten
+@@ -200,12 +234,13 @@ function buildSchemaFromDefinitionsAndExtensions({ typeDefinitionsMap, typeExten
              assumeValidSDL: true,
          });
      }
