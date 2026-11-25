@@ -16,7 +16,7 @@
   "license": "MIT",
   "private": true,
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=22.23.5"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

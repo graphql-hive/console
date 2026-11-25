@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@graphql-hive/logger": "1.1.0",
+    "@graphql-hive/logger": "1.1.1",
     "@graphql-inspector/core": "catalog:",
     "@graphql-inspector/patch": "catalog:",
     "@graphql-yoga/redis-event-target": "catalog:",

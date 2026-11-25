@@ -268,7 +268,7 @@ test('usage reporting for persisted document', async () => {
     .post('/usage', body => {
       expect(body.map).toMatchInlineSnapshot(`
         {
-          ace78a32bbf8a79071356e5d5b13c5c83baf4e14: {
+          e177af2873d4e055cb0570bb384641c2253e4f4c: {
             fields: [
               Query.hi,
             ],
@@ -281,7 +281,7 @@ test('usage reporting for persisted document', async () => {
       expect(body.operations).toMatchObject([
         {
           metadata: {},
-          operationMapKey: 'ace78a32bbf8a79071356e5d5b13c5c83baf4e14',
+          operationMapKey: 'e177af2873d4e055cb0570bb384641c2253e4f4c',
           persistedDocumentHash: 'client-name~client-version~hash',
         },
       ]);

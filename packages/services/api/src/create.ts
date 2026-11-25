@@ -53,6 +53,7 @@ import {
   SCHEMA_SERVICE_CONFIG,
   SchemaServiceConfig,
 } from './modules/schema/providers/orchestrator/tokens';
+import { SchemaDiffWorkerConfig } from './modules/schema/providers/schema-diff-scheduler';
 import { sharedModule } from './modules/shared';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { HttpClient } from './modules/shared/providers/http-client';
@@ -121,6 +122,7 @@ export function createRegistry({
   s3AuditLogs,
   encryptionSecret,
   schemaConfig,
+  schemaDiffWorker,
   supportConfig,
   oidcIntegrationConfig,
   pubSub,
@@ -167,6 +169,7 @@ export function createRegistry({
     };
   } | null;
   schemaConfig: SchemaModuleConfig;
+  schemaDiffWorker: SchemaDiffWorkerConfig['config'];
   supportConfig: SupportConfig | null;
   oidcIntegrationConfig: OIDCIntegrationConfig;
   pubSub: HivePubSub;
@@ -347,6 +350,11 @@ export function createRegistry({
       useValue: new Encryptor(encryptionSecret),
     },
     provideSchemaModuleConfig(schemaConfig),
+    {
+      provide: SchemaDiffWorkerConfig,
+      useValue: new SchemaDiffWorkerConfig(schemaDiffWorker),
+      scope: Scope.Singleton,
+    },
     provideCommerceConfig(commerce),
     {
       provide: Session,

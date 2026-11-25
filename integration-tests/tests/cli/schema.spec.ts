@@ -1551,21 +1551,23 @@ test.concurrent('schema:check works with federated subgraphs', async () => {
   const yogaFederation = createYoga({
     logging: false,
     plugins: [useDisableIntrospection()],
-    schema: buildSubgraphSchema({
-      typeDefs: parse(/* GraphQL */ `
-        extend type Query {
-          me: User
-          user(id: ID!): User
-          users: [User]
-        }
+    schema: buildSubgraphSchema([
+      {
+        typeDefs: parse(/* GraphQL */ `
+          extend type Query {
+            me: User
+            user(id: ID!): User
+            users: [User]
+          }
 
-        type User @key(fields: "id") {
-          id: ID!
-          name: String
-          username: String
-        }
-      `),
-    }),
+          type User @key(fields: "id") {
+            id: ID!
+            name: String
+            username: String
+          }
+        `),
+      },
+    ]),
   });
 
   server.route({
@@ -1585,7 +1587,7 @@ test.concurrent('schema:check works with federated subgraphs', async () => {
   const { createOrg } = await initSeed().createOwner();
   const { inviteAndJoinMember, createProject } = await createOrg();
   await inviteAndJoinMember();
-  const { createTargetAccessToken } = await createProject(ProjectType.Single);
+  const { createTargetAccessToken } = await createProject(ProjectType.Federation);
   const { secret } = await createTargetAccessToken({});
 
   await expect(
@@ -1596,6 +1598,10 @@ test.concurrent('schema:check works with federated subgraphs', async () => {
       'jdolle',
       '--commit',
       'abc123',
+      '--service',
+      'users',
+      '--url',
+      'http://users.localhost/graphql',
       url + yogaFederation.graphqlEndpoint,
     ]),
   ).resolves.toContain('Published initial schema');
@@ -1606,6 +1612,8 @@ test.concurrent('schema:check works with federated subgraphs', async () => {
       secret,
       '--commit',
       'abc1234',
+      '--service',
+      'users',
       url + yogaFederation.graphqlEndpoint,
     ]),
   ).resolves.toContain('No changes');

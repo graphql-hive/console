@@ -1,5 +1,5 @@
 import { buildASTSchema, parse } from 'graphql';
-import { createLogger } from 'graphql-yoga';
+import { Logger } from 'graphql-yoga';
 import { pollFor, waitForExpectations } from 'testkit/flow';
 import { initSeed } from 'testkit/seed';
 import { getServiceHost } from 'testkit/utils';
@@ -2182,7 +2182,7 @@ test('app deployment usage reporting', async () => {
     usage: true,
     debug: false,
     agent: {
-      logger: createLogger('debug'),
+      logger: new Logger({ level: 'debug' }),
       maxSize: 1,
     },
     selfHosting: {
@@ -2760,7 +2760,7 @@ test('activeAppDeployments filters by lastUsedBefore', async () => {
     usage: true,
     debug: false,
     agent: {
-      logger: createLogger('debug'),
+      logger: new Logger({ level: 'debug' }),
       maxSize: 1,
     },
     selfHosting: {
@@ -2922,7 +2922,7 @@ test('activeAppDeployments applies OR logic between lastUsedBefore and neverUsed
     usage: true,
     debug: false,
     agent: {
-      logger: createLogger('debug'),
+      logger: new Logger({ level: 'debug' }),
       maxSize: 1,
     },
     selfHosting: {
@@ -3199,7 +3199,7 @@ test('activeAppDeployments filters by name combined with lastUsedBefore', async 
     usage: true,
     debug: false,
     agent: {
-      logger: createLogger('debug'),
+      logger: new Logger({ level: 'debug' }),
       maxSize: 1,
     },
     selfHosting: {
@@ -5624,7 +5624,7 @@ test('retire app deployment with --force bypasses protection', async () => {
     usage: true,
     debug: false,
     agent: {
-      logger: createLogger('debug'),
+      logger: new Logger({ level: 'debug' }),
       maxSize: 1,
     },
     selfHosting: {

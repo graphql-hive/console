@@ -178,7 +178,7 @@ test('federation v1 reports an internal composer exception as an unexpected comp
           a: A
         }
 
-        type A @key {
+        type A @key(fields: "") {
           id: ID!
         }
       `),

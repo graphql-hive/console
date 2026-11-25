@@ -9,7 +9,7 @@
   },
   "devDependencies": {
     "@apollo/composition": "catalog:",
-    "@apollo/federation-internals": "2.14.0",
+    "@apollo/federation-internals": "2.14.5",
     "@graphql-hive/external-composition": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@whatwg-node/server": "catalog:",

@@ -9,7 +9,7 @@ import {
   SpanProcessor,
   type ReadableSpan,
   type Span,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 
 /** Note: this is inlined for now... */
 class MultiSpanProcessor implements SpanProcessor {
@@ -67,31 +67,29 @@ if (
     // Noop is only there to not raise an exception in case we do not hive console tracing.
     target: process.env['HIVE_HIVE_TARGET'] ?? 'noop',
     contextManager: new AsyncLocalStorageContextManager(),
-    // @ts-expect-error console uses otel v1 and hive gateway uses v2
-    // TODO: upgrade console to otel v2
     processor: new MultiSpanProcessor([
       ...(process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN'] &&
       process.env['HIVE_HIVE_TRACE_ENDPOINT'] &&
       process.env['HIVE_HIVE_TARGET']
         ? [
-            new BatchSpanProcessor(
-              new OTLPTraceExporter({
+            new BatchSpanProcessor({
+              exporter: new OTLPTraceExporter({
                 url: process.env['HIVE_HIVE_TRACE_ENDPOINT'],
                 headers: {
                   Authorization: `Bearer ${process.env['HIVE_HIVE_TRACE_ACCESS_TOKEN']}`,
                   'X-Hive-Target-Ref': process.env['HIVE_HIVE_TARGET'],
                 },
               }),
-            ),
+            }),
           ]
         : []),
       ...(process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT']
         ? [
-            new BatchSpanProcessor(
-              new OTLPTraceExporter({
+            new BatchSpanProcessor({
+              exporter: new OTLPTraceExporter({
                 url: process.env['OPENTELEMETRY_COLLECTOR_ENDPOINT']!,
               }),
-            ),
+            }),
           ]
         : []),
     ]),

@@ -3,13 +3,13 @@ import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'url';
 import { Injectable, Scope } from 'graphql-modules';
 import {
-  getErrorSource,
   getRequestId,
   injectActiveTraceContext,
   setErrorSource,
   trace,
   traceFn,
 } from '@hive/service-common';
+import { deserializeWorkerError } from '../../shared/lib/worker-task';
 import { Logger, registerWorkerLogging } from '../../shared/providers/logger';
 import {
   observeR2ErrorTrace,
@@ -37,30 +37,6 @@ type PendingTaskRecord = {
     r2ErrorTraceSummary?: R2ErrorTraceSummary;
   }) => void;
 };
-
-export type SerializedWorkerError = {
-  name: string;
-  message: string;
-  stack: string | undefined;
-  source: string | null;
-};
-
-export function serializeWorkerError(error: unknown): SerializedWorkerError {
-  const normalizedError = error instanceof Error ? error : new Error(String(error));
-  return {
-    name: normalizedError.name,
-    message: normalizedError.message,
-    stack: normalizedError.stack,
-    source: getErrorSource(normalizedError),
-  };
-}
-
-export function deserializeWorkerError(error: SerializedWorkerError): Error {
-  const deserializedError = new Error(error.message);
-  deserializedError.name = error.name;
-  deserializedError.stack = error.stack;
-  return error.source ? setErrorSource(deserializedError, error.source) : deserializedError;
-}
 
 @Injectable({
   scope: Scope.Singleton,

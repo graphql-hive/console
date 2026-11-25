@@ -356,6 +356,7 @@ export async function main() {
           }
         : null,
       encryptionSecret: env.encryptionSecret,
+      schemaDiffWorker: env.schemaDiffWorker,
       schemaConfig: env.hiveServices.webApp
         ? {
             schemaPublishLink(input) {
@@ -642,7 +643,7 @@ export async function main() {
         method: ['GET'],
         url: '/artifacts/v1/*',
         async handler(req, reply) {
-          const response = await artifactRouteHandler.handleNodeRequest(req);
+          const response = await artifactRouteHandler.handleNodeRequestAndResponse(req, reply);
 
           if (response === undefined) {
             void reply.status(404).send('Not found.');

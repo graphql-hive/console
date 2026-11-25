@@ -4,9 +4,9 @@ import type { DangerousChangeType } from '@hive/api/__generated__/types';
 import type { OperationsReader } from '../../operations/providers/operations-reader';
 import type { SchemaPolicyProvider } from '../../policy/providers/schema-policy.provider';
 import { NoopLogger } from '../../shared/providers/logger';
-import { Inspector } from './inspector';
 import type { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks, type GetAffectedAppDeployments } from './registry-checks';
+import { SchemaDiffScheduler, SchemaDiffWorkerConfig } from './schema-diff-scheduler';
 import { SchemaHelper } from './schema-helper';
 
 /** A registry whose usage data is the given request count per schema coordinate. */
@@ -25,7 +25,10 @@ function createRegistryChecks(usage: Record<string, number>) {
   return new RegistryChecks(
     new SchemaHelper(),
     {} as unknown as SchemaPolicyProvider,
-    new Inspector(logger),
+    new SchemaDiffScheduler(
+      logger,
+      new SchemaDiffWorkerConfig({ workerCount: 0, maxOldGenerationSizeMb: 0, timeoutMs: 0 }),
+    ),
     logger,
     operationsReader as unknown as OperationsReader,
     {} as unknown as CompositionOrchestrator,
