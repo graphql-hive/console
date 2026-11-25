@@ -458,7 +458,7 @@ function FederationModalContent(props: { cdnUrl: string }) {
                   multiline
                   value={`docker run --name apollo-router -p 4000:4000 --rm \\
   --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
-  --env HIVE_CDN_KEY="<hive_cdn_access_key>"
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>" \\
   ghcr.io/graphql-hive/apollo-router`}
                 />
                 <p>
@@ -491,7 +491,7 @@ function FederationModalContent(props: { cdnUrl: string }) {
                   multiline
                   value={`docker run --name grafbase-gateway -p 5000:5000 --rm \\
   --env HIVE_CDN_ENDPOINT="${dockerCdnUrl}" \\
-  --env HIVE_CDN_KEY="<hive_cdn_access_key>"
+  --env HIVE_CDN_KEY="<hive_cdn_access_key>" \\
   ghcr.io/grafbase/gateway`}
                 />
                 <p>
