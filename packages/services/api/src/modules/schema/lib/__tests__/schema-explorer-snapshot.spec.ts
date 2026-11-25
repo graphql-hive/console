@@ -2,9 +2,8 @@ import { parse } from 'graphql';
 import { composeServices } from '@theguild/federation-composition';
 import {
   buildSchemaExplorerSnapshot,
-  getEntry,
-  getTypeEntities,
-  getTypeEntity,
+  encodeSchemaExplorerSnapshot,
+  SchemaExplorerSnapshotReader,
   type SchemaExplorerSnapshot,
 } from '../schema-explorer-snapshot.js';
 
@@ -55,44 +54,45 @@ function compose() {
   return buildSchemaExplorerSnapshot(parse(result.publicSdl!), parse(result.supergraphSdl!));
 }
 
-/** What the cache hands out: the snapshot after a JSON round trip. */
-function fromCache(snapshot: SchemaExplorerSnapshot): SchemaExplorerSnapshot {
-  return JSON.parse(JSON.stringify(snapshot));
+/** What the cache hands out: a reader of the encoded snapshot. */
+function fromCache(snapshot: SchemaExplorerSnapshot): SchemaExplorerSnapshotReader {
+  return SchemaExplorerSnapshotReader.fromBuffer(encodeSchemaExplorerSnapshot(snapshot))!;
 }
 
 test('entries are keyed by schema coordinate and point to their children', () => {
   const snapshot = fromCache(compose());
 
-  expect(getEntry(snapshot, 'Product')).toMatchObject({
+  expect(snapshot.getEntry('Product')).toMatchObject({
     kind: 'ObjectTypeDefinition',
     fields: ['Product.id', 'Product.name', 'Product.category', 'Product.reviews'],
     ownedBy: expect.arrayContaining(['products', 'reviews']),
   });
-  expect(getEntry(snapshot, 'Product.reviews')).toEqual({
+  expect(snapshot.getEntry('Product.reviews')).toEqual({
     kind: 'FieldDefinition',
     type: '[Review!]!',
     args: ['Product.reviews.first'],
     ownedBy: ['reviews'],
   });
-  expect(getEntry(snapshot, 'Product.reviews.first')).toEqual({
+  expect(snapshot.getEntry('Product.reviews.first')).toEqual({
     kind: 'InputValueDefinition',
     type: 'Int',
     defaultValue: 10,
   });
-  expect(getEntry(snapshot, 'Product.name')).toMatchObject({
+  expect(snapshot.getEntry('Product.name')).toMatchObject({
     deprecationReason: 'use title',
     ownedBy: ['products'],
   });
-  expect(getEntry(snapshot, 'Category')).toMatchObject({ values: ['Category.A', 'Category.B'] });
-  expect(getEntry(snapshot, 'SearchResult')).toMatchObject({ members: ['Review'] });
-  expect(getEntry(snapshot, 'Product.unknown')).toBe(null);
+  expect(snapshot.getEntry('Category')).toMatchObject({ values: ['Category.A', 'Category.B'] });
+  expect(snapshot.getEntry('SearchResult')).toMatchObject({ members: ['Review'] });
+  expect(snapshot.getEntry('Product.unknown')).toBe(null);
 });
 
 test('types, roots and subgraph names', () => {
   const snapshot = fromCache(compose());
 
-  expect(snapshot.types).toEqual([...snapshot.types].sort((a, b) => a.localeCompare(b)));
-  expect(snapshot.types.some(name => name.startsWith('__'))).toBe(false);
+  const types = snapshot.getTypeNames({ withBuiltInScalars: true });
+  expect(types).toEqual([...types].sort((a, b) => a.localeCompare(b)));
+  expect(types.some(name => name.startsWith('__'))).toBe(false);
   expect(snapshot.queryTypeName).toBe('Query');
   expect(snapshot.mutationTypeName).toBe('Mutation');
   expect(snapshot.subscriptionTypeName).toBe(null);
@@ -138,7 +138,7 @@ test('deprecatedTypes covers deprecated fields, arguments, enum values and input
 test('types are assembled from their entries', () => {
   const snapshot = fromCache(compose());
 
-  expect(getTypeEntity(snapshot, 'Product')).toEqual({
+  expect(snapshot.getTypeEntity('Product')).toEqual({
     kind: 'ObjectTypeDefinition',
     name: 'Product',
     interfaces: [],
@@ -154,7 +154,7 @@ test('types are assembled from their entries', () => {
     ],
   });
   // A field coordinate is not a type.
-  expect(getTypeEntity(snapshot, 'Product.reviews')).toBe(null);
+  expect(snapshot.getTypeEntity('Product.reviews')).toBe(null);
 });
 
 test('built-in scalars are flagged and can be left out', () => {
@@ -162,18 +162,14 @@ test('built-in scalars are flagged and can be left out', () => {
     buildSchemaExplorerSnapshot(parse(`type Query { a: String, d: Date } scalar Date`), null),
   );
 
-  expect(getEntry(snapshot, 'String')).toMatchObject({ builtIn: true });
-  expect(getEntry(snapshot, 'Date')).not.toHaveProperty('builtIn');
-  expect(getTypeEntities(snapshot, { withBuiltInScalars: true }).map(t => t.name)).toEqual([
-    'Boolean',
-    'Date',
-    'Query',
-    'String',
-  ]);
-  expect(getTypeEntities(snapshot, { withBuiltInScalars: false }).map(t => t.name)).toEqual([
-    'Date',
-    'Query',
-  ]);
+  expect(snapshot.getEntry('String')).toMatchObject({ builtIn: true });
+  expect(snapshot.getEntry('Date')).not.toHaveProperty('builtIn');
+  expect(
+    snapshot.getTypeEntities(snapshot.getTypeNames({ withBuiltInScalars: true })).map(t => t.name),
+  ).toEqual(['Boolean', 'Date', 'Query', 'String']);
+  expect(
+    snapshot.getTypeEntities(snapshot.getTypeNames({ withBuiltInScalars: false })).map(t => t.name),
+  ).toEqual(['Date', 'Query']);
   expect(snapshot.subgraphNames).toEqual([]);
 });
 
@@ -197,12 +193,12 @@ test('default values are coerced, including nested input object defaults', () =>
     ),
   );
 
-  expect(getEntry(snapshot, 'Query.f.i')).toMatchObject({ defaultValue: { a: 2, e: 'A' } });
-  expect(getEntry(snapshot, 'Query.f.e')).toMatchObject({ defaultValue: 'B' });
-  expect(getEntry(snapshot, 'Query.f.s')).toMatchObject({ defaultValue: null });
-  expect(getEntry(snapshot, 'Query.f.l')).toMatchObject({ defaultValue: [1, 2] });
-  expect(getEntry(snapshot, 'Query.f.none')).not.toHaveProperty('defaultValue');
-  expect(getEntry(snapshot, 'I.a')).toMatchObject({ defaultValue: 1 });
+  expect(snapshot.getEntry('Query.f.i')).toMatchObject({ defaultValue: { a: 2, e: 'A' } });
+  expect(snapshot.getEntry('Query.f.e')).toMatchObject({ defaultValue: 'B' });
+  expect(snapshot.getEntry('Query.f.s')).toMatchObject({ defaultValue: null });
+  expect(snapshot.getEntry('Query.f.l')).toMatchObject({ defaultValue: [1, 2] });
+  expect(snapshot.getEntry('Query.f.none')).not.toHaveProperty('defaultValue');
+  expect(snapshot.getEntry('I.a')).toMatchObject({ defaultValue: 1 });
 });
 
 test('Object.prototype keys are not entries', () => {
@@ -210,7 +206,101 @@ test('Object.prototype keys are not entries', () => {
     buildSchemaExplorerSnapshot(parse(`type Query { constructor: String }`), null),
   );
 
-  expect(getEntry(snapshot, 'constructor')).toBe(null);
-  expect(getTypeEntity(snapshot, 'toString')).toBe(null);
-  expect(getEntry(snapshot, 'Query.constructor')).toMatchObject({ type: 'String' });
+  expect(snapshot.getEntry('constructor')).toBe(null);
+  expect(snapshot.getTypeEntity('toString')).toBe(null);
+  expect(snapshot.getEntry('Query.constructor')).toMatchObject({ type: 'String' });
+});
+
+test('ownership of types comes from the header, of other coordinates from their entries', () => {
+  const snapshot = fromCache(compose());
+
+  expect(snapshot.getOwnedBy('Product')?.sort()).toEqual(['products', 'reviews']);
+  expect(snapshot.getOwnedBy('Product.reviews')).toEqual(['reviews']);
+  expect(snapshot.getOwnedBy('Product.reviews.first')).toBe(null);
+  expect(snapshot.getOwnedBy('Unknown')).toBe(null);
+  expect(snapshot.getOwnedBy('Unknown.field')).toBe(null);
+});
+
+test('reading a buffer of another format returns null', () => {
+  const buffer = encodeSchemaExplorerSnapshot(compose());
+  expect(SchemaExplorerSnapshotReader.fromBuffer(buffer)).not.toBe(null);
+
+  const otherVersion = Buffer.from(buffer);
+  otherVersion.writeUInt8(otherVersion.readUInt8(3) + 1, 3);
+  expect(SchemaExplorerSnapshotReader.fromBuffer(otherVersion)).toBe(null);
+  expect(SchemaExplorerSnapshotReader.fromBuffer(Buffer.from('{"coordinates":{}}'))).toBe(null);
+  expect(SchemaExplorerSnapshotReader.fromBuffer(Buffer.alloc(0))).toBe(null);
+});
+
+test('non-ASCII descriptions survive the byte offsets', () => {
+  const snapshot = fromCache(
+    buildSchemaExplorerSnapshot(
+      parse(/* GraphQL */ `
+        "Über 🚀 café"
+        type Query {
+          "naïve ✓"
+          a: String
+          b: Unicode
+        }
+        "日本語"
+        type Unicode {
+          x: Int
+        }
+      `),
+      null,
+    ),
+  );
+
+  expect(snapshot.getTypeEntity('Query')).toMatchObject({
+    description: 'Über 🚀 café',
+    fields: [{ name: 'a', description: 'naïve ✓' }, { name: 'b' }],
+  });
+  expect(snapshot.getTypeEntity('Unicode')).toMatchObject({ description: '日本語' });
+});
+
+describe('getLazyTypeEntity', () => {
+  test('equals the assembled type for every type', () => {
+    const snapshot = fromCache(compose());
+    const properties = ['kind', 'name', 'description', 'interfaces', 'fields', 'values', 'members'];
+    for (const typename of snapshot.getTypeNames({ withBuiltInScalars: true })) {
+      const lazy = snapshot.getLazyTypeEntity(typename)!;
+      const assembled = snapshot.getTypeEntity(typename)!;
+      // The getters live on the prototype, so read every property explicitly.
+      expect(
+        Object.fromEntries(properties.filter(p => p in lazy).map(p => [p, (lazy as any)[p]])),
+      ).toEqual(assembled);
+      expect(properties.filter(p => p in lazy)).toEqual(properties.filter(p => p in assembled));
+    }
+    expect(snapshot.getLazyTypeEntity('Unknown')).toBe(null);
+  });
+
+  test('listing names, kinds and owners decodes no type', () => {
+    const snapshot = fromCache(compose());
+    const parse = vi.spyOn(JSON, 'parse');
+    try {
+      const listed = snapshot.getTypeNames({ withBuiltInScalars: true }).map(typename => {
+        const entity = snapshot.getLazyTypeEntity(typename)!;
+        return [entity.name, entity.kind, snapshot.getOwnedBy(typename)];
+      });
+      expect(listed).toContainEqual([
+        'Product',
+        'ObjectTypeDefinition',
+        expect.arrayContaining(['products', 'reviews']),
+      ]);
+      expect(parse).not.toHaveBeenCalled();
+
+      // The first access to anything else decodes the type, once.
+      const product = snapshot.getLazyTypeEntity('Product')!;
+      expect(product.description).toBe(undefined);
+      expect('fields' in product && product.fields.map(field => field.name)).toEqual([
+        'id',
+        'name',
+        'category',
+        'reviews',
+      ]);
+      expect(parse).toHaveBeenCalledTimes(1);
+    } finally {
+      parse.mockRestore();
+    }
+  });
 });

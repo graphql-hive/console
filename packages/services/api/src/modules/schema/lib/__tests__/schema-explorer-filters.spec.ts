@@ -2,44 +2,43 @@ import { parse } from 'graphql';
 import { onlyDeprecatedTypes, onlyUnusedTypes } from '../schema-explorer-filters.js';
 import {
   buildSchemaExplorerSnapshot,
-  getTypeEntities,
-  getTypeEntity,
+  SchemaExplorerSnapshotReader,
 } from '../schema-explorer-snapshot.js';
 
-const snapshot = buildSchemaExplorerSnapshot(
-  parse(/* GraphQL */ `
-    type Query {
-      a(x: Int, y: String @deprecated(reason: "no")): String
-      b: Int @deprecated
-      c: Node
-      d: SearchResult
-      e(in: In): E
-    }
-    interface Node {
-      id: ID!
-    }
-    type Impl implements Node {
-      id: ID!
-    }
-    input In {
-      a: Int = 1
-      b: String @deprecated
-    }
-    enum E {
-      A
-      B @deprecated
-    }
-    enum F {
-      X
-    }
-    union SearchResult = Impl
-    scalar Date
-  `),
-  null,
+const snapshot = SchemaExplorerSnapshotReader.fromSnapshot(
+  buildSchemaExplorerSnapshot(
+    parse(/* GraphQL */ `
+      type Query {
+        a(x: Int, y: String @deprecated(reason: "no")): String
+        b: Int @deprecated
+        c: Node
+        d: SearchResult
+        e(in: In): E
+      }
+      interface Node {
+        id: ID!
+      }
+      type Impl implements Node {
+        id: ID!
+      }
+      input In {
+        a: Int = 1
+        b: String @deprecated
+      }
+      enum E {
+        A
+        B @deprecated
+      }
+      enum F {
+        X
+      }
+      union SearchResult = Impl
+      scalar Date
+    `),
+    null,
+  ),
 );
-const sdlTypes = getTypeEntities(JSON.parse(JSON.stringify(snapshot)), {
-  withBuiltInScalars: false,
-});
+const sdlTypes = snapshot.getTypeEntities(snapshot.getTypeNames({ withBuiltInScalars: false }));
 
 /** Type name to its remaining fields/values/members, for compact assertions. */
 function outline(types: ReturnType<typeof onlyUnusedTypes>) {
@@ -102,12 +101,54 @@ describe('onlyUnusedTypes', () => {
   });
 });
 
+describe('getTypesWithUnusedCoordinates', () => {
+  const allCoordinates = sdlTypes.flatMap(type => [
+    type.name,
+    ...('fields' in type
+      ? type.fields.flatMap(field => [
+          `${type.name}.${field.name}`,
+          ...('args' in field
+            ? field.args.map(arg => `${type.name}.${field.name}.${arg.name}`)
+            : []),
+        ])
+      : []),
+    ...('values' in type ? type.values.map(value => `${type.name}.${value.name}`) : []),
+  ]);
+
+  test('filtering only these types gives the same result as filtering all types', () => {
+    let seed = 7;
+    const random = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    for (let i = 0; i < 300; i++) {
+      const ratio = random();
+      const used = new Set(allCoordinates.filter(() => random() < ratio));
+      expect(
+        onlyUnusedTypes(
+          snapshot.getTypeEntities(snapshot.getTypesWithUnusedCoordinates(used)),
+          used,
+        ),
+      ).toEqual(onlyUnusedTypes(sdlTypes, used));
+    }
+  });
+
+  test('skips types that are entirely used and built-in scalars', () => {
+    expect(snapshot.getTypesWithUnusedCoordinates(new Set())).toEqual(
+      sdlTypes.map(type => type.name),
+    );
+    expect(snapshot.getTypesWithUnusedCoordinates(new Set(allCoordinates))).toEqual([]);
+    expect(
+      snapshot.getTypesWithUnusedCoordinates(
+        new Set(allCoordinates.filter(coordinate => coordinate !== 'Query.a.x')),
+      ),
+    ).toEqual(['Query']);
+  });
+});
+
 describe('onlyDeprecatedTypes', () => {
   test('only needs the types in deprecatedTypes', () => {
     expect(snapshot.deprecatedTypes).toEqual(['E', 'In', 'Query']);
-    expect(
-      onlyDeprecatedTypes(snapshot.deprecatedTypes.map(name => getTypeEntity(snapshot, name)!)),
-    ).toEqual(onlyDeprecatedTypes(sdlTypes));
+    expect(onlyDeprecatedTypes(snapshot.getTypeEntities(snapshot.deprecatedTypes))).toEqual(
+      onlyDeprecatedTypes(sdlTypes),
+    );
   });
 
   test('keeps deprecated parts and fields with deprecated arguments', () => {

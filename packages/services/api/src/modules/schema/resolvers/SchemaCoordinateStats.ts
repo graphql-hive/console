@@ -1,5 +1,4 @@
 import { GraphStore } from '../../graph/providers/graph-store';
-import { getEntry } from '../lib/schema-explorer-snapshot';
 import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';
 import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/types';
@@ -15,9 +14,7 @@ export const SchemaCoordinateStats: Pick<SchemaCoordinateStatsResolvers, 'superg
       return null;
     }
     const snapshot = await injector.get(SchemaVersionHelper).getExplorerSnapshot(latestVersion);
-    const ownedByServiceNames = snapshot
-      ? getEntry(snapshot, schemaCoordinate)?.ownedBy
-      : undefined;
+    const ownedByServiceNames = snapshot?.getOwnedBy(schemaCoordinate);
 
     return {
       __typename: 'SupergraphMetadata',

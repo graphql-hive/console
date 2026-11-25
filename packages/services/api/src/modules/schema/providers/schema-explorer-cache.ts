@@ -1,69 +1,81 @@
-import { BentoCache, bentostore } from 'bentocache';
-import { memoryDriver } from 'bentocache/drivers/memory';
-import { redisDriver } from 'bentocache/drivers/redis';
 import { Inject, Injectable, Scope } from 'graphql-modules';
-import { prometheusPlugin } from '@bentocache/plugin-prometheus';
-import {
-  PROMETHEUS_CACHE_KEY_GROUPS,
-  PrometheusConfig,
-} from '../../shared/providers/prometheus-config';
+import { LRUCache } from 'lru-cache';
+import * as Sentry from '@sentry/node';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
-import type { SchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
+import {
+  SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
+  SchemaExplorerSnapshotReader,
+  type SchemaExplorerSnapshot,
+} from '../lib/schema-explorer-snapshot';
+
+/** Bounds the binary snapshots kept in memory (outside the JS heap) per API instance. */
+const MEMORY_MAX_BYTES = 256 * 1024 * 1024;
+/** A schema version never changes after it is written; the TTL only bounds Redis memory. */
+const REDIS_TTL_SECONDS = 24 * 60 * 60;
 
 /**
- * Bump when the shape of `SchemaExplorerSnapshot` changes, so stale entries are not read.
- */
-const SNAPSHOT_FORMAT_VERSION = 1;
-
-/**
- * Caches the schema explorer snapshot per schema version.
- * A schema version never changes after it is written, so entries never need invalidation;
- * the TTL only bounds memory.
+ * Caches the binary schema explorer snapshot per schema version: in memory (readers with their
+ * parsed headers, up to `MEMORY_MAX_BYTES`) and in Redis (the raw bytes).
+ * Snapshots are immutable, so entries never need to be invalidated.
  */
 @Injectable({
   scope: Scope.Singleton,
   global: true,
 })
 export class SchemaExplorerCache {
-  private cache: BentoCache<{ store: ReturnType<typeof bentostore> }>;
+  private memory = new LRUCache<string, SchemaExplorerSnapshotReader>({
+    maxSize: MEMORY_MAX_BYTES,
+    sizeCalculation: reader => Math.max(1, reader.byteLength),
+  });
+  /** Loads or builds in progress, so concurrent requests for a version share one. */
+  private inflight = new Map<string, Promise<SchemaExplorerSnapshotReader | null>>();
 
-  constructor(@Inject(REDIS_INSTANCE) redis: Redis, prometheusConfig: PrometheusConfig) {
-    const prefix = `bentocache:schemaExplorer:v${SNAPSHOT_FORMAT_VERSION}`;
-    this.cache = new BentoCache({
-      default: 'schemaExplorer',
-      plugins: prometheusConfig.isEnabled
-        ? [
-            prometheusPlugin({
-              prefix: 'bentocache_schemaExplorer',
-              keyGroups: PROMETHEUS_CACHE_KEY_GROUPS,
-            }),
-          ]
-        : undefined,
-      stores: {
-        schemaExplorer: bentostore()
-          .useL1Layer(
-            memoryDriver({
-              // Snapshots of large schemas are several MB, so bound by size rather than count.
-              maxSize: '256mb',
-              prefix,
-            }),
-          )
-          .useL2Layer(redisDriver({ connection: redis, prefix })),
-      },
-    });
-  }
+  constructor(@Inject(REDIS_INSTANCE) private redis: Redis) {}
 
-  /**
-   * Concurrent calls for the same schema version share one `build`.
-   */
   getOrBuild(
     schemaVersionId: string,
     build: () => Promise<SchemaExplorerSnapshot | null>,
-  ): Promise<SchemaExplorerSnapshot | null> {
-    return this.cache.getOrSet({
-      key: schemaVersionId,
-      factory: build,
-      ttl: '1d',
+  ): Promise<SchemaExplorerSnapshotReader | null> {
+    const inMemory = this.memory.get(schemaVersionId);
+    if (inMemory) {
+      return Promise.resolve(inMemory);
+    }
+
+    let pending = this.inflight.get(schemaVersionId);
+    if (!pending) {
+      pending = this.load(schemaVersionId, build).finally(() => {
+        this.inflight.delete(schemaVersionId);
+      });
+      this.inflight.set(schemaVersionId, pending);
+    }
+    return pending;
+  }
+
+  private async load(
+    schemaVersionId: string,
+    build: () => Promise<SchemaExplorerSnapshot | null>,
+  ): Promise<SchemaExplorerSnapshotReader | null> {
+    const key = `schema-explorer-snapshot:v${SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION}:${schemaVersionId}`;
+
+    const stored = await this.redis.getBuffer(key).catch(error => {
+      // Not being able to read the cache must not fail the request; build the snapshot instead.
+      Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
+      return null;
     });
+    let reader = stored ? SchemaExplorerSnapshotReader.fromBuffer(stored) : null;
+
+    if (!reader) {
+      const snapshot = await build();
+      if (!snapshot) {
+        return null;
+      }
+      reader = SchemaExplorerSnapshotReader.fromSnapshot(snapshot);
+      await this.redis.setex(key, REDIS_TTL_SECONDS, reader.toBuffer()).catch(error => {
+        Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
+      });
+    }
+
+    this.memory.set(schemaVersionId, reader);
+    return reader;
   }
 }

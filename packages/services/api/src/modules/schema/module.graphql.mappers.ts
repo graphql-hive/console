@@ -10,7 +10,7 @@ import type { DateRange, PushedCompositeSchema, SingleSchema } from '../../share
 import type { PromiseOrValue } from '../../shared/helpers';
 import type { ContractGraph } from '../graph/providers/graph-store';
 import type {
-  SchemaExplorerSnapshot,
+  SchemaExplorerSnapshotReader,
   SchemaExplorerTypeEntity,
 } from './lib/schema-explorer-snapshot';
 import type {
@@ -71,7 +71,7 @@ export type ExplorerSupergraph = {
   subgraphNames: Array<string>;
 };
 export type SchemaExplorerMapper = {
-  snapshot: SchemaExplorerSnapshot;
+  snapshot: SchemaExplorerSnapshotReader;
   usage: {
     period: DateRange;
     organizationId: string;

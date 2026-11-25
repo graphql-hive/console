@@ -1,7 +1,6 @@
 import type { GraphQLObjectTypeMapper, SchemaExplorerMapper } from '../module.graphql.mappers';
 import { Kind } from 'graphql';
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { getTypeEntities, getTypeEntity } from '../lib/schema-explorer-snapshot';
 import { fieldsSupergraph, memo, toNamedTypeMapper, withUsedByClients } from '../utils';
 import type { SchemaExplorerResolvers } from './../../../__generated__/types';
 
@@ -9,7 +8,7 @@ type UsageLoader = GraphQLObjectTypeMapper['usage'];
 
 export const SchemaExplorer: SchemaExplorerResolvers = {
   type: async (source, { name }, { injector }) => {
-    const entity = getTypeEntity(source.snapshot, name);
+    const entity = source.snapshot.getTypeEntity(name);
     if (!entity) {
       return null;
     }
@@ -42,9 +41,10 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
       arg => arg,
     );
 
-    return getTypeEntities(snapshot, { withBuiltInScalars: true }).map(entity =>
-      toNamedTypeMapper(entity, () => getStats(entity.name), supergraph),
-    );
+    return snapshot
+      .getTypeNames({ withBuiltInScalars: true })
+      .flatMap(typename => snapshot.getLazyTypeEntity(typename) ?? [])
+      .map(entity => toNamedTypeMapper(entity, () => getStats(entity.name), supergraph));
   },
   query: (source, _, { injector }) =>
     rootTypeMapper(source, source.snapshot.queryTypeName, injector.get(OperationsManager)),
@@ -88,7 +88,7 @@ function rootTypeMapper(
   typename: string | null,
   operationsManager: OperationsManager,
 ): GraphQLObjectTypeMapper | null {
-  const entity = typename ? getTypeEntity(source.snapshot, typename) : null;
+  const entity = typename ? source.snapshot.getTypeEntity(typename) : null;
   if (!entity || entity.kind !== Kind.OBJECT_TYPE_DEFINITION) {
     return null;
   }

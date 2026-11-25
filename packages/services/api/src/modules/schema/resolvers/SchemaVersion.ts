@@ -3,12 +3,7 @@ import { OperationsManager } from '../../operations/providers/operations-manager
 import { Logger } from '../../shared/providers/logger';
 import { isFieldRequestedDeep } from '../lib/graphql-info-helper';
 import { onlyDeprecatedTypes, onlyUnusedTypes } from '../lib/schema-explorer-filters';
-import {
-  getEntry,
-  getTypeEntities,
-  getTypeEntity,
-  type SchemaExplorerSnapshot,
-} from '../lib/schema-explorer-snapshot';
+import type { SchemaExplorerSnapshotReader } from '../lib/schema-explorer-snapshot';
 import { Contracts } from '../providers/contracts';
 import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';
@@ -95,7 +90,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
 
     return {
       types: onlyUnusedTypes(
-        getTypeEntities(snapshot, { withBuiltInScalars: false }),
+        snapshot.getTypeEntities(snapshot.getTypesWithUnusedCoordinates(usedCoordinates)),
         usedCoordinates,
       ),
       usage: {
@@ -130,9 +125,7 @@ export const SchemaVersion: SchemaVersionResolvers = {
       .usagePeriod({ organizationId: version.organizationId }, args.period?.absoluteRange);
 
     return {
-      types: onlyDeprecatedTypes(
-        snapshot.deprecatedTypes.flatMap(typename => getTypeEntity(snapshot, typename) ?? []),
-      ),
+      types: onlyDeprecatedTypes(snapshot.getTypeEntities(snapshot.deprecatedTypes)),
       usage: {
         period,
         organizationId: version.organizationId,
@@ -189,10 +182,10 @@ export const SchemaVersion: SchemaVersionResolvers = {
 
 function explorerSupergraph(
   version: SchemaVersionMapper,
-  snapshot: SchemaExplorerSnapshot,
+  snapshot: SchemaExplorerSnapshotReader,
 ): ExplorerSupergraph {
   return {
-    getOwnedByServices: coordinate => getEntry(snapshot, coordinate)?.ownedBy ?? null,
+    getOwnedByServices: coordinate => snapshot.getOwnedBy(coordinate),
     getMetadata: coordinate =>
       version.schemaMetadata && Object.hasOwn(version.schemaMetadata, coordinate)
         ? version.schemaMetadata[coordinate]
