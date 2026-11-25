@@ -1,10 +1,14 @@
-import { buildASTSchema } from '../../../shared/schema';
+import type { ExplorerSupergraph, SchemaVersionMapper } from '../module.graphql.mappers';
 import { OperationsManager } from '../../operations/providers/operations-manager';
 import { Logger } from '../../shared/providers/logger';
-import { onlyDeprecatedDocumentNode } from '../lib/deprecated-graphql';
-import { extractSuperGraphInformation } from '../lib/federation-super-graph';
 import { isFieldRequestedDeep } from '../lib/graphql-info-helper';
-import { stripUsedSchemaCoordinatesFromDocumentNode } from '../lib/unused-graphql';
+import { onlyDeprecatedTypes, onlyUnusedTypes } from '../lib/schema-explorer-filters';
+import {
+  getEntry,
+  getTypeEntities,
+  getTypeEntity,
+  type SchemaExplorerSnapshot,
+} from '../lib/schema-explorer-snapshot';
 import { Contracts } from '../providers/contracts';
 import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';
@@ -54,44 +58,27 @@ export const SchemaVersion: SchemaVersionResolvers = {
     const period = await injector
       .get(OperationsManager)
       .usagePeriod({ organizationId: version.organizationId }, usage?.period);
-    // @todo use graphql resolve info to optimize this query
-    const [schemaAst, supergraphAst] = await Promise.all([
-      injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
-      injector.get(SchemaVersionHelper).getSupergraphAst(version),
-    ]);
+    const snapshot = await injector.get(SchemaVersionHelper).getExplorerSnapshot(version);
 
-    if (!schemaAst) {
+    if (!snapshot) {
       return null;
     }
 
-    const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
-
     return {
-      schema: buildASTSchema(schemaAst),
+      snapshot,
       usage: {
         period,
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,
       },
-      supergraph: {
-        schemaCoordinateMetadataMappings: version.schemaMetadata
-          ? new Map(Object.entries(version.schemaMetadata))
-          : null,
-        schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
-        metadataAttributes: version.metadataAttributes
-          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
-          : null,
-      },
+      supergraph: explorerSupergraph(version, snapshot),
     };
   },
   unusedSchema: async (version, args, { injector }) => {
-    const [schemaAst, supergraphAst] = await Promise.all([
-      injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
-      injector.get(SchemaVersionHelper).getSupergraphAst(version),
-    ]);
+    const snapshot = await injector.get(SchemaVersionHelper).getExplorerSnapshot(version);
 
-    if (!schemaAst) {
+    if (!snapshot) {
       return null;
     }
 
@@ -106,10 +93,11 @@ export const SchemaVersion: SchemaVersionResolvers = {
       period,
     });
 
-    const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
-
     return {
-      sdl: stripUsedSchemaCoordinatesFromDocumentNode(schemaAst, usedCoordinates),
+      types: onlyUnusedTypes(
+        getTypeEntities(snapshot, { withBuiltInScalars: false }),
+        usedCoordinates,
+      ),
       usage: {
         period,
         organizationId: version.organizationId,
@@ -117,78 +105,41 @@ export const SchemaVersion: SchemaVersionResolvers = {
         targetId: version.targetId,
         usedCoordinates,
       },
-      supergraph: {
-        schemaCoordinateMetadataMappings: version.schemaMetadata
-          ? new Map(Object.entries(version.schemaMetadata))
-          : null,
-        schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
-        metadataAttributes: version.metadataAttributes
-          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
-          : null,
-      },
+      supergraph: explorerSupergraph(version, snapshot),
     };
   },
   deprecatedSchema: async (version, args, { injector }) => {
-    const logger = injector.get(Logger);
+    injector
+      .get(Logger)
+      .debug(
+        'Build deprecated schema explorer. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
+        version.organizationId,
+        version.projectId,
+        version.targetId,
+        version.id,
+      );
 
-    logger.debug(
-      'Build deprecated schema explorer. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
-      version.organizationId,
-      version.projectId,
-      version.targetId,
-      version.id,
-    );
+    const snapshot = await injector.get(SchemaVersionHelper).getExplorerSnapshot(version);
 
-    const [schemaAst, supergraphAst] = await Promise.all([
-      injector.get(SchemaVersionHelper).getCompositeSchemaAst(version),
-      injector.get(SchemaVersionHelper).getSupergraphAst(version),
-    ]);
-
-    if (!schemaAst) {
+    if (!snapshot) {
       return null;
     }
-
-    const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
 
     const period = await injector
       .get(OperationsManager)
       .usagePeriod({ organizationId: version.organizationId }, args.period?.absoluteRange);
 
-    logger.debug(
-      'Start filtering full schema SDL into deprecated schema SDL. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
-      version.organizationId,
-      version.projectId,
-      version.targetId,
-      version.id,
-    );
-
-    const filteredSdl = onlyDeprecatedDocumentNode(schemaAst);
-
-    logger.debug(
-      'Finished filtering full schema SDL into deprecated schema SDL. (organizationId=%s, projectId=%s, targetId=%s, schemaVersionId=%s)',
-      version.organizationId,
-      version.projectId,
-      version.targetId,
-      version.id,
-    );
-
     return {
-      sdl: filteredSdl,
+      types: onlyDeprecatedTypes(
+        snapshot.deprecatedTypes.flatMap(typename => getTypeEntity(snapshot, typename) ?? []),
+      ),
       usage: {
         period,
         organizationId: version.organizationId,
         projectId: version.projectId,
         targetId: version.targetId,
       },
-      supergraph: {
-        schemaCoordinateMetadataMappings: version.schemaMetadata
-          ? new Map(Object.entries(version.schemaMetadata))
-          : null,
-        schemaCoordinateServicesMappings: supergraph?.schemaCoordinateServicesMappings ?? new Map(),
-        metadataAttributes: version.metadataAttributes
-          ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
-          : null,
-      },
+      supergraph: explorerSupergraph(version, snapshot),
     };
   },
   date: version => version.createdAt,
@@ -235,3 +186,20 @@ export const SchemaVersion: SchemaVersionResolvers = {
     };
   },
 };
+
+function explorerSupergraph(
+  version: SchemaVersionMapper,
+  snapshot: SchemaExplorerSnapshot,
+): ExplorerSupergraph {
+  return {
+    getOwnedByServices: coordinate => getEntry(snapshot, coordinate)?.ownedBy ?? null,
+    getMetadata: coordinate =>
+      version.schemaMetadata && Object.hasOwn(version.schemaMetadata, coordinate)
+        ? version.schemaMetadata[coordinate]
+        : null,
+    metadataAttributes: version.metadataAttributes
+      ? Object.entries(version.metadataAttributes).map(([name, values]) => ({ name, values }))
+      : null,
+    subgraphNames: snapshot.subgraphNames,
+  };
+}

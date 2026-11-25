@@ -1,8 +1,8 @@
-import { buildGraphQLTypesFromSDL } from '../utils';
+import { toNamedTypeMapper } from '../utils';
 import type { UnusedSchemaExplorerResolvers } from './../../../__generated__/types';
 
 export const UnusedSchemaExplorer: UnusedSchemaExplorerResolvers = {
-  types: ({ sdl, supergraph, usage }) => {
+  types: ({ types, supergraph, usage }) => {
     const unused = () =>
       ({
         isUsed: false,
@@ -13,8 +13,8 @@ export const UnusedSchemaExplorer: UnusedSchemaExplorerResolvers = {
         targetId: usage.targetId,
       }) as const;
 
-    return buildGraphQLTypesFromSDL(sdl, unused, supergraph).sort((a, b) =>
-      a.entity.name.localeCompare(b.entity.name),
-    );
+    return types
+      .map(entity => toNamedTypeMapper(entity, unused, supergraph))
+      .sort((a, b) => a.entity.name.localeCompare(b.entity.name));
   },
 };

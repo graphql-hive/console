@@ -1,23 +1,19 @@
 import {
-  GraphQLEnumTypeMapper,
-  GraphQLInputObjectTypeMapper,
-  GraphQLInterfaceTypeMapper,
+  ExplorerSupergraph,
   GraphQLNamedTypeMapper,
   GraphQLObjectTypeMapper,
-  GraphQLScalarTypeMapper,
-  GraphQLUnionTypeMapper,
   SchemaCoordinateUsageForUnusedExplorer,
   SchemaCoordinateUsageMapper,
   WithGraphQLParentInfo,
   WithSchemaCoordinatesUsage,
 } from './module.graphql.mappers';
 import stringify from 'fast-json-stable-stringify';
-import { ConstDirectiveNode, DEFAULT_DEPRECATION_REASON, DocumentNode, Kind, print } from 'graphql';
+import { Kind } from 'graphql';
 import type { DateRange } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import { OperationsManager } from '../operations/providers/operations-manager';
 import { TargetSelector } from '../shared/providers/storage';
-import { SuperGraphInformation } from './lib/federation-super-graph';
+import type { SchemaExplorerTypeEntity } from './lib/schema-explorer-snapshot';
 
 export function withUsedByClients<
   T extends {
@@ -101,234 +97,74 @@ export function withUsedByClients<
   >;
 }
 
-function deprecationReasonFromDirectives(directives: readonly ConstDirectiveNode[] | undefined) {
-  if (!directives) {
+export function fieldsSupergraph(
+  typename: string,
+  supergraph: ExplorerSupergraph | null,
+): GraphQLObjectTypeMapper['supergraph'] {
+  if (!supergraph) {
     return null;
   }
-
-  const deprecatedDirective = directives.find(d => d.name.value === 'deprecated');
-
-  if (!deprecatedDirective) {
-    return null;
-  }
-
-  const reasonArgument = deprecatedDirective.arguments?.find(a => a.name.value === 'reason');
-
-  if (!reasonArgument) {
-    return DEFAULT_DEPRECATION_REASON;
-  }
-
-  if (reasonArgument.value.kind !== 'StringValue') {
-    throw new Error('Expected @deprecated(reason:) to be StringValue');
-  }
-
-  return reasonArgument.value.value;
+  return {
+    getFieldMetadata: fieldName => supergraph.getMetadata(`${typename}.${fieldName}`),
+    ownedByServiceNames: supergraph.getOwnedByServices(typename),
+    getFieldOwnedByServices: fieldName => supergraph.getOwnedByServices(`${typename}.${fieldName}`),
+  };
 }
 
-export function buildGraphQLTypesFromSDL(
-  sdl: DocumentNode,
-  getStats: (
-    typeName: string,
-  ) => ReturnType<
-    | GraphQLObjectTypeMapper['usage']
-    | GraphQLInterfaceTypeMapper['usage']
-    | GraphQLUnionTypeMapper['usage']
-    | GraphQLEnumTypeMapper['usage']
-    | GraphQLInputObjectTypeMapper['usage']
-    | GraphQLScalarTypeMapper['usage']
-  >,
-  supergraph: SuperGraphInformation | null,
-) {
-  const types: Array<
-    | GraphQLObjectTypeMapper
-    | GraphQLInterfaceTypeMapper
-    | GraphQLUnionTypeMapper
-    | GraphQLEnumTypeMapper
-    | GraphQLInputObjectTypeMapper
-    | GraphQLScalarTypeMapper
-  > = [];
+export function toNamedTypeMapper(
+  entity: SchemaExplorerTypeEntity,
+  usage: GraphQLObjectTypeMapper['usage'],
+  supergraph: ExplorerSupergraph | null,
+): GraphQLNamedTypeMapper {
+  const ownedBy = (coordinate: string) => supergraph?.getOwnedByServices(coordinate) ?? null;
+  const typename = entity.name;
 
-  for (const typeDefinition of sdl.definitions) {
-    if (typeDefinition.kind === Kind.OBJECT_TYPE_DEFINITION) {
-      types.push({
-        entity: {
-          kind: Kind.OBJECT_TYPE_DEFINITION,
-          name: typeDefinition.name.value,
-          description: typeDefinition.description?.value,
-          interfaces: typeDefinition.interfaces?.map(i => i.name.value) ?? [],
-          fields:
-            typeDefinition.fields?.map(f => ({
-              name: f.name.value,
-              description: f.description?.value,
-              type: print(f.type),
-              deprecationReason: deprecationReasonFromDirectives(f.directives),
-              args:
-                f.arguments?.map(a => ({
-                  name: a.name.value,
-                  description: a.description?.value,
-                  deprecationReason: deprecationReasonFromDirectives(a.directives),
-                  type: print(a.type),
-                })) ?? [],
-            })) ?? [],
-        },
-        usage() {
-          return getStats(typeDefinition.name.value);
-        },
+  switch (entity.kind) {
+    case Kind.OBJECT_TYPE_DEFINITION:
+      return { entity, usage, supergraph: fieldsSupergraph(typename, supergraph) };
+    case Kind.INTERFACE_TYPE_DEFINITION:
+      return { entity, usage, supergraph: fieldsSupergraph(typename, supergraph) };
+    case Kind.ENUM_TYPE_DEFINITION:
+      return {
+        entity,
+        usage,
         supergraph: supergraph
           ? {
-              getFieldMetadata: (fieldName: string) =>
-                supergraph.schemaCoordinateMetadataMappings?.get(
-                  `${typeDefinition.name.value}.${fieldName}`,
-                ) ?? null,
-              ownedByServiceNames:
-                supergraph.schemaCoordinateServicesMappings.get(typeDefinition.name.value) ?? null,
-              getFieldOwnedByServices: (fieldName: string) =>
-                supergraph.schemaCoordinateServicesMappings.get(
-                  `${typeDefinition.name.value}.${fieldName}`,
-                ) ?? null,
+              ownedByServiceNames: ownedBy(typename),
+              getEnumValueOwnedByServices: valueName => ownedBy(`${typename}.${valueName}`),
             }
           : null,
-      } satisfies GraphQLObjectTypeMapper);
-    } else if (typeDefinition.kind === Kind.INTERFACE_TYPE_DEFINITION) {
-      types.push({
-        entity: {
-          kind: Kind.INTERFACE_TYPE_DEFINITION,
-          name: typeDefinition.name.value,
-          description: typeDefinition.description?.value,
-          interfaces: typeDefinition.interfaces?.map(i => i.name.value) ?? [],
-          fields:
-            typeDefinition.fields?.map(f => ({
-              name: f.name.value,
-              description: f.description?.value,
-              deprecationReason: deprecationReasonFromDirectives(f.directives),
-              type: print(f.type),
-              args:
-                f.arguments?.map(a => ({
-                  name: a.name.value,
-                  description: a.description?.value,
-                  deprecationReason: deprecationReasonFromDirectives(a.directives),
-                  type: print(a.type),
-                })) ?? [],
-            })) ?? [],
-        },
-        usage() {
-          return getStats(typeDefinition.name.value);
-        },
+      };
+    case Kind.UNION_TYPE_DEFINITION:
+      return {
+        entity,
+        usage,
         supergraph: supergraph
           ? {
-              getFieldMetadata: (fieldName: string) =>
-                supergraph.schemaCoordinateMetadataMappings?.get(
-                  `${typeDefinition.name.value}.${fieldName}`,
-                ) ?? null,
-              ownedByServiceNames:
-                supergraph.schemaCoordinateServicesMappings.get(typeDefinition.name.value) ?? null,
-              getFieldOwnedByServices: (fieldName: string) =>
-                supergraph.schemaCoordinateServicesMappings.get(
-                  `${typeDefinition.name.value}.${fieldName}`,
-                ) ?? null,
+              ownedByServiceNames: ownedBy(typename),
+              getUnionMemberOwnedByServices: memberName => ownedBy(memberName),
             }
           : null,
-      } satisfies GraphQLInterfaceTypeMapper);
-    } else if (typeDefinition.kind === Kind.ENUM_TYPE_DEFINITION) {
-      types.push({
-        entity: {
-          kind: Kind.ENUM_TYPE_DEFINITION,
-          name: typeDefinition.name.value,
-          description: typeDefinition.description?.value,
-          values:
-            typeDefinition.values?.map(value => ({
-              name: value.name.value,
-              description: value.description?.value,
-              deprecationReason: deprecationReasonFromDirectives(value.directives),
-            })) ?? [],
-        },
-        usage() {
-          return getStats(typeDefinition.name.value);
-        },
+      };
+    case Kind.INPUT_OBJECT_TYPE_DEFINITION:
+      return {
+        entity,
+        usage,
         supergraph: supergraph
           ? {
-              ownedByServiceNames:
-                supergraph.schemaCoordinateServicesMappings.get(typeDefinition.name.value) ?? null,
-              getEnumValueOwnedByServices: (fieldName: string) =>
-                supergraph.schemaCoordinateServicesMappings.get(
-                  `${typeDefinition.name.value}.${fieldName}`,
-                ) ?? null,
+              ownedByServiceNames: ownedBy(typename),
+              getInputFieldOwnedByServices: inputFieldName =>
+                ownedBy(`${typename}.${inputFieldName}`),
             }
           : null,
-      } satisfies GraphQLEnumTypeMapper);
-    } else if (typeDefinition.kind === Kind.UNION_TYPE_DEFINITION) {
-      types.push({
-        entity: {
-          kind: Kind.UNION_TYPE_DEFINITION,
-          name: typeDefinition.name.value,
-          description: typeDefinition.description?.value,
-          members:
-            typeDefinition.types?.map(t => ({
-              name: t.name.value,
-            })) ?? [],
-        },
-        usage() {
-          return getStats(typeDefinition.name.value);
-        },
-        supergraph: supergraph
-          ? {
-              ownedByServiceNames:
-                supergraph.schemaCoordinateServicesMappings.get(typeDefinition.name.value) ?? null,
-              getUnionMemberOwnedByServices: (memberName: string) =>
-                supergraph.schemaCoordinateServicesMappings.get(memberName) ?? null,
-            }
-          : null,
-      } satisfies GraphQLUnionTypeMapper);
-    } else if (typeDefinition.kind === Kind.INPUT_OBJECT_TYPE_DEFINITION) {
-      types.push({
-        entity: {
-          kind: Kind.INPUT_OBJECT_TYPE_DEFINITION,
-          name: typeDefinition.name.value,
-          description: typeDefinition.description?.value,
-          fields:
-            typeDefinition.fields?.map(f => ({
-              name: f.name.value,
-              defaultValue: f.defaultValue ? print(f.defaultValue) : undefined,
-              description: f.description?.value,
-              deprecationReason: deprecationReasonFromDirectives(f.directives),
-              type: print(f.type),
-            })) ?? [],
-        },
-        usage() {
-          return getStats(typeDefinition.name.value);
-        },
-        supergraph: supergraph
-          ? {
-              ownedByServiceNames:
-                supergraph.schemaCoordinateServicesMappings.get(typeDefinition.name.value) ?? null,
-              getInputFieldOwnedByServices: (inputFieldName: string) =>
-                supergraph.schemaCoordinateServicesMappings.get(
-                  `${typeDefinition.name.value}.${inputFieldName}`,
-                ) ?? null,
-            }
-          : null,
-      } satisfies GraphQLInputObjectTypeMapper);
-    } else if (typeDefinition.kind === Kind.SCALAR_TYPE_DEFINITION) {
-      types.push({
-        entity: {
-          kind: Kind.SCALAR_TYPE_DEFINITION,
-          name: typeDefinition.name.value,
-          description: typeDefinition.description?.value,
-        },
-        usage() {
-          return getStats(typeDefinition.name.value);
-        },
-        supergraph: supergraph
-          ? {
-              ownedByServiceNames:
-                supergraph.schemaCoordinateServicesMappings.get(typeDefinition.name.value) ?? null,
-            }
-          : null,
-      } satisfies GraphQLScalarTypeMapper);
-    }
+      };
+    case Kind.SCALAR_TYPE_DEFINITION:
+      return {
+        entity,
+        usage,
+        supergraph: supergraph ? { ownedByServiceNames: ownedBy(typename) } : null,
+      };
   }
-
-  return types;
 }
 
 export function __isTypeOf<

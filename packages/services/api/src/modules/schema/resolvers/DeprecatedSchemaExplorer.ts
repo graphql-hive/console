@@ -1,9 +1,9 @@
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { buildGraphQLTypesFromSDL, memo, withUsedByClients } from '../utils';
+import { memo, toNamedTypeMapper, withUsedByClients } from '../utils';
 import type { DeprecatedSchemaExplorerResolvers } from './../../../__generated__/types';
 
 export const DeprecatedSchemaExplorer: DeprecatedSchemaExplorerResolvers = {
-  types: ({ sdl, supergraph, usage }, _, { injector }) => {
+  types: ({ types, supergraph, usage }, _, { injector }) => {
     const operationsManager = injector.get(OperationsManager);
 
     // NOTE: this function is super heavy.
@@ -26,8 +26,8 @@ export const DeprecatedSchemaExplorer: DeprecatedSchemaExplorerResolvers = {
       arg => arg,
     );
 
-    return buildGraphQLTypesFromSDL(sdl, getStats, supergraph).sort((a, b) =>
-      a.entity.name.localeCompare(b.entity.name),
-    );
+    return types
+      .map(entity => toNamedTypeMapper(entity, () => getStats(entity.name), supergraph))
+      .sort((a, b) => a.entity.name.localeCompare(b.entity.name));
   },
 };

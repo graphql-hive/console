@@ -1,5 +1,5 @@
 import { GraphStore } from '../../graph/providers/graph-store';
-import { extractSuperGraphInformation } from '../lib/federation-super-graph';
+import { getEntry } from '../lib/schema-explorer-snapshot';
 import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';
 import type { SchemaCoordinateStatsResolvers } from './../../../__generated__/types';
@@ -14,9 +14,10 @@ export const SchemaCoordinateStats: Pick<SchemaCoordinateStatsResolvers, 'superg
     if (!latestVersion) {
       return null;
     }
-    // @note: `SchemaVersionHelper.getSupergraphAst` is cached
-    const supergraphAst = await injector.get(SchemaVersionHelper).getSupergraphAst(latestVersion);
-    const supergraph = supergraphAst ? extractSuperGraphInformation(supergraphAst) : null;
+    const snapshot = await injector.get(SchemaVersionHelper).getExplorerSnapshot(latestVersion);
+    const ownedByServiceNames = snapshot
+      ? getEntry(snapshot, schemaCoordinate)?.ownedBy
+      : undefined;
 
     return {
       __typename: 'SupergraphMetadata',
@@ -24,7 +25,7 @@ export const SchemaCoordinateStats: Pick<SchemaCoordinateStatsResolvers, 'superg
         ...m,
         __typename: 'SchemaMetadata',
       })),
-      ownedByServiceNames: supergraph?.schemaCoordinateServicesMappings.get(schemaCoordinate),
+      ownedByServiceNames,
     };
   },
 };
