@@ -1,0 +1,2572 @@
+{
+  "__comments": [
+    "Counters are selected as {__name__=~\"name(_total)?\"}: the collector exposes bare counter names, and Grafana Cloud's OTLP ingestion appends _total. One selector works in both.",
+    "otelcol_* and hive_auth_* are emitted only by the customer-facing collector (the internal observability collector is not scraped), so they carry no pod matcher; that also keeps the dashboard working on a local Prometheus, which has no pod label. http_server_* is a generic name, so it is pinned to the customer port 4318.",
+    "Every exporter query filters exporter=\"clickhouse\": the collector config also has a local-development otlp_grpc/tempo exporter, and its failures would pollute any unfiltered aggregate.",
+    "send_failed, enqueue_failed and the otlp/internal receiver series exist only after their first event, so rate() and increase() miss the first occurrence. Range stats add the first value of any series born inside the range, and the drop panel plots raw counters.",
+    "Known gap (needs a new metric): whether rows reached otel_traces. The exporter uses wait_for_async_insert=0, so acknowledged means buffered by ClickHouse, not stored; a failed flush is invisible and Grafana has no datasource for Hive's ClickHouse.",
+    "Known gap (needs a new metric): per-target volume and success. No metric carries a target id, so one target losing everything is invisible in the aggregates.",
+    "Known gap (needs a new metric): why a request got 401. Cached auth decisions and missing headers have no metric and no log line, and Envoy 401 access logs are not shipped to Loki.",
+    "Known gap (needs a new metric): loss on pod death. The batch buffer, the sending queue (on pod-local disk) and the last unscraped interval have no counter, and there is no restart or OOM metric. Visible only as a positive Unaccounted spans.",
+    "Known gap (needs a new metric): duplicates. A retry after a 5 s insert timeout that had in fact succeeded stores the batch twice."
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "datasource",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "Health at a glance",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Collector pods whose metrics arrived recently, and the uptime of the youngest one. 0 means the collector is down or not scraped: every other panel is then empty because data is missing, not because ingestion is healthy.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "youngest uptime"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "yellow"
+                    },
+                    {
+                      "color": "green",
+                      "value": 600
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "count(otelcol_process_memory_rss) or vector(0)",
+          "legendFormat": "reporting",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "min({__name__=~\"otelcol_process_uptime(_total)?\"})",
+          "legendFormat": "youngest uptime",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Collectors reporting",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Spans the collector accepted on all receivers, per second. Counted after authentication and decoding, so rejected requests are not in it.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "suffix: spans/s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["mean"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({__name__=~\"otelcol_receiver_accepted_spans(_total)?\"}[$__rate_interval]))",
+          "legendFormat": "accepted",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Spans accepted per second",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Share of requests on the customer port (4318) that the collector answered with an error, over the range. 5xx is on the Hive side (503 is the memory limiter, and Envoy retries each one twice). 401 is either bad customer credentials or the auth service failing; compare with the auth panels.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 0.001
+              },
+              {
+                "color": "red",
+                "value": 0.01
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^(401|other 4xx)$/"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "text",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "((sum(increase(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=~\"5..\"}[$__range])) or vector(0)) + (sum(min_over_time(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=~\"5..\"}[$__range]) unless http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=~\"5..\"} offset $__range) or vector(0))) / clamp_min((sum(increase(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"}[$__range])) or vector(0)) + (sum(min_over_time(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"}[$__range]) unless http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"} offset $__range) or vector(0)), 1)",
+          "instant": true,
+          "legendFormat": "5xx",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "((sum(increase(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=\"401\"}[$__range])) or vector(0)) + (sum(min_over_time(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=\"401\"}[$__range]) unless http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=\"401\"} offset $__range) or vector(0))) / clamp_min((sum(increase(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"}[$__range])) or vector(0)) + (sum(min_over_time(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"}[$__range]) unless http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"} offset $__range) or vector(0)), 1)",
+          "instant": true,
+          "legendFormat": "401",
+          "range": false,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "((sum(increase(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=~\"4..\", http_response_status_code!=\"401\"}[$__range])) or vector(0)) + (sum(min_over_time(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=~\"4..\", http_response_status_code!=\"401\"}[$__range]) unless http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=~\"4..\", http_response_status_code!=\"401\"} offset $__range) or vector(0))) / clamp_min((sum(increase(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"}[$__range])) or vector(0)) + (sum(min_over_time(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"}[$__range]) unless http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"} offset $__range) or vector(0)), 1)",
+          "instant": true,
+          "legendFormat": "other 4xx",
+          "range": false,
+          "refId": "C"
+        }
+      ],
+      "title": "Rejected requests (range)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Fill of the fullest pod's ClickHouse sending queue (5000 batches). Healthy is about 0%. It grows when ClickHouse is slow or unreachable, and at 100% every new batch is dropped.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 0.05
+              },
+              {
+                "color": "red",
+                "value": 0.5
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "max(otelcol_exporter_queue_size{exporter=\"clickhouse\"} / otelcol_exporter_queue_capacity{exporter=\"clickhouse\"})",
+          "legendFormat": "fill",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "ClickHouse queue fill",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Spans ClickHouse acknowledged divided by spans accepted, over the range. Judge it on an hour or more: a backlog lowers it and a draining backlog pushes it above 100%. Acknowledged means ClickHouse buffered the async insert, not that the rows are stored.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [
+            {
+              "options": {
+                "match": "nan",
+                "result": {
+                  "color": "text",
+                  "index": 0,
+                  "text": "idle"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "noValue": "no data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "yellow",
+                "value": 0.99
+              },
+              {
+                "color": "green",
+                "value": 0.999
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(increase({__name__=~\"otelcol_exporter_sent_spans(_total)?\", exporter=\"clickhouse\"}[$__range])) / sum(increase({__name__=~\"otelcol_receiver_accepted_spans(_total)?\"}[$__range]))",
+          "instant": true,
+          "legendFormat": "delivered",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Delivered to ClickHouse (range)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Spans the sender got a success response for and the collector then dropped before ClickHouse: retries exhausted or a permanent error (export failed), or the sending queue was at capacity (queue full). Any non-zero value is customer data loss.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 5
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "(sum(increase({__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"clickhouse\"}[$__range])) or vector(0)) + (sum(min_over_time({__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"clickhouse\"}[$__range]) unless {__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"clickhouse\"} offset $__range) or vector(0))",
+          "instant": true,
+          "legendFormat": "export failed",
+          "range": false,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "(sum(increase({__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"clickhouse\"}[$__range])) or vector(0)) + (sum(min_over_time({__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"clickhouse\"}[$__range]) unless {__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"clickhouse\"} offset $__range) or vector(0))",
+          "instant": true,
+          "legendFormat": "queue full",
+          "range": false,
+          "refId": "B"
+        }
+      ],
+      "title": "Spans dropped after acceptance (range)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Accepted spans that are neither acknowledged nor counted as dropped, as a share of accepted. Positive while the queue is empty means spans vanished without a counter (a pod replaced with a non-empty queue, a crash). Negative means an older backlog was delivered inside the range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "noValue": "no data",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "yellow",
+                "value": -0.01
+              },
+              {
+                "color": "green",
+                "value": -0.001
+              },
+              {
+                "color": "yellow",
+                "value": 0.001
+              },
+              {
+                "color": "red",
+                "value": 0.01
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 5
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "(sum(increase({__name__=~\"otelcol_receiver_accepted_spans(_total)?\"}[$__range])) - (sum(increase({__name__=~\"otelcol_exporter_sent_spans(_total)?\", exporter=\"clickhouse\"}[$__range])) or vector(0)) - ((sum(increase({__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"clickhouse\"}[$__range])) or vector(0)) + (sum(min_over_time({__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"clickhouse\"}[$__range]) unless {__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"clickhouse\"} offset $__range) or vector(0))) - ((sum(increase({__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"clickhouse\"}[$__range])) or vector(0)) + (sum(min_over_time({__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"clickhouse\"}[$__range]) unless {__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"clickhouse\"} offset $__range) or vector(0)))) / clamp_min(sum(increase({__name__=~\"otelcol_receiver_accepted_spans(_total)?\"}[$__range])), 1)",
+          "instant": true,
+          "legendFormat": "unaccounted",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Unaccounted spans (range)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Spans accepted on the unauthenticated internal receiver (ports 4319/4320). They are stored without hive.target_id, so no target can read them. Expected only in local development.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 5
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "(sum(increase({__name__=~\"otelcol_receiver_accepted_spans(_total)?\", receiver=\"otlp/internal\"}[$__range])) or vector(0)) + (sum(min_over_time({__name__=~\"otelcol_receiver_accepted_spans(_total)?\", receiver=\"otlp/internal\"}[$__range]) unless {__name__=~\"otelcol_receiver_accepted_spans(_total)?\", receiver=\"otlp/internal\"} offset $__range) or vector(0))",
+          "instant": true,
+          "legendFormat": "internal receiver",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Unattributed spans (range)",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "id": 10,
+      "panels": [],
+      "title": "Customer intake: HTTP and auth",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Requests on the customer port (4318) by response status. The only series that sees 401s and undecodable payloads (400), which never reach the span counters. A 401 rise together with a 200 drop is an auth outage, not bad tokens.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_count{server_port=\"4318\", pod=~\"(otel-collector-.*)?\"}[$__rate_interval]))",
+          "legendFormat": "{{http_response_status_code}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Requests per second by status code",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Collector-side duration of accepted (200) requests. It includes the auth lookup on a cache miss and not the ClickHouse write, which happens after the response. A rising p99 with flat auth latency points at CPU or memory pressure.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_request_duration_bucket{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=\"200\"}[$__rate_interval])))",
+          "legendFormat": "p50",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_bucket{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=\"200\"}[$__rate_interval])))",
+          "legendFormat": "p95",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_bucket{server_port=\"4318\", pod=~\"(otel-collector-.*)?\", http_response_status_code=\"200\"}[$__rate_interval])))",
+          "legendFormat": "p99",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Request duration (accepted requests)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Calls from the collector to the API's /otel-auth endpoint. Only cache misses are counted (a success is cached 30 s, a failure 10 s), so this is neither request volume nor an error percentage. error mixes rejected credentials with auth-service failures; the log row separates them.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "success"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "error"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum by (status) (rate(hive_auth_requests_total[$__rate_interval]))",
+          "legendFormat": "{{status}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Auth lookups per second (cache misses only)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Duration of the auth lookup; a cache miss blocks the sender's request for this long. A slow error p95 means the API is failing and being retried rather than rejecting credentials. Buckets top out at 10 s.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 19
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, sum by (le, status) (rate(hive_auth_request_duration_milliseconds_bucket[$__rate_interval])))",
+          "legendFormat": "p50 {{status}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le, status) (rate(hive_auth_request_duration_milliseconds_bucket[$__rate_interval])))",
+          "legendFormat": "p95 {{status}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Auth lookup duration",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "id": 15,
+      "panels": [],
+      "title": "Span flow and conservation",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Accepted and acknowledged should overlap. Acknowledged below accepted is a growing backlog, above is a backlog draining. Refused spans (the memory limiter) and spans that failed in the receiver were answered with an error, so the sender decides whether they are retried.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "suffix: spans/s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "refused (error returned to sender)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "failed in the receiver"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 29
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({__name__=~\"otelcol_receiver_accepted_spans(_total)?\", receiver=\"otlp\"}[$__rate_interval]))",
+          "legendFormat": "accepted (customer)",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({__name__=~\"otelcol_receiver_accepted_spans(_total)?\", receiver=\"otlp/internal\"}[$__rate_interval]))",
+          "legendFormat": "accepted (internal, unattributed)",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({__name__=~\"otelcol_exporter_sent_spans(_total)?\", exporter=\"clickhouse\"}[$__rate_interval]))",
+          "legendFormat": "acknowledged by ClickHouse",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({__name__=~\"otelcol_receiver_refused_spans(_total)?\"}[$__rate_interval]))",
+          "legendFormat": "refused (error returned to sender)",
+          "range": true,
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate({__name__=~\"otelcol_receiver_failed_spans(_total)?\"}[$__rate_interval]))",
+          "legendFormat": "failed in the receiver",
+          "range": true,
+          "refId": "E"
+        }
+      ],
+      "title": "Spans per second by stage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Accepted minus acknowledged minus dropped, from the raw counters of one scrape: the spans sitting in the batch buffer, the queue and the in-flight insert. It should return to about 0. A value that stays high while the queue panel reads 0 is silent loss.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 29
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum by (pod) ({__name__=~\"otelcol_receiver_accepted_spans(_total)?\"}) - (sum by (pod) ({__name__=~\"otelcol_exporter_sent_spans(_total)?\", exporter=\"clickhouse\"}) or sum by (pod) ({__name__=~\"otelcol_receiver_accepted_spans(_total)?\"}) * 0) - (sum by (pod) ({__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"clickhouse\"}) or sum by (pod) ({__name__=~\"otelcol_receiver_accepted_spans(_total)?\"}) * 0) - (sum by (pod) ({__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"clickhouse\"}) or sum by (pod) ({__name__=~\"otelcol_receiver_accepted_spans(_total)?\"}) * 0)",
+          "legendFormat": "in collector {{pod}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Spans inside the collector",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Batches waiting in the ClickHouse sending queue and the insert in flight, against the capacity. A single consumer retries one batch for up to 300 s while the rest wait, so a ClickHouse problem shows here minutes before any failure counter moves. The queue is on pod-local disk: what is queued when a pod is replaced is lost.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "capacity"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [10, 10],
+                  "fill": "dash"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": ["mean", "max", "lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum by (pod) (otelcol_exporter_queue_size{exporter=\"clickhouse\"})",
+          "legendFormat": "queued {{pod}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum by (pod) (otelcol_exporter_in_flight_requests{exporter=\"clickhouse\"})",
+          "legendFormat": "in flight {{pod}}",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "max(otelcol_exporter_queue_capacity{exporter=\"clickhouse\"})",
+          "legendFormat": "capacity",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "ClickHouse sending queue (batches)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Raw counters, not rates, because these series only exist after the first drop. Any step up is lost customer data. permanent=true means ClickHouse rejected a whole batch (up to 5000 spans across targets); queue full means the sending queue was at capacity.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "stepAfter",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "noValue": "No drops since pod start",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": ["lastNotNull"],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum by (pod, error_type, error_permanent) ({__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"clickhouse\"})",
+          "legendFormat": "export failed {{error_type}} permanent={{error_permanent}} {{pod}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "sum by (pod) ({__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"clickhouse\"})",
+          "legendFormat": "queue full {{pod}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Dropped spans since pod start",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": true,
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 47
+      },
+      "id": 20,
+      "panels": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "description": "Non-200 responses Envoy returned for the trace ingestion route, by status. 200 and 401 access logs are not shipped to Loki, so this is neither volume nor auth failures. 502, 503 and 504 are requests the collector did not answer successfully after Envoy's retries.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 60,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 48
+          },
+          "id": 21,
+          "options": {
+            "legend": {
+              "calcs": ["sum"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "grafanacloud-logs"
+              },
+              "editorMode": "code",
+              "expr": "sum by (response_code) (count_over_time({namespace=\"contour\", container_name=\"envoy\"} | json | __error__=`` | path =~ `(/otel)?/v1/traces.*` [$__interval]))",
+              "legendFormat": "{{response_code}}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Envoy non-200 responses on the trace route",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "description": "Splits what the auth metric lumps together: 'authentication failed' with a 4xx status is a rejected credential or target, the other two messages are the auth service failing. Logged on cache misses only.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 60,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 48
+          },
+          "id": 22,
+          "options": {
+            "legend": {
+              "calcs": ["sum"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "grafanacloud-logs"
+              },
+              "editorMode": "code",
+              "expr": "sum by (msg, status) (count_over_time({container_name=\"otel-collector\"} | json | msg =~ `authentication failed|error calling authentication service|received 5xx response, retrying` [$__interval]))",
+              "legendFormat": "{{msg}} {{status}}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Collector auth events",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "description": "Collector warnings and errors by message, without the otlp_grpc/tempo exporter (see Process health). 'Exporting failed' and memory limiter messages here are on the customer data path.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "bars",
+                "fillOpacity": 60,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 57
+          },
+          "id": 23,
+          "options": {
+            "legend": {
+              "calcs": ["sum"],
+              "displayMode": "table",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "grafanacloud-logs"
+              },
+              "editorMode": "code",
+              "expr": "sum by (level, msg) (count_over_time({container_name=\"otel-collector\"} !~ `otlp_grpc/tempo|tempo:4317` | json | level =~ `warn|error` [$__interval]))",
+              "legendFormat": "{{level}} {{msg}}",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Collector warnings and errors by message",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "description": "The log lines behind the panel above.",
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 65
+          },
+          "id": 24,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": false
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "loki",
+                "uid": "grafanacloud-logs"
+              },
+              "editorMode": "code",
+              "expr": "{container_name=\"otel-collector\"} !~ `otlp_grpc/tempo|tempo:4317` | json | level =~ `warn|error`",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Collector warning and error lines",
+          "type": "logs"
+        }
+      ],
+      "title": "Error drill-down (logs)",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 25,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "description": "Uptime resets are in-place container restarts such as OOM kills. A rollout or a scale-down shows only as more pods seen. Either way that pod's batch buffer and on-disk queue are gone.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "noValue": "0",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "none"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "in-place restarts"
+                },
+                "properties": [
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "green"
+                        },
+                        {
+                          "color": "yellow",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 6,
+            "x": 0,
+            "y": 49
+          },
+          "id": 26,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "text": {
+              "titleSize": 14,
+              "valueSize": 48
+            },
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "sum(resets({__name__=~\"otelcol_process_uptime(_total)?\"}[$__range])) or vector(0)",
+              "instant": true,
+              "legendFormat": "in-place restarts",
+              "range": false,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "count(count by (pod) (count_over_time(otelcol_process_memory_rss[$__range])))",
+              "instant": true,
+              "legendFormat": "pods seen",
+              "range": false,
+              "refId": "B"
+            }
+          ],
+          "title": "Restarts and pods (range)",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "description": "CPU cores used per pod. The autoscaler scales the collector on CPU only.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 9,
+            "x": 6,
+            "y": 49
+          },
+          "id": 27,
+          "options": {
+            "legend": {
+              "calcs": ["mean", "max", "lastNotNull"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "sum by (pod) (rate({__name__=~\"otelcol_process_cpu_seconds(_total)?\"}[$__rate_interval]))",
+              "legendFormat": "cores {{pod}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "CPU",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "description": "Above 800 MiB the memory limiter answers 503. The limiter's hard limit equals the production pod memory limit (1000 MiB), so an OOM kill can come first. The two reference lines are constants copied from the collector config.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "bytes"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "memory limiter refuses above"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "dash": [10, 10],
+                      "fill": "dash"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "hard limit"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "dash": [10, 10],
+                      "fill": "dash"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 9,
+            "x": 15,
+            "y": 49
+          },
+          "id": 28,
+          "options": {
+            "legend": {
+              "calcs": ["max", "lastNotNull"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "otelcol_process_memory_rss",
+              "legendFormat": "rss {{pod}}",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "otelcol_process_runtime_heap_alloc_bytes",
+              "legendFormat": "heap {{pod}}",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "otelcol_process_runtime_total_sys_memory_bytes",
+              "legendFormat": "sys {{pod}}",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "vector(800 * 1024 * 1024)",
+              "legendFormat": "memory limiter refuses above",
+              "range": true,
+              "refId": "D"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "vector(1000 * 1024 * 1024)",
+              "legendFormat": "hard limit",
+              "range": true,
+              "refId": "E"
+            }
+          ],
+          "title": "Memory",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "description": "The local-development Tempo exporter that is also in the collector config production runs, where it has no reachable endpoint. It is not the customer data path and is excluded from every other panel. Shown because its failures are expected noise, and because its in-memory queue uses memory the memory limiter counts.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineStyle": {
+                  "fill": "solid"
+                },
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  }
+                ]
+              },
+              "unit": "suffix: spans/s"
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "queue fill"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percentunit"
+                  },
+                  {
+                    "id": "max",
+                    "value": 1
+                  },
+                  {
+                    "id": "custom.axisPlacement",
+                    "value": "right"
+                  },
+                  {
+                    "id": "custom.lineStyle",
+                    "value": {
+                      "dash": [10, 10],
+                      "fill": "dash"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 24,
+            "x": 0,
+            "y": 58
+          },
+          "id": 29,
+          "options": {
+            "legend": {
+              "calcs": ["mean", "max", "lastNotNull"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate({__name__=~\"otelcol_exporter_send_failed_spans(_total)?\", exporter=\"otlp_grpc/tempo\"}[$__rate_interval]))",
+              "legendFormat": "failed spans per second",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "sum(rate({__name__=~\"otelcol_exporter_enqueue_failed_spans(_total)?\", exporter=\"otlp_grpc/tempo\"}[$__rate_interval]))",
+              "legendFormat": "queue-full spans per second",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "PROM_DATASOURCE_UID"
+              },
+              "editorMode": "code",
+              "expr": "max(otelcol_exporter_queue_size{exporter=\"otlp_grpc/tempo\"} / otelcol_exporter_queue_capacity{exporter=\"otlp_grpc/tempo\"})",
+              "legendFormat": "queue fill",
+              "range": true,
+              "refId": "C"
+            }
+          ],
+          "title": "otlp_grpc/tempo exporter (not the customer data path)",
+          "type": "timeseries"
+        }
+      ],
+      "title": "Process health",
+      "type": "row"
+    }
+  ],
+  "preload": false,
+  "refresh": "30s",
+  "revision": 1,
+  "schemaVersion": 41,
+  "style": "dark",
+  "tags": ["hive", "otel", "traces", "latest"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "OTEL Trace Ingestion",
+  "uid": "hive-otel-trace-ingestion",
+  "version": 1,
+  "weekStart": ""
+}
