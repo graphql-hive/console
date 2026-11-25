@@ -356,6 +356,7 @@ export async function main() {
           }
         : null,
       encryptionSecret: env.encryptionSecret,
+      schemaDiffWorker: env.schemaDiffWorker,
       schemaConfig: env.hiveServices.webApp
         ? {
             schemaPublishLink(input) {
