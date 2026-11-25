@@ -1,9 +1,7 @@
 import { parse } from 'graphql';
 import { onlyDeprecatedTypes, onlyUnusedTypes } from '../schema-explorer-filters.js';
-import {
-  buildSchemaExplorerSnapshot,
-  SchemaExplorerSnapshotReader,
-} from '../schema-explorer-snapshot.js';
+import { SchemaExplorerSnapshotReader } from '../schema-explorer-flat-snapshot.js';
+import { buildSchemaExplorerSnapshot } from '../schema-explorer-snapshot.js';
 
 const snapshot = SchemaExplorerSnapshotReader.fromSnapshot(
   buildSchemaExplorerSnapshot(

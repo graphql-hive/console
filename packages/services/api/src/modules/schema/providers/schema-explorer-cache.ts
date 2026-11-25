@@ -5,8 +5,8 @@ import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 import {
   SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
   SchemaExplorerSnapshotReader,
-  type SchemaExplorerSnapshot,
-} from '../lib/schema-explorer-snapshot';
+} from '../lib/schema-explorer-flat-snapshot';
+import type { SchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
 
 /** Bounds the binary snapshots kept in memory (outside the JS heap) per API instance. */
 const MEMORY_MAX_BYTES = 256 * 1024 * 1024;

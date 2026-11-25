@@ -3,7 +3,7 @@ import { OperationsManager } from '../../operations/providers/operations-manager
 import { Logger } from '../../shared/providers/logger';
 import { isFieldRequestedDeep } from '../lib/graphql-info-helper';
 import { onlyDeprecatedTypes, onlyUnusedTypes } from '../lib/schema-explorer-filters';
-import type { SchemaExplorerSnapshotReader } from '../lib/schema-explorer-snapshot';
+import type { SchemaExplorerSnapshotReader } from '../lib/schema-explorer-flat-snapshot';
 import { Contracts } from '../providers/contracts';
 import { SchemaManager } from '../providers/schema-manager';
 import { SchemaVersionHelper } from '../providers/schema-version-helper';

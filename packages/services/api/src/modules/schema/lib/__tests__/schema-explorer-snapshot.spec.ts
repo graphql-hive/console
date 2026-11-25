@@ -1,9 +1,11 @@
 import { parse } from 'graphql';
 import { composeServices } from '@theguild/federation-composition';
 import {
-  buildSchemaExplorerSnapshot,
   encodeSchemaExplorerSnapshot,
   SchemaExplorerSnapshotReader,
+} from '../schema-explorer-flat-snapshot.js';
+import {
+  buildSchemaExplorerSnapshot,
   type SchemaExplorerSnapshot,
 } from '../schema-explorer-snapshot.js';
 
@@ -302,5 +304,106 @@ describe('getLazyTypeEntity', () => {
     } finally {
       parse.mockRestore();
     }
+  });
+});
+
+describe('binary format', () => {
+  const normalize = (value: unknown) =>
+    JSON.parse(JSON.stringify(value, (_, v) => (v === null ? undefined : v)) ?? 'null');
+
+  test('every coordinate reads back as the builder produced it', () => {
+    const built = compose();
+    const snapshot = fromCache(built);
+    for (const [coordinate, entry] of Object.entries(built.coordinates)) {
+      expect([coordinate, normalize(snapshot.getEntry(coordinate))]).toEqual([
+        coordinate,
+        normalize(entry),
+      ]);
+    }
+    expect(snapshot.getTypeNames({ withBuiltInScalars: true })).toEqual(built.types);
+    expect(snapshot.deprecatedTypes).toEqual(built.deprecatedTypes);
+    expect(snapshot.subgraphNames).toEqual(built.subgraphNames);
+  });
+
+  test('types whose only deprecation is an argument or an input field are deprecated types', () => {
+    const snapshot = fromCache(
+      buildSchemaExplorerSnapshot(
+        parse(/* GraphQL */ `
+          type Query {
+            a(old: Int @deprecated): Int
+          }
+          input In {
+            z: Int @deprecated
+          }
+          type Clean {
+            y(x: In): Int
+          }
+        `),
+        null,
+      ),
+    );
+    expect(snapshot.deprecatedTypes).toEqual(['In', 'Query']);
+  });
+
+  /** A snapshot written by hand, for cases the GraphQL parser cannot produce. */
+  function handWritten(overrides: Partial<SchemaExplorerSnapshot> = {}): SchemaExplorerSnapshot {
+    return {
+      coordinates: {
+        Query: {
+          kind: 'ObjectTypeDefinition',
+          interfaces: [],
+          fields: ['Query.a'],
+          ownedBy: ['b', 'a'],
+        },
+        'Query.a': { kind: 'FieldDefinition', type: 'String', args: [], ownedBy: ['b', 'a'] },
+        String: { kind: 'ScalarTypeDefinition', builtIn: true },
+      },
+      types: ['Query', 'String'],
+      deprecatedTypes: [],
+      queryTypeName: 'Query',
+      mutationTypeName: null,
+      subscriptionTypeName: null,
+      subgraphNames: ['a', 'b'],
+      ...overrides,
+    };
+  }
+
+  test('owners keep their order', () => {
+    const snapshot = fromCache(handWritten());
+    expect(snapshot.getOwnedBy('Query')).toEqual(['b', 'a']);
+    expect(snapshot.getOwnedBy('Query.a')).toEqual(['b', 'a']);
+  });
+
+  test('a schema without a query type', () => {
+    const snapshot = fromCache(handWritten({ queryTypeName: null }));
+    expect(snapshot.queryTypeName).toBe(null);
+    expect(snapshot.getTypeEntity('Query')).toMatchObject({ name: 'Query' });
+  });
+
+  test('lone surrogates are replaced instead of failing', () => {
+    const built = handWritten();
+    built.coordinates.Query.description = 'lone \uD800 surrogate';
+    const snapshot = fromCache(built);
+    expect(snapshot.getTypeEntity('Query')?.description).toBe('lone � surrogate');
+  });
+
+  test('misaligned buffers are read, truncated or corrupt ones are rejected', () => {
+    const buffer = encodeSchemaExplorerSnapshot(compose());
+
+    const shifted = Buffer.alloc(buffer.length + 3);
+    buffer.copy(shifted, 3);
+    const misaligned = shifted.subarray(3);
+    expect(misaligned.byteOffset % 8).not.toBe(0);
+    expect(
+      SchemaExplorerSnapshotReader.fromBuffer(misaligned)?.getOwnedBy('Product.reviews'),
+    ).toEqual(['reviews']);
+
+    expect(SchemaExplorerSnapshotReader.fromBuffer(buffer.subarray(0, buffer.length - 100))).toBe(
+      null,
+    );
+    const corrupt = Buffer.from(buffer);
+    // Claim far more types than the buffer holds.
+    corrupt.writeUInt32LE(0x7fffffff, 8 + 4 * 4);
+    expect(SchemaExplorerSnapshotReader.fromBuffer(corrupt)).toBe(null);
   });
 });

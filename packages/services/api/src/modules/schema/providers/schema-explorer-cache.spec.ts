@@ -1,10 +1,8 @@
 import Redis from 'ioredis-mock';
 import 'reflect-metadata';
 import { parse } from 'graphql';
-import {
-  buildSchemaExplorerSnapshot,
-  SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
-} from '../lib/schema-explorer-snapshot';
+import { SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION } from '../lib/schema-explorer-flat-snapshot';
+import { buildSchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
 import { SchemaExplorerCache } from './schema-explorer-cache';
 
 let port = 1000;
