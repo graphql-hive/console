@@ -1,7 +1,11 @@
+import { zstdDecompressSync } from 'node:zlib';
 import Redis from 'ioredis-mock';
 import 'reflect-metadata';
 import { parse } from 'graphql';
-import { SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION } from '../lib/schema-explorer-flat-snapshot';
+import {
+  SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
+  SchemaExplorerSnapshotReader,
+} from '../lib/schema-explorer-flat-snapshot';
 import { buildSchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
 import { SchemaExplorerCache } from './schema-explorer-cache';
 
@@ -19,7 +23,13 @@ function snapshotBuilder() {
 }
 
 const key = (id: string) =>
-  `schema-explorer-snapshot:v${SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION}:${id}`;
+  `schema-explorer-snapshot:v${SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION}:zstd:${id}`;
+
+/** The stored value, decompressed. */
+async function storedSnapshot(redis: InstanceType<typeof Redis>, id: string) {
+  const stored = await redis.getBuffer(key(id));
+  return stored ? zstdDecompressSync(stored) : null;
+}
 
 test('builds on a miss, stores the binary snapshot in Redis and serves later reads from memory', async () => {
   const redis = createRedis();
@@ -33,7 +43,10 @@ test('builds on a miss, stores the binary snapshot in Redis and serves later rea
   expect(build).toHaveBeenCalledTimes(1);
 
   const stored = await redis.getBuffer(key('version-1'));
-  expect(stored?.toString('latin1', 0, 3)).toBe('HSE');
+  const decompressed = await storedSnapshot(redis, 'version-1');
+  expect(decompressed?.toString('latin1', 0, 3)).toBe('HSE');
+  // Stored compressed.
+  expect(stored!.length).toBeLessThan(decompressed!.length);
   expect(await redis.ttl(key('version-1'))).toBeGreaterThan(0);
 
   expect(await cache.getOrBuild('version-1', build)).toBe(first);
@@ -76,7 +89,20 @@ test('a stored snapshot of another format is rebuilt', async () => {
 
   expect(reader?.queryTypeName).toBe('Query');
   expect(build).toHaveBeenCalledTimes(1);
-  expect((await redis.getBuffer(key('version-1')))?.toString('latin1', 0, 3)).toBe('HSE');
+  expect((await storedSnapshot(redis, 'version-1'))?.toString('latin1', 0, 3)).toBe('HSE');
+});
+
+test('an uncompressed snapshot in Redis is rebuilt', async () => {
+  const redis = createRedis();
+  const build = snapshotBuilder();
+  const uncompressed = SchemaExplorerSnapshotReader.fromSnapshot(await build()).toBuffer();
+  await redis.set(key('version-1'), uncompressed);
+
+  const reader = await new SchemaExplorerCache(redis as any).getOrBuild('version-1', build);
+
+  expect(reader?.queryTypeName).toBe('Query');
+  expect(build).toHaveBeenCalledTimes(2);
+  expect((await storedSnapshot(redis, 'version-1'))?.equals(uncompressed)).toBe(true);
 });
 
 test('versions without a schema are not cached', async () => {
