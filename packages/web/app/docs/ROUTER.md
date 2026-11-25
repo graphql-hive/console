@@ -70,7 +70,7 @@ src/lib/testing/             renderAtUrl, the fixture-checking test urql client,
 
 Route modules import pages, components and their parent route module, never `src/router.ts`. Pages
 and components never import a layout; the route renders it. Both are enforced by
-`@typescript-eslint/no-restricted-imports` in the root `.eslintrc.cjs`.
+`no-restricted-imports` in the root `.oxlintrc.json`.
 
 ## Reading route state
 

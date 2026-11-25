@@ -1,4 +1,4 @@
-import { FC, ReactNode, Suspense, useState } from 'react';
+import { ReactNode, Suspense, useState } from 'react';
 import { env } from '@/env/frontend';
 import { captureMessage } from '@sentry/react';
 import { Elements as ElementsProvider } from '@stripe/react-stripe-js';
@@ -9,7 +9,7 @@ import { Elements as ElementsProvider } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js/pure';
 import { getStripePublicKey } from './stripe-public-key';
 
-export const HiveStripeWrapper: FC<{ children: ReactNode }> = ({ children }) => {
+export const HiveStripeWrapper = ({ children }: { children: ReactNode }) => {
   const [blocked, setBlocked] = useState(false);
   // eslint-disable-next-line react/hook-use-state -- we don't need setter
   const [stripe] = useState<ReturnType<typeof loadStripe> | void>(async () => {

@@ -1,4 +1,4 @@
-// eslint-disable-next-line import/no-extraneous-dependencies -- required before loading seed helpers
+// eslint-disable-next-line import-js/no-extraneous-dependencies -- required before loading seed helpers
 import 'reflect-metadata';
 import { test as base, expect, type Page } from '@playwright/test';
 import { initSeed, ProjectType } from '../integration-tests/testkit/seed';

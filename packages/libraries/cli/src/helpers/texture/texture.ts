@@ -147,4 +147,5 @@ export const createBuilder = (): Builder => {
   return builder;
 };
 
+// eslint-disable-next-line import/no-self-import
 export * as Texture from './texture';

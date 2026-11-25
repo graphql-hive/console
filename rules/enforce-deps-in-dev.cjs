@@ -73,9 +73,7 @@ function getDependencies(context, packageDir) {
         packageContent,
         extractDepFields(
           readPkgUp({
-            cwd: context.getPhysicalFilename
-              ? context.getPhysicalFilename()
-              : context.getFilename(),
+            cwd: context.physicalFilename,
             normalize: false,
           }).pkg,
         ),
@@ -199,6 +197,19 @@ function reportIfMissing(context, deps, node, name, scopes) {
 module.exports = {
   meta: {
     type: 'problem',
+    schema: [
+      {
+        type: 'object',
+        properties: {
+          scopes: { type: 'array', items: { type: 'string' } },
+          ignored: { type: 'array', items: { type: 'string' } },
+          packageDir: {
+            anyOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
+          },
+        },
+        additionalProperties: false,
+      },
+    ],
   },
 
   create(context) {
@@ -206,9 +217,7 @@ module.exports = {
     const deps = getDependencies(context, options.packageDir) || extractDepFields({});
 
     if (Array.isArray(options.ignored)) {
-      const filepath = context.getPhysicalFilename
-        ? context.getPhysicalFilename()
-        : context.getFilename();
+      const filepath = context.physicalFilename;
 
       if (
         options.ignored.some(

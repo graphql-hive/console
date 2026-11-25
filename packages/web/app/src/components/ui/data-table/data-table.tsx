@@ -40,7 +40,6 @@ import {
 
 declare module '@tanstack/react-table' {
   // The generics are TanStack's; an augmentation has to repeat them to merge.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> extends DataTableColumnLayout {
     /** Renders the header as a sort toggle. */
     sortable?: boolean;

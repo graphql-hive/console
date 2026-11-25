@@ -1,4 +1,4 @@
-import { createContext, FC, ReactNode, useCallback, useContext, useRef, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useRef, useState } from 'react';
 
 interface WidthSyncContextType {
   width: number;
@@ -12,7 +12,7 @@ interface WidthSyncProviderProps {
   defaultWidth: number;
 }
 
-export const WidthSyncProvider: FC<WidthSyncProviderProps> = props => {
+export const WidthSyncProvider = (props: WidthSyncProviderProps) => {
   const [width, setWidth] = useState<number>(props.defaultWidth);
   // Throttle state to avoid too many updates during slider dragging
   const throttleTimerRef = useRef<number | null>(null);

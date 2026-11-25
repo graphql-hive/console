@@ -114,7 +114,7 @@ describe('useTabs replaceOperationId', () => {
       'server-op',
       'op-t2',
     ]);
-    expect((result.current.activeTab?.data as { id: string }).id).toBe('server-op');
+    expect((result.current.activeTab?.data as { id: string })?.id).toBe('server-op');
     expect(onTabsChange).toHaveBeenCalledWith(result.current.tabs);
   });
 });

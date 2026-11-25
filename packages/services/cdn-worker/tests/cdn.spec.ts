@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import '../src/dev-polyfill';
 import { MockAgent, MockPool, fetch as undiciFetch } from 'undici';
-// eslint-disable-next-line import/no-extraneous-dependencies
+// eslint-disable-next-line import-js/no-extraneous-dependencies
 import { afterAll, afterEach, beforeEach, describe, expect, test } from 'vitest';
 import { ArtifactStorageReader } from '../src/artifact-storage-reader';
 import { AwsClient } from '../src/aws';

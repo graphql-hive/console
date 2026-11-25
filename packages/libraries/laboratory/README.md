@@ -147,7 +147,6 @@ browser rather than during server-side rendering.
 ```bash
 pnpm dev   # Vite dev server on http://localhost:5173
 pnpm build # library build (ES + CJS) and UMD build
-pnpm lint  # eslint
 ```
 
 `pnpm dev` mounts the Lab via [`src/main.tsx`](src/main.tsx) / [`index.html`](index.html), a thin
