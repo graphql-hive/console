@@ -13,6 +13,12 @@ Apollo Federation v1 composition, used by the schema service for projects that h
 native composition. The patch moves fields whose type only exists as an `extend type` into an
 extension node so composition does not throw, and de-duplicates repeated errors (#1407).
 
+It also treats a missing `fields` or `values` list on a type extension as empty. The package
+supports graphql 15 and 16 only and runs on graphql 17 here, whose parser leaves those lists
+`undefined` where 16 returned `[]`. Upstream then left its loop over the subgraph's definitions, so
+everything declared after a root type without fields, or after an extension without a body, was
+missing from the composed schema while composition still succeeded.
+
 Retire when Federation v1 support is dropped. The package is frozen at 0.38.1 upstream.
 
 ## `@slonik__pg-driver@48.19.0.patch`
