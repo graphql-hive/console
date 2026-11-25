@@ -33,6 +33,7 @@ const NONE = -1;
 
 type TypeKind = Extract<SchemaExplorerEntry['kind'], `${string}TypeDefinition`>;
 
+/** The `typeKind` column stores an index into this list. */
 const TYPE_KINDS = [
   Kind.SCALAR_TYPE_DEFINITION,
   Kind.OBJECT_TYPE_DEFINITION,
@@ -42,189 +43,230 @@ const TYPE_KINDS = [
   Kind.INPUT_OBJECT_TYPE_DEFINITION,
 ] as const satisfies ReadonlyArray<TypeKind>;
 // 0 is a scalar
-const K_OBJECT = 1;
-const K_INTERFACE = 2;
-const K_UNION = 3;
-const K_ENUM = 4;
-const K_INPUT = 5;
+const TYPE_KIND_OBJECT = 1;
+const TYPE_KIND_INTERFACE = 2;
+const TYPE_KIND_UNION = 3;
+const TYPE_KIND_ENUM = 4;
+const TYPE_KIND_INPUT_OBJECT = 5;
 
-/** Type flags */
-const T_BUILT_IN = 1;
-/** Input value flags */
-const V_ARGUMENT = 1;
+/** Bits of the `typeFlags` column. */
+const TYPE_FLAG_BUILT_IN = 1;
+/** Bits of the `inputValueFlags` column. */
+const INPUT_VALUE_FLAG_ARGUMENT = 1;
 
 // A handle packs (entity kind, index) into one small integer: what a coordinate lookup returns.
-const H_TYPE = 1;
-const H_FIELD = 2;
-const H_VALUE = 3;
-const H_ENUM_VALUE = 4;
-const H_SHIFT = 2 ** 26;
-const handleKind = (handle: number) => Math.floor(handle / H_SHIFT);
-const handleIndex = (handle: number) => handle % H_SHIFT;
-const makeHandle = (kind: number, index: number) => kind * H_SHIFT + index;
+const HANDLE_KIND_TYPE = 1;
+const HANDLE_KIND_FIELD = 2;
+const HANDLE_KIND_INPUT_VALUE = 3;
+const HANDLE_KIND_ENUM_VALUE = 4;
+/** Indexes are below this, so `kind * HANDLE_INDEX_RANGE + index` is unambiguous. */
+const HANDLE_INDEX_RANGE = 2 ** 26;
+const handleKind = (handle: number) => Math.floor(handle / HANDLE_INDEX_RANGE);
+const handleIndex = (handle: number) => handle % HANDLE_INDEX_RANGE;
+const makeHandle = (kind: number, index: number) => kind * HANDLE_INDEX_RANGE + index;
 
 // ---------------------------------------------------------------------------------------------
 // Layout
 
+/** Only the order matters for the binary format; the names are not stored. */
 const HEADER_WORDS = [
-  'S', // strings
-  'H', // string hash table slots
-  'CH', // coordinate hash table slots
-  'G', // subgraphs
-  'T', // types
-  'F', // fields
-  'V', // input values (arguments and input fields)
-  'E', // enum values
-  'R', // type references (interfaces, union members)
-  'O', // owner sets
-  'OI', // owner set items
-  'B', // string blob bytes
-  'D', // deprecated types
-  'query',
-  'mutation',
-  'subscription',
+  'stringCount',
+  'stringHashSlots',
+  'coordinateHashSlots',
+  'subgraphCount',
+  'typeCount',
+  'fieldCount',
+  /** Arguments and input fields */
+  'inputValueCount',
+  'enumValueCount',
+  /** Interfaces of object and interface types, and members of unions */
+  'typeRefCount',
+  'ownerSetCount',
+  'ownerSetItemCount',
+  'stringBlobBytes',
+  'deprecatedTypeCount',
+  /** Type ids of the root types, NONE if absent */
+  'queryType',
+  'mutationType',
+  'subscriptionType',
 ] as const;
 type Header = Record<(typeof HEADER_WORDS)[number], number>;
 const HEADER_OFFSET = 8;
 const HEADER_END = Math.ceil((HEADER_OFFSET + HEADER_WORDS.length * 4) / 8) * 8;
 
-type CountKey = Exclude<keyof Header, 'query' | 'mutation' | 'subscription'> | 'S1' | 'O1';
+/** The header word holding the length of a column; `+1` columns hold one more element. */
+type ColumnLength =
+  | Exclude<keyof Header, 'queryType' | 'mutationType' | 'subscriptionType'>
+  | 'stringCount+1'
+  | 'ownerSetCount+1';
 type ArrayConstructor =
   | Int32ArrayConstructor
   | Uint32ArrayConstructor
   | Uint16ArrayConstructor
   | Uint8ArrayConstructor;
 
+/**
+ * Only the order matters for the binary format; the names are not stored.
+ *
+ * Name, description, deprecation reason and default value columns hold string ids (NONE if
+ * absent). Owner set columns hold owner set ids (NONE if absent). `…Start` / `…Length` columns are
+ * ranges into the columns of another entity kind.
+ */
 const COLUMNS = [
   // strings
-  ['strOff', Uint32Array, 'S1'], // UTF-16 offsets into the decoded blob
-  ['strHash', Int32Array, 'H'],
-  ['typeByStr', Int32Array, 'S'],
-  ['coordHash', Int32Array, 'CH'],
-  ['subgraphs', Int32Array, 'G'],
+  ['stringOffsets', Uint32Array, 'stringCount+1'], // UTF-16 offsets into the decoded blob
+  ['stringHashTable', Int32Array, 'stringHashSlots'], // string id per slot
+  ['typeIdByStringId', Int32Array, 'stringCount'],
+  ['coordinateHashTable', Int32Array, 'coordinateHashSlots'], // handle per slot
+  ['subgraphNames', Int32Array, 'subgraphCount'],
   // types (in name order)
-  ['tName', Int32Array, 'T'],
-  ['tDesc', Int32Array, 'T'],
-  ['tOwners', Int32Array, 'T'],
-  ['tChildStart', Uint32Array, 'T'],
-  ['tChildCount', Uint32Array, 'T'],
-  ['tRefStart', Uint32Array, 'T'],
-  ['tRefCount', Uint32Array, 'T'],
-  ['tKind', Uint8Array, 'T'],
-  ['tFlags', Uint8Array, 'T'],
+  ['typeName', Int32Array, 'typeCount'],
+  ['typeDescription', Int32Array, 'typeCount'],
+  ['typeOwnerSet', Int32Array, 'typeCount'],
+  ['typeChildrenStart', Uint32Array, 'typeCount'], // into fields, input values or enum values
+  ['typeChildrenLength', Uint32Array, 'typeCount'],
+  ['typeRefsStart', Uint32Array, 'typeCount'], // into typeRefs
+  ['typeRefsLength', Uint32Array, 'typeCount'],
+  ['typeKind', Uint8Array, 'typeCount'],
+  ['typeFlags', Uint8Array, 'typeCount'],
   // fields of object and interface types
-  ['fName', Int32Array, 'F'],
-  ['fDesc', Int32Array, 'F'],
-  ['fDepr', Int32Array, 'F'],
-  ['fOwners', Int32Array, 'F'],
-  ['fType', Uint32Array, 'F'],
-  ['fArgStart', Uint32Array, 'F'],
-  ['fArgCount', Uint32Array, 'F'],
-  ['fParent', Uint32Array, 'F'],
-  ['fWrap', Uint16Array, 'F'],
+  ['fieldName', Int32Array, 'fieldCount'],
+  ['fieldDescription', Int32Array, 'fieldCount'],
+  ['fieldDeprecationReason', Int32Array, 'fieldCount'],
+  ['fieldOwnerSet', Int32Array, 'fieldCount'],
+  ['fieldType', Uint32Array, 'fieldCount'],
+  ['fieldArgsStart', Uint32Array, 'fieldCount'], // into input values
+  ['fieldArgsLength', Uint32Array, 'fieldCount'],
+  ['fieldParentType', Uint32Array, 'fieldCount'],
+  ['fieldTypeWrapping', Uint16Array, 'fieldCount'],
   // input values: arguments (parent is a field) and input fields (parent is a type)
-  ['vName', Int32Array, 'V'],
-  ['vDesc', Int32Array, 'V'],
-  ['vDefault', Int32Array, 'V'],
-  ['vDepr', Int32Array, 'V'],
-  ['vOwners', Int32Array, 'V'],
-  ['vType', Uint32Array, 'V'],
-  ['vParent', Uint32Array, 'V'],
-  ['vWrap', Uint16Array, 'V'],
-  ['vFlags', Uint8Array, 'V'],
+  ['inputValueName', Int32Array, 'inputValueCount'],
+  ['inputValueDescription', Int32Array, 'inputValueCount'],
+  ['inputValueDefaultValue', Int32Array, 'inputValueCount'], // JSON
+  ['inputValueDeprecationReason', Int32Array, 'inputValueCount'],
+  ['inputValueOwnerSet', Int32Array, 'inputValueCount'],
+  ['inputValueType', Uint32Array, 'inputValueCount'],
+  ['inputValueParent', Uint32Array, 'inputValueCount'],
+  ['inputValueTypeWrapping', Uint16Array, 'inputValueCount'],
+  ['inputValueFlags', Uint8Array, 'inputValueCount'],
   // enum values
-  ['eName', Int32Array, 'E'],
-  ['eDesc', Int32Array, 'E'],
-  ['eDepr', Int32Array, 'E'],
-  ['eOwners', Int32Array, 'E'],
-  ['eParent', Uint32Array, 'E'],
+  ['enumValueName', Int32Array, 'enumValueCount'],
+  ['enumValueDescription', Int32Array, 'enumValueCount'],
+  ['enumValueDeprecationReason', Int32Array, 'enumValueCount'],
+  ['enumValueOwnerSet', Int32Array, 'enumValueCount'],
+  ['enumValueParentType', Uint32Array, 'enumValueCount'],
   // misc
-  ['refs', Uint32Array, 'R'],
-  ['osStart', Uint32Array, 'O1'],
-  ['osItems', Uint16Array, 'OI'],
-  ['deprecatedTypes', Uint32Array, 'D'],
-  ['blob', Uint8Array, 'B'],
-] as const satisfies ReadonlyArray<readonly [string, ArrayConstructor, CountKey]>;
+  ['typeRefs', Uint32Array, 'typeRefCount'], // type ids
+  ['ownerSetStart', Uint32Array, 'ownerSetCount+1'], // into ownerSetSubgraphs
+  ['ownerSetSubgraphs', Uint16Array, 'ownerSetItemCount'], // indexes into subgraphNames
+  ['deprecatedTypes', Uint32Array, 'deprecatedTypeCount'], // type ids
+  ['stringBlob', Uint8Array, 'stringBlobBytes'],
+] as const satisfies ReadonlyArray<readonly [string, ArrayConstructor, ColumnLength]>;
 
 type ColumnName = (typeof COLUMNS)[number][0];
 type Columns = {
   [N in ColumnName]: InstanceType<Extract<(typeof COLUMNS)[number], readonly [N, any, any]>[1]>;
 };
 
-function countOf(header: Header, key: CountKey) {
-  return key === 'S1' ? header.S + 1 : key === 'O1' ? header.O + 1 : header[key];
+function columnLength(header: Header, length: ColumnLength) {
+  switch (length) {
+    case 'stringCount+1':
+      return header.stringCount + 1;
+    case 'ownerSetCount+1':
+      return header.ownerSetCount + 1;
+    default:
+      return header[length];
+  }
 }
 
 function layout(header: Header) {
   let offset = HEADER_END;
   const offsets: Array<number> = [];
-  for (const [, ctor, key] of COLUMNS) {
+  for (const [, ArrayType, length] of COLUMNS) {
     offsets.push(offset);
-    offset += countOf(header, key) * ctor.BYTES_PER_ELEMENT;
+    offset += columnLength(header, length) * ArrayType.BYTES_PER_ELEMENT;
     offset = (offset + 7) & ~7;
   }
   return { offsets, total: offset };
 }
 
-/** FNV-1a over UTF-16 code units of `s[start, end)`. */
-function fnv(s: string, start: number, end: number) {
+/** FNV-1a over UTF-16 code units of `value[start, end)`. */
+function fnv1a(value: string, start: number, end: number) {
   let hash = 0x811c9dc5;
-  for (let i = start; i < end; i++) {
-    hash = Math.imul(hash ^ s.charCodeAt(i), 0x01000193);
+  for (let index = start; index < end; index++) {
+    hash = Math.imul(hash ^ value.charCodeAt(index), 0x01000193);
   }
   return hash >>> 0;
+}
+
+/** Smallest power of two (at least 16) with at least twice as many slots as entries. */
+function hashTableSlots(entries: number) {
+  let slots = 16;
+  while (slots < entries * 2) {
+    slots <<= 1;
+  }
+  return slots;
 }
 
 // ---------------------------------------------------------------------------------------------
 // Type references
 
-/** `[[Foo!]!]` → `{ name: 'Foo', wrap }`, wrap = list depth (3 bits) | non-null mask << 3. */
+const CHAR_OPEN_BRACKET = 91; // [
+const CHAR_CLOSE_BRACKET = 93; // ]
+const CHAR_EXCLAMATION = 33; // !
+const CHAR_DOT = 46; // .
+
+/**
+ * `[[Foo!]!]` → `{ name: 'Foo', wrapping }`.
+ * wrapping = list depth (3 bits) | non-null mask << 3, where bit `level` of the non-null mask is
+ * set if the type at that list depth is non-null (bit 0 is the outermost type).
+ */
 function parseTypeRef(type: string) {
-  let i = 0;
-  let depth = 0;
-  while (type.charCodeAt(i) === 91 /* [ */) {
-    depth++;
-    i++;
+  let position = 0;
+  let listDepth = 0;
+  while (type.charCodeAt(position) === CHAR_OPEN_BRACKET) {
+    listDepth++;
+    position++;
   }
-  let j = i;
+  const nameStart = position;
   while (
-    j < type.length &&
-    type.charCodeAt(j) !== 33 /* ! */ &&
-    type.charCodeAt(j) !== 93 /* ] */
+    position < type.length &&
+    type.charCodeAt(position) !== CHAR_EXCLAMATION &&
+    type.charCodeAt(position) !== CHAR_CLOSE_BRACKET
   ) {
-    j++;
+    position++;
   }
-  const name = type.slice(i, j);
-  let level = depth;
-  let mask = 0;
-  if (type.charCodeAt(j) === 33) {
-    mask |= 1 << level;
-    j++;
+  const name = type.slice(nameStart, position);
+  let level = listDepth;
+  let nonNullMask = 0;
+  if (type.charCodeAt(position) === CHAR_EXCLAMATION) {
+    nonNullMask |= 1 << level;
+    position++;
   }
-  while (j < type.length) {
-    if (type.charCodeAt(j) === 93) {
+  while (position < type.length) {
+    if (type.charCodeAt(position) === CHAR_CLOSE_BRACKET) {
       level--;
-      j++;
+      position++;
     }
-    if (type.charCodeAt(j) === 33) {
-      mask |= 1 << level;
-      j++;
+    if (type.charCodeAt(position) === CHAR_EXCLAMATION) {
+      nonNullMask |= 1 << level;
+      position++;
     }
   }
-  invariant(depth <= 7, () => `Type ${type} is nested in too many lists.`);
-  return { name, wrap: depth | (mask << 3) };
+  invariant(listDepth <= 7, () => `Type ${type} is nested in too many lists.`);
+  return { name, wrapping: listDepth | (nonNullMask << 3) };
 }
 
-function formatTypeRef(name: string, wrap: number) {
-  const depth = wrap & 7;
-  const mask = wrap >> 3;
-  let out = '['.repeat(depth) + name;
-  if (mask & (1 << depth)) {
+function formatTypeRef(name: string, wrapping: number) {
+  const listDepth = wrapping & 7;
+  const nonNullMask = wrapping >> 3;
+  let out = '['.repeat(listDepth) + name;
+  if (nonNullMask & (1 << listDepth)) {
     out += '!';
   }
-  for (let level = depth - 1; level >= 0; level--) {
+  for (let level = listDepth - 1; level >= 0; level--) {
     out += ']';
-    if (mask & (1 << level)) {
+    if (nonNullMask & (1 << level)) {
       out += '!';
     }
   }
@@ -242,7 +284,8 @@ function nameOf(coordinate: string) {
 export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): Buffer {
   const strings: Array<string> = [];
   const stringIds = new Map<string, number>();
-  const str = (value: string | null | undefined) => {
+  /** Returns the id of a string, adding it if needed. */
+  const internString = (value: string | null | undefined) => {
     if (value == null) {
       return NONE;
     }
@@ -258,34 +301,34 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     return id;
   };
 
-  const subgraphIndex = new Map(snapshot.subgraphNames.map((name, index) => [name, index]));
-  const subgraphs = snapshot.subgraphNames.map(str);
-  const osStart: Array<number> = [0];
-  const osItems: Array<number> = [];
-  const ownerSets = new Map<string, number>();
-  /** Interns a list of owning subgraphs, keeping its order. */
-  const owners = (serviceNames: ReadonlyArray<string> | undefined) => {
+  const subgraphIndexes = new Map(snapshot.subgraphNames.map((name, index) => [name, index]));
+  const subgraphNames = snapshot.subgraphNames.map(internString);
+  const ownerSetStart: Array<number> = [0];
+  const ownerSetSubgraphs: Array<number> = [];
+  const ownerSetIds = new Map<string, number>();
+  /** Returns the id of a list of owning subgraphs (keeping its order), adding it if needed. */
+  const internOwnerSet = (serviceNames: ReadonlyArray<string> | undefined) => {
     if (!serviceNames) {
       return NONE;
     }
     const indexes = serviceNames.map(name => {
-      const index = subgraphIndex.get(name);
+      const index = subgraphIndexes.get(name);
       invariant(index !== undefined, () => `Subgraph ${name} is missing from the subgraph names.`);
       return index;
     });
     const key = indexes.join(',');
-    let id = ownerSets.get(key);
+    let id = ownerSetIds.get(key);
     if (id === undefined) {
-      id = osStart.length - 1;
-      osItems.push(...indexes);
-      osStart.push(osItems.length);
-      ownerSets.set(key, id);
+      id = ownerSetStart.length - 1;
+      ownerSetSubgraphs.push(...indexes);
+      ownerSetStart.push(ownerSetSubgraphs.length);
+      ownerSetIds.set(key, id);
     }
     return id;
   };
 
   const typeIds = new Map(snapshot.types.map((name, index) => [name, index]));
-  const typeId = (name: string) => {
+  const typeIdOf = (name: string) => {
     const id = typeIds.get(name);
     invariant(id !== undefined, () => `Type ${name} is missing from the snapshot.`);
     return id;
@@ -299,270 +342,271 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     return entry as Extract<SchemaExplorerEntry, { kind: TKind }>;
   };
 
-  const T = snapshot.types.length;
-  const t = {
-    name: new Int32Array(T),
-    desc: new Int32Array(T),
-    owners: new Int32Array(T),
-    childStart: new Uint32Array(T),
-    childCount: new Uint32Array(T),
-    refStart: new Uint32Array(T),
-    refCount: new Uint32Array(T),
-    kind: new Uint8Array(T),
-    flags: new Uint8Array(T),
+  const typeCount = snapshot.types.length;
+  const types = {
+    name: new Int32Array(typeCount),
+    description: new Int32Array(typeCount),
+    ownerSet: new Int32Array(typeCount),
+    childrenStart: new Uint32Array(typeCount),
+    childrenLength: new Uint32Array(typeCount),
+    refsStart: new Uint32Array(typeCount),
+    refsLength: new Uint32Array(typeCount),
+    kind: new Uint8Array(typeCount),
+    flags: new Uint8Array(typeCount),
   };
-  const f = {
+  const fields = {
     name: [] as Array<number>,
-    desc: [] as Array<number>,
-    depr: [] as Array<number>,
-    owners: [] as Array<number>,
+    description: [] as Array<number>,
+    deprecationReason: [] as Array<number>,
+    ownerSet: [] as Array<number>,
     type: [] as Array<number>,
-    argStart: [] as Array<number>,
-    argCount: [] as Array<number>,
-    parent: [] as Array<number>,
-    wrap: [] as Array<number>,
+    argsStart: [] as Array<number>,
+    argsLength: [] as Array<number>,
+    parentType: [] as Array<number>,
+    typeWrapping: [] as Array<number>,
     argCoordinates: [] as Array<ReadonlyArray<string>>,
   };
-  const v = {
+  const inputValues = {
     name: [] as Array<number>,
-    desc: [] as Array<number>,
-    default: [] as Array<number>,
-    depr: [] as Array<number>,
-    owners: [] as Array<number>,
+    description: [] as Array<number>,
+    defaultValue: [] as Array<number>,
+    deprecationReason: [] as Array<number>,
+    ownerSet: [] as Array<number>,
     type: [] as Array<number>,
     parent: [] as Array<number>,
-    wrap: [] as Array<number>,
+    typeWrapping: [] as Array<number>,
     flags: [] as Array<number>,
   };
-  const e = {
+  const enumValues = {
     name: [] as Array<number>,
-    desc: [] as Array<number>,
-    depr: [] as Array<number>,
-    owners: [] as Array<number>,
-    parent: [] as Array<number>,
+    description: [] as Array<number>,
+    deprecationReason: [] as Array<number>,
+    ownerSet: [] as Array<number>,
+    parentType: [] as Array<number>,
   };
-  const refs: Array<number> = [];
+  const typeRefs: Array<number> = [];
 
   const addInputValue = (coordinate: string, parent: number, isArgument: boolean) => {
     const value = entryOf(coordinate, Kind.INPUT_VALUE_DEFINITION);
-    const ref = parseTypeRef(value.type);
-    v.name.push(str(nameOf(coordinate)));
-    v.desc.push(str(value.description));
-    v.default.push(
-      value.defaultValue === undefined ? NONE : str(JSON.stringify(value.defaultValue)),
+    const typeRef = parseTypeRef(value.type);
+    inputValues.name.push(internString(nameOf(coordinate)));
+    inputValues.description.push(internString(value.description));
+    inputValues.defaultValue.push(
+      value.defaultValue === undefined ? NONE : internString(JSON.stringify(value.defaultValue)),
     );
-    v.depr.push(str(value.deprecationReason));
-    v.owners.push(owners(value.ownedBy));
-    v.type.push(typeId(ref.name));
-    v.wrap.push(ref.wrap);
-    v.parent.push(parent);
-    v.flags.push(isArgument ? V_ARGUMENT : 0);
+    inputValues.deprecationReason.push(internString(value.deprecationReason));
+    inputValues.ownerSet.push(internOwnerSet(value.ownedBy));
+    inputValues.type.push(typeIdOf(typeRef.name));
+    inputValues.typeWrapping.push(typeRef.wrapping);
+    inputValues.parent.push(parent);
+    inputValues.flags.push(isArgument ? INPUT_VALUE_FLAG_ARGUMENT : 0);
   };
 
   // Pass 1: types and their direct children. Arguments are added afterwards, so the arguments of
   // a field and the children of a type are contiguous ranges.
-  snapshot.types.forEach((typename, i) => {
+  snapshot.types.forEach((typename, type) => {
     const entry = snapshot.coordinates[typename];
     invariant(entry, () => `Type ${typename} is missing from the snapshot.`);
     const kind = TYPE_KINDS.indexOf(entry.kind as TypeKind);
     invariant(kind !== -1, () => `Expected schema coordinate ${typename} to be a type.`);
-    t.name[i] = str(typename);
-    t.desc[i] = str(entry.description);
-    t.owners[i] = owners(entry.ownedBy);
-    t.kind[i] = kind;
-    t.refStart[i] = refs.length;
+    types.name[type] = internString(typename);
+    types.description[type] = internString(entry.description);
+    types.ownerSet[type] = internOwnerSet(entry.ownedBy);
+    types.kind[type] = kind;
+    types.refsStart[type] = typeRefs.length;
 
     switch (entry.kind) {
       case Kind.OBJECT_TYPE_DEFINITION:
       case Kind.INTERFACE_TYPE_DEFINITION:
-        entry.interfaces.forEach(name => refs.push(typeId(name)));
-        t.childStart[i] = f.name.length;
-        t.childCount[i] = entry.fields.length;
+        entry.interfaces.forEach(name => typeRefs.push(typeIdOf(name)));
+        types.childrenStart[type] = fields.name.length;
+        types.childrenLength[type] = entry.fields.length;
         for (const coordinate of entry.fields) {
           const field = entryOf(coordinate, Kind.FIELD_DEFINITION);
-          const ref = parseTypeRef(field.type);
-          f.name.push(str(nameOf(coordinate)));
-          f.desc.push(str(field.description));
-          f.depr.push(str(field.deprecationReason));
-          f.owners.push(owners(field.ownedBy));
-          f.type.push(typeId(ref.name));
-          f.wrap.push(ref.wrap);
-          f.parent.push(i);
-          f.argStart.push(0);
-          f.argCount.push(field.args.length);
-          f.argCoordinates.push(field.args);
+          const typeRef = parseTypeRef(field.type);
+          fields.name.push(internString(nameOf(coordinate)));
+          fields.description.push(internString(field.description));
+          fields.deprecationReason.push(internString(field.deprecationReason));
+          fields.ownerSet.push(internOwnerSet(field.ownedBy));
+          fields.type.push(typeIdOf(typeRef.name));
+          fields.typeWrapping.push(typeRef.wrapping);
+          fields.parentType.push(type);
+          fields.argsStart.push(0);
+          fields.argsLength.push(field.args.length);
+          fields.argCoordinates.push(field.args);
         }
         break;
       case Kind.INPUT_OBJECT_TYPE_DEFINITION:
-        t.childStart[i] = v.name.length;
-        t.childCount[i] = entry.fields.length;
-        entry.fields.forEach(coordinate => addInputValue(coordinate, i, false));
+        types.childrenStart[type] = inputValues.name.length;
+        types.childrenLength[type] = entry.fields.length;
+        entry.fields.forEach(coordinate => addInputValue(coordinate, type, false));
         break;
       case Kind.ENUM_TYPE_DEFINITION:
-        t.childStart[i] = e.name.length;
-        t.childCount[i] = entry.values.length;
+        types.childrenStart[type] = enumValues.name.length;
+        types.childrenLength[type] = entry.values.length;
         for (const coordinate of entry.values) {
           const value = entryOf(coordinate, Kind.ENUM_VALUE_DEFINITION);
-          e.name.push(str(nameOf(coordinate)));
-          e.desc.push(str(value.description));
-          e.depr.push(str(value.deprecationReason));
-          e.owners.push(owners(value.ownedBy));
-          e.parent.push(i);
+          enumValues.name.push(internString(nameOf(coordinate)));
+          enumValues.description.push(internString(value.description));
+          enumValues.deprecationReason.push(internString(value.deprecationReason));
+          enumValues.ownerSet.push(internOwnerSet(value.ownedBy));
+          enumValues.parentType.push(type);
         }
         break;
       case Kind.UNION_TYPE_DEFINITION:
-        entry.members.forEach(name => refs.push(typeId(name)));
+        entry.members.forEach(name => typeRefs.push(typeIdOf(name)));
         break;
       case Kind.SCALAR_TYPE_DEFINITION:
-        t.flags[i] = entry.builtIn ? T_BUILT_IN : 0;
+        types.flags[type] = entry.builtIn ? TYPE_FLAG_BUILT_IN : 0;
         break;
     }
-    t.refCount[i] = refs.length - t.refStart[i];
+    types.refsLength[type] = typeRefs.length - types.refsStart[type];
   });
 
   // Pass 2: arguments.
-  f.argCoordinates.forEach((argCoordinates, field) => {
-    f.argStart[field] = v.name.length;
+  fields.argCoordinates.forEach((argCoordinates, field) => {
+    fields.argsStart[field] = inputValues.name.length;
     argCoordinates.forEach(coordinate => addInputValue(coordinate, field, true));
   });
 
   // Strings: one blob, a hash table from string to id, and type ids by name string.
-  const joined = strings.join('');
-  const blob = new TextEncoder().encode(joined);
-  const strOff = new Uint32Array(strings.length + 1);
-  for (let i = 0, offset = 0; i < strings.length; i++) {
-    strOff[i] = offset;
-    offset += strings[i].length;
-    strOff[i + 1] = offset;
+  const stringBlob = new TextEncoder().encode(strings.join(''));
+  const stringOffsets = new Uint32Array(strings.length + 1);
+  for (let id = 0, offset = 0; id < strings.length; id++) {
+    stringOffsets[id] = offset;
+    offset += strings[id].length;
+    stringOffsets[id + 1] = offset;
   }
-  let H = 16;
-  while (H < strings.length * 2) {
-    H <<= 1;
-  }
-  const strHash = new Int32Array(H).fill(NONE);
+  const stringHashSlots = hashTableSlots(strings.length);
+  const stringHashTable = new Int32Array(stringHashSlots).fill(NONE);
   strings.forEach((value, id) => {
-    let slot = fnv(value, 0, value.length) & (H - 1);
-    while (strHash[slot] !== NONE) {
-      slot = (slot + 1) & (H - 1);
+    let slot = fnv1a(value, 0, value.length) & (stringHashSlots - 1);
+    while (stringHashTable[slot] !== NONE) {
+      slot = (slot + 1) & (stringHashSlots - 1);
     }
-    strHash[slot] = id;
+    stringHashTable[slot] = id;
   });
-  const typeByStr = new Int32Array(strings.length).fill(NONE);
-  for (let i = 0; i < T; i++) {
-    typeByStr[t.name[i]] = i;
+  const typeIdByStringId = new Int32Array(strings.length).fill(NONE);
+  for (let type = 0; type < typeCount; type++) {
+    typeIdByStringId[types.name[type]] = type;
   }
 
   // Schema coordinate → handle. Coordinates are only built here; they are not stored.
-  const coordinateCount = T + f.name.length + v.name.length + e.name.length;
-  let CH = 16;
-  while (CH < coordinateCount * 2) {
-    CH <<= 1;
-  }
-  const coordHash = new Int32Array(CH).fill(NONE);
+  const coordinateHashSlots = hashTableSlots(
+    typeCount + fields.name.length + inputValues.name.length + enumValues.name.length,
+  );
+  const coordinateHashTable = new Int32Array(coordinateHashSlots).fill(NONE);
   const putCoordinate = (coordinate: string, handle: number) => {
-    let slot = fnv(coordinate, 0, coordinate.length) & (CH - 1);
-    while (coordHash[slot] !== NONE) {
-      slot = (slot + 1) & (CH - 1);
+    let slot = fnv1a(coordinate, 0, coordinate.length) & (coordinateHashSlots - 1);
+    while (coordinateHashTable[slot] !== NONE) {
+      slot = (slot + 1) & (coordinateHashSlots - 1);
     }
-    coordHash[slot] = handle;
+    coordinateHashTable[slot] = handle;
   };
+  const typeNameOf = (type: number) => strings[types.name[type]];
   const fieldCoordinate = (field: number) =>
-    `${strings[t.name[f.parent[field]]]}.${strings[f.name[field]]}`;
-  for (let i = 0; i < T; i++) {
-    putCoordinate(strings[t.name[i]], makeHandle(H_TYPE, i));
+    `${typeNameOf(fields.parentType[field])}.${strings[fields.name[field]]}`;
+  for (let type = 0; type < typeCount; type++) {
+    putCoordinate(typeNameOf(type), makeHandle(HANDLE_KIND_TYPE, type));
   }
-  for (let i = 0; i < f.name.length; i++) {
-    putCoordinate(fieldCoordinate(i), makeHandle(H_FIELD, i));
+  for (let field = 0; field < fields.name.length; field++) {
+    putCoordinate(fieldCoordinate(field), makeHandle(HANDLE_KIND_FIELD, field));
   }
-  for (let i = 0; i < v.name.length; i++) {
-    const parent =
-      v.flags[i] & V_ARGUMENT ? fieldCoordinate(v.parent[i]) : strings[t.name[v.parent[i]]];
-    putCoordinate(`${parent}.${strings[v.name[i]]}`, makeHandle(H_VALUE, i));
-  }
-  for (let i = 0; i < e.name.length; i++) {
+  for (let inputValue = 0; inputValue < inputValues.name.length; inputValue++) {
+    const parent = inputValues.parent[inputValue];
+    const parentCoordinate =
+      inputValues.flags[inputValue] & INPUT_VALUE_FLAG_ARGUMENT
+        ? fieldCoordinate(parent)
+        : typeNameOf(parent);
     putCoordinate(
-      `${strings[t.name[e.parent[i]]]}.${strings[e.name[i]]}`,
-      makeHandle(H_ENUM_VALUE, i),
+      `${parentCoordinate}.${strings[inputValues.name[inputValue]]}`,
+      makeHandle(HANDLE_KIND_INPUT_VALUE, inputValue),
+    );
+  }
+  for (let enumValue = 0; enumValue < enumValues.name.length; enumValue++) {
+    putCoordinate(
+      `${typeNameOf(enumValues.parentType[enumValue])}.${strings[enumValues.name[enumValue]]}`,
+      makeHandle(HANDLE_KIND_ENUM_VALUE, enumValue),
     );
   }
 
-  const rootTypeId = (name: string | null) => (name === null ? NONE : typeId(name));
+  const rootTypeId = (name: string | null) => (name === null ? NONE : typeIdOf(name));
   const header: Header = {
-    S: strings.length,
-    H,
-    CH,
-    G: subgraphs.length,
-    T,
-    F: f.name.length,
-    V: v.name.length,
-    E: e.name.length,
-    R: refs.length,
-    O: osStart.length - 1,
-    OI: osItems.length,
-    B: blob.length,
-    D: snapshot.deprecatedTypes.length,
-    query: rootTypeId(snapshot.queryTypeName),
-    mutation: rootTypeId(snapshot.mutationTypeName),
-    subscription: rootTypeId(snapshot.subscriptionTypeName),
+    stringCount: strings.length,
+    stringHashSlots,
+    coordinateHashSlots,
+    subgraphCount: subgraphNames.length,
+    typeCount,
+    fieldCount: fields.name.length,
+    inputValueCount: inputValues.name.length,
+    enumValueCount: enumValues.name.length,
+    typeRefCount: typeRefs.length,
+    ownerSetCount: ownerSetStart.length - 1,
+    ownerSetItemCount: ownerSetSubgraphs.length,
+    stringBlobBytes: stringBlob.length,
+    deprecatedTypeCount: snapshot.deprecatedTypes.length,
+    queryType: rootTypeId(snapshot.queryTypeName),
+    mutationType: rootTypeId(snapshot.mutationTypeName),
+    subscriptionType: rootTypeId(snapshot.subscriptionTypeName),
   };
   const data: Record<ColumnName, ArrayLike<number>> = {
-    strOff,
-    strHash,
-    typeByStr,
-    coordHash,
-    subgraphs,
-    tName: t.name,
-    tDesc: t.desc,
-    tOwners: t.owners,
-    tChildStart: t.childStart,
-    tChildCount: t.childCount,
-    tRefStart: t.refStart,
-    tRefCount: t.refCount,
-    tKind: t.kind,
-    tFlags: t.flags,
-    fName: f.name,
-    fDesc: f.desc,
-    fDepr: f.depr,
-    fOwners: f.owners,
-    fType: f.type,
-    fArgStart: f.argStart,
-    fArgCount: f.argCount,
-    fParent: f.parent,
-    fWrap: f.wrap,
-    vName: v.name,
-    vDesc: v.desc,
-    vDefault: v.default,
-    vDepr: v.depr,
-    vOwners: v.owners,
-    vType: v.type,
-    vParent: v.parent,
-    vWrap: v.wrap,
-    vFlags: v.flags,
-    eName: e.name,
-    eDesc: e.desc,
-    eDepr: e.depr,
-    eOwners: e.owners,
-    eParent: e.parent,
-    refs,
-    osStart,
-    osItems,
-    deprecatedTypes: snapshot.deprecatedTypes.map(typeId),
-    blob,
+    stringOffsets,
+    stringHashTable,
+    typeIdByStringId,
+    coordinateHashTable,
+    subgraphNames,
+    typeName: types.name,
+    typeDescription: types.description,
+    typeOwnerSet: types.ownerSet,
+    typeChildrenStart: types.childrenStart,
+    typeChildrenLength: types.childrenLength,
+    typeRefsStart: types.refsStart,
+    typeRefsLength: types.refsLength,
+    typeKind: types.kind,
+    typeFlags: types.flags,
+    fieldName: fields.name,
+    fieldDescription: fields.description,
+    fieldDeprecationReason: fields.deprecationReason,
+    fieldOwnerSet: fields.ownerSet,
+    fieldType: fields.type,
+    fieldArgsStart: fields.argsStart,
+    fieldArgsLength: fields.argsLength,
+    fieldParentType: fields.parentType,
+    fieldTypeWrapping: fields.typeWrapping,
+    inputValueName: inputValues.name,
+    inputValueDescription: inputValues.description,
+    inputValueDefaultValue: inputValues.defaultValue,
+    inputValueDeprecationReason: inputValues.deprecationReason,
+    inputValueOwnerSet: inputValues.ownerSet,
+    inputValueType: inputValues.type,
+    inputValueParent: inputValues.parent,
+    inputValueTypeWrapping: inputValues.typeWrapping,
+    inputValueFlags: inputValues.flags,
+    enumValueName: enumValues.name,
+    enumValueDescription: enumValues.description,
+    enumValueDeprecationReason: enumValues.deprecationReason,
+    enumValueOwnerSet: enumValues.ownerSet,
+    enumValueParentType: enumValues.parentType,
+    typeRefs,
+    ownerSetStart,
+    ownerSetSubgraphs,
+    deprecatedTypes: snapshot.deprecatedTypes.map(typeIdOf),
+    stringBlob,
   };
 
   const { offsets, total } = layout(header);
   const buffer = new ArrayBuffer(total);
   const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < MAGIC.length; i++) {
-    bytes[i] = MAGIC.charCodeAt(i);
+  for (let index = 0; index < MAGIC.length; index++) {
+    bytes[index] = MAGIC.charCodeAt(index);
   }
   bytes[3] = SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION;
   const words = new Uint32Array(buffer, HEADER_OFFSET, HEADER_WORDS.length);
-  HEADER_WORDS.forEach((key, i) => {
-    words[i] = header[key] >>> 0;
+  HEADER_WORDS.forEach((key, index) => {
+    words[index] = header[key] >>> 0;
   });
-  COLUMNS.forEach(([name, ctor, key], i) => {
-    new ctor(buffer, offsets[i], countOf(header, key)).set(data[name]);
+  COLUMNS.forEach(([name, ArrayType, length], index) => {
+    new ArrayType(buffer, offsets[index], columnLength(header, length)).set(data[name]);
   });
   return Buffer.from(buffer);
 }
@@ -636,11 +680,12 @@ export class SchemaExplorerSnapshotReader {
 
   private constructor(
     private buffer: Buffer,
-    private c: Columns,
-    private h: Header,
+    private columns: Columns,
+    private header: Header,
+    /** The decoded string blob; string `id` is `[stringOffsets[id], stringOffsets[id + 1])`. */
     private text: string,
   ) {
-    this.ownerSetNames = new Array(h.O);
+    this.ownerSetNames = new Array(header.ownerSetCount);
   }
 
   /** Returns null if the buffer is not a valid snapshot of the current format. */
@@ -667,24 +712,29 @@ export class SchemaExplorerSnapshotReader {
       const arrayBuffer = buffer.buffer as ArrayBuffer;
       const words = new Uint32Array(arrayBuffer, base + HEADER_OFFSET, HEADER_WORDS.length);
       const header = {} as Header;
-      HEADER_WORDS.forEach((key, i) => {
-        header[key] = words[i];
+      HEADER_WORDS.forEach((key, index) => {
+        header[key] = words[index];
       });
-      header.query |= 0;
-      header.mutation |= 0;
-      header.subscription |= 0;
+      // Root type ids are signed: NONE is stored as 0xffffffff.
+      header.queryType |= 0;
+      header.mutationType |= 0;
+      header.subscriptionType |= 0;
 
       const { offsets, total } = layout(header);
       if (total > buffer.length) {
         return null;
       }
       const views: Record<string, unknown> = {};
-      COLUMNS.forEach(([name, ctor, key], i) => {
-        views[name] = new ctor(arrayBuffer, base + offsets[i], countOf(header, key));
+      COLUMNS.forEach(([name, ArrayType, length], index) => {
+        views[name] = new ArrayType(
+          arrayBuffer,
+          base + offsets[index],
+          columnLength(header, length),
+        );
       });
       const columns = views as Columns;
-      const text = new TextDecoder().decode(columns.blob);
-      if (text.length !== columns.strOff[header.S]) {
+      const text = new TextDecoder().decode(columns.stringBlob);
+      if (text.length !== columns.stringOffsets[header.stringCount]) {
         return null;
       }
       return new SchemaExplorerSnapshotReader(buffer, columns, header, text);
@@ -711,59 +761,62 @@ export class SchemaExplorerSnapshotReader {
 
   // ------------------------------------------------------------------------------- strings
 
-  private str(id: number): string {
-    return this.text.substring(this.c.strOff[id], this.c.strOff[id + 1]);
+  private string(id: number): string {
+    return this.text.substring(this.columns.stringOffsets[id], this.columns.stringOffsets[id + 1]);
   }
 
-  private strOrUndefined(id: number): string | undefined {
-    return id === NONE ? undefined : this.str(id);
+  private stringOrUndefined(id: number): string | undefined {
+    return id === NONE ? undefined : this.string(id);
   }
 
-  /** Id of `s[start, end)` without allocating it, or NONE. */
-  private strId(s: string, start = 0, end = s.length): number {
-    const { strHash, strOff } = this.c;
-    const mask = this.h.H - 1;
+  /** Id of `value[start, end)` without allocating it, or NONE. */
+  private findStringId(value: string, start = 0, end = value.length): number {
+    const { stringHashTable, stringOffsets } = this.columns;
+    const slotMask = this.header.stringHashSlots - 1;
     const length = end - start;
-    let slot = fnv(s, start, end) & mask;
+    let slot = fnv1a(value, start, end) & slotMask;
     for (;;) {
-      const id = strHash[slot];
+      const id = stringHashTable[slot];
       if (id === NONE) {
         return NONE;
       }
-      const offset = strOff[id];
-      if (strOff[id + 1] - offset === length) {
-        let k = 0;
-        while (k < length && this.text.charCodeAt(offset + k) === s.charCodeAt(start + k)) {
-          k++;
+      const offset = stringOffsets[id];
+      if (stringOffsets[id + 1] - offset === length) {
+        let matched = 0;
+        while (
+          matched < length &&
+          this.text.charCodeAt(offset + matched) === value.charCodeAt(start + matched)
+        ) {
+          matched++;
         }
-        if (k === length) {
+        if (matched === length) {
           return id;
         }
       }
-      slot = (slot + 1) & mask;
+      slot = (slot + 1) & slotMask;
     }
   }
 
-  private typeId(name: string): number {
-    const id = this.strId(name);
-    return id === NONE ? NONE : this.c.typeByStr[id];
+  private findTypeId(name: string): number {
+    const id = this.findStringId(name);
+    return id === NONE ? NONE : this.columns.typeIdByStringId[id];
   }
 
-  private typeName(type: number) {
-    return this.str(this.c.tName[type]);
+  private typeNameOf(type: number) {
+    return this.string(this.columns.typeName[type]);
   }
 
   // ------------------------------------------------------------------- coordinate lookup
 
-  /** Position after the string `id` if `s` continues with it at `position`, otherwise -1. */
-  private matchSegment(s: string, position: number, id: number): number {
-    const offset = this.c.strOff[id];
-    const length = this.c.strOff[id + 1] - offset;
-    if (position + length > s.length) {
+  /** Position after string `stringId` if `coordinate` continues with it at `position`, otherwise -1. */
+  private matchSegment(coordinate: string, position: number, stringId: number): number {
+    const offset = this.columns.stringOffsets[stringId];
+    const length = this.columns.stringOffsets[stringId + 1] - offset;
+    if (position + length > coordinate.length) {
       return -1;
     }
-    for (let k = 0; k < length; k++) {
-      if (this.text.charCodeAt(offset + k) !== s.charCodeAt(position + k)) {
+    for (let index = 0; index < length; index++) {
+      if (this.text.charCodeAt(offset + index) !== coordinate.charCodeAt(position + index)) {
         return -1;
       }
     }
@@ -771,42 +824,43 @@ export class SchemaExplorerSnapshotReader {
   }
 
   private coordinateEquals(coordinate: string, handle: number): boolean {
-    const c = this.c;
-    const i = handleIndex(handle);
+    const columns = this.columns;
+    const index = handleIndex(handle);
+    // The coordinate of the handle is `type.member` or `type.member.argument` (string ids).
     let type: number;
     let member: number;
     let argument = NONE;
     switch (handleKind(handle)) {
-      case H_TYPE:
-        return this.matchSegment(coordinate, 0, c.tName[i]) === coordinate.length;
-      case H_FIELD:
-        type = c.fParent[i];
-        member = c.fName[i];
+      case HANDLE_KIND_TYPE:
+        return this.matchSegment(coordinate, 0, columns.typeName[index]) === coordinate.length;
+      case HANDLE_KIND_FIELD:
+        type = columns.fieldParentType[index];
+        member = columns.fieldName[index];
         break;
-      case H_ENUM_VALUE:
-        type = c.eParent[i];
-        member = c.eName[i];
+      case HANDLE_KIND_ENUM_VALUE:
+        type = columns.enumValueParentType[index];
+        member = columns.enumValueName[index];
         break;
       default:
-        if (c.vFlags[i] & V_ARGUMENT) {
-          const field = c.vParent[i];
-          type = c.fParent[field];
-          member = c.fName[field];
-          argument = c.vName[i];
+        if (columns.inputValueFlags[index] & INPUT_VALUE_FLAG_ARGUMENT) {
+          const field = columns.inputValueParent[index];
+          type = columns.fieldParentType[field];
+          member = columns.fieldName[field];
+          argument = columns.inputValueName[index];
         } else {
-          type = c.vParent[i];
-          member = c.vName[i];
+          type = columns.inputValueParent[index];
+          member = columns.inputValueName[index];
         }
     }
-    let position = this.matchSegment(coordinate, 0, c.tName[type]);
-    if (position < 0 || coordinate.charCodeAt(position) !== 46 /* . */) {
+    let position = this.matchSegment(coordinate, 0, columns.typeName[type]);
+    if (position < 0 || coordinate.charCodeAt(position) !== CHAR_DOT) {
       return false;
     }
     position = this.matchSegment(coordinate, position + 1, member);
     if (argument === NONE) {
       return position === coordinate.length;
     }
-    if (position < 0 || coordinate.charCodeAt(position) !== 46) {
+    if (position < 0 || coordinate.charCodeAt(position) !== CHAR_DOT) {
       return false;
     }
     return this.matchSegment(coordinate, position + 1, argument) === coordinate.length;
@@ -814,9 +868,9 @@ export class SchemaExplorerSnapshotReader {
 
   /** `Type`, `Type.field`, `Type.field.argument`, `Input.field` or `Enum.VALUE` → handle or NONE. */
   private lookup(coordinate: string): number {
-    const table = this.c.coordHash;
-    const mask = this.h.CH - 1;
-    let slot = fnv(coordinate, 0, coordinate.length) & mask;
+    const table = this.columns.coordinateHashTable;
+    const slotMask = this.header.coordinateHashSlots - 1;
+    let slot = fnv1a(coordinate, 0, coordinate.length) & slotMask;
     for (;;) {
       const handle = table[slot];
       if (handle === NONE) {
@@ -825,54 +879,56 @@ export class SchemaExplorerSnapshotReader {
       if (this.coordinateEquals(coordinate, handle)) {
         return handle;
       }
-      slot = (slot + 1) & mask;
+      slot = (slot + 1) & slotMask;
     }
   }
 
-  private ownerSet(set: number): Array<string> | null {
-    if (set === NONE) {
+  private ownerSet(ownerSet: number): Array<string> | null {
+    if (ownerSet === NONE) {
       return null;
     }
-    let names = this.ownerSetNames[set];
+    let names = this.ownerSetNames[ownerSet];
     if (!names) {
-      const { osStart, osItems, subgraphs } = this.c;
+      const { ownerSetStart, ownerSetSubgraphs, subgraphNames } = this.columns;
       names = [];
-      for (let i = osStart[set]; i < osStart[set + 1]; i++) {
-        names.push(this.str(subgraphs[osItems[i]]));
+      for (let item = ownerSetStart[ownerSet]; item < ownerSetStart[ownerSet + 1]; item++) {
+        names.push(this.string(subgraphNames[ownerSetSubgraphs[item]]));
       }
-      this.ownerSetNames[set] = names;
+      this.ownerSetNames[ownerSet] = names;
     }
     return names;
   }
 
   private ownerSetOf(handle: number) {
-    const i = handleIndex(handle);
+    const index = handleIndex(handle);
     switch (handleKind(handle)) {
-      case H_TYPE:
-        return this.c.tOwners[i];
-      case H_FIELD:
-        return this.c.fOwners[i];
-      case H_VALUE:
-        return this.c.vOwners[i];
+      case HANDLE_KIND_TYPE:
+        return this.columns.typeOwnerSet[index];
+      case HANDLE_KIND_FIELD:
+        return this.columns.fieldOwnerSet[index];
+      case HANDLE_KIND_INPUT_VALUE:
+        return this.columns.inputValueOwnerSet[index];
       default:
-        return this.c.eOwners[i];
+        return this.columns.enumValueOwnerSet[index];
     }
   }
 
   // --------------------------------------------------------------------------- public API
 
   get queryTypeName() {
-    return this.h.query === NONE ? null : this.typeName(this.h.query);
+    return this.header.queryType === NONE ? null : this.typeNameOf(this.header.queryType);
   }
   get mutationTypeName() {
-    return this.h.mutation === NONE ? null : this.typeName(this.h.mutation);
+    return this.header.mutationType === NONE ? null : this.typeNameOf(this.header.mutationType);
   }
   get subscriptionTypeName() {
-    return this.h.subscription === NONE ? null : this.typeName(this.h.subscription);
+    return this.header.subscriptionType === NONE
+      ? null
+      : this.typeNameOf(this.header.subscriptionType);
   }
   /** All subgraphs owning a part of the supergraph, sorted by name. */
   get subgraphNames(): Array<string> {
-    this.cachedSubgraphNames ??= Array.from(this.c.subgraphs, id => this.str(id));
+    this.cachedSubgraphNames ??= Array.from(this.columns.subgraphNames, id => this.string(id));
     return this.cachedSubgraphNames;
   }
   /**
@@ -880,16 +936,18 @@ export class SchemaExplorerSnapshotReader {
    * The deprecated explorer only needs to look at these.
    */
   get deprecatedTypes(): Array<string> {
-    this.cachedDeprecatedTypes ??= Array.from(this.c.deprecatedTypes, type => this.typeName(type));
+    this.cachedDeprecatedTypes ??= Array.from(this.columns.deprecatedTypes, type =>
+      this.typeNameOf(type),
+    );
     return this.cachedDeprecatedTypes;
   }
 
   /** All type names, sorted by name. */
   getTypeNames({ withBuiltInScalars }: { withBuiltInScalars: boolean }): Array<string> {
     const names: Array<string> = [];
-    for (let type = 0; type < this.h.T; type++) {
-      if (withBuiltInScalars || !(this.c.tFlags[type] & T_BUILT_IN)) {
-        names.push(this.typeName(type));
+    for (let type = 0; type < this.header.typeCount; type++) {
+      if (withBuiltInScalars || !(this.columns.typeFlags[type] & TYPE_FLAG_BUILT_IN)) {
+        names.push(this.typeNameOf(type));
       }
     }
     return names;
@@ -907,111 +965,134 @@ export class SchemaExplorerSnapshotReader {
     if (handle === NONE) {
       return null;
     }
-    const c = this.c;
-    const i = handleIndex(handle);
+    const columns = this.columns;
+    const index = handleIndex(handle);
     const ownedBy = this.ownerSet(this.ownerSetOf(handle));
     const withOwners = (entry: SchemaExplorerEntry): SchemaExplorerEntry =>
       ownedBy ? { ...entry, ownedBy } : entry;
 
     switch (handleKind(handle)) {
-      case H_FIELD: {
+      case HANDLE_KIND_FIELD: {
+        const field = index;
         const args: Array<string> = [];
-        for (let a = c.fArgStart[i], end = a + c.fArgCount[i]; a < end; a++) {
-          args.push(`${coordinate}.${this.str(c.vName[a])}`);
+        for (
+          let argument = columns.fieldArgsStart[field],
+            argsEnd = argument + columns.fieldArgsLength[field];
+          argument < argsEnd;
+          argument++
+        ) {
+          args.push(`${coordinate}.${this.string(columns.inputValueName[argument])}`);
         }
         return withOwners({
           kind: Kind.FIELD_DEFINITION,
-          description: this.strOrUndefined(c.fDesc[i]),
-          deprecationReason: this.strOrUndefined(c.fDepr[i]),
-          type: formatTypeRef(this.typeName(c.fType[i]), c.fWrap[i]),
+          description: this.stringOrUndefined(columns.fieldDescription[field]),
+          deprecationReason: this.stringOrUndefined(columns.fieldDeprecationReason[field]),
+          type: formatTypeRef(
+            this.typeNameOf(columns.fieldType[field]),
+            columns.fieldTypeWrapping[field],
+          ),
           args,
         });
       }
-      case H_VALUE: {
-        const value = this.inputValue(i);
+      case HANDLE_KIND_INPUT_VALUE: {
+        const inputValue = this.inputValue(index);
         return withOwners({
           kind: Kind.INPUT_VALUE_DEFINITION,
-          description: value.description,
-          deprecationReason: value.deprecationReason,
-          type: value.type,
-          ...(c.vDefault[i] === NONE ? {} : { defaultValue: value.defaultValue }),
+          description: inputValue.description,
+          deprecationReason: inputValue.deprecationReason,
+          type: inputValue.type,
+          ...(columns.inputValueDefaultValue[index] === NONE
+            ? {}
+            : { defaultValue: inputValue.defaultValue }),
         });
       }
-      case H_ENUM_VALUE:
+      case HANDLE_KIND_ENUM_VALUE: {
+        const enumValue = index;
         return withOwners({
           kind: Kind.ENUM_VALUE_DEFINITION,
-          description: this.strOrUndefined(c.eDesc[i]),
-          deprecationReason: this.strOrUndefined(c.eDepr[i]),
+          description: this.stringOrUndefined(columns.enumValueDescription[enumValue]),
+          deprecationReason: this.stringOrUndefined(columns.enumValueDeprecationReason[enumValue]),
         });
+      }
     }
 
+    const type = index;
     const typename = coordinate;
-    const description = this.strOrUndefined(c.tDesc[i]);
-    const start = c.tChildStart[i];
-    const end = start + c.tChildCount[i];
-    const children = (names: Int32Array) => {
+    const description = this.stringOrUndefined(columns.typeDescription[type]);
+    const childrenStart = columns.typeChildrenStart[type];
+    const childrenEnd = childrenStart + columns.typeChildrenLength[type];
+    const childCoordinates = (childNames: Int32Array) => {
       const coordinates: Array<string> = [];
-      for (let child = start; child < end; child++) {
-        coordinates.push(`${typename}.${this.str(names[child])}`);
+      for (let child = childrenStart; child < childrenEnd; child++) {
+        coordinates.push(`${typename}.${this.string(childNames[child])}`);
       }
       return coordinates;
     };
-    switch (c.tKind[i]) {
-      case K_OBJECT:
-      case K_INTERFACE:
+    switch (columns.typeKind[type]) {
+      case TYPE_KIND_OBJECT:
+      case TYPE_KIND_INTERFACE:
         return withOwners({
-          kind: TYPE_KINDS[c.tKind[i]] as
+          kind: TYPE_KINDS[columns.typeKind[type]] as
             | typeof Kind.OBJECT_TYPE_DEFINITION
             | typeof Kind.INTERFACE_TYPE_DEFINITION,
           description,
-          interfaces: this.typeRefs(i),
-          fields: children(c.fName),
+          interfaces: this.typeRefNames(type),
+          fields: childCoordinates(columns.fieldName),
         });
-      case K_INPUT:
+      case TYPE_KIND_INPUT_OBJECT:
         return withOwners({
           kind: Kind.INPUT_OBJECT_TYPE_DEFINITION,
           description,
-          fields: children(c.vName),
+          fields: childCoordinates(columns.inputValueName),
         });
-      case K_ENUM:
+      case TYPE_KIND_ENUM:
         return withOwners({
           kind: Kind.ENUM_TYPE_DEFINITION,
           description,
-          values: children(c.eName),
+          values: childCoordinates(columns.enumValueName),
         });
-      case K_UNION:
+      case TYPE_KIND_UNION:
         return withOwners({
           kind: Kind.UNION_TYPE_DEFINITION,
           description,
-          members: this.typeRefs(i),
+          members: this.typeRefNames(type),
         });
       default:
         return withOwners({
           kind: Kind.SCALAR_TYPE_DEFINITION,
           description,
-          ...(c.tFlags[i] & T_BUILT_IN ? { builtIn: true as const } : {}),
+          ...(columns.typeFlags[type] & TYPE_FLAG_BUILT_IN ? { builtIn: true as const } : {}),
         });
     }
   }
 
-  private typeRefs(type: number): Array<string> {
+  /** Names of the interfaces of an object or interface type, or the members of a union. */
+  private typeRefNames(type: number): Array<string> {
+    const { typeRefsStart, typeRefsLength, typeRefs } = this.columns;
     const names: Array<string> = [];
-    for (let r = this.c.tRefStart[type], end = r + this.c.tRefCount[type]; r < end; r++) {
-      names.push(this.typeName(this.c.refs[r]));
+    for (
+      let typeRef = typeRefsStart[type], end = typeRef + typeRefsLength[type];
+      typeRef < end;
+      typeRef++
+    ) {
+      names.push(this.typeNameOf(typeRefs[typeRef]));
     }
     return names;
   }
 
-  private inputValue(i: number) {
-    const c = this.c;
-    const defaultValue = c.vDefault[i];
+  private inputValue(inputValue: number) {
+    const columns = this.columns;
+    const defaultValue = columns.inputValueDefaultValue[inputValue];
     return {
-      name: this.str(c.vName[i]),
-      description: this.strOrUndefined(c.vDesc[i]),
-      deprecationReason: this.strOrUndefined(c.vDepr[i]),
+      name: this.string(columns.inputValueName[inputValue]),
+      description: this.stringOrUndefined(columns.inputValueDescription[inputValue]),
+      deprecationReason: this.stringOrUndefined(columns.inputValueDeprecationReason[inputValue]),
       defaultValue:
-        defaultValue === NONE ? undefined : (JSON.parse(this.str(defaultValue)) as unknown),
-      type: formatTypeRef(this.typeName(c.vType[i]), c.vWrap[i]),
+        defaultValue === NONE ? undefined : (JSON.parse(this.string(defaultValue)) as unknown),
+      type: formatTypeRef(
+        this.typeNameOf(columns.inputValueType[inputValue]),
+        columns.inputValueTypeWrapping[inputValue],
+      ),
     };
   }
 
@@ -1020,67 +1101,77 @@ export class SchemaExplorerSnapshotReader {
    * Returns null if there is no such type.
    */
   getTypeEntity(typename: string): SchemaExplorerTypeEntity | null {
-    const type = this.typeId(typename);
+    const type = this.findTypeId(typename);
     if (type === NONE) {
       return null;
     }
-    const c = this.c;
-    const description = this.strOrUndefined(c.tDesc[type]);
-    const start = c.tChildStart[type];
-    const end = start + c.tChildCount[type];
+    const columns = this.columns;
+    const description = this.stringOrUndefined(columns.typeDescription[type]);
+    const childrenStart = columns.typeChildrenStart[type];
+    const childrenEnd = childrenStart + columns.typeChildrenLength[type];
 
-    switch (c.tKind[type]) {
-      case K_OBJECT:
-      case K_INTERFACE: {
+    switch (columns.typeKind[type]) {
+      case TYPE_KIND_OBJECT:
+      case TYPE_KIND_INTERFACE: {
         const fields: Array<GraphQLFieldMapper['entity']> = [];
-        for (let field = start; field < end; field++) {
+        for (let field = childrenStart; field < childrenEnd; field++) {
           const args = [];
-          for (let a = c.fArgStart[field], argsEnd = a + c.fArgCount[field]; a < argsEnd; a++) {
-            args.push(this.inputValue(a));
+          for (
+            let argument = columns.fieldArgsStart[field],
+              argsEnd = argument + columns.fieldArgsLength[field];
+            argument < argsEnd;
+            argument++
+          ) {
+            args.push(this.inputValue(argument));
           }
           fields.push({
-            name: this.str(c.fName[field]),
-            description: this.strOrUndefined(c.fDesc[field]),
-            deprecationReason: this.strOrUndefined(c.fDepr[field]),
-            type: formatTypeRef(this.typeName(c.fType[field]), c.fWrap[field]),
+            name: this.string(columns.fieldName[field]),
+            description: this.stringOrUndefined(columns.fieldDescription[field]),
+            deprecationReason: this.stringOrUndefined(columns.fieldDeprecationReason[field]),
+            type: formatTypeRef(
+              this.typeNameOf(columns.fieldType[field]),
+              columns.fieldTypeWrapping[field],
+            ),
             args,
           });
         }
         return {
           kind:
-            c.tKind[type] === K_OBJECT
+            columns.typeKind[type] === TYPE_KIND_OBJECT
               ? Kind.OBJECT_TYPE_DEFINITION
               : Kind.INTERFACE_TYPE_DEFINITION,
           name: typename,
           description,
-          interfaces: this.typeRefs(type),
+          interfaces: this.typeRefNames(type),
           fields,
         };
       }
-      case K_INPUT: {
+      case TYPE_KIND_INPUT_OBJECT: {
         const fields = [];
-        for (let value = start; value < end; value++) {
-          fields.push(this.inputValue(value));
+        for (let inputValue = childrenStart; inputValue < childrenEnd; inputValue++) {
+          fields.push(this.inputValue(inputValue));
         }
         return { kind: Kind.INPUT_OBJECT_TYPE_DEFINITION, name: typename, description, fields };
       }
-      case K_ENUM: {
+      case TYPE_KIND_ENUM: {
         const values = [];
-        for (let value = start; value < end; value++) {
+        for (let enumValue = childrenStart; enumValue < childrenEnd; enumValue++) {
           values.push({
-            name: this.str(c.eName[value]),
-            description: this.strOrUndefined(c.eDesc[value]),
-            deprecationReason: this.strOrUndefined(c.eDepr[value]),
+            name: this.string(columns.enumValueName[enumValue]),
+            description: this.stringOrUndefined(columns.enumValueDescription[enumValue]),
+            deprecationReason: this.stringOrUndefined(
+              columns.enumValueDeprecationReason[enumValue],
+            ),
           });
         }
         return { kind: Kind.ENUM_TYPE_DEFINITION, name: typename, description, values };
       }
-      case K_UNION:
+      case TYPE_KIND_UNION:
         return {
           kind: Kind.UNION_TYPE_DEFINITION,
           name: typename,
           description,
-          members: this.typeRefs(type).map(name => ({ name })),
+          members: this.typeRefNames(type).map(name => ({ name })),
         };
       default:
         return { kind: Kind.SCALAR_TYPE_DEFINITION, name: typename, description };
@@ -1099,11 +1190,11 @@ export class SchemaExplorerSnapshotReader {
    * Returns null if there is no such type.
    */
   getLazyTypeEntity(typename: string): SchemaExplorerTypeEntity | null {
-    const type = this.typeId(typename);
+    const type = this.findTypeId(typename);
     if (type === NONE) {
       return null;
     }
-    const kind = TYPE_KINDS[this.c.tKind[type]];
+    const kind = TYPE_KINDS[this.columns.typeKind[type]];
     const LazyTypeEntity = LAZY_TYPE_ENTITY_CLASSES[kind];
     return new LazyTypeEntity(
       kind,
@@ -1121,7 +1212,8 @@ export class SchemaExplorerSnapshotReader {
   getTypesWithUnusedCoordinates(usedCoordinates: ReadonlySet<string>): Array<string> {
     // Looking up a coordinate hashes it in JS; building one and calling `Set.has` hashes natively
     // and costs about half as much. Go over whichever side has fewer coordinates.
-    const schemaCoordinates = this.h.T + this.h.F + this.h.V + this.h.E;
+    const { typeCount, fieldCount, inputValueCount, enumValueCount } = this.header;
+    const schemaCoordinates = typeCount + fieldCount + inputValueCount + enumValueCount;
     return usedCoordinates.size * 2 < schemaCoordinates
       ? this.typesWithUnusedCoordinatesByLookup(usedCoordinates)
       : this.typesWithUnusedCoordinatesByScan(usedCoordinates);
@@ -1129,45 +1221,50 @@ export class SchemaExplorerSnapshotReader {
 
   /** Marks the used coordinates by looking each one up, then scans the columns. */
   private typesWithUnusedCoordinatesByLookup(usedCoordinates: ReadonlySet<string>) {
-    const c = this.c;
-    const typeUsed = new Uint8Array(this.h.T);
-    const fieldUsed = new Uint8Array(this.h.F);
-    const valueUsed = new Uint8Array(this.h.V);
+    const columns = this.columns;
+    const typeUsed = new Uint8Array(this.header.typeCount);
+    const fieldUsed = new Uint8Array(this.header.fieldCount);
+    const inputValueUsed = new Uint8Array(this.header.inputValueCount);
     for (const coordinate of usedCoordinates) {
       const handle = this.lookup(coordinate);
       switch (handleKind(handle)) {
-        case H_TYPE:
+        case HANDLE_KIND_TYPE:
           typeUsed[handleIndex(handle)] = 1;
           break;
-        case H_FIELD:
+        case HANDLE_KIND_FIELD:
           fieldUsed[handleIndex(handle)] = 1;
           break;
-        case H_VALUE:
-          valueUsed[handleIndex(handle)] = 1;
+        case HANDLE_KIND_INPUT_VALUE:
+          inputValueUsed[handleIndex(handle)] = 1;
           break;
       }
     }
 
     return this.typesWhere(type => {
-      const start = c.tChildStart[type];
-      const end = start + c.tChildCount[type];
-      switch (c.tKind[type]) {
-        case K_OBJECT:
-        case K_INTERFACE:
-          for (let field = start; field < end; field++) {
+      const childrenStart = columns.typeChildrenStart[type];
+      const childrenEnd = childrenStart + columns.typeChildrenLength[type];
+      switch (columns.typeKind[type]) {
+        case TYPE_KIND_OBJECT:
+        case TYPE_KIND_INTERFACE:
+          for (let field = childrenStart; field < childrenEnd; field++) {
             if (!fieldUsed[field]) {
               return true;
             }
-            for (let a = c.fArgStart[field], argsEnd = a + c.fArgCount[field]; a < argsEnd; a++) {
-              if (!valueUsed[a]) {
+            for (
+              let argument = columns.fieldArgsStart[field],
+                argsEnd = argument + columns.fieldArgsLength[field];
+              argument < argsEnd;
+              argument++
+            ) {
+              if (!inputValueUsed[argument]) {
                 return true;
               }
             }
           }
           return false;
-        case K_INPUT:
-          for (let value = start; value < end; value++) {
-            if (!valueUsed[value]) {
+        case TYPE_KIND_INPUT_OBJECT:
+          for (let inputValue = childrenStart; inputValue < childrenEnd; inputValue++) {
+            if (!inputValueUsed[inputValue]) {
               return true;
             }
           }
@@ -1180,29 +1277,36 @@ export class SchemaExplorerSnapshotReader {
 
   /** Builds the coordinates of each type until one of them is not in the used set. */
   private typesWithUnusedCoordinatesByScan(usedCoordinates: ReadonlySet<string>) {
-    const c = this.c;
+    const columns = this.columns;
     return this.typesWhere(type => {
-      const typename = this.typeName(type);
-      const start = c.tChildStart[type];
-      const end = start + c.tChildCount[type];
-      switch (c.tKind[type]) {
-        case K_OBJECT:
-        case K_INTERFACE:
-          for (let field = start; field < end; field++) {
-            const fieldCoordinate = `${typename}.${this.str(c.fName[field])}`;
+      const typename = this.typeNameOf(type);
+      const childrenStart = columns.typeChildrenStart[type];
+      const childrenEnd = childrenStart + columns.typeChildrenLength[type];
+      switch (columns.typeKind[type]) {
+        case TYPE_KIND_OBJECT:
+        case TYPE_KIND_INTERFACE:
+          for (let field = childrenStart; field < childrenEnd; field++) {
+            const fieldCoordinate = `${typename}.${this.string(columns.fieldName[field])}`;
             if (!usedCoordinates.has(fieldCoordinate)) {
               return true;
             }
-            for (let a = c.fArgStart[field], argsEnd = a + c.fArgCount[field]; a < argsEnd; a++) {
-              if (!usedCoordinates.has(`${fieldCoordinate}.${this.str(c.vName[a])}`)) {
+            for (
+              let argument = columns.fieldArgsStart[field],
+                argsEnd = argument + columns.fieldArgsLength[field];
+              argument < argsEnd;
+              argument++
+            ) {
+              const argumentName = this.string(columns.inputValueName[argument]);
+              if (!usedCoordinates.has(`${fieldCoordinate}.${argumentName}`)) {
                 return true;
               }
             }
           }
           return false;
-        case K_INPUT:
-          for (let value = start; value < end; value++) {
-            if (!usedCoordinates.has(`${typename}.${this.str(c.vName[value])}`)) {
+        case TYPE_KIND_INPUT_OBJECT:
+          for (let inputValue = childrenStart; inputValue < childrenEnd; inputValue++) {
+            const inputFieldName = this.string(columns.inputValueName[inputValue]);
+            if (!usedCoordinates.has(`${typename}.${inputFieldName}`)) {
               return true;
             }
           }
@@ -1216,9 +1320,9 @@ export class SchemaExplorerSnapshotReader {
   /** Names of the types (without built-in scalars) matching `predicate`, sorted by name. */
   private typesWhere(predicate: (type: number) => boolean): Array<string> {
     const result: Array<string> = [];
-    for (let type = 0; type < this.h.T; type++) {
-      if (!(this.c.tFlags[type] & T_BUILT_IN) && predicate(type)) {
-        result.push(this.typeName(type));
+    for (let type = 0; type < this.header.typeCount; type++) {
+      if (!(this.columns.typeFlags[type] & TYPE_FLAG_BUILT_IN) && predicate(type)) {
+        result.push(this.typeNameOf(type));
       }
     }
     return result;
