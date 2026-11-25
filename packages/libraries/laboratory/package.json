@@ -42,7 +42,7 @@
     "zod": "^4.6.6"
   },
   "dependencies": {
-    "@graphql-tools/url-loader": "^9.1.12",
+    "@graphql-tools/url-loader": "^10.0.9",
     "dompurify": "catalog:",
     "graphql-language-service": "^5.5.0",
     "radix-ui": "^1.4.3",
@@ -79,7 +79,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@types/ws": "8.18.1",
+    "@types/ws": "8.18.2",
     "@vitejs/plugin-react": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -87,7 +87,7 @@
     "crypto-js": "catalog:",
     "date-fns": "catalog:",
     "esbuild": "catalog:",
-    "graphql": "^16.14.0",
+    "graphql": "catalog:",
     "graphql-ws": "catalog:",
     "graphql-yoga": "catalog:",
     "happy-dom": "^21.0.4",

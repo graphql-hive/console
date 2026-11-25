@@ -16,7 +16,7 @@
   },
   "license": "MIT",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=22.23.5"
   },
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -43,8 +43,8 @@
     "check:build": "bob check"
   },
   "peerDependencies": {
-    "@envelop/types": "^5.0.0",
-    "graphql": "^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0"
+    "@envelop/types": "^5.0.0 || ^6.0.0",
+    "graphql": "^16.0.0 || ^17.0.0"
   },
   "dependencies": {
     "@graphql-hive/core": "workspace:*"

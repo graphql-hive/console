@@ -1,5 +1,5 @@
-import type { ParseOptions, Source, ValidationRule } from 'graphql';
-import { createGraphQLError, type Plugin } from 'graphql-yoga';
+import { GraphQLError, type ParseOptions, type Source, type ValidationRule } from 'graphql';
+import type { Plugin } from 'graphql-yoga';
 import promClient from 'prom-client';
 import { maxAliasesRule } from '@escape.tech/graphql-armor-max-aliases';
 import { maxDepthRule } from '@escape.tech/graphql-armor-max-depth';
@@ -38,7 +38,7 @@ const DisallowReservedAliasesRule: ValidationRule = context => {
   return {
     Field(field) {
       if (field.alias?.value && reservedTypenameAliases.has(field.alias.value)) {
-        context.reportError(createGraphQLError(`The alias "${field.alias.value}" cannot be used.`));
+        context.reportError(new GraphQLError(`The alias "${field.alias.value}" cannot be used.`));
       }
     },
   };
@@ -168,7 +168,7 @@ export function useArmor<
           return parser.parseDocument();
         } catch (error) {
           if (tokenLimitError && error === tokenLimitError) {
-            throw createGraphQLError(tokenLimitError.message, {
+            throw new GraphQLError(tokenLimitError.message, {
               extensions: {
                 http: {
                   spec: true,

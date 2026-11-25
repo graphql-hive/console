@@ -6,7 +6,7 @@
     "deploy": "node --experimental-strip-types ./src/generate-supergraph.ts && wrangler deploy src/main.ts"
   },
   "dependencies": {
-    "@apollo/subgraph": "2.13.2",
+    "@apollo/subgraph": "2.17.0",
     "@theguild/federation-composition": "catalog:",
     "graphql": "catalog:",
     "graphql-yoga": "catalog:"

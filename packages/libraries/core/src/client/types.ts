@@ -7,7 +7,6 @@ import type {
 } from 'graphql';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue.js';
 import { LogLevel as HiveLoggerLevel, Logger } from '@graphql-hive/logger';
-import { MaybePromise } from '@graphql-tools/utils';
 import type { AgentOptions } from './agent.js';
 import { CircuitBreakerConfiguration } from './circuit-breaker.js';
 import type { autoDisposeSymbol, hiveClientSymbol } from './client.js';
@@ -449,7 +448,7 @@ export type PersistedDocumentsCache = {
     key: string,
     value: string | PersistedDocumentNotFound,
     options?: { ttl?: number },
-  ): MaybePromise<unknown>;
+  ): PromiseOrValue<unknown>;
 };
 
 /**

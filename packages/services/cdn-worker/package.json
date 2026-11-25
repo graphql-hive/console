@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "graphql": "^16.0.0"
+    "graphql": "^17.0.0"
   },
   "devDependencies": {
     "@aws-sdk/credential-providers": "catalog:",

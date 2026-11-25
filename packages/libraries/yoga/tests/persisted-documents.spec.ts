@@ -561,7 +561,7 @@ test('usage reporting for persisted document', async () => {
   expect(usageResponseArgs[0]).toEqual('http://localhost/usage');
   const body = JSON.parse((usageResponseArgs[1] as any).body);
   expect(body.map).toEqual({
-    ace78a32bbf8a79071356e5d5b13c5c83baf4e14: {
+    e177af2873d4e055cb0570bb384641c2253e4f4c: {
       operation: '{hi}',
       operationName: 'anonymous',
       fields: ['Query.hi'],
@@ -665,7 +665,7 @@ test('usage reporting for persisted document (subscription)', async () => {
   const body = JSON.parse((usageResponseArgs[1] as any).body);
   expect(body.map).toMatchInlineSnapshot(`
         {
-          74cf03b67c3846231d04927b02e1fca45e727223: {
+          3db3a0c8753034709fdb95ee1860262c46f612c7: {
             fields: [
               Subscription.hi,
             ],
@@ -678,7 +678,7 @@ test('usage reporting for persisted document (subscription)', async () => {
   expect(body.subscriptionOperations).toMatchObject([
     {
       metadata: {},
-      operationMapKey: '74cf03b67c3846231d04927b02e1fca45e727223',
+      operationMapKey: '3db3a0c8753034709fdb95ee1860262c46f612c7',
       persistedDocumentHash: 'client-name~client-version~hash',
     },
   ]);
@@ -813,14 +813,14 @@ test('usage reporting with batch execution and persisted documents', async () =>
   const body = JSON.parse((usageResponseArgs[1] as any).body);
   expect(body.map).toMatchInlineSnapshot(`
     {
-      07188723c7bd37a812cb478cc980f83fe5b4026c: {
+      a762fe6c6cfe12aaaa905029a1f6ce41a3d31b85: {
         fields: [
           Query.a,
         ],
         operation: {a},
         operationName: anonymous,
       },
-      e8571e61911eea36db5ef7a3ed222aacb0cd5ba1: {
+      db9d0d4aca00ae5e27d0fda7770f8e479e090656: {
         fields: [
           Query.b,
         ],

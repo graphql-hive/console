@@ -36,6 +36,37 @@ export {
 } from '@graphql-hive/core';
 export type { SupergraphSDLFetcherOptions } from '@graphql-hive/core';
 
+type YogaLogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+/**
+ * graphql-yoga@5 exposes a `YogaLogger` as `yoga.logger` (`logger.info(msg, ...args)`), while
+ * graphql-yoga@6 exposes a Hive `Logger` as `yoga.log` (`log.info(attrs, msg)`).
+ */
+function yogaLog(
+  yoga: YogaServer<any, any>,
+  level: YogaLogLevel,
+  msg: unknown,
+  attrs?: unknown,
+): void {
+  const server = yoga as unknown as {
+    log?: Record<YogaLogLevel, (...args: unknown[]) => void>;
+    logger?: Record<YogaLogLevel, (...args: unknown[]) => void>;
+  };
+  if (server.log) {
+    if (attrs) {
+      server.log[level](attrs, msg);
+    } else {
+      server.log[level](msg);
+    }
+    return;
+  }
+  if (attrs) {
+    server.logger?.[level](msg, attrs);
+  } else {
+    server.logger?.[level](msg);
+  }
+}
+
 type CacheRecord = {
   callback: CollectUsage;
   paramsArgs: GraphQLParams;
@@ -269,7 +300,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
             ),
           );
         } catch (err) {
-          yoga.logger.error(err);
+          yogaLog(yoga, 'error', err);
         }
       }
     },
@@ -286,7 +317,7 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                     write(level, attrs, msg) {
                       level = level === 'trace' ? 'debug' : level;
                       if (!onYogaInitDefered) {
-                        yoga.logger[level](msg, attrs);
+                        yogaLog(yoga, level, msg, attrs);
 
                         return;
                       }
@@ -294,7 +325,9 @@ export function useHive(clientOrOptions: HiveClient | YogaPluginOptions): Plugin
                       // Ideally, onPluginInit would provide us access to the logger instance
                       // See https://github.com/graphql-hive/graphql-yoga/issues/4048#issuecomment-3576258603
                       void onYogaInitDefered.then(() => {
-                        yoga?.logger[level](msg, attrs);
+                        if (yoga) {
+                          yogaLog(yoga, level, msg, attrs);
+                        }
                       });
                     },
                   },

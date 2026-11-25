@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { buildASTSchema, GraphQLError, parse } from 'graphql';
-import { createLogger } from 'graphql-yoga';
+import { Logger } from 'graphql-yoga';
 import { ProjectType } from 'testkit/gql/graphql';
 import { initSeed } from 'testkit/seed';
 import z from 'zod';
@@ -399,7 +399,7 @@ describe('graph', () => {
       },
       debug: false,
       agent: {
-        logger: createLogger('debug'),
+        logger: new Logger({ level: 'debug' }),
         // only flush on dispose, so every operation ends up in a single report
         maxSize: 1000,
       },
