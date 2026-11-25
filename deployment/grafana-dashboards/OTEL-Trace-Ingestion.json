@@ -2252,7 +2252,7 @@
         "spec": {
           "id": 19,
           "title": "Collector warnings and errors by message",
-          "description": "Collector warnings and errors by message, without the otlp_grpc/tempo exporter (see Process health). 'Exporting failed' and memory limiter messages here are on the customer data path.",
+          "description": "Collector warnings and errors by message, without lines from the otlp_grpc/tempo exporter (see Process health). 'Exporting failed' and memory limiter messages here are on the customer data path. 'Sender failed' comes from the batch processor and does not name the exporter: while the Tempo exporter's queue is full it repeats with 'sending queue is full', which is not ClickHouse loss.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
