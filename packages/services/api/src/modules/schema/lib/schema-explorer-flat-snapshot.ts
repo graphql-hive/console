@@ -18,6 +18,7 @@
  */
 import type { GraphQLFieldMapper } from '../module.graphql.mappers';
 import { Kind } from 'graphql';
+import { invariant } from '@hive/service-common';
 import type {
   SchemaExplorerEntry,
   SchemaExplorerSnapshot,
@@ -210,9 +211,7 @@ function parseTypeRef(type: string) {
       j++;
     }
   }
-  if (depth > 7) {
-    throw new Error(`Type ${type} is nested in too many lists.`);
-  }
+  invariant(depth <= 7, () => `Type ${type} is nested in too many lists.`);
   return { name, wrap: depth | (mask << 3) };
 }
 
@@ -271,9 +270,7 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     }
     const indexes = serviceNames.map(name => {
       const index = subgraphIndex.get(name);
-      if (index === undefined) {
-        throw new Error(`Subgraph ${name} is missing from the subgraph names.`);
-      }
+      invariant(index !== undefined, () => `Subgraph ${name} is missing from the subgraph names.`);
       return index;
     });
     const key = indexes.join(',');
@@ -290,16 +287,15 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
   const typeIds = new Map(snapshot.types.map((name, index) => [name, index]));
   const typeId = (name: string) => {
     const id = typeIds.get(name);
-    if (id === undefined) {
-      throw new Error(`Type ${name} is missing from the snapshot.`);
-    }
+    invariant(id !== undefined, () => `Type ${name} is missing from the snapshot.`);
     return id;
   };
   const entryOf = <TKind extends SchemaExplorerEntry['kind']>(coordinate: string, kind: TKind) => {
     const entry = snapshot.coordinates[coordinate];
-    if (entry?.kind !== kind) {
-      throw new Error(`Expected schema coordinate ${coordinate} to be ${kind}.`);
-    }
+    invariant(
+      entry?.kind === kind,
+      () => `Expected schema coordinate ${coordinate} to be ${kind}.`,
+    );
     return entry as Extract<SchemaExplorerEntry, { kind: TKind }>;
   };
 
@@ -367,13 +363,9 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
   // a field and the children of a type are contiguous ranges.
   snapshot.types.forEach((typename, i) => {
     const entry = snapshot.coordinates[typename];
-    if (!entry) {
-      throw new Error(`Type ${typename} is missing from the snapshot.`);
-    }
+    invariant(entry, () => `Type ${typename} is missing from the snapshot.`);
     const kind = TYPE_KINDS.indexOf(entry.kind as TypeKind);
-    if (kind === -1) {
-      throw new Error(`Expected schema coordinate ${typename} to be a type.`);
-    }
+    invariant(kind !== -1, () => `Expected schema coordinate ${typename} to be a type.`);
     t.name[i] = str(typename);
     t.desc[i] = str(entry.description);
     t.owners[i] = owners(entry.ownedBy);
@@ -703,9 +695,7 @@ export class SchemaExplorerSnapshotReader {
 
   static fromSnapshot(snapshot: SchemaExplorerSnapshot) {
     const reader = SchemaExplorerSnapshotReader.fromBuffer(encodeSchemaExplorerSnapshot(snapshot));
-    if (!reader) {
-      throw new Error('Failed to read the encoded schema explorer snapshot.');
-    }
+    invariant(reader, 'Failed to read the encoded schema explorer snapshot.');
     return reader;
   }
 
