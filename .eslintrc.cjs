@@ -9,13 +9,6 @@ const [, ...GUILD_REACT_RESTRICTED_IMPORTS] =
   require('@theguild/eslint-config/react-base').rules['@typescript-eslint/no-restricted-imports'];
 const path = require('path');
 
-const SCHEMA_PATH = './packages/services/api/src/modules/*/module.graphql.ts';
-const OPERATIONS_PATHS = [
-  './packages/web/app/**/*.ts',
-  './packages/web/app/**/*.tsx',
-  './packages/web/app/**/*.graphql',
-];
-
 const rulesToExtends = Object.fromEntries(
   Object.entries(guildConfig.rules).filter(([key]) =>
     [
@@ -63,35 +56,6 @@ module.exports = {
     'packages/web/app/vite.config.ts',
   ],
   overrides: [
-    {
-      // Setup GraphQL Parser
-      files: '*.{graphql,gql}',
-      parser: '@graphql-eslint/eslint-plugin',
-      plugins: ['@graphql-eslint'],
-      parserOptions: {
-        graphQLConfig: {
-          schema: SCHEMA_PATH,
-          documents: OPERATIONS_PATHS,
-        },
-      },
-      rules: {
-        '@graphql-eslint/no-deprecated': 'error',
-        '@graphql-eslint/require-selections': ['error', { fieldName: ['id'] }],
-      },
-    },
-    {
-      // Setup processor for operations/fragments definitions on code-files
-      files: ['packages/web/app/**/*.tsx', 'packages/web/app/**/*.ts'],
-      processor: '@graphql-eslint/graphql',
-    },
-    {
-      files: ['packages/web/app/**/*.graphql'],
-      plugins: ['@graphql-eslint'],
-      rules: {
-        '@graphql-eslint/no-deprecated': 'error',
-        '@graphql-eslint/require-selections': ['error', { fieldName: ['id'] }],
-      },
-    },
     {
       files: ['*.cjs'],
       parserOptions: { ecmaVersion: 2020 },

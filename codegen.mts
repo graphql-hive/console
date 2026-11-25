@@ -1,6 +1,7 @@
 import { defineConfig } from '@eddeee888/gcg-typescript-resolver-files';
 import { type CodegenConfig } from '@graphql-codegen/cli';
 import { addTypenameSelectionDocumentTransform } from '@graphql-codegen/client-preset';
+import { addIdSelectionDocumentTransform } from './scripts/codegen-add-id-selection';
 
 const config: CodegenConfig = {
   schema: './packages/services/api/src/modules/*/module.graphql.ts',
@@ -82,7 +83,7 @@ const config: CodegenConfig = {
       presetConfig: {
         persistedDocuments: true,
       },
-      documentTransforms: [addTypenameSelectionDocumentTransform],
+      documentTransforms: [addTypenameSelectionDocumentTransform, addIdSelectionDocumentTransform],
     },
     './packages/web/app/src/gql/schema.ts': {
       plugins: ['urql-introspection'],

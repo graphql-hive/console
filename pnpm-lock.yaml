@@ -389,9 +389,6 @@ importers:
       '@graphql-codegen/urql-introspection':
         specifier: 5.0.0
         version: 5.0.0(graphql@17.1.0)
-      '@graphql-eslint/eslint-plugin':
-        specifier: 5.0.0
-        version: 5.0.0(@apollo/subgraph@2.17.0(graphql@17.1.0))(@types/node@26.6.6)(@typescript/typescript6@6.0.2)(cosmiconfig-toml-loader@1.0.0)(eslint@8.57.1)(graphql@17.1.0)
       '@graphql-inspector/cli':
         specifier: 7.0.9
         version: 7.0.9(@types/node@26.6.6)(graphql@17.1.0)
@@ -3781,20 +3778,6 @@ packages:
     engines: {node: '>=22.18.0'}
     peerDependencies:
       graphql: 17.1.0
-
-  '@graphql-eslint/eslint-plugin@5.0.0':
-    resolution: {integrity: sha512-HCmw54tLdF5Oll4HUV7iq4rc9eWziJgg05W9WnQ/I1+XbmXhUJB87jr51BpL1fkgUDUd7JkoCHluVFj2iniyGg==}
-    engines: {node: '>=22.18.0'}
-    peerDependencies:
-      '@apollo/subgraph': ^2.16.0
-      eslint: '>=8.44.0'
-      graphql: 17.1.0
-      json-schema-to-ts: ^3
-    peerDependenciesMeta:
-      '@apollo/subgraph':
-        optional: true
-      json-schema-to-ts:
-        optional: true
 
   '@graphql-hive/gateway-runtime@3.0.0':
     resolution: {integrity: sha512-iXR9o/4TXFysvCO/FPJ1fp9Ug1rUqyY0r7iyjaLpsx1tQliYlTe81PTf55K6DxTXsgVlABVzTSW+TCixikcYVA==}
@@ -17615,29 +17598,6 @@ snapshots:
       graphql-tag: 2.12.7(graphql@17.1.0)
       parse-filepath: 1.0.2
       tslib: 2.8.1
-
-  '@graphql-eslint/eslint-plugin@5.0.0(@apollo/subgraph@2.17.0(graphql@17.1.0))(@types/node@26.6.6)(@typescript/typescript6@6.0.2)(cosmiconfig-toml-loader@1.0.0)(eslint@8.57.1)(graphql@17.1.0)':
-    dependencies:
-      '@graphql-tools/code-file-loader': 9.1.2(graphql@17.1.0)
-      '@graphql-tools/graphql-tag-pluck': 9.0.10(graphql@17.1.0)
-      '@graphql-tools/utils': 13.2.2(graphql@17.1.0)
-      debug: 4.4.3(supports-color@8.1.1)
-      eslint: 8.57.1
-      fast-glob: 3.3.3
-      graphql: 17.1.0
-      graphql-config: 6.0.0(@types/node@26.6.6)(@typescript/typescript6@6.0.2)(cosmiconfig-toml-loader@1.0.0)(graphql@17.1.0)
-      lodash.lowercase: 4.3.0
-    optionalDependencies:
-      '@apollo/subgraph': 2.17.0(graphql@17.1.0)
-    transitivePeerDependencies:
-      - '@fastify/websocket'
-      - '@types/node'
-      - bufferutil
-      - cosmiconfig-toml-loader
-      - crossws
-      - supports-color
-      - typescript
-      - utf-8-validate
 
   '@graphql-hive/gateway-runtime@3.0.0(graphql@17.1.0)(ioredis@6.0.0)(pino@10.3.0)(ws@8.22.0)':
     dependencies:
