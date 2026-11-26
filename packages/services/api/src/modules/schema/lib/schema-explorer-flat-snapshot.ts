@@ -208,6 +208,34 @@ function hashTableSlots(entries: number) {
   return slots;
 }
 
+/**
+ * Open addressing with linear probing over an Int32Array whose length is a power of two.
+ * NONE marks an empty slot.
+ */
+function hashTableInsert(table: Int32Array, hash: number, value: number) {
+  const slotMask = table.length - 1;
+  let slot = hash & slotMask;
+  while (table[slot] !== NONE) {
+    slot = (slot + 1) & slotMask;
+  }
+  table[slot] = value;
+}
+
+/** The first value in the probe sequence of `hash` for which `matches` is true, or NONE. */
+function hashTableFind(
+  table: Int32Array,
+  hash: number,
+  matches: (value: number) => boolean,
+): number {
+  const slotMask = table.length - 1;
+  for (let slot = hash & slotMask; ; slot = (slot + 1) & slotMask) {
+    const value = table[slot];
+    if (value === NONE || matches(value)) {
+      return value;
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------------------------
 // Type references
 
@@ -477,14 +505,9 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     offset += strings[id].length;
     stringOffsets[id + 1] = offset;
   }
-  const stringHashSlots = hashTableSlots(strings.length);
-  const stringHashTable = new Int32Array(stringHashSlots).fill(NONE);
+  const stringHashTable = new Int32Array(hashTableSlots(strings.length)).fill(NONE);
   strings.forEach((value, id) => {
-    let slot = fnv1a(value, 0, value.length) & (stringHashSlots - 1);
-    while (stringHashTable[slot] !== NONE) {
-      slot = (slot + 1) & (stringHashSlots - 1);
-    }
-    stringHashTable[slot] = id;
+    hashTableInsert(stringHashTable, fnv1a(value, 0, value.length), id);
   });
   const typeIdByStringId = new Int32Array(strings.length).fill(NONE);
   for (let type = 0; type < typeCount; type++) {
@@ -492,16 +515,13 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
   }
 
   // Schema coordinate → handle. Coordinates are only built here; they are not stored.
-  const coordinateHashSlots = hashTableSlots(
-    typeCount + fields.name.length + inputValues.name.length + enumValues.name.length,
-  );
-  const coordinateHashTable = new Int32Array(coordinateHashSlots).fill(NONE);
+  const coordinateHashTable = new Int32Array(
+    hashTableSlots(
+      typeCount + fields.name.length + inputValues.name.length + enumValues.name.length,
+    ),
+  ).fill(NONE);
   const putCoordinate = (coordinate: string, handle: number) => {
-    let slot = fnv1a(coordinate, 0, coordinate.length) & (coordinateHashSlots - 1);
-    while (coordinateHashTable[slot] !== NONE) {
-      slot = (slot + 1) & (coordinateHashSlots - 1);
-    }
-    coordinateHashTable[slot] = handle;
+    hashTableInsert(coordinateHashTable, fnv1a(coordinate, 0, coordinate.length), handle);
   };
   const typeNameOf = (type: number) => strings[types.name[type]];
   const fieldCoordinate = (field: number) =>
@@ -533,8 +553,8 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
   const rootTypeId = (name: string | null) => (name === null ? NONE : typeIdOf(name));
   const header: Header = {
     stringCount: strings.length,
-    stringHashSlots,
-    coordinateHashSlots,
+    stringHashSlots: stringHashTable.length,
+    coordinateHashSlots: coordinateHashTable.length,
     subgraphCount: subgraphNames.length,
     typeCount,
     fieldCount: fields.name.length,
@@ -772,29 +792,19 @@ export class SchemaExplorerSnapshotReader {
   /** Id of `value[start, end)` without allocating it, or NONE. */
   private findStringId(value: string, start = 0, end = value.length): number {
     const { stringHashTable, stringOffsets } = this.columns;
-    const slotMask = this.header.stringHashSlots - 1;
     const length = end - start;
-    let slot = fnv1a(value, start, end) & slotMask;
-    for (;;) {
-      const id = stringHashTable[slot];
-      if (id === NONE) {
-        return NONE;
-      }
+    return hashTableFind(stringHashTable, fnv1a(value, start, end), id => {
       const offset = stringOffsets[id];
-      if (stringOffsets[id + 1] - offset === length) {
-        let matched = 0;
-        while (
-          matched < length &&
-          this.text.charCodeAt(offset + matched) === value.charCodeAt(start + matched)
-        ) {
-          matched++;
-        }
-        if (matched === length) {
-          return id;
+      if (stringOffsets[id + 1] - offset !== length) {
+        return false;
+      }
+      for (let index = 0; index < length; index++) {
+        if (this.text.charCodeAt(offset + index) !== value.charCodeAt(start + index)) {
+          return false;
         }
       }
-      slot = (slot + 1) & slotMask;
-    }
+      return true;
+    });
   }
 
   private findTypeId(name: string): number {
@@ -868,19 +878,11 @@ export class SchemaExplorerSnapshotReader {
 
   /** `Type`, `Type.field`, `Type.field.argument`, `Input.field` or `Enum.VALUE` → handle or NONE. */
   private lookup(coordinate: string): number {
-    const table = this.columns.coordinateHashTable;
-    const slotMask = this.header.coordinateHashSlots - 1;
-    let slot = fnv1a(coordinate, 0, coordinate.length) & slotMask;
-    for (;;) {
-      const handle = table[slot];
-      if (handle === NONE) {
-        return NONE;
-      }
-      if (this.coordinateEquals(coordinate, handle)) {
-        return handle;
-      }
-      slot = (slot + 1) & slotMask;
-    }
+    return hashTableFind(
+      this.columns.coordinateHashTable,
+      fnv1a(coordinate, 0, coordinate.length),
+      handle => this.coordinateEquals(coordinate, handle),
+    );
   }
 
   private ownerSet(ownerSet: number): Array<string> | null {
