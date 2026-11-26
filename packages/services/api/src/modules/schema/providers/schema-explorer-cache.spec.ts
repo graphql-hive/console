@@ -2,6 +2,8 @@ import { zstdDecompressSync } from 'node:zlib';
 import Redis from 'ioredis-mock';
 import 'reflect-metadata';
 import { metrics } from '@hive/service-common';
+import type { Logger } from '../../shared/providers/logger';
+import { Mutex, MutexResourceLockedError } from '../../shared/providers/mutex';
 import {
   SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
   SchemaExplorerSnapshotReader,
@@ -15,9 +17,30 @@ function createRedis() {
   return new Redis(port++);
 }
 
-/** A cache like one API instance's, with the default 512 MB memory limit unless given. */
-function createCache(redis: unknown, memoryMaxBytes = 512 * 1024 * 1024) {
-  return new SchemaExplorerCache(redis as any, new SchemaExplorerCacheConfig({ memoryMaxBytes }));
+const logger = {
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
+  trace: vi.fn(),
+  debug: vi.fn(),
+  child: () => logger,
+} as unknown as Logger;
+
+/**
+ * A cache like one API instance's: the default 512 MB memory limit and a real lock on the given
+ * (mock) Redis, unless given.
+ */
+function createCache(
+  redis: unknown,
+  memoryMaxBytes = 512 * 1024 * 1024,
+  lock: unknown = new Mutex(logger, redis as any),
+) {
+  return new SchemaExplorerCache(
+    redis as any,
+    new SchemaExplorerCacheConfig({ memoryMaxBytes }),
+    lock as any,
+  );
 }
 
 function snapshotBuilder() {
@@ -133,7 +156,12 @@ test('Redis errors do not fail the request', async () => {
       throw new Error('connection lost');
     }),
   };
-  const cache = createCache(failingRedis);
+  const failingLock = {
+    lock: vi.fn(async () => {
+      throw new Error('connection lost');
+    }),
+  };
+  const cache = createCache(failingRedis, undefined, failingLock);
   const build = snapshotBuilder();
 
   const reader = await cache.getOrBuild('version-1', build);
@@ -277,4 +305,61 @@ describe('metrics', () => {
     expect(tooLarge).toBe(2);
     expect(fromMemory).toBe(0);
   });
+
+  test("an instance that waited for another instance's build counts it as a Redis load", async () => {
+    const redis = createRedis();
+    const instances = [createCache(redis), createCache(redis), createCache(redis)];
+    const slowBuild = async () => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return buildSchemaExplorerSnapshotBuffer({
+        compositeSdl: `type Query { hello: String }`,
+        supergraphSdl: null,
+      });
+    };
+
+    const [built, fromRedis] = await delta([requests('build'), requests('redis')], async () => {
+      await Promise.all(instances.map(cache => cache.getOrBuild('version-1', slowBuild)));
+    });
+
+    expect(built).toBe(1);
+    expect(fromRedis).toBe(2);
+  });
+});
+
+test('only one instance builds a missing snapshot; the others read it from Redis', async () => {
+  const redis = createRedis();
+  const instances = [createCache(redis), createCache(redis), createCache(redis)];
+  let builds = 0;
+  const slowBuild = async () => {
+    builds++;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return buildSchemaExplorerSnapshotBuffer({
+      compositeSdl: `type Query { hello: String }`,
+      supergraphSdl: null,
+    });
+  };
+
+  const readers = await Promise.all(
+    instances.map(cache => cache.getOrBuild('version-1', slowBuild)),
+  );
+
+  expect(builds).toBe(1);
+  expect(readers.map(reader => reader?.queryTypeName)).toEqual(['Query', 'Query', 'Query']);
+});
+
+test('an instance builds the snapshot itself when it cannot get the lock', async () => {
+  const redis = createRedis();
+  const busyLock = {
+    lock: vi.fn(async () => {
+      throw new MutexResourceLockedError('Resource is locked.');
+    }),
+  };
+  const cache = createCache(redis, undefined, busyLock);
+  const build = snapshotBuilder();
+
+  const reader = await cache.getOrBuild('version-1', build);
+
+  expect(reader?.queryTypeName).toBe('Query');
+  expect(build).toHaveBeenCalledTimes(1);
+  expect((await storedSnapshot(redis, 'version-1'))?.toString('latin1', 0, 3)).toBe('HSE');
 });

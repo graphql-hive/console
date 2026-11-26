@@ -4,6 +4,7 @@ import { Inject, Injectable, Scope } from 'graphql-modules';
 import { LRUCache } from 'lru-cache';
 import { invariant, metrics } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
+import { Mutex, MutexResourceLockedError } from '../../shared/providers/mutex';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 import {
   SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
@@ -74,6 +75,13 @@ const entries = new metrics.Gauge({
   help: 'Number of schema explorer snapshots kept in memory.',
 });
 
+/**
+ * How long an instance waits for another instance's build before building itself.
+ * A build of a 20 MB supergraph takes about 1.5 to 3.5 seconds.
+ */
+const BUILD_LOCK_WAIT_MS = 10_000;
+const BUILD_LOCK_RETRY_DELAY_MS = 250;
+
 // Run on libuv's thread pool, so neither blocks the event loop.
 const compress = promisify(zstdCompress);
 const decompress = promisify(zstdDecompress);
@@ -115,6 +123,7 @@ export class SchemaExplorerCache {
   constructor(
     @Inject(REDIS_INSTANCE) private redis: Redis,
     { config }: SchemaExplorerCacheConfig,
+    private mutex: Mutex,
   ) {
     this.memoryMaxBytes = config.memoryMaxBytes;
     memoryMaxBytes.set(this.memoryMaxBytes);
@@ -175,8 +184,7 @@ export class SchemaExplorerCache {
     let source: 'redis' | 'build' = 'redis';
     let reader = await this.fromRedis(key);
     if (!reader) {
-      source = 'build';
-      reader = await this.buildAndStore(key, build);
+      ({ reader, source } = await this.buildOnce(key, build));
     }
     if (!reader) {
       done('none');
@@ -202,23 +210,54 @@ export class SchemaExplorerCache {
     entries.set(this.memory.size);
   }
 
-  /** Builds a missing snapshot and stores it in Redis for other instances. */
-  private async buildAndStore(
+  /**
+   * Builds a missing snapshot under a lock per schema version, so only one API instance builds it.
+   * Instances that waited for the lock read what the holder stored instead of building again.
+   * If the lock cannot be acquired in time (or Redis fails), the snapshot is built without it: an
+   * explorer request must never fail because of the lock.
+   * `source` is `redis` when another instance stored the snapshot while this one waited.
+   */
+  private async buildOnce(
     key: string,
     build: () => Promise<Buffer | null>,
-  ): Promise<SchemaExplorerSnapshotReader | null> {
-    const bytes = await build();
-    if (!bytes) {
-      return null;
-    }
-    const reader = SchemaExplorerSnapshotReader.fromBuffer(bytes);
-    invariant(reader, 'The built schema explorer snapshot could not be read.');
-    await compress(reader.toBuffer())
-      .then(compressed => this.redis.setex(key, REDIS_TTL_SECONDS, compressed))
+  ): Promise<{ reader: SchemaExplorerSnapshotReader | null; source: 'redis' | 'build' }> {
+    const unlock = await this.mutex
+      .lock(`${key}:build`, {
+        signal: AbortSignal.timeout(BUILD_LOCK_WAIT_MS + 1_000),
+        retries: BUILD_LOCK_WAIT_MS / BUILD_LOCK_RETRY_DELAY_MS,
+        retryDelay: BUILD_LOCK_RETRY_DELAY_MS,
+      })
       .catch(error => {
-        Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
+        if (!(error instanceof MutexResourceLockedError)) {
+          Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
+        }
+        return null;
       });
-    return reader;
+
+    try {
+      if (unlock) {
+        // Another instance may have stored it while this one waited for the lock.
+        const stored = await this.fromRedis(key);
+        if (stored) {
+          return { reader: stored, source: 'redis' };
+        }
+      }
+
+      const bytes = await build();
+      if (!bytes) {
+        return { reader: null, source: 'build' };
+      }
+      const reader = SchemaExplorerSnapshotReader.fromBuffer(bytes);
+      invariant(reader, 'The built schema explorer snapshot could not be read.');
+      await compress(reader.toBuffer())
+        .then(compressed => this.redis.setex(key, REDIS_TTL_SECONDS, compressed))
+        .catch(error => {
+          Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
+        });
+      return { reader, source: 'build' };
+    } finally {
+      await unlock?.();
+    }
   }
 
   /**
