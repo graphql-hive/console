@@ -834,11 +834,15 @@ export class SchemaVersionStore {
     );
   }
 
-  async getMaybeLatestValidSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion | null> {
+  async getMaybeLatestValidSchemaVersionForGraph(
+    graph: Graph,
+    options?: SchemaVersionLookupOptions,
+  ): Promise<SchemaVersion | null> {
+    const fields = schemaVersionSQLFields(psql`"sv".`, lookupFieldOptions(options));
     let version = await this.pg.maybeOne(
       psql`/* getLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`"sv".`)}
+          ${fields}
         FROM
           "schema_versions" as "sv"
         WHERE
@@ -857,7 +861,7 @@ export class SchemaVersionStore {
     version = await this.pg.maybeOne(
       psql`/* getLatestValidVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`"sv".`)}
+          ${fields}
         FROM
           "schema_versions" as "sv"
         WHERE
@@ -910,11 +914,15 @@ export class SchemaVersionStore {
     return version;
   }
 
-  async getMaybeLatestSchemaVersionForGraph(graph: Graph): Promise<SchemaVersion | null> {
+  async getMaybeLatestSchemaVersionForGraph(
+    graph: Graph,
+    options?: SchemaVersionLookupOptions,
+  ): Promise<SchemaVersion | null> {
+    const fields = schemaVersionSQLFields(psql`sv.`, lookupFieldOptions(options));
     let version = await this.pg.maybeOne(
       psql`/* getMaybeLatestVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`sv.`)}
+          ${fields}
         FROM
           "schema_versions" AS "sv"
         WHERE
@@ -932,7 +940,7 @@ export class SchemaVersionStore {
     version = await this.pg.maybeOne(
       psql`/* getMaybeLatestVersion */
         SELECT
-          ${schemaVersionSQLFields(psql`sv.`)}
+          ${fields}
         FROM
           "schema_versions" AS "sv"
         WHERE
@@ -1102,8 +1110,9 @@ export class SchemaVersionStore {
   async getSchemaVersionForGraphById(
     graph: Graph,
     schemaVersionId: string,
+    options?: SchemaVersionLookupOptions,
   ): Promise<SchemaVersion | null> {
-    const schemaVersion = await this.getSchemaVersionById(schemaVersionId);
+    const schemaVersion = await this.getSchemaVersionById(schemaVersionId, options);
 
     if (
       schemaVersion &&
@@ -1120,10 +1129,10 @@ export class SchemaVersionStore {
     return null;
   }
 
-  async getSchemaVersionById(schemaVersionId: string) {
+  async getSchemaVersionById(schemaVersionId: string, options?: SchemaVersionLookupOptions) {
     const result = await this.pg.maybeOne(psql`/* getMaybeVersion */
       SELECT
-        ${schemaVersionSQLFields(psql`sv.`)}
+        ${schemaVersionSQLFields(psql`sv.`, lookupFieldOptions(options))}
       FROM schema_versions as sv
       WHERE
         sv.id = ${schemaVersionId}
@@ -1816,6 +1825,18 @@ export class SchemaVersionStore {
       return payload;
     });
   }
+}
+
+export type SchemaVersionLookupOptions = {
+  /**
+   * Whether to load the composite schema and supergraph SDL (default: true). Without it,
+   * `SchemaVersionHelper` loads the SDL on demand.
+   */
+  withSDL?: boolean;
+};
+
+function lookupFieldOptions(options?: SchemaVersionLookupOptions) {
+  return { withSDL: options?.withSDL ?? true, withChanges: true };
 }
 
 const schemaVersionSQLFields = (

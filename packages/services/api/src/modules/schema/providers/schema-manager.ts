@@ -45,6 +45,7 @@ import { CompositionOrchestrator } from './orchestrator/composition-orchestrator
 import { ensureCompositeSchemas, removeDescriptions, SchemaHelper } from './schema-helper';
 import {
   SchemaVersionStore,
+  type SchemaVersionLookupOptions,
   type SchemaVersion as StoredSchemaVersion,
 } from './schema-version-store';
 
@@ -70,7 +71,11 @@ const externalSchemaCompositionTestSdl = /* GraphQL */ `
 export class SchemaManager {
   private logger: Logger;
   private latestSchemaVersionLoader: DataLoader<TargetSelector, SchemaVersion>;
-  private latestValidVersionByGraphLoader: DataLoader<Graph, StoredSchemaVersion | null, string>;
+  private latestValidVersionByGraphLoader: DataLoader<
+    { graph: Graph; withSDL: boolean },
+    StoredSchemaVersion | null,
+    string
+  >;
 
   constructor(
     logger: Logger,
@@ -114,11 +119,13 @@ export class SchemaManager {
       },
     );
     this.latestValidVersionByGraphLoader = new DataLoader(
-      graphs =>
+      keys =>
         Promise.all(
-          graphs.map(graph => this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(graph)),
+          keys.map(({ graph, withSDL }) =>
+            this.schemaVersions.getMaybeLatestValidSchemaVersionForGraph(graph, { withSDL }),
+          ),
         ),
-      { cacheKeyFn: graph => graph.id },
+      { cacheKeyFn: ({ graph, withSDL }) => `${graph.id}:${withSDL}` },
     );
   }
 
@@ -291,10 +298,13 @@ export class SchemaManager {
     return this.schemaVersions.getMatchingServiceSchemaOfVersions(versions);
   }
 
-  async getMaybeLatestValidVersionForGraph(graph: Graph) {
+  async getMaybeLatestValidVersionForGraph(graph: Graph, options?: SchemaVersionLookupOptions) {
     this.logger.debug('Fetching maybe latest valid version (graphId=%s)', graph.id);
 
-    const version = await this.latestValidVersionByGraphLoader.load(graph);
+    const version = await this.latestValidVersionByGraphLoader.load({
+      graph,
+      withSDL: options?.withSDL ?? true,
+    });
 
     if (!version) {
       return null;
@@ -386,9 +396,9 @@ export class SchemaManager {
     return this.latestSchemaVersionLoader.load(selector);
   }
 
-  async getMaybeLatestVersionForGraph(graph: Graph) {
+  async getMaybeLatestVersionForGraph(graph: Graph, options?: SchemaVersionLookupOptions) {
     this.logger.debug('Fetching maybe latest version (graphId=%s)', graph.id);
-    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForGraph(graph);
+    const latest = await this.schemaVersions.getMaybeLatestSchemaVersionForGraph(graph, options);
 
     if (!latest) {
       return null;
@@ -1376,12 +1386,16 @@ export class SchemaManager {
     };
   }
 
-  async getSchemaVersionForGraphById(graph: Graph, id: string) {
+  async getSchemaVersionForGraphById(
+    graph: Graph,
+    id: string,
+    options?: SchemaVersionLookupOptions,
+  ) {
     if (!isUUID(id)) {
       this.logger.debug('Invalid UUID provided. (versionId=%s)', id);
       return null;
     }
-    const version = await this.schemaVersions.getSchemaVersionForGraphById(graph, id);
+    const version = await this.schemaVersions.getSchemaVersionForGraphById(graph, id, options);
 
     if (!version) {
       return null;

@@ -147,7 +147,15 @@ export class SchemaVersionHelper {
   async getSupergraphSdl(schemaVersion: SchemaVersion): Promise<string | null> {
     if (!schemaVersion.hasLoadedSDL) {
       const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
-      return fullSchemaVersion?.supergraphSDL ?? null;
+      if (!fullSchemaVersion) {
+        return null;
+      }
+      schemaVersion = {
+        ...schemaVersion,
+        hasLoadedSDL: true,
+        compositeSchemaSDL: fullSchemaVersion.compositeSchemaSDL,
+        supergraphSDL: fullSchemaVersion.supergraphSDL,
+      };
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
