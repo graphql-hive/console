@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { parentPort } from 'node:worker_threads';
 import { configureTracing } from '@hive/service-common';
-import { createSchemaDiffWorker } from '../../api/src/modules/schema/worker/schema-diff-worker';
+import { createSchemaWorker } from '../../api/src/modules/schema/worker/schema-worker';
 import { env } from './environment';
 
 if (!parentPort) {
@@ -16,4 +16,4 @@ if (env.tracing.collectorEndpoint) {
   }).setup();
 }
 
-createSchemaDiffWorker(parentPort);
+createSchemaWorker(parentPort);

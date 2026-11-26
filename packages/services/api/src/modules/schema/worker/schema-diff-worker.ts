@@ -1,6 +1,6 @@
-import { threadId, threadName, type MessagePort } from 'node:worker_threads';
+import { threadId, threadName } from 'node:worker_threads';
 import { traceInline } from '@hive/service-common';
-import { handleWorkerTasks, type WorkerTaskMeta } from '../../shared/lib/worker-task';
+import type { WorkerTaskMeta } from '../../shared/lib/worker-task';
 import {
   computeSchemaChanges,
   serializeSchemaChange,
@@ -13,7 +13,8 @@ export type SchemaDiffWorkerResult =
   | { status: 'skipped' }
   | { status: 'completed'; changes: SerializedSchemaChange[] };
 
-const traceSchemaDiff = traceInline<
+/** Diffs schemas within a worker task (see `schema-worker.ts`). */
+export const traceSchemaDiff = traceInline<
   [SchemaDiffInput, WorkerTaskMeta],
   Promise<SchemaDiffWorkerResult>
 >(
@@ -36,14 +37,6 @@ const traceSchemaDiff = traceInline<
   },
   input => runSchemaDiff(input),
 );
-
-/** Diffs schemas in a worker thread, so large schemas do not block the event loop of the API. */
-export function createSchemaDiffWorker(port: MessagePort) {
-  handleWorkerTasks<SchemaDiffInput, SchemaDiffWorkerResult>(
-    port,
-    async (input, meta) => await traceSchemaDiff(input, meta),
-  );
-}
 
 export async function runSchemaDiff(input: SchemaDiffInput): Promise<SchemaDiffWorkerResult> {
   const outcome = await computeSchemaChanges(input);

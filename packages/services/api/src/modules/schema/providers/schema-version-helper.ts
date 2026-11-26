@@ -17,11 +17,11 @@ import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
-import { buildSchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
 import { SchemaExplorerCache } from './schema-explorer-cache';
+import { SchemaExplorerSnapshotBuilder } from './schema-explorer-snapshot-builder';
 import { ensureCompositeSchemas, SchemaHelper, toCompositeSchemaInput } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 import { SchemaVersionStore } from './schema-version-store';
@@ -48,6 +48,7 @@ export class SchemaVersionHelper {
     private schemaVersions: SchemaVersionStore,
     private breakingSchemaChangesHelper: BreakingSchemaChangeUsageHelper,
     private schemaExplorerCache: SchemaExplorerCache,
+    private schemaExplorerSnapshotBuilder: SchemaExplorerSnapshotBuilder,
   ) {}
 
   @traceFn('SchemaVersionHelper.composeSchemaVersion', {
@@ -184,11 +185,14 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   async getExplorerSnapshot(schemaVersion: SchemaVersion) {
     return this.schemaExplorerCache.getOrBuild(schemaVersion.id, async () => {
-      const [schemaAst, supergraphAst] = await Promise.all([
-        this.getCompositeSchemaAst(schemaVersion),
-        this.getSupergraphAst(schemaVersion),
+      const [compositeSdl, supergraphSdl] = await Promise.all([
+        this.getCompositeSchemaSdl(schemaVersion),
+        this.getSupergraphSdl(schemaVersion),
       ]);
-      return schemaAst ? buildSchemaExplorerSnapshot(schemaAst, supergraphAst) : null;
+      // Parsing and building happen in a worker thread.
+      return compositeSdl === null
+        ? null
+        : this.schemaExplorerSnapshotBuilder.build({ compositeSdl, supergraphSdl });
     });
   }
 

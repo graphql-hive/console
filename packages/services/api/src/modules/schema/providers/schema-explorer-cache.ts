@@ -9,7 +9,6 @@ import {
   SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
   SchemaExplorerSnapshotReader,
 } from '../lib/schema-explorer-flat-snapshot';
-import type { SchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
 
 /** A schema version never changes after it is written; the TTL only bounds Redis memory. */
 const REDIS_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -136,9 +135,10 @@ export class SchemaExplorerCache {
     });
   }
 
+  /** `build` returns the encoded snapshot (see `SchemaExplorerSnapshotBuilder`), or null. */
   getOrBuild(
     schemaVersionId: string,
-    build: () => Promise<SchemaExplorerSnapshot | null>,
+    build: () => Promise<Buffer | null>,
   ): Promise<SchemaExplorerSnapshotReader | null> {
     const inMemory = this.memory.get(schemaVersionId);
     if (inMemory) {
@@ -163,7 +163,7 @@ export class SchemaExplorerCache {
 
   private async load(
     schemaVersionId: string,
-    build: () => Promise<SchemaExplorerSnapshot | null>,
+    build: () => Promise<Buffer | null>,
   ): Promise<SchemaExplorerSnapshotReader | null> {
     const key = `schema-explorer-snapshot:v${SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION}:zstd:${schemaVersionId}`;
     const startedAt = performance.now();
@@ -172,27 +172,15 @@ export class SchemaExplorerCache {
       loadDuration.observe({ source }, (performance.now() - startedAt) / 1000);
     };
 
-    const stored = await this.redis.getBuffer(key).catch(error => {
-      // Not being able to read the cache must not fail the request; build the snapshot instead.
-      Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
-      return null;
-    });
-    let reader = stored ? await this.read(stored, key) : null;
     let source: 'redis' | 'build' = 'redis';
-
+    let reader = await this.fromRedis(key);
     if (!reader) {
       source = 'build';
-      const snapshot = await build();
-      if (!snapshot) {
-        done('none');
-        return null;
-      }
-      reader = SchemaExplorerSnapshotReader.fromSnapshot(snapshot);
-      await compress(reader.toBuffer())
-        .then(compressed => this.redis.setex(key, REDIS_TTL_SECONDS, compressed))
-        .catch(error => {
-          Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
-        });
+      reader = await this.buildAndStore(key, build);
+    }
+    if (!reader) {
+      done('none');
+      return null;
     }
 
     done(source);
@@ -214,9 +202,37 @@ export class SchemaExplorerCache {
     entries.set(this.memory.size);
   }
 
-  /** A stored value that cannot be decompressed or read is treated as missing, so it gets rebuilt. */
-  private async read(stored: Buffer, key: string): Promise<SchemaExplorerSnapshotReader | null> {
+  /** Builds a missing snapshot and stores it in Redis for other instances. */
+  private async buildAndStore(
+    key: string,
+    build: () => Promise<Buffer | null>,
+  ): Promise<SchemaExplorerSnapshotReader | null> {
+    const bytes = await build();
+    if (!bytes) {
+      return null;
+    }
+    const reader = SchemaExplorerSnapshotReader.fromBuffer(bytes);
+    if (!reader) {
+      throw new Error('The built schema explorer snapshot could not be read.');
+    }
+    await compress(reader.toBuffer())
+      .then(compressed => this.redis.setex(key, REDIS_TTL_SECONDS, compressed))
+      .catch(error => {
+        Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
+      });
+    return reader;
+  }
+
+  /**
+   * The snapshot stored in Redis, or null if there is none.
+   * A value that cannot be fetched, decompressed or read counts as missing, so it gets rebuilt.
+   */
+  private async fromRedis(key: string): Promise<SchemaExplorerSnapshotReader | null> {
     try {
+      const stored = await this.redis.getBuffer(key);
+      if (!stored) {
+        return null;
+      }
       const reader = SchemaExplorerSnapshotReader.fromBuffer(await decompress(stored));
       if (!reader) {
         Sentry.captureMessage('Unreadable schema explorer snapshot in Redis', {

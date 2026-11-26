@@ -356,7 +356,7 @@ export async function main() {
           }
         : null,
       encryptionSecret: env.encryptionSecret,
-      schemaDiffWorker: env.schemaDiffWorker,
+      schemaWorker: env.schemaWorker,
       schemaExplorerCache: env.schemaExplorerCache,
       schemaConfig: env.hiveServices.webApp
         ? {

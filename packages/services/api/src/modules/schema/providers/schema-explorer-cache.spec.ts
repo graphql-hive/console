@@ -1,13 +1,12 @@
 import { zstdDecompressSync } from 'node:zlib';
 import Redis from 'ioredis-mock';
 import 'reflect-metadata';
-import { parse } from 'graphql';
 import { metrics } from '@hive/service-common';
 import {
   SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
   SchemaExplorerSnapshotReader,
 } from '../lib/schema-explorer-flat-snapshot';
-import { buildSchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
+import { buildSchemaExplorerSnapshotBuffer } from '../worker/schema-explorer-snapshot-worker';
 import { SchemaExplorerCache, SchemaExplorerCacheConfig } from './schema-explorer-cache';
 
 let port = 1000;
@@ -23,7 +22,10 @@ function createCache(redis: unknown, memoryMaxBytes = 512 * 1024 * 1024) {
 
 function snapshotBuilder() {
   const build = vi.fn(async () =>
-    buildSchemaExplorerSnapshot(parse(`type Query { hello(name: String = "you"): String }`), null),
+    buildSchemaExplorerSnapshotBuffer({
+      compositeSdl: `type Query { hello(name: String = "you"): String }`,
+      supergraphSdl: null,
+    }),
   );
   return build;
 }
@@ -101,7 +103,7 @@ test('a stored snapshot of another format is rebuilt', async () => {
 test('an uncompressed snapshot in Redis is rebuilt', async () => {
   const redis = createRedis();
   const build = snapshotBuilder();
-  const uncompressed = SchemaExplorerSnapshotReader.fromSnapshot(await build()).toBuffer();
+  const uncompressed = (await build())!;
   await redis.set(key('version-1'), uncompressed);
 
   const reader = await createCache(redis).getOrBuild('version-1', build);

@@ -6,8 +6,9 @@ import type { SchemaPolicyProvider } from '../../policy/providers/schema-policy.
 import { NoopLogger } from '../../shared/providers/logger';
 import type { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks, type GetAffectedAppDeployments } from './registry-checks';
-import { SchemaDiffScheduler, SchemaDiffWorkerConfig } from './schema-diff-scheduler';
+import { SchemaDiffScheduler } from './schema-diff-scheduler';
 import { SchemaHelper } from './schema-helper';
+import { SchemaWorkerConfig, SchemaWorkerPool } from './schema-worker-pool';
 
 /** A registry whose usage data is the given request count per schema coordinate. */
 function createRegistryChecks(usage: Record<string, number>) {
@@ -26,8 +27,10 @@ function createRegistryChecks(usage: Record<string, number>) {
     new SchemaHelper(),
     {} as unknown as SchemaPolicyProvider,
     new SchemaDiffScheduler(
-      logger,
-      new SchemaDiffWorkerConfig({ workerCount: 0, maxOldGenerationSizeMb: 0, timeoutMs: 0 }),
+      new SchemaWorkerPool(
+        logger,
+        new SchemaWorkerConfig({ workerCount: 0, maxOldGenerationSizeMb: 0, timeoutMs: 0 }),
+      ),
     ),
     logger,
     operationsReader as unknown as OperationsReader,

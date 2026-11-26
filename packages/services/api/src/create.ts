@@ -53,8 +53,8 @@ import {
   SCHEMA_SERVICE_CONFIG,
   SchemaServiceConfig,
 } from './modules/schema/providers/orchestrator/tokens';
-import { SchemaDiffWorkerConfig } from './modules/schema/providers/schema-diff-scheduler';
 import { SchemaExplorerCacheConfig } from './modules/schema/providers/schema-explorer-cache';
+import { SchemaWorkerConfig } from './modules/schema/providers/schema-worker-pool';
 import { sharedModule } from './modules/shared';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { HttpClient } from './modules/shared/providers/http-client';
@@ -123,8 +123,8 @@ export function createRegistry({
   s3AuditLogs,
   encryptionSecret,
   schemaConfig,
-  schemaDiffWorker,
   schemaExplorerCache,
+  schemaWorker,
   supportConfig,
   oidcIntegrationConfig,
   pubSub,
@@ -171,8 +171,9 @@ export function createRegistry({
     };
   } | null;
   schemaConfig: SchemaModuleConfig;
-  schemaDiffWorker: SchemaDiffWorkerConfig['config'];
   schemaExplorerCache: SchemaExplorerCacheConfig['config'];
+  /** The worker threads shared by the CPU heavy schema tasks (diffs, explorer snapshots). */
+  schemaWorker: SchemaWorkerConfig['config'];
   supportConfig: SupportConfig | null;
   oidcIntegrationConfig: OIDCIntegrationConfig;
   pubSub: HivePubSub;
@@ -354,8 +355,8 @@ export function createRegistry({
     },
     provideSchemaModuleConfig(schemaConfig),
     {
-      provide: SchemaDiffWorkerConfig,
-      useValue: new SchemaDiffWorkerConfig(schemaDiffWorker),
+      provide: SchemaWorkerConfig,
+      useValue: new SchemaWorkerConfig(schemaWorker),
       scope: Scope.Singleton,
     },
     {

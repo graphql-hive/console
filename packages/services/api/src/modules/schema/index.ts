@@ -9,6 +9,7 @@ import { RegistryChecks } from './providers/registry-checks';
 import { SchemaCheckManager } from './providers/schema-check-manager';
 import { SchemaDiffScheduler } from './providers/schema-diff-scheduler';
 import { SchemaExplorerCache } from './providers/schema-explorer-cache';
+import { SchemaExplorerSnapshotBuilder } from './providers/schema-explorer-snapshot-builder';
 import { SchemaHelper } from './providers/schema-helper';
 import { SchemaManager } from './providers/schema-manager';
 import { SchemaPublisher } from './providers/schema-publisher';
@@ -16,6 +17,7 @@ import { SchemaPusher } from './providers/schema-pusher';
 import { SchemaRevisionStore } from './providers/schema-revision-store';
 import { SchemaVersionHelper } from './providers/schema-version-helper';
 import { SchemaVersionStore } from './providers/schema-version-store';
+import { SchemaWorkerPool } from './providers/schema-worker-pool';
 import { resolvers } from './resolvers.generated';
 import typeDefs from './module.graphql';
 
@@ -32,6 +34,8 @@ export const schemaModule = createModule({
     SchemaRevisionStore,
     SchemaDiffScheduler,
     SchemaExplorerCache,
+    SchemaExplorerSnapshotBuilder,
+    SchemaWorkerPool,
     SchemaHelper,
     RegistryChecks,
     SchemaVersionHelper,
