@@ -13,7 +13,7 @@ import type { SchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
 /** Bounds the binary snapshots kept in memory (outside the JS heap) per API instance. */
 const MEMORY_MAX_BYTES = 256 * 1024 * 1024;
 /** A schema version never changes after it is written; the TTL only bounds Redis memory. */
-const REDIS_TTL_SECONDS = 24 * 60 * 60;
+const REDIS_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 // Run on libuv's thread pool, so neither blocks the event loop.
 const compress = promisify(zstdCompress);
@@ -21,7 +21,7 @@ const decompress = promisify(zstdDecompress);
 
 /**
  * Caches the binary schema explorer snapshot per schema version: in memory (readers over the
- * uncompressed bytes, up to `MEMORY_MAX_BYTES`) and in Redis (zstd-compressed, about 6× smaller,
+ * uncompressed bytes, up to `MEMORY_MAX_BYTES` of their estimated memory) and in Redis (zstd-compressed, about 6× smaller,
  * which shrinks both Redis memory and the transfer on an instance's first request for a version).
  * Snapshots are immutable, so entries never need to be invalidated.
  */
@@ -32,7 +32,7 @@ const decompress = promisify(zstdDecompress);
 export class SchemaExplorerCache {
   private memory = new LRUCache<string, SchemaExplorerSnapshotReader>({
     maxSize: MEMORY_MAX_BYTES,
-    sizeCalculation: reader => Math.max(1, reader.byteLength),
+    sizeCalculation: reader => Math.max(1, reader.estimatedMemoryBytes),
   });
   /** Loads or builds in progress, so concurrent requests for a version share one. */
   private inflight = new Map<string, Promise<SchemaExplorerSnapshotReader | null>>();

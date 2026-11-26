@@ -30,6 +30,8 @@ export const SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION = 1;
 
 const MAGIC = 'HSE';
 const NONE = -1;
+/** V8 string header plus array slot of a cached lazy string; measured at 28.5–29.3 bytes. */
+const CACHED_LAZY_STRING_OVERHEAD_BYTES = 32;
 
 type TypeKind = Extract<SchemaExplorerEntry['kind'], `${string}TypeDefinition`>;
 
@@ -84,6 +86,8 @@ const HEADER_WORDS = [
   'ownerSetCount',
   'ownerSetItemCount',
   'stringBlobBytes',
+  'lazyStringCount',
+  'lazyStringBlobBytes',
   'deprecatedTypeCount',
   /** Type ids of the root types, NONE if absent */
   'queryType',
@@ -98,6 +102,7 @@ const HEADER_END = Math.ceil((HEADER_OFFSET + HEADER_WORDS.length * 4) / 8) * 8;
 type ColumnLength =
   | Exclude<keyof Header, 'queryType' | 'mutationType' | 'subscriptionType'>
   | 'stringCount+1'
+  | 'lazyStringCount+1'
   | 'ownerSetCount+1';
 type ArrayConstructor =
   | Int32ArrayConstructor
@@ -108,9 +113,12 @@ type ArrayConstructor =
 /**
  * Only the order matters for the binary format; the names are not stored.
  *
- * Name, description, deprecation reason and default value columns hold string ids (NONE if
- * absent). Owner set columns hold owner set ids (NONE if absent). `…Start` / `…Length` columns are
- * ranges into the columns of another entity kind.
+ * Name columns hold string ids. Description, deprecation reason and default value columns hold
+ * lazy string ids (NONE if absent): these strings are only read, never looked up, so they are kept
+ * out of the string blob and decoded one at a time on first read instead of on open. Owner set
+ * columns hold owner set ids
+ * (NONE if absent). `…Start` / `…Length` columns are ranges into the columns of another entity
+ * kind.
  */
 const COLUMNS = [
   // strings
@@ -161,6 +169,8 @@ const COLUMNS = [
   ['ownerSetSubgraphs', Uint16Array, 'ownerSetItemCount'], // indexes into subgraphNames
   ['deprecatedTypes', Uint32Array, 'deprecatedTypeCount'], // type ids
   ['stringBlob', Uint8Array, 'stringBlobBytes'],
+  ['lazyStringOffsets', Uint32Array, 'lazyStringCount+1'], // UTF-8 byte offsets into lazyStringBlob
+  ['lazyStringBlob', Uint8Array, 'lazyStringBlobBytes'],
 ] as const satisfies ReadonlyArray<readonly [string, ArrayConstructor, ColumnLength]>;
 
 type ColumnName = (typeof COLUMNS)[number][0];
@@ -172,6 +182,8 @@ function columnLength(header: Header, length: ColumnLength) {
   switch (length) {
     case 'stringCount+1':
       return header.stringCount + 1;
+    case 'lazyStringCount+1':
+      return header.lazyStringCount + 1;
     case 'ownerSetCount+1':
       return header.ownerSetCount + 1;
     default:
@@ -233,6 +245,77 @@ function hashTableFind(
     if (value === NONE || matches(value)) {
       return value;
     }
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Strings
+
+/** Stores each distinct string once and hands out ids in insertion order. */
+class StringInterner {
+  readonly values: Array<string> = [];
+  #ids = new Map<string, number>();
+
+  /** Id of a string, adding it if needed; NONE for null or undefined. */
+  intern(value: string | null | undefined): number {
+    if (value == null) {
+      return NONE;
+    }
+    // The GraphQL parser rejects lone surrogates; should one appear anyway, replace it rather
+    // than failing, as UTF-8 cannot represent it.
+    const wellFormed = value.isWellFormed() ? value : value.toWellFormed();
+    let id = this.#ids.get(wellFormed);
+    if (id === undefined) {
+      id = this.values.length;
+      this.values.push(wellFormed);
+      this.#ids.set(wellFormed, id);
+    }
+    return id;
+  }
+}
+
+/**
+ * Lazy strings: descriptions, deprecation reasons and default values. They are only read, never
+ * looked up, so they are stored apart from the names and decoded one at a time on first read.
+ */
+class LazyStringEncoder extends StringInterner {
+  /** One UTF-8 blob; lazy string `id` is bytes `[offsets[id], offsets[id + 1])` of it. */
+  encode(): { offsets: Uint32Array; blob: Uint8Array } {
+    const blob = new TextEncoder().encode(this.values.join(''));
+    const offsets = new Uint32Array(this.values.length + 1);
+    for (let id = 0, offset = 0; id < this.values.length; id++) {
+      offset += Buffer.byteLength(this.values[id], 'utf8');
+      offsets[id + 1] = offset;
+    }
+    return { offsets, blob };
+  }
+}
+
+class LazyStringDecoder {
+  #bytes: Buffer;
+  #decoded: Array<string | undefined>;
+
+  constructor(
+    private offsets: Uint32Array,
+    blob: Uint8Array,
+  ) {
+    this.#bytes = Buffer.from(blob.buffer, blob.byteOffset, blob.byteLength);
+    this.#decoded = new Array(offsets.length - 1);
+  }
+
+  /**
+   * The lazy string, or undefined for NONE. Decoded on its first read and kept: decoding costs
+   * about 70 ns, a cached read about 5 ns, and only the strings requests read are ever decoded.
+   */
+  get(id: number): string | undefined {
+    if (id === NONE) {
+      return undefined;
+    }
+    return (this.#decoded[id] ??= this.#bytes.toString(
+      'utf8',
+      this.offsets[id],
+      this.offsets[id + 1],
+    ));
   }
 }
 
@@ -379,26 +462,9 @@ function nameOf(coordinate: string) {
 }
 
 export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): Buffer {
-  const strings: Array<string> = [];
-  const stringIds = new Map<string, number>();
-  /** Returns the id of a string, adding it if needed. */
-  const internString = (value: string | null | undefined) => {
-    if (value == null) {
-      return NONE;
-    }
-    // The GraphQL parser rejects lone surrogates; should one appear anyway, replace it rather
-    // than failing, as UTF-8 cannot represent it.
-    const wellFormed = value.isWellFormed() ? value : value.toWellFormed();
-    let id = stringIds.get(wellFormed);
-    if (id === undefined) {
-      id = strings.length;
-      strings.push(wellFormed);
-      stringIds.set(wellFormed, id);
-    }
-    return id;
-  };
-
-  const subgraphNames = snapshot.subgraphNames.map(internString);
+  const strings = new StringInterner();
+  const lazyStrings = new LazyStringEncoder();
+  const subgraphNames = snapshot.subgraphNames.map(name => strings.intern(name));
   const ownerSets = new OwnerSetEncoder(snapshot.subgraphNames);
 
   const typeIds = new Map(snapshot.types.map((name, index) => [name, index]));
@@ -463,12 +529,14 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
   const addInputValue = (coordinate: string, parent: number, isArgument: boolean) => {
     const value = entryOf(coordinate, Kind.INPUT_VALUE_DEFINITION);
     const typeRef = parseTypeRef(value.type);
-    inputValues.name.push(internString(nameOf(coordinate)));
-    inputValues.description.push(internString(value.description));
+    inputValues.name.push(strings.intern(nameOf(coordinate)));
+    inputValues.description.push(lazyStrings.intern(value.description));
     inputValues.defaultValue.push(
-      value.defaultValue === undefined ? NONE : internString(JSON.stringify(value.defaultValue)),
+      value.defaultValue === undefined
+        ? NONE
+        : lazyStrings.intern(JSON.stringify(value.defaultValue)),
     );
-    inputValues.deprecationReason.push(internString(value.deprecationReason));
+    inputValues.deprecationReason.push(lazyStrings.intern(value.deprecationReason));
     inputValues.ownerSet.push(ownerSets.intern(value.ownedBy));
     inputValues.type.push(typeIdOf(typeRef.name));
     inputValues.typeWrapping.push(typeRef.wrapping);
@@ -483,8 +551,8 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     invariant(entry, () => `Type ${typename} is missing from the snapshot.`);
     const kind = TYPE_KINDS.indexOf(entry.kind as TypeKind);
     invariant(kind !== -1, () => `Expected schema coordinate ${typename} to be a type.`);
-    types.name[type] = internString(typename);
-    types.description[type] = internString(entry.description);
+    types.name[type] = strings.intern(typename);
+    types.description[type] = lazyStrings.intern(entry.description);
     types.ownerSet[type] = ownerSets.intern(entry.ownedBy);
     types.kind[type] = kind;
     types.refsStart[type] = typeRefs.length;
@@ -498,9 +566,9 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
         for (const coordinate of entry.fields) {
           const field = entryOf(coordinate, Kind.FIELD_DEFINITION);
           const typeRef = parseTypeRef(field.type);
-          fields.name.push(internString(nameOf(coordinate)));
-          fields.description.push(internString(field.description));
-          fields.deprecationReason.push(internString(field.deprecationReason));
+          fields.name.push(strings.intern(nameOf(coordinate)));
+          fields.description.push(lazyStrings.intern(field.description));
+          fields.deprecationReason.push(lazyStrings.intern(field.deprecationReason));
           fields.ownerSet.push(ownerSets.intern(field.ownedBy));
           fields.type.push(typeIdOf(typeRef.name));
           fields.typeWrapping.push(typeRef.wrapping);
@@ -520,9 +588,9 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
         types.childrenLength[type] = entry.values.length;
         for (const coordinate of entry.values) {
           const value = entryOf(coordinate, Kind.ENUM_VALUE_DEFINITION);
-          enumValues.name.push(internString(nameOf(coordinate)));
-          enumValues.description.push(internString(value.description));
-          enumValues.deprecationReason.push(internString(value.deprecationReason));
+          enumValues.name.push(strings.intern(nameOf(coordinate)));
+          enumValues.description.push(lazyStrings.intern(value.description));
+          enumValues.deprecationReason.push(lazyStrings.intern(value.deprecationReason));
           enumValues.ownerSet.push(ownerSets.intern(value.ownedBy));
           enumValues.parentType.push(type);
         }
@@ -543,19 +611,21 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     argCoordinates.forEach(coordinate => addInputValue(coordinate, field, true));
   });
 
+  const { offsets: lazyStringOffsets, blob: lazyStringBlob } = lazyStrings.encode();
+
   // Strings: one blob, a hash table from string to id, and type ids by name string.
-  const stringBlob = new TextEncoder().encode(strings.join(''));
-  const stringOffsets = new Uint32Array(strings.length + 1);
-  for (let id = 0, offset = 0; id < strings.length; id++) {
+  const stringBlob = new TextEncoder().encode(strings.values.join(''));
+  const stringOffsets = new Uint32Array(strings.values.length + 1);
+  for (let id = 0, offset = 0; id < strings.values.length; id++) {
     stringOffsets[id] = offset;
-    offset += strings[id].length;
+    offset += strings.values[id].length;
     stringOffsets[id + 1] = offset;
   }
-  const stringHashTable = new Int32Array(hashTableSlots(strings.length)).fill(NONE);
-  strings.forEach((value, id) => {
+  const stringHashTable = new Int32Array(hashTableSlots(strings.values.length)).fill(NONE);
+  strings.values.forEach((value, id) => {
     hashTableInsert(stringHashTable, fnv1a(value, 0, value.length), id);
   });
-  const typeIdByStringId = new Int32Array(strings.length).fill(NONE);
+  const typeIdByStringId = new Int32Array(strings.values.length).fill(NONE);
   for (let type = 0; type < typeCount; type++) {
     typeIdByStringId[types.name[type]] = type;
   }
@@ -569,9 +639,9 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
   const putCoordinate = (coordinate: string, handle: number) => {
     hashTableInsert(coordinateHashTable, fnv1a(coordinate, 0, coordinate.length), handle);
   };
-  const typeNameOf = (type: number) => strings[types.name[type]];
+  const typeNameOf = (type: number) => strings.values[types.name[type]];
   const fieldCoordinate = (field: number) =>
-    `${typeNameOf(fields.parentType[field])}.${strings[fields.name[field]]}`;
+    `${typeNameOf(fields.parentType[field])}.${strings.values[fields.name[field]]}`;
   for (let type = 0; type < typeCount; type++) {
     putCoordinate(typeNameOf(type), makeHandle(HANDLE_KIND_TYPE, type));
   }
@@ -585,20 +655,21 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
         ? fieldCoordinate(parent)
         : typeNameOf(parent);
     putCoordinate(
-      `${parentCoordinate}.${strings[inputValues.name[inputValue]]}`,
+      `${parentCoordinate}.${strings.values[inputValues.name[inputValue]]}`,
       makeHandle(HANDLE_KIND_INPUT_VALUE, inputValue),
     );
   }
   for (let enumValue = 0; enumValue < enumValues.name.length; enumValue++) {
+    const enumName = typeNameOf(enumValues.parentType[enumValue]);
     putCoordinate(
-      `${typeNameOf(enumValues.parentType[enumValue])}.${strings[enumValues.name[enumValue]]}`,
+      `${enumName}.${strings.values[enumValues.name[enumValue]]}`,
       makeHandle(HANDLE_KIND_ENUM_VALUE, enumValue),
     );
   }
 
   const rootTypeId = (name: string | null) => (name === null ? NONE : typeIdOf(name));
   const header: Header = {
-    stringCount: strings.length,
+    stringCount: strings.values.length,
     stringHashSlots: stringHashTable.length,
     coordinateHashSlots: coordinateHashTable.length,
     subgraphCount: subgraphNames.length,
@@ -610,6 +681,8 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     ownerSetCount: ownerSets.count,
     ownerSetItemCount: ownerSets.subgraphs.length,
     stringBlobBytes: stringBlob.length,
+    lazyStringCount: lazyStrings.values.length,
+    lazyStringBlobBytes: lazyStringBlob.length,
     deprecatedTypeCount: snapshot.deprecatedTypes.length,
     queryType: rootTypeId(snapshot.queryTypeName),
     mutationType: rootTypeId(snapshot.mutationTypeName),
@@ -658,6 +731,8 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     ownerSetSubgraphs: ownerSets.subgraphs,
     deprecatedTypes: snapshot.deprecatedTypes.map(typeIdOf),
     stringBlob,
+    lazyStringOffsets,
+    lazyStringBlob,
   };
 
   const { offsets, total } = layout(header);
@@ -740,6 +815,7 @@ const LAZY_TYPE_ENTITY_CLASSES = Object.fromEntries(
  * blob; entities are materialized when they are read.
  */
 export class SchemaExplorerSnapshotReader {
+  private cachedLazyStrings: LazyStringDecoder | null = null;
   private cachedOwnerSets: OwnerSetDecoder | null = null;
   private cachedSubgraphNames: Array<string> | null = null;
   private cachedDeprecatedTypes: Array<string> | null = null;
@@ -800,7 +876,10 @@ export class SchemaExplorerSnapshotReader {
       // Keep a leading U+FEFF: by default TextDecoder strips it as a byte order mark, which would
       // shift every string offset when the first string starts with it.
       const text = new TextDecoder('utf-8', { ignoreBOM: true }).decode(columns.stringBlob);
-      if (text.length !== columns.stringOffsets[header.stringCount]) {
+      if (
+        text.length !== columns.stringOffsets[header.stringCount] ||
+        columns.lazyStringOffsets[header.lazyStringCount] !== header.lazyStringBlobBytes
+      ) {
         return null;
       }
       return new SchemaExplorerSnapshotReader(buffer, columns, header, text);
@@ -820,6 +899,23 @@ export class SchemaExplorerSnapshotReader {
     return this.buffer.length;
   }
 
+  /**
+   * Memory this reader holds once all of its lazy strings have been read: the buffer, the decoded
+   * names (one byte per character; only subgraph names can be non-ASCII) and the cached lazy
+   * strings.
+   * Used to size the in-memory cache, so it errs on the side of a reader that has served many
+   * requests.
+   */
+  get estimatedMemoryBytes() {
+    const { stringBlobBytes, lazyStringBlobBytes, lazyStringCount } = this.header;
+    return (
+      this.buffer.length +
+      stringBlobBytes +
+      lazyStringBlobBytes +
+      lazyStringCount * CACHED_LAZY_STRING_OVERHEAD_BYTES
+    );
+  }
+
   /** The binary snapshot, e.g. for storing it. */
   toBuffer() {
     return this.buffer;
@@ -831,8 +927,12 @@ export class SchemaExplorerSnapshotReader {
     return this.text.substring(this.columns.stringOffsets[id], this.columns.stringOffsets[id + 1]);
   }
 
-  private stringOrUndefined(id: number): string | undefined {
-    return id === NONE ? undefined : this.string(id);
+  private get lazyStrings(): LazyStringDecoder {
+    this.cachedLazyStrings ??= new LazyStringDecoder(
+      this.columns.lazyStringOffsets,
+      this.columns.lazyStringBlob,
+    );
+    return this.cachedLazyStrings;
   }
 
   /** Id of `value[start, end)` without allocating it, or NONE. */
@@ -864,7 +964,9 @@ export class SchemaExplorerSnapshotReader {
 
   // ------------------------------------------------------------------- coordinate lookup
 
-  /** Position after string `stringId` if `coordinate` continues with it at `position`, otherwise -1. */
+  /**
+   * Position after string `stringId` if `coordinate` continues with it at `position`, otherwise -1.
+   */
   private matchSegment(coordinate: string, position: number, stringId: number): number {
     const offset = this.columns.stringOffsets[stringId];
     const length = this.columns.stringOffsets[stringId + 1] - offset;
@@ -1026,8 +1128,8 @@ export class SchemaExplorerSnapshotReader {
         }
         return withOwners({
           kind: Kind.FIELD_DEFINITION,
-          description: this.stringOrUndefined(columns.fieldDescription[field]),
-          deprecationReason: this.stringOrUndefined(columns.fieldDeprecationReason[field]),
+          description: this.lazyStrings.get(columns.fieldDescription[field]),
+          deprecationReason: this.lazyStrings.get(columns.fieldDeprecationReason[field]),
           type: formatTypeRef(
             this.typeNameOf(columns.fieldType[field]),
             columns.fieldTypeWrapping[field],
@@ -1051,15 +1153,15 @@ export class SchemaExplorerSnapshotReader {
         const enumValue = index;
         return withOwners({
           kind: Kind.ENUM_VALUE_DEFINITION,
-          description: this.stringOrUndefined(columns.enumValueDescription[enumValue]),
-          deprecationReason: this.stringOrUndefined(columns.enumValueDeprecationReason[enumValue]),
+          description: this.lazyStrings.get(columns.enumValueDescription[enumValue]),
+          deprecationReason: this.lazyStrings.get(columns.enumValueDeprecationReason[enumValue]),
         });
       }
     }
 
     const type = index;
     const typename = coordinate;
-    const description = this.stringOrUndefined(columns.typeDescription[type]);
+    const description = this.lazyStrings.get(columns.typeDescription[type]);
     const childrenStart = columns.typeChildrenStart[type];
     const childrenEnd = childrenStart + columns.typeChildrenLength[type];
     const childCoordinates = (childNames: Int32Array) => {
@@ -1123,13 +1225,12 @@ export class SchemaExplorerSnapshotReader {
 
   private inputValue(inputValue: number) {
     const columns = this.columns;
-    const defaultValue = columns.inputValueDefaultValue[inputValue];
+    const defaultValue = this.lazyStrings.get(columns.inputValueDefaultValue[inputValue]);
     return {
       name: this.string(columns.inputValueName[inputValue]),
-      description: this.stringOrUndefined(columns.inputValueDescription[inputValue]),
-      deprecationReason: this.stringOrUndefined(columns.inputValueDeprecationReason[inputValue]),
-      defaultValue:
-        defaultValue === NONE ? undefined : (JSON.parse(this.string(defaultValue)) as unknown),
+      description: this.lazyStrings.get(columns.inputValueDescription[inputValue]),
+      deprecationReason: this.lazyStrings.get(columns.inputValueDeprecationReason[inputValue]),
+      defaultValue: defaultValue === undefined ? undefined : (JSON.parse(defaultValue) as unknown),
       type: formatTypeRef(
         this.typeNameOf(columns.inputValueType[inputValue]),
         columns.inputValueTypeWrapping[inputValue],
@@ -1147,7 +1248,7 @@ export class SchemaExplorerSnapshotReader {
       return null;
     }
     const columns = this.columns;
-    const description = this.stringOrUndefined(columns.typeDescription[type]);
+    const description = this.lazyStrings.get(columns.typeDescription[type]);
     const childrenStart = columns.typeChildrenStart[type];
     const childrenEnd = childrenStart + columns.typeChildrenLength[type];
 
@@ -1167,8 +1268,8 @@ export class SchemaExplorerSnapshotReader {
           }
           fields.push({
             name: this.string(columns.fieldName[field]),
-            description: this.stringOrUndefined(columns.fieldDescription[field]),
-            deprecationReason: this.stringOrUndefined(columns.fieldDeprecationReason[field]),
+            description: this.lazyStrings.get(columns.fieldDescription[field]),
+            deprecationReason: this.lazyStrings.get(columns.fieldDeprecationReason[field]),
             type: formatTypeRef(
               this.typeNameOf(columns.fieldType[field]),
               columns.fieldTypeWrapping[field],
@@ -1199,10 +1300,8 @@ export class SchemaExplorerSnapshotReader {
         for (let enumValue = childrenStart; enumValue < childrenEnd; enumValue++) {
           values.push({
             name: this.string(columns.enumValueName[enumValue]),
-            description: this.stringOrUndefined(columns.enumValueDescription[enumValue]),
-            deprecationReason: this.stringOrUndefined(
-              columns.enumValueDeprecationReason[enumValue],
-            ),
+            description: this.lazyStrings.get(columns.enumValueDescription[enumValue]),
+            deprecationReason: this.lazyStrings.get(columns.enumValueDeprecationReason[enumValue]),
           });
         }
         return { kind: Kind.ENUM_TYPE_DEFINITION, name: typename, description, values };
