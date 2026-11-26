@@ -1,5 +1,9 @@
 import type { Kind } from 'graphql';
 import type {
+  SchemaExplorerSnapshotReader,
+  SchemaExplorerTypeEntity,
+} from '@hive/schema-explorer-snapshot';
+import type {
   Change,
   SchemaChangeType,
   SchemaCheck,
@@ -9,8 +13,6 @@ import type { SchemaError } from '../../__generated__/types';
 import type { DateRange, PushedCompositeSchema, SingleSchema } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import type { ContractGraph } from '../graph/providers/graph-store';
-import type { SchemaExplorerSnapshotReader } from './lib/schema-explorer-flat-snapshot';
-import type { SchemaExplorerTypeEntity } from './lib/schema-explorer-snapshot';
 import type {
   ContractCheck,
   ContractVersion,

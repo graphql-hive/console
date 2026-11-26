@@ -9,11 +9,11 @@ import {
 } from './module.graphql.mappers';
 import stringify from 'fast-json-stable-stringify';
 import { Kind } from 'graphql';
+import type { SchemaExplorerTypeEntity } from '@hive/schema-explorer-snapshot';
 import type { DateRange } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import { OperationsManager } from '../operations/providers/operations-manager';
 import { TargetSelector } from '../shared/providers/storage';
-import type { SchemaExplorerTypeEntity } from './lib/schema-explorer-snapshot';
 
 export function withUsedByClients<
   T extends {

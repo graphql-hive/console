@@ -1,18 +1,13 @@
-import { promisify } from 'node:util';
-import { zstdCompress, zstdDecompress } from 'node:zlib';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { LRUCache } from 'lru-cache';
-import { metrics } from '@hive/service-common';
+import {
+  readSchemaExplorerSnapshot,
+  schemaExplorerSnapshotKey,
+  type SchemaExplorerSnapshotReader,
+} from '@hive/schema-explorer-snapshot';
+import { invariant, metrics } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
-import {
-  SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
-  SchemaExplorerSnapshotReader,
-} from '../lib/schema-explorer-flat-snapshot';
-import type { SchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
-
-/** A schema version never changes after it is written; the TTL only bounds Redis memory. */
-const REDIS_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 /**
  * A miss for a version this instance evicted within this window counts as a miss after eviction:
@@ -75,16 +70,14 @@ const entries = new metrics.Gauge({
   help: 'Number of schema explorer snapshots kept in memory.',
 });
 
-// Run on libuv's thread pool, so neither blocks the event loop.
-const compress = promisify(zstdCompress);
-const decompress = promisify(zstdDecompress);
-
 @Injectable()
 export class SchemaExplorerCacheConfig {
   constructor(
     public readonly config: {
       /** Estimated memory of the snapshots kept in memory per API instance, in bytes. */
       memoryMaxBytes: number;
+      /** How long a request waits for the workflows service to build a missing snapshot. */
+      buildTimeoutMs: number;
     },
   ) {}
 }
@@ -94,7 +87,8 @@ export class SchemaExplorerCacheConfig {
  * uncompressed bytes, up to `memoryMaxBytes` of their estimated memory, see
  * `SCHEMA_EXPLORER_CACHE_MEMORY_MAX_MB`) and in Redis (zstd-compressed, about 6× smaller, which
  * shrinks both Redis memory and the transfer on an instance's first request for a version).
- * Snapshots are immutable, so entries never need to be invalidated.
+ * Snapshots are immutable, so entries never need to be invalidated. Missing snapshots are built
+ * by the workflows service (see `SchemaExplorerSnapshotBuilder`).
  */
 @Injectable({
   scope: Scope.Singleton,
@@ -136,9 +130,13 @@ export class SchemaExplorerCache {
     });
   }
 
+  /**
+   * `build` has the snapshot built and stored in Redis (see `SchemaExplorerSnapshotBuilder`); it
+   * resolves `false` if the version has no schema.
+   */
   getOrBuild(
     schemaVersionId: string,
-    build: () => Promise<SchemaExplorerSnapshot | null>,
+    build: () => Promise<boolean>,
   ): Promise<SchemaExplorerSnapshotReader | null> {
     const inMemory = this.memory.get(schemaVersionId);
     if (inMemory) {
@@ -163,36 +161,25 @@ export class SchemaExplorerCache {
 
   private async load(
     schemaVersionId: string,
-    build: () => Promise<SchemaExplorerSnapshot | null>,
+    build: () => Promise<boolean>,
   ): Promise<SchemaExplorerSnapshotReader | null> {
-    const key = `schema-explorer-snapshot:v${SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION}:zstd:${schemaVersionId}`;
     const startedAt = performance.now();
     const done = (source: 'redis' | 'build' | 'none') => {
       requests.inc({ source });
       loadDuration.observe({ source }, (performance.now() - startedAt) / 1000);
     };
 
-    const stored = await this.redis.getBuffer(key).catch(error => {
-      // Not being able to read the cache must not fail the request; build the snapshot instead.
-      Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
-      return null;
-    });
-    let reader = stored ? await this.read(stored, key) : null;
+    let reader = await this.read(schemaVersionId);
     let source: 'redis' | 'build' = 'redis';
 
     if (!reader) {
       source = 'build';
-      const snapshot = await build();
-      if (!snapshot) {
+      if (!(await build())) {
         done('none');
         return null;
       }
-      reader = SchemaExplorerSnapshotReader.fromSnapshot(snapshot);
-      await compress(reader.toBuffer())
-        .then(compressed => this.redis.setex(key, REDIS_TTL_SECONDS, compressed))
-        .catch(error => {
-          Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
-        });
+      reader = await this.read(schemaVersionId);
+      invariant(reader, 'The built schema explorer snapshot could not be read from Redis.');
     }
 
     done(source);
@@ -214,18 +201,17 @@ export class SchemaExplorerCache {
     entries.set(this.memory.size);
   }
 
-  /** A stored value that cannot be decompressed or read is treated as missing, so it gets rebuilt. */
-  private async read(stored: Buffer, key: string): Promise<SchemaExplorerSnapshotReader | null> {
+  /**
+   * The snapshot stored in Redis, or null. A value that cannot be fetched, decompressed or read
+   * counts as missing, so it gets rebuilt.
+   */
+  private async read(schemaVersionId: string): Promise<SchemaExplorerSnapshotReader | null> {
     try {
-      const reader = SchemaExplorerSnapshotReader.fromBuffer(await decompress(stored));
-      if (!reader) {
-        Sentry.captureMessage('Unreadable schema explorer snapshot in Redis', {
-          extra: { schemaExplorerCacheKey: key },
-        });
-      }
-      return reader;
+      return await readSchemaExplorerSnapshot(this.redis, schemaVersionId);
     } catch (error) {
-      Sentry.captureException(error, { extra: { schemaExplorerCacheKey: key } });
+      Sentry.captureException(error, {
+        extra: { schemaExplorerCacheKey: schemaExplorerSnapshotKey(schemaVersionId) },
+      });
       return null;
     }
   }

@@ -9,6 +9,7 @@ import { RegistryChecks } from './providers/registry-checks';
 import { SchemaCheckManager } from './providers/schema-check-manager';
 import { SchemaDiffScheduler } from './providers/schema-diff-scheduler';
 import { SchemaExplorerCache } from './providers/schema-explorer-cache';
+import { SchemaExplorerSnapshotBuilder } from './providers/schema-explorer-snapshot-builder';
 import { SchemaHelper } from './providers/schema-helper';
 import { SchemaManager } from './providers/schema-manager';
 import { SchemaPublisher } from './providers/schema-publisher';
@@ -32,6 +33,7 @@ export const schemaModule = createModule({
     SchemaRevisionStore,
     SchemaDiffScheduler,
     SchemaExplorerCache,
+    SchemaExplorerSnapshotBuilder,
     SchemaHelper,
     RegistryChecks,
     SchemaVersionHelper,

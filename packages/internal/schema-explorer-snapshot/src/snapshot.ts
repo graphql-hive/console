@@ -1,11 +1,3 @@
-import type {
-  GraphQLEnumTypeMapper,
-  GraphQLInputObjectTypeMapper,
-  GraphQLInterfaceTypeMapper,
-  GraphQLObjectTypeMapper,
-  GraphQLScalarTypeMapper,
-  GraphQLUnionTypeMapper,
-} from '../module.graphql.mappers';
 import {
   coerceInputLiteral,
   isEnumType,
@@ -20,16 +12,71 @@ import {
   type GraphQLArgument,
   type GraphQLInputField,
 } from 'graphql';
-import { buildASTSchema } from '../../../shared/schema';
 import { extractSuperGraphInformation } from './federation-super-graph';
+import { buildASTSchema } from './schema';
 
+/** An argument or an input field. */
+export type SchemaExplorerInputValueEntity = {
+  name: string;
+  description?: string | null;
+  deprecationReason?: string | null;
+  defaultValue?: unknown;
+  type: string;
+};
+
+export type SchemaExplorerFieldEntity = {
+  name: string;
+  description?: string | null;
+  deprecationReason?: string | null;
+  type: string;
+  args: Array<SchemaExplorerInputValueEntity>;
+};
+
+export type SchemaExplorerEnumValueEntity = {
+  name: string;
+  description?: string | null;
+  deprecationReason?: string | null;
+};
+
+/** A materialized type, the shape the API's GraphQL mappers expose as `entity`. */
 export type SchemaExplorerTypeEntity =
-  | GraphQLObjectTypeMapper['entity']
-  | GraphQLInterfaceTypeMapper['entity']
-  | GraphQLUnionTypeMapper['entity']
-  | GraphQLEnumTypeMapper['entity']
-  | GraphQLInputObjectTypeMapper['entity']
-  | GraphQLScalarTypeMapper['entity'];
+  | {
+      kind: typeof Kind.OBJECT_TYPE_DEFINITION;
+      name: string;
+      description?: string | null;
+      fields: Array<SchemaExplorerFieldEntity>;
+      interfaces: Array<string>;
+    }
+  | {
+      kind: typeof Kind.INTERFACE_TYPE_DEFINITION;
+      name: string;
+      description?: string | null;
+      fields: Array<SchemaExplorerFieldEntity>;
+      interfaces: Array<string>;
+    }
+  | {
+      kind: typeof Kind.UNION_TYPE_DEFINITION;
+      name: string;
+      description?: string | null;
+      members: Array<{ name: string }>;
+    }
+  | {
+      kind: typeof Kind.ENUM_TYPE_DEFINITION;
+      name: string;
+      description?: string | null;
+      values: Array<SchemaExplorerEnumValueEntity>;
+    }
+  | {
+      kind: typeof Kind.INPUT_OBJECT_TYPE_DEFINITION;
+      name: string;
+      description?: string | null;
+      fields: Array<SchemaExplorerInputValueEntity>;
+    }
+  | {
+      kind: typeof Kind.SCALAR_TYPE_DEFINITION;
+      name: string;
+      description?: string | null;
+    };
 
 type Described = {
   description?: string | null;

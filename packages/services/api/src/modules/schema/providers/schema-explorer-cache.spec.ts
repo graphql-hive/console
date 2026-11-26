@@ -1,13 +1,13 @@
 import { zstdDecompressSync } from 'node:zlib';
 import Redis from 'ioredis-mock';
 import 'reflect-metadata';
-import { parse } from 'graphql';
-import { metrics } from '@hive/service-common';
 import {
-  SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION,
+  buildSchemaExplorerSnapshotBuffer,
+  schemaExplorerSnapshotKey as key,
   SchemaExplorerSnapshotReader,
-} from '../lib/schema-explorer-flat-snapshot';
-import { buildSchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
+  writeSchemaExplorerSnapshot,
+} from '@hive/schema-explorer-snapshot';
+import { metrics } from '@hive/service-common';
 import { SchemaExplorerCache, SchemaExplorerCacheConfig } from './schema-explorer-cache';
 
 let port = 1000;
@@ -18,18 +18,24 @@ function createRedis() {
 
 /** A cache like one API instance's, with the default 512 MB memory limit unless given. */
 function createCache(redis: unknown, memoryMaxBytes = 512 * 1024 * 1024) {
-  return new SchemaExplorerCache(redis as any, new SchemaExplorerCacheConfig({ memoryMaxBytes }));
-}
-
-function snapshotBuilder() {
-  const build = vi.fn(async () =>
-    buildSchemaExplorerSnapshot(parse(`type Query { hello(name: String = "you"): String }`), null),
+  return new SchemaExplorerCache(
+    redis as any,
+    new SchemaExplorerCacheConfig({ memoryMaxBytes, buildTimeoutMs: 30_000 }),
   );
-  return build;
 }
 
-const key = (id: string) =>
-  `schema-explorer-snapshot:v${SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION}:zstd:${id}`;
+const snapshot = buildSchemaExplorerSnapshotBuffer({
+  compositeSdl: `type Query { hello(name: String = "you"): String }`,
+  supergraphSdl: null,
+});
+
+/** Stands in for the workflows service: stores the snapshot in Redis, as the build task does. */
+function workflow(redis: InstanceType<typeof Redis>) {
+  return vi.fn(async (schemaVersionId: string) => {
+    await writeSchemaExplorerSnapshot(redis, schemaVersionId, snapshot);
+    return true;
+  });
+}
 
 /** The stored value, decompressed. */
 async function storedSnapshot(redis: InstanceType<typeof Redis>, id: string) {
@@ -37,12 +43,12 @@ async function storedSnapshot(redis: InstanceType<typeof Redis>, id: string) {
   return stored ? zstdDecompressSync(stored) : null;
 }
 
-test('builds on a miss, stores the binary snapshot in Redis and serves later reads from memory', async () => {
+test('a miss waits for the build, reads the snapshot from Redis and serves later reads from memory', async () => {
   const redis = createRedis();
   const cache = createCache(redis);
-  const build = snapshotBuilder();
+  const build = workflow(redis);
 
-  const first = await cache.getOrBuild('version-1', build);
+  const first = await cache.getOrBuild('version-1', () => build('version-1'));
   expect(first?.getTypeEntity('Query')).toMatchObject({
     fields: [{ name: 'hello', args: [{ name: 'name', defaultValue: 'you' }] }],
   });
@@ -55,30 +61,31 @@ test('builds on a miss, stores the binary snapshot in Redis and serves later rea
   expect(stored!.length).toBeLessThan(decompressed!.length);
   expect(await redis.ttl(key('version-1'))).toBeGreaterThan(0);
 
-  expect(await cache.getOrBuild('version-1', build)).toBe(first);
+  expect(await cache.getOrBuild('version-1', () => build('version-1'))).toBe(first);
   expect(build).toHaveBeenCalledTimes(1);
 });
 
 test('another instance (empty memory) reads the snapshot from Redis instead of building it', async () => {
   const redis = createRedis();
-  const build = snapshotBuilder();
-  await createCache(redis).getOrBuild('version-1', build);
+  const build = workflow(redis);
+  await createCache(redis).getOrBuild('version-1', () => build('version-1'));
 
   const otherInstance = createCache(redis);
-  const reader = await otherInstance.getOrBuild('version-1', build);
+  const reader = await otherInstance.getOrBuild('version-1', () => build('version-1'));
 
   expect(reader?.queryTypeName).toBe('Query');
   expect(build).toHaveBeenCalledTimes(1);
 });
 
 test('concurrent requests for a version share one build', async () => {
-  const cache = createCache(createRedis());
-  const build = snapshotBuilder();
+  const redis = createRedis();
+  const cache = createCache(redis);
+  const build = workflow(redis);
 
   const [a, b, c] = await Promise.all([
-    cache.getOrBuild('version-1', build),
-    cache.getOrBuild('version-1', build),
-    cache.getOrBuild('version-1', build),
+    cache.getOrBuild('version-1', () => build('version-1')),
+    cache.getOrBuild('version-1', () => build('version-1')),
+    cache.getOrBuild('version-1', () => build('version-1')),
   ]);
 
   expect(build).toHaveBeenCalledTimes(1);
@@ -89,9 +96,9 @@ test('concurrent requests for a version share one build', async () => {
 test('a stored snapshot of another format is rebuilt', async () => {
   const redis = createRedis();
   await redis.set(key('version-1'), Buffer.from('not a snapshot'));
-  const build = snapshotBuilder();
+  const build = workflow(redis);
 
-  const reader = await createCache(redis).getOrBuild('version-1', build);
+  const reader = await createCache(redis).getOrBuild('version-1', () => build('version-1'));
 
   expect(reader?.queryTypeName).toBe('Query');
   expect(build).toHaveBeenCalledTimes(1);
@@ -100,21 +107,20 @@ test('a stored snapshot of another format is rebuilt', async () => {
 
 test('an uncompressed snapshot in Redis is rebuilt', async () => {
   const redis = createRedis();
-  const build = snapshotBuilder();
-  const uncompressed = SchemaExplorerSnapshotReader.fromSnapshot(await build()).toBuffer();
-  await redis.set(key('version-1'), uncompressed);
+  await redis.set(key('version-1'), snapshot);
+  const build = workflow(redis);
 
-  const reader = await createCache(redis).getOrBuild('version-1', build);
+  const reader = await createCache(redis).getOrBuild('version-1', () => build('version-1'));
 
   expect(reader?.queryTypeName).toBe('Query');
-  expect(build).toHaveBeenCalledTimes(2);
-  expect((await storedSnapshot(redis, 'version-1'))?.equals(uncompressed)).toBe(true);
+  expect(build).toHaveBeenCalledTimes(1);
+  expect((await storedSnapshot(redis, 'version-1'))?.equals(snapshot)).toBe(true);
 });
 
 test('versions without a schema are not cached', async () => {
   const redis = createRedis();
   const cache = createCache(redis);
-  const build = vi.fn(async () => null);
+  const build = vi.fn(async () => false);
 
   expect(await cache.getOrBuild('version-1', build)).toBe(null);
   expect(await cache.getOrBuild('version-1', build)).toBe(null);
@@ -122,24 +128,29 @@ test('versions without a schema are not cached', async () => {
   expect(await redis.exists(key('version-1'))).toBe(0);
 });
 
-test('Redis errors do not fail the request', async () => {
-  const failingRedis = {
-    getBuffer: vi.fn(async () => {
-      throw new Error('connection lost');
-    }),
-    setex: vi.fn(async () => {
-      throw new Error('connection lost');
-    }),
-  };
-  const cache = createCache(failingRedis);
-  const build = snapshotBuilder();
+test('a failing Redis read counts as a miss', async () => {
+  const redis = createRedis();
+  // The first read fails, later ones reach Redis.
+  vi.spyOn(redis, 'getBuffer').mockImplementationOnce(async () => {
+    throw new Error('connection lost');
+  });
+  const build = workflow(redis);
 
-  const reader = await cache.getOrBuild('version-1', build);
+  const reader = await createCache(redis).getOrBuild('version-1', () => build('version-1'));
 
   expect(reader?.queryTypeName).toBe('Query');
-  expect(failingRedis.setex).toHaveBeenCalledTimes(1);
-  // Served from memory afterwards.
-  await cache.getOrBuild('version-1', build);
+  expect(build).toHaveBeenCalledTimes(1);
+});
+
+test('a build whose snapshot cannot be read from Redis fails the request', async () => {
+  const cache = createCache(createRedis());
+
+  await expect(cache.getOrBuild('version-1', async () => true)).rejects.toThrow(
+    'could not be read from Redis',
+  );
+  // Not cached: the next request builds again.
+  const build = vi.fn(async () => false);
+  expect(await cache.getOrBuild('version-1', build)).toBe(null);
   expect(build).toHaveBeenCalledTimes(1);
 });
 
@@ -183,18 +194,19 @@ describe('metrics', () => {
   test('requests are counted by where the snapshot came from', async () => {
     const redis = createRedis();
     const cache = createCache(redis);
+    const build = workflow(redis);
 
     const counts = await delta(
       ['memory', 'inflight', 'redis', 'build', 'none'].map(requests),
       async () => {
-        await cache.getOrBuild('version-1', snapshotBuilder()); // build
-        await cache.getOrBuild('version-1', snapshotBuilder()); // memory
+        await cache.getOrBuild('version-1', () => build('version-1')); // build
+        await cache.getOrBuild('version-1', () => build('version-1')); // memory
         await Promise.all([
-          cache.getOrBuild('version-2', snapshotBuilder()), // build
-          cache.getOrBuild('version-2', snapshotBuilder()), // inflight
+          cache.getOrBuild('version-2', () => build('version-2')), // build
+          cache.getOrBuild('version-2', () => build('version-2')), // inflight
         ]);
-        await createCache(redis).getOrBuild('version-1', snapshotBuilder()); // redis
-        await cache.getOrBuild('version-3', async () => null); // none
+        await createCache(redis).getOrBuild('version-1', () => build('version-1')); // redis
+        await cache.getOrBuild('version-3', async () => false); // none
       },
     );
 
@@ -205,7 +217,9 @@ describe('metrics', () => {
     vi.spyOn(SchemaExplorerSnapshotReader.prototype, 'estimatedMemoryBytes', 'get').mockReturnValue(
       100 * MB,
     );
-    const cache = createCache(createRedis(), 256 * MB);
+    const redis = createRedis();
+    const cache = createCache(redis, 256 * MB);
+    const build = workflow(redis);
 
     const [evicted, ages, missesAfterEviction, fromRedis] = await delta(
       [
@@ -221,10 +235,10 @@ describe('metrics', () => {
       async () => {
         // 3 × 100 MB do not fit into 256 MB: the least recently used version-1 is evicted.
         for (const id of ['version-1', 'version-2', 'version-3']) {
-          await cache.getOrBuild(id, snapshotBuilder());
+          await cache.getOrBuild(id, () => build(id));
         }
         // A larger cache would have served this from memory.
-        await cache.getOrBuild('version-1', snapshotBuilder());
+        await cache.getOrBuild('version-1', () => build('version-1'));
       },
     );
 
@@ -241,16 +255,17 @@ describe('metrics', () => {
     vi.spyOn(SchemaExplorerSnapshotReader.prototype, 'estimatedMemoryBytes', 'get').mockReturnValue(
       100 * MB,
     );
-    const cache = createCache(createRedis(), 150 * MB);
-    const build = snapshotBuilder();
+    const redis = createRedis();
+    const cache = createCache(redis, 150 * MB);
+    const build = workflow(redis);
 
     const [evicted] = await delta(
       [['api_schema_explorer_cache_evictions_total', { reason: 'evict' }]],
       async () => {
-        await cache.getOrBuild('version-1', build);
+        await cache.getOrBuild('version-1', () => build('version-1'));
         // 2 × 100 MB do not fit into 150 MB.
-        await cache.getOrBuild('version-2', build);
-        await cache.getOrBuild('version-1', build);
+        await cache.getOrBuild('version-2', () => build('version-2'));
+        await cache.getOrBuild('version-1', () => build('version-1'));
       },
     );
 
@@ -262,13 +277,15 @@ describe('metrics', () => {
     vi.spyOn(SchemaExplorerSnapshotReader.prototype, 'estimatedMemoryBytes', 'get').mockReturnValue(
       600 * MB,
     );
-    const cache = createCache(createRedis());
+    const redis = createRedis();
+    const cache = createCache(redis);
+    const build = workflow(redis);
 
     const [tooLarge, fromMemory] = await delta(
       [['api_schema_explorer_cache_evictions_total', { reason: 'too_large' }], requests('memory')],
       async () => {
-        await cache.getOrBuild('version-1', snapshotBuilder());
-        await cache.getOrBuild('version-1', snapshotBuilder());
+        await cache.getOrBuild('version-1', () => build('version-1'));
+        await cache.getOrBuild('version-1', () => build('version-1'));
       },
     );
 

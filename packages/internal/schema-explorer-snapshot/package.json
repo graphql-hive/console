@@ -1,0 +1,19 @@
+{
+  "name": "@hive/schema-explorer-snapshot",
+  "type": "module",
+  "license": "MIT",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@graphql-tools/merge": "catalog:",
+    "@theguild/federation-composition": "catalog:",
+    "graphql": "catalog:"
+  },
+  "devDependencies": {
+    "@hive/service-common": "workspace:*",
+    "ioredis-mock": "catalog:",
+    "vitest": "catalog:"
+  }
+}
