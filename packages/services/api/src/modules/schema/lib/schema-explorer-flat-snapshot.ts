@@ -797,7 +797,9 @@ export class SchemaExplorerSnapshotReader {
         );
       });
       const columns = views as Columns;
-      const text = new TextDecoder().decode(columns.stringBlob);
+      // Keep a leading U+FEFF: by default TextDecoder strips it as a byte order mark, which would
+      // shift every string offset when the first string starts with it.
+      const text = new TextDecoder('utf-8', { ignoreBOM: true }).decode(columns.stringBlob);
       if (text.length !== columns.stringOffsets[header.stringCount]) {
         return null;
       }

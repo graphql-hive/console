@@ -346,45 +346,130 @@ describe('binary format', () => {
   });
 
   /** A snapshot written by hand, for cases the GraphQL parser cannot produce. */
-  function handWritten(overrides: Partial<SchemaExplorerSnapshot> = {}): SchemaExplorerSnapshot {
-    return {
-      coordinates: {
-        Query: {
-          kind: 'ObjectTypeDefinition',
-          interfaces: [],
-          fields: ['Query.a'],
-          ownedBy: ['b', 'a'],
-        },
-        'Query.a': { kind: 'FieldDefinition', type: 'String', args: [], ownedBy: ['b', 'a'] },
-        String: { kind: 'ScalarTypeDefinition', builtIn: true },
-      },
-      types: ['Query', 'String'],
-      deprecatedTypes: [],
-      queryTypeName: 'Query',
-      mutationTypeName: null,
-      subscriptionTypeName: null,
-      subgraphNames: ['a', 'b'],
-      ...overrides,
-    };
+  /** Parses supergraph SDL; only the join directives matter for ownership. */
+  function supergraph(typeDefs: string) {
+    return parse(/* GraphQL */ `
+      schema
+        @link(url: "https://specs.apollo.dev/link/v1.0")
+        @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION) {
+        query: Query
+      }
+      ${typeDefs}
+    `);
   }
 
   test('owners keep their order', () => {
-    const snapshot = fromCache(handWritten());
+    const snapshot = fromCache(
+      buildSchemaExplorerSnapshot(
+        parse(/* GraphQL */ `
+          type Query {
+            a: String
+          }
+        `),
+        supergraph(/* GraphQL */ `
+          enum join__Graph {
+            A @join__graph(name: "a", url: "")
+            B @join__graph(name: "b", url: "")
+          }
+          type Query @join__type(graph: B) @join__type(graph: A) {
+            a: String
+          }
+        `),
+      ),
+    );
     expect(snapshot.getOwnedBy('Query')).toEqual(['b', 'a']);
     expect(snapshot.getOwnedBy('Query.a')).toEqual(['b', 'a']);
   });
 
   test('a schema without a query type', () => {
-    const snapshot = fromCache(handWritten({ queryTypeName: null }));
+    const snapshot = fromCache(
+      buildSchemaExplorerSnapshot(
+        parse(/* GraphQL */ `
+          type Foo {
+            a: Int
+          }
+        `),
+        null,
+      ),
+    );
     expect(snapshot.queryTypeName).toBe(null);
-    expect(snapshot.getTypeEntity('Query')).toMatchObject({ name: 'Query' });
+    expect(snapshot.getTypeEntity('Foo')).toMatchObject({ name: 'Foo' });
   });
 
   test('lone surrogates are replaced instead of failing', () => {
-    const built = handWritten();
+    const built = buildSchemaExplorerSnapshot(
+      parse(/* GraphQL */ `
+        type Query {
+          a: String
+        }
+      `),
+      null,
+    );
+    // The GraphQL parser rejects lone surrogates, so only a hand-edited snapshot can contain one.
     built.coordinates.Query.description = 'lone \uD800 surrogate';
     const snapshot = fromCache(built);
     expect(snapshot.getTypeEntity('Query')?.description).toBe('lone � surrogate');
+  });
+
+  test('a first string starting with U+FEFF is not stripped as a byte order mark', () => {
+    // Subgraph names are the first strings of the blob. They are sorted with `localeCompare`,
+    // which ignores U+FEFF, so "﻿a" comes before "b".
+    const built = buildSchemaExplorerSnapshot(
+      parse(/* GraphQL */ `
+        type Query {
+          a: String
+        }
+      `),
+      supergraph(/* GraphQL */ `
+        enum join__Graph {
+          A @join__graph(name: "﻿a", url: "")
+          B @join__graph(name: "b", url: "")
+        }
+        type Query @join__type(graph: B) @join__type(graph: A) {
+          a: String @join__field(graph: A)
+        }
+      `),
+    );
+    expect(built.subgraphNames).toEqual(['﻿a', 'b']);
+    const snapshot = SchemaExplorerSnapshotReader.fromBuffer(encodeSchemaExplorerSnapshot(built));
+    expect(snapshot).not.toBe(null);
+    expect(snapshot?.subgraphNames).toEqual(['﻿a', 'b']);
+    expect(snapshot?.getOwnedBy('Query')).toEqual(['b', '﻿a']);
+    expect(snapshot?.getOwnedBy('Query.a')).toEqual(['﻿a']);
+    expect(snapshot?.getTypeEntity('Query')).toMatchObject({ fields: [{ name: 'a' }] });
+  });
+
+  test('emoji in subgraph names, deprecation reasons and default values', () => {
+    const snapshot = fromCache(
+      buildSchemaExplorerSnapshot(
+        parse(/* GraphQL */ `
+          type Query {
+            a(arg: String = "👨‍👩‍👧 family"): String @deprecated(reason: "use 🧊 instead")
+          }
+        `),
+        supergraph(/* GraphQL */ `
+          enum join__Graph {
+            CART @join__graph(name: "🛒 cart", url: "")
+            UNICODE @join__graph(name: "ünïcödé", url: "")
+          }
+          type Query @join__type(graph: UNICODE) @join__type(graph: CART) {
+            a(arg: String = "👨‍👩‍👧 family"): String
+          }
+        `),
+      ),
+    );
+
+    expect(snapshot.subgraphNames).toEqual(['🛒 cart', 'ünïcödé']);
+    expect(snapshot.getOwnedBy('Query')).toEqual(['ünïcödé', '🛒 cart']);
+    expect(snapshot.getTypeEntity('Query')).toMatchObject({
+      fields: [
+        {
+          name: 'a',
+          deprecationReason: 'use 🧊 instead',
+          args: [{ name: 'arg', defaultValue: '👨‍👩‍👧 family' }],
+        },
+      ],
+    });
   });
 
   test('misaligned buffers are read, truncated or corrupt ones are rejected', () => {
