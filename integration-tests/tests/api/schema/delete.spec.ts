@@ -1,7 +1,9 @@
 import 'reflect-metadata';
+import asyncRetry from 'async-retry';
 import { parse, print } from 'graphql';
 import { updateSchemaComposition } from 'testkit/flow';
-import { ProjectType } from 'testkit/gql/graphql';
+import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
+import { generateMockEndpoint, getRecordedRequests } from 'testkit/mock-server';
 import { initSeed } from 'testkit/seed';
 import { assertNonNull, getServiceHost } from 'testkit/utils';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
@@ -68,8 +70,9 @@ test.concurrent(
   'can delete a service and updates the CDN when the super schema is still composable',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
-    const { createProject } = await createOrg();
-    const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+    const { createProject, organization } = await createOrg();
+    const { createTargetAccessToken, target, project, addAlert, addAlertChannel } =
+      await createProject(ProjectType.Federation);
 
     const readToken = await createTargetAccessToken({});
 
@@ -109,6 +112,23 @@ test.concurrent(
       `),
     );
 
+    const webhook = await generateMockEndpoint();
+    const channel = await addAlertChannel({
+      name: 'test',
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      type: AlertChannelType.Webhook,
+      webhook: { endpoint: webhook.url },
+    });
+    invariant(channel.ok, 'Expected the alert channel to be created.');
+    await addAlert({
+      organizationSlug: organization.slug,
+      projectSlug: project.slug,
+      targetSlug: target.slug,
+      channelId: channel.ok.addedAlertChannel.id,
+      type: AlertType.SchemaChangeNotifications,
+    });
+
     const deleteServiceResult = await readToken
       .deleteSchema('foo1')
       .then(r => r.expectNoGraphQLErrors());
@@ -123,6 +143,27 @@ test.concurrent(
           ping: String
         }
       `),
+    );
+
+    // The schema change webhook lists the breaking changes of a delete as changes only.
+    await asyncRetry(
+      async () => {
+        expect(await getRecordedRequests()).toContainEqual(
+          expect.objectContaining({
+            path: webhook.path,
+            body: expect.objectContaining({
+              json: expect.objectContaining({
+                schema: expect.objectContaining({ valid: true }),
+                changes: expect.arrayContaining([
+                  expect.objectContaining({ criticality: 'BREAKING' }),
+                ]),
+                errors: [],
+              }),
+            }),
+          }),
+        );
+      },
+      { retries: 5, maxTimeout: 2000 },
     );
   },
 );

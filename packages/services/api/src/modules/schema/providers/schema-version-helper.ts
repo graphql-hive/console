@@ -360,7 +360,7 @@ export class SchemaVersionHelper {
     return schemaLog?.sdl ?? null;
   }
 
-  getIsValid(schemaVersion: SchemaVersion) {
+  getIsValid(schemaVersion: Pick<SchemaVersion, 'isComposable' | 'hasContractCompositionErrors'>) {
     return schemaVersion.isComposable && schemaVersion.hasContractCompositionErrors === false;
   }
 

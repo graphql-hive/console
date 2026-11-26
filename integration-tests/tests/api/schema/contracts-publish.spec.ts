@@ -1,4 +1,6 @@
-import { ProjectType } from 'testkit/gql/graphql';
+import asyncRetry from 'async-retry';
+import { AlertChannelType, AlertType, ProjectType } from 'testkit/gql/graphql';
+import { generateMockEndpoint, getRecordedRequests } from 'testkit/mock-server';
 import { assertNonNullish } from 'testkit/utils';
 import { GetObjectCommand, NoSuchKey, S3Client } from '@aws-sdk/client-s3';
 import { graphql } from '../../../testkit/gql';
@@ -319,8 +321,9 @@ test.concurrent('schema publish with succeeding contract composition', async ({ 
 
 test.concurrent('schema publish with failing contract composition', async ({ expect }) => {
   const { createOrg, ownerToken } = await initSeed().createOwner();
-  const { createProject } = await createOrg();
-  const { createTargetAccessToken, target } = await createProject(ProjectType.Federation);
+  const { createProject, organization } = await createOrg();
+  const { createTargetAccessToken, target, project, addAlert, addAlertChannel } =
+    await createProject(ProjectType.Federation);
 
   // Create a token with write rights
   const writeToken = await createTargetAccessToken({});
@@ -359,6 +362,23 @@ test.concurrent('schema publish with failing contract composition', async ({ exp
     .then(r => r.expectNoGraphQLErrors());
 
   expect(publishResult.schemaPublish.__typename).toBe('SchemaPublishSuccess');
+
+  const webhook = await generateMockEndpoint();
+  const channel = await addAlertChannel({
+    name: 'test',
+    organizationSlug: organization.slug,
+    projectSlug: project.slug,
+    type: AlertChannelType.Webhook,
+    webhook: { endpoint: webhook.url },
+  });
+  assertNonNullish(channel.ok);
+  await addAlert({
+    organizationSlug: organization.slug,
+    projectSlug: project.slug,
+    targetSlug: target.slug,
+    channelId: channel.ok.addedAlertChannel.id,
+    type: AlertType.SchemaChangeNotifications,
+  });
 
   publishResult = await writeToken
     .publishSchema({
@@ -400,6 +420,26 @@ test.concurrent('schema publish with failing contract composition', async ({ exp
       helloHidden: String
     }
   `);
+
+  // The schema change webhook reports the version as `SchemaVersion.isValid` does.
+  await asyncRetry(
+    async () => {
+      expect(await getRecordedRequests()).toContainEqual(
+        expect.objectContaining({
+          path: webhook.path,
+          body: expect.objectContaining({
+            json: expect.objectContaining({
+              schema: expect.objectContaining({ valid: false }),
+              errors: expect.arrayContaining([
+                expect.objectContaining({ message: expect.stringContaining('[my-contract]') }),
+              ]),
+            }),
+          }),
+        }),
+      );
+    },
+    { retries: 5, maxTimeout: 2000 },
+  );
 });
 
 test.concurrent(

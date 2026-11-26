@@ -106,21 +106,28 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
         url: changeUrl,
       });
 
-      const message = input.event.initial
-        ? `Hive received your first schema in project ${projectLink}, target ${targetLink} (${viewLink}).`
-        : `Hive found **${totalChanges} ${this.pluralize(
-            'change',
-            totalChanges,
-          )}** in project ${projectLink}, target ${targetLink} (${viewLink}).`;
+      const compositionFailed = !input.event.schema.valid;
+      const message = compositionFailed
+        ? `Hive could not compose the schema in project ${projectLink}, target ${targetLink} (${viewLink}).`
+        : input.event.initial
+          ? `Hive received your first schema in project ${projectLink}, target ${targetLink} (${viewLink}).`
+          : `Hive found **${totalChanges} ${this.pluralize(
+              'change',
+              totalChanges,
+            )}** in project ${projectLink}, target ${targetLink} (${viewLink}).`;
 
-      const detailsText = input.event.initial
-        ? ''
-        : createDetailsText(input.event.changes, input.event.messages, input.event.errors);
+      const detailsText =
+        input.event.initial && !compositionFailed
+          ? ''
+          : createDetailsText(
+              input.event.changes,
+              input.event.messages,
+              compositionFailed ? input.event.errors : [],
+            );
 
       const hasBreakingChanges = input.event.changes.some(
         change => change.criticality === CriticalityLevel.Breaking,
       );
-      const hasErrors = input.event.errors.length > 0;
 
       const idempotencyKey = `schema-change:${input.event.schema.id}:${input.channel.id}`;
       const headers = buildHiveWebhookHeaders(
@@ -147,13 +154,15 @@ export class DiscordCommunicationAdapter implements CommunicationAdapter {
             {
               embeds: [
                 {
-                  title: input.event.initial
-                    ? 'Schema published'
-                    : hasBreakingChanges || hasErrors
-                      ? 'Breaking schema changes detected'
-                      : 'Schema changes detected',
+                  title: compositionFailed
+                    ? 'Schema composition failed'
+                    : input.event.initial
+                      ? 'Schema published'
+                      : hasBreakingChanges
+                        ? 'Breaking schema changes detected'
+                        : 'Schema changes detected',
                   url: changeUrl,
-                  color: hasBreakingChanges || hasErrors ? DISCORD_RED : DISCORD_GREEN,
+                  color: compositionFailed || hasBreakingChanges ? DISCORD_RED : DISCORD_GREEN,
                   description: [message, detailsText].filter(Boolean).join('\n\n'),
                   fields: [
                     {
@@ -332,7 +341,7 @@ export function describeDiscordError(error: unknown): DeliveryOutcome | null {
 function createDetailsText(
   changes: readonly SchemaChangeType[],
   messages: readonly string[],
-  errors: readonly { message: string }[],
+  compositionErrors: readonly { message: string }[],
 ): string {
   const breakingChanges = changes.filter(
     change => change.criticality === CriticalityLevel.Breaking,
@@ -340,6 +349,12 @@ function createDetailsText(
   const safeChanges = changes.filter(change => change.criticality !== CriticalityLevel.Breaking);
 
   const sections: string[] = [];
+
+  if (compositionErrors.length) {
+    sections.push(
+      `### Composition errors\n${compositionErrors.map(error => slackCoderize(` - ${error.message}`)).join('\n')}`,
+    );
+  }
 
   if (breakingChanges.length) {
     sections.push(renderChangeList('Breaking changes', breakingChanges));
@@ -353,10 +368,6 @@ function createDetailsText(
     sections.push(
       `### Other changes\n${messages.map(message => slackCoderize(message)).join('\n')}`,
     );
-  }
-
-  if (errors.length) {
-    sections.push(`### Errors\n${errors.map(error => slackCoderize(error.message)).join('\n')}`);
   }
 
   return sections.join('\n');

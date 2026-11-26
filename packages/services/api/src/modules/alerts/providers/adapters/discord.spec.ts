@@ -200,6 +200,21 @@ describe('DiscordCommunicationAdapter', () => {
       expect(sendDiscordMessageSpy.mock.calls[0]?.[1].embeds?.[0]?.description).toContain(
         '### Safe changes',
       );
+
+      await adapter.sendSchemaChangeNotification({
+        ...input,
+        event: {
+          ...input.event,
+          changes: [],
+          initial: true,
+          errors: [{ message: 'Type "User" is not composable' }],
+          schema: { ...input.event.schema, valid: false },
+        },
+      });
+
+      expect(sendDiscordMessageSpy.mock.calls[1]?.[1].embeds?.[0]?.description).toContain(
+        'Type `User` is not composable',
+      );
     });
 
     it('should not send a notification without a webhook endpoint', async () => {
