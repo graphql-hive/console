@@ -77,6 +77,7 @@ async function builds(outcome: string) {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.restoreAllMocks();
 });
 
@@ -127,10 +128,16 @@ test('does not schedule a build when the snapshot is already stored', async () =
 });
 
 test('notices a stored snapshot without a notification', async () => {
-  // The notification got lost: only polling Redis finds the snapshot.
-  const { builder } = setup(({ store }) => store());
+  // The notification got lost: only polling Redis finds the snapshot. Fake timers skip the wait
+  // for the poll (every 5 seconds), which would otherwise exceed the test timeout.
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const { builder, scheduleTask } = setup(({ store }) => store(), 60_000);
 
-  expect(await builder.build('version-1', { legacyComposition: null })).toBe(true);
+  const result = builder.build('version-1', { legacyComposition: null });
+  await vi.waitFor(() => expect(scheduleTask).toHaveBeenCalled());
+  await vi.advanceTimersByTimeAsync(5_000);
+
+  expect(await result).toBe(true);
 });
 
 test('resolves false for a version without a schema', async () => {
