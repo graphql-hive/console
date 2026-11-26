@@ -154,6 +154,18 @@ function revisionNotFoundResult(revision: string) {
   };
 }
 
+function toContractCompositionErrors(contracts: Array<ContractResult> | null) {
+  return (
+    contracts?.flatMap(
+      contract =>
+        contract.compositionErrors?.map(err => ({
+          ...err,
+          message: `[${formatContractName(contract.contractName)}] ${err.message}`,
+        })) ?? [],
+    ) ?? []
+  );
+}
+
 function assertNonNull<T>(value: T | null, message: string): T {
   if (value === null) {
     throw new Error(message);
@@ -1849,11 +1861,9 @@ export class SchemaPublisher {
               const changes = deleteResult.state.changes ?? [];
               const errors = [
                 ...(deleteResult.state.compositionErrors ?? []),
-                ...(deleteResult.state.breakingChanges ?? []).map(change => ({
-                  message: change.message,
-                  // triggerSchemaChangeNotifications.errors accepts only path as array
-                  path: change.path ? [change.path] : undefined,
-                })),
+                ...(deleteResult.state.composable
+                  ? toContractCompositionErrors(deleteResult.state.contracts)
+                  : []),
               ];
 
               if ((Array.isArray(changes) && changes.length > 0) || errors.length > 0) {
@@ -1865,7 +1875,7 @@ export class SchemaPublisher {
                     schema: {
                       id: schemaVersion.id,
                       commit: schemaVersion.id,
-                      valid: deleteResult.state.composable,
+                      valid: this.schemaVersionHelper.getIsValid(schemaVersion),
                     },
                     changes,
                     messages: [],
@@ -2307,14 +2317,7 @@ export class SchemaPublisher {
       };
     }
 
-    const contractCompositionErrors =
-      publishResult.state.contracts?.flatMap(
-        contract =>
-          contract.compositionErrors?.map(err => ({
-            ...err,
-            message: `[${formatContractName(contract.contractName)}] ${err.message}`,
-          })) ?? [],
-      ) ?? [];
+    const contractCompositionErrors = toContractCompositionErrors(publishResult.state.contracts);
 
     if (
       project.type === ProjectType.FEDERATION &&
@@ -2483,7 +2486,9 @@ export class SchemaPublisher {
       throw error;
     }
 
-    if (changes.length > 0 || errors.length > 0) {
+    const notificationErrors = composable ? errors.concat(contractCompositionErrors) : errors;
+
+    if (changes.length > 0 || notificationErrors.length > 0) {
       void this.alertsManager
         .triggerSchemaChangeNotifications({
           organization,
@@ -2492,11 +2497,11 @@ export class SchemaPublisher {
           schema: {
             id: result.schemaVersion.id,
             commit: input.commit,
-            valid: result.schemaVersion.isComposable,
+            valid: this.schemaVersionHelper.getIsValid(result.schemaVersion),
           },
           changes,
           messages,
-          errors,
+          errors: notificationErrors,
           initial,
         })
         .catch(error => {

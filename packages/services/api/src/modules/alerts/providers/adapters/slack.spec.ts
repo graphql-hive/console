@@ -122,6 +122,38 @@ describe('SlackCommunicationAdapter', () => {
       expect.objectContaining({ ok: false, statusCode: null, statusText: 'channel_not_found' }),
     );
   });
+
+  test('a schema version that failed to compose posts its composition errors', async () => {
+    const { adapter } = createAdapter();
+
+    await adapter.sendSchemaChangeNotification({
+      event: {
+        organization: confirmation.event.organization,
+        project: confirmation.event.project,
+        target: { id: 'target-id', cleanId: 'target', slug: 'target', name: 'Target' },
+        schema: { id: 'schema-id', commit: 'commit', valid: false },
+        changes: [],
+        messages: [],
+        errors: [{ message: 'Type "User" is not composable' }],
+        initial: true,
+      },
+      alert: {
+        id: 'alert-id',
+        type: 'SCHEMA_CHANGE_NOTIFICATIONS',
+        channelId: 'channel-id',
+        projectId: 'project-id',
+        organizationId: 'org-id',
+        targetId: 'target-id',
+        createdAt: confirmation.channel.createdAt,
+      },
+      channel: confirmation.channel,
+      integrations: confirmation.integrations,
+    });
+
+    expect(postMessage.mock.calls[0][0].attachments).toEqual([
+      expect.objectContaining({ text: expect.stringContaining('Type `User` is not composable') }),
+    ]);
+  });
 });
 
 describe('describeSlackError', () => {

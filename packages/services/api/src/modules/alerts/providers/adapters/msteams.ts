@@ -69,16 +69,24 @@ export class TeamsCommunicationAdapter implements CommunicationAdapter {
         url: changeUrl,
       });
 
-      const message = input.event.initial
-        ? `🐝 Hi, I received your *first* schema in project ${projectLink}, target ${targetLink} (${viewLink}):`
-        : `🐝 Hi, I found *${totalChanges} ${this.pluralize(
-            'change',
-            totalChanges,
-          )}* in project ${projectLink}, target ${targetLink} (${viewLink}):`;
+      const compositionFailed = !input.event.schema.valid;
+      const message = compositionFailed
+        ? `🐝 Hi, the schema in project ${projectLink}, target ${targetLink} *failed to compose* (${viewLink}):`
+        : input.event.initial
+          ? `🐝 Hi, I received your *first* schema in project ${projectLink}, target ${targetLink} (${viewLink}):`
+          : `🐝 Hi, I found *${totalChanges} ${this.pluralize(
+              'change',
+              totalChanges,
+            )}* in project ${projectLink}, target ${targetLink} (${viewLink}):`;
 
-      const attachmentsText = input.event.initial
-        ? ''
-        : createAttachmentsText(input.event.changes, input.event.messages);
+      const attachmentsText =
+        input.event.initial && !compositionFailed
+          ? ''
+          : createAttachmentsText(
+              input.event.changes,
+              input.event.messages,
+              compositionFailed ? input.event.errors : [],
+            );
 
       const idempotencyKey = `schema-change:${input.event.schema.id}:${input.channel.id}`;
       const headers = buildHiveWebhookHeaders(
@@ -312,6 +320,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function createAttachmentsText(
   changes: readonly SchemaChangeType[],
   messages: readonly string[],
+  compositionErrors: readonly { message: string }[],
 ): string {
   const breakingChanges = changes.filter(
     change => change.criticality === CriticalityLevel.Breaking,
@@ -319,6 +328,12 @@ function createAttachmentsText(
   const safeChanges = changes.filter(change => change.criticality !== CriticalityLevel.Breaking);
 
   let text = '';
+
+  if (compositionErrors.length) {
+    text += `### Composition errors\n${compositionErrors
+      .map(error => slackCoderize(` - ${error.message}`))
+      .join('\n')}\n`;
+  }
 
   if (breakingChanges.length) {
     text += renderChangeList({

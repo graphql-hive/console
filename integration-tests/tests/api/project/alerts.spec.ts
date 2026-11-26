@@ -20,7 +20,7 @@ test.concurrent(
     const { createOrg } = await initSeed().createOwner();
     const { createProject, organization } = await createOrg();
     const { createTargetAccessToken, project, target, fetchVersions, addAlert, addAlertChannel } =
-      await createProject(ProjectType.Single);
+      await createProject(ProjectType.Federation);
     const readWriteToken = await createTargetAccessToken({});
 
     const result1 = await readWriteToken
@@ -30,6 +30,8 @@ test.concurrent(
             ping: String
           }
         `,
+        service: 'ping',
+        url: 'http://ping.localhost',
       })
       .then(r => r.expectNoGraphQLErrors());
 
@@ -91,6 +93,8 @@ test.concurrent(
             pong: String
           }
         `,
+        service: 'ping',
+        url: 'http://ping.localhost',
       })
       .then(r => r.expectNoGraphQLErrors());
 
@@ -164,6 +168,47 @@ test.concurrent(
               'Hive-Target-ID': target.id,
               'Hive-Schema-ID': sentHeaders['hive-schema-id'],
               'Idempotency-Key': sentHeaders['idempotency-key'],
+            }),
+          }),
+        );
+      },
+      {
+        retries: 5,
+        maxTimeout: 2000,
+      },
+    );
+
+    const result3 = await readWriteToken
+      .publishSchema({
+        sdl: /* GraphQL */ `
+          type Query {
+            ping: String
+            user: User
+          }
+
+          type User @key(fields: "missing") {
+            id: ID!
+          }
+        `,
+        service: 'ping',
+        url: 'http://ping.localhost',
+      })
+      .then(r => r.expectNoGraphQLErrors());
+
+    expect(result3.schemaPublish).toMatchObject({ __typename: 'SchemaPublishSuccess' });
+
+    // A version that failed to compose reaches the same webhook, told apart by `schema.valid`.
+    await asyncRetry(
+      async () => {
+        expect(await getRecordedRequests()).toContainEqual(
+          expect.objectContaining({
+            path: mockEndpoint.path,
+            body: expect.objectContaining({
+              json: expect.objectContaining({
+                schema: expect.objectContaining({ valid: false }),
+                changes: [],
+                errors: [expect.objectContaining({ message: expect.any(String) })],
+              }),
             }),
           }),
         );

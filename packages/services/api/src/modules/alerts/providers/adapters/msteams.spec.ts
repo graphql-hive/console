@@ -217,6 +217,19 @@ describe('TeamsCommunicationAdapter', () => {
           metadata: sendTeamsMessageSpy.mock.calls[0][3],
         }),
       );
+
+      await adapter.sendSchemaChangeNotification({
+        ...input,
+        event: {
+          ...input.event,
+          changes: [],
+          initial: true,
+          errors: [{ message: 'Type "User" is not composable' }],
+          schema: { ...input.event.schema, valid: false },
+        },
+      });
+
+      expect(sendTeamsMessageSpy.mock.calls[1][1]).toContain('Type `User` is not composable');
     });
 
     it('records a rejected webhook with the status the destination answered', async () => {

@@ -143,27 +143,41 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
           idempotencyKey,
         }),
       );
-      const message: ChatPostMessageArguments = input.event.initial
+      const message: ChatPostMessageArguments = !input.event.schema.valid
         ? {
             channel: input.channel.slackChannel!,
-            text: `:bee: Hi, I received your *first* schema in project ${projectLink}, target ${targetLink} (${viewLink}):`,
+            text: `:bee: Hi, the schema in project ${projectLink}, target ${targetLink} *failed to compose* (${viewLink}):`,
             mrkdwn: true,
+            attachments: createAttachments(
+              input.event.changes,
+              input.event.messages,
+              input.event.errors,
+            ),
             unfurl_links: false,
             unfurl_media: false,
             metadata,
           }
-        : {
-            channel: input.channel.slackChannel!,
-            text: `:bee: Hi, I found *${totalChanges} ${this.pluralize(
-              'change',
-              totalChanges,
-            )}* in project ${projectLink}, target ${targetLink} (${viewLink}):`,
-            mrkdwn: true,
-            attachments: createAttachments(input.event.changes, input.event.messages),
-            unfurl_links: false,
-            unfurl_media: false,
-            metadata,
-          };
+        : input.event.initial
+          ? {
+              channel: input.channel.slackChannel!,
+              text: `:bee: Hi, I received your *first* schema in project ${projectLink}, target ${targetLink} (${viewLink}):`,
+              mrkdwn: true,
+              unfurl_links: false,
+              unfurl_media: false,
+              metadata,
+            }
+          : {
+              channel: input.channel.slackChannel!,
+              text: `:bee: Hi, I found *${totalChanges} ${this.pluralize(
+                'change',
+                totalChanges,
+              )}* in project ${projectLink}, target ${targetLink} (${viewLink}):`,
+              mrkdwn: true,
+              attachments: createAttachments(input.event.changes, input.event.messages, []),
+              unfurl_links: false,
+              unfurl_media: false,
+              metadata,
+            };
 
       await this.deliveries.track(
         {
@@ -314,13 +328,28 @@ export class SlackCommunicationAdapter implements CommunicationAdapter {
   }
 }
 
-function createAttachments(changes: readonly SchemaChangeType[], messages: readonly string[]) {
+function createAttachments(
+  changes: readonly SchemaChangeType[],
+  messages: readonly string[],
+  compositionErrors: readonly { message: string }[],
+) {
   const breakingChanges = changes.filter(
     change => change.criticality === CriticalityLevel.Breaking,
   );
   const safeChanges = changes.filter(change => change.criticality !== CriticalityLevel.Breaking);
 
   const attachments: MessageAttachment[] = [];
+
+  if (compositionErrors.length) {
+    const text = compositionErrors.map(error => slackCoderize(`• ${error.message}`)).join('\n');
+    attachments.push({
+      mrkdwn_in: ['text'],
+      color: '#E74C3B',
+      author_name: 'Composition errors',
+      text,
+      fallback: text,
+    });
+  }
 
   if (breakingChanges.length) {
     attachments.push(
@@ -367,7 +396,7 @@ function renderAttachments({
 }): MessageAttachment {
   const text = changes
     .map(change => {
-      let text = change.message;
+      let text = `• ${change.message}`;
       if (change.isSafeBasedOnUsage) {
         text += ' (safe based on usage)';
       }
