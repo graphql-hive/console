@@ -54,6 +54,7 @@ import {
   SchemaServiceConfig,
 } from './modules/schema/providers/orchestrator/tokens';
 import { SchemaDiffWorkerConfig } from './modules/schema/providers/schema-diff-scheduler';
+import { SchemaExplorerCacheConfig } from './modules/schema/providers/schema-explorer-cache';
 import { sharedModule } from './modules/shared';
 import { DistributedCache } from './modules/shared/providers/distributed-cache';
 import { HttpClient } from './modules/shared/providers/http-client';
@@ -123,6 +124,7 @@ export function createRegistry({
   encryptionSecret,
   schemaConfig,
   schemaDiffWorker,
+  schemaExplorerCache,
   supportConfig,
   oidcIntegrationConfig,
   pubSub,
@@ -170,6 +172,7 @@ export function createRegistry({
   } | null;
   schemaConfig: SchemaModuleConfig;
   schemaDiffWorker: SchemaDiffWorkerConfig['config'];
+  schemaExplorerCache: SchemaExplorerCacheConfig['config'];
   supportConfig: SupportConfig | null;
   oidcIntegrationConfig: OIDCIntegrationConfig;
   pubSub: HivePubSub;
@@ -353,6 +356,11 @@ export function createRegistry({
     {
       provide: SchemaDiffWorkerConfig,
       useValue: new SchemaDiffWorkerConfig(schemaDiffWorker),
+      scope: Scope.Singleton,
+    },
+    {
+      provide: SchemaExplorerCacheConfig,
+      useValue: new SchemaExplorerCacheConfig(schemaExplorerCache),
       scope: Scope.Singleton,
     },
     provideCommerceConfig(commerce),

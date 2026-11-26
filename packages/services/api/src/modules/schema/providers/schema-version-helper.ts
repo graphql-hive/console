@@ -17,9 +17,11 @@ import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
+import { buildSchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
+import { SchemaExplorerCache } from './schema-explorer-cache';
 import { ensureCompositeSchemas, SchemaHelper, toCompositeSchemaInput } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 import { SchemaVersionStore } from './schema-version-store';
@@ -45,6 +47,7 @@ export class SchemaVersionHelper {
     private compositionOrchestrator: CompositionOrchestrator,
     private schemaVersions: SchemaVersionStore,
     private breakingSchemaChangesHelper: BreakingSchemaChangeUsageHelper,
+    private schemaExplorerCache: SchemaExplorerCache,
   ) {}
 
   @traceFn('SchemaVersionHelper.composeSchemaVersion', {
@@ -172,6 +175,21 @@ export class SchemaVersionHelper {
     );
 
     return compositeSchemaAst;
+  }
+
+  /**
+   * The schema explorer snapshot of a schema version, built from its composite schema and
+   * supergraph on first access and cached across requests afterwards.
+   */
+  @cache<SchemaVersion>(version => version.id)
+  async getExplorerSnapshot(schemaVersion: SchemaVersion) {
+    return this.schemaExplorerCache.getOrBuild(schemaVersion.id, async () => {
+      const [schemaAst, supergraphAst] = await Promise.all([
+        this.getCompositeSchemaAst(schemaVersion),
+        this.getSupergraphAst(schemaVersion),
+      ]);
+      return schemaAst ? buildSchemaExplorerSnapshot(schemaAst, supergraphAst) : null;
+    });
   }
 
   @cache<SchemaVersion>(version => version.id)

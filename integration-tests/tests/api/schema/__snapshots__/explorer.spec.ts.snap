@@ -460,7 +460,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
                 },
               },
               {
-                defaultValue: null,
+                defaultValue: false,
                 deprecationReason: null,
                 description: Also returns deleted users.,
                 isDeprecated: false,
@@ -491,7 +491,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
           {
             args: [
               {
-                defaultValue: null,
+                defaultValue: 10,
                 deprecationReason: null,
                 description: null,
                 isDeprecated: false,
@@ -530,7 +530,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
                 },
               },
               {
-                defaultValue: null,
+                defaultValue: "ASC",
                 deprecationReason: null,
                 description: null,
                 isDeprecated: false,
@@ -844,7 +844,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
               },
             },
             {
-              defaultValue: null,
+              defaultValue: "USER",
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -1025,7 +1025,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
           description: null,
           fields: [
             {
-              defaultValue: null,
+              defaultValue: 1,
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -1224,7 +1224,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
                   },
                 },
                 {
-                  defaultValue: null,
+                  defaultValue: false,
                   deprecationReason: null,
                   description: Also returns deleted users.,
                   isDeprecated: false,
@@ -1255,7 +1255,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 10,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -1294,7 +1294,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
                   },
                 },
                 {
-                  defaultValue: null,
+                  defaultValue: "ASC",
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -1699,7 +1699,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 5,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -1749,7 +1749,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
           description: null,
           fields: [
             {
-              defaultValue: null,
+              defaultValue: "anonymous",
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -1765,7 +1765,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
               },
             },
             {
-              defaultValue: null,
+              defaultValue: "USER",
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -1781,7 +1781,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
               },
             },
             {
-              defaultValue: null,
+              defaultValue: ["ADMIN"],
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -1797,7 +1797,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
               },
             },
             {
-              defaultValue: null,
+              defaultValue: {"limit":3},
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -1917,7 +1917,7 @@ exports[`schema explorer > exposes every type kind with fields, arguments, value
           {
             args: [
               {
-                defaultValue: null,
+                defaultValue: 5,
                 deprecationReason: null,
                 description: null,
                 isDeprecated: false,
@@ -2044,7 +2044,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
                 },
               },
               {
-                defaultValue: null,
+                defaultValue: false,
                 deprecationReason: null,
                 description: Also returns deleted users.,
                 isDeprecated: false,
@@ -2077,7 +2077,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
           {
             args: [
               {
-                defaultValue: null,
+                defaultValue: 10,
                 deprecationReason: null,
                 description: null,
                 isDeprecated: false,
@@ -2118,7 +2118,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
                 },
               },
               {
-                defaultValue: null,
+                defaultValue: "ASC",
                 deprecationReason: null,
                 description: null,
                 isDeprecated: false,
@@ -2464,7 +2464,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
               },
             },
             {
-              defaultValue: null,
+              defaultValue: "USER",
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -2653,7 +2653,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
           description: null,
           fields: [
             {
-              defaultValue: null,
+              defaultValue: 1,
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -2854,7 +2854,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
                   },
                 },
                 {
-                  defaultValue: null,
+                  defaultValue: false,
                   deprecationReason: null,
                   description: Also returns deleted users.,
                   isDeprecated: false,
@@ -2887,7 +2887,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 10,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -2928,7 +2928,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
                   },
                 },
                 {
-                  defaultValue: null,
+                  defaultValue: "ASC",
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -3372,7 +3372,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 5,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -3436,7 +3436,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
           description: null,
           fields: [
             {
-              defaultValue: null,
+              defaultValue: "anonymous",
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -3452,7 +3452,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
               },
             },
             {
-              defaultValue: null,
+              defaultValue: "USER",
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -3470,7 +3470,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
               },
             },
             {
-              defaultValue: null,
+              defaultValue: ["ADMIN"],
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -3486,7 +3486,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
               },
             },
             {
-              defaultValue: null,
+              defaultValue: {"limit":3},
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -3621,7 +3621,7 @@ exports[`schema explorer > reports the usage of types, fields, arguments and enu
           {
             args: [
               {
-                defaultValue: null,
+                defaultValue: 5,
                 deprecationReason: null,
                 description: null,
                 isDeprecated: false,
@@ -3719,7 +3719,7 @@ exports[`schema explorer > shows subgraph ownership, subgraph names and schema m
           {
             args: [
               {
-                defaultValue: null,
+                defaultValue: 10,
                 deprecationReason: null,
                 description: null,
                 isDeprecated: false,
@@ -4080,7 +4080,7 @@ exports[`schema explorer > shows subgraph ownership, subgraph names and schema m
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 10,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -4798,7 +4798,7 @@ exports[`unused schema > used schema coordinates are left out 1`] = `
           description: null,
           fields: [
             {
-              defaultValue: "1",
+              defaultValue: 1,
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -4984,7 +4984,7 @@ exports[`unused schema > used schema coordinates are left out 1`] = `
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: false,
                   deprecationReason: null,
                   description: Also returns deleted users.,
                   isDeprecated: false,
@@ -5015,7 +5015,7 @@ exports[`unused schema > used schema coordinates are left out 1`] = `
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 10,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -5041,7 +5041,7 @@ exports[`unused schema > used schema coordinates are left out 1`] = `
                   },
                 },
                 {
-                  defaultValue: null,
+                  defaultValue: "ASC",
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -5332,7 +5332,7 @@ exports[`unused schema > used schema coordinates are left out 1`] = `
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 5,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -5393,7 +5393,7 @@ exports[`unused schema > used schema coordinates are left out 1`] = `
           description: null,
           fields: [
             {
-              defaultValue: "\\"anonymous\\"",
+              defaultValue: "anonymous",
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -5409,7 +5409,7 @@ exports[`unused schema > used schema coordinates are left out 1`] = `
               },
             },
             {
-              defaultValue: "[ADMIN]",
+              defaultValue: ["ADMIN"],
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -5425,7 +5425,7 @@ exports[`unused schema > used schema coordinates are left out 1`] = `
               },
             },
             {
-              defaultValue: "{ limit: 3 }",
+              defaultValue: {"limit":3},
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -5658,7 +5658,7 @@ exports[`unused schema > without usage, everything defined in the schema is unus
           description: null,
           fields: [
             {
-              defaultValue: "1",
+              defaultValue: 1,
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -5857,7 +5857,7 @@ exports[`unused schema > without usage, everything defined in the schema is unus
                   },
                 },
                 {
-                  defaultValue: null,
+                  defaultValue: false,
                   deprecationReason: null,
                   description: Also returns deleted users.,
                   isDeprecated: false,
@@ -5888,7 +5888,7 @@ exports[`unused schema > without usage, everything defined in the schema is unus
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 10,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -5927,7 +5927,7 @@ exports[`unused schema > without usage, everything defined in the schema is unus
                   },
                 },
                 {
-                  defaultValue: null,
+                  defaultValue: "ASC",
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -6317,7 +6317,7 @@ exports[`unused schema > without usage, everything defined in the schema is unus
             {
               args: [
                 {
-                  defaultValue: null,
+                  defaultValue: 5,
                   deprecationReason: null,
                   description: null,
                   isDeprecated: false,
@@ -6367,7 +6367,7 @@ exports[`unused schema > without usage, everything defined in the schema is unus
           description: null,
           fields: [
             {
-              defaultValue: "\\"anonymous\\"",
+              defaultValue: "anonymous",
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -6399,7 +6399,7 @@ exports[`unused schema > without usage, everything defined in the schema is unus
               },
             },
             {
-              defaultValue: "[ADMIN]",
+              defaultValue: ["ADMIN"],
               deprecationReason: null,
               description: null,
               isDeprecated: false,
@@ -6415,7 +6415,7 @@ exports[`unused schema > without usage, everything defined in the schema is unus
               },
             },
             {
-              defaultValue: "{ limit: 3 }",
+              defaultValue: {"limit":3},
               deprecationReason: null,
               description: null,
               isDeprecated: false,

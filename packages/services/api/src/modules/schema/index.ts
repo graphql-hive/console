@@ -8,6 +8,7 @@ import { CompositionOrchestrator } from './providers/orchestrator/composition-or
 import { RegistryChecks } from './providers/registry-checks';
 import { SchemaCheckManager } from './providers/schema-check-manager';
 import { SchemaDiffScheduler } from './providers/schema-diff-scheduler';
+import { SchemaExplorerCache } from './providers/schema-explorer-cache';
 import { SchemaHelper } from './providers/schema-helper';
 import { SchemaManager } from './providers/schema-manager';
 import { SchemaPublisher } from './providers/schema-publisher';
@@ -30,6 +31,7 @@ export const schemaModule = createModule({
     SchemaPusher,
     SchemaRevisionStore,
     SchemaDiffScheduler,
+    SchemaExplorerCache,
     SchemaHelper,
     RegistryChecks,
     SchemaVersionHelper,

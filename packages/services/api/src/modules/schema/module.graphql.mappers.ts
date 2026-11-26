@@ -1,4 +1,4 @@
-import type { DocumentNode, GraphQLSchema, Kind } from 'graphql';
+import type { Kind } from 'graphql';
 import type {
   Change,
   SchemaChangeType,
@@ -9,7 +9,8 @@ import type { SchemaError } from '../../__generated__/types';
 import type { DateRange, PushedCompositeSchema, SingleSchema } from '../../shared/entities';
 import type { PromiseOrValue } from '../../shared/helpers';
 import type { ContractGraph } from '../graph/providers/graph-store';
-import type { SuperGraphInformation } from './lib/federation-super-graph';
+import type { SchemaExplorerSnapshotReader } from './lib/schema-explorer-flat-snapshot';
+import type { SchemaExplorerTypeEntity } from './lib/schema-explorer-snapshot';
 import type {
   ContractCheck,
   ContractVersion,
@@ -58,18 +59,28 @@ export type SchemaVersionMapper = SchemaVersion & {
 export type SingleSchemaMapper = SingleSchema;
 export type CompositeSchemaMapper = PushedCompositeSchema;
 export type SchemaMapper = SingleSchemaMapper | CompositeSchemaMapper; // TODO: eddeee888 to check if union is wired up correctly by Server Preset
+/**
+ * Federation information of a schema version, as needed by the explorers.
+ */
+export type ExplorerSupergraph = {
+  getOwnedByServices: (coordinate: string) => Array<string> | null;
+  getMetadata: (coordinate: string) => Array<SchemaMetadataMapper> | null;
+  metadataAttributes: Array<{ name: string; values: Array<string> }> | null;
+  subgraphNames: Array<string>;
+};
 export type SchemaExplorerMapper = {
-  schema: GraphQLSchema;
+  snapshot: SchemaExplorerSnapshotReader;
   usage: {
     period: DateRange;
     organizationId: string;
     projectId: string;
     targetId: string;
   };
-  supergraph: null | SuperGraphInformation;
+  supergraph: null | ExplorerSupergraph;
 };
 export type UnusedSchemaExplorerMapper = {
-  sdl: DocumentNode;
+  /** Only the unused parts of the schema. */
+  types: Array<SchemaExplorerTypeEntity>;
   usage: {
     period: DateRange;
     organizationId: string;
@@ -77,17 +88,18 @@ export type UnusedSchemaExplorerMapper = {
     targetId: string;
     usedCoordinates: Set<string>;
   };
-  supergraph: null | SuperGraphInformation;
+  supergraph: null | ExplorerSupergraph;
 };
 export type DeprecatedSchemaExplorerMapper = {
-  sdl: DocumentNode;
+  /** Only the deprecated parts of the schema. */
+  types: Array<SchemaExplorerTypeEntity>;
   usage: {
     period: DateRange;
     organizationId: string;
     projectId: string;
     targetId: string;
   };
-  supergraph: null | SuperGraphInformation;
+  supergraph: null | ExplorerSupergraph;
 };
 
 export type GraphQLArgumentMapper = WithSchemaCoordinatesUsage<
