@@ -422,7 +422,7 @@ describe('binary format', () => {
       `),
       supergraph(/* GraphQL */ `
         enum join__Graph {
-          A @join__graph(name: "\\uFEFFa", url: "")
+          A @join__graph(name: "﻿a", url: "")
           B @join__graph(name: "b", url: "")
         }
         type Query @join__type(graph: B) @join__type(graph: A) {
