@@ -2,7 +2,7 @@ import { promisify } from 'node:util';
 import { zstdCompress, zstdDecompress } from 'node:zlib';
 import { Inject, Injectable, Scope } from 'graphql-modules';
 import { LRUCache } from 'lru-cache';
-import { metrics } from '@hive/service-common';
+import { invariant, metrics } from '@hive/service-common';
 import * as Sentry from '@sentry/node';
 import { REDIS_INSTANCE, type Redis } from '../../shared/providers/redis';
 import {
@@ -212,9 +212,7 @@ export class SchemaExplorerCache {
       return null;
     }
     const reader = SchemaExplorerSnapshotReader.fromBuffer(bytes);
-    if (!reader) {
-      throw new Error('The built schema explorer snapshot could not be read.');
-    }
+    invariant(reader, 'The built schema explorer snapshot could not be read.');
     await compress(reader.toBuffer())
       .then(compressed => this.redis.setex(key, REDIS_TTL_SECONDS, compressed))
       .catch(error => {
