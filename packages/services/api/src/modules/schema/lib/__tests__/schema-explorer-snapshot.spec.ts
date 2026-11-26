@@ -413,7 +413,7 @@ describe('binary format', () => {
 
   test('a first string starting with U+FEFF is not stripped as a byte order mark', () => {
     // Subgraph names are the first strings of the blob. They are sorted with `localeCompare`,
-    // which ignores U+FEFF, so "﻿a" comes before "b".
+    // which ignores U+FEFF, so "\uFEFFa" comes before "b".
     const built = buildSchemaExplorerSnapshot(
       parse(/* GraphQL */ `
         type Query {
@@ -422,7 +422,7 @@ describe('binary format', () => {
       `),
       supergraph(/* GraphQL */ `
         enum join__Graph {
-          A @join__graph(name: "﻿a", url: "")
+          A @join__graph(name: "\\uFEFFa", url: "")
           B @join__graph(name: "b", url: "")
         }
         type Query @join__type(graph: B) @join__type(graph: A) {
@@ -430,12 +430,12 @@ describe('binary format', () => {
         }
       `),
     );
-    expect(built.subgraphNames).toEqual(['﻿a', 'b']);
+    expect(built.subgraphNames).toEqual(['\uFEFFa', 'b']);
     const snapshot = SchemaExplorerSnapshotReader.fromBuffer(encodeSchemaExplorerSnapshot(built));
     expect(snapshot).not.toBe(null);
-    expect(snapshot?.subgraphNames).toEqual(['﻿a', 'b']);
-    expect(snapshot?.getOwnedBy('Query')).toEqual(['b', '﻿a']);
-    expect(snapshot?.getOwnedBy('Query.a')).toEqual(['﻿a']);
+    expect(snapshot?.subgraphNames).toEqual(['\uFEFFa', 'b']);
+    expect(snapshot?.getOwnedBy('Query')).toEqual(['b', '\uFEFFa']);
+    expect(snapshot?.getOwnedBy('Query.a')).toEqual(['\uFEFFa']);
     expect(snapshot?.getTypeEntity('Query')).toMatchObject({ fields: [{ name: 'a' }] });
   });
 
