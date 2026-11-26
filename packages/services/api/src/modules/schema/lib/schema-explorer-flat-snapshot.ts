@@ -237,6 +237,75 @@ function hashTableFind(
 }
 
 // ---------------------------------------------------------------------------------------------
+// Owner sets: lists of owning subgraphs, each stored once and referenced by id.
+
+class OwnerSetEncoder {
+  /** Offsets into `subgraphs`; set `id` is `subgraphs[start[id], start[id + 1])`. */
+  readonly start: Array<number> = [0];
+  /** Indexes into the subgraph names. */
+  readonly subgraphs: Array<number> = [];
+  #ids = new Map<string, number>();
+  #subgraphIndexes: Map<string, number>;
+
+  constructor(subgraphNames: ReadonlyArray<string>) {
+    this.#subgraphIndexes = new Map(subgraphNames.map((name, index) => [name, index]));
+  }
+
+  get count() {
+    return this.start.length - 1;
+  }
+
+  /** Id of a list of owning subgraphs (keeping its order), adding it if needed; NONE if absent. */
+  intern(serviceNames: ReadonlyArray<string> | undefined): number {
+    if (!serviceNames) {
+      return NONE;
+    }
+    const indexes = serviceNames.map(name => {
+      const index = this.#subgraphIndexes.get(name);
+      invariant(index !== undefined, () => `Subgraph ${name} is missing from the subgraph names.`);
+      return index;
+    });
+    const key = indexes.join(',');
+    let id = this.#ids.get(key);
+    if (id === undefined) {
+      id = this.count;
+      this.subgraphs.push(...indexes);
+      this.start.push(this.subgraphs.length);
+      this.#ids.set(key, id);
+    }
+    return id;
+  }
+}
+
+class OwnerSetDecoder {
+  #names: Array<Array<string> | undefined>;
+
+  constructor(
+    private start: Uint32Array,
+    private subgraphs: Uint16Array,
+    private subgraphNames: ReadonlyArray<string>,
+  ) {
+    this.#names = new Array(start.length - 1);
+  }
+
+  /** The subgraph names of a set (decoded once), or null for NONE. */
+  get(ownerSet: number): Array<string> | null {
+    if (ownerSet === NONE) {
+      return null;
+    }
+    let names = this.#names[ownerSet];
+    if (!names) {
+      names = [];
+      for (let item = this.start[ownerSet]; item < this.start[ownerSet + 1]; item++) {
+        names.push(this.subgraphNames[this.subgraphs[item]]);
+      }
+      this.#names[ownerSet] = names;
+    }
+    return names;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Type references
 
 const CHAR_OPEN_BRACKET = 91; // [
@@ -329,31 +398,8 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     return id;
   };
 
-  const subgraphIndexes = new Map(snapshot.subgraphNames.map((name, index) => [name, index]));
   const subgraphNames = snapshot.subgraphNames.map(internString);
-  const ownerSetStart: Array<number> = [0];
-  const ownerSetSubgraphs: Array<number> = [];
-  const ownerSetIds = new Map<string, number>();
-  /** Returns the id of a list of owning subgraphs (keeping its order), adding it if needed. */
-  const internOwnerSet = (serviceNames: ReadonlyArray<string> | undefined) => {
-    if (!serviceNames) {
-      return NONE;
-    }
-    const indexes = serviceNames.map(name => {
-      const index = subgraphIndexes.get(name);
-      invariant(index !== undefined, () => `Subgraph ${name} is missing from the subgraph names.`);
-      return index;
-    });
-    const key = indexes.join(',');
-    let id = ownerSetIds.get(key);
-    if (id === undefined) {
-      id = ownerSetStart.length - 1;
-      ownerSetSubgraphs.push(...indexes);
-      ownerSetStart.push(ownerSetSubgraphs.length);
-      ownerSetIds.set(key, id);
-    }
-    return id;
-  };
+  const ownerSets = new OwnerSetEncoder(snapshot.subgraphNames);
 
   const typeIds = new Map(snapshot.types.map((name, index) => [name, index]));
   const typeIdOf = (name: string) => {
@@ -423,7 +469,7 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
       value.defaultValue === undefined ? NONE : internString(JSON.stringify(value.defaultValue)),
     );
     inputValues.deprecationReason.push(internString(value.deprecationReason));
-    inputValues.ownerSet.push(internOwnerSet(value.ownedBy));
+    inputValues.ownerSet.push(ownerSets.intern(value.ownedBy));
     inputValues.type.push(typeIdOf(typeRef.name));
     inputValues.typeWrapping.push(typeRef.wrapping);
     inputValues.parent.push(parent);
@@ -439,7 +485,7 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     invariant(kind !== -1, () => `Expected schema coordinate ${typename} to be a type.`);
     types.name[type] = internString(typename);
     types.description[type] = internString(entry.description);
-    types.ownerSet[type] = internOwnerSet(entry.ownedBy);
+    types.ownerSet[type] = ownerSets.intern(entry.ownedBy);
     types.kind[type] = kind;
     types.refsStart[type] = typeRefs.length;
 
@@ -455,7 +501,7 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
           fields.name.push(internString(nameOf(coordinate)));
           fields.description.push(internString(field.description));
           fields.deprecationReason.push(internString(field.deprecationReason));
-          fields.ownerSet.push(internOwnerSet(field.ownedBy));
+          fields.ownerSet.push(ownerSets.intern(field.ownedBy));
           fields.type.push(typeIdOf(typeRef.name));
           fields.typeWrapping.push(typeRef.wrapping);
           fields.parentType.push(type);
@@ -477,7 +523,7 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
           enumValues.name.push(internString(nameOf(coordinate)));
           enumValues.description.push(internString(value.description));
           enumValues.deprecationReason.push(internString(value.deprecationReason));
-          enumValues.ownerSet.push(internOwnerSet(value.ownedBy));
+          enumValues.ownerSet.push(ownerSets.intern(value.ownedBy));
           enumValues.parentType.push(type);
         }
         break;
@@ -561,8 +607,8 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     inputValueCount: inputValues.name.length,
     enumValueCount: enumValues.name.length,
     typeRefCount: typeRefs.length,
-    ownerSetCount: ownerSetStart.length - 1,
-    ownerSetItemCount: ownerSetSubgraphs.length,
+    ownerSetCount: ownerSets.count,
+    ownerSetItemCount: ownerSets.subgraphs.length,
     stringBlobBytes: stringBlob.length,
     deprecatedTypeCount: snapshot.deprecatedTypes.length,
     queryType: rootTypeId(snapshot.queryTypeName),
@@ -608,8 +654,8 @@ export function encodeSchemaExplorerSnapshot(snapshot: SchemaExplorerSnapshot): 
     enumValueOwnerSet: enumValues.ownerSet,
     enumValueParentType: enumValues.parentType,
     typeRefs,
-    ownerSetStart,
-    ownerSetSubgraphs,
+    ownerSetStart: ownerSets.start,
+    ownerSetSubgraphs: ownerSets.subgraphs,
     deprecatedTypes: snapshot.deprecatedTypes.map(typeIdOf),
     stringBlob,
   };
@@ -694,7 +740,7 @@ const LAZY_TYPE_ENTITY_CLASSES = Object.fromEntries(
  * blob; entities are materialized when they are read.
  */
 export class SchemaExplorerSnapshotReader {
-  private ownerSetNames: Array<Array<string> | undefined>;
+  private cachedOwnerSets: OwnerSetDecoder | null = null;
   private cachedSubgraphNames: Array<string> | null = null;
   private cachedDeprecatedTypes: Array<string> | null = null;
 
@@ -704,9 +750,7 @@ export class SchemaExplorerSnapshotReader {
     private header: Header,
     /** The decoded string blob; string `id` is `[stringOffsets[id], stringOffsets[id + 1])`. */
     private text: string,
-  ) {
-    this.ownerSetNames = new Array(header.ownerSetCount);
-  }
+  ) {}
 
   /** Returns null if the buffer is not a valid snapshot of the current format. */
   static fromBuffer(input: Buffer): SchemaExplorerSnapshotReader | null {
@@ -886,19 +930,12 @@ export class SchemaExplorerSnapshotReader {
   }
 
   private ownerSet(ownerSet: number): Array<string> | null {
-    if (ownerSet === NONE) {
-      return null;
-    }
-    let names = this.ownerSetNames[ownerSet];
-    if (!names) {
-      const { ownerSetStart, ownerSetSubgraphs, subgraphNames } = this.columns;
-      names = [];
-      for (let item = ownerSetStart[ownerSet]; item < ownerSetStart[ownerSet + 1]; item++) {
-        names.push(this.string(subgraphNames[ownerSetSubgraphs[item]]));
-      }
-      this.ownerSetNames[ownerSet] = names;
-    }
-    return names;
+    this.cachedOwnerSets ??= new OwnerSetDecoder(
+      this.columns.ownerSetStart,
+      this.columns.ownerSetSubgraphs,
+      this.subgraphNames,
+    );
+    return this.cachedOwnerSets.get(ownerSet);
   }
 
   private ownerSetOf(handle: number) {
