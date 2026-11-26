@@ -97,7 +97,7 @@ export function withUsedByClients<
   >;
 }
 
-export function fieldsSupergraph(
+export function toObjectTypeSupergraphMapper(
   typename: string,
   supergraph: ExplorerSupergraph | null,
 ): GraphQLObjectTypeMapper['supergraph'] {
@@ -116,22 +116,25 @@ export function toNamedTypeMapper(
   usage: GraphQLObjectTypeMapper['usage'],
   supergraph: ExplorerSupergraph | null,
 ): GraphQLNamedTypeMapper {
-  const ownedBy = (coordinate: string) => supergraph?.getOwnedByServices(coordinate) ?? null;
+  const getOwnedByServices = (coordinate: string) =>
+    supergraph?.getOwnedByServices(coordinate) ?? null;
+
   const typename = entity.name;
 
   switch (entity.kind) {
     case Kind.OBJECT_TYPE_DEFINITION:
-      return { entity, usage, supergraph: fieldsSupergraph(typename, supergraph) };
+      return { entity, usage, supergraph: toObjectTypeSupergraphMapper(typename, supergraph) };
     case Kind.INTERFACE_TYPE_DEFINITION:
-      return { entity, usage, supergraph: fieldsSupergraph(typename, supergraph) };
+      return { entity, usage, supergraph: toObjectTypeSupergraphMapper(typename, supergraph) };
     case Kind.ENUM_TYPE_DEFINITION:
       return {
         entity,
         usage,
         supergraph: supergraph
           ? {
-              ownedByServiceNames: ownedBy(typename),
-              getEnumValueOwnedByServices: valueName => ownedBy(`${typename}.${valueName}`),
+              ownedByServiceNames: getOwnedByServices(typename),
+              getEnumValueOwnedByServices: valueName =>
+                getOwnedByServices(`${typename}.${valueName}`),
             }
           : null,
       };
@@ -141,8 +144,8 @@ export function toNamedTypeMapper(
         usage,
         supergraph: supergraph
           ? {
-              ownedByServiceNames: ownedBy(typename),
-              getUnionMemberOwnedByServices: memberName => ownedBy(memberName),
+              ownedByServiceNames: getOwnedByServices(typename),
+              getUnionMemberOwnedByServices: memberName => getOwnedByServices(memberName),
             }
           : null,
       };
@@ -152,9 +155,9 @@ export function toNamedTypeMapper(
         usage,
         supergraph: supergraph
           ? {
-              ownedByServiceNames: ownedBy(typename),
+              ownedByServiceNames: getOwnedByServices(typename),
               getInputFieldOwnedByServices: inputFieldName =>
-                ownedBy(`${typename}.${inputFieldName}`),
+                getOwnedByServices(`${typename}.${inputFieldName}`),
             }
           : null,
       };
@@ -162,7 +165,7 @@ export function toNamedTypeMapper(
       return {
         entity,
         usage,
-        supergraph: supergraph ? { ownedByServiceNames: ownedBy(typename) } : null,
+        supergraph: supergraph ? { ownedByServiceNames: getOwnedByServices(typename) } : null,
       };
   }
 }

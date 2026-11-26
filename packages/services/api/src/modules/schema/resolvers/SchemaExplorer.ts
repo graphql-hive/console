@@ -1,7 +1,7 @@
 import type { GraphQLObjectTypeMapper, SchemaExplorerMapper } from '../module.graphql.mappers';
 import { Kind } from 'graphql';
 import { OperationsManager } from '../../operations/providers/operations-manager';
-import { fieldsSupergraph, memo, toNamedTypeMapper, withUsedByClients } from '../utils';
+import { memo, toNamedTypeMapper, toObjectTypeSupergraphMapper, withUsedByClients } from '../utils';
 import type { SchemaExplorerResolvers } from './../../../__generated__/types';
 
 type UsageLoader = GraphQLObjectTypeMapper['usage'];
@@ -15,7 +15,7 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
 
     return toNamedTypeMapper(
       entity,
-      typeUsageLoader(source, entity.name, injector.get(OperationsManager)),
+      toTypeUsageLoader(source, entity.name, injector.get(OperationsManager)),
       source.supergraph,
     );
   },
@@ -47,18 +47,18 @@ export const SchemaExplorer: SchemaExplorerResolvers = {
       .map(entity => toNamedTypeMapper(entity, () => getStats(entity.name), supergraph));
   },
   query: (source, _, { injector }) =>
-    rootTypeMapper(source, source.snapshot.queryTypeName, injector.get(OperationsManager)),
+    toRootTypeMapper(source, source.snapshot.queryTypeName, injector.get(OperationsManager)),
   mutation: (source, _, { injector }) =>
-    rootTypeMapper(source, source.snapshot.mutationTypeName, injector.get(OperationsManager)),
+    toRootTypeMapper(source, source.snapshot.mutationTypeName, injector.get(OperationsManager)),
   subscription: (source, _, { injector }) =>
-    rootTypeMapper(source, source.snapshot.subscriptionTypeName, injector.get(OperationsManager)),
+    toRootTypeMapper(source, source.snapshot.subscriptionTypeName, injector.get(OperationsManager)),
   metadataAttributes: async ({ supergraph }, _arg, _ctx) => {
     return supergraph?.metadataAttributes;
   },
   subgraphNames: ({ supergraph }) => supergraph?.subgraphNames ?? [],
 };
 
-function typeUsageLoader(
+function toTypeUsageLoader(
   source: SchemaExplorerMapper,
   typename: string,
   operationsManager: OperationsManager,
@@ -83,7 +83,7 @@ function typeUsageLoader(
       );
 }
 
-function rootTypeMapper(
+function toRootTypeMapper(
   source: SchemaExplorerMapper,
   typename: string | null,
   operationsManager: OperationsManager,
@@ -95,7 +95,7 @@ function rootTypeMapper(
 
   return {
     entity,
-    usage: typeUsageLoader(source, entity.name, operationsManager),
-    supergraph: fieldsSupergraph(entity.name, source.supergraph),
+    usage: toTypeUsageLoader(source, entity.name, operationsManager),
+    supergraph: toObjectTypeSupergraphMapper(entity.name, source.supergraph),
   };
 }
