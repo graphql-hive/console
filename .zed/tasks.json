@@ -1,0 +1,58 @@
+[
+  {
+    "label": "hive:server",
+    "command": "(cd packages/services/server && pnpm dev)",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "hive:usage",
+    "command": "(cd packages/services/usage && pnpm dev)",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "hive:usage-ingestor",
+    "command": "(cd packages/services/usage-ingestor && pnpm dev)",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "hive:app",
+    "command": "(cd packages/web/app && pnpm dev)",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "hive:schema",
+    "command": "(cd packages/services/schema && pnpm dev)",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "hive:commerce",
+    "command": "(cd packages/services/commerce && pnpm dev)",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "hive:workflows",
+    "command": "(cd packages/services/workflows && pnpm dev)",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "hive:policy",
+    "command": "(cd packages/services/policy && pnpm dev)",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  }
+]
