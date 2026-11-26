@@ -92,3 +92,48 @@ index dbf319952c630aa8c0f534e06bd0258e06bcaf8a..6cd5c910e48c46fb07b8503ebb4afc75
      try {
          schema = (0, graphql_1.extendSchema)(schema, extensionsDocument, {
              assumeValidSDL: true,
+diff --git a/dist/composition/utils.js b/dist/composition/utils.js
+index 3cf1129b65f9e1698dfbbb9d1dd52a672e1c6590..df7211b752ca84ed60c7dd8241e676662b3abf4d 100644
+--- a/dist/composition/utils.js
++++ b/dist/composition/utils.js
+@@ -102,6 +102,13 @@ function parseFieldSet(source) {
+     catch {
+         throw new Error(`Invalid FieldSet provided: '${source}'. FieldSets may not contain operations within them.`);
+     }
++    (0, graphql_1.visit)(selectionSet, {
++        SelectionSet(node) {
++            if (node.selections.length === 0) {
++                throw new Error(`Invalid FieldSet provided: '${source}'. FieldSets may not contain empty selection sets.`);
++            }
++        },
++    });
+     const selections = selectionSet.selections;
+     (0, utilities_1.assert)(selections.length > 0, `Field sets may not be empty`);
+     (0, graphql_1.visit)(selectionSet, {
+@@ -134,8 +141,9 @@ function logDirective(directiveName) {
+ }
+ exports.logDirective = logDirective;
+ function errorWithCode(code, message, nodes) {
+-    return new graphql_1.GraphQLError(message, nodes, undefined, undefined, undefined, undefined, {
+-        code,
++    return new graphql_1.GraphQLError(message, {
++        nodes,
++        extensions: { code },
+     });
+ }
+ exports.errorWithCode = errorWithCode;
+diff --git a/dist/service/printSupergraphSdl.js b/dist/service/printSupergraphSdl.js
+index 1ae8e602e7766137ec0a4f14cb1ec99e788be532..73c9f9a328e5d159ff690873cfc07bd9ba5dba48 100644
+--- a/dist/service/printSupergraphSdl.js
++++ b/dist/service/printSupergraphSdl.js
+@@ -264,7 +264,9 @@ function printArgs(args, indentation = '') {
+         ')');
+ }
+ function printInputValue(arg) {
+-    const defaultAST = (0, graphql_1.astFromValue)(arg.defaultValue, arg.type);
++    const defaultAST = arg.default
++        ? arg.default.literal ?? (0, graphql_1.valueToLiteral)(arg.default.value, arg.type)
++        : (0, graphql_1.astFromValue)(arg.defaultValue, arg.type);
+     let argDecl = arg.name + ': ' + String(arg.type);
+     if (defaultAST) {
+         argDecl += ` = ${(0, graphql_1.print)(defaultAST)}`;

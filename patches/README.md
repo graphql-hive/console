@@ -19,6 +19,20 @@ supports graphql 15 and 16 only and runs on graphql 17 here, whose parser leaves
 everything declared after a root type without fields, or after an extension without a body, was
 missing from the composed schema while composition still succeeded.
 
+Two more hunks cover graphql 17 API changes. The supergraph printer reads default values from
+`default` (17 keeps the SDL literal there and leaves `defaultValue` undefined) and only falls back
+to `defaultValue` on 16; without it every argument, input field and directive argument default was
+missing from the supergraph. `errorWithCode` builds its `GraphQLError` with the options object,
+because 17 dropped the positional constructor and the error code and locations were lost. Other
+`new GraphQLError(message, nodes)` calls in the validation rules still lose their locations on 17;
+we only read the message, so they are left alone.
+
+`parseFieldSet` rejects empty selection sets in `@key`, `@requires` and `@provides` field sets.
+graphql 17.1 accepts `{}` (graphql-js#4852), so `fields: ""` became an internal exception instead of
+a composition error, and a nested empty selection such as `fields: "id b { }"` composed and was
+written into the supergraph, which graphql 16 based gateways cannot parse. The new error uses the
+`Invalid FieldSet provided:` prefix that the schema service reports as a composition error.
+
 Retire when Federation v1 support is dropped. The package is frozen at 0.38.1 upstream.
 
 ## `@slonik__pg-driver@48.19.0.patch`

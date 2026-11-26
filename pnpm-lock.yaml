@@ -331,7 +331,7 @@ overrides:
 
 patchedDependencies:
   '@apollo/federation@0.38.1':
-    hash: 4d342fe355853ce58c22ef667eadf339acb081c66e2f5f7ea6d88d57010e29ec
+    hash: 98a6f7e2562880404647ced0ab484b972d159cc58e542449c691a99cbb6658b5
     path: patches/@apollo__federation@0.38.1.patch
   '@slonik/pg-driver@48.19.0':
     hash: e12360d0c0740724e0317b8f5e2e4b4ab6cca28dd48bf04eef7ce550e8f08519
@@ -861,7 +861,7 @@ importers:
     devDependencies:
       '@apollo/federation':
         specifier: 'catalog:'
-        version: 0.38.1(patch_hash=4d342fe355853ce58c22ef667eadf339acb081c66e2f5f7ea6d88d57010e29ec)(encoding@0.1.13)(graphql@17.1.0)
+        version: 0.38.1(patch_hash=98a6f7e2562880404647ced0ab484b972d159cc58e542449c691a99cbb6658b5)(encoding@0.1.13)(graphql@17.1.0)
       '@apollo/subgraph':
         specifier: 2.17.0
         version: 2.17.0(graphql@17.1.0)
@@ -1703,7 +1703,7 @@ importers:
     devDependencies:
       '@apollo/federation':
         specifier: 'catalog:'
-        version: 0.38.1(patch_hash=4d342fe355853ce58c22ef667eadf339acb081c66e2f5f7ea6d88d57010e29ec)(encoding@0.1.13)(graphql@17.1.0)
+        version: 0.38.1(patch_hash=98a6f7e2562880404647ced0ab484b972d159cc58e542449c691a99cbb6658b5)(encoding@0.1.13)(graphql@17.1.0)
       '@graphql-tools/merge':
         specifier: 'catalog:'
         version: 10.0.9(graphql@17.1.0)
@@ -15298,7 +15298,7 @@ snapshots:
       js-levenshtein: 1.1.6
       uuid: 14.0.0
 
-  '@apollo/federation@0.38.1(patch_hash=4d342fe355853ce58c22ef667eadf339acb081c66e2f5f7ea6d88d57010e29ec)(encoding@0.1.13)(graphql@17.1.0)':
+  '@apollo/federation@0.38.1(patch_hash=98a6f7e2562880404647ced0ab484b972d159cc58e542449c691a99cbb6658b5)(encoding@0.1.13)(graphql@17.1.0)':
     dependencies:
       '@apollo/subgraph': 0.6.1(graphql@17.1.0)
       apollo-server-types: 3.7.0(encoding@0.1.13)(graphql@17.1.0)
