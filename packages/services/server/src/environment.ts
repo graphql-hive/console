@@ -675,7 +675,7 @@ export const env = {
   },
   schemaExplorerCache: {
     memoryMaxBytes: (base.SCHEMA_EXPLORER_CACHE_MEMORY_MAX_MB ?? 512) * 1024 * 1024,
-    buildTimeoutMs: base.SCHEMA_EXPLORER_SNAPSHOT_BUILD_TIMEOUT_MS ?? 30_000,
+    buildTimeoutMs: base.SCHEMA_EXPLORER_SNAPSHOT_BUILD_TIMEOUT_MS ?? 15_000,
   },
   http: {
     port: base.PORT ?? 3001,
