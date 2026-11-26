@@ -1,0 +1,6466 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`deprecated schema > contains the deprecated fields, arguments, input fields and enum values 1`] = `
+{
+  latestValidVersion: {
+    deprecatedSchema: {
+      types: [
+        {
+          __typename: GraphQLObjectType,
+          description: The root query.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: Use user instead.,
+              description: null,
+              isDeprecated: true,
+              name: legacyField,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: Use current.,
+                  description: null,
+                  isDeprecated: true,
+                  name: old,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: withDeprecatedArgument,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Query,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 2,
+            usedByClients: [
+              web,
+              mobile,
+            ],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: The role of a user.,
+          name: Role,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 2,
+            usedByClients: [
+              web,
+              mobile,
+            ],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ADMIN,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [
+                  mobile,
+                ],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: A regular user.,
+              isDeprecated: false,
+              name: USER,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: Guests are no longer supported.,
+              description: null,
+              isDeprecated: true,
+              name: GUEST,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: A user.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: No longer supported,
+              description: null,
+              isDeprecated: true,
+              name: oldName,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+            Named,
+          ],
+          name: User,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 2,
+            usedByClients: [
+              web,
+              mobile,
+            ],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: No longer used.,
+              description: null,
+              isDeprecated: true,
+              name: legacy,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: UserFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 1,
+            usedByClients: [
+              mobile,
+            ],
+          },
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`deprecated schema > shows subgraph ownership in a federated graph 1`] = `
+{
+  latestValidVersion: {
+    deprecatedSchema: {
+      types: [
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: Use fullName.,
+              description: null,
+              isDeprecated: true,
+              name: name,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: identity,
+                    name: domain,
+                    source: users,
+                  },
+                  {
+                    content: users,
+                    name: team,
+                    source: users,
+                  },
+                ],
+                ownedByServiceNames: [
+                  users,
+                ],
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: User,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: [
+              posts,
+              users,
+            ],
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`schema coordinate stats > resolve subgraph ownership and metadata of coordinates 1`] = `
+{
+  target: {
+    queryUser: {
+      supergraphMetadata: {
+        metadata: [
+          {
+            content: high,
+            name: priority,
+            source: users,
+          },
+          {
+            content: users,
+            name: team,
+            source: users,
+          },
+        ],
+        ownedByServiceNames: [
+          users,
+        ],
+      },
+    },
+    roleAdmin: {
+      supergraphMetadata: {
+        metadata: null,
+        ownedByServiceNames: [
+          posts,
+          users,
+        ],
+      },
+    },
+    unknown: {
+      supergraphMetadata: {
+        metadata: null,
+        ownedByServiceNames: null,
+      },
+    },
+    user: {
+      supergraphMetadata: {
+        metadata: null,
+        ownedByServiceNames: [
+          posts,
+          users,
+        ],
+      },
+    },
+    userPosts: {
+      supergraphMetadata: {
+        metadata: [
+          {
+            content: posts,
+            name: team,
+            source: posts,
+          },
+        ],
+        ownedByServiceNames: [
+          posts,
+        ],
+      },
+    },
+  },
+}
+`;
+
+exports[`schema explorer > exposes every type kind with fields, arguments, values, members, defaults and deprecations 1`] = `
+{
+  latestValidVersion: {
+    explorer: {
+      metadataAttributes: null,
+      missing: null,
+      mutation: {
+        __typename: GraphQLObjectType,
+        description: null,
+        fields: [
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: input,
+                type: CreateUserInput!,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: createUser,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: User,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [],
+        name: Mutation,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+      },
+      query: {
+        __typename: GraphQLObjectType,
+        description: The root query.,
+        fields: [
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: id,
+                type: ID!,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: Also returns deleted users.,
+                isDeprecated: false,
+                name: includeDeleted,
+                type: Boolean,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: Looks up a user.,
+            isDeprecated: false,
+            name: user,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: User,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: first,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: after,
+                type: String,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: filter,
+                type: UserFilter,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: order,
+                type: Order,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: users,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: [User!]!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: term,
+                type: String!,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: search,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: [SearchResult!]!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: id,
+                type: ID!,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: node,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: Node,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: Use user instead.,
+            description: null,
+            isDeprecated: true,
+            name: legacyField,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: String,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: Use current.,
+                description: null,
+                isDeprecated: true,
+                name: old,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: current,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: withDeprecatedArgument,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: Int,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: now,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: DateTime,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [],
+        name: Query,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+      },
+      role: {
+        __typename: GraphQLEnumType,
+        description: The role of a user.,
+        name: Role,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+        values: [
+          {
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: ADMIN,
+            supergraphMetadata: {
+              ownedByServiceNames: null,
+            },
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            deprecationReason: null,
+            description: A regular user.,
+            isDeprecated: false,
+            name: USER,
+            supergraphMetadata: {
+              ownedByServiceNames: null,
+            },
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            deprecationReason: Guests are no longer supported.,
+            description: null,
+            isDeprecated: true,
+            name: GUEST,
+            supergraphMetadata: {
+              ownedByServiceNames: null,
+            },
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+      },
+      subgraphNames: [],
+      subscription: {
+        __typename: GraphQLObjectType,
+        description: null,
+        fields: [
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: userCreated,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: User,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [],
+        name: Subscription,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+      },
+      types: [
+        {
+          __typename: GraphQLScalarType,
+          description: The \`Boolean\` scalar type represents \`true\` or \`false\`.,
+          name: Boolean,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: The data to create a user.,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: CreateUserInput,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: A date and time in ISO 8601.,
+          name: DateTime,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`ID\` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as \`"4"\`) or integer (such as \`4\`) input value will be accepted as an ID.,
+          name: ID,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`Int\` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.,
+          name: Int,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: input,
+                  type: CreateUserInput!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: createUser,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Mutation,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInterfaceType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+          ],
+          name: Named,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: limit,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: NestedFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInterfaceType,
+          description: An object with an id.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Node,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: null,
+          name: Order,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ASC,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: DESC,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: title,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: author,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+          ],
+          name: Post,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: The root query.,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: id,
+                  type: ID!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: Also returns deleted users.,
+                  isDeprecated: false,
+                  name: includeDeleted,
+                  type: Boolean,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: Looks up a user.,
+              isDeprecated: false,
+              name: user,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: after,
+                  type: String,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: filter,
+                  type: UserFilter,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: order,
+                  type: Order,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: users,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [User!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: term,
+                  type: String!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: search,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [SearchResult!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: id,
+                  type: ID!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: node,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Node,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: Use user instead.,
+              description: null,
+              isDeprecated: true,
+              name: legacyField,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: Use current.,
+                  description: null,
+                  isDeprecated: true,
+                  name: old,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: current,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: withDeprecatedArgument,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: now,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: DateTime,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Query,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: The role of a user.,
+          name: Role,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ADMIN,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: A regular user.,
+              isDeprecated: false,
+              name: USER,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: Guests are no longer supported.,
+              description: null,
+              isDeprecated: true,
+              name: GUEST,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLUnionType,
+          description: Either a user or a post.,
+          members: [
+            {
+              name: User,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              name: Post,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: SearchResult,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`String\` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.,
+          name: String,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: userCreated,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Subscription,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: A user.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: No longer supported,
+              description: null,
+              isDeprecated: true,
+              name: oldName,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: posts,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [Post!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+            Named,
+          ],
+          name: User,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: roles,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: [Role!],
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: nested,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: NestedFilter,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: No longer used.,
+              description: null,
+              isDeprecated: true,
+              name: legacy,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: UserFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+      ],
+      user: {
+        __typename: GraphQLObjectType,
+        description: A user.,
+        fields: [
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: id,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: ID!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: name,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: String,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: role,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: Role,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: No longer supported,
+            description: null,
+            isDeprecated: true,
+            name: oldName,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: String,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: first,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: posts,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: [Post!]!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [
+          Node,
+          Named,
+        ],
+        name: User,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+      },
+    },
+  },
+}
+`;
+
+exports[`schema explorer > reports the usage of types, fields, arguments and enum values 1`] = `
+{
+  latestValidVersion: {
+    explorer: {
+      metadataAttributes: null,
+      missing: null,
+      mutation: {
+        __typename: GraphQLObjectType,
+        description: null,
+        fields: [
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: input,
+                type: CreateUserInput!,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: createUser,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: User,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [],
+        name: Mutation,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+      },
+      query: {
+        __typename: GraphQLObjectType,
+        description: The root query.,
+        fields: [
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: id,
+                type: ID!,
+                usage: {
+                  isUsed: true,
+                  total: 1,
+                  usedByClients: [
+                    web,
+                  ],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: Also returns deleted users.,
+                isDeprecated: false,
+                name: includeDeleted,
+                type: Boolean,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: Looks up a user.,
+            isDeprecated: false,
+            name: user,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: User,
+            usage: {
+              isUsed: true,
+              total: 1,
+              usedByClients: [
+                web,
+              ],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: first,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: after,
+                type: String,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: filter,
+                type: UserFilter,
+                usage: {
+                  isUsed: true,
+                  total: 1,
+                  usedByClients: [
+                    mobile,
+                  ],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: order,
+                type: Order,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: users,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: [User!]!,
+            usage: {
+              isUsed: true,
+              total: 1,
+              usedByClients: [
+                mobile,
+              ],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: term,
+                type: String!,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: search,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: [SearchResult!]!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: id,
+                type: ID!,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: node,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: Node,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: Use user instead.,
+            description: null,
+            isDeprecated: true,
+            name: legacyField,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: String,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: Use current.,
+                description: null,
+                isDeprecated: true,
+                name: old,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: current,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: withDeprecatedArgument,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: Int,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: now,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: DateTime,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [],
+        name: Query,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: true,
+          topOperations: [
+            {
+              count: 1,
+              hash: 262ee6ee585ef15a5ab9ab84f470e290,
+              name: GetUser,
+            },
+            {
+              count: 1,
+              hash: 70a92269ecfe92bee44e9a64c2ff6179,
+              name: Admins,
+            },
+          ],
+          total: 2,
+          usedByClients: [
+            web,
+            mobile,
+          ],
+        },
+      },
+      role: {
+        __typename: GraphQLEnumType,
+        description: The role of a user.,
+        name: Role,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: true,
+          topOperations: [
+            {
+              count: 1,
+              hash: 262ee6ee585ef15a5ab9ab84f470e290,
+              name: GetUser,
+            },
+            {
+              count: 1,
+              hash: 70a92269ecfe92bee44e9a64c2ff6179,
+              name: Admins,
+            },
+          ],
+          total: 2,
+          usedByClients: [
+            web,
+            mobile,
+          ],
+        },
+        values: [
+          {
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: ADMIN,
+            supergraphMetadata: {
+              ownedByServiceNames: null,
+            },
+            usage: {
+              isUsed: true,
+              total: 1,
+              usedByClients: [
+                mobile,
+              ],
+            },
+          },
+          {
+            deprecationReason: null,
+            description: A regular user.,
+            isDeprecated: false,
+            name: USER,
+            supergraphMetadata: {
+              ownedByServiceNames: null,
+            },
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            deprecationReason: Guests are no longer supported.,
+            description: null,
+            isDeprecated: true,
+            name: GUEST,
+            supergraphMetadata: {
+              ownedByServiceNames: null,
+            },
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+      },
+      subgraphNames: [],
+      subscription: {
+        __typename: GraphQLObjectType,
+        description: null,
+        fields: [
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: userCreated,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: User,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [],
+        name: Subscription,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+      },
+      types: [
+        {
+          __typename: GraphQLScalarType,
+          description: The \`Boolean\` scalar type represents \`true\` or \`false\`.,
+          name: Boolean,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: The data to create a user.,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: CreateUserInput,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: A date and time in ISO 8601.,
+          name: DateTime,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`ID\` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as \`"4"\`) or integer (such as \`4\`) input value will be accepted as an ID.,
+          name: ID,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+            ],
+            total: 1,
+            usedByClients: [
+              web,
+            ],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`Int\` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.,
+          name: Int,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: input,
+                  type: CreateUserInput!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: createUser,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Mutation,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInterfaceType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+          ],
+          name: Named,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: limit,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: NestedFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInterfaceType,
+          description: An object with an id.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Node,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: null,
+          name: Order,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ASC,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: DESC,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: title,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: author,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+          ],
+          name: Post,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: The root query.,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: id,
+                  type: ID!,
+                  usage: {
+                    isUsed: true,
+                    total: 1,
+                    usedByClients: [
+                      web,
+                    ],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: Also returns deleted users.,
+                  isDeprecated: false,
+                  name: includeDeleted,
+                  type: Boolean,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: Looks up a user.,
+              isDeprecated: false,
+              name: user,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [
+                  web,
+                ],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: after,
+                  type: String,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: filter,
+                  type: UserFilter,
+                  usage: {
+                    isUsed: true,
+                    total: 1,
+                    usedByClients: [
+                      mobile,
+                    ],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: order,
+                  type: Order,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: users,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [User!]!,
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [
+                  mobile,
+                ],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: term,
+                  type: String!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: search,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [SearchResult!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: id,
+                  type: ID!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: node,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Node,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: Use user instead.,
+              description: null,
+              isDeprecated: true,
+              name: legacyField,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: Use current.,
+                  description: null,
+                  isDeprecated: true,
+                  name: old,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: current,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: withDeprecatedArgument,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: now,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: DateTime,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Query,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 2,
+            usedByClients: [
+              web,
+              mobile,
+            ],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: The role of a user.,
+          name: Role,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 2,
+            usedByClients: [
+              web,
+              mobile,
+            ],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ADMIN,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [
+                  mobile,
+                ],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: A regular user.,
+              isDeprecated: false,
+              name: USER,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: Guests are no longer supported.,
+              description: null,
+              isDeprecated: true,
+              name: GUEST,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLUnionType,
+          description: Either a user or a post.,
+          members: [
+            {
+              name: User,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              name: Post,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: SearchResult,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`String\` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.,
+          name: String,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: userCreated,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Subscription,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: A user.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: true,
+                total: 2,
+                usedByClients: [
+                  web,
+                  mobile,
+                ],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [
+                  web,
+                ],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [
+                  web,
+                ],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: No longer supported,
+              description: null,
+              isDeprecated: true,
+              name: oldName,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: posts,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [Post!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+            Named,
+          ],
+          name: User,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 2,
+            usedByClients: [
+              web,
+              mobile,
+            ],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [
+                  mobile,
+                ],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: roles,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: [Role!],
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: nested,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: NestedFilter,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: No longer used.,
+              description: null,
+              isDeprecated: true,
+              name: legacy,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: UserFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 1,
+            usedByClients: [
+              mobile,
+            ],
+          },
+        },
+      ],
+      user: {
+        __typename: GraphQLObjectType,
+        description: A user.,
+        fields: [
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: id,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: ID!,
+            usage: {
+              isUsed: true,
+              total: 2,
+              usedByClients: [
+                web,
+                mobile,
+              ],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: name,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: String,
+            usage: {
+              isUsed: true,
+              total: 1,
+              usedByClients: [
+                web,
+              ],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: role,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: Role,
+            usage: {
+              isUsed: true,
+              total: 1,
+              usedByClients: [
+                web,
+              ],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: No longer supported,
+            description: null,
+            isDeprecated: true,
+            name: oldName,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: String,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: first,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: posts,
+            supergraphMetadata: {
+              metadata: null,
+              ownedByServiceNames: null,
+            },
+            type: [Post!]!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [
+          Node,
+          Named,
+        ],
+        name: User,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: null,
+        },
+        usage: {
+          isUsed: true,
+          topOperations: [
+            {
+              count: 1,
+              hash: 262ee6ee585ef15a5ab9ab84f470e290,
+              name: GetUser,
+            },
+            {
+              count: 1,
+              hash: 70a92269ecfe92bee44e9a64c2ff6179,
+              name: Admins,
+            },
+          ],
+          total: 2,
+          usedByClients: [
+            web,
+            mobile,
+          ],
+        },
+      },
+    },
+  },
+}
+`;
+
+exports[`schema explorer > shows subgraph ownership, subgraph names and schema metadata of a federated graph 1`] = `
+{
+  latestValidVersion: {
+    explorer: {
+      metadataAttributes: [
+        {
+          name: team,
+          values: [
+            posts,
+            users,
+          ],
+        },
+        {
+          name: domain,
+          values: [
+            identity,
+          ],
+        },
+        {
+          name: priority,
+          values: [
+            high,
+          ],
+        },
+      ],
+      missing: null,
+      mutation: null,
+      query: {
+        __typename: GraphQLObjectType,
+        description: null,
+        fields: [
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: first,
+                type: Int,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: posts,
+            supergraphMetadata: {
+              metadata: [
+                {
+                  content: posts,
+                  name: team,
+                  source: posts,
+                },
+              ],
+              ownedByServiceNames: [
+                posts,
+              ],
+            },
+            type: [Post!]!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: feed,
+            supergraphMetadata: {
+              metadata: [
+                {
+                  content: posts,
+                  name: team,
+                  source: posts,
+                },
+              ],
+              ownedByServiceNames: [
+                posts,
+              ],
+            },
+            type: [FeedItem!]!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [
+              {
+                defaultValue: null,
+                deprecationReason: null,
+                description: null,
+                isDeprecated: false,
+                name: id,
+                type: ID!,
+                usage: {
+                  isUsed: false,
+                  total: 0,
+                  usedByClients: [],
+                },
+              },
+            ],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: user,
+            supergraphMetadata: {
+              metadata: [
+                {
+                  content: high,
+                  name: priority,
+                  source: users,
+                },
+                {
+                  content: users,
+                  name: team,
+                  source: users,
+                },
+              ],
+              ownedByServiceNames: [
+                users,
+              ],
+            },
+            type: User,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [],
+        name: Query,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: [
+            posts,
+            users,
+          ],
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+      },
+      role: {
+        __typename: GraphQLEnumType,
+        description: null,
+        name: Role,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: [
+            posts,
+            users,
+          ],
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+        values: [
+          {
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: ADMIN,
+            supergraphMetadata: {
+              ownedByServiceNames: [
+                posts,
+                users,
+              ],
+            },
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: USER,
+            supergraphMetadata: {
+              ownedByServiceNames: [
+                posts,
+                users,
+              ],
+            },
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+      },
+      subgraphNames: [
+        posts,
+        users,
+      ],
+      subscription: null,
+      types: [
+        {
+          __typename: GraphQLScalarType,
+          description: The \`Boolean\` scalar type represents \`true\` or \`false\`.,
+          name: Boolean,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLUnionType,
+          description: null,
+          members: [
+            {
+              name: Post,
+              supergraphMetadata: {
+                ownedByServiceNames: [
+                  posts,
+                ],
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: FeedItem,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: [
+              posts,
+            ],
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`ID\` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as \`"4"\`) or integer (such as \`4\`) input value will be accepted as an ID.,
+          name: ID,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`Int\` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.,
+          name: Int,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: posts,
+                    name: team,
+                    source: posts,
+                  },
+                ],
+                ownedByServiceNames: [
+                  posts,
+                ],
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: title,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: posts,
+                    name: team,
+                    source: posts,
+                  },
+                ],
+                ownedByServiceNames: [
+                  posts,
+                ],
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: author,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: posts,
+                    name: team,
+                    source: posts,
+                  },
+                ],
+                ownedByServiceNames: [
+                  posts,
+                ],
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Post,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: [
+              posts,
+            ],
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: posts,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: posts,
+                    name: team,
+                    source: posts,
+                  },
+                ],
+                ownedByServiceNames: [
+                  posts,
+                ],
+              },
+              type: [Post!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: feed,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: posts,
+                    name: team,
+                    source: posts,
+                  },
+                ],
+                ownedByServiceNames: [
+                  posts,
+                ],
+              },
+              type: [FeedItem!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: id,
+                  type: ID!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: user,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: high,
+                    name: priority,
+                    source: users,
+                  },
+                  {
+                    content: users,
+                    name: team,
+                    source: users,
+                  },
+                ],
+                ownedByServiceNames: [
+                  users,
+                ],
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Query,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: [
+              posts,
+              users,
+            ],
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: null,
+          name: Role,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: [
+              posts,
+              users,
+            ],
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ADMIN,
+              supergraphMetadata: {
+                ownedByServiceNames: [
+                  posts,
+                  users,
+                ],
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: USER,
+              supergraphMetadata: {
+                ownedByServiceNames: [
+                  posts,
+                  users,
+                ],
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: The \`String\` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.,
+          name: String,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: posts,
+                    name: team,
+                    source: posts,
+                  },
+                  {
+                    content: identity,
+                    name: domain,
+                    source: users,
+                  },
+                  {
+                    content: users,
+                    name: team,
+                    source: users,
+                  },
+                ],
+                ownedByServiceNames: [
+                  posts,
+                  users,
+                ],
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: posts,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: posts,
+                    name: team,
+                    source: posts,
+                  },
+                ],
+                ownedByServiceNames: [
+                  posts,
+                ],
+              },
+              type: [Post!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: Use fullName.,
+              description: null,
+              isDeprecated: true,
+              name: name,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: identity,
+                    name: domain,
+                    source: users,
+                  },
+                  {
+                    content: users,
+                    name: team,
+                    source: users,
+                  },
+                ],
+                ownedByServiceNames: [
+                  users,
+                ],
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: fullName,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: identity,
+                    name: domain,
+                    source: users,
+                  },
+                  {
+                    content: users,
+                    name: team,
+                    source: users,
+                  },
+                ],
+                ownedByServiceNames: [
+                  users,
+                ],
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                metadata: [
+                  {
+                    content: identity,
+                    name: domain,
+                    source: users,
+                  },
+                  {
+                    content: users,
+                    name: team,
+                    source: users,
+                  },
+                ],
+                ownedByServiceNames: [
+                  users,
+                ],
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: User,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: [
+              posts,
+              users,
+            ],
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+      ],
+      user: {
+        __typename: GraphQLObjectType,
+        description: null,
+        fields: [
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: id,
+            supergraphMetadata: {
+              metadata: [
+                {
+                  content: posts,
+                  name: team,
+                  source: posts,
+                },
+                {
+                  content: identity,
+                  name: domain,
+                  source: users,
+                },
+                {
+                  content: users,
+                  name: team,
+                  source: users,
+                },
+              ],
+              ownedByServiceNames: [
+                posts,
+                users,
+              ],
+            },
+            type: ID!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: posts,
+            supergraphMetadata: {
+              metadata: [
+                {
+                  content: posts,
+                  name: team,
+                  source: posts,
+                },
+              ],
+              ownedByServiceNames: [
+                posts,
+              ],
+            },
+            type: [Post!]!,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: Use fullName.,
+            description: null,
+            isDeprecated: true,
+            name: name,
+            supergraphMetadata: {
+              metadata: [
+                {
+                  content: identity,
+                  name: domain,
+                  source: users,
+                },
+                {
+                  content: users,
+                  name: team,
+                  source: users,
+                },
+              ],
+              ownedByServiceNames: [
+                users,
+              ],
+            },
+            type: String,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: fullName,
+            supergraphMetadata: {
+              metadata: [
+                {
+                  content: identity,
+                  name: domain,
+                  source: users,
+                },
+                {
+                  content: users,
+                  name: team,
+                  source: users,
+                },
+              ],
+              ownedByServiceNames: [
+                users,
+              ],
+            },
+            type: String,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+          {
+            args: [],
+            deprecationReason: null,
+            description: null,
+            isDeprecated: false,
+            name: role,
+            supergraphMetadata: {
+              metadata: [
+                {
+                  content: identity,
+                  name: domain,
+                  source: users,
+                },
+                {
+                  content: users,
+                  name: team,
+                  source: users,
+                },
+              ],
+              ownedByServiceNames: [
+                users,
+              ],
+            },
+            type: Role,
+            usage: {
+              isUsed: false,
+              total: 0,
+              usedByClients: [],
+            },
+          },
+        ],
+        interfaces: [],
+        name: User,
+        supergraphMetadata: {
+          metadata: null,
+          ownedByServiceNames: [
+            posts,
+            users,
+          ],
+        },
+        usage: {
+          isUsed: false,
+          topOperations: [],
+          total: 0,
+          usedByClients: [],
+        },
+      },
+    },
+  },
+}
+`;
+
+exports[`unused schema > used schema coordinates are left out 1`] = `
+{
+  latestValidVersion: {
+    unusedSchema: {
+      types: [
+        {
+          __typename: GraphQLInputObjectType,
+          description: The data to create a user.,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: "USER",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: CreateUserInput,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: A date and time in ISO 8601.,
+          name: DateTime,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: input,
+                  type: CreateUserInput!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: createUser,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Mutation,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInterfaceType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+          ],
+          name: Named,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: "1",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: limit,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: NestedFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInterfaceType,
+          description: An object with an id.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Node,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: null,
+          name: Order,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ASC,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: DESC,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: title,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: author,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+          ],
+          name: Post,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: The root query.,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: Also returns deleted users.,
+                  isDeprecated: false,
+                  name: includeDeleted,
+                  type: Boolean,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: Looks up a user.,
+              isDeprecated: false,
+              name: user,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: after,
+                  type: String,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: order,
+                  type: Order,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: users,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [User!]!,
+              usage: {
+                isUsed: true,
+                total: 1,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: term,
+                  type: String!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: search,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [SearchResult!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: id,
+                  type: ID!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: node,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Node,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: Use user instead.,
+              description: null,
+              isDeprecated: true,
+              name: legacyField,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: Use current.,
+                  description: null,
+                  isDeprecated: true,
+                  name: old,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: current,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: withDeprecatedArgument,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: now,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: DateTime,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Query,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 1,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLUnionType,
+          description: Either a user or a post.,
+          members: [
+            {
+              name: User,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              name: Post,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: SearchResult,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: userCreated,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Subscription,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: A user.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: No longer supported,
+              description: null,
+              isDeprecated: true,
+              name: oldName,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: posts,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [Post!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+            Named,
+          ],
+          name: User,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 262ee6ee585ef15a5ab9ab84f470e290,
+                name: GetUser,
+              },
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 1,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: "\\"anonymous\\"",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: "[ADMIN]",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: roles,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: [Role!],
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: "{ limit: 3 }",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: nested,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: NestedFilter,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: No longer used.,
+              description: null,
+              isDeprecated: true,
+              name: legacy,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: UserFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: true,
+            topOperations: [
+              {
+                count: 1,
+                hash: 70a92269ecfe92bee44e9a64c2ff6179,
+                name: Admins,
+              },
+            ],
+            total: 1,
+            usedByClients: [],
+          },
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`unused schema > without usage, everything defined in the schema is unused 1`] = `
+{
+  latestValidVersion: {
+    unusedSchema: {
+      types: [
+        {
+          __typename: GraphQLInputObjectType,
+          description: The data to create a user.,
+          fields: [
+            {
+              defaultValue: null,
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: "USER",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: CreateUserInput,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLScalarType,
+          description: A date and time in ISO 8601.,
+          name: DateTime,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: input,
+                  type: CreateUserInput!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: createUser,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Mutation,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInterfaceType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+          ],
+          name: Named,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: "1",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: limit,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: NestedFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInterfaceType,
+          description: An object with an id.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Node,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: null,
+          name: Order,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ASC,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: DESC,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: title,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: author,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+          ],
+          name: Post,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: The root query.,
+          fields: [
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: id,
+                  type: ID!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: Also returns deleted users.,
+                  isDeprecated: false,
+                  name: includeDeleted,
+                  type: Boolean,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: Looks up a user.,
+              isDeprecated: false,
+              name: user,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: after,
+                  type: String,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: filter,
+                  type: UserFilter,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: order,
+                  type: Order,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: users,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [User!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: term,
+                  type: String!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: search,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [SearchResult!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: id,
+                  type: ID!,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: node,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Node,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: Use user instead.,
+              description: null,
+              isDeprecated: true,
+              name: legacyField,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: Use current.,
+                  description: null,
+                  isDeprecated: true,
+                  name: old,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: current,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: withDeprecatedArgument,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Int,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: now,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: DateTime,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Query,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLEnumType,
+          description: The role of a user.,
+          name: Role,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+          values: [
+            {
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: ADMIN,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: null,
+              description: A regular user.,
+              isDeprecated: false,
+              name: USER,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              deprecationReason: Guests are no longer supported.,
+              description: null,
+              isDeprecated: true,
+              name: GUEST,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+        },
+        {
+          __typename: GraphQLUnionType,
+          description: Either a user or a post.,
+          members: [
+            {
+              name: User,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              name: Post,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: SearchResult,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: null,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: userCreated,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: User,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [],
+          name: Subscription,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLObjectType,
+          description: A user.,
+          fields: [
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: id,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: ID!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [],
+              deprecationReason: No longer supported,
+              description: null,
+              isDeprecated: true,
+              name: oldName,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              args: [
+                {
+                  defaultValue: null,
+                  deprecationReason: null,
+                  description: null,
+                  isDeprecated: false,
+                  name: first,
+                  type: Int,
+                  usage: {
+                    isUsed: false,
+                    total: 0,
+                    usedByClients: [],
+                  },
+                },
+              ],
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: posts,
+              supergraphMetadata: {
+                metadata: null,
+                ownedByServiceNames: null,
+              },
+              type: [Post!]!,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          interfaces: [
+            Node,
+            Named,
+          ],
+          name: User,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+        {
+          __typename: GraphQLInputObjectType,
+          description: null,
+          fields: [
+            {
+              defaultValue: "\\"anonymous\\"",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: name,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: "USER",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: role,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: Role,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: "[ADMIN]",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: roles,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: [Role!],
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: "{ limit: 3 }",
+              deprecationReason: null,
+              description: null,
+              isDeprecated: false,
+              name: nested,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: NestedFilter,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+            {
+              defaultValue: null,
+              deprecationReason: No longer used.,
+              description: null,
+              isDeprecated: true,
+              name: legacy,
+              supergraphMetadata: {
+                ownedByServiceNames: null,
+              },
+              type: String,
+              usage: {
+                isUsed: false,
+                total: 0,
+                usedByClients: [],
+              },
+            },
+          ],
+          name: UserFilter,
+          supergraphMetadata: {
+            metadata: null,
+            ownedByServiceNames: null,
+          },
+          usage: {
+            isUsed: false,
+            topOperations: [],
+            total: 0,
+            usedByClients: [],
+          },
+        },
+      ],
+    },
+  },
+}
+`;
