@@ -26,7 +26,7 @@ import { Logger } from './../../shared/providers/logger';
 import { SchemaCheckWarning } from './models/shared';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { SchemaDiffScheduler } from './schema-diff-scheduler';
-import { CompositeSchemaInput, extendWithBase, SchemaHelper, SchemaInput } from './schema-helper';
+import { extendWithBase, SchemaHelper, SchemaInput } from './schema-helper';
 
 export type ConditionalBreakingChangeDiffConfig = {
   period: DateRange;
@@ -339,7 +339,8 @@ export class RegistryChecks {
     version: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: Array<SchemaInput>;
+      /** Only invoked for legacy versions without a stored composite schema SDL. */
+      loadSchemas: () => Promise<Array<SchemaInput>>;
     } | null;
     organization: Organization;
     project: Project;
@@ -365,7 +366,7 @@ export class RegistryChecks {
 
     const existingSchemaResult = await this.orchestrator.composeAndValidate(
       CompositionOrchestrator.projectTypeToOrchestratorType(args.project.type),
-      args.version.schemas.map(s => toCompositionSchemaInput(s)),
+      (await args.version.loadSchemas()).map(s => toCompositionSchemaInput(s)),
       {
         external: args.project.externalComposition,
         native: this.checkProjectNativeFederationSupport(
@@ -485,8 +486,8 @@ export class RegistryChecks {
     includeUrlChanges:
       | false
       | {
-          schemasBefore: CompositeSchemaInput[];
-          schemasAfter: CompositeSchemaInput[];
+          schemasBefore: ReadonlyArray<SubgraphDefinition>;
+          schemasAfter: ReadonlyArray<SubgraphDefinition>;
         };
     /** Whether Federation directive related changes should be filtered out from the list of changes. These would only show up due to an internal bug. */
     filterOutFederationChanges: boolean;
@@ -990,7 +991,7 @@ type PerTargetRead = {
   period: DateRange;
 };
 
-type SubgraphDefinition = {
+export type SubgraphDefinition = {
   serviceName: string;
   serviceUrl: string | null;
 };

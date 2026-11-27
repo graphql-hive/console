@@ -8,6 +8,7 @@ import {
   GetAffectedAppDeployments,
   RegistryChecks,
   type ConditionalBreakingChangeDiffConfig,
+  type SubgraphDefinition,
 } from '../registry-checks';
 import { CompositeSchemaInput, swapServices } from '../schema-helper';
 import type { Organization, Project, Target } from './../../../../shared/entities';
@@ -221,7 +222,7 @@ export class CompositeModel {
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: CompositeSchemaInput[];
+      loadSchemas: () => Promise<Array<CompositeSchemaInput>>;
     } | null;
     baseSchema: string | null;
     project: Project;
@@ -570,7 +571,9 @@ export class CompositeModel {
       isComposable: boolean;
       sdl: string | null;
       supergraphSdl: string | null;
-      schemas: CompositeSchemaInput[];
+      loadSchemas: () => Promise<Array<CompositeSchemaInput>>;
+      /** Service names and urls of the subgraphs, used for detecting url changes. */
+      loadSubgraphs: () => Promise<Array<SubgraphDefinition>>;
     } | null;
     baseSchema: string | null;
     contracts: Array<ContractInput> | null;
@@ -682,12 +685,15 @@ export class CompositeModel {
       };
     }
 
-    const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: latestComposable,
-      organization,
-      project,
-      targetId: target.id,
-    });
+    const [previousVersionSdl, subgraphsBefore] = await Promise.all([
+      this.checks.retrievePreviousVersionSdl({
+        version: latestComposable,
+        organization,
+        project,
+        targetId: target.id,
+      }),
+      latestComposable ? latestComposable.loadSubgraphs() : [],
+    ]);
 
     const getAffectedAppDeploymentsForPublish: GetAffectedAppDeployments = schemaCoordinates =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
@@ -701,7 +707,7 @@ export class CompositeModel {
       this.checks.diff({
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
         includeUrlChanges: {
-          schemasBefore: latestComposable?.schemas ?? [],
+          schemasBefore: subgraphsBefore,
           schemasAfter: schemas,
         },
         filterOutFederationChanges: project.type === ProjectType.FEDERATION,
@@ -831,7 +837,7 @@ export class CompositeModel {
       isComposable: boolean;
       sdl: string | null;
       supergraphSdl: string | null;
-      schemas: CompositeSchemaInput[];
+      loadSchemas: () => Promise<Array<CompositeSchemaInput>>;
     } | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;

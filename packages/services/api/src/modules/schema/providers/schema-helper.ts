@@ -193,6 +193,18 @@ export function toCompositeSchemaInput(schema: PushedCompositeSchema): Composite
   };
 }
 
+/** Service name and url only, e.g. for detecting url changes without loading the SDL. */
+export function toSubgraphDefinition(schema: PushedCompositeSchema): {
+  serviceName: string;
+  serviceUrl: string;
+} {
+  return {
+    serviceName: schema.service_name,
+    // service_url can be null for very old records from 2023 (see toCompositeSchemaInput)
+    serviceUrl: schema.service_url ?? '',
+  };
+}
+
 export function toSingleSchemaInput(schema: SingleSchema): SingleSchemaInput {
   return {
     id: schema.id,

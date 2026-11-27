@@ -452,6 +452,55 @@ export class SchemaManager {
     };
   }
 
+  /**
+   * Retrieve the latest schema version including its schema logs, plus the latest composable schema version.
+   *
+   * The schema logs of the latest composable version are rarely needed (its composite and supergraph SDL
+   * are stored on the version itself), so they are only loaded on demand.
+   * If both are the same version, the already loaded schema logs of the latest version are reused.
+   */
+  async getLatestAndLatestComposableSchemaVersionForGraph(args: { graph: Graph }) {
+    const [latestVersion, latestComposableVersion] = await Promise.all([
+      this.getMaybeLatestVersionForGraph(args.graph),
+      this.getMaybeLatestValidVersionForGraph(args.graph),
+    ]);
+
+    const latestSchemas = latestVersion
+      ? await this.schemaVersions.getSchemasBySchemaVersionId(latestVersion.id)
+      : null;
+
+    const latest =
+      latestVersion && latestSchemas ? { version: latestVersion, schemas: latestSchemas } : null;
+
+    if (!latestComposableVersion) {
+      return { latest, latestComposable: null };
+    }
+
+    if (latest && latest.version.id === latestComposableVersion.id) {
+      return {
+        latest,
+        latestComposable: {
+          version: latestComposableVersion,
+          loadSchemas: () => Promise.resolve(latest.schemas),
+          loadSchemasWithoutSDL: () => Promise.resolve(latest.schemas),
+        },
+      };
+    }
+
+    return {
+      latest,
+      latestComposable: {
+        version: latestComposableVersion,
+        /** Load the schema logs including their SDL. */
+        loadSchemas: () =>
+          this.schemaVersions.getSchemasBySchemaVersionId(latestComposableVersion.id),
+        /** Load the schema logs without their SDL (e.g. for comparing service names and urls). */
+        loadSchemasWithoutSDL: () =>
+          this.schemaVersions.getSchemasWithoutSDLBySchemaVersionId(latestComposableVersion.id),
+      },
+    };
+  }
+
   async getPaginatedSchemaVersionsForGraph(
     graph: Graph,
     args: {
