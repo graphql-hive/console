@@ -1,0 +1,37 @@
+type Query {
+  business: Business
+  document: FinancialDocument
+  ping: String
+}
+
+interface Node {
+  id: ID!
+}
+
+interface FinancialEntity implements Node {
+  id: ID!
+}
+
+interface Document implements Node {
+  id: ID!
+}
+
+type Business implements FinancialEntity & Node {
+  id: ID!
+  name: String
+  legalName: String
+}
+
+type FinancialDocument implements Document & Node {
+  id: ID!
+  title: String
+}
+
+extend interface FinancialEntity {
+  name: String
+  legalName: String
+}
+
+extend interface Document {
+  title: String
+}
