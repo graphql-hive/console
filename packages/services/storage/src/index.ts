@@ -2706,6 +2706,7 @@ export async function createStorage(
       const schemaCheck = await this.findSchemaCheck({
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
+        withSDL: false,
       });
 
       if (!schemaCheck) {

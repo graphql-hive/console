@@ -16,6 +16,11 @@ const SchemaRevisionModel = z.object({
 
 export type SchemaRevision = z.TypeOf<typeof SchemaRevisionModel>;
 
+const SchemaRevisionMetadataModel = SchemaRevisionModel.omit({ sdl: true });
+
+/** A schema revision without its SDL, as exposed through the GraphQL API. */
+export type SchemaRevisionMetadata = z.TypeOf<typeof SchemaRevisionMetadataModel>;
+
 const SchemaRevisionExpiryModel = SchemaRevisionModel.pick({ expiresAt: true });
 
 /** Thrown when a schema revision expired and was deleted before the publish that uses it was stored. */
@@ -191,28 +196,25 @@ export class SchemaRevisionStore {
     return row !== null;
   }
 
+  /** Loads revisions without their SDL, which the GraphQL `SchemaRevision` type does not expose. */
   getById = batch(async (ids: Array<string>) => {
     const rows = await this.pg.any(psql`
       SELECT
-        "schema_revisions"."id" AS "id"
-        , "schema_revisions"."service_name" AS "service"
-        , "schema_revisions"."digest" AS "digest"
-        , "schema_revisions"."revision" AS "revision"
-        , "schema_revisions"."created_at" AS "createdAt"
-        , "schema_revisions"."expires_at" AS "expiresAt"
-        , "sdl_artifacts"."sdl" AS "sdl"
+        "id"
+        , "service_name" AS "service"
+        , "digest"
+        , "revision"
+        , "created_at" AS "createdAt"
+        , "expires_at" AS "expiresAt"
       FROM
         "schema_revisions"
-      JOIN
-        "sdl_artifacts"
-          ON "sdl_artifacts"."digest" = "schema_revisions"."digest"
       WHERE
-        "schema_revisions"."id" = ANY(${psql.array(ids, 'uuid')})
+        "id" = ANY(${psql.array(ids, 'uuid')})
     `);
 
-    const items = new Map<string, SchemaRevision>();
+    const items = new Map<string, SchemaRevisionMetadata>();
     for (const row of rows) {
-      const record = SchemaRevisionModel.parse(row);
+      const record = SchemaRevisionMetadataModel.parse(row);
       items.set(record.id, record);
     }
 

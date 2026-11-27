@@ -984,6 +984,8 @@ export class SchemaManager {
       this.storage.findSchemaCheck({
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
+        withSDL: false,
+        withChanges: false,
       }),
       this.targetStore.getTarget({
         organizationId: args.organizationId,
@@ -1084,6 +1086,8 @@ export class SchemaManager {
       const recheck = await this.storage.findSchemaCheck({
         targetId: args.targetId,
         schemaCheckId: args.schemaCheckId,
+        withSDL: false,
+        withChanges: false,
       });
 
       if (recheck?.schemaPolicyErrors !== null) {
