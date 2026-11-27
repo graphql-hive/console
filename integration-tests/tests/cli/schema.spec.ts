@@ -1118,8 +1118,8 @@ test.concurrent(
 
     expect(result).not.toContain('no longer implements');
     expect(result).toContain('Field ping was added to object type Query');
-    expect(result).toContain('Field name was added to object type Business');
-    expect(result).toContain('Field title was added to object type FinancialDocument');
+    expect(result).toContain('Field legalName was added to interface FinancialEntity');
+    expect(result).toContain('Field legalName was added to object type Business');
   },
 );
 

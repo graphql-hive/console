@@ -17,10 +17,12 @@ interface Document implements Node {
 
 type Business implements FinancialEntity & Node {
   id: ID!
+  name: String
 }
 
 type FinancialDocument implements Document & Node {
   id: ID!
+  title: String
 }
 
 extend interface FinancialEntity {
