@@ -105,6 +105,16 @@ const schemaCheckCount = new promClient.Counter({
   labelNames: ['model', 'projectType', 'conclusion'],
 });
 
+/**
+ * Subset of `registry_check_count`: checks of an unchanged schema (same checksum as the latest schema version)
+ * that reuse the result of the latest schema version instead of running composition, diff and policy checks.
+ */
+const schemaCheckSkippedCount = new promClient.Counter({
+  name: 'registry_check_skipped_count',
+  help: 'Number of schema checks skipped because the schema is unchanged compared to the latest schema version (subset of registry_check_count)',
+  labelNames: ['model', 'projectType'],
+});
+
 const schemaPublishCount = new promClient.Counter({
   name: 'registry_publish_count',
   help: 'Number of performed schema publishes',
@@ -942,6 +952,11 @@ export class SchemaPublisher {
       if (!latestVersion) {
         throw new Error('This cannot happen 1 :)');
       }
+
+      schemaCheckSkippedCount.inc({
+        model: 'modern',
+        projectType: project.type,
+      });
 
       const [compositeSchemaSdl, supergraphSdl, compositionErrors] = await Promise.all([
         this.schemaVersionHelper.getCompositeSchemaSdl(latestVersion.version),
