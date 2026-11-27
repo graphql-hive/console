@@ -88,8 +88,25 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
     debug: (...args) => this.logDebug(...args),
   };
 
+  /**
+   * Whether the command was asked to write machine-readable output to stdout.
+   * Commands opt in by defining an `output` flag.
+   */
+  protected get isJsonOutput(): boolean {
+    return (this.flags as { output?: string } | undefined)?.output === 'json';
+  }
+
+  /** Writes status messages, which must stay out of stdout when it carries JSON. */
+  private logStatus(message: string) {
+    if (this.isJsonOutput) {
+      this.logToStderr(message);
+    } else {
+      this.log(message);
+    }
+  }
+
   logSuccess(...args: any[]) {
-    this.log(Texture.success(...args));
+    this.logStatus(Texture.success(...args));
   }
 
   logFailure(...args: any[]) {
@@ -97,11 +114,11 @@ export default abstract class BaseCommand<T extends typeof Command> extends Comm
   }
 
   logInfo(...args: any[]) {
-    this.log(Texture.info(...args));
+    this.logStatus(Texture.info(...args));
   }
 
   logWarning(...args: any[]) {
-    this.log(Texture.warning(...args));
+    this.logStatus(Texture.warning(...args));
   }
 
   logDebug(...args: any[]) {
