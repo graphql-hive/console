@@ -295,7 +295,7 @@ jobs:
           compression-level: 0
 
       - name: docker details pr comment
-        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v2
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
         if:
           ${{ inputs.dockerize && inputs.pushImages && github.event_name == 'pull_request' &&
           inputs.publishPrComment }}
