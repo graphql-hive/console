@@ -1787,6 +1787,10 @@ export class SchemaPublisher {
                     ensureCompositeSchemas(await latestComposableVersion.loadSchemas()).map(
                       toCompositeSchemaInput,
                     ),
+                  loadSubgraphs: async () =>
+                    ensureCompositeSchemas(
+                      await latestComposableVersion.loadSchemasWithoutSDL(),
+                    ).map(toSubgraphDefinition),
                 }
               : null,
             baseSchema,

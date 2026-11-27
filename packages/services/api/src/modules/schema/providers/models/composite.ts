@@ -838,6 +838,8 @@ export class CompositeModel {
       sdl: string | null;
       supergraphSdl: string | null;
       loadSchemas: () => Promise<Array<CompositeSchemaInput>>;
+      /** Service names and urls of the subgraphs, used for detecting url changes. */
+      loadSubgraphs: () => Promise<Array<SubgraphDefinition>>;
     } | null;
     contracts: Array<ContractInput> | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
@@ -868,12 +870,15 @@ export class CompositeModel {
         })) ?? null,
     });
 
-    const previousVersionSdl = await this.checks.retrievePreviousVersionSdl({
-      version: latestComposable,
-      organization,
-      project,
-      targetId: selector.target,
-    });
+    const [previousVersionSdl, subgraphsBefore] = await Promise.all([
+      this.checks.retrievePreviousVersionSdl({
+        version: latestComposable,
+        organization,
+        project,
+        targetId: selector.target,
+      }),
+      latestComposable ? latestComposable.loadSubgraphs() : [],
+    ]);
 
     const getAffectedAppDeploymentsForDelete: GetAffectedAppDeployments = schemaCoordinates =>
       this.appDeployments.getAffectedAppDeploymentsBySchemaCoordinates({
@@ -887,7 +892,7 @@ export class CompositeModel {
       this.checks.diff({
         conditionalBreakingChangeConfig: conditionalBreakingChangeDiffConfig,
         includeUrlChanges: {
-          schemasBefore: latestVersion.schemas,
+          schemasBefore: subgraphsBefore,
           schemasAfter: schemas,
         },
         filterOutFederationChanges: project.type === ProjectType.FEDERATION,
