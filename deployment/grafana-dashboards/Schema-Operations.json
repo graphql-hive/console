@@ -655,7 +655,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 16,
+        "w": 12,
         "x": 0,
         "y": 15
       },
@@ -716,6 +716,72 @@
       ],
       "title": "Checks by conclusion",
       "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Percentage of schema checks that were skipped because the checked schema has the same checksum as the latest schema version. Skipped checks reuse the result of the latest schema version instead of running composition, diff and policy checks. They are included in the accepted/rejected counts.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "noValue": "0%",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 15
+      },
+      "id": 208,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "100 * (sum(increase(registry_check_skipped_count_total[$__range])) or vector(0)) / clamp_min(sum(increase(registry_check_count_total[$__range])) or vector(0), 1)",
+          "instant": true,
+          "legendFormat": "Skipped",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Checks skipped (no changes)",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -1377,7 +1443,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 16,
+        "w": 12,
         "x": 0,
         "y": 37
       },
@@ -1450,6 +1516,72 @@
       ],
       "title": "Publishes by conclusion",
       "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROM_DATASOURCE_UID"
+      },
+      "description": "Percentage of schema publishes that were ignored because the published schema has the same checksum as the latest schema version.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "noValue": "0%",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 37
+      },
+      "id": 309,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PROM_DATASOURCE_UID"
+          },
+          "editorMode": "code",
+          "expr": "100 * (sum(increase(registry_publish_count_total{conclusion=\"ignored\"}[$__range])) or vector(0)) / clamp_min(sum(increase(registry_publish_count_total[$__range])) or vector(0), 1)",
+          "instant": true,
+          "legendFormat": "Ignored",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Publishes ignored (no changes)",
+      "type": "stat"
     },
     {
       "datasource": {
