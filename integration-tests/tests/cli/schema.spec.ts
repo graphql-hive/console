@@ -1077,6 +1077,53 @@ test.concurrent(
 );
 
 test.concurrent(
+  'schema:check keeps the `implements` clause of interfaces that are extended via `extend interface`',
+  async ({ expect }) => {
+    const { createOrg } = await initSeed().createOwner();
+    const { createProject } = await createOrg();
+    const { createTargetAccessToken } = await createProject(ProjectType.Single);
+    const { secret, latestSchema } = await createTargetAccessToken({});
+
+    await schemaPublish([
+      '--registry.accessToken',
+      secret,
+      '--author',
+      'Test',
+      '--commit',
+      'init',
+      'fixtures/interface-extension-init.graphql',
+    ]);
+
+    // Merging the type definitions must not drop `implements Node` when an
+    // `extend interface` for the same interface follows its definition
+    // (regression in @graphql-tools/merge@10.0.9, fixed in 10.0.10).
+    // This is the assertion that catches the regression: the check below runs on the
+    // same merge version as the publish, so both sides would lose the clause equally.
+    const latest = await latestSchema();
+    expect(latest.latestVersion?.isValid).toBe(true);
+    expect(latest.latestVersion?.sdl).toIncludeSubstringWithoutWhitespace(
+      'interface FinancialEntity implements Node { id: ID! name: String }',
+    );
+    expect(latest.latestVersion?.sdl).toIncludeSubstringWithoutWhitespace(
+      'interface Document implements Node { id: ID! title: String }',
+    );
+
+    const result = stripAnsi(
+      await schemaCheck([
+        '--registry.accessToken',
+        secret,
+        'fixtures/interface-extension-change.graphql',
+      ]),
+    );
+
+    expect(result).not.toContain('no longer implements');
+    expect(result).toContain('Field ping was added to object type Query');
+    expect(result).toContain('Field name was added to object type Business');
+    expect(result).toContain('Field title was added to object type FinancialDocument');
+  },
+);
+
+test.concurrent(
   'huge schema causing composition to go OOM gives correct error message',
   async ({ expect }) => {
     const { createOrg } = await initSeed().createOwner();
