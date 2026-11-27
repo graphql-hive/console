@@ -1,5 +1,119 @@
 # hive
 
+## 15.8.0
+
+### Minor Changes
+
+- [#8997](https://github.com/graphql-hive/console/pull/8997)
+  [`c449c12`](https://github.com/graphql-hive/console/commit/c449c120ecbcdf00b6f0fc45709211231bf55fc6)
+  Thanks [@jdolle](https://github.com/jdolle)! - Schema change notifications now report a schema
+  version that failed to compose.
+
+  `schema.valid` in the HTTP webhook payload now means the same as `SchemaVersion.isValid` in the
+  GraphQL API: it is `false` when the supergraph or any contract failed to compose. Before, a
+  version whose supergraph composed while a contract did not was delivered with `valid: true` and no
+  errors, or was not delivered at all when the schema itself had no changes. Such a version is now
+  delivered with `valid: false`, and `errors` holds the contract's composition errors, each prefixed
+  with the contract name. Filter on `schema.valid` to act on failed compositions only.
+
+  Deleting a subgraph no longer repeats its breaking changes in `errors`. They are delivered in
+  `changes`, as they are for a publish, so `errors` only holds composition errors.
+
+  Slack, Microsoft Teams and Discord messages now state that composition failed and list the
+  composition errors. Slack and Microsoft Teams reported such a version as "0 changes" without the
+  errors, Discord titled it "Breaking schema changes detected", and a first publish that failed to
+  compose was announced as a received schema on all three.
+
+### Patch Changes
+
+- [#9006](https://github.com/graphql-hive/console/pull/9006)
+  [`b2b356d`](https://github.com/graphql-hive/console/commit/b2b356dfe5d396acd173f045cb2a0fbe6bcbbc17)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Schema checks now report adding an argument with a
+  default value to an existing directive as a dangerous change. Existing usages of the directive
+  keep working, but they now receive the default value, which may change runtime behaviour.
+
+  - Adding a non-null argument with a default value, for example `@cache(maxAge: Int! = 60)`, was
+    reported as a breaking change and failed the check. It no longer fails the check, unless the
+    target is configured to fail on dangerous changes.
+  - Adding a nullable argument with a default value, for example `@cache(scope: String = "PUBLIC")`,
+    was reported as a safe change. It now fails the check when the target is configured to fail on
+    all dangerous changes or on `DIRECTIVE_ARGUMENT_ADDED`.
+
+  Adding an argument without a default value is reported as before: breaking when it is non-null,
+  safe when it is nullable. Adding arguments to a directive that is new in the same change stays
+  safe.
+
+- [#8993](https://github.com/graphql-hive/console/pull/8993)
+  [`c3dffe6`](https://github.com/graphql-hive/console/commit/c3dffe6707000009d90b29de04a29766b3a28f40)
+  Thanks [@jdolle](https://github.com/jdolle)! - Fix legacy Federation v1 composition dropping part
+  of a subgraph. Since 15.7.0, when a subgraph declared a root type without fields (for example
+  `type Mutation`, with the fields added later through `extend type Mutation { ... }`) or a type
+  extension without a body, every definition that followed it in that subgraph was left out of the
+  composed schema, while composition still reported success.
+
+  A graph that was published while affected keeps the incomplete schema until it is composed again.
+  Publishing an unchanged schema is skipped, so publish a subgraph with a small change to compose it
+  again.
+
+- [#9003](https://github.com/graphql-hive/console/pull/9003)
+  [`c87764c`](https://github.com/graphql-hive/console/commit/c87764c9a8067d7b986e593759c8958d584cd853)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix legacy Federation v1 composition leaving
+  default values out of the supergraph. Since 15.7.0, the supergraph lost every default value of
+  field arguments, input object fields and directive arguments (for example
+  `shippingCostV2(quantity: Int! = 1)` became `shippingCostV2(quantity: Int!)`), so gateways
+  rejected valid operations that relied on a default, such as passing a nullable variable to a
+  non-null argument with a default. The public API schema was not affected.
+
+  Field sets in `@key`, `@requires` and `@provides` with an empty selection are reported as
+  composition errors again. Since 15.7.0, `fields: ""` was reported as an unexpected composition
+  error, and a nested empty selection such as `fields: "id dimensions { }"` composed successfully
+  and ended up in the supergraph.
+
+  Composition errors also lost their error code, so they were reported as GraphQL errors instead of
+  composition errors.
+
+  A graph that was published while affected keeps the incomplete supergraph until it is composed
+  again. Publishing an unchanged schema is skipped, so publish a subgraph with a small change to
+  compose it again.
+
+- [#9005](https://github.com/graphql-hive/console/pull/9005)
+  [`c9afa51`](https://github.com/graphql-hive/console/commit/c9afa510ba24e15595e011c52067788ed4c645de)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Fix single schema projects dropping the
+  `implements` clause of an interface that is extended with `extend interface` later in the SDL.
+  Since 15.7.0, a schema such as
+
+  ```graphql
+  interface Node {
+    id: ID!
+  }
+  interface FinancialEntity implements Node {
+    id: ID!
+  }
+  extend interface FinancialEntity {
+    name: String
+  }
+  ```
+
+  was stored as `interface FinancialEntity { id: ID! name: String }`. Schema checks against a
+  version published before 15.7.0 reported phantom breaking changes such as
+  `FinancialEntity object type no longer implements Node interface`, even though the schema
+  contained none of them.
+
+  A schema version that was published while affected keeps the missing `implements` clause until a
+  new version is published. Publishing an unchanged schema is skipped, so publish the schema with a
+  small change to store it correctly again.
+
+- [#9004](https://github.com/graphql-hive/console/pull/9004)
+  [`523657c`](https://github.com/graphql-hive/console/commit/523657ccd26f70f1f9033f7e1db8dd1e813ddd34)
+  Thanks [@n1ru4l](https://github.com/n1ru4l)! - Schema check, publish and delete load fewer
+  subgraph SDLs. They loaded the SDL of every subgraph twice: once for the latest schema version and
+  once for the latest composable version. The latest composable version's subgraph SDLs are now only
+  loaded for old versions that do not store their composed schema.
+
+  Deleting a subgraph now detects service URL changes against the latest composable version, as
+  publishing a subgraph does. Before, it compared against the latest version, even when that version
+  failed to compose.
+
 ## 15.7.0
 
 ### Minor Changes
