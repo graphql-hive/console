@@ -84,6 +84,7 @@ import {
   SchemaHelper,
   toCompositeSchemaInput,
   toSingleSchemaInput,
+  toSubgraphDefinition,
   type SchemaInput,
 } from './schema-helper';
 import { SchemaManager } from './schema-manager';
@@ -435,15 +436,10 @@ export class SchemaPublisher {
       } as const;
     }
 
-    const [latestVersion, latestComposableVersion] = await Promise.all([
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+    const { latest: latestVersion, latestComposable: latestComposableVersion } =
+      await this.schemaManager.getLatestAndLatestComposableSchemaVersionForGraph({
         graph,
-      }),
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
-        graph,
-        onlyComposable: true,
-      }),
-    ]);
+      });
 
     if (input.service) {
       let serviceExists = false;
@@ -707,7 +703,11 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestComposableVersion.version.isComposable,
                 sdl: latestComposableVersion.version.compositeSchemaSDL,
-                schemas: [toSingleSchemaInput(ensureSingleSchema(latestComposableVersion.schemas))],
+                loadSchemas: async () => [
+                  toSingleSchemaInput(
+                    ensureSingleSchema(await latestComposableVersion.loadSchemas()),
+                  ),
+                ],
               }
             : null,
           baseSchema,
@@ -770,9 +770,10 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestComposableVersion.version.isComposable,
                 sdl: latestComposableVersion.version.compositeSchemaSDL,
-                schemas: ensureCompositeSchemas(latestComposableVersion.schemas).map(
-                  toCompositeSchemaInput,
-                ),
+                loadSchemas: async () =>
+                  ensureCompositeSchemas(await latestComposableVersion.loadSchemas()).map(
+                    toCompositeSchemaInput,
+                  ),
               }
             : null,
           baseSchema,
@@ -1709,20 +1710,17 @@ export class SchemaPublisher {
             throw new HiveError(`${project.type} project not supported`);
           }
 
-          const [latestVersion, latestComposableVersion, baseSchema] = await Promise.all([
-            this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
-              graph,
-            }),
-            this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
-              graph,
-              onlyComposable: true,
-            }),
-            this.storage.getBaseSchema({
-              organizationId: selector.organizationId,
-              projectId: selector.projectId,
-              targetId: selector.targetId,
-            }),
-          ]);
+          const [{ latest: latestVersion, latestComposable: latestComposableVersion }, baseSchema] =
+            await Promise.all([
+              this.schemaManager.getLatestAndLatestComposableSchemaVersionForGraph({
+                graph,
+              }),
+              this.storage.getBaseSchema({
+                organizationId: selector.organizationId,
+                projectId: selector.projectId,
+                targetId: selector.targetId,
+              }),
+            ]);
 
           if (!latestVersion || latestVersion.schemas.length === 0) {
             throw new HiveError('Registry is empty');
@@ -1785,9 +1783,14 @@ export class SchemaPublisher {
                   isComposable: latestComposableVersion.version.isComposable,
                   sdl: latestComposableVersion.version.compositeSchemaSDL ?? null,
                   supergraphSdl: latestComposableVersion.version.supergraphSDL,
-                  schemas: ensureCompositeSchemas(latestComposableVersion.schemas).map(
-                    toCompositeSchemaInput,
-                  ),
+                  loadSchemas: async () =>
+                    ensureCompositeSchemas(await latestComposableVersion.loadSchemas()).map(
+                      toCompositeSchemaInput,
+                    ),
+                  loadSubgraphs: async () =>
+                    ensureCompositeSchemas(
+                      await latestComposableVersion.loadSchemasWithoutSDL(),
+                    ).map(toSubgraphDefinition),
                 }
               : null,
             baseSchema,
@@ -1999,15 +2002,10 @@ export class SchemaPublisher {
       this.graphStore.getDefaultGraphForTargetId(targetId),
     ]);
 
-    const [latestVersion, latestComposable] = await Promise.all([
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
+    const { latest: latestVersion, latestComposable } =
+      await this.schemaManager.getLatestAndLatestComposableSchemaVersionForGraph({
         graph,
-      }),
-      this.schemaManager.getLatestSchemaVersionWithSchemaLogsForGraph({
-        graph,
-        onlyComposable: true,
-      }),
-    ]);
+      });
 
     trace.getActiveSpan()?.setAttributes({
       'hive.latestSchemaVersion.id': latestVersion?.version.id ?? 'no prior version',
@@ -2143,7 +2141,9 @@ export class SchemaPublisher {
             ? {
                 isComposable: latestComposable.version.isComposable,
                 sdl: latestComposable.version.compositeSchemaSDL,
-                schemas: [toSingleSchemaInput(ensureSingleSchema(latestComposable.schemas))],
+                loadSchemas: async () => [
+                  toSingleSchemaInput(ensureSingleSchema(await latestComposable.loadSchemas())),
+                ],
               }
             : null,
           organization,
@@ -2191,9 +2191,14 @@ export class SchemaPublisher {
                 isComposable: latestComposable.version.isComposable,
                 sdl: latestComposable.version.compositeSchemaSDL,
                 supergraphSdl: latestComposable.version.supergraphSDL,
-                schemas: ensureCompositeSchemas(latestComposable.schemas).map(
-                  toCompositeSchemaInput,
-                ),
+                loadSchemas: async () =>
+                  ensureCompositeSchemas(await latestComposable.loadSchemas()).map(
+                    toCompositeSchemaInput,
+                  ),
+                loadSubgraphs: async () =>
+                  ensureCompositeSchemas(await latestComposable.loadSchemasWithoutSDL()).map(
+                    toSubgraphDefinition,
+                  ),
               }
             : null,
           organization,

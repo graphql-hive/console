@@ -78,7 +78,7 @@ export class SingleModel {
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchemaInput];
+      loadSchemas: () => Promise<Array<SingleSchemaInput>>;
     } | null;
     baseSchema: string | null;
     project: Project;
@@ -319,7 +319,7 @@ export class SingleModel {
     latestComposable: {
       isComposable: boolean;
       sdl: string | null;
-      schemas: [SingleSchemaInput];
+      loadSchemas: () => Promise<Array<SingleSchemaInput>>;
     } | null;
     baseSchema: string | null;
     conditionalBreakingChangeDiffConfig: null | ConditionalBreakingChangeDiffConfig;
