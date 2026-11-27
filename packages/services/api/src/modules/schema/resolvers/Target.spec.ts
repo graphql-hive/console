@@ -236,14 +236,23 @@ describe('schemaVersions selections', () => {
     );
   });
 
-  test.each(['sdl', 'supergraph', 'explorer', 'unusedSchema', 'deprecatedSchema'])(
-    'loads SDL when %s is selected',
+  test.each(['sdl', 'supergraph'])('loads SDL when %s is selected', async fieldName => {
+    const info = await schemaVersionsInfo(`
+      { target { schemaVersions { edges { node { ${fieldName} } } } } }
+    `);
+
+    expect(isSchemaVersionSDLRequested(info)).toBe(true);
+  });
+
+  // The workflows service builds the explorer snapshots and loads the SDL itself.
+  test.each(['explorer', 'unusedSchema', 'deprecatedSchema'])(
+    'does not load SDL when %s is selected',
     async fieldName => {
       const info = await schemaVersionsInfo(`
         { target { schemaVersions { edges { node { ${fieldName} } } } } }
       `);
 
-      expect(isSchemaVersionSDLRequested(info)).toBe(true);
+      expect(isSchemaVersionSDLRequested(info)).toBe(false);
     },
   );
 

@@ -104,6 +104,7 @@ const EnvironmentModel = zod.object({
   SCHEMA_DIFF_WORKER_MAX_OLD_GENERATION_SIZE_MB: emptyString(NumberFromString.optional()),
   SCHEMA_DIFF_WORKER_TIMEOUT_MS: emptyString(NumberFromString.optional()),
   SCHEMA_EXPLORER_CACHE_MEMORY_MAX_MB: emptyString(NumberFromString.optional()),
+  SCHEMA_EXPLORER_SNAPSHOT_BUILD_TIMEOUT_MS: emptyString(NumberFromString.optional()),
 });
 
 const CommerceModel = zod.object({
@@ -674,6 +675,7 @@ export const env = {
   },
   schemaExplorerCache: {
     memoryMaxBytes: (base.SCHEMA_EXPLORER_CACHE_MEMORY_MAX_MB ?? 512) * 1024 * 1024,
+    buildTimeoutMs: base.SCHEMA_EXPLORER_SNAPSHOT_BUILD_TIMEOUT_MS ?? 15_000,
   },
   http: {
     port: base.PORT ?? 3001,

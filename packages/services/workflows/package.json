@@ -21,6 +21,7 @@
     "@hive/clickhouse": "workspace:*",
     "@hive/postgres": "workspace:*",
     "@hive/pubsub": "workspace:*",
+    "@hive/schema-explorer-snapshot": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@sentry/node": "catalog:",

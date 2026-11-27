@@ -118,6 +118,30 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
     ],
   });
 
+  /** The pushed schemas a schema version was composed from (custom projects excluded). */
+  async function schemasOfVersion(args: { versionId: string; pool: PostgresDatabasePool }) {
+    const result = await args.pool.any(
+      psql`/* getSchemasOfVersion */
+        SELECT
+            sl.id
+          , sl.sdl
+          , lower(sl.service_name) as "serviceName"
+          , sl.service_url as "serviceUrl"
+          , p.type
+        FROM schema_version_to_log AS svl
+        LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
+        LEFT JOIN projects as p ON (p.id = sl.project_id)
+        WHERE
+          svl.version_id = ${args.versionId}
+          AND sl.action = 'PUSH'
+          AND p.type != 'CUSTOM'
+        ORDER BY
+          sl.created_at DESC
+      `,
+    );
+    return result.map(row => SchemaModel.parse(row));
+  }
+
   return {
     id: 'schema' as const,
     /**
@@ -257,27 +281,10 @@ export function schemaProvider(providerConfig: SchemaProviderConfig) {
         return [];
       }
 
-      const result = await args.pool.any(
-        psql`/* getSchemasOfVersion */
-          SELECT
-              sl.id
-            , sl.sdl
-            , lower(sl.service_name) as "serviceName"
-            , sl.service_url as "serviceUrl"
-            , p.type
-          FROM schema_version_to_log AS svl
-          LEFT JOIN schema_log AS sl ON (sl.id = svl.action_id)
-          LEFT JOIN projects as p ON (p.id = sl.project_id)
-          WHERE
-            svl.version_id = ${latestVersionId}
-            AND sl.action = 'PUSH'
-            AND p.type != 'CUSTOM'
-          ORDER BY
-            sl.created_at DESC
-        `,
-      );
-      return result.map(row => SchemaModel.parse(row));
+      return schemasOfVersion({ versionId: latestVersionId, pool: args.pool });
     },
+
+    schemasOfVersion,
 
     async getBaseSchema(args: { targetId: string; pool: PostgresDatabasePool }) {
       const baseSchema = await args.pool

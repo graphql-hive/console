@@ -1,14 +1,10 @@
 import type { SchemaVersionMapper as SchemaVersion } from '../module.graphql.mappers';
-import { __Type, isTypeSystemExtensionNode, print } from 'graphql';
-import { Injectable, Scope } from 'graphql-modules';
+import { __Type } from 'graphql';
+import { CONTEXT, Inject, Injectable, Scope } from 'graphql-modules';
 import { CriticalityLevel } from '@graphql-inspector/core';
-import { mergeTypeDefs } from '@graphql-tools/merge';
+import { autoFixCompositeSchemaSdl } from '@hive/schema-explorer-snapshot';
 import { invariant, traceFn } from '@hive/service-common';
 import type { SchemaChangeType } from '@hive/storage';
-import {
-  containsSupergraphSpec,
-  transformSupergraphToPublicSchema,
-} from '@theguild/federation-composition';
 import type { ResolversUnionTypes } from '../../../__generated__/types';
 import { ProjectType, SchemaLog } from '../../../shared/entities';
 import { cache } from '../../../shared/helpers';
@@ -17,11 +13,14 @@ import { ProjectManager } from '../../project/providers/project-manager';
 import { Logger } from '../../shared/providers/logger';
 import { Storage } from '../../shared/providers/storage';
 import { TargetStore } from '../../target/providers/target-store';
-import { buildSchemaExplorerSnapshot } from '../lib/schema-explorer-snapshot';
 import { BreakingSchemaChangeUsageHelper } from './breaking-schema-changes-helper';
 import { CompositionOrchestrator } from './orchestrator/composition-orchestrator';
 import { RegistryChecks } from './registry-checks';
 import { SchemaExplorerCache } from './schema-explorer-cache';
+import {
+  SchemaExplorerSnapshotBuilder,
+  type LegacyComposition,
+} from './schema-explorer-snapshot-builder';
 import { ensureCompositeSchemas, SchemaHelper, toCompositeSchemaInput } from './schema-helper';
 import { SchemaManager } from './schema-manager';
 import { SchemaVersionStore } from './schema-version-store';
@@ -48,6 +47,8 @@ export class SchemaVersionHelper {
     private schemaVersions: SchemaVersionStore,
     private breakingSchemaChangesHelper: BreakingSchemaChangeUsageHelper,
     private schemaExplorerCache: SchemaExplorerCache,
+    private schemaExplorerSnapshotBuilder: SchemaExplorerSnapshotBuilder,
+    @Inject(CONTEXT) private context: GraphQLModules.ModuleContext,
   ) {}
 
   @traceFn('SchemaVersionHelper.composeSchemaVersion', {
@@ -111,7 +112,9 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   async getCompositeSchemaSdl(schemaVersion: SchemaVersion): Promise<string | null> {
     if (!schemaVersion.hasLoadedSDL) {
-      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
+      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id, {
+        withSDL: true,
+      });
       if (!fullSchemaVersion) {
         return null;
       }
@@ -145,8 +148,18 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   async getSupergraphSdl(schemaVersion: SchemaVersion): Promise<string | null> {
     if (!schemaVersion.hasLoadedSDL) {
-      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
-      return fullSchemaVersion?.supergraphSDL ?? null;
+      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id, {
+        withSDL: true,
+      });
+      if (!fullSchemaVersion) {
+        return null;
+      }
+      schemaVersion = {
+        ...schemaVersion,
+        hasLoadedSDL: true,
+        compositeSchemaSDL: fullSchemaVersion.compositeSchemaSDL,
+        supergraphSDL: fullSchemaVersion.supergraphSDL,
+      };
     }
 
     if (schemaVersion.hasPersistedSchemaChanges) {
@@ -183,13 +196,31 @@ export class SchemaVersionHelper {
    */
   @cache<SchemaVersion>(version => version.id)
   async getExplorerSnapshot(schemaVersion: SchemaVersion) {
-    return this.schemaExplorerCache.getOrBuild(schemaVersion.id, async () => {
-      const [schemaAst, supergraphAst] = await Promise.all([
-        this.getCompositeSchemaAst(schemaVersion),
-        this.getSupergraphAst(schemaVersion),
-      ]);
-      return schemaAst ? buildSchemaExplorerSnapshot(schemaAst, supergraphAst) : null;
-    });
+    // The workflows service builds missing snapshots; the API never loads the SDL for them.
+    return this.schemaExplorerCache.getOrBuild(schemaVersion.id, async () =>
+      this.schemaExplorerSnapshotBuilder.build(schemaVersion.id, {
+        requestId: this.context.requestId,
+        legacyComposition: schemaVersion.hasPersistedSchemaChanges
+          ? null
+          : await this.getLegacyComposition(schemaVersion),
+      }),
+    );
+  }
+
+  /** How a version without persisted SDL is composed again (see `composeSchemaVersion`). */
+  private async getLegacyComposition(schemaVersion: SchemaVersion): Promise<LegacyComposition> {
+    const [project, organization] = await Promise.all([
+      this.projectManager.getProjectById(schemaVersion.projectId),
+      this.storage.getOrganization({ organizationId: schemaVersion.organizationId }),
+    ]);
+    return {
+      externalComposition: project.externalComposition,
+      native: this.schemaManager.checkProjectNativeFederationSupport({
+        project,
+        organization,
+        targetId: schemaVersion.targetId,
+      }),
+    };
   }
 
   @cache<SchemaVersion>(version => version.id)
@@ -682,52 +713,8 @@ export class SchemaVersionHelper {
    * This function will check for type system extensions and merge them into matching definitions.
    */
   private autoFixCompositeSchemaSdl(sdl: string, versionId: string): string {
-    const isFederationV1Output = sdl.includes('@core');
-    // Poor's man check for type extensions to avoid parsing the SDL if it's not necessary.
-    // Checks if the `extend` keyword is followed by a space or a newline and it's not a part of a word.
-    const hasPotentiallyTypeExtensions = /\bextend(?=[\s\n])/.test(sdl);
-
-    /**
-     * If the SDL is clean from Supergraph spec or it's an output of @apollo/federation, we don't need to transform it.
-     * We ignore @apollo/federation, because we never really transformed the output of it to public schema.
-     * Doing so might be a breaking change for some users (like: removed join__Graph type).
-     */
-    if (!isFederationV1Output && containsSupergraphSpec(sdl)) {
-      this.logger.warn(
-        'Composite schema SDL contains supergraph spec, transforming to public schema (versionId: %s)',
-        versionId,
-      );
-
-      const transformedSdl = print(
-        transformSupergraphToPublicSchema(parseGraphQLSource(sdl, 'autoFixCompositeSchemaSdl')),
-      );
-
-      this.logger.debug(
-        transformedSdl === sdl
-          ? 'Transformation did not change the original SDL'
-          : 'Transformation changed the original SDL',
-      );
-
-      return transformedSdl;
-    }
-
-    /**
-     * If the SDL has type extensions, we need to merge them into matching definitions.
-     */
-    if (hasPotentiallyTypeExtensions) {
-      const schemaAst = parseGraphQLSource(sdl, 'autoFixCompositeSchemaSdl');
-      const hasTypeExtensions = schemaAst.definitions.some(isTypeSystemExtensionNode);
-
-      if (!hasTypeExtensions) {
-        return sdl;
-      }
-
-      this.logger.warn(
-        'Composite schema AST contains type extensions, merging them into matching definitions',
-      );
-      return print(mergeTypeDefs(schemaAst));
-    }
-
-    return sdl;
+    return autoFixCompositeSchemaSdl(sdl, message =>
+      this.logger.warn('%s (versionId: %s)', message, versionId),
+    );
   }
 }

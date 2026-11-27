@@ -1,13 +1,7 @@
 import { parse } from 'graphql';
 import { composeServices } from '@theguild/federation-composition';
-import {
-  encodeSchemaExplorerSnapshot,
-  SchemaExplorerSnapshotReader,
-} from '../schema-explorer-flat-snapshot.js';
-import {
-  buildSchemaExplorerSnapshot,
-  type SchemaExplorerSnapshot,
-} from '../schema-explorer-snapshot.js';
+import { encodeSchemaExplorerSnapshot, SchemaExplorerSnapshotReader } from '../flat-snapshot.js';
+import { buildSchemaExplorerSnapshot, type SchemaExplorerSnapshot } from '../snapshot.js';
 
 function compose() {
   const result = composeServices([

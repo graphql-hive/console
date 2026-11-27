@@ -1,5 +1,5 @@
 import { Kind } from 'graphql';
-import type { SchemaExplorerTypeEntity } from './schema-explorer-snapshot';
+import type { SchemaExplorerTypeEntity } from '@hive/schema-explorer-snapshot';
 
 /**
  * Removes the schema coordinates that were used, keeping only the unused parts of each type.

@@ -16,14 +16,14 @@
  * (uint32) and the columns, each 8-byte aligned. Columns use the platform's byte order; a
  * buffer of another byte order fails the magic check and is rebuilt.
  */
-import type { GraphQLFieldMapper } from '../module.graphql.mappers';
 import { Kind } from 'graphql';
 import { invariant } from '@hive/service-common';
 import type {
   SchemaExplorerEntry,
+  SchemaExplorerFieldEntity,
   SchemaExplorerSnapshot,
   SchemaExplorerTypeEntity,
-} from './schema-explorer-snapshot';
+} from './snapshot';
 
 /** Bump when the layout or the meaning of a column changes, so stale snapshots are not read. */
 export const SCHEMA_EXPLORER_SNAPSHOT_FORMAT_VERSION = 1;
@@ -1255,7 +1255,7 @@ export class SchemaExplorerSnapshotReader {
     switch (columns.typeKind[type]) {
       case TYPE_KIND_OBJECT:
       case TYPE_KIND_INTERFACE: {
-        const fields: Array<GraphQLFieldMapper['entity']> = [];
+        const fields: Array<SchemaExplorerFieldEntity> = [];
         for (let field = childrenStart; field < childrenEnd; field++) {
           const args = [];
           for (

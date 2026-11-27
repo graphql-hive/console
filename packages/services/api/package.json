@@ -37,6 +37,7 @@
     "@hive/postgres": "workspace:*",
     "@hive/pubsub": "workspace:*",
     "@hive/schema": "workspace:*",
+    "@hive/schema-explorer-snapshot": "workspace:*",
     "@hive/service-common": "workspace:*",
     "@hive/storage": "workspace:*",
     "@hive/usage-common": "workspace:*",
