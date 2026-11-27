@@ -3241,7 +3241,8 @@ export class SchemaPublisher {
     ] = await Promise.all([
       // The latest versions within the target we promote to
       this.schemaManager.getMaybeLatestVersionForGraph(graph),
-      this.schemaManager.getMaybeLatestValidVersionForGraph(graph),
+      // its SDL is the baseline for the promotion diff
+      this.schemaManager.getMaybeLatestValidVersionForGraph(graph, { withSDL: true }),
       // We have some old schema versions that do not store the SDLs on the record
       // we need to use the helpers to ensure the SDL is produced for these
       this.schemaVersionHelper.getCompositeSchemaSdl(originSchemaVersion),

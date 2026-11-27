@@ -1829,14 +1829,15 @@ export class SchemaVersionStore {
 
 export type SchemaVersionLookupOptions = {
   /**
-   * Whether to load the composite schema and supergraph SDL (default: true). Without it,
-   * `SchemaVersionHelper` loads the SDL on demand.
+   * Whether to load the composite schema and supergraph SDL (default: false). Without it,
+   * `SchemaVersionHelper` loads the SDL on demand. Only opt in when reading
+   * `compositeSchemaSDL`/`supergraphSDL` directly from the returned record.
    */
   withSDL?: boolean;
 };
 
 function lookupFieldOptions(options?: SchemaVersionLookupOptions) {
-  return { withSDL: options?.withSDL ?? true, withChanges: true };
+  return { withSDL: options?.withSDL ?? false, withChanges: true };
 }
 
 const schemaVersionSQLFields = (

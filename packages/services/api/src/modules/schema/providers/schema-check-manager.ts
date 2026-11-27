@@ -104,12 +104,16 @@ export class SchemaCheckManager {
     if (schemaCheck.schemaVersionId === null) {
       return null;
     }
-    return this.schemaManager.getSchemaVersionBySelector({
-      organizationId: schemaCheck.selector.organizationId,
-      projectId: schemaCheck.selector.projectId,
-      targetId: schemaCheck.targetId,
-      versionId: schemaCheck.schemaVersionId,
-    });
+    return this.schemaManager.getSchemaVersionBySelector(
+      {
+        organizationId: schemaCheck.selector.organizationId,
+        projectId: schemaCheck.selector.projectId,
+        targetId: schemaCheck.targetId,
+        versionId: schemaCheck.schemaVersionId,
+      },
+      // the baseline reads the composite schema and supergraph SDL of the version
+      { withSDL: true },
+    );
   }
 
   async getGraphQLSchemaVersion(

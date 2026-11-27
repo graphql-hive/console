@@ -112,7 +112,9 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   async getCompositeSchemaSdl(schemaVersion: SchemaVersion): Promise<string | null> {
     if (!schemaVersion.hasLoadedSDL) {
-      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
+      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id, {
+        withSDL: true,
+      });
       if (!fullSchemaVersion) {
         return null;
       }
@@ -146,7 +148,9 @@ export class SchemaVersionHelper {
   @cache<SchemaVersion>(version => version.id)
   async getSupergraphSdl(schemaVersion: SchemaVersion): Promise<string | null> {
     if (!schemaVersion.hasLoadedSDL) {
-      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id);
+      const fullSchemaVersion = await this.schemaVersions.getSchemaVersionById(schemaVersion.id, {
+        withSDL: true,
+      });
       if (!fullSchemaVersion) {
         return null;
       }

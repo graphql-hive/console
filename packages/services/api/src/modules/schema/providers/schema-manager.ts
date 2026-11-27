@@ -303,7 +303,7 @@ export class SchemaManager {
 
     const version = await this.latestValidVersionByGraphLoader.load({
       graph,
-      withSDL: options?.withSDL ?? true,
+      withSDL: options?.withSDL ?? false,
     });
 
     if (!version) {
@@ -414,6 +414,7 @@ export class SchemaManager {
 
   async getSchemaVersionBySelector(
     selector: TargetSelector & { versionId: string },
+    options?: SchemaVersionLookupOptions,
   ): Promise<SchemaVersion | null> {
     this.logger.debug('Fetching single schema version (selector=%o)', selector);
 
@@ -422,7 +423,7 @@ export class SchemaManager {
       return null;
     }
 
-    const version = await this.schemaVersions.getSchemaVersionById(selector.versionId);
+    const version = await this.schemaVersions.getSchemaVersionById(selector.versionId, options);
 
     if (!version) {
       return null;
@@ -447,8 +448,8 @@ export class SchemaManager {
     onlyComposable?: boolean;
   }) {
     const schemaVersion = await (args.onlyComposable
-      ? this.getMaybeLatestValidVersionForGraph(args.graph)
-      : this.getMaybeLatestVersionForGraph(args.graph));
+      ? this.getMaybeLatestValidVersionForGraph(args.graph, { withSDL: true })
+      : this.getMaybeLatestVersionForGraph(args.graph, { withSDL: true }));
 
     if (!schemaVersion) {
       return null;
@@ -1272,7 +1273,9 @@ export class SchemaManager {
     const results = await Promise.all(
       targets.map(async target => {
         const graph = await this.graphs.getDefaultGraphForTargetId(target.id);
-        const schemaVersion = await this.getMaybeLatestValidVersionForGraph(graph);
+        const schemaVersion = await this.getMaybeLatestValidVersionForGraph(graph, {
+          withSDL: true,
+        });
 
         if (schemaVersion === null) {
           return {
